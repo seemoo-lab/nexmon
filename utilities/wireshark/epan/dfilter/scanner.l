@@ -58,6 +58,12 @@
  */
 %option extra-type="dfsyntax_t *"
 
+/*
+ * Token matching is case-insensitive. yytext still has the original case.
+ * The escape sequences are the only patterns not case-insensitive.
+ */
+%option case-insensitive
+
 %{
 /*
  * Wireshark - Network traffic analyzer
@@ -95,6 +101,7 @@ static bool parse_double(dfsyntax_t *dfs, const char *s, double *valuep);
 
 static void update_location(dfsyntax_t *dfs, const char *text);
 static void update_string_loc(dfsyntax_t *dfs, const char *text);
+static void start_string(dfsyntax_t *dfs, const char *init);
 
 #define FAIL(...) \
 	do { \
@@ -151,6 +158,7 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 %x LAYER
 %x DQUOTE
 %x SQUOTE
+%x DDQUOTE
 
 %%
 
@@ -226,6 +234,12 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
+<LAYER><<EOF>>				{
+	update_location(yyextra, yytext);
+	FAIL("The layer number or range was missing.");
+	return SCAN_FAILED;
+}
+
 <INITIAL,LAYER>"["		{
 	BEGIN(RANGE);
 	return simple(TOKEN_LBRACKET);
@@ -251,8 +265,8 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
-[rR]{0,1}\042			{
-	/* start quote of a quoted string */
+[rR]{0,1}\x22		{
+	/* start quote of a quoted string, straight quotation mark. */
 	/*
 	 * The example of how to scan for strings was taken from
 	 * the flex manual, from the section "Start Conditions".
@@ -260,17 +274,43 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	 */
 	BEGIN(DQUOTE);
 	update_location(yyextra, yytext);
-	yyextra->string_loc = yyextra->location;
-
-	yyextra->quoted_string = g_string_new(NULL);
+	start_string(yyextra, NULL);
 
 	if (yytext[0] == 'r' || yytext[0] == 'R') {
 		/*
-		 * This is a raw string (like in Python). Rules: 1) The two
-		 * escape sequences are \\ and \". 2) Backslashes are
-		 * preserved. 3) Double quotes in the string must be escaped.
-		 * Corollary: Strings cannot end with an odd number of
-		 * backslashes.
+		 * This is a raw string (like in Python). Rules: 1) Backslashes are
+		 * preserved. 2) Double quotes in the string must still be escaped
+		 * (or else they end the string), but when escaped the backslash is
+		 * still preserved (see 1).
+		 * Corollary: Strings cannot *end* with an odd number of backslashes.
+		 * Example: r"a\b\x12\"\\" is the string (including the implicit NUL terminator)
+		 * {'a', '\\', 'b', '\\', 'x', '1', '2', '\\', '"', '\\'. '\\', '\0'}
+		 */
+		yyextra->raw_string = true;
+	}
+	else {
+		yyextra->raw_string = false;
+	}
+}
+
+[rR]{0,1}\xE2\x80\x9C		{
+	/* start quote of a quoted string, left double quotation mark. */
+	/*
+	 * The example of how to scan for strings was taken from
+	 * the flex manual, from the section "Start Conditions".
+	 * See: https://westes.github.io/flex/manual/Start-Conditions.html
+	 */
+	BEGIN(DDQUOTE);
+	update_location(yyextra, yytext);
+	start_string(yyextra, NULL);
+
+	if (yytext[0] == 'r' || yytext[0] == 'R') {
+		/*
+		 * This is a raw string (like in Python). Rules: 1) Backslashes are
+		 * preserved. 2) Double quotes in the string must still be escaped
+		 * (or else they end the string), but when escaped the backslash is
+		 * still preserved (see 1).
+		 * Corollary: Strings cannot *end* with an odd number of backslashes.
 		 * Example: r"a\b\x12\"\\" is the string (including the implicit NUL terminator)
 		 * {'a', '\\', 'b', '\\', 'x', '1', '2', '\\', '"', '\\'. '\\', '\0'}
 		 */
@@ -290,8 +330,8 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
-<DQUOTE>\042			{
-	/* end quote */
+<DQUOTE>\x22		{
+	/* end quote, straight double quotation mark */
 	BEGIN(INITIAL);
 	update_string_loc(yyextra, yytext);
 	int token = set_lval_quoted_string(yyextra, yyextra->quoted_string);
@@ -300,7 +340,26 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return token;
 }
 
-<DQUOTE>\\[0-7]{1,3} {
+<DDQUOTE><<EOF>>				{
+	/* unterminated string */
+	update_string_loc(yyextra, yytext);
+	g_string_free(yyextra->quoted_string, TRUE);
+	yyextra->quoted_string = NULL;
+	FAIL("The final quote was missing from string literal with directional (smart) quotes.");
+	return SCAN_FAILED;
+}
+
+<DDQUOTE>\xE2\x80\x9D		{
+	/* end quote, right double quotation mark */
+	BEGIN(INITIAL);
+	update_string_loc(yyextra, yytext);
+	int token = set_lval_quoted_string(yyextra, yyextra->quoted_string);
+	yyextra->quoted_string = NULL;
+	yyextra->string_loc.col_start = -1;
+	return token;
+}
+
+<DQUOTE,DDQUOTE>\\[0-7]{1,3} {
 	/* octal sequence */
 	update_string_loc(yyextra, yytext);
 	if (yyextra->raw_string) {
@@ -319,7 +378,7 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-<DQUOTE>\\x[[:xdigit:]]{1,2} {
+<DQUOTE,DDQUOTE>\\(?-i:x)[[:xdigit:]]{1,2} {
 	/* hex sequence */
 	/*
 	 * C standard does not place a limit on the number of hex
@@ -336,8 +395,8 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-<DQUOTE>\\u[[:xdigit:]]{0,4} {
-	/* universal character name */
+<DQUOTE,DDQUOTE>\\(?-i:u)[[:xdigit:]]{0,4} {
+	/* universal character name, BMP */
 	update_string_loc(yyextra, yytext);
 	if (yyextra->raw_string) {
 		g_string_append(yyextra->quoted_string, yytext);
@@ -349,8 +408,8 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-<DQUOTE>\\U[[:xdigit:]]{0,8} {
-	/* universal character name */
+<DQUOTE,DDQUOTE>\\(?-i:U)[[:xdigit:]]{0,8} {
+	/* universal character name, upper-case (8 digits) */
 	update_string_loc(yyextra, yytext);
 	if (yyextra->raw_string) {
 		g_string_append(yyextra->quoted_string, yytext);
@@ -362,8 +421,7 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-
-<DQUOTE>\\.				{
+<DQUOTE,DDQUOTE>\\.				{
 	/* escaped character */
 	update_string_loc(yyextra, yytext);
 	if (yyextra->raw_string) {
@@ -376,20 +434,55 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	}
 }
 
-<DQUOTE>[^\\\042]+			{
+<DQUOTE>[^\\\x22]+			{
 	/* non-escaped string */
 	update_string_loc(yyextra, yytext);
 	g_string_append(yyextra->quoted_string, yytext);
 }
 
+<DDQUOTE>[^\\\xE2]+			{
+	/* non-escaped string */
+	update_string_loc(yyextra, yytext);
+	g_string_append(yyextra->quoted_string, yytext);
+}
 
-\047				{
+<DDQUOTE>\\\xE2\x80\x9D			{
+	/* escaped right double quotation mark */
+	update_string_loc(yyextra, yytext);
+	if (yyextra->raw_string) {
+		g_string_append(yyextra->quoted_string, yytext);
+	}
+	else {
+		g_string_append(yyextra->quoted_string, yytext + 1);
+	}
+}
+
+<DDQUOTE>(\xE2[^\x80])|(\xE2\x80[^\x9D])	{
+	/* not a right double quotation mark, but the first or first two
+	 * bytes match. */
+	update_string_loc(yyextra, yytext);
+	g_string_append(yyextra->quoted_string, yytext);
+}
+
+<DQUOTE,DDQUOTE>\\				{
+	/* backslash with no escape sequence following */
+	update_string_loc(yyextra, yytext);
+	if (yyextra->raw_string) {
+		g_string_append(yyextra->quoted_string, yytext);
+	}
+	else {
+		g_string_free(yyextra->quoted_string, TRUE);
+		yyextra->quoted_string = NULL;
+		FAIL("Empty escape sequence.");
+		return SCAN_FAILED;
+	}
+}
+
+\x27				{
 	/* start quote of a quoted character value */
 	BEGIN(SQUOTE);
 	update_location(yyextra, yytext);
-	yyextra->string_loc = yyextra->location;
-
-	yyextra->quoted_string = g_string_new("'");
+	start_string(yyextra, "'");
 }
 
 <SQUOTE><<EOF>>				{
@@ -401,7 +494,7 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	return SCAN_FAILED;
 }
 
-<SQUOTE>\047			{
+<SQUOTE>\x27			{
 	/* end quote */
 	BEGIN(INITIAL);
 	update_string_loc(yyextra, yytext);
@@ -418,10 +511,19 @@ HexExponent		([pP][+-]?[[:digit:]]+)
 	g_string_append(yyextra->quoted_string, yytext);
 }
 
-<SQUOTE>[^\\\047]+			{
+<SQUOTE>[^\\\x27]+			{
 	/* non-escaped string */
 	update_string_loc(yyextra, yytext);
 	g_string_append(yyextra->quoted_string, yytext);
+}
+
+<SQUOTE>\\				{
+	/* backslash with no escape sequence following */
+	update_string_loc(yyextra, yytext);
+	g_string_free(yyextra->quoted_string, TRUE);
+	yyextra->quoted_string = NULL;
+	FAIL("Empty escape sequence.");
+	return SCAN_FAILED;
 }
 
 	/* NOTE: None of the patterns below can match ".." anywhere in the token string. */
@@ -614,6 +716,16 @@ update_string_loc(dfsyntax_t *dfs, const char *text)
 	_update_location(dfs, len);
 }
 
+static void
+start_string(dfsyntax_t *dfs, const char* init)
+{
+	dfs->string_loc = dfs->location;
+	/* dfs->quoted_string should be NULL here because this is only
+     * called from certain states. It leaks if not. */
+	ws_assert(dfs->quoted_string == NULL);
+	dfs->quoted_string = g_string_new(init);
+}
+
 static int
 set_lval_simple(dfsyntax_t *dfs, int token, const char *token_value, sttype_id_t type_id)
 {
@@ -782,19 +894,31 @@ parse_universal_character_name(dfsyntax_t *dfs _U_, const char *str, char **ret_
 
 	/*
 	 * Ref: https://en.cppreference.com/w/c/language/escape
-	 * Range of universal character names
+	 * https://en.cppreference.com/cpp/language/escape
+	 * https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3124.pdf
+	 * N3096 (Working draft of C23 shortly before final version)
+	 * https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3096.pdf
+	 * N3220 (Working draft of C2y shortly thereafter)
+	 * https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf
 	 *
-	 * If a universal character name corresponds to a code point that is
-	 * not 0x24 ($), 0x40 (@), nor 0x60 (`) and less than 0xA0, or a
-	 * surrogate code point (the range 0xD800-0xDFFF, inclusive), or
-	 * greater than 0x10FFFF, i.e. not a Unicode code point (since C23),
-	 * the program is ill-formed. In other words, members of basic source
-	 * character set and control characters (in ranges 0x0-0x1F and
-	 * 0x7F-0x9F) cannot be expressed in universal character names.
+	 * "Range of universal character names
+	 *
+	 * If a universal character name corresponding to a scalar value of a
+	 * character in the basic character set or a control character appear
+	 * outside a character or string literal, the program is ill-formed.
+	 * If a universal character name does not correspond to a code point in
+	 * ISO/IEC 10646 (the range 0x0-0x10FFFF, inclusive) or corresponds to a
+	 * surrogate code point (the range 0xD800-0xDFFF, inclusive), the program
+	 * is ill-formed."
+	 *
+	 * We are inside a character or string literal here. WG14 adopted N3124,
+	 * which aligned with C++11 and allowed UCNs to have values of characters
+	 * in the basic character set inside character and string literals, between
+	 * N3096 and N3220 (compare 6.4.3 Universal character names). We shall also
+	 * allow UCNs of the basic character set because there's no good reason to
+	 * exclude them in our case either.
 	 */
-	if (val < 0xA0 && val != 0x24 && val != 0x40 && val != 0x60)
-		return false;
-	else if (val >= 0xD800 && val <= 0xDFFF)
+	if (val >= 0xD800 && val <= 0xDFFF)
 		return false;
 	else if (val > 0x10FFFF)
 		return false;

@@ -18,11 +18,11 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/in_cksum.h>
-#include <epan/ipproto.h>
 #include <epan/prefs.h>
 #include <epan/reassemble.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/array.h>
 
@@ -261,7 +261,7 @@ dissect_tcp_flags(proto_tree *tree, tvbuff_t *tvb, int offset)
 static void
 dissect_tcp_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree)
 {
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *tcp_tree;
     proto_item *tcp_item, *data_offset_item;
     int data_offset;
@@ -424,8 +424,7 @@ dissect_stt_tree(tvbuff_t *tvb, packet_info *pinfo, proto_tree *stt_tree,
     offset += 2;
 
     /* Context ID */
-    context_id = tvb_get_ntoh64(tvb, offset);
-    proto_tree_add_item(stt_tree, hf_stt_context_id, tvb, offset, 8, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint64(stt_tree, hf_stt_context_id, tvb, offset, 8, ENC_BIG_ENDIAN, &context_id);
     proto_item_append_text(stt_item, ", Context ID: 0x%" PRIx64,
                            context_id);
     offset += 8;
@@ -905,7 +904,7 @@ void
 proto_reg_handoff_stt(void)
 {
     /*
-     * The I-D doesn't explicity indicate that the FCS isn't present
+     * The I-D doesn't explicitly indicate that the FCS isn't present
      * in the tunneled Ethernet frames, but it is missing from the
      * captures attached to bug 10282.
      */

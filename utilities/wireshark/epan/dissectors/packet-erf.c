@@ -13,9 +13,9 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
-#include <epan/ipproto.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 #include <wsutil/str_util.h>
 #include <wiretap/wtap.h>
 #include <wiretap/erf_record.h>
@@ -1240,7 +1240,7 @@ init_tag_fields(wmem_array_t *hfri_table, wmem_array_t *ett_table, const erf_met
 
   /*Tags with subfields (only)*/
   /*XXX: Can't currently easily be described in the template because
-   * there is curently no dissect bitfield equivalent that supports arbitrary
+   * there is currently no dissect bitfield equivalent that supports arbitrary
    * types/offsets*/
   switch (tag->code) {
   /*Special case: parent_section*/

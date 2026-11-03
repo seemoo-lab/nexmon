@@ -16,26 +16,26 @@
 
 #include "packet-ber.h"
 #include "packet-media-type.h"
+#include "packet-e212.h"
 #include "packet-pkix1explicit.h"
 #include "packet-pkix1implicit.h"
 #include "packet-sgp22.h"
 #include "packet-sgp32.h"
 
-#define PNAME  "SGP.32 GSMA Remote SIM Provisioning (RSP)"
-#define PSNAME "SGP.32"
-#define PFNAME "sgp32"
-
 void proto_register_sgp32(void);
 void proto_reg_handoff_sgp32(void);
 
 static int proto_sgp32;
+static int hf_sgp32_tag_len1;
+static int hf_sgp32_tag_len2;
 #include "packet-sgp32-hf.c"
 
 static int ett_sgp32;
+static int ett_sgp32_rPLMN;
+static int ett_sgp32_tagList;
 #include "packet-sgp32-ett.c"
 
-#include "packet-sgp32-fn.c"
-
+static dissector_handle_t sgp22_handle;
 static dissector_handle_t sgp32_handle;
 
 /* Dissector tables */
@@ -43,6 +43,40 @@ static dissector_table_t sgp22_request_dissector_table;
 static dissector_table_t sgp22_response_dissector_table;
 static dissector_table_t sgp32_request_dissector_table;
 static dissector_table_t sgp32_response_dissector_table;
+
+static const value_string sgp32_tag_vals[] = {
+  { 0x81, "defaultSmdpAddress" },
+  { 0x83, "rootSmdsAddress" },
+  { 0x84, "associationToken" },
+  { 0xA0, "notificationsList" },
+  { 0xA2, "euiccPackageResultList" },
+  { 0xA5, "eumCertificate" },
+  { 0xA6, "euiccCertificate" },
+  { 0xA8, "ipaCapabilities" },
+  { 0xA9, "deviceInfo" },
+  { 0xBF20, "eUICCInfo1" },
+  { 0xBF22, "eUICCInfo2" },
+  { 0, NULL }
+};
+
+static int dissect_sgp32_taglist(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+{
+  unsigned offset = 0;
+
+  while (tvb_reported_length_remaining(tvb, offset)) {
+    if ((tvb_get_uint8(tvb, offset) & 0x1F) == 0x1F) { /* Continue */
+      proto_tree_add_item(tree, hf_sgp32_tag_len2, tvb, offset, 2, ENC_BIG_ENDIAN);
+      offset += 2;
+    } else {
+      proto_tree_add_item(tree, hf_sgp32_tag_len1, tvb, offset, 1, ENC_NA);
+      offset += 1;
+    }
+  }
+
+  return offset;
+}
+
+#include "packet-sgp32-fn.c"
 
 static int get_sgp32_tag(tvbuff_t *tvb, uint32_t *tag)
 {
@@ -138,12 +172,19 @@ static int dissect_sgp32(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
   media_content_info_t *content_info = (media_content_info_t *)data;
   proto_item *sgp32_ti;
   proto_tree *sgp32_tree;
+  uint32_t tag;
   int offset;
 
   if (!content_info ||
       ((content_info->type != MEDIA_CONTAINER_HTTP_REQUEST) &&
        (content_info->type != MEDIA_CONTAINER_HTTP_RESPONSE))) {
     return 0;
+  }
+
+  /* Check for SGP.22 RemoteProfileProvisioning -- Tag 'A2' */
+  get_sgp32_tag(tvb, &tag);
+  if (tag == 0xA2) {
+    return call_dissector_only(sgp22_handle, tvb, pinfo, tree, data);
   }
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "SGP.32");
@@ -164,15 +205,25 @@ static int dissect_sgp32(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 void proto_register_sgp32(void)
 {
   static hf_register_info hf[] = {
+    { &hf_sgp32_tag_len1,
+      { "Tag", "sgp32.tag",
+        FT_UINT8, BASE_HEX, VALS(sgp32_tag_vals), 0,
+        NULL, HFILL }},
+    { &hf_sgp32_tag_len2,
+      { "Tag", "sgp32.tag",
+        FT_UINT16, BASE_HEX, VALS(sgp32_tag_vals), 0,
+        NULL, HFILL }},
 #include "packet-sgp32-hfarr.c"
   };
 
   static int *ett[] = {
     &ett_sgp32,
+    &ett_sgp32_rPLMN,
+    &ett_sgp32_tagList,
 #include "packet-sgp32-ettarr.c"
   };
 
-  proto_sgp32 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_sgp32 = proto_register_protocol("SGP.32 GSMA Remote SIM Provisioning (RSP)", "SGP.32", "sgp32");
   proto_register_field_array(proto_sgp32, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
@@ -189,10 +240,12 @@ void proto_register_sgp32(void)
 
 void proto_reg_handoff_sgp32(void)
 {
+  sgp22_handle = find_dissector("sgp22");
   sgp22_request_dissector_table = find_dissector_table("sgp22.request");
   sgp22_response_dissector_table = find_dissector_table("sgp22.response");
 
   dissector_add_string("media_type", "application/x-gsma-rsp-asn1", sgp32_handle);
+  dissector_add_string("coap_uri_path", "/gsma/rsp2/asn1", sgp32_handle);
 
 #include "packet-sgp32-dis-tab.c"
 }

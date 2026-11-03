@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN "tacacs"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
@@ -388,12 +389,12 @@ dissect_tacplus_args_list( tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, 
 {
 	int i;
 	int len;
-	uint8_t *value;
+	char *value;
 	for(i=0;i<arg_cnt;i++){
 		len=tvb_get_uint8(tvb,len_off+i);
 		proto_tree_add_uint_format(tree, hf_tacplus_arg_length, tvb, len_off+i, 1, len,
 									"Arg[%d] length: %d", i, len);
-		value=tvb_get_string_enc(pinfo->pool, tvb, data_off, len, ENC_ASCII|ENC_NA);
+		value=(char*)tvb_get_string_enc(pinfo->pool, tvb, data_off, len, ENC_ASCII|ENC_NA);
 		proto_tree_add_string_format(tree, hf_tacplus_arg_value, tvb, data_off, len, value,
 									"Arg[%d] value: %s", i, value);
 		data_off+=len;
@@ -472,7 +473,7 @@ dissect_tacplus_body_authen_req_login( tvbuff_t* tvb, proto_tree *tree, int var_
 			proto_tree_add_item(tree, hf_tacplus_chap_data_length, tvb, AUTHEN_S_DATA_LEN_OFF, 1, ENC_BIG_ENDIAN);
 			if( val ) {
 				proto_tree *pt;
-				uint8_t chal_len=val-(1+16); /* Response field alwayes 16 octets */
+				uint8_t chal_len=val-(1+16); /* Response field always 16 octets */
 				pt = proto_tree_add_subtree(tree, tvb, var_off, val, ett_tacplus_body_chap, NULL, "CHAP Data" );
 				proto_tree_add_item(pt, hf_tacplus_chap_id, tvb, var_off, 1, ENC_BIG_ENDIAN);
 				var_off++;
@@ -485,7 +486,7 @@ dissect_tacplus_body_authen_req_login( tvbuff_t* tvb, proto_tree *tree, int var_
 			proto_tree_add_item(tree, hf_tacplus_mschap_data_length, tvb, AUTHEN_S_DATA_LEN_OFF, 1, ENC_BIG_ENDIAN);
 			if( val ) {
 				proto_tree *pt;
-				uint8_t chal_len=val-(1+49);  /* Response field alwayes 49 octets */
+				uint8_t chal_len=val-(1+49);  /* Response field always 49 octets */
 				pt = proto_tree_add_subtree(tree, tvb, var_off, val, ett_tacplus_body_chap, NULL, "MSCHAP Data" );
 				proto_tree_add_item(pt, hf_tacplus_mschap_id, tvb, var_off, 1, ENC_BIG_ENDIAN);
 				var_off++;
@@ -723,12 +724,12 @@ dissect_tacplus_body(tvbuff_t * hdr_tvb, packet_info *pinfo, tvbuff_t * tvb, pro
 			dissect_tacplus_body_acct_rep( tvb, tree );
 		break;
 	  default:
-		proto_tree_add_expert( tree, pinfo, &ei_tacplus_bogus_data, tvb, 0, -1);
+		proto_tree_add_expert_remaining( tree, pinfo, &ei_tacplus_bogus_data, tvb, 0);
 		break;
 	}
 }
 
-#ifdef DEB_TACPLUS
+#ifdef WS_DEBUG
 static void
 tacplus_print_key_entry( void *data, void *user_data )
 {
@@ -738,9 +739,9 @@ tacplus_print_key_entry( void *data, void *user_data )
 	s_str = address_to_str( NULL, tacplus_data->s );
 	c_str = address_to_str( NULL, tacplus_data->c );
 	if( user_data ) {
-		ws_debug_printf("%s:%s=%s\n", s_str, c_str, tacplus_data->k );
+		ws_debug("%s:%s=%s\n", s_str, c_str, tacplus_data->k );
 	} else {
-		ws_debug_printf("%s:%s\n", s_str, c_str );
+		ws_debug("%s:%s\n", s_str, c_str );
 	}
 	wmem_free(NULL, s_str);
 	wmem_free(NULL, c_str);
@@ -753,9 +754,9 @@ cmp_conv_address( const void *p1, const void *p2 )
 	const tacplus_key_entry *a2=(const tacplus_key_entry *)p2;
 	int32_t	ret;
 	/*
-	ws_debug_printf("p1=>");
+	ws_debug("p1=>");
 	tacplus_print_key_entry( p1, NULL );
-	ws_debug_printf("p2=>");
+	ws_debug("p2=>");
 	tacplus_print_key_entry( p2, NULL );
 	*/
 	ret=cmp_address( a1->s, a2->s );
@@ -763,9 +764,9 @@ cmp_conv_address( const void *p1, const void *p2 )
 		ret=cmp_address( a1->c, a2->c );
 		/*
 		if(ret)
-			ws_debug_printf("No Client found!"); */
+			ws_debug("No Client found!"); */
 	} else {
-		/* ws_debug_printf("No Server found!"); */
+		/* ws_debug("No Server found!"); */
 	}
 	return ret;
 }
@@ -778,10 +779,10 @@ find_key( address *srv, address *cln )
 
 	data.s=srv;
 	data.c=cln;
-/*	ws_debug_printf("Looking for: ");
+/*	ws_debug("Looking for: ");
 	tacplus_print_key_entry( (const void *)&data, NULL ); */
 	match=g_slist_find_custom( tacplus_keys, (void *)&data, cmp_conv_address );
-/*	ws_debug_printf("Finished (%p)\n", match);  */
+/*	ws_debug("Finished (%p)\n", match);  */
 	if( match )
 		return ((tacplus_key_entry*)match->data)->k;
 
@@ -810,7 +811,7 @@ parse_tuple( char *key_from_option )
 	char *client,*key;
 	tacplus_key_entry *tacplus_data=g_new(tacplus_key_entry, 1);
 	/*
-	ws_debug_printf("keys: %s\n", key_from_option );
+	ws_debug("keys: %s\n", key_from_option );
 	*/
 	client=strchr(key_from_option,'/');
 	if(!client) {
@@ -825,7 +826,7 @@ parse_tuple( char *key_from_option )
 	}
 	*key++='\0';
 	/*
-	ws_debug_printf("%s %s => %s\n", key_from_option, client, key );
+	ws_debug("%s %s => %s\n", key_from_option, client, key );
 	*/
 	mkipv4_address( &tacplus_data->s, key_from_option );
 	mkipv4_address( &tacplus_data->c, client );
@@ -858,7 +859,7 @@ parse_tacplus_keys( const char *keys_from_option )
 		s=s1;
 	}
 	g_free( key_copy );
-#ifdef DEB_TACPLUS
+#ifdef WS_DEBUG
 	g_slist_foreach( tacplus_keys, tacplus_print_key_entry, GINT_TO_POINTER(1) );
 #endif
 }

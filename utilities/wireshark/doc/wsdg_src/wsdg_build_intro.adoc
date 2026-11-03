@@ -29,7 +29,7 @@ the _/capture_ directory
 === Coding Style
 
 The coding style guides for Wireshark can be found in the “Portability”
-section of the file _doc/README.developer_.
+section of the file wsrepofile:doc/README.developer[].
 
 [#ChCodeGLib]
 

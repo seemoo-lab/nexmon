@@ -24,12 +24,6 @@
 #include "extcap_parser.h"
 #include "ws_attributes.h"
 
-void extcap_printf_complex(extcap_complex *comp) {
-    char *ret = extcap_get_complex_as_string(comp);
-    printf("%s", ret);
-    g_free(ret);
-}
-
 char *extcap_get_complex_as_string(extcap_complex *comp) {
     return (comp ? g_strdup(comp->_val) : NULL);
 }
@@ -59,6 +53,17 @@ void extcap_free_complex(extcap_complex *comp) {
     if (comp)
         g_free(comp->_val);
     g_free(comp);
+}
+
+extcap_complex *
+extcap_copy_complex(const extcap_complex *comp) {
+    if (comp == NULL)
+        return NULL;
+
+    extcap_complex *copy = g_new0(extcap_complex, 1);
+    copy->complex_type = comp->complex_type;
+    copy->_val = g_strdup(comp->_val);
+    return copy;
 }
 
 int extcap_complex_get_int(extcap_complex *comp) {
@@ -226,6 +231,10 @@ static extcap_token_sentence *extcap_tokenize_sentence(const char *s) {
 }
 
 static GList *extcap_tokenize_sentences(const char *s) {
+    if (s == NULL) {
+        /* We have no output, e.g. because the extcap exited with an error. */
+        return NULL;
+    }
 
     GList *sentences = NULL;
     extcap_token_sentence *item = NULL;
@@ -255,8 +264,27 @@ static void extcap_free_value(extcap_value *v) {
     g_free(v);
 }
 
+static extcap_value*
+extcap_copy_value(const extcap_value *v) {
+    if (v == NULL)
+        return NULL;
+
+    extcap_value *copy = g_new(extcap_value, 1);
+    *copy = *v;
+    copy->call = g_strdup(v->call);
+    copy->display = g_strdup(v->display);
+    copy->parent = g_strdup(v->parent);
+
+    return copy;
+}
+
 static void extcap_free_valuelist(void *data, void *user_data _U_) {
     extcap_free_value((extcap_value *) data);
+}
+
+static void*
+extcap_copy_value_cb(const void *src, void *data _U_) {
+    return extcap_copy_value((const extcap_value*)src);
 }
 
 void extcap_free_arg(extcap_arg *a) {
@@ -271,6 +299,7 @@ void extcap_free_arg(extcap_arg *a) {
     g_free(a->fileextension);
     g_free(a->regexp);
     g_free(a->group);
+    g_free(a->prefix);
     g_free(a->device_name);
 
     if (a->range_start != NULL)
@@ -285,6 +314,33 @@ void extcap_free_arg(extcap_arg *a) {
     g_list_foreach(a->values, (GFunc) extcap_free_valuelist, NULL);
     g_list_free(a->values);
     g_free(a);
+}
+
+extcap_arg* extcap_copy_arg(const extcap_arg *a) {
+
+    if (a == NULL)
+        return NULL;
+
+    extcap_arg *copy = g_new(extcap_arg, 1);
+    *copy = *a;
+
+    copy->call = g_strdup(a->call);
+    copy->display = g_strdup(a->display);
+    copy->tooltip = g_strdup(a->tooltip);
+    copy->placeholder = g_strdup(a->placeholder);
+    copy->fileextension = g_strdup(a->fileextension);
+    copy->regexp = g_strdup(a->regexp);
+    copy->group = g_strdup(a->group);
+    copy->prefix = g_strdup(a->prefix);
+    copy->device_name = g_strdup(a->device_name);
+
+    copy->range_start = extcap_copy_complex(a->range_start);
+    copy->range_end = extcap_copy_complex(a->range_end);
+    copy->default_complex = extcap_copy_complex(a->default_complex);
+
+    copy->values = g_list_copy_deep(a->values, extcap_copy_value_cb, NULL);
+
+    return copy;
 }
 
 static void extcap_free_toolbar_value(iface_toolbar_value *value)
@@ -365,12 +421,12 @@ static extcap_value *extcap_parse_value_sentence(extcap_token_sentence *s) {
 
         if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_ARG)))
                 == NULL) {
-            printf("no arg in VALUE sentence\n");
+            ws_warning("no arg in VALUE sentence");
             return NULL;
         }
 
         if (sscanf(param_value, "%d", &tint) != 1) {
-            printf("invalid arg in VALUE sentence\n");
+            ws_warning("invalid arg in VALUE sentence");
             return NULL;
         }
 
@@ -380,7 +436,7 @@ static extcap_value *extcap_parse_value_sentence(extcap_token_sentence *s) {
 
         if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_VALUE)))
                 == NULL) {
-            /* printf("no value in VALUE sentence\n"); */
+            ws_debug("no value in VALUE sentence");
             extcap_free_value(value);
             return NULL;
         }
@@ -388,7 +444,7 @@ static extcap_value *extcap_parse_value_sentence(extcap_token_sentence *s) {
 
         if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_DISPLAY)))
                 == NULL) {
-            /* printf("no display in VALUE sentence\n"); */
+            ws_debug("no display in VALUE sentence");
             extcap_free_value(value);
             return NULL;
         }
@@ -401,7 +457,7 @@ static extcap_value *extcap_parse_value_sentence(extcap_token_sentence *s) {
 
         if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_DEFAULT)))
                 != NULL) {
-            /* printf("found default value\n"); */
+            ws_debug("found default value");
             value->is_default = matches_regex(EXTCAP_BOOLEAN_REGEX, param_value);
         }
 
@@ -428,10 +484,10 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
 
     if (g_ascii_strcasecmp(s->sentence, "arg") == 0) {
         sent = EXTCAP_SENTENCE_ARG;
-        /* printf("ARG sentence\n"); */
+        ws_noisy("ARG sentence");
     } else if (g_ascii_strcasecmp(s->sentence, "value") == 0) {
         sent = EXTCAP_SENTENCE_VALUE;
-        /* printf("VALUE sentence\n"); */
+        ws_noisy("VALUE sentence");
     }
 
     if (sent == EXTCAP_SENTENCE_ARG) {
@@ -518,7 +574,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
 
         if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_TYPE)))
                 == NULL) {
-            /* printf("no type in ARG sentence\n"); */
+            /* ws_warning("no type in ARG sentence"); */
             extcap_free_arg(target_arg);
             return NULL;
         }
@@ -548,6 +604,8 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
             target_arg->arg_type = EXTCAP_ARG_PASSWORD;
         } else if (g_ascii_strcasecmp(param_value, "fileselect") == 0) {
             target_arg->arg_type = EXTCAP_ARG_FILESELECT;
+        } else if (g_ascii_strcasecmp(param_value, "folderselect") == 0) {
+            target_arg->arg_type = EXTCAP_ARG_FOLDERSELECT;
         } else if (g_ascii_strcasecmp(param_value, "multicheck") == 0) {
             target_arg->arg_type = EXTCAP_ARG_MULTICHECK;
         } else if (g_ascii_strcasecmp(param_value, "table") == 0) {
@@ -555,7 +613,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
         } else if (g_ascii_strcasecmp(param_value, "timestamp") == 0) {
             target_arg->arg_type = EXTCAP_ARG_TIMESTAMP;
         } else {
-            printf("invalid type %s in ARG sentence\n", param_value);
+            ws_warning("invalid type %s in ARG sentence", param_value);
             extcap_free_arg(target_arg);
             return NULL;
         }
@@ -580,7 +638,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
             char *cp = g_strstr_len(param_value, -1, ",");
 
             if (cp == NULL) {
-                printf("invalid range, expected value,value got %s\n",
+                ws_warning("invalid range, expected value,value got %s",
                        param_value);
                 extcap_free_arg(target_arg);
                 return NULL;
@@ -588,7 +646,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
 
             if ((target_arg->range_start = extcap_parse_complex(
                                                target_arg->arg_type, param_value)) == NULL) {
-                printf("invalid range, expected value,value got %s\n",
+                ws_warning("invalid range, expected value,value got %s",
                        param_value);
                 extcap_free_arg(target_arg);
                 return NULL;
@@ -596,7 +654,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
 
             if ((target_arg->range_end = extcap_parse_complex(
                                              target_arg->arg_type, cp + 1)) == NULL) {
-                printf("invalid range, expected value,value got %s\n",
+                ws_warning("invalid range, expected value,value got %s",
                        param_value);
                 extcap_free_arg(target_arg);
                 return NULL;
@@ -610,7 +668,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
             {
                 if ((target_arg->default_complex = extcap_parse_complex(
                                                        target_arg->arg_type, param_value)) == NULL) {
-                    printf("invalid default, couldn't parse %s\n", param_value);
+                    ws_warning("invalid default, couldn't parse %s", param_value);
                 }
             }
         }
@@ -622,7 +680,7 @@ static extcap_arg *extcap_parse_arg_sentence(GList *args, extcap_token_sentence 
 
         if ((entry = g_list_find_custom(args, &value->arg_num, glist_find_numbered_arg))
                 == NULL) {
-            printf("couldn't find arg %d in list for VALUE sentence\n", value->arg_num);
+            ws_warning("couldn't find arg %d in list for VALUE sentence", value->arg_num);
             return NULL;
         }
 
@@ -704,7 +762,7 @@ static extcap_interface *extcap_parse_interface_sentence(extcap_token_sentence *
 
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_VALUE)))
             == NULL && sent == EXTCAP_SENTENCE_INTERFACE) {
-        printf("No value in INTERFACE sentence\n");
+        ws_warning("No value in INTERFACE sentence");
         g_free(ri);
         return NULL;
     }
@@ -712,7 +770,7 @@ static extcap_interface *extcap_parse_interface_sentence(extcap_token_sentence *
 
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_DISPLAY)))
             == NULL && sent == EXTCAP_SENTENCE_INTERFACE) {
-        printf("No display in INTERFACE sentence\n");
+        ws_warning("No display in INTERFACE sentence");
         g_free(ri->call);
         g_free(ri);
         return NULL;
@@ -727,6 +785,14 @@ static extcap_interface *extcap_parse_interface_sentence(extcap_token_sentence *
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_HELP)))
             != NULL) {
         ri->help = g_strdup(param_value);
+    }
+
+    if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_CONTROL)))
+            != NULL) {
+        if (!ws_basestrtou(param_value, NULL, &ri->control, 0)) {
+            // Unrecognized; treat as 0
+            ri->control = EXTCAP_CONTROL_NONE;
+        }
     }
 
     return ri;
@@ -810,7 +876,7 @@ static iface_toolbar_control *extcap_parse_control_sentence(GList *control_items
             control->ctrl_type = INTERFACE_TYPE_STRING;
             arg_type = EXTCAP_ARG_STRING;
         } else {
-            printf("invalid type %s in CONTROL sentence\n", param_value);
+            ws_warning("invalid type %s in CONTROL sentence", param_value);
             extcap_free_toolbar_control(control);
             return NULL;
         }
@@ -826,7 +892,7 @@ static iface_toolbar_control *extcap_parse_control_sentence(GList *control_items
             } else if (g_ascii_strcasecmp(param_value, "restore") == 0) {
                 control->ctrl_role = INTERFACE_ROLE_RESTORE;
             } else {
-                printf("invalid role %s in CONTROL sentence\n", param_value);
+                ws_warning("invalid role %s in CONTROL sentence", param_value);
                 control->ctrl_role = INTERFACE_ROLE_UNKNOWN;
             }
         } else {
@@ -846,7 +912,7 @@ static iface_toolbar_control *extcap_parse_control_sentence(GList *control_items
                     }
                     extcap_free_complex(complex);
                 } else {
-                    printf("invalid default, couldn't parse %s\n", param_value);
+                    ws_warning("invalid default, couldn't parse %s", param_value);
                 }
             }
         }
@@ -854,7 +920,7 @@ static iface_toolbar_control *extcap_parse_control_sentence(GList *control_items
     } else if (sent == EXTCAP_SENTENCE_VALUE) {
         param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_CONTROL));
         if (param_value == NULL) {
-            printf("no control in VALUE sentence\n");
+            ws_warning("no control in VALUE sentence");
             return NULL;
         }
 
@@ -865,7 +931,7 @@ static iface_toolbar_control *extcap_parse_control_sentence(GList *control_items
 
         entry = g_list_find_custom(control_items, &num, glist_find_numbered_control);
         if (entry == NULL) {
-            printf("couldn't find control %u in list for VALUE sentence\n", num);
+            ws_warning("couldn't find control %u in list for VALUE sentence", num);
             return NULL;
         }
 
@@ -961,19 +1027,19 @@ static extcap_dlt *extcap_parse_dlt_sentence(extcap_token_sentence *s) {
 
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_ARGNUM)))
             == NULL) {
-        printf("No number in DLT sentence\n");
+        ws_warning("No number in DLT sentence");
         g_free(result);
         return NULL;
     }
     if (sscanf(param_value, "%d", &(result->number)) != 1) {
-        printf("Invalid number in DLT sentence\n");
+        ws_warning("Invalid number in DLT sentence");
         g_free(result);
         return NULL;
     }
 
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_NAME)))
             == NULL) {
-        printf("No name in DLT sentence\n");
+        ws_warning("No name in DLT sentence");
         g_free(result);
         return NULL;
     }
@@ -981,7 +1047,7 @@ static extcap_dlt *extcap_parse_dlt_sentence(extcap_token_sentence *s) {
 
     if ((param_value = (char *)g_hash_table_lookup(s->param_list, ENUM_KEY(EXTCAP_PARAM_DISPLAY)))
             == NULL) {
-        printf("No display in DLT sentence\n");
+        ws_warning("No display in DLT sentence");
         g_free(result->name);
         g_free(result);
         return NULL;

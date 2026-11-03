@@ -20,11 +20,15 @@
 #include "ui/qt/interface_frame.h"
 #include <ui/qt/simple_dialog.h>
 #include <ui/qt/main_application.h>
+#include <ui/qt/main_window.h>
 
+#include <ui/qt/manager/interface_list_manager.h>
+#include <ui/qt/manager/interface_statistics.h>
 #include <ui/qt/models/interface_tree_model.h>
 #include <ui/qt/models/sparkline_delegate.h>
 
 #include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/font_manager.h>
 
 
 #include "extcap.h"
@@ -32,8 +36,7 @@
 #include <ui/recent.h>
 #include "ui/capture_opts.h"
 #include "ui/capture_globals.h"
-#include <ui/iface_lists.h>
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>
 #include <wsutil/utf8_entities.h>
 #ifdef Q_OS_UNIX
 #include <unistd.h> /* for access() and X_OK */
@@ -49,17 +52,18 @@
 #include <QUrl>
 #include <QMutex>
 #include <QDebug>
+#include <QEvent>
+#include <QHeaderView>
+#include <QResizeEvent>
+#include <QStyle>
 
 #include <epan/prefs.h>
+#include <epan/wmem_scopes.h>
+#include <ui/preference_utils.h>
 
 #define BTN_IFTYPE_PROPERTY "ifType"
 
-#ifdef HAVE_LIBPCAP
-const int stat_update_interval_ = 1000; // ms
-#endif
-const char *no_capture_link = "#no_capture";
-
-static QMutex scan_mutex;
+static constexpr const char *no_capture_link = "#no_capture";
 
 InterfaceFrame::InterfaceFrame(QWidget * parent)
 : QFrame(parent),
@@ -67,9 +71,6 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
   , proxy_model_(Q_NULLPTR)
   , source_model_(Q_NULLPTR)
   , info_model_(this)
-#ifdef HAVE_LIBPCAP
-  ,stat_timer_(NULL)
-#endif // HAVE_LIBPCAP
 {
     ui->setupUi(this);
 
@@ -84,7 +85,7 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
 
     ui->warningLabel->hide();
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     ui->interfaceTree->setAttribute(Qt::WA_MacShowFocusRect, false);
 #endif
 
@@ -99,6 +100,8 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
     ifTypeDescription.insert(IF_USB, tr("USB"));
     ifTypeDescription.insert(IF_EXTCAP, tr("External Capture"));
     ifTypeDescription.insert(IF_VIRTUAL, tr ("Virtual"));
+    ifTypeDescription.insert(IF_TUNNEL, tr ("Tunnel Interfaces"));
+    ifTypeDescription.insert(IF_LOOPBACK, tr ("Loopback Devices"));
 
     QList<InterfaceTreeColumns> columns;
     columns.append(IFTREE_COL_EXTCAP);
@@ -109,27 +112,81 @@ InterfaceFrame::InterfaceFrame(QWidget * parent)
     proxy_model_.setSortByActivity(true);
     proxy_model_.setSourceModel(&source_model_);
 
+    connect(&source_model_, &QAbstractItemModel::modelReset, this, [this]() {
+        // InterfaceListManager signals interfaceListChanged when these prefs
+        // change, so we don't need to watch preferencesChanged separately.
+        info_model_.clearInfos();
+        if (prefs.capture_no_extcap)
+            info_model_.appendInfo(tr("External capture interfaces disabled."));
+        resetInterfaceTreeDisplay();
+        // Ensure that device selection is consistent with the displayed selection.
+        updateSelectedInterfaces();
+    });
+
     info_model_.setSourceModel(&proxy_model_);
     info_model_.setColumn(static_cast<int>(columns.indexOf(IFTREE_COL_STATS)));
 
     ui->interfaceTree->setModel(&info_model_);
     ui->interfaceTree->setSortingEnabled(true);
 
+    // Long source names (e.g. extcap descriptions) are elided in the middle
+    // so both the type prefix and the trailing short id stay visible. The
+    // model supplies a ToolTipRole with the full name for hover.
+    ui->interfaceTree->setTextElideMode(Qt::ElideMiddle);
+
+    // Let the (last) sparkline column stretch to fill whatever the icon and
+    // name columns leave; resizeInterfaceColumns() caps the name column so
+    // this stretch always yields a generous sparkline width.
+    ui->interfaceTree->header()->setStretchLastSection(true);
+
     ui->interfaceTree->setItemDelegateForColumn(proxy_model_.mapSourceToColumn(IFTREE_COL_STATS), new SparkLineDelegate(this));
 
     ui->interfaceTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->interfaceTree, &QTreeView::customContextMenuRequested, this, &InterfaceFrame::showContextMenu);
 
-    connect(mainApp, &MainApplication::appInitialized, this, &InterfaceFrame::interfaceListChanged);
-    connect(mainApp, &MainApplication::localInterfaceListChanged, this, &InterfaceFrame::interfaceListChanged);
+    // This is a temporary hack to ensure that the warning message is displayed
+    // if the interface list is never loaded at the beginning. Note the weird
+    // timing - WiresharkMainWindow::openCaptureFile calls showRunOnFile() when
+    // opening a capture file, and that has to happen after this in order for
+    // the warning message to be correct for that case. It might make more
+    // sense for main.cpp to explicitly set the appropriate warning and display
+    // it when not loading the interfaces synchronously.
+    connect(mainApp, &MainApplication::appInitialized, this, &InterfaceFrame::resetInterfaceTreeDisplay);
+
+    connect(mainApp, &MainApplication::interfaceListChanged, this, &InterfaceFrame::interfaceListChanged);
 
     connect(ui->interfaceTree->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &InterfaceFrame::interfaceTreeSelectionChanged);
+
+    // The extcap-config decoration is a ContrastAdaptIcon; as the consuming view
+    // the tree scales its icons with the application zoom level.
+    auto applyIconSize = [this]() {
+        const int s = qRound(style()->pixelMetric(QStyle::PM_SmallIconSize) * FontManager::zoomFactor());
+        ui->interfaceTree->setIconSize(QSize(s, s));
+    };
+    applyIconSize();
+    connect(FontManager::instance(), &FontManager::zoomChanged, this, applyIconSize);
 }
 
 InterfaceFrame::~InterfaceFrame()
 {
     delete ui;
+}
+
+void InterfaceFrame::saveHiddenInterfaces()
+{
+    // Rebuild prefs.capture_devices_hide from the current runtime state and write
+    // it to the profile, mirroring InterfaceTreeCacheModel::save() (the only other
+    // writer). The pref string is owned by wmem_epan_scope().
+    QStringList hidden;
+    for (unsigned i = 0; i < global_capture_opts.all_ifaces->len; i++) {
+        interface_t *device = &g_array_index(global_capture_opts.all_ifaces, interface_t, i);
+        if (device->hidden)
+            hidden << QString(device->name);
+    }
+    wmem_free(wmem_epan_scope(), prefs.capture_devices_hide);
+    prefs.capture_devices_hide = wmem_strdup(wmem_epan_scope(), hidden.join(",").toUtf8().constData());
+    prefs_main_write();
 }
 
 QMenu * InterfaceFrame::getSelectionMenu()
@@ -199,42 +256,6 @@ void InterfaceFrame::ensureSelectedInterface()
 #endif
 }
 
-void InterfaceFrame::hideEvent(QHideEvent *) {
-#ifdef HAVE_LIBPCAP
-    if (stat_timer_)
-        stat_timer_->stop();
-    source_model_.stopStatistic();
-#endif // HAVE_LIBPCAP
-}
-
-void InterfaceFrame::showEvent(QShowEvent *) {
-
-#ifdef HAVE_LIBPCAP
-    if (stat_timer_)
-        stat_timer_->start(stat_update_interval_);
-#endif // HAVE_LIBPCAP
-}
-
-#ifdef HAVE_LIBPCAP
-void InterfaceFrame::scanLocalInterfaces(GList *filter_list)
-{
-    GList *if_list = NULL;
-    if (scan_mutex.tryLock()) {
-        if (isVisible()) {
-            source_model_.stopStatistic();
-            if_stat_cache_t * stat_cache = capture_interface_stat_start(&global_capture_opts, &if_list);
-            source_model_.setCache(stat_cache);
-        }
-        mainApp->setInterfaceList(if_list);
-        free_interface_list(if_list);
-        scan_local_interfaces_filtered(filter_list, main_window_update);
-        mainApp->emitAppSignal(MainApplication::LocalInterfacesChanged);
-        scan_mutex.unlock();
-    } else {
-        qDebug() << "scan mutex locked, can't scan interfaces";
-    }
-}
-#endif // HAVE_LIBPCAP
 
 void InterfaceFrame::actionButton_toggled(bool checked)
 {
@@ -262,20 +283,15 @@ void InterfaceFrame::triggeredIfTypeButton()
 
 void InterfaceFrame::interfaceListChanged()
 {
-    info_model_.clearInfos();
-    if (prefs.capture_no_extcap)
-        info_model_.appendInfo(tr("External capture interfaces disabled."));
-
-    resetInterfaceTreeDisplay();
-    // Ensure that device selection is consistent with the displayed selection.
-    updateSelectedInterfaces();
-
 #ifdef HAVE_LIBPCAP
-    if (!stat_timer_) {
-        updateStatistics();
-        stat_timer_ = new QTimer(this);
-        connect(stat_timer_, &QTimer::timeout, this, &InterfaceFrame::updateStatistics);
-        stat_timer_->start(stat_update_interval_);
+    // Read live sparkline/activity data from the window's InterfaceStatistics
+    // (owned by its InterfaceListManager) and ensure sampling is running. Both
+    // calls are idempotent, so repeating them on every list change is harmless.
+    MainWindow *mainWindow = mainApp->mainWindow();
+    if (mainWindow && mainWindow->interfaceListManager()) {
+        InterfaceStatistics *stats = mainWindow->interfaceListManager()->statistics();
+        source_model_.setStatistics(stats);
+        stats->start();
     }
 #endif
 }
@@ -346,7 +362,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
 
     if (!haveLocalCapturePermissions())
     {
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
         //
         // NOTE: if you change this text, you must also change the
         // definition of PLATFORM_PERMISSIONS_SUGGESTION that is
@@ -396,9 +412,7 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     if (proxy_model_.rowCount() > 0)
     {
         ui->interfaceTree->show();
-        ui->interfaceTree->resizeColumnToContents(proxy_model_.mapSourceToColumn(IFTREE_COL_EXTCAP));
-        ui->interfaceTree->resizeColumnToContents(proxy_model_.mapSourceToColumn(IFTREE_COL_DISPLAY_NAME));
-        ui->interfaceTree->resizeColumnToContents(proxy_model_.mapSourceToColumn(IFTREE_COL_STATS));
+        resizeInterfaceColumns();
     }
     else
     {
@@ -406,10 +420,58 @@ void InterfaceFrame::resetInterfaceTreeDisplay()
     }
 }
 
+void InterfaceFrame::resizeInterfaceColumns()
+{
+    if (proxy_model_.rowCount() <= 0)
+        return;
+
+    int extcapCol = proxy_model_.mapSourceToColumn(IFTREE_COL_EXTCAP);
+    int nameCol = proxy_model_.mapSourceToColumn(IFTREE_COL_DISPLAY_NAME);
+
+    ui->interfaceTree->resizeColumnToContents(extcapCol);
+    ui->interfaceTree->resizeColumnToContents(nameCol);
+
+    // Cap the name column to at most half of the row's text area so the
+    // sparkline column (the stretched last section) always gets a generous
+    // share. Without this cap a long name (e.g. the packetflix extcap
+    // description) would grow the name column to its full content width and
+    // squeeze the sparkline down to a sliver. QTreeView elides the
+    // overflowing names (Qt::ElideMiddle, set in the constructor).
+    int textArea = ui->interfaceTree->viewport()->width()
+                   - ui->interfaceTree->columnWidth(extcapCol);
+    int maxNameW = textArea / 2;
+    if (maxNameW > 0 && ui->interfaceTree->columnWidth(nameCol) > maxNameW)
+        ui->interfaceTree->setColumnWidth(nameCol, maxNameW);
+    // The sparkline column then stretches to fill the remainder
+    // (header()->setStretchLastSection(true) in the constructor).
+}
+
+void InterfaceFrame::changeEvent(QEvent *evt)
+{
+    QFrame::changeEvent(evt);
+
+    // QTBUG-122109: re-polishing a QTreeView (which happens whenever the
+    // application style sheet is reapplied — on a theme change or an OS
+    // dark/light switch) resets every visible section to the minimum width,
+    // eliding the interface-name column since it isn't the last column.
+    // Re-fit the columns once the style change has propagated to the tree.
+    if (evt->type() == QEvent::StyleChange)
+        QTimer::singleShot(0, this, &InterfaceFrame::resizeInterfaceColumns);
+}
+
+void InterfaceFrame::resizeEvent(QResizeEvent *evt)
+{
+    QFrame::resizeEvent(evt);
+
+    // Re-fit the columns so the name column's cap (and thus the room left
+    // for the sparkline) tracks the available width as the window resizes.
+    resizeInterfaceColumns();
+}
+
 // XXX Should this be in capture/capture-pcap-util.[ch]?
 bool InterfaceFrame::haveLocalCapturePermissions() const
 {
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     if (application_flavor_is_wireshark()) {
         QFileInfo bpf0_fi = QFileInfo("/dev/bpf0");
         return bpf0_fi.isReadable() && bpf0_fi.isWritable();
@@ -520,24 +582,6 @@ void InterfaceFrame::on_interfaceTree_clicked(const QModelIndex &index)
 }
 #endif
 
-void InterfaceFrame::updateStatistics(void)
-{
-    if (source_model_.rowCount() == 0)
-        return;
-
-#ifdef HAVE_LIBPCAP
-
-    for (int idx = 0; idx < source_model_.rowCount(); idx++)
-    {
-        QModelIndex selectIndex = info_model_.mapFromSource(proxy_model_.mapFromSource(source_model_.index(idx, 0)));
-
-        /* Proxy model has not masked out the interface */
-        if (selectIndex.isValid())
-            source_model_.updateStatistic(idx);
-    }
-#endif
-}
-
 void InterfaceFrame::showRunOnFile(void)
 {
     ui->warningLabel->setText("Interfaces not loaded on startup (run on capture file). Go to Capture -> Refresh Interfaces to load.");
@@ -575,12 +619,35 @@ void InterfaceFrame::showContextMenu(QPoint pos)
         /* Attention! Only realIndex.row is a 1:1 correlation to all_ifaces */
         interface_t *device = &g_array_index(global_capture_opts.all_ifaces, interface_t, realIndex.row());
         device->hidden = ! device->hidden;
-        mainApp->emitAppSignal(MainApplication::LocalInterfacesChanged);
+        // Persist the choice to the profile, then notify (no rescan needed).
+        saveHiddenInterfaces();
+        MainWindow *mainWindow = mainApp->mainWindow();
+        if (mainWindow && mainWindow->interfaceListManager())
+            mainWindow->interfaceListManager()->notifyListChanged();
     });
     hideAction->setCheckable(true);
     hideAction->setChecked(isHidden);
 
+    int iftype = source_model_.getColumnContent(realIndex.row(), IFTREE_COL_TYPE).toInt();
+    QString ifTypeStr = ifTypeDescription.value(iftype, tr("Unknown"));
+
+    QAction * hideAllInterfacesForTypeAction = ctx_menu->addAction(tr("Hide all '%1' interfaces").arg(ifTypeStr));
+    connect(hideAllInterfacesForTypeAction, &QAction::triggered, this, &InterfaceFrame::hideInterfacesOfType);
+    hideAllInterfacesForTypeAction->setProperty(BTN_IFTYPE_PROPERTY, iftype);
+    hideAllInterfacesForTypeAction->setEnabled(realIndex.isValid());
+
     ctx_menu->popup(ui->interfaceTree->mapToGlobal(pos));
+}
+
+void InterfaceFrame::hideInterfacesOfType()
+{
+    QAction *sender = qobject_cast<QAction *>(QObject::sender());
+    if (sender && sender->property(BTN_IFTYPE_PROPERTY).isValid()) {
+        int iftype = sender->property(BTN_IFTYPE_PROPERTY).toInt();
+        proxy_model_.setInterfaceTypeVisible(iftype, false);
+        resetInterfaceTreeDisplay();
+        emit typeSelectionChanged();
+    }
 }
 
 void InterfaceFrame::on_warningLabel_linkActivated(const QString &link)

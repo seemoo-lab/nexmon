@@ -26,10 +26,6 @@
 #include "packet-acse.h"
 #include "packet-ftam.h"
 
-#define PNAME  "ISO 8571 FTAM"
-#define PSNAME "FTAM"
-#define PFNAME "ftam"
-
 void proto_register_ftam(void);
 void proto_reg_handoff_ftam(void);
 
@@ -37,7 +33,7 @@ void proto_reg_handoff_ftam(void);
 static int proto_ftam;
 
 /* Declare the function to avoid a compiler warning */
-static int dissect_ftam_OR_Set(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
+static unsigned dissect_ftam_OR_Set(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
 
 static int hf_ftam_unstructured_text;              /* ISO FTAM unstructured text */
 static int hf_ftam_unstructured_binary;            /* ISO FTAM unstructured binary */
@@ -77,8 +73,8 @@ dissect_ftam_unstructured_binary(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
 static int
 dissect_ftam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
-	int offset = 0;
-	int old_offset;
+	unsigned offset = 0;
+	unsigned old_offset;
 	proto_item *item=NULL;
 	proto_tree *tree=NULL;
 	asn1_ctx_t asn1_ctx;
@@ -96,7 +92,7 @@ dissect_ftam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 		old_offset=offset;
 		offset=dissect_ftam_PDU(false, tvb, offset, &asn1_ctx, tree, -1);
 		if(offset == old_offset){
-			proto_tree_add_expert(tree, pinfo, &ei_ftam_zero_pdu, tvb, offset, -1);
+			proto_tree_add_expert_remaining(tree, pinfo, &ei_ftam_zero_pdu, tvb, offset);
 			break;
 		}
 	}
@@ -131,7 +127,7 @@ void proto_register_ftam(void) {
   expert_module_t* expert_ftam;
 
   /* Register protocol */
-  proto_ftam = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_ftam = proto_register_protocol("ISO 8571 FTAM", "FTAM", "ftam");
   register_dissector("ftam", dissect_ftam, proto_ftam);
   /* Register fields and subtrees */
   proto_register_field_array(proto_ftam, hf, array_length(hf));

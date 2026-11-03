@@ -9,9 +9,8 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#define WS_LOG_DOMAIN "packet-ipmi"
-
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-ipmi"
 #include <wireshark.h>
 
 #include <epan/packet.h>
@@ -129,8 +128,8 @@ static bool dissect_bus_commands;
 static bool fru_langcode_is_english = true;
 static unsigned response_after_req = 5000;
 static unsigned response_before_req;
-static unsigned message_format = MSGFMT_GUESS;
-static unsigned selected_oem = IPMI_OEM_NONE;
+static int message_format = MSGFMT_GUESS;
+static int selected_oem = IPMI_OEM_NONE;
 
 static int hf_ipmi_command_data;
 static int hf_ipmi_session_handle;
@@ -841,7 +840,7 @@ parse_binary(char *p, tvbuff_t *tvb, unsigned offs, unsigned len)
 	}
 }
 
-static struct ipmi_parse_typelen ptl_binary = {
+static const struct ipmi_parse_typelen ptl_binary = {
 	get_len_binary, parse_binary, "Binary"
 };
 
@@ -873,7 +872,7 @@ parse_bcdplus(char *p, tvbuff_t *tvb, unsigned offs, unsigned len)
 	}
 }
 
-static struct ipmi_parse_typelen ptl_bcdplus = {
+static const struct ipmi_parse_typelen ptl_bcdplus = {
 	get_len_bcdplus, parse_bcdplus, "BCD+"
 };
 
@@ -924,7 +923,7 @@ parse_6bit_ascii(char *p, tvbuff_t *tvb, unsigned offs, unsigned len)
 	}
 }
 
-static struct ipmi_parse_typelen ptl_6bit_ascii = {
+static const struct ipmi_parse_typelen ptl_6bit_ascii = {
 	get_len_6bit_ascii, parse_6bit_ascii, "6-bit ASCII"
 };
 
@@ -961,7 +960,7 @@ parse_8bit_ascii(char *p, tvbuff_t *tvb, unsigned offs, unsigned len)
 	}
 }
 
-static struct ipmi_parse_typelen ptl_8bit_ascii = {
+static const struct ipmi_parse_typelen ptl_8bit_ascii = {
 	get_len_8bit_ascii, parse_8bit_ascii, "ASCII+Latin1"
 };
 
@@ -992,7 +991,7 @@ parse_unicode(char *p, tvbuff_t *tvb, unsigned offs, unsigned len)
 	}
 }
 
-static struct ipmi_parse_typelen ptl_unicode = {
+static const struct ipmi_parse_typelen ptl_unicode = {
 	get_len_unicode, parse_unicode, "Unicode"
 };
 
@@ -1000,16 +999,16 @@ void
 ipmi_add_typelen(packet_info *pinfo, proto_tree *tree, int hf_string, int hf_type, int hf_length, tvbuff_t *tvb,
 		unsigned offs, bool is_fru)
 {
-	static struct ipmi_parse_typelen *fru_eng[4] = {
+	static const struct ipmi_parse_typelen * const fru_eng[4] = {
 		&ptl_binary, &ptl_bcdplus, &ptl_6bit_ascii, &ptl_8bit_ascii
 	};
-	static struct ipmi_parse_typelen *fru_noneng[4] = {
+	static const struct ipmi_parse_typelen * const fru_noneng[4] = {
 		&ptl_binary, &ptl_bcdplus, &ptl_6bit_ascii, &ptl_unicode
 	};
-	static struct ipmi_parse_typelen *ipmi[4] = {
+	static const struct ipmi_parse_typelen * const ipmi[4] = {
 		&ptl_unicode, &ptl_bcdplus, &ptl_6bit_ascii, &ptl_8bit_ascii
 	};
-	struct ipmi_parse_typelen *ptr;
+	const struct ipmi_parse_typelen *ptr;
 	proto_tree *s_tree;
 	unsigned type, msk, clen, blen, len;
 	const char *unit;
@@ -1158,7 +1157,7 @@ ipmi_getnetfn(uint32_t netfn, const uint8_t *sig)
 
 	inr = &ipmi_cmd_tab[netfn >> 1];
 	for (inh = inr->list; inh; inh = inh->next) {
-		if ((inh->oem_selector == selected_oem || inh->oem_selector == IPMI_OEM_NONE)
+		if ((inh->oem_selector == (unsigned)selected_oem || inh->oem_selector == IPMI_OEM_NONE)
 				&& (!inr->siglen || !memcmp(sig, inh->sig, inr->siglen))) {
 			return inh;
 		}
@@ -1202,7 +1201,7 @@ ipmi_getcmd(ipmi_netfn_t *nf, uint32_t cmd)
 void
 ipmi_notimpl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	proto_tree_add_expert(tree, pinfo, &ei_impi_parser_not_implemented, tvb, 0, -1);
+	proto_tree_add_expert_remaining(tree, pinfo, &ei_impi_parser_not_implemented, tvb, 0);
 }
 
 void

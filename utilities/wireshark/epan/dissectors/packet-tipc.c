@@ -25,6 +25,7 @@
 #include <epan/expert.h>
 #include <epan/etypes.h>
 #include <epan/address_types.h>
+#include <epan/exceptions.h>
 #include <epan/reassemble.h>
 
 #include <wsutil/ws_roundup.h>
@@ -185,6 +186,7 @@ static int ett_tipc;
 static int ett_tipc_data;
 
 static expert_field ei_tipc_field_not_specified;
+static expert_field ei_tipc_invalid_msg_size;
 static expert_field ei_tipc_invalid_bundle_size;
 static expert_field ei_tipc_max_recursion_depth_reached;
 
@@ -388,7 +390,7 @@ static const value_string tipcv2_error_code_short_strings[] = {
 	{ 0, NULL}
 };
 
-static const value_string tipcv2_lookup_scope_strings[] = {
+static const value_string tipcv2_lookup_or_dist_scope_strings[] = {
 	{ 0, "Zone Scope"},
 	{ 1, "Cluster Scope"},
 	{ 2, "Node Scope"},
@@ -516,13 +518,6 @@ static const value_string tipcv2_dist_dist_strings[] = {
 	{ 0, NULL}
 };
 
-static const value_string tipcv2_dist_scope_strings[] = {
-	{ 0, "Zone Scope"},
-	{ 1, "Cluster Scope"},
-	{ 2, "Node Scope"},
-	{ 0, NULL}
-};
-
 /* TIPCv2_CHANGEOVER_PROTOCOL - Link Changeover Protocol */
 static const value_string tipcv2_changeover_mtype_strings[] = {
 	{ 0, "Duplicate"},
@@ -635,7 +630,7 @@ tipc_addr_str_len(const address* addr _U_)
 static void
 dissect_tipc_name_dist_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint8_t item_size)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t dword;
 	char *addr_str_ptr;
 
@@ -863,11 +858,11 @@ dissect_tipc_v2_internal_msg(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_i
 	unsigned msg_no = 0;
 	uint32_t msg_in_bundle_size;
 	uint8_t msg_in_bundle_user;
-	uint32_t b_inst_strlen;
+	unsigned b_inst_strlen;
 	unsigned padlen;
 
 	/* for fragmented messages */
-	int len, reported_len;
+	int len;
 	bool save_fragmented;
 	uint32_t frag_no, frag_msg_no;
 	tvbuff_t* new_tvb = NULL;
@@ -1172,7 +1167,7 @@ dissect_tipc_v2_internal_msg(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_i
 			offset = offset + 4;
 
 			/* W8 Unused */
-			/* might be set prior to 1.7.3 but according to Allan Stephens this was never verfied by the receiver
+			/* might be set prior to 1.7.3 but according to Allan Stephens this was never verified by the receiver
 			   proto_tree_add_item(tipc_tree, hf_tipcv2_transport_seq_no, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
 			   */
 			proto_tree_add_none_format(tipc_tree, hf_tipc_unused_word, tipc_tvb, offset, 4, "word 8 unused for this user");
@@ -1500,7 +1495,6 @@ dissect_tipc_v2_internal_msg(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_i
 			}
 
 			len = (msg_size - (orig_hdr_size<<2));
-			reported_len = tvb_reported_length_remaining(tipc_tvb, offset);
 
 			if (tipc_defragment) {
 				/* reassemble fragmented packages */
@@ -1537,14 +1531,14 @@ dissect_tipc_v2_internal_msg(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_i
 					col_set_fence(pinfo->cinfo, COL_INFO);
 					dissect_tipc(new_tvb, pinfo, top_tree, NULL);
 				} else { /* make a new subset */
-					data_tvb = tvb_new_subset_length_caplen(tipc_tvb, offset, len, reported_len);
+					data_tvb = tvb_new_subset_length(tipc_tvb, offset, len);
 					call_data_dissector(data_tvb, pinfo, top_tree);
 				}
 
 				pinfo->fragmented = save_fragmented;
 			} else {
 				/* don't reassemble is set in the "preferences" */
-				data_tvb = tvb_new_subset_length_caplen(tipc_tvb, offset, len, reported_len);
+				data_tvb = tvb_new_subset_length(tipc_tvb, offset, len);
 				call_data_dissector(data_tvb, pinfo, top_tree);
 			}
 
@@ -1746,7 +1740,7 @@ dissect_tipc_v2(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_info *pinfo, i
 	uint32_t name_type = 0;
 	uint32_t *name_type_p = NULL;
 	tvbuff_t *data_tvb;
-	int len, reported_len;
+	int len;
 
 	orig_hdr_size = hdr_size;
 
@@ -1771,7 +1765,11 @@ dissect_tipc_v2(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_info *pinfo, i
 	/* Reserved: 1 bits */
 
 	/* Message Size: 17 bits */
-	proto_tree_add_item(tipc_tree, hf_tipc_msg_size, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
+	item = proto_tree_add_item(tipc_tree, hf_tipc_msg_size, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
+	if (msg_size < (unsigned)(orig_hdr_size << 2)) {
+		expert_add_info_format(pinfo, item, &ei_tipc_invalid_msg_size, "Invalid message size (%u bytes) < header size (%d bytes)", msg_size, orig_hdr_size << 2);
+		THROW(ReportedBoundsError);
+	}
 	offset = offset + 4;
 
 	if (!datatype_hdr) {
@@ -1837,8 +1835,7 @@ dissect_tipc_v2(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_info *pinfo, i
 			/* W8 name type / transport sequence number */
 			/* Transport Level Sequence Number: 32 bits */
 			/* Port Name Type: 32 bits */
-			proto_tree_add_item(tipc_tree, hf_tipcv2_port_name_type, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
-			name_type = tvb_get_ntohl(tipc_tvb, offset);
+			proto_tree_add_item_ret_uint(tipc_tree, hf_tipcv2_port_name_type, tipc_tvb, offset, 4, ENC_BIG_ENDIAN, &name_type);
 			name_type_p = &name_type;
 			offset = offset + 4;
 
@@ -1872,8 +1869,7 @@ dissect_tipc_v2(tvbuff_t *tipc_tvb, proto_tree *tipc_tree, packet_info *pinfo, i
 	}
 	/* TIPCv2 data */
 	len = (msg_size - (orig_hdr_size<<2));
-	reported_len = tvb_reported_length_remaining(tipc_tvb, offset);
-	data_tvb = tvb_new_subset_length_caplen(tipc_tvb, offset, len, reported_len);
+	data_tvb = tvb_new_subset_length(tipc_tvb, offset, len);
 
 	call_tipc_v2_data_subdissectors(data_tvb, pinfo, name_type_p, user);
 }
@@ -2152,7 +2148,7 @@ dissect_tipc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
 	proto_item *ti, *item;
 	proto_tree *tipc_tree, *tipc_data_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t srcport, destport = 0, dword;
 	uint8_t version;
 	uint32_t msg_size;
@@ -2182,11 +2178,7 @@ dissect_tipc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	}
 	p_set_proto_depth(pinfo, proto_tipc, recursion_depth);
 
-	if ((uint32_t)tvb_reported_length_remaining(tvb, offset) < msg_size) {
-		tipc_tvb = tvb;
-	} else {
-		tipc_tvb = tvb_new_subset_length(tvb, offset, msg_size);
-	}
+	tipc_tvb = tvb_new_subset_length(tvb, offset, msg_size);
 	/* user == 7 only works for v2, this will decode the legacy TIPC configuration protocol */
 	if (user == TIPCv2_LINK_PROTOCOL) version = TIPCv2;
 	/* Set User values in COL INFO different in V1 and V2 */
@@ -2287,7 +2279,11 @@ dissect_tipc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		proto_tree_add_item(tipc_tree, hf_tipcv2_srcdrop, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
 	}
 
-	proto_tree_add_item(tipc_tree, hf_tipc_msg_size, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
+	item = proto_tree_add_item(tipc_tree, hf_tipc_msg_size, tipc_tvb, offset, 4, ENC_BIG_ENDIAN);
+	if (msg_size < (unsigned)(hdr_size << 2)) {
+		expert_add_info_format(pinfo, item, &ei_tipc_invalid_msg_size, "Invalid message size (%u bytes) < Header size (%d bytes)", msg_size, hdr_size << 2);
+		THROW(ReportedBoundsError);
+	}
 	offset = offset + 4;
 
 	/* Word 1 */
@@ -2417,7 +2413,7 @@ dissect_tipc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 					break;
 			}
 			/* tipc data type user doesn't change format, reuse v2 function */
-			next_tvb = tvb_new_subset_remaining(tvb, offset);
+			next_tvb = tvb_new_subset_remaining(tipc_tvb, offset);
 			call_tipc_v2_data_subdissectors(next_tvb, pinfo, name_type_p, user);
 		}
 	} /*if (hdr_size <= 5) */
@@ -2778,7 +2774,7 @@ proto_register_tipc(void)
 		},
 		{ &hf_tipcv2_lookup_scope,
 			{ "Lookup Scope", "tipcv2.lookup_scope",
-				FT_UINT32, BASE_DEC, VALS(tipcv2_lookup_scope_strings), 0x00180000,
+				FT_UINT32, BASE_DEC, VALS(tipcv2_lookup_or_dist_scope_strings), 0x00180000,
 				NULL, HFILL }
 		},
 		{ &hf_tipcv2_opt_p,
@@ -3050,7 +3046,7 @@ proto_register_tipc(void)
 		},
 		{ &hf_tipcv2_dist_scope,
 			{ "Route Distributor Scope", "tipcv2.dist_scope",
-				FT_UINT32, BASE_DEC, VALS(tipcv2_dist_scope_strings), 0x0000000f,
+				FT_UINT32, BASE_DEC, VALS(tipcv2_lookup_or_dist_scope_strings), 0x0000000f,
 				NULL, HFILL }
 		},
 		{ &hf_tipcv2_name_dist_port_id_node,
@@ -3075,6 +3071,7 @@ proto_register_tipc(void)
 
 	static ei_register_info ei[] = {
 		{ &ei_tipc_field_not_specified, { "tipc.field_not_specified", PI_PROTOCOL, PI_WARN, "This field is not specified in TIPC v7", EXPFILL }},
+		{ &ei_tipc_invalid_msg_size, { "tipc.invalid_message_size", PI_PROTOCOL, PI_WARN, "Invalid message size", EXPFILL }},
 		{ &ei_tipc_invalid_bundle_size, { "tipc.invalid_bundle_size", PI_PROTOCOL, PI_WARN, "Invalid message bundle size", EXPFILL }},
 		{ &ei_tipc_max_recursion_depth_reached, { "tipc.max_recursion_depth_reached", PI_PROTOCOL, PI_WARN, "Maximum allowed recursion depth reached. Dissection stopped.", EXPFILL }},
 	};

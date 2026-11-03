@@ -24,7 +24,6 @@
 #include <epan/packet.h>
 
 #include "packet-gsm_a_common.h"
-#include "lapd_sapi.h"
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/conversation.h>
@@ -33,6 +32,7 @@
 
 #include <wsutil/array.h>
 
+#include "packet-lapd.h"
 #include "packet-rtp.h"
 #include "packet-rtcp.h"
 
@@ -107,6 +107,9 @@ static int hf_rsl_class;
 static int hf_rsl_cause_value;
 static int hf_rsl_paging_grp;
 static int hf_rsl_paging_load;
+static int hf_rsl_sacch_inf_no_of_msgs;
+static int hf_rsl_sacch_inf_msg_type;
+static int hf_rsl_sacch_inf_msg_len;
 static int hf_rsl_sys_info_type;
 static int hf_rsl_timing_offset;
 static int hf_rsl_ch_needed;
@@ -218,6 +221,7 @@ static int ett_ie_rlm_cause;
 static int ett_ie_staring_time;
 static int ett_ie_timing_adv;
 static int ett_ie_uplink_meas;
+static int ett_ie_sacch_inf;
 static int ett_ie_full_imm_ass_inf;
 static int ett_ie_smscb_inf;
 static int ett_ie_ms_timing_offset;
@@ -594,7 +598,7 @@ static value_string_ext rsl_msg_type_vals_ext = VALUE_STRING_EXT_INIT(rsl_msg_ty
 #define RSL_IE_CB_CMD_TYPE              41
 #define RSL_IE_SMSCB_MESS               42
 #define RSL_IE_CBCH_LOAD_INF            43
-
+#define RSL_IE_SACCH_INF                44
 
 #define RSL_IE_SMSCB_CH_IND             46
 #define RSL_IE_GRP_CALL_REF             47
@@ -660,7 +664,7 @@ static const value_string rsl_ie_type_vals[] = {
 /* 0x29 */    { RSL_IE_CB_CMD_TYPE,     "CB Command type" },            /*  9.3.41 */
 /* 0x2a */    { RSL_IE_SMSCB_MESS,      "SMSCB Message" },              /*  9.3.42 */
 /* 0x2b */    { RSL_IE_CBCH_LOAD_INF,   "Full Immediate Assign Info" }, /*  9.3.35 */
-/* 0x2c */    {  0x2c,                  "SACCH Information" },          /*  9.3.29 */
+/* 0x2c */    { RSL_IE_SACCH_INF,       "SACCH Information" },          /*  9.3.29 */
 /* 0x2d */    {  0x2d,                  "CBCH Load Information" },      /*  9.3.43 */
 /* 0x2e */    { RSL_IE_SMSCB_CH_IND,    "SMSCB Channel Indicator" },    /*  9.3.44 */
 /* 0x2f */    { RSL_IE_GRP_CALL_REF,    "Group Call Reference" },       /*  9.3.45 */
@@ -1661,7 +1665,7 @@ dissect_rsl_phy_ctx_ab_rx_lvl_err_bits(tvbuff_t *tvb, packet_info *pinfo _U_, pr
     offset++;
     return offset;
 }
-/* Physcial Context dissection*
+/* Physical Context dissection*
  * Ext RandAccess *
  *
  */
@@ -2330,6 +2334,61 @@ dissect_rsl_ie_message_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
     offset++;
     return offset;
 }
+
+/*
+ * 9.3.29 SACCH Information
+ */
+static const value_string rsl_sacch_inf_type_vals[] = {
+    {  0x05,    "SYSTEM INFORMATION 5" },
+    {  0x06,    "SYSTEM INFORMATION 6" },
+    {  0x0d,    "SYSTEM INFORMATION 5bis" },
+    {  0x0e,    "SYSTEM INFORMATION 5ter" },
+    {  0x47,    "EXTENDED MEASUREMENT ORDER" },
+    {  0x48,    "MEASUREMENT INFORMATION" },
+    { 0,            NULL }
+};
+static value_string_ext rsl_sacch_inf_type_vals_ext = VALUE_STRING_EXT_INIT(rsl_sacch_inf_type_vals);
+
+static int
+dissect_rsl_ie_sacch_inf(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, bool is_mandatory)
+{
+    proto_item *ti;
+    proto_tree *ie_tree;
+    uint8_t     ie_id;
+
+    uint16_t    length;
+    uint8_t     no_of_msgs, msg_len;
+
+    if (is_mandatory == false) {
+        ie_id = tvb_get_uint8(tvb, offset);
+        if (ie_id != RSL_IE_SACCH_INF)
+            return offset;
+    }
+
+    ie_tree = proto_tree_add_subtree(tree, tvb, offset, 0, ett_ie_sacch_inf, &ti, "SACCH Information IE");
+
+    /* Element identifier */
+    proto_tree_add_item(ie_tree, hf_rsl_ie_id, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset++;
+    /* Length */
+    proto_tree_add_item_ret_uint16(ie_tree, hf_rsl_ie_length, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+    proto_item_set_len(ti, length+2);
+    offset++;
+    proto_tree_add_item_ret_uint8(ie_tree, hf_rsl_sacch_inf_no_of_msgs, tvb, offset, 1, ENC_BIG_ENDIAN, &no_of_msgs);
+    offset++;
+    for (unsigned i = 0; i < no_of_msgs; i++) {
+        proto_tree_add_item(ie_tree, hf_rsl_sacch_inf_msg_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+        offset++;
+        proto_tree_add_item_ret_uint8(ie_tree, hf_rsl_sacch_inf_msg_len, tvb, offset, 1, ENC_BIG_ENDIAN, &msg_len);
+        offset++;
+        /* 'The "n’th message" field contains a complete SACCH message as defended [sic] in 3GPP TS 44.018.' */
+        call_dissector(gsm_a_sacch_handle, tvb_new_subset_length(tvb, offset, msg_len), pinfo, proto_tree_get_root(tree));
+        offset += msg_len;
+    }
+
+    return offset;
+}
+
 /*
  * 9.3.30 System Info Type
  */
@@ -3934,8 +3993,7 @@ dissct_rsl_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
     uint8_t paging_package_number;
 
     msg_disc = tvb_get_uint8(tvb, offset++) >> 1;
-    msg_type = tvb_get_uint8(tvb, offset) & 0x7f;
-    proto_tree_add_item(tree, hf_rsl_msg_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_rsl_msg_type, tvb, offset, 1, ENC_BIG_ENDIAN, &msg_type);
 
     if (msg_disc == RSL_MSGDISC_IPACCESS) {
         offset = dissct_rsl_ipaccess_msg(tvb, pinfo, tree, offset);
@@ -4228,6 +4286,8 @@ dissct_rsl_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
         if (tvb_reported_length_remaining(tvb, offset) > 0)
             offset = dissect_rsl_ie_phy_ctx(tvb, pinfo, tree, offset, false);
         /* SACCH Information        9.3.29  O 8) TLV >=3    */
+        if (tvb_reported_length_remaining(tvb, offset) > 0)
+            offset = dissect_rsl_ie_sacch_inf(tvb, pinfo, tree, offset, false);
         /* UIC                      9.3.50  O 9) TLV 3      */
         if (tvb_reported_length_remaining(tvb, offset) > 0)
             offset = dissect_rsl_ie_uic(tvb, pinfo, tree, offset, false);
@@ -4713,7 +4773,7 @@ dissect_rsl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     uint8_t     msg_type;
 
 
-    int offset = 0;
+    unsigned offset = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RSL");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -5077,6 +5137,21 @@ void proto_register_rsl(void)
             FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_rsl_sacch_inf_no_of_msgs,
+          { "Number of messages",           "gsm_abis_rsl.sacch_inf.no_of_msgs",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_rsl_sacch_inf_msg_type,
+          { "Type of Message",           "gsm_abis_rsl.sacch_inf.msg.type",
+            FT_UINT8, BASE_DEC|BASE_EXT_STRING, &rsl_sacch_inf_type_vals_ext, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_rsl_sacch_inf_msg_len,
+          { "Length of Message",           "gsm_abis_rsl.sacch_inf.msg.len",
+            FT_UINT8, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
+        },
         { &hf_rsl_sys_info_type,
           { "System Info Type",           "gsm_abis_rsl.sys_info_type",
             FT_UINT8, BASE_DEC|BASE_EXT_STRING, &rsl_sys_info_type_vals_ext, 0x0,
@@ -5394,6 +5469,7 @@ void proto_register_rsl(void)
         &ett_ie_staring_time,
         &ett_ie_timing_adv,
         &ett_ie_uplink_meas,
+        &ett_ie_sacch_inf,
         &ett_ie_full_imm_ass_inf,
         &ett_ie_smscb_inf,
         &ett_ie_ms_timing_offset,
@@ -5574,7 +5650,7 @@ proto_reg_handoff_rsl(void)
     gsm_cbs_handle = find_dissector_add_dependency("gsm_cbs", proto_rsl);
     gsm_a_ccch_handle = find_dissector_add_dependency("gsm_a_ccch", proto_rsl);
     gsm_a_dtap_handle = find_dissector_add_dependency("gsm_a_dtap", proto_rsl);
-    gsm_a_sacch_handle = find_dissector_add_dependency("gsm_a_sacch", proto_rsl);
+    gsm_a_sacch_handle = find_dissector_add_dependency("gsm_a_sacch_ui", proto_rsl);
 }
 
 /*

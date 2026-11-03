@@ -25,7 +25,7 @@
 #include "ui/decode_as_utils.h"
 
 #if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
-#include <epan/dissectors/read_keytab_file.h>
+#include <epan/read_keytab_file.h>
 #endif
 
 #include <wsutil/clopts_common.h>
@@ -55,7 +55,7 @@ dissect_opts_handle_opt(int opt, char *optarg_str_p)
         break;
     case 'K':        /* Kerberos keytab file */
 #if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
-        read_keytab_file(optarg_str_p);
+        keytab_file_read(optarg_str_p);
 #else
         cmdarg_err("-K specified, but Kerberos keytab file support isn't present");
         return false;
@@ -108,6 +108,8 @@ dissect_opts_handle_opt(int opt, char *optarg_str_p)
         }
         if (strcmp(optarg_str_p, "r") == 0)
             global_dissect_options.time_format = TS_RELATIVE;
+        else if (strcmp(optarg_str_p, "rc") == 0)
+            global_dissect_options.time_format = TS_RELATIVE_CAP;
         else if (strcmp(optarg_str_p, "a") == 0)
             global_dissect_options.time_format = TS_ABSOLUTE;
         else if (strcmp(optarg_str_p, "ad") == 0)
@@ -136,6 +138,7 @@ dissect_opts_handle_opt(int opt, char *optarg_str_p)
                             "\t\"dd\"   for delta displayed\n"
                             "\t\"e\"    for epoch\n"
                             "\t\"r\"    for relative\n"
+                            "\t\"rc\"   for relative to capture start\n"
                             "\t\"u\"    for absolute UTC\n"
                             "\t\"ud\"   for absolute UTC with YYYY-MM-DD date\n"
                             "\t\"udoy\" for absolute UTC with YYYY/DOY date");

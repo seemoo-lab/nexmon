@@ -17,5 +17,18 @@
 
 #include "wslua.h"
 
+/**
+ * @brief Pushes a Columns object onto the Lua stack.
+ *
+ * @param L The Lua state.
+ * @param c The Columns object to push.
+ */
 void Push_Columns(lua_State *L, Columns c);
+
+/**
+ * @brief Retrieves the index of the Columns object in the Lua stack.
+ *
+ * @param L The Lua state.
+ * @return The index of the Columns object in the Lua stack.
+ */
 int get_Columns_index(lua_State *L);

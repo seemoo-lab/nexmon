@@ -14,28 +14,30 @@
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
+#include <epan/expert.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
 
 #include <wsutil/array.h>
 
 #include "packet-ber.h"
+#include "packet-HI2Operations.h"
 #include "packet-e212.h"
 #include "packet-gsm_a_common.h"
 #include "packet-gtpv2.h"
 #include "packet-isup.h"
 #include "packet-q931.h"
 
-#define PNAME  "HI2Operations"
-#define PSNAME "HI2OPERATIONS"
-#define PFNAME "HI2operations"
-
 void proto_register_HI2Operations(void);
 void proto_reg_handoff_HI2Operations(void);
 
 /* Initialize the protocol and registered fields */
-int proto_HI2Operations;
-int hf_HI2Operations_apn_str;
+static int proto_HI2Operations;
+static int hf_HI2Operations_apn_str;
+
+static expert_field ei_HI2Operations_non_compliant_apn;
+static expert_field ei_HI2Operations_non_compliant_uli;
+
 #include "packet-HI2Operations-hf.c"
 
 /* Initialize the subtree pointers */
@@ -80,11 +82,20 @@ void proto_register_HI2Operations(void) {
   };
 
   /* Register protocol */
-  proto_HI2Operations = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_HI2Operations = proto_register_protocol("HI2Operations", "HI2OPERATIONS", "HI2operations");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_HI2Operations, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  {
+    static ei_register_info ei[] = {
+      { &ei_HI2Operations_non_compliant_apn, { "HI2Operations.non_compliant_apn", PI_PROTOCOL, PI_WARN, "APN not label-encoded per TS 23.003", EXPFILL }},
+      { &ei_HI2Operations_non_compliant_uli, { "HI2Operations.non_compliant_uli", PI_PROTOCOL, PI_WARN, "ULI too short to decode", EXPFILL }},
+    };
+    expert_module_t *expert_HI2Operations = expert_register_protocol(proto_HI2Operations);
+    expert_register_field_array(expert_HI2Operations, ei, array_length(ei));
+  }
 
   register_dissector("HI2Operations", dissect_IRIsContent_PDU, proto_HI2Operations);
 

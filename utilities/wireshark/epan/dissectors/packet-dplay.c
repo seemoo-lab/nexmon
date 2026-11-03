@@ -450,8 +450,7 @@ static int dissect_session_desc(proto_tree *tree, tvbuff_t *tvb, int offset)
 
 static int dissect_packed_player(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int offset)
 {
-    uint32_t sn_len, ln_len, sd_len, pd_len, num_players, i;
-    int size;
+    uint32_t sn_len, ln_len, sd_len, pd_len, num_players, i, size;
     static int * const flags[] = {
         &hf_dplay_pp_flag_sending,
         &hf_dplay_pp_flag_in_group,
@@ -495,7 +494,7 @@ static int dissect_packed_player(proto_tree *tree, packet_info* pinfo, tvbuff_t 
     }
 
     /* Size seems to miss the unknown empty dword */
-    if (size + 4 > offset) {
+    if ((uint32_t)(offset - 4) < size) {
         proto_tree_add_item(tree, hf_dplay_pp_parent_id, tvb, offset, 4, ENC_NA); offset += 4;
     }
 
@@ -850,8 +849,7 @@ static int dissect_type1a_message(proto_tree *tree, packet_info* pinfo, tvbuff_t
 static int dissect_type29_message(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int offset)
 {
     uint32_t password_offset = tvb_get_letohl(tvb, offset + 24);
-    int player_count, group_count, shortcut_count;
-    int i;
+    uint32_t player_count, group_count, shortcut_count, i;
 
     proto_tree_add_item_ret_uint(tree, hf_dplay_type_29_player_count, tvb, offset, 4, ENC_LITTLE_ENDIAN, &player_count); offset += 4;
     proto_tree_add_item_ret_uint(tree, hf_dplay_type_29_group_count, tvb, offset, 4, ENC_LITTLE_ENDIAN, &group_count); offset += 4;
@@ -903,7 +901,7 @@ static void dissect_dplay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     uint16_t second_message_type = UINT16_MAX;
     uint16_t proto_version;
     uint32_t dplay_id;
-    uint8_t play_id[] = {'p','l','a','y'};
+    const uint8_t play_id[] = {'p','l','a','y'};
 
     dplay_id = tvb_get_letohl(tvb, 20);
     message_type = tvb_get_letohs(tvb, 24);
@@ -939,7 +937,7 @@ static void dissect_dplay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         proto_tree *dplay_tree;
         proto_tree *dplay_header;
         proto_tree *dplay_data;
-        int offset = 0;
+        unsigned offset = 0;
 
         dplay_item = proto_tree_add_item(tree, proto_dplay, tvb, 0, -1, ENC_NA);
         dplay_tree = proto_item_add_subtree(dplay_item, ett_dplay);
@@ -1015,7 +1013,7 @@ static void dissect_dplay_player_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tr
         proto_item *dplay_item;
         proto_tree *dplay_tree;
         proto_tree *data_tree;
-        int offset = 0;
+        unsigned offset = 0;
 
         dplay_item = proto_tree_add_item(tree, proto_dplay, tvb, offset, -1, ENC_NA);
         dplay_tree = proto_item_add_subtree(dplay_item, ett_dplay);
@@ -1611,19 +1609,15 @@ void proto_register_dplay(void)
         &ett_dplay_type29_spp,
     };
 
-    proto_dplay = proto_register_protocol (
-        "DirectPlay Protocol",
-        "DPLAY",
-        "dplay"
-        );
+    proto_dplay = proto_register_protocol ("DirectPlay Protocol", "DPLAY", "dplay");
     proto_register_field_array(proto_dplay, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 }
 
 void proto_reg_handoff_dplay(void)
 {
-    heur_dissector_add("udp", heur_dissect_dplay, "DirectPlay over UDP", "dplay_udp", proto_dplay, HEURISTIC_ENABLE);
-    heur_dissector_add("tcp", heur_dissect_dplay, "DirectPlay over TCP", "dplay_tcp", proto_dplay, HEURISTIC_ENABLE);
+    heur_dissector_add("udp", heur_dissect_dplay, "DirectPlay over UDP", "dplay_udp", proto_dplay, HEURISTIC_DISABLE);
+    heur_dissector_add("tcp", heur_dissect_dplay, "DirectPlay over TCP", "dplay_tcp", proto_dplay, HEURISTIC_DISABLE);
 }
 
 /*

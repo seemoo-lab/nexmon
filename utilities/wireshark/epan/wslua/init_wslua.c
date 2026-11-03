@@ -17,6 +17,7 @@
 
 #include "wslua.h"
 #include "init_wslua.h"
+#include "wslua_debugger.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -52,6 +53,7 @@ struct _wslua_treeitem* lua_tree;
 tvbuff_t* lua_tvb;
 int lua_dissectors_table_ref = LUA_NOREF;
 int lua_heur_dissectors_table_ref = LUA_NOREF;
+const char* lua_app_env_var_prefix;
 
 static int proto_lua;
 
@@ -170,7 +172,7 @@ lua_pinfo_end(wmem_allocator_t *allocator _U_, wmem_cb_event_t event _U_,
     clear_outstanding_PrivateTable();
     clear_outstanding_TreeItem();
     clear_outstanding_FieldInfo();
-    clear_outstanding_FuncSavers();
+    clear_outstanding_FuncSavers(NULL);
 
     /* keep invoking this callback later? */
     return false;
@@ -193,6 +195,17 @@ static int dissector_error_handler(lua_State *LS) {
 
     proto_item *tb_item;
     proto_tree *tb_tree;
+
+    /* Snapshot error location/stack while Lua is still unwinding inside
+     * lua_pcall. The actual break-on-error pause is deferred until after lua_pcall
+     * returns to avoid re-entrancy crashes. */
+    wslua_debugger_capture_runtime_error(LS, lua_tostring(LS, -1));
+
+    if (!(lua_tree && lua_tree->tree && lua_pinfo && lua_tvb)) {
+        /* Message handlers must return a valid non-negative result count.
+         * Keep the original Lua error object unchanged on top of stack. */
+        return 1;
+    }
 
     // Add the expert info Lua error message
     // XXX - Should this add the current protocol to the message, and add to
@@ -268,10 +281,59 @@ static int dissector_error_handler(lua_State *LS) {
     // Cleanup
     g_free(tb_string);
 
+    /* Leave the original error object on top of stack for lua_pcall. */
+    lua_pop(LS, 1);
+
     // Return the same original error message
-    return -2;
+    return 1;
 }
 
+static void lua_resetthread_cb(void *user_data) {
+
+    lua_State *L1 = (lua_State*)user_data;
+
+    ws_debug("freeing thread: %p", L1);
+    /* Drop any debugger references to this dying coroutine (paused_L,
+     * runtime_error_stack_L) before Lua actually closes / collects it.
+     * The function only mutates debugger-internal fields - it does not
+     * touch L1 - so it is safe to call before lua_closethread. */
+    wslua_debugger_forget_lua_thread(L1);
+    clear_outstanding_FuncSavers(L1);
+#if LUA_VERSION_RELEASE_NUM >= 50406
+    // Lua 5.3 and earlier doesn't have a way to close a thread, and
+    // relies on garbage collection only.
+    //
+    // Lua 5.4 introduced lua_resetthread().
+    //
+    // Lua 5.4.5 added a second argument to lua_resethread() to
+    // take a second argument. Fedora backported that change to
+    // some releases that have a pre-5.4.5 Lua 5.4, but didn't
+    // change LUA_VERSION_RELEASE_NUM, so we can't use a check for
+    // LUA_VERSION_RELEASE_NUM == 50404 to test for that, so we
+    // do a check in CMake.
+    //
+    // See the thread starting at
+    //
+    //    https://lists.wireshark.org/archives/wireshark-dev/202511/msg00031.html
+    //
+    // Lua 5.4.6 reverts that change, and introduces lua_closethread(..., NULL)
+    // to replace lua_resetthread().
+    //
+    lua_closethread(L1, NULL);
+#elif LUA_VERSION_NUM >= 504
+  #ifdef HAVE_TWO_ARGUMENT_LUA_RESETTHREAD
+    lua_resetthread(L1, NULL);
+  #else
+    lua_resetthread(L1);
+  #endif
+#endif
+    // The thread was pushed onto the global stack when created. Each thread
+    // should be taken off the stack in order.
+    ws_assert(L1 == lua_tothread(L, -1));
+    // Now remove the thread from the global state stack, which will allow it
+    // to be garbage collected.
+    lua_pop(L, 1);
+}
 
 int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_) {
     int consumed_bytes = tvb_captured_length(tvb);
@@ -286,49 +348,74 @@ int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data 
      * dissectors[current_proto](tvb,pinfo,tree)
      */
 
-    // set the stack top be index 0
-    lua_settop(L,0);
+    // Create a new thread with an independent execution stack and,
+    // importantly, an independent errorJmp linked list. This avoids
+    // issues with nested lua_pcalls, where a Wireshark exception
+    // can longjmp out of the inner pcall's luaD_rawunprotected function,
+    // and a lua_error from the outer pcall then tries to longjmp to
+    // the exited no longer valid inner setjmp, which is undefined
+    // behavior and likely crashes.
+    // This pushes the new thread onto the global stack (which
+    // prevents the new thread from being garbage collected.)
+    lua_State *L1 = lua_newthread(L);
+    ws_debug("new Lua thread: %p", L1);
+
+    // Make sure that even in the case of an uncaught Wireshark exception
+    // that the thread is reset and garbage collected. (This could possibly
+    // be a TRY..FINALLY block that also does some handling to put the
+    // Lua call stack in the tree.)
+    CLEANUP_PUSH(lua_resetthread_cb, L1);
+    // Note this macro declares struct except_stacknode except_sn and
+    // pushes it to the top of the exception stack.
 
     // After call, stack: [ error_handler_func ]
-    lua_pushcfunction(L, dissector_error_handler);
+    lua_pushcfunction(L1, dissector_error_handler);
 
     // Push the dissectors table onto the the stack
     // After call, stack: [ error_handler_func, dissectors_table ]
-    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_dissectors_table_ref);
+    lua_rawgeti(L1, LUA_REGISTRYINDEX, lua_dissectors_table_ref);
 
     // Push a copy of the current_proto string onto the stack
     // After call, stack: [ error_handler_func, dissectors_table, current_proto ]
-    lua_pushstring(L, pinfo->current_proto);
+    lua_pushstring(L1, pinfo->current_proto);
 
     // dissectors_table[current_proto], a dissector, goes into the stack
     // The key (current_proto) is popped off the stack.
     // After call, stack: [ error_handler_func, dissectors_table, dissector ]
-    lua_gettable(L, -2);
+    lua_gettable(L1, -2);
 
     // We don't need the dissectors_table in the stack
     // After call, stack: [ error_handler_func, dissector ]
-    lua_remove(L,2);
+    lua_remove(L1,2);
 
     // Is the dissector a function?
-    if (lua_isfunction(L,2)) {
+    if (lua_isfunction(L1,2)) {
 
         // After call, stack: [ error_handler_func, dissector, tvb ]
-        push_Tvb(L,tvb);
+        push_Tvb(L1,tvb);
         // After call, stack: [ error_handler_func, dissector, tvb, pinfo ]
-        push_Pinfo(L,pinfo);
+        push_Pinfo(L1,pinfo);
         // After call, stack: [ error_handler_func, dissector, tvb, pinfo, TreeItem ]
-        lua_tree = push_TreeItem(L, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));
+        lua_tree = push_TreeItem(L1, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));
         proto_item_set_hidden(lua_tree->item);
 
-        if  ( lua_pcall(L, /*num_args=*/3, /*num_results=*/1, /*error_handler_func_stack_position=*/1) ) {
-            // do nothing; the traceback error message handler function does everything
+        if  ( lua_pcall(L1, /*num_args=*/3, /*num_results=*/1, /*error_handler_func_stack_position=*/1) ) {
+            wslua_debugger_after_pcall_failure(L1);
+            if (except_get_top() != &except_sn) {
+                ws_critical("exception stack mismatch! Lua error longjmp'd out of a Wireshark TRY block.");
+                // Just reset the exception stack. If one of the exceptions
+                // nodes skipped was a cleanup handler, this might leak, but
+                // since the except_stacknode was created on the stack, there's
+                // nothing we can do.
+                except_set_top(&except_sn);
+            }
         } else {
 
             /* if the Lua dissector reported the consumed bytes, pass it to our caller */
-            if (lua_isnumber(L, -1)) {
+            if (lua_isnumber(L1, -1)) {
                 /* we got the consumed bytes or the missing bytes as a negative number */
-                consumed_bytes = wslua_toint(L, -1);
-                lua_pop(L, 1);
+                consumed_bytes = wslua_toint(L1, -1);
+                lua_pop(L1, 1);
             }
         }
 
@@ -337,7 +424,12 @@ int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data 
                     "Lua Error: did not find the %s dissector in the dissectors table", pinfo->current_proto);
     }
 
+    // XXX - Should this be registered before the lua_pcall, in case there's
+    // an exception? Also, as there can be nested dissector calls, should we
+    // try to avoid registering it more than once?
     wmem_register_callback(pinfo->pool, lua_pinfo_end, NULL);
+
+    CLEANUP_CALL_AND_POP;
 
     lua_pinfo = saved_lua_pinfo;
     lua_tree = saved_lua_tree;
@@ -377,65 +469,93 @@ bool heur_dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void*
      * So it's like registry[table_ref][heur_list_name][proto_name] = func
      */
 
-    lua_settop(L,0);
+    // Create a new thread with an independent execution stack and,
+    // importantly, a independent linked list errorJmp of lua_longjmp.
+    // This pushes the new thread onto the global stack (which
+    // prevents the new thread from being garbage collected.)
+    lua_State *L1 = lua_newthread(L);
+    ws_debug("new Lua thread: %p", L1);
+
+    CLEANUP_PUSH(lua_resetthread_cb, L1);
+    // Note this macro declares struct except_stacknode except_sn and
+    // pushes it to the top of the exception stack.
 
     /* get the table of all lua heuristic dissector lists */
-    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_heur_dissectors_table_ref);
+    lua_rawgeti(L1, LUA_REGISTRYINDEX, lua_heur_dissectors_table_ref);
 
     /* get the table inside that, for the lua heuristic dissectors of the requested heur list */
-    if (!wslua_get_table(L, -1, pinfo->heur_list_name)) {
+    if (!wslua_get_table(L1, -1, pinfo->heur_list_name)) {
         /* this shouldn't happen */
-        lua_settop(L,0);
         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,
                 "internal error in heur_dissect_lua: no %s heur list table", pinfo->heur_list_name);
-        return false;
+        result = false;
+        goto end;
     }
 
     /* get the table inside that, for the specific lua heuristic dissector */
-    if (!wslua_get_field(L,-1,pinfo->current_proto)) {
+    if (!wslua_get_field(L1,-1,pinfo->current_proto)) {
         /* this shouldn't happen */
-        lua_settop(L,0);
         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,
                 "internal error in heur_dissect_lua: no %s heuristic dissector for list %s",
                         pinfo->current_proto, pinfo->heur_list_name);
-        return false;
+        result = false;
+        goto end;
     }
 
     /* remove the table of all lists (the one in the registry) */
-    lua_remove(L,1);
+    lua_remove(L1,1);
     /* remove the heur_list_name heur list table */
-    lua_remove(L,1);
+    lua_remove(L1,1);
 
-    if (!lua_isfunction(L,-1)) {
+    if (!lua_isfunction(L1,-1)) {
         /* this shouldn't happen */
-        lua_settop(L,0);
         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,
                 "internal error in heur_dissect_lua: %s heuristic dissector is not a function", pinfo->current_proto);
-        return false;
+        result = false;
+        goto end;
     }
 
-    push_Tvb(L,tvb);
-    push_Pinfo(L,pinfo);
-    lua_tree = push_TreeItem(L, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));
+    push_Tvb(L1,tvb);
+    push_Pinfo(L1,pinfo);
+    lua_tree = push_TreeItem(L1, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));
     proto_item_set_hidden(lua_tree->item);
 
-    if  ( lua_pcall(L,3,1,0) ) {
+    /* Push a message handler so runtime VM errors are routed through the
+     * existing Lua traceback / tree reporting path. */
+    lua_pushcfunction(L1, dissector_error_handler);
+    lua_insert(L1, 1); /* move handler below the dissector function */
+
+    if  ( lua_pcall(L1,3,1,1) ) {
+        wslua_debugger_after_pcall_failure(L1);
         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,
-                "Lua Error: error calling %s heuristic dissector: %s", pinfo->current_proto, lua_tostring(L,-1));
-        lua_settop(L,0);
+                "Lua Error: error calling %s heuristic dissector: %s", pinfo->current_proto, lua_tostring(L1,-1));
+        if (except_get_top() != &except_sn) {
+            ws_critical("exception stack mismatch! Lua error longjmp'd past a Wireshark TRY block.");
+            // Just reset the exception stack. If one of the exceptions
+            // nodes skipped was a cleanup handler, this might leak, but
+            // since the except_stacknode was created on the stack, there's
+            // nothing we can do.
+            except_set_top(&except_sn);
+        }
     } else {
-        if (lua_isboolean(L, -1) || lua_isnil(L, -1)) {
-            result = lua_toboolean(L, -1);
-        } else if (lua_type(L, -1) == LUA_TNUMBER) {
-            result = lua_tointeger(L,-1) != 0 ? true : false;
+        if (lua_isboolean(L1, -1) || lua_isnil(L1, -1)) {
+            result = lua_toboolean(L1, -1);
+        } else if (lua_type(L1, -1) == LUA_TNUMBER) {
+            result = lua_tointeger(L1,-1) != 0 ? true : false;
         } else {
             proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,
                     "Lua Error: invalid return value from Lua %s heuristic dissector", pinfo->current_proto);
         }
-        lua_pop(L, 1);
+        lua_pop(L1, 1);
     }
 
+end:
+    // XXX - Should this be registered before the lua_pcall, in case there's
+    // an exception? Also, as there can be nested dissector calls, should we
+    // try to avoid registering it more than once?
     wmem_register_callback(pinfo->pool, lua_pinfo_end, NULL);
+
+    CLEANUP_CALL_AND_POP;
 
     lua_pinfo = saved_lua_pinfo;
     lua_tree = saved_lua_tree;
@@ -465,6 +585,7 @@ static void iter_table_and_call(lua_State* LS, const char* table_name, lua_CFunc
         if (lua_isfunction(LS,-1)) {
 
             if ( lua_pcall(LS,0,0,1) ) {
+                    wslua_debugger_after_pcall_failure(LS);
                     lua_pop(LS,1);
             }
 
@@ -480,10 +601,31 @@ static void iter_table_and_call(lua_State* LS, const char* table_name, lua_CFunc
 }
 
 
+/*
+ * Common handler for errors raised during Lua init / prefs-callback chunks.
+ * Captures the runtime error so any subsequent break-on-error pause has
+ * the (message, file, line, stack) ready, and routes the user-facing
+ * message through ws_warning (when break-on-error will pause and surface
+ * it inline) or report_failure (otherwise).
+ */
+static void wslua_handle_lua_init_error(lua_State *LS,
+                                        const char *context_label,
+                                        const char *raw_msg) {
+    if (wslua_debugger_capture_runtime_error(LS, raw_msg)) {
+        ws_warning("Lua: Error during execution of %s: %s",
+                   context_label,
+                   raw_msg ? raw_msg : "(nil)");
+    } else {
+        report_failure("Lua: Error during execution of %s:\n %s",
+                       context_label,
+                       raw_msg ? raw_msg : "(nil)");
+    }
+}
+
 static int init_error_handler(lua_State* LS) {
-    const char* error =  lua_tostring(LS,1);
-    report_failure("Lua: Error during execution of initialization:\n %s",error);
-    return 0;
+    wslua_handle_lua_init_error(LS, "initialization",
+                                lua_tostring(LS, 1));
+    return 1;
 }
 
 
@@ -518,9 +660,9 @@ static void wslua_cleanup_routine(void) {
 }
 
 static int prefs_changed_error_handler(lua_State* LS) {
-    const char* error =  lua_tostring(LS,1);
-    report_failure("Lua: Error during execution of prefs apply callback:\n %s",error);
-    return 0;
+    wslua_handle_lua_init_error(LS, "prefs apply callback",
+                                lua_tostring(LS, 1));
+    return 1;
 }
 
 void wslua_prefs_changed(void) {
@@ -540,6 +682,7 @@ static const char *getF(lua_State *LS _U_, void *ud, size_t *size)
 
 static int error_handler_with_callback(lua_State *LS) {
     const char *msg = lua_tostring(LS, 1);
+    wslua_debugger_capture_runtime_error(LS, msg);
     luaL_traceback(LS, LS, msg, 1);     /* push message with traceback.  */
     lua_remove(LS, -2);                 /* remove original msg */
     return 1;
@@ -599,7 +742,7 @@ static int lua_script_push_args(const int script_num) {
  * We could add a custom loader to package.searchers instead, which
  * might be more useful in some way. We could also have some method of
  * saving and restoring the path, instead of constantly adding to it. */
-static void prepend_path(const char* dirname) {
+static void prepend_path(const char* dirname, bool with_packages) {
     const char* path;
 
     /* prepend the directory name to _G.package.path */
@@ -608,9 +751,15 @@ static void prepend_path(const char* dirname) {
     path = luaL_checkstring(L, -1); /* get the path string */
     lua_pop(L, 1);                  /* pop the path string */
     /* prepend the path */
-    /* We could also add "?/init.lua" for packages. */
-    lua_pushfstring(L, "%s" G_DIR_SEPARATOR_S "?.lua;%s",
-                    dirname, path);
+    if (with_packages) {
+        lua_pushfstring(L, "%s" G_DIR_SEPARATOR_S "?.lua;%s" G_DIR_SEPARATOR_S
+                        "?" G_DIR_SEPARATOR_S "init.lua;%s",
+                        dirname, dirname, path);
+    }
+    else {
+        lua_pushfstring(L, "%s" G_DIR_SEPARATOR_S "?.lua;%s",
+                        dirname, path);
+    }
     lua_setfield(L, -2, "path");
     lua_pop(L, 1);
 }
@@ -692,7 +841,8 @@ static bool lua_load_plugin(const char* filename) {
      */
     status = lua_pcall(L, 1, 0, 1);
     if (status != LUA_OK) {
-        switch (status) {
+        if (!wslua_debugger_after_pcall_failure(L)) {
+            switch (status) {
             case LUA_ERRRUN:
                 report_failure("Lua: Error during loading:\n%s", lua_tostring(L, -1));
                 break;
@@ -705,6 +855,7 @@ static bool lua_load_plugin(const char* filename) {
             default:
                 report_failure("Lua: Error during loading: unknown error %d", status);
                 break;
+            }
         }
     }
     return status == LUA_OK;
@@ -742,7 +893,7 @@ static bool lua_load_script(const char* filename, const char* dirname, const int
                 numargs = lua_script_push_args(file_count);
             }
             error = lua_pcall(L, numargs, 0, 1);
-            if (error) {
+            if (error && !wslua_debugger_after_pcall_failure(L)) {
                 switch (error) {
                     case LUA_ERRRUN:
                         report_failure("Lua: Error during loading:\n%s", lua_tostring(L, -1));
@@ -797,6 +948,10 @@ static bool lua_load_plugin_script(const char* name,
                          lua_load_plugin(filename)) {
         wslua_add_plugin(name, get_current_plugin_version(), filename);
         clear_current_plugin_version();
+
+        /* Notify the debugger that a script has been loaded */
+        wslua_debugger_notify_script_loaded(filename);
+
         return true;
     }
     return false;
@@ -810,6 +965,17 @@ static int wslua_panic(lua_State* LS) {
 
 static int string_compare(const void *a, const void *b) {
     return strcmp((const char*)a, (const char*)b);
+}
+
+static bool is_package(GList* sorted_filenames) {
+    const char* filename;
+
+    if (sorted_filenames == NULL || g_list_length(sorted_filenames) > 1) {
+        return false;
+    }
+
+    filename = get_basename((const char*)sorted_filenames->data);
+    return strrchr(filename, '.') == NULL;
 }
 
 static int lua_load_plugins(const char *dirname, register_cb cb, void *client_data,
@@ -833,12 +999,34 @@ static int lua_load_plugins(const char *dirname, register_cb cb, void *client_da
                 /* skip "." and ".." */
                 continue;
             }
-            if (depth == 0 && strcmp(name, "init.lua") == 0) {
+            if (strcmp(name, "init.lua") == 0) {
                 /* If we are in the root directory skip the special "init.lua"
-                 * file that was already loaded before every other user script.
-                 * (If we are below the root script directory we just treat it like any other
-                 * Lua script.) */
-                continue;
+                 * file that was already loaded before every other user script. */
+                if (depth == 0) {
+                    continue;
+                }
+
+                /* Otherwise treat a directory in the root with a "init.lua" file as a
+                 * package that should be loaded as `require "dirname"` in lua. The init.lua
+                 * file is the entry point of the module and responsible for loading any
+                 * submodules within this directory */
+                if (depth == 1) {
+                    /* prevent further recursion into this tree */
+                    if (sorted_dirnames) {
+                        g_list_free_full(sorted_dirnames, g_free);
+                        sorted_dirnames = NULL;
+                    }
+
+                    /* remove any already discovered modules */
+                    if (sorted_filenames) {
+                        g_list_free_full(sorted_filenames, g_free);
+                        sorted_filenames = NULL;
+                    }
+
+                    filename = ws_strdup(dirname);
+                    sorted_filenames = g_list_prepend(sorted_filenames, (void*)filename);
+                    break;
+                }
             }
 
             filename = ws_strdup_printf("%s" G_DIR_SEPARATOR_S "%s", dirname, name);
@@ -881,10 +1069,10 @@ static int lua_load_plugins(const char *dirname, register_cb cb, void *client_da
 
     /* Process files in ASCIIbetical order */
     if (sorted_filenames != NULL) {
-        /* If this is not the root of the plugin directory, add it to the path.
+        /* If this is not the root of the plugin directory or a package, add it to the path.
          * XXX - Should we remove it after we're done with this directory? */
-        if (depth > 0) {
-            prepend_path(dirname);
+        if (depth > 0 && !is_package(sorted_filenames)) {
+            prepend_path(dirname, false);
         }
         sorted_filenames = g_list_sort(sorted_filenames, string_compare);
         for (l = sorted_filenames; l != NULL; l = l->next) {
@@ -916,7 +1104,7 @@ static int lua_load_plugins(const char *dirname, register_cb cb, void *client_da
 static int lua_load_global_plugins(register_cb cb, void *client_data,
                                     bool count_only)
 {
-    return lua_load_plugins(get_plugins_dir(), cb, client_data, count_only, false, NULL, 0);
+    return lua_load_plugins(get_plugins_dir(lua_app_env_var_prefix), cb, client_data, count_only, false, NULL, 0);
 }
 
 static int lua_load_pers_plugins(register_cb cb, void *client_data,
@@ -933,11 +1121,11 @@ static int lua_load_pers_plugins(register_cb cb, void *client_data,
     GHashTable *loaded_user_scripts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
     /* load user scripts */
-    plugins_counter += lua_load_plugins(get_plugins_pers_dir(), cb, client_data, count_only, true, loaded_user_scripts, 0);
+    plugins_counter += lua_load_plugins(get_plugins_pers_dir(lua_app_env_var_prefix), cb, client_data, count_only, true, loaded_user_scripts, 0);
 
     /* for backward compatibility check old plugin directory */
-    char *old_path = get_persconffile_path("plugins", false);
-    if (strcmp(get_plugins_pers_dir(), old_path) != 0) {
+    char *old_path = get_persconffile_path("plugins", false, lua_app_env_var_prefix);
+    if (strcmp(get_plugins_pers_dir(lua_app_env_var_prefix), old_path) != 0) {
         plugins_counter += lua_load_plugins(old_path, cb, client_data, count_only, true, loaded_user_scripts, 0);
     }
     g_free(old_path);
@@ -1221,7 +1409,7 @@ static void wslua_add_deprecated(void)
      */
     wslua_init_wtap_filetypes(L);
 
-    /* Old / deprecated menu groups. These shoudn't be used in new code. */
+    /* Old / deprecated menu groups. These shouldn't be used in new code. */
     lua_getglobal(L, "MENU_PACKET_ANALYZE_UNSORTED");
     lua_setglobal(L, "MENU_ANALYZE_UNSORTED");
     lua_getglobal(L, "MENU_ANALYZE_CONVERSATION_FILTER");
@@ -1443,15 +1631,16 @@ void wslua_add_useful_constants(void)
     char *path;
 
     WSLUA_REG_GLOBAL_BOOL(L,"GUI_ENABLED",ops && ops->new_dialog);
+    WSLUA_REG_GLOBAL_STRING(L,"_LUA_RELEASE",ABOUT_LUA_RELEASE);
 
     /* DATA_DIR has a trailing directory separator. */
-    path = get_datafile_path("");
+    path = get_datafile_path("", lua_app_env_var_prefix);
     lua_pushfstring(L, "%s"G_DIR_SEPARATOR_S, path);
     g_free(path);
     lua_setglobal(L, "DATA_DIR");
 
     /* USER_DIR has a trailing directory separator. */
-    path = get_persconffile_path("", false);
+    path = get_persconffile_path("", false, lua_app_env_var_prefix);
     lua_pushfstring(L, "%s"G_DIR_SEPARATOR_S, path);
     g_free(path);
     lua_setglobal(L, "USER_DIR");
@@ -1463,7 +1652,7 @@ void wslua_add_useful_constants(void)
     lua_setglobal(L, "typeof");
 }
 
-void wslua_init(register_cb cb, void *client_data) {
+void wslua_init(register_cb cb, void *client_data, const char* app_env_var_prefix) {
     char* filename;
     bool enable_lua = true;
     bool run_anyway = false;
@@ -1621,9 +1810,12 @@ void wslua_init(register_cb cb, void *client_data) {
         proto_register_subtree_array(ett, array_length(ett));
         expert_lua = expert_register_protocol(proto_lua);
         expert_register_field_array(expert_lua, ei, array_length(ei));
+        lua_app_env_var_prefix = app_env_var_prefix;
     }
 
     lua_atpanic(L,wslua_panic);
+
+    wslua_debugger_init(L);
 
     /*
      * The init_routines table (accessible by the user).
@@ -1698,11 +1890,11 @@ void wslua_init(register_cb cb, void *client_data) {
     /* wslua_dofile / wslua_get_actual_filename look in the datafile dir.
      * Should we add that to the path for require() as well, for consistency?
      */
-    prepend_path(get_datafile_dir());
+    prepend_path(get_datafile_dir(lua_app_env_var_prefix));
 #endif
     /* Add the global plugins path for require */
-    prepend_path(get_plugins_dir());
-    filename = g_build_filename(get_plugins_dir(), "init.lua", (char *)NULL);
+    prepend_path(get_plugins_dir(lua_app_env_var_prefix), true);
+    filename = g_build_filename(get_plugins_dir(lua_app_env_var_prefix), "init.lua", (char *)NULL);
     if (file_exists(filename)) {
         ws_debug("Loading init.lua file: %s", filename);
         lua_load_internal_script(filename);
@@ -1716,18 +1908,18 @@ void wslua_init(register_cb cb, void *client_data) {
         /* wslua_dofile / wslua_get_actual_filename look in the personal configuration
          * directory. Should we add that to the path for require() as well, for consistency?
          */
-        profile_dir = get_profile_dir(NULL, false);
+        profile_dir = get_profile_dir(lua_app_env_var_prefix, NULL, false);
         prepend_path(profile_dir);
         g_free(profile_dir);
 #endif
         /* Add the personal plugins path(s) for require() */
-        char *old_path = get_persconffile_path("plugins", false);
-        if (strcmp(get_plugins_pers_dir(), old_path) != 0) {
-            prepend_path(old_path);
+        char *old_path = get_persconffile_path("plugins", false, lua_app_env_var_prefix);
+        if (strcmp(get_plugins_pers_dir(lua_app_env_var_prefix), old_path) != 0) {
+            prepend_path(old_path, true);
         }
         g_free(old_path);
-        prepend_path(get_plugins_pers_dir());
-        filename = g_build_filename(get_plugins_pers_dir(), "init.lua", (char *)NULL);
+        prepend_path(get_plugins_pers_dir(lua_app_env_var_prefix), true);
+        filename = g_build_filename(get_plugins_pers_dir(lua_app_env_var_prefix), "init.lua", (char *)NULL);
         if (file_exists(filename)) {
             ws_debug("Loading init.lua file: %s", filename);
             lua_load_internal_script(filename);
@@ -1735,7 +1927,7 @@ void wslua_init(register_cb cb, void *client_data) {
         g_free(filename);
 
         /* For backward compatibility also load it from the configuration directory. */
-        filename = get_persconffile_path("init.lua", false);
+        filename = get_persconffile_path("init.lua", false, lua_app_env_var_prefix);
         if (file_exists(filename)) {
             ws_message("Loading init.lua file from deprecated path: %s", filename);
             lua_load_internal_script(filename);
@@ -1793,7 +1985,7 @@ void wslua_init(register_cb cb, void *client_data) {
              * default).
              * XXX - Should we remove it after we're done with this script? */
             if (dname)
-                prepend_path(dname);
+                prepend_path(dname, false);
 
             if (cb)
                 (*cb)(RA_LUA_PLUGINS, get_basename(script_filename), client_data);
@@ -1855,13 +2047,25 @@ void wslua_early_cleanup(void) {
     wslua_deregister_protocols(L);
 }
 
-void wslua_reload_plugins (register_cb cb, void *client_data) {
+bool wslua_reload_plugins (register_cb cb, void *client_data, const char* app_env_var_prefix) {
     const funnel_ops_t* ops = funnel_get_funnel_ops();
+
+    /*
+     * Notify the debugger that a reload is starting.  This saves the
+     * enabled state, disables the hook, detaches from the Lua state.
+     *
+     * If the debugger was paused, it returns false — Lua is still on
+     * the C call stack and destroying the state would crash.  The UI
+     * has been told to exit its nested event loop and schedule a
+     * deferred reload once the call stack unwinds.
+     */
+    if (!wslua_debugger_notify_reload())
+        return false;
 
     if (cb)
         (*cb)(RA_LUA_DEREGISTER, NULL, client_data);
 
-    if (ops->close_dialogs)
+    if (ops && ops->close_dialogs)
         ops->close_dialogs();
 
     wslua_deregister_heur_dissectors(L);
@@ -1874,7 +2078,16 @@ void wslua_reload_plugins (register_cb cb, void *client_data) {
     wslua_clear_plugin_list();
 
     wslua_cleanup();
-    wslua_init(cb, client_data);    /* reinitialize */
+    wslua_debugger_prepare_for_reload_init();
+    wslua_init(cb, client_data, app_env_var_prefix);    /* reinitialize */
+
+    /*
+     * Signal the debugger that reload is complete so the post-reload UI
+     * callback can refresh the file tree with the newly loaded scripts.
+     */
+    wslua_debugger_notify_post_reload();
+
+    return true;
 }
 
 void wslua_cleanup(void) {

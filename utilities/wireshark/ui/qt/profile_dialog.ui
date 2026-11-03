@@ -40,7 +40,7 @@
       <bool>false</bool>
      </property>
      <property name="sortingEnabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="headerHidden">
       <bool>false</bool>

@@ -2183,7 +2183,7 @@ dissect_cb_reply(ptvcursor_t *cursor, packet_info* pinfo _U_, struct rxinfo *rxi
 	if ( rxinfo->type == RX_PACKET_TYPE_DATA )
 	{
 		switch ( opcode ) {
-			case 65538: /* get-capabilites */
+			case 65538: /* get-capabilities */
 				OUT_CM_INTERFACES(cursor);
 				OUT_CM_CAPABILITIES(cursor);
 				break;
@@ -2758,7 +2758,7 @@ dissect_afs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 	proto_item		*hidden_item;
 	int port, node, typenode, opcode;
 	value_string_ext *vals_ext;
-	int offset = 0;
+	unsigned offset = 0;
 	nstime_t delta_ts;
 	uint8_t save_fragmented;
 	int reassembled = 0;

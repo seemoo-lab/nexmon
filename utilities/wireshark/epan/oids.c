@@ -28,6 +28,7 @@
 #include "wsutil/filesystem.h"
 #include "dissectors/packet-ber.h"
 #include <wsutil/ws_assert.h>
+#include <wsutil/file_util.h>
 
 #ifdef HAVE_LIBSMI
 #include <smi.h>
@@ -291,7 +292,7 @@ static const oid_value_type_t* get_typedata(SmiType* smiType) {
 	 * There has to be a better way to know if a given
 	 * OCTETSTRING type is actually human readable text,
 	 * an address of some type or some moe specific FT_
-	 * Until that is found, this is the mappping between
+	 * Until that is found, this is the mapping between
 	 * SNMP Types and our FT_s
 	 */
 	static const struct _type_mapping_t {
@@ -426,11 +427,11 @@ static inline oid_kind_t smikind(SmiNode* sN, oid_key_t** key_p) {
 
 				typedata =  get_typedata(elType);
 
-				k = g_new(oid_key_t,1);
+				k = wmem_new(wmem_epan_scope(), oid_key_t);
 
 				oid1 = smiRenderOID(sN->oidlen, sN->oid, SMI_RENDER_QUALIFIED);
 				oid2 = smiRenderOID(elNode->oidlen, elNode->oid, SMI_RENDER_NAME);
-				k->name = g_strconcat(oid1, ".", oid2, NULL);
+				k->name = wmem_strconcat(wmem_epan_scope(), oid1, ".", oid2, NULL);
 				smi_free (oid1);
 				smi_free (oid2);
 
@@ -524,10 +525,11 @@ static inline oid_kind_t smikind(SmiNode* sN, oid_key_t** key_p) {
 						   || (ft == FT_UINT64) || (ft == FT_INT64) )
 
 static void unregister_mibs(void) {
-	/* TODO: Unregister "MIBs" proto and clean up field array and subtree array.
-	 * Wireshark does not support that yet. :-( */
-
-	/* smiExit(); */
+	if (oids_init_done) {
+		proto_deregister_protocol("MIBS");
+	}
+	smiExit();
+	oids_init_done = false;
 }
 
 static void restart_needed_warning(void) {
@@ -535,14 +537,15 @@ static void restart_needed_warning(void) {
 		report_failure("Wireshark needs to be restarted for these changes to take effect");
 }
 
-static void register_mibs(void) {
+static void register_mibs(const char* app_env_var_prefix) {
 	SmiModule *smiModule;
 	SmiNode *smiNode;
 	unsigned i;
-	int proto_mibs = -1;
+	int proto_mibs = 0;
 	wmem_array_t* hfa;
 	GArray* etta;
 	char* path_str;
+	int ret;
 
 	if (!load_smi_modules) {
 		ws_info("OID resolution not enabled");
@@ -557,7 +560,7 @@ static void register_mibs(void) {
 	}
 
 	hfa = wmem_array_sized_new(wmem_epan_scope(), sizeof(hf_register_info), 1024); /* oids 631 */
-	etta = g_array_new(false,true,sizeof(int*));
+	etta = g_array_new(FALSE,TRUE,sizeof(int*));
 
 	smiInit("wireshark");
 	smi_init_done = true;
@@ -565,10 +568,16 @@ static void register_mibs(void) {
 	smi_errors = g_string_new("");
 	smiSetErrorHandler(smi_error_handler);
 
-	path_str = oid_get_default_mib_path();
+	path_str = oid_get_default_mib_path(app_env_var_prefix);
 	ws_info("SMI Path: '%s'",path_str);
 
-	smiSetPath(path_str);
+	ret = smiSetPath(path_str);
+	if (ret < 0) {
+		if (!suppress_smi_errors) {
+			report_failure("Failed to set SMI path to '%s'", path_str);
+		}
+		ws_info("Failed to set SMI path to '%s'", path_str);
+	}
 
 	for(i=0;i<num_smi_modules;i++) {
 		if (!smi_modules[i].name) continue;
@@ -596,7 +605,7 @@ static void register_mibs(void) {
 	}
 
 	g_free(path_str);
-	g_string_free(smi_errors,TRUE);
+	g_string_free(smi_errors, TRUE);
 
 	for (smiModule = smiGetFirstModule();
 		 smiModule;
@@ -668,10 +677,10 @@ static void register_mibs(void) {
 				/* HFILL */
 				HFILL_INIT(hf);
 
-				oid_data->value_hfid = -1;
+				oid_data->value_hfid = 0;
 
 				if ( IS_ENUMABLE(hf.hfinfo.type) && (smiEnum = smiGetFirstNamedNumber(smiType))) {
-					GArray* vals = g_array_sized_new(true,true,sizeof(value_string), 16);
+					GArray* vals = g_array_sized_new(TRUE,TRUE,sizeof(value_string), 16);
 
 					for(;smiEnum; smiEnum = smiGetNextNamedNumber(smiEnum)) {
 						if (smiEnum->name) {
@@ -730,7 +739,7 @@ static void register_mibs(void) {
 						hf_register_info hf;
 
 						hf.p_id                     = &(key->hfid);
-						hf.hfinfo.name              = key->name;
+						hf.hfinfo.name              = g_strdup(key->name);
 						hf.hfinfo.abbrev            = alnumerize(key->name);
 						hf.hfinfo.type              = key->ft_type;
 						hf.hfinfo.display           = key->display;
@@ -741,14 +750,16 @@ static void register_mibs(void) {
 						HFILL_INIT(hf);
 
 						wmem_array_append_one(hfa,hf);
-						key->hfid = -1;
+						key->hfid = 0;
 					}
 				}
 			}
 		}
 	}
 
-	proto_mibs = proto_register_protocol("MIBs", "MIBS", "mibs");
+	/* These are allocated on the heap so that proto_deregister_protocol
+	 * can free them. */
+	proto_mibs = proto_register_protocol(g_strdup("MIBs"), g_strdup("MIBS"), g_strdup("mibs"));
 
 	proto_register_field_array(proto_mibs, (hf_register_info*)wmem_array_get_raw(hfa), wmem_array_get_count(hfa));
 	proto_register_subtree_array((int**)(void*)etta->data, etta->len);
@@ -810,7 +821,7 @@ void oid_pref_init(module_t *nameres)
     prefs_register_uat_preference(nameres,
                                   "smi_paths",
                                   "SMI (MIB and PIB) paths",
-                                  "Search paths for SMI (MIB and PIB) modules. You must"
+                                  "Search paths for SMI (MIB and PIB) modules (recursively). You must"
                                   " restart Wireshark for these changes to take effect.",
                                   smi_paths_uat);
 
@@ -858,10 +869,10 @@ void oid_pref_init(module_t *nameres)
 #endif
 }
 
-void oids_init(void) {
+void oids_init(const char* app_env_var_prefix _U_) {
 	prepopulate_oids();
 #ifdef HAVE_LIBSMI
-	register_mibs();
+	register_mibs(app_env_var_prefix);
 #else
 	ws_info("libsmi disabled oid resolution not enabled");
 #endif
@@ -1272,38 +1283,109 @@ void oid_both_from_string(wmem_allocator_t *scope, const char *oid_str, char** r
 	wmem_free(NULL, subids);
 }
 
+#ifdef HAVE_LIBSMI
+// NOLINTNEXTLINE(misc-no-recursion)
+static void oid_add_unique_path(GHashTable* unique_paths, GString* path_str, const char* path)
+{
+	WS_DIR* dir;
+	WS_DIRENT* file;
+	const char* name;
+	char* filename;
+
+	//Sanity check
+	if (!(path && *path))
+		return;
+
+	if ((dir = ws_dir_open(path, 0, NULL)) != NULL) {
+		unsigned file_count = 0;
+		while ((file = ws_dir_read_name(dir)) != NULL) {
+			name = ws_dir_get_name(file);
+
+			filename = ws_strdup_printf("%s%s%s", path, G_DIR_SEPARATOR_S, name);
+
+			if (test_for_directory(filename) == EISDIR) {
+				if (!g_hash_table_contains(unique_paths, filename))
+					oid_add_unique_path(unique_paths, path_str, filename);
+			}
+			else {
+				if (file_count == 0) {
+					//There's at least one file in this directory, presume it's a MIB file and add it to the unique paths.
+					if (g_hash_table_add(unique_paths, g_strdup(path)))
+						g_string_append_printf(path_str, G_SEARCHPATH_SEPARATOR_S "%s", path);
+				}
+				file_count++;
+			}
+			g_free(filename);
+
+		}
+		ws_dir_close(dir);
+	}
+}
+
+//Done for more glib-friendly datatypes.
+static guint
+files_hash(gconstpointer key)
+{
+	return (guint)files_identical_hash((const void *)key);
+}
+
+static gboolean
+files_identical_equal(const void* fname1, const void* fname2)
+{
+	return files_identical((const char*)fname1, (const char*)fname2) ? TRUE : FALSE;
+}
+#endif
+
 /**
  * Fetch the default OID path.
  */
-extern char *
-oid_get_default_mib_path(void) {
+char *
+oid_get_default_mib_path(const char* app_env_var_prefix _U_) {
 #ifdef HAVE_LIBSMI
-	GString* path_str;
+	GString* path_str = g_string_new("");
 	char *path;
 	unsigned i;
-
-	path_str = g_string_new("");
 
 	if (!load_smi_modules) {
 		ws_info("OID resolution not enabled");
 		return g_string_free(path_str, FALSE);
 	}
-#ifdef _WIN32
-	path = get_datafile_path("snmp\\mibs");
-	g_string_append_printf(path_str, "%s;", path);
-	g_free (path);
 
-	path = get_persconffile_path("snmp\\mibs", false);
-	g_string_append_printf(path_str, "%s", path);
-	g_free (path);
+	//To limit the size of the MIB path, we use a hash table to store the unique paths.
+	GHashTable* unique_paths = g_hash_table_new_full(files_hash, files_identical_equal, NULL, g_free);
+
+#ifdef _WIN32
+	/* XXX - This is appropriate for MSYS2 installed via package,
+	 * but an MSYS2 install into the POSIX runtime should probably
+	 * use the other path (NB: check the search path separator.) */
+	path = get_datafile_path("snmp\\mibs", app_env_var_prefix);
+	oid_add_unique_path(unique_paths, path_str, path);
+
+	path = get_persconffile_path("snmp\\mibs", false, app_env_var_prefix);
+	oid_add_unique_path(unique_paths, path_str, path);
 #else
+	// This directory is usually flat on UN*X systems, and we haven't
+	// recursively descended into it before. We could start.
+	g_hash_table_add(unique_paths, g_strdup("/usr/share/snmp/mibs"));
 	g_string_append(path_str, "/usr/share/snmp/mibs");
+
 	if (!smi_init_done)
 		smiInit("wireshark");
 	path = smiGetPath();
 	if (strlen(path) > 0 ) {
-		g_string_append(path_str, G_SEARCHPATH_SEPARATOR_S);
-		g_string_append_printf(path_str, "%s", path);
+		// Conversely to above, libsmi is generally compiled with the
+		// entire directory structure so we don't need to recurse here
+		// or check that there actually are files in each directory.
+		// We do want to split them for adding to the unique hash table.
+		// 20 is arbitrary here to have a limit; 12 is the number that
+		// libsmi seems to be compiled with currently.
+		char **paths = g_strsplit(path, G_SEARCHPATH_SEPARATOR_S, 20);
+		for (i = 0; paths[i]; i++) {
+			//oid_add_unique_path(unique_paths, path_str, paths[i]);
+			if (g_hash_table_add(unique_paths, g_strdup(path)))
+				g_string_append_printf(path_str, G_SEARCHPATH_SEPARATOR_S "%s", path);
+		}
+		g_strfreev(paths);
 	}
 	smi_free(path);
 
@@ -1314,14 +1396,17 @@ oid_get_default_mib_path(void) {
 			if (!(smi_paths[i].name && *smi_paths[i].name))
 				continue;
 
-			g_string_append_printf(path_str, G_SEARCHPATH_SEPARATOR_S "%s", smi_paths[i].name);
+			oid_add_unique_path(unique_paths, path_str, smi_paths[i].name);
 		}
 #ifndef _WIN32
 	}
 #endif
+
+	g_hash_table_destroy(unique_paths);
+
 	return g_string_free(path_str, FALSE);
 #else /* HAVE_LIBSMI */
-        return g_strdup("");
+	return g_strdup("");
 #endif
 }
 

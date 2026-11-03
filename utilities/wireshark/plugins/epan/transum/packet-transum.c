@@ -19,7 +19,6 @@
 #include <epan/proto.h>
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include <epan/ws_printf.h>
 #include "packet-transum.h"
 #include "preferences.h"
 #include "extractors.h"
@@ -127,7 +126,7 @@ static wmem_list_t *temp_rsp_rrpd_list;  /* Reuse these for speed and efficient 
 /* Optimisation data - the following is used for various optimisation measures */
 static int highest_tcp_stream_no;
 static int highest_udp_stream_no;
-wmem_map_t *tcp_stream_exceptions;
+static wmem_map_t *tcp_stream_exceptions;
 
 
 static int ett_transum;

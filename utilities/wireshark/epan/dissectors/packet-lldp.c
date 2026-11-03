@@ -32,12 +32,12 @@
 
 #include <epan/packet.h>
 #include <epan/etypes.h>
-#include <epan/afn.h>
 #include <epan/addr_resolv.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/array.h>
 #include <epan/oui.h>
@@ -1820,7 +1820,7 @@ dissect_lldp_chassis_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uin
 
 		/* Check for IPv4 or IPv6 */
 		switch(addr_family){
-		case AFNUM_INET:
+		case AFNUM_IP:
 			if (dataLen == 6){
 				strPtr = tvb_ip_to_str(pinfo->pool, tvb, offset);
 			}else{
@@ -1832,7 +1832,7 @@ dissect_lldp_chassis_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uin
 			proto_tree_add_item(chassis_tree, hf_chassis_id_ip4, tvb, offset, 4, ENC_BIG_ENDIAN);
 
 			break;
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			if  (dataLen == 18){
 				strPtr = tvb_ip6_to_str(pinfo->pool, tvb, offset);
 			}else{
@@ -1993,7 +1993,7 @@ dissect_lldp_port_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32
 
 		/* Check for IPv4 or IPv6 */
 		switch(addr_family){
-		case AFNUM_INET:
+		case AFNUM_IP:
 			if (dataLen == 6){
 				strPtr = tvb_ip_to_str(pinfo->pool, tvb, offset);
 			}else{
@@ -2005,7 +2005,7 @@ dissect_lldp_port_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32
 			proto_tree_add_item(port_tree, hf_port_id_ip4, tvb, offset, 4, ENC_BIG_ENDIAN);
 
 			break;
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			if  (dataLen == 18){
 				strPtr = tvb_ip6_to_str(pinfo->pool, tvb, offset);
 			}else{
@@ -2634,7 +2634,7 @@ dissect_ieee_802_1_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 	uint8_t subType;
 	uint32_t offset = 0;
 	uint8_t tempByte;
-	uint16_t dcbApp, appCount;
+	uint16_t dcbApp;
 
 	proto_tree	*vlan_flags_tree = NULL;
 	proto_tree	*mac_phy_flags = NULL;
@@ -2992,9 +2992,7 @@ dissect_ieee_802_1_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 
 		offset++;
 
-		appCount = tvb_reported_length_remaining(tvb, offset)/3;
-
-		while(appCount--) {
+		while(tvb_reported_length_remaining(tvb, offset) >= 3) {
 			dcbApp = tvb_get_ntohs(tvb, offset + 1);
 
 			apptlv_tree = proto_tree_add_subtree_format(tree, tvb, offset, 3,
@@ -3465,7 +3463,7 @@ dissect_ieee_802_3_tlv(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 	}
 
 	if(tvb_reported_length_remaining(tvb, offset)) {
-		proto_tree_add_expert(tree, pinfo, &ei_lldp_bad_length_excess, tvb, offset, -1);
+		proto_tree_add_expert_remaining(tree, pinfo, &ei_lldp_bad_length_excess, tvb, offset);
 	}
 	return offset;
 }

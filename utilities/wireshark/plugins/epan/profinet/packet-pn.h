@@ -30,186 +30,564 @@ extern int proto_pn_io_time_aware_status;
 
 extern bool pnio_ps_selection;  /* given by pnio preferences */
 
-/* Structure for general station information */
+/**
+ * @brief Holds all dissection state for a single PROFINET IO station, spanning identity, frame layout, GSD metadata, and object lists.
+ */
 typedef struct tagStationInfo {
     /* general information */
-    char     *typeofstation;
-    char     *nameofstation;
-    uint16_t  u16Vendor_id;
-    uint16_t  u16Device_id;
+    char     *typeofstation;        /**< Human-readable string describing the station type (e.g. "IO-Device"). */
+    char     *nameofstation;        /**< Station name as configured in the network, used for identification. */
+    uint16_t  u16Vendor_id;         /**< PROFINET vendor ID assigned by the PNO to the device manufacturer. */
+    uint16_t  u16Device_id;         /**< Vendor-assigned device ID identifying the specific product model. */
+
     /* frame structure */
-    uint16_t  ioDataObjectNr_in;
-    uint16_t  ioDataObjectNr_out;
-    uint16_t  iocsNr_in;
-    uint16_t  iocsNr_out;
-    /* GSDfile station information */
-    bool      gsdFound;
-    bool      gsdPathLength;
-    char     *gsdLocation;
+    uint16_t  ioDataObjectNr_in;    /**< Number of incoming IO data objects carried in the cyclic data frame. */
+    uint16_t  ioDataObjectNr_out;   /**< Number of outgoing IO data objects carried in the cyclic data frame. */
+    uint16_t  iocsNr_in;            /**< Number of incoming IOCS (IO Consumer Status) objects in the cyclic data frame. */
+    uint16_t  iocsNr_out;           /**< Number of outgoing IOCS objects in the cyclic data frame. */
+
+    /* GSD file station information */
+    bool      gsdFound;             /**< True if a matching GSD/GSDML file was located for this station. */
+    bool      gsdPathLength;        /**< True if the GSD file path length is within the permitted bounds. */
+    char     *gsdLocation;          /**< File system path or URI to the GSD/GSDML file for this station. */
+
     /* IOCS object data */
-    wmem_list_t *iocs_data_in;
-    wmem_list_t *iocs_data_out;
+    wmem_list_t *iocs_data_in;      /**< List of incoming iocsObject entries describing consumer status slots in the frame. */
+    wmem_list_t *iocs_data_out;     /**< List of outgoing iocsObject entries describing consumer status slots in the frame. */
+
     /* IOData object data */
-    wmem_list_t *ioobject_data_in;
-    wmem_list_t *ioobject_data_out;
+    wmem_list_t *ioobject_data_in;  /**< List of incoming ioDataObject entries describing IO data slots in the frame. */
+    wmem_list_t *ioobject_data_out; /**< List of outgoing ioDataObject entries describing IO data slots in the frame. */
+
     /* Different ModuleIdentnumber */
-    wmem_list_t *diff_module;
+    wmem_list_t *diff_module;       /**< List of moduleDiffInfo entries for modules whose ident number differs from the expected value. */
+
     /* Flag for the extraction of PNIO Objects without AR */
-    bool filled_with_objects;
+    bool filled_with_objects;       /**< True if this station's object lists have been populated from frames that arrived without an established AR. */
 } stationInfo;
 
+/**
+ * @brief Carries the link-layer addressing context needed to correlate APDU status frames in a redundant PROFINET topology.
+ */
 typedef struct tagApduStatusSwitch
 {
-    bool isRedundancyActive;
-    address dl_dst;
-    address dl_src;
-}apduStatusSwitch;
+    bool    isRedundancyActive; /**< True if PROFINET system redundancy is currently active for this station. */
+    address dl_dst;             /**< Data-link destination address of the APDU status frame. */
+    address dl_src;             /**< Data-link source address of the APDU status frame. */
+} apduStatusSwitch;
 
-/* Structure for IOCS Frames */
+/**
+ * @brief Describes a single IOCS (IO Consumer Status) object entry within a cyclic PROFINET frame.
+ */
 typedef struct tagIocsObject {
-    uint16_t   slotNr;
-    uint16_t   subSlotNr;
-    uint16_t   frameOffset;
+    uint16_t slotNr;      /**< Slot number of the module to which this IOCS entry belongs. */
+    uint16_t subSlotNr;   /**< Subslot number within the slot to which this IOCS entry belongs. */
+    uint16_t frameOffset; /**< Byte offset of this IOCS entry within the cyclic data frame. */
 } iocsObject;
 
-/* Structure for IO Data Objects  */
+/**
+ * @brief Describes a single IO data object within a cyclic PROFINET frame, including PROFIsafe parameters and dissection state.
+ */
 typedef struct tagIoDataObject {
-    uint16_t    slotNr;
-    uint16_t    subSlotNr;
-    uint32_t    api;
-    uint32_t    moduleIdentNr;
-    uint32_t    subModuleIdentNr;
-    uint16_t    frameOffset;
-    uint16_t    length;
-    uint16_t    amountInGSDML;
-    uint32_t    fParameterIndexNr;
-    uint16_t    f_par_crc1;
-    uint16_t    f_src_adr;
-    uint16_t    f_dest_adr;
-    bool        f_crc_seed;
-    uint8_t     f_crc_len;
-    address     srcAddr;
-    address     dstAddr;
-    bool        profisafeSupported;
-    bool        discardIOXS;
-    char       *moduleNameStr;
-    tvbuff_t   *tvb_slot;
-    tvbuff_t   *tvb_subslot;
-    /* Status- or Controlbyte data*/
-    uint8_t    last_sb_cb;
-    uint8_t    lastToggleBit;
+    uint16_t  slotNr;              /**< Slot number of the module that owns this IO data object. */
+    uint16_t  subSlotNr;           /**< Subslot number within the slot that owns this IO data object. */
+    uint32_t  api;                 /**< Application Process Identifier scoping the module and submodule ident numbers. */
+    uint32_t  moduleIdentNr;       /**< Module ident number as declared in the GSD/GSDML file. */
+    uint32_t  subModuleIdentNr;    /**< Submodule ident number as declared in the GSD/GSDML file. */
+    uint16_t  frameOffset;         /**< Byte offset of this IO data object within the cyclic data frame. */
+    uint16_t  length;              /**< Length in bytes of the IO data payload for this object. */
+    uint16_t  amountInGSDML;       /**< Number of times this submodule appears in the GSDML, used for validation. */
+    uint32_t  fParameterIndexNr;   /**< F-Parameter index number used to locate PROFIsafe parameters for this object. */
+    uint16_t  f_par_crc1;          /**< PROFIsafe F-Parameter CRC1 integrity check value. */
+    uint16_t  f_src_adr;           /**< PROFIsafe source F-Address assigned to the safety controller. */
+    uint16_t  f_dest_adr;          /**< PROFIsafe destination F-Address assigned to this safety device. */
+    bool      f_crc_seed;          /**< PROFIsafe CRC seed selection flag; false selects seed 0, true selects seed 1. */
+    uint8_t   f_crc_len;           /**< Length in bytes of the PROFIsafe CRC appended to the safety data. */
+    address   srcAddr;             /**< Network source address of the device supplying this IO data object. */
+    address   dstAddr;             /**< Network destination address of the consumer of this IO data object. */
+    bool      profisafeSupported;  /**< True if this submodule has been identified as PROFIsafe-capable. */
+    bool      discardIOXS;         /**< True if the IOXS (IO provider/consumer status) byte should be suppressed during dissection. */
+    char     *moduleNameStr;       /**< Human-readable module name string sourced from the GSD/GSDML file. */
+    tvbuff_t *tvb_slot;            /**< Tvbuff spanning the slot portion of the frame data, used for sub-dissection. */
+    tvbuff_t *tvb_subslot;         /**< Tvbuff spanning the subslot portion of the frame data, used for sub-dissection. */
+
+    /* Status- or Controlbyte data */
+    uint8_t   last_sb_cb;          /**< Most recently observed status or control byte value for this object, used for change detection. */
+    uint8_t   lastToggleBit;       /**< Last seen PROFIsafe toggle bit, used to detect retransmissions and sequence errors. */
 } ioDataObject;
 
-/* Structure for Modules with different ModuleIdentnumber */
+/**
+ * @brief Records a module whose actual ModuleIdentNumber differs from the value expected by the IO controller.
+ */
 typedef struct tagModuleDiffInfo {
-    uint16_t   slotNr;
-    uint32_t   modulID;
+    uint16_t slotNr;  /**< Slot number of the module reporting a differing ident number. */
+    uint32_t modulID; /**< Actual ModuleIdentNumber reported by the device in the slot. */
 } moduleDiffInfo;
 
+/**
+ * @brief Associates an AR UUID with the frame numbers of its setup, release, and cyclic data frames.
+ */
 typedef struct tagARUUIDFrame {
-    e_guid_t aruuid;
-    uint32_t setupframe;
-    uint32_t releaseframe;
-    uint16_t outputframe;
-    uint16_t inputframe;
+    e_guid_t aruuid;        /**< Application Relation UUID uniquely identifying this AR within the PROFINET network. */
+    uint32_t setupframe;    /**< Wireshark frame number of the AR establishment (Connect) frame. */
+    uint32_t releaseframe;  /**< Wireshark frame number of the AR release frame; 0 if the AR has not yet been released. */
+    uint16_t outputframe;   /**< Wireshark frame number of the first outgoing cyclic data frame for this AR. */
+    uint16_t inputframe;    /**< Wireshark frame number of the first incoming cyclic data frame for this AR. */
 } ARUUIDFrame;
 
-extern wmem_list_t *aruuid_frame_setup_list;
+extern wmem_list_t *aruuid_frame_setup_list; /**< Global list of ARUUIDFrame entries tracking all observed AR lifecycles across the capture. */
 
+/**
+ * @brief Initialize PROFINET protocol dissector.
+ *
+ * @param proto Protocol identifier.
+ */
 extern void init_pn(int proto);
+
+/**
+ * @brief Initialize PN-IO RTC1 protocol dissector.
+ *
+ * @param proto Protocol identifier.
+ */
 extern void init_pn_io_rtc1(int proto);
+
+/**
+ * @brief Initialize PN-RSI protocol.
+ *
+ * @param proto Protocol identifier.
+ */
 extern void init_pn_rsi(int proto);
+
+/**
+ * @brief Initialize the RSI reassembly functionality.
+ */
 extern void pn_rsi_reassemble_init(void);
 
+/**
+ * @brief Initialize the PNIO RTC1 station information structure.
+ *
+ * @param station_info Pointer to the stationInfo structure to be initialized.
+ */
 extern void init_pnio_rtc1_station(stationInfo *station_info);
 
-extern int dissect_pn_uint8(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a 8-bit unsigned integer from the packet buffer.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The current offset within the buffer to start dissecting.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param hfindex Field ID index for the new field.
+ * @param pdata Pointer to store the dissected value.
+ * @return The updated offset after dissecting the 8-bit unsigned integer.
+ */
+extern unsigned dissect_pn_uint8(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                   proto_tree *tree, int hfindex, uint8_t *pdata);
 
-extern int dissect_pn_uint16_ret_item(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+/**
+ * @brief Dissects a 16-bit unsigned integer from the packet buffer and adds it as a proto item.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The current offset within the buffer to start dissecting.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param hfindex Field ID index for the new field.
+ * @param pdata Pointer to store the dissected 16-bit unsigned integer value.
+ * @param new_item Pointer to store the created proto item for the dissected field.
+ * @return The updated offset after dissecting the 16-bit unsigned integer.
+ */
+extern unsigned dissect_pn_uint16_ret_item(tvbuff_t *tvb, unsigned offset, packet_info *pinfo _U_,
                        proto_tree *tree, int hfindex, uint16_t *pdata, proto_item ** new_item);
-extern int dissect_pn_uint16(tvbuff_t *tvb, int offset, packet_info *pinfo,
+
+/**
+ * @brief Dissects a 16-bit unsigned integer from the packet buffer.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The starting offset within the buffer to begin dissection.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying dissected data.
+ * @param hfindex Field ID index for the new field.
+ * @param pdata Pointer to store the dissected 16-bit unsigned integer value.
+ * @return The number of bytes consumed during dissection.
+ */
+extern unsigned dissect_pn_uint16(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                        proto_tree *tree, int hfindex, uint16_t *pdata);
 
-extern int dissect_pn_int16(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a 16-bit integer from the packet buffer.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The current offset within the buffer to start dissection.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying dissected data.
+ * @param hfindex Field ID index for the new field.
+ * @param pdata Pointer to store the dissected 16-bit integer value.
+ * @return The number of bytes consumed during dissection.
+ */
+extern unsigned dissect_pn_int16(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                        proto_tree *tree, int hfindex, int16_t *pdata);
 
-extern int dissect_pn_oid(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a PROFIBUS-DP OID (Object Identifier).
+ *
+ * @param tvb The TVB buffer containing the data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection.
+ * @param hfindex Field ID index for the OID field.
+ * @param pdata Pointer to store the parsed OID data.
+ * @return The new offset after dissecting the OID.
+ */
+extern unsigned dissect_pn_oid(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, int hfindex, uint32_t *pdata);
 
-extern int dissect_pn_mac(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a PROFIBUS-DP MAC frame.
+ *
+ * @param tvb The TVB buffer containing the data to dissect.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param hfindex Index of the field to be used for display in the protocol tree.
+ * @param pdata Pointer to a data buffer where additional data can be stored.
+ * @return The new offset after dissecting the MAC frame.
+ */
+extern unsigned dissect_pn_mac(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, int hfindex, uint8_t *pdata);
 
-extern int dissect_pn_ipv4(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a PROFINET IPv4 packet.
+ *
+ * @param tvb The TVB containing the data to dissect.
+ * @param offset The current offset within the TVB.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection.
+ * @param hfindex Field index for the protocol field.
+ * @param pdata Pointer to store additional data.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_pn_ipv4(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, int hfindex, uint32_t *pdata);
 
-extern int dissect_pn_uuid(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a UUID from the packet buffer.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The starting offset within the buffer to begin dissection.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for adding dissected items.
+ * @param hfindex Field identifier for the UUID.
+ * @param uuid Pointer to store the dissected UUID.
+ * @return The number of bytes consumed during dissection.
+ */
+extern unsigned dissect_pn_uuid(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, int hfindex, e_guid_t *uuid);
 
-extern int dissect_pn_undecoded(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief "dissect" some undecoded bytes (with Expert warning)
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The current offset within the buffer to start dissecting.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param length Length of the data to be dissected in bytes.
+ * @return The new offset after dissecting the undecoded bytes.
+ */
+extern unsigned dissect_pn_undecoded(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, uint32_t length);
 
-extern int dissect_pn_user_data(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+/**
+ * @brief Dissects PN user data.
+ *
+ * @param tvb The TVB containing the packet data.
+ * @param offset The current offset within the TVB.
+ * @param pinfo Packet information (not used).
+ * @param tree Protocol tree to add items to.
+ * @param length Length of the data to dissect.
+ * @param text Text associated with the data.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_pn_user_data(tvbuff_t *tvb, unsigned offset, packet_info *pinfo _U_,
                     proto_tree *tree, uint32_t length, const char *text);
 
-extern int dissect_pn_pa_profile_data(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+/**
+ * @brief Dissects PA Profile data within a packet.
+ *
+ * This function processes the PA Profile data, which includes an 8-bit status and either a float, an 8-bit integer, or a 16-bit integer.
+ *
+ * @param tvb The TVB buffer containing the packet data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information (not used).
+ * @param tree Protocol tree to add items to.
+ * @param length Length of the PA Profile data.
+ * @param text Text associated with the PA Profile data (not used).
+ * @return Updated offset after processing the PA Profile data.
+ */
+extern unsigned dissect_pn_pa_profile_data(tvbuff_t *tvb, unsigned offset, packet_info *pinfo _U_,
                     proto_tree *tree, uint32_t length, const char *text);
 
-extern int dissect_blocks(tvbuff_t *tvb, int offset,
+/**
+ * @brief Dissects PN-IO blocks in a TVB buffer.
+ *
+ * @param tvb The TVB buffer containing the data to be dissected.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying dissection results.
+ * @param drep Data representation (byte order).
+ * @return The updated offset after dissecting all blocks.
+ */
+extern unsigned dissect_blocks(tvbuff_t *tvb, unsigned offset,
                     packet_info *pinfo, proto_tree *tree, uint8_t *drep);
 
 #define PDU_TYPE_REQ 0x05
 #define PDU_TYPE_RSP 0x06
 
-extern int dissect_rsi_blocks(tvbuff_t* tvb, int offset, packet_info* pinfo, proto_tree* tree, uint8_t* drep, uint32_t u32FOpnumOffsetOpnum, int type);
+/**
+ * @brief Dissects a PN-RSI blocks.
+ *
+ * @param tvb The TVB buffer containing the data to dissect.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param drep Data representation.
+ * @param u32FOpnumOffsetOpnum Offset of operation number.
+ * @param type Type of data to dissect.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_rsi_blocks(tvbuff_t* tvb, unsigned offset, packet_info* pinfo, proto_tree* tree, uint8_t* drep, uint32_t u32FOpnumOffsetOpnum, int type);
 
 #define SUBST_DATA  1
 #define FRAG_DATA   2
 
-extern int dissect_pn_user_data_bytes(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+/**
+ * @brief Dissects user data bytes in a PROFNET packet.
+ *
+ * @param tvb The TVB containing the packet data.
+ * @param offset The current offset within the TVB.
+ * @param pinfo Packet information (not used).
+ * @param tree Protocol tree to add items to.
+ * @param length Length of the data to dissect.
+ * @param iSelect Selection flag indicating the type of data.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_pn_user_data_bytes(tvbuff_t *tvb, unsigned offset, packet_info *pinfo _U_,
                     proto_tree *tree, uint32_t length, int iSelect);
 
-extern int dissect_pn_malformed(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a malformed PROFINET packet.
+ *
+ * @param tvb The TVB buffer containing the packet data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection results.
+ * @param length Length of the malformed data.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_pn_malformed(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, uint32_t length);
 
-extern int dissect_pn_padding(tvbuff_t *tvb, int offset, packet_info *pinfo,
-                    proto_tree *tree, int length);
+/**
+ * @brief Dissects PROFIBUS-DP padding.
+ *
+ * @param tvb The input buffer containing the packet data.
+ * @param offset The current offset within the buffer to start dissection.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying dissected data.
+ * @param length Length of the padding.
+ * @return The number of bytes consumed during dissection.
+ */
+extern unsigned dissect_pn_padding(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
+                    proto_tree *tree, unsigned length);
 
-extern int dissect_pn_align4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+/**
+ * @brief Aligns the offset to a 4-byte boundary.
+ *
+ * @param tvb The TVB buffer containing the data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection.
+ * @return The new offset after alignment.
+ */
+extern unsigned dissect_pn_align4(tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree *tree);
 
-extern int dissect_PNIO_status(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects the PNIO status information.
+ *
+ * @param tvb The TVB buffer containing the data to dissect.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for adding dissected items.
+ * @param drep Data representation (endianness).
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_PNIO_status(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, uint8_t *drep);
 
-extern int dissect_PNIO_C_SDU_RTC1(tvbuff_t* tvb, int offset, packet_info* pinfo,
+ /**
+  * @brief Dissects a PNIO C SDU RTC1 packet.
+  *
+  * @param tvb The TVB buffer containing the packet data.
+  * @param offset The current offset within the TVB buffer.
+  * @param pinfo Packet information structure.
+  * @param tree Protocol tree to add dissected items to.
+  * @param drep Data representation (not used).
+  * @param frameid Frame identifier.
+  * @return The new offset after dissection.
+  */
+
+extern unsigned dissect_PNIO_C_SDU_RTC1(tvbuff_t* tvb, unsigned offset, packet_info* pinfo,
                     proto_tree* tree, uint8_t* drep _U_, uint16_t frameid);
 
-extern int dissect_PNIO_RTC1_with_security(tvbuff_t* tvb, int offset, packet_info* pinfo,
+ /**
+  * @brief Dissects a PN-IO RTC1 frame with security.
+  *
+  * @param tvb The TVB buffer containing the packet data.
+  * @param offset The current offset within the TVB buffer.
+  * @param pinfo Packet information structure.
+  * @param tree Protocol tree to add dissected items to.
+  * @param drep Data representation (not used).
+  * @param frameid Frame identifier.
+  * @return The new offset after dissection.
+  */
+
+extern unsigned dissect_PNIO_RTC1_with_security(tvbuff_t* tvb, unsigned offset, packet_info* pinfo,
                     proto_tree* tree, uint8_t* drep _U_, uint16_t frameid);
 
-extern int dissect_RTC3_with_security(tvbuff_t* tvb, int offset, packet_info* pinfo,
+/**
+ * @brief Dissects a RTC3 packet with security information.
+ *
+ * @param tvb The tvbuff_t containing the packet data.
+ * @param offset The current offset within the tvbuff_t.
+ * @param pinfo The packet_info structure for the packet.
+ * @param tree The protocol tree to add items to.
+ * @param drep The data representation (not used).
+ * @param data Additional data (not used).
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_RTC3_with_security(tvbuff_t* tvb, unsigned offset, packet_info* pinfo,
                     proto_tree* tree, uint8_t* drep _U_, void* data);
 
-extern int dissect_PNIO_RSI(tvbuff_t *tvb, int offset, packet_info *pinfo,
+/**
+ * @brief Dissects a PROFINET IO RSI (Remote Service Invocation) packet.
+ *
+ * @param tvb The TVB containing the data to dissect.
+ * @param offset The current offset within the TVB.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for adding protocol items.
+ * @param drep Data representation.
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_PNIO_RSI(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                     proto_tree *tree, uint8_t *drep);
 
-extern int dissect_PNIO_RSI_with_security(tvbuff_t* tvb, int offset, packet_info* pinfo,
+/**
+ * @brief Dissects a PNIO RSI with security.
+ *
+ * @param tvb The TVB buffer containing the data to dissect.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying the dissection.
+ * @param drep Data representation (endianness).
+ * @return The new offset after dissection.
+ */
+extern unsigned dissect_PNIO_RSI_with_security(tvbuff_t* tvb, unsigned offset, packet_info* pinfo,
                     proto_tree* tree, uint8_t* drep);
 
-extern int dissect_SecurityMetaData_block(tvbuff_t* tvb, int offset,
+/**
+ * @brief Dissects a Security MetaData block in a PN-RT protocol.
+ *
+ * @param tvb The TVB buffer containing the packet data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param item Parent proto_item for this subtree.
+ * @param tree Protocol tree to add items to.
+ * @param drep Data representation (endianness).
+ * @return The new offset after dissecting the block.
+ */
+extern unsigned dissect_SecurityMetaData_block(tvbuff_t* tvb, unsigned offset,
                     packet_info* pinfo, proto_item* item, proto_tree* tree, uint8_t* drep);
 
-extern int dissect_SecurityChecksum(tvbuff_t* tvb, int offset, proto_tree* tree);
+/**
+ * @brief Dissects the SecurityChecksum field in a PROFIBUS-DP packet.
+ *
+ * @param tvb The TVB buffer containing the packet data.
+ * @param offset The current offset within the TVB buffer.
+ * @param tree The protocol tree to add items to.
+ * @return The updated offset after dissecting the SecurityChecksum.
+ */
+extern unsigned dissect_SecurityChecksum(tvbuff_t* tvb, unsigned offset, proto_tree* tree);
 
 
-extern int dissect_PDRsiInstances_block(tvbuff_t *tvb, int offset,
+/**
+ * @brief Dissects a PN-IO RSI Instances block.
+ *
+ * @param tvb The TVB buffer containing the packet data.
+ * @param offset The current offset within the TVB buffer.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree for displaying dissected data.
+ * @param item Unused parameter.
+ * @param drep Data representation (endianness).
+ * @param u8BlockVersionHigh High byte of block version.
+ * @param u8BlockVersionLow Low byte of block version.
+ * @return The updated offset after dissection.
+ */
+extern unsigned dissect_PDRsiInstances_block(tvbuff_t *tvb, unsigned offset,
                     packet_info *pinfo, proto_tree *tree, proto_item *item _U_, uint8_t *drep, uint8_t u8BlockVersionHigh, uint8_t u8BlockVersionLow);
 
+/**
+ * @brief Appends information to packet info and protocol item.
+ *
+ * @param pinfo Pointer to packet_info structure.
+ * @param dcp_item Pointer to protocol_item structure.
+ * @param text Information text to append.
+ */
 extern void pn_append_info(packet_info *pinfo, proto_item *dcp_item, const char *text);
 
+/**
+ * @brief Initialize and append an ARUUID frame setup list.
+ *
+ * @param aruuid The ARUUID to be added.
+ * @param setup The setup value for the ARUUID frame.
+ */
 extern void pn_init_append_aruuid_frame_setup_list(e_guid_t aruuid, uint32_t setup);
 
+/**
+ * @brief Finds the ARUUIDFrame setup frame for a given packet.
+ *
+ * @param pinfo The packet information structure.
+ * @return ARUUIDFrame* Pointer to the found ARUUIDFrame, or NULL if not found.
+ */
 extern ARUUIDFrame* pn_find_aruuid_frame_setup(packet_info* pinfo);
 
+/**
+ * @brief Finds and updates DCP station information based on conversation data.
+ *
+ * Searches for DCP Station Info in the given conversation and updates the provided station_info structure accordingly.
+ *
+ * @param station_info Pointer to the stationInfo structure to be updated.
+ * @param conversation Pointer to the conversation_t structure containing DCP station info.
+ */
 extern void pn_find_dcp_station_info(stationInfo* station_info, conversation_t* conversation);
 
+/**
+ * @brief Heuristic dissector for CSF SDU packets.
+ *
+ * This function attempts to dissect a CSF SDU packet based on its header information.
+ *
+ * @param tvb The TVB containing the packet data.
+ * @param pinfo Packet information structure.
+ * @param tree Protocol tree to add items to.
+ * @param data Pointer to additional data, expected to be a pointer to a uint16_t FrameID.
+ * @return True if the packet is dissected, false otherwise.
+ */
 extern bool dissect_CSF_SDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
+
+/**
+ * @brief Check if the Security MetaData in a PN-RT packet is valid.
+ *
+ * @param tvb The TVB containing the packet data.
+ * @param security_meta_data_offset The offset where the Security MetaData starts in the TVB.
+ * @param expected_security_data_length The expected length of the Security MetaData.
+ * @return True if the packet has valid security metadata, false otherwise.
+ */
+extern bool pn_is_valid_security_metadata(tvbuff_t *tvb, unsigned security_meta_data_offset, int expected_security_data_length);

@@ -64,9 +64,6 @@ void proto_reg_handoff_gsm_sms(void);
         return; \
     }
 
-static const char *gsm_sms_proto_name = "GSM SMS TPDU (GSM 03.40)";
-static const char *gsm_sms_proto_name_short = "GSM SMS";
-
 /* Initialize the subtree pointers */
 static int ett_gsm_sms;
 static int ett_pid;
@@ -665,7 +662,7 @@ dis_field_addr(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, uint32_t *of
                                                  (addrlength > MAX_ADDR_SIZE) ? MAX_ADDR_SIZE : addrlength);
         break;
     default:
-        addrstr = tvb_get_string_enc(pinfo->pool, tvb, offset, numdigocts, ENC_KEYPAD_ABC_TBCD|ENC_LITTLE_ENDIAN);
+        addrstr = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, numdigocts, ENC_KEYPAD_ABC_TBCD|ENC_LITTLE_ENDIAN);
         break;
     }
 
@@ -2541,8 +2538,8 @@ dis_msg_deliver_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2556,8 +2553,8 @@ dis_msg_deliver_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2571,8 +2568,8 @@ dis_msg_deliver_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2712,8 +2709,8 @@ dis_msg_submit_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
 
     if (pi & 0x01) {
         if (length <= (offset - saved_offset)) {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2727,8 +2724,8 @@ dis_msg_submit_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2742,8 +2739,8 @@ dis_msg_submit_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2827,8 +2824,8 @@ dis_msg_status_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2841,8 +2838,8 @@ dis_msg_status_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2855,8 +2852,8 @@ dis_msg_status_report(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint3
     {
         if (length <= (offset - saved_offset))
         {
-            proto_tree_add_expert(tree, pinfo, &ei_gsm_sms_short_data,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_gsm_sms_short_data,
+                tvb, offset);
             return;
         }
 
@@ -2927,7 +2924,7 @@ dis_msg_command(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32_
 static int ett_msgs[NUM_MSGS];
 #endif
 
-static void (*gsm_sms_msg_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, gsm_sms_data_t *data) = {
+static void (* const gsm_sms_msg_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, gsm_sms_data_t *data) = {
     dis_msg_deliver,        /* SMS-DELIVER */
     dis_msg_deliver_report, /* SMS-DELIVER REPORT */
     dis_msg_submit,         /* SMS-SUBMIT */
@@ -2954,7 +2951,7 @@ dissect_gsm_sms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     /*int          ett_msg_idx;*/
     gsm_sms_data_t *gsm_data = (gsm_sms_data_t*) data;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, gsm_sms_proto_name_short);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "GSM SMS");
 
     /* In the interest of speed, if "tree" is NULL, don't do any work not
      * necessary to generate protocol tree items.
@@ -2985,8 +2982,7 @@ dissect_gsm_sms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
          */
         gsm_sms_item =
             proto_tree_add_protocol_format(tree, proto_gsm_sms, tvb, 0, -1,
-                "%s %s",
-                gsm_sms_proto_name,
+                "GSM SMS TPDU (GSM 03.40) %s",
                 (str == NULL) ? "Unknown message identifier" : str);
 
         gsm_sms_tree =
@@ -3006,8 +3002,8 @@ dissect_gsm_sms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
         if (msg_fcn == NULL)
         {
-            proto_tree_add_expert(gsm_sms_tree, pinfo, &ei_gsm_sms_message_dissector_not_implemented,
-                tvb, offset, -1);
+            proto_tree_add_expert_remaining(gsm_sms_tree, pinfo, &ei_gsm_sms_message_dissector_not_implemented,
+                tvb, offset);
         }
         else
         {
@@ -3773,7 +3769,7 @@ proto_register_gsm_sms(void)
 
     /* Register the protocol name and description */
 
-    proto_gsm_sms = proto_register_protocol(gsm_sms_proto_name, gsm_sms_proto_name_short, "gsm_sms");
+    proto_gsm_sms = proto_register_protocol("GSM SMS TPDU (GSM 03.40)", "GSM SMS", "gsm_sms");
 
     proto_register_field_array(proto_gsm_sms, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));

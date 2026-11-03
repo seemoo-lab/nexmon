@@ -11,8 +11,9 @@
 import json
 import os.path
 import subprocess
-from matchers import *
+
 import pytest
+
 
 @pytest.fixture
 def check_outputformat(cmd_tshark, request, dirs, capture_file):

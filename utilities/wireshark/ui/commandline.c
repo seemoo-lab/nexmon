@@ -22,7 +22,7 @@
 
 #include <wsutil/version_info.h>
 
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>
 #include <wsutil/clopts_common.h>
 #include <wsutil/cmdarg_err.h>
 #include <wsutil/filesystem.h>
@@ -48,8 +48,6 @@
 #include "ui/capture_opts.h"
 #include "ui/dissect_opts.h"
 #include "ui/commandline.h"
-
-#include <wsutil/application_flavor.h>
 
 
  /* Command-line options that don't have direct API calls to handle the data */
@@ -84,19 +82,15 @@ static commandline_param_info_t commandline_info;
 capture_options global_capture_opts;
 
 static void
-commandline_print_usage(bool for_help_option) {
+commandline_print_usage(commandline_usage_app_data_t* app_data, bool for_help_option) {
     FILE *output;
 
 #ifdef _WIN32
-    create_console();
+    create_console(app_data->console_name);
 #endif
 
     if (for_help_option) {
-        if (application_flavor_is_wireshark()) {
-            show_help_header("Interactively dump and analyze network traffic.");
-        } else {
-            show_help_header("Interactively dump and analyze system calls and log messages.");
-        }
+        show_help_header(app_data->help_header);
         output = stdout;
     } else {
         output = stderr;
@@ -106,34 +100,15 @@ commandline_print_usage(bool for_help_option) {
     fprintf(output, "\n");
 
 #ifdef HAVE_LIBPCAP
-    if (application_flavor_is_wireshark()) {
-        fprintf(output, "Capture interface:\n");
-        fprintf(output, "  -i <interface>, --interface <interface>\n");
-        fprintf(output, "                           name or idx of interface (def: first non-loopback)\n");
-        fprintf(output, "  -f <capture filter>      packet filter in libpcap filter syntax\n");
-    } else {
-        fprintf(output, "Capture source:\n");
-        fprintf(output, "  -i <source>, --source <source>\n");
-        fprintf(output, "                           name or idx of source (def: first source listed by -D or --list-sources)\n");
-        fprintf(output, "  -f <capture filter>      filter in libsinsp/libscap filter syntax\n");
-    }
-    if (application_flavor_is_wireshark()) {
-        fprintf(output, "  -s <snaplen>, --snapshot-length <snaplen>\n");
-        fprintf(output, "                           packet snapshot length (def: appropriate maximum)\n");
-        fprintf(output, "  -p, --no-promiscuous-mode\n");
-        fprintf(output, "                           don't capture in promiscuous mode\n");
-        fprintf(output, "  -I, --monitor-mode       capture in monitor mode, if available\n");
-        fprintf(output, "  -B <buffer size>, --buffer-size <buffer size>\n");
-        fprintf(output, "                           size of kernel buffer in MiB (def: %dMiB)\n", DEFAULT_CAPTURE_BUFFER_SIZE);
-    }
+    if (app_data->capture_interface_options != NULL)
+        app_data->capture_interface_options(output);
+
     fprintf(output, "  -y <link type>, --linktype <link type>\n");
     fprintf(output, "                           link layer type (def: first appropriate)\n");
     fprintf(output, "  --time-stamp-type <type> timestamp method for interface\n");
-    if (application_flavor_is_wireshark()) {
-        fprintf(output, "  -D, --list-interfaces    print list of interfaces and exit\n");
-    } else {
-        fprintf(output, "  -D, --list-sources       print list of sources and exit\n");
-    }
+    if (app_data->list_interface_options != NULL)
+        app_data->list_interface_options(output);
+
     fprintf(output, "  -L, --list-data-link-types\n");
     fprintf(output, "                           print list of link-layer types of iface and exit\n");
     fprintf(output, "  --list-time-stamp-types  print list of timestamp types for iface and exit\n");
@@ -143,31 +118,22 @@ commandline_print_usage(bool for_help_option) {
     fprintf(output, "  -S                       update display when new items are captured\n");
     fprintf(output, "  -l                       turn on automatic scrolling while -S is in use\n");
     fprintf(output, "  --update-interval        interval between updates with new items, in milliseconds (def: %dms)\n", DEFAULT_UPDATE_INTERVAL);
+    fprintf(output, "  --process-info[=basic|full]\n");
+    fprintf(output, "                           record the processes that sent or received each packet:\n");
+    fprintf(output, "                           their ID and name (basic, the default), or their path,\n");
+    fprintf(output, "                           command line and user as well (full)\n");
     fprintf(output, "Capture stop conditions:\n");
     fprintf(output, "  -c <item count>          stop after n items (def: infinite)\n");
     fprintf(output, "  -a <autostop cond.> ..., --autostop <autostop cond.> ...\n");
     fprintf(output, "                           duration:NUM - stop after NUM seconds\n");
     fprintf(output, "                           filesize:NUM - stop this file after NUM KB\n");
     fprintf(output, "                              files:NUM - stop after NUM files\n");
-    if (application_flavor_is_wireshark()) {
-        fprintf(output, "                            packets:NUM - stop after NUM packets\n");
-    } else {
-        fprintf(output, "                             events:NUM - stop after NUM packets\n");
-    }
+    fprintf(output, "                            %s:NUM - stop after NUM %s\n", app_data->item_name, app_data->item_name);
+
     /*fprintf(output, "\n");*/
-    // XXX libscap and libsinsp don't support this, so we should probably omit this if our flavor is Stratoshark.
-    fprintf(output, "Capture output:\n");
-    fprintf(output, "  -b <ringbuffer opt.> ..., --ring-buffer <ringbuffer opt.>\n");
-    fprintf(output, "                           duration:NUM - switch to next file after NUM secs\n");
-    fprintf(output, "                           filesize:NUM - switch to next file after NUM KB\n");
-    fprintf(output, "                              files:NUM - ringbuffer: replace after NUM files\n");
-    if (application_flavor_is_wireshark()) {
-        fprintf(output, "                            packets:NUM - switch to next file after NUM packets\n");
-    } else {
-        fprintf(output, "                             events:NUM - switch to next file after NUM events\n");
-    }
-    fprintf(output, "                           interval:NUM - switch to next file when the time is\n");
-    fprintf(output, "                                          an exact multiple of NUM secs\n");
+    if (app_data->capture_output_options != NULL)
+        app_data->capture_output_options(output);
+
 #endif  /* HAVE_LIBPCAP */
 #ifdef HAVE_PCAP_REMOTE
     fprintf(output, "RPCAP options:\n");
@@ -212,7 +178,7 @@ commandline_print_usage(bool for_help_option) {
     fprintf(output, "  -J <jump filter>         jump to the first item matching the display\n");
     fprintf(output, "                           filter\n");
     fprintf(output, "  -j                       search backwards for a matching item after \"-J\"\n");
-    fprintf(output, "  -t (a|ad|adoy|d|dd|e|r|u|ud|udoy)[.[N]]|.[N]\n");
+    fprintf(output, "  -t (a|ad|adoy|d|dd|e|r|rc|u|ud|udoy)[.[N]]|.[N]\n");
     fprintf(output, "                           format of time stamps (def: r: rel. to first)\n");
     fprintf(output, "  -u s|hms                 output format of seconds (def: s: seconds)\n");
     fprintf(output, "  -X <key>:<value>         eXtension options, see man page for details\n");
@@ -286,7 +252,7 @@ static void print_no_capture_support_error(void)
 }
 #endif
 
-int commandline_early_options(int argc, char *argv[])
+int commandline_early_options(int argc, char *argv[], commandline_usage_app_data_t* app_data)
 {
     int opt;
 #ifdef HAVE_LIBPCAP
@@ -335,19 +301,19 @@ int commandline_early_options(int argc, char *argv[])
     while ((opt = ws_getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
             case 'C':        /* Configuration Profile */
-                if (profile_exists (ws_optarg, false)) {
+                if (profile_exists (application_configuration_environment_prefix(), ws_optarg, false)) {
                     set_profile_name (ws_optarg);
-                } else if (profile_exists (ws_optarg, true)) {
+                } else if (profile_exists (application_configuration_environment_prefix(), ws_optarg, true)) {
                     char  *pf_dir_path, *pf_dir_path2, *pf_filename;
                     /* Copy from global profile */
-                    if (create_persconffile_profile(ws_optarg, &pf_dir_path) == -1) {
+                    if (create_persconffile_profile(application_configuration_environment_prefix(), ws_optarg, &pf_dir_path) == -1) {
                         cmdarg_err("Can't create directory\n\"%s\":\n%s.",
                             pf_dir_path, g_strerror(errno));
 
                         g_free(pf_dir_path);
                         return WS_EXIT_INVALID_FILE;
                     }
-                    if (copy_persconffile_profile(ws_optarg, ws_optarg, true, &pf_filename,
+                    if (copy_persconffile_profile(application_configuration_environment_prefix(), ws_optarg, ws_optarg, true, &pf_filename,
                             &pf_dir_path, &pf_dir_path2) == -1) {
                         cmdarg_err("Can't copy file \"%s\" in directory\n\"%s\" to\n\"%s\":\n%s.",
                             pf_filename, pf_dir_path2, pf_dir_path, g_strerror(errno));
@@ -373,7 +339,7 @@ int commandline_early_options(int argc, char *argv[])
                      * interfaces.  Report it.
                      */
 #ifdef _WIN32
-                    create_console();
+                    create_console(app_data->console_name);
 #endif /* _WIN32 */
                     cmdarg_err("%s", err_str);
                     g_free(err_str);
@@ -392,7 +358,7 @@ int commandline_early_options(int argc, char *argv[])
                     return exit_status;
                 }
 #ifdef _WIN32
-                create_console();
+                create_console(app_data->console_name);
 #endif /* _WIN32 */
                 capture_opts_print_interfaces(if_list);
                 free_interface_list(if_list);
@@ -405,7 +371,7 @@ int commandline_early_options(int argc, char *argv[])
 #endif /* HAVE_LIBPCAP */
                 break;
             case 'h':        /* Print help and exit */
-                commandline_print_usage(true);
+                commandline_print_usage(app_data, true);
                 return WS_EXIT_NOW;
 #ifdef _WIN32
             case 'i':
@@ -421,7 +387,7 @@ int commandline_early_options(int argc, char *argv[])
                 break;
             case 'v':        /* Show version and exit */
 #ifdef _WIN32
-                create_console();
+                create_console(app_data->console_name);
 #endif
                 show_version();
 #ifdef _WIN32
@@ -451,7 +417,7 @@ int commandline_early_options(int argc, char *argv[])
 #ifndef HAVE_LIBPCAP
     if (capture_option_specified) {
         print_no_capture_support_error();
-        commandline_print_usage(false);
+        commandline_print_usage(app_data, false);
         return WS_EXIT_NOW;
     }
 #endif
@@ -542,7 +508,7 @@ void commandline_override_prefs(int argc, char *argv[], bool opt_reset)
 
 }
 
-void commandline_other_options(int argc, char *argv[], bool opt_reset)
+void commandline_other_options(capture_options* capture_opts _U_, int argc, char *argv[], commandline_usage_app_data_t* app_data, bool opt_reset)
 {
     int opt;
     bool arg_error = false;
@@ -607,6 +573,7 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
             case LONGOPT_SET_TSTAMP_TYPE: /* Set capture timestamp type */
             case LONGOPT_CAPTURE_TMPDIR: /* capture temp directory */
             case LONGOPT_UPDATE_INTERVAL: /* sync pipe update interval */
+            case LONGOPT_PROCESS_INFO: /* record the processes that sent or received each packet */
             case 'I':        /* Capture in monitor mode, if available */
 #ifdef HAVE_PCAP_REMOTE
             case 'A':        /* Authentication */
@@ -616,8 +583,9 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
             case 'w':        /* Write to capture file xxx */
             case 'y':        /* Set the pcap data link type */
             case 'B':        /* Buffer size */
+            case LONGOPT_NO_OPTIMIZE: /* Don't optimize capture filter */
 #ifdef HAVE_LIBPCAP
-                status = capture_opts_add_opt(&global_capture_opts, opt, ws_optarg);
+                status = capture_opts_add_opt(application_configuration_environment_prefix(), &global_capture_opts, opt, ws_optarg);
                 if(status != 0) {
                     exit_application(status);
                 }
@@ -802,7 +770,7 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
             print_no_capture_support_error();
         }
 #endif
-        commandline_print_usage(false);
+        commandline_print_usage(app_data, false);
         exit_application(1);
     }
 
@@ -822,7 +790,7 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
             exit_application(1);
         }
         /* No - did they specify a ring buffer option? */
-        if (global_capture_opts.multi_files_on) {
+        if (capture_opts->multi_files_on) {
             cmdarg_err("Ring buffer requested, but a capture isn't being done.");
             exit_application(1);
         }
@@ -837,21 +805,21 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)
 
         /* No - was the ring buffer option specified and, if so, does it make
            sense? */
-        if (global_capture_opts.multi_files_on) {
+        if (capture_opts->multi_files_on) {
             /* Ring buffer works only under certain conditions:
              a) ring buffer does not work with temporary files;
              b) real_time_mode and multi_files_on are mutually exclusive -
              real_time_mode takes precedence;
              c) it makes no sense to enable the ring buffer if the maximum
              file size is set to "infinite". */
-            if (global_capture_opts.save_file == NULL) {
+            if (capture_opts->save_file == NULL) {
                 cmdarg_err("Ring buffer requested, but capture isn't being saved to a permanent file.");
-                global_capture_opts.multi_files_on = false;
+                capture_opts->multi_files_on = false;
             }
-            if (!global_capture_opts.has_autostop_filesize &&
-                !global_capture_opts.has_file_duration &&
-                !global_capture_opts.has_file_interval &&
-                !global_capture_opts.has_file_packets) {
+            if (!capture_opts->has_autostop_filesize &&
+                !capture_opts->has_file_duration &&
+                !capture_opts->has_file_interval &&
+                !capture_opts->has_file_packets) {
                 cmdarg_err("Ring buffer requested, but no maximum capture file size, duration, interval or packets were specified.");
                 /* XXX - this must be redesigned as the conditions changed */
             }
@@ -892,6 +860,7 @@ void commandline_options_drop(const char *module_name, const char *pref_name) {
 /* Reapply any options the user specified on the command line with `-o`
  * Called in the Qt UI when reloading Lua plugins
  * For https://gitlab.com/wireshark/wireshark/-/issues/12331
+ * Also called after switching configuration profiles.
  */
 void commandline_options_reapply(void) {
     char *errmsg = NULL;
@@ -904,6 +873,10 @@ void commandline_options_reapply(void) {
          * specified for a lua plugin which has been edited after Wireshark
          * started and has had that pref removed; not worth exiting over.
          * See #12331
+         *
+         * Another error case we'll ignore is if a pref was specified for
+         * an extcap and either it was removed or all the extcaps were disabled
+         * because prefs.capture_no_extcap is now true.
          */
         prefs_set_pref((char *)entry->data, &errmsg);
         if (errmsg != NULL) {

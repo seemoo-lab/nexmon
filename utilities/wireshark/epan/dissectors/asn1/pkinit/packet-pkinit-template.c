@@ -23,10 +23,6 @@
 #include "packet-pkix1explicit.h"
 #include "packet-kerberos.h"
 
-#define PNAME  "PKINIT"
-#define PSNAME "PKInit"
-#define PFNAME "pkinit"
-
 void proto_register_pkinit(void);
 void proto_reg_handoff_pkinit(void);
 
@@ -37,27 +33,27 @@ static int proto_pkinit;
 /* Initialize the subtree pointers */
 #include "packet-pkinit-ett.c"
 
-static int dissect_KerberosV5Spec2_KerberosTime(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
-static int dissect_KerberosV5Spec2_Realm(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
-static int dissect_KerberosV5Spec2_PrincipalName(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
-static int dissect_pkinit_PKAuthenticator_Win2k(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_KerberosV5Spec2_KerberosTime(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
+static unsigned dissect_KerberosV5Spec2_Realm(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
+static unsigned dissect_KerberosV5Spec2_PrincipalName(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset,  asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_);
+static unsigned dissect_pkinit_PKAuthenticator_Win2k(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 #include "packet-pkinit-fn.c"
 
-static int
-dissect_KerberosV5Spec2_KerberosTime(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
+static unsigned
+dissect_KerberosV5Spec2_KerberosTime(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
   offset = dissect_krb5_ctime(tree, tvb, offset, actx);
   return offset;
 }
 
-static int
-dissect_KerberosV5Spec2_Realm(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
+static unsigned
+dissect_KerberosV5Spec2_Realm(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
   offset = dissect_krb5_realm(tree, tvb, offset, actx);
   return offset;
 }
 
-static int
-dissect_KerberosV5Spec2_PrincipalName(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
+static unsigned
+dissect_KerberosV5Spec2_PrincipalName(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
   offset = dissect_krb5_cname(tree, tvb, offset, actx);
   return offset;
 }
@@ -77,7 +73,7 @@ void proto_register_pkinit(void) {
   };
 
   /* Register protocol */
-  proto_pkinit = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_pkinit = proto_register_protocol("PKINIT", "PKInit", "pkinit");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_pkinit, hf, array_length(hf));

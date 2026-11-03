@@ -44,6 +44,7 @@
 #include <epan/dfilter/sttype-op.h>
 #include <epan/exceptions.h>
 #include <epan/follow.h>
+#include <epan/maxmind_db.h>
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/proto.h>
@@ -57,6 +58,7 @@
 #include <wsutil/file_util.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/inet_addr.h>
+#include <wsutil/plugins.h>
 #include <wsutil/report_message.h>
 #include <wsutil/strtoi.h>
 
@@ -78,6 +80,18 @@ typedef struct conv_filter_info {
     wmem_strbuf_t *strbuf;
 } conv_filter_info;
 
+typedef enum geoip_off_e {
+    GEOIP_SUMMARY,
+    GEOIP_COUNTRY,
+    GEOIP_COUNTRY_ISO,
+    GEOIP_CITY,
+    GEOIP_AS_NUMBER,
+    GEOIP_AS_ORG,
+    GEOIP_LATITUDE,
+    GEOIP_LONGITUDE,
+    GEOIP_FIELD_COUNT
+} geoip_off_e;
+
 typedef struct bridge_info {
     sinsp_source_info_t *ssi;
     uint32_t source_id;
@@ -89,6 +103,8 @@ typedef struct bridge_info {
     int *hf_v4_ids;
     hf_register_info* hf_v6;
     int *hf_v6_ids;
+    hf_register_info* hf_geoip;
+    int *hf_geoip_ids;
     int* hf_id_to_addr_id; // Maps an hf offset to an hf_v[46] offset
     unsigned visible_fields;
     unsigned addr_fields;
@@ -137,6 +153,7 @@ static dissector_handle_t syscall_evt_dissector_handle;
 static dissector_handle_t syscall_fd_dissector_handle;
 
 static int proto_falco_events;
+static int proto_falco_json_events;
 static int proto_syscalls[NUM_SINSP_SYSCALL_CATEGORIES];
 
 static int ett_falco_events;
@@ -147,6 +164,7 @@ static int ett_sinsp_enriched;
 static int ett_sinsp_span;
 static int ett_address;
 static int ett_json;
+static int ett_geoip_info;
 
 static int container_io_tap;
 
@@ -166,13 +184,13 @@ const char* get_str_value(sinsp_field_extract_t *sinsp_fields, uint32_t sf_idx);
 /*
  * Array of plugin bridges
  */
-bridge_info* bridges;
-size_t nbridges;
+static bridge_info* bridges;
+static size_t nbridges;
 
 /*
  * sinsp extractor span
  */
-sinsp_span_t *sinsp_span;
+static sinsp_span_t *sinsp_span;
 
 /*
  * Fields
@@ -249,6 +267,25 @@ is_source_address_field(enum ftenum ftype, const char *abbrev) {
     };
     for (size_t idx = 0; idx < array_length(addr_suffixes); idx++) {
         if (g_str_has_suffix(abbrev, addr_suffixes[idx])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Returns true if the field is a text username.
+static bool
+is_plugin_user_name_field(const char *abbrev) {
+    const char *user_name_fields[] = {
+        "ct.user",
+        // "ct.request.username",  // Does this make more sense than ct.user?
+        "ka.user.name",
+        "gcp.user",
+        "okta.target.user.name",
+        "github.user",
+    };
+    for (size_t idx = 0; idx < array_length(user_name_fields); idx++) {
+        if (strcmp(abbrev, user_name_fields[idx]) == 0) {
             return true;
         }
     }
@@ -473,6 +510,8 @@ create_source_hfids(bridge_info* bi)
             bi->hf_v4_ids = (int*)wmem_alloc0(wmem_epan_scope(), bi->addr_fields * sizeof(int));
             bi->hf_v6 = (hf_register_info*)wmem_alloc(wmem_epan_scope(), bi->addr_fields * sizeof(hf_register_info));
             bi->hf_v6_ids = (int*)wmem_alloc0(wmem_epan_scope(), bi->addr_fields * sizeof(int));
+            bi->hf_geoip = (hf_register_info*)wmem_alloc(wmem_epan_scope(), bi->addr_fields * GEOIP_FIELD_COUNT * sizeof(hf_register_info));
+            bi->hf_geoip_ids = (int*)wmem_alloc0(wmem_epan_scope(), bi->addr_fields * GEOIP_FIELD_COUNT * sizeof(int));
         }
 
         if (bi->num_conversation_filters) {
@@ -592,7 +631,7 @@ create_source_hfids(bridge_info* bi)
                         wmem_strdup_printf(wmem_epan_scope(), "%s.v4", sfi.abbrev),
                         FT_IPv4, BASE_NONE,
                         NULL, 0x0,
-                        wmem_strdup_printf(wmem_epan_scope(), "%s (IPv4)", sfi.description), HFILL
+                        NULL, HFILL
                     }
                 };
                 bi->hf_v4[addr_fld_cnt] = finfo_v4;
@@ -604,10 +643,68 @@ create_source_hfids(bridge_info* bi)
                         wmem_strdup_printf(wmem_epan_scope(), "%s.v6", sfi.abbrev),
                         FT_IPv6, BASE_NONE,
                         NULL, 0x0,
-                        wmem_strdup_printf(wmem_epan_scope(), "%s (IPv6)", sfi.description), HFILL
+                        NULL, HFILL
                     }
                 };
                 bi->hf_v6[addr_fld_cnt] = finfo_v6;
+
+                for (int gidx = 0; gidx < GEOIP_FIELD_COUNT; gidx++) {
+                    const char *name = NULL;
+                    const char *abbrev = NULL;
+                    ftype = FT_STRING;
+                    fdisplay = BASE_NONE;
+                    switch (gidx) {
+                    case GEOIP_SUMMARY:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP Information", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip", sfi.abbrev);
+                        break;
+                    case GEOIP_COUNTRY:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP Country", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.country", sfi.abbrev);
+                        break;
+                    case GEOIP_COUNTRY_ISO:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP ISO Two Letter Country Code", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.country_iso", sfi.abbrev);
+                        break;
+                    case GEOIP_CITY:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP City", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.city", sfi.abbrev);
+                        break;
+                    case GEOIP_AS_NUMBER:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP AS Number", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.asnum", sfi.abbrev);
+                        ftype = FT_UINT32;
+                        fdisplay = BASE_DEC;
+                        break;
+                    case GEOIP_AS_ORG:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP AS Organization", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.org", sfi.abbrev);
+                        break;
+                    case GEOIP_LATITUDE:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP Latitude", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.lat", sfi.abbrev);
+                        ftype = FT_DOUBLE;
+                        break;
+                    case GEOIP_LONGITUDE:
+                        name = wmem_strdup_printf(wmem_epan_scope(), "%s GeoIP Longitude", sfi.display);
+                        abbrev = wmem_strdup_printf(wmem_epan_scope(), "%s.geoip.lon", sfi.abbrev);
+                        ftype = FT_DOUBLE;
+                        break;
+                    }
+
+                    hf_register_info finfo_geo = {
+                        bi->hf_geoip_ids + (addr_fld_cnt * GEOIP_FIELD_COUNT) + gidx,
+                        {
+                            name,
+                            abbrev,
+                            ftype, fdisplay,
+                            NULL, 0x0,
+                            NULL, HFILL
+                        }
+                    };
+                    bi->hf_geoip[(addr_fld_cnt * GEOIP_FIELD_COUNT) + gidx] = finfo_geo;
+                }
+
                 addr_fld_cnt++;
             } else if (bi->hf_id_to_addr_id) {
                 bi->hf_id_to_addr_id[fld_cnt] = -1;
@@ -620,6 +717,7 @@ create_source_hfids(bridge_info* bi)
         if (addr_fld_cnt) {
             proto_register_field_array(proto_falco_events, bi->hf_v4, addr_fld_cnt);
             proto_register_field_array(proto_falco_events, bi->hf_v6, addr_fld_cnt);
+            proto_register_field_array(proto_falco_events, bi->hf_geoip, addr_fld_cnt * GEOIP_FIELD_COUNT);
         }
 
         // Useful hf ids
@@ -954,7 +1052,7 @@ fd_tap_listener(void *tapdata, packet_info *pinfo,
     follow_record->packet_num = pinfo->fd->num;
     follow_record->abs_ts = pinfo->fd->abs_ts;
     follow_record->data = g_byte_array_append(g_byte_array_new(),
-                                              tap_info->data,
+                                              (const uint8_t*)tap_info->data,
                                               tap_info->datalen);
 
     follow_info->bytes_written[is_server] += follow_record->data->len;
@@ -987,13 +1085,13 @@ get_bridge_info(uint32_t source_id)
 }
 
 static int
-dissect_falco_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *epd_p)
+dissect_falco_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *epd_p)
 {
     int encoding = pinfo->rec->rec_header.syscall_header.byte_order == G_BIG_ENDIAN ? ENC_BIG_ENDIAN : ENC_LITTLE_ENDIAN;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Falco Events");
 
-    // Some events don't have any data. Make sure we don't return 0 in that case
+    // Some syscall events don't have any data. Make sure we don't return 0 in that case
     // so that things like "protocols in frame" work.
     int consumed = tvb_captured_length(tvb);
     if (consumed == 0) {
@@ -1003,7 +1101,7 @@ dissect_falco_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
     // https://github.com/falcosecurity/libs/blob/9c942f27/userspace/libscap/scap.c#L1900
 
     uint32_t source_id = 0;
-    if (pinfo->rec->rec_header.syscall_header.event_type == FALCO_PPME_PLUGINEVENT_E) {
+    if (pinfo->rec->rec_type == REC_TYPE_SYSCALL && pinfo->rec->rec_header.syscall_header.event_type == FALCO_PPME_PLUGINEVENT_E) {
         source_id = tvb_get_uint32(tvb, 8, encoding);
     }
 
@@ -1047,6 +1145,50 @@ dissect_falco_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
     return consumed;
 }
 
+// We assume that there is no whitespace between key names and their colons.
+// This is *probably* safe, but if not we can just parse the buffer if needed.
+static bool has_keys(const uint8_t *data, int data_len, const char *keys[]) {
+    for (size_t idx = 0; keys[idx]; idx++) {
+        if (!ws_memmem(data, data_len, keys[idx], strlen(keys[idx]))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static int
+dissect_falco_json_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    uint32_t source_id = 0;
+
+    // https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/
+    const char *k8saudit_keys[] = { "\"kind\":", "\"apiVersion\":", "\"level\":", "\"auditID\":", NULL };
+    // https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html
+    const char *cloudtrail_keys[] = { "\"eventVersion\":", "\"userIdentity\":", "\"eventSource\":", NULL };
+    // https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+    const char *gcpaudit_keys[] = { "\"insertId\":", "\"logName\":", NULL };
+
+    int tvb_len = tvb_captured_length(tvb);
+    const uint8_t *tvb_data = tvb_get_ptr(tvb, 0, tvb_len);
+
+    if (has_keys(tvb_data, tvb_len, k8saudit_keys)) {
+        source_id = K8SAUDIT_PLUGIN_ID;
+    } else if (has_keys(tvb_data, tvb_len, cloudtrail_keys)) {
+        source_id = CLOUDTRAIL_PLUGIN_ID;
+    } else if (has_keys(tvb_data, tvb_len, gcpaudit_keys)) {
+        source_id = GCPAUDIT_PLUGIN_ID;
+    }
+
+    bridge_info* bi = get_bridge_info(source_id);
+
+    if (source_id != 0 && bi) {
+        set_data_source_media_type(get_data_source_by_tvb(pinfo, tvb), DS_MEDIA_TYPE_APPLICATION_JSON);
+        return dissect_sinsp_plugin(tvb, pinfo, tree, bi);
+    }
+    return 0;
+}
+
 int extract_lineage_number(const char *fld_name) {
     char *last_dot = strrchr(fld_name, '.');
     if (last_dot != NULL) {
@@ -1070,6 +1212,74 @@ const char* get_str_value(sinsp_field_extract_t *sinsp_fields, uint32_t sf_idx) 
     return res_str;
 }
 
+static void add_geoip_info(proto_tree *tree, bridge_info * bi, int base_idx, packet_info *pinfo, tvbuff_t *tvb, int offset, int length, const mmdb_lookup_t *lookup) {
+    if (!lookup || !lookup->found) {
+        return;
+    }
+
+    wmem_strbuf_t *summary = wmem_strbuf_new(pinfo->pool, "");
+    if (lookup->city) {
+        wmem_strbuf_append(summary, lookup->city);
+    }
+    if (lookup->country_iso) {
+        if (wmem_strbuf_get_len(summary) > 0) wmem_strbuf_append(summary, ", ");
+        wmem_strbuf_append(summary, lookup->country_iso);
+    } else if (lookup->country) {
+        if (wmem_strbuf_get_len(summary) > 0) wmem_strbuf_append(summary, ", ");
+        wmem_strbuf_append(summary, lookup->country);
+    }
+    if (lookup->as_number > 0) {
+        if (wmem_strbuf_get_len(summary) > 0) wmem_strbuf_append(summary, ", ");
+        wmem_strbuf_append_printf(summary, "ASN %u", lookup->as_number);
+    }
+    if (lookup->as_org) {
+        if (wmem_strbuf_get_len(summary) > 0) wmem_strbuf_append(summary, ", ");
+        wmem_strbuf_append(summary, lookup->as_org);
+    }
+
+    proto_item *geoip_info_item = proto_tree_add_string(tree, bi->hf_geoip_ids[base_idx + GEOIP_SUMMARY], tvb, offset, length, wmem_strbuf_finalize(summary));
+    proto_item_set_generated(geoip_info_item);
+    proto_tree *geoip_info_tree = proto_item_add_subtree(geoip_info_item, ett_geoip_info);
+
+    proto_item *item;
+
+    if (lookup->city) {
+        item = proto_tree_add_string(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_CITY], tvb, offset, length, lookup->city);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->country) {
+        item = proto_tree_add_string(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_COUNTRY], tvb, offset, length, lookup->country);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->country_iso) {
+        item = proto_tree_add_string(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_COUNTRY_ISO], tvb, offset, length, lookup->country_iso);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->as_number > 0) {
+        item = proto_tree_add_uint(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_AS_NUMBER], tvb, offset, length, lookup->as_number);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->as_org) {
+        item = proto_tree_add_string(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_AS_ORG], tvb, offset, length, lookup->as_org);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->latitude >= -90.0 && lookup->latitude <= 90.0) {
+        item = proto_tree_add_double(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_LATITUDE], tvb, offset, length, lookup->latitude);
+        proto_item_set_generated(item);
+    }
+
+    if (lookup->longitude >= -180.0 && lookup->longitude <= 180.0) {
+        item = proto_tree_add_double(geoip_info_tree, bi->hf_geoip_ids[base_idx + GEOIP_LONGITUDE], tvb, offset, length, lookup->longitude);
+        proto_item_set_generated(item);
+    }
+}
+
+
 // Minimal dissector for adding protocol layers.
 static int
 dissect_syscall_layer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *psldp)
@@ -1089,11 +1299,19 @@ dissect_sinsp_enriched(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
 
     if (!pinfo->fd->visited) {
         if (pinfo->fd->num == 1) {
-            // Open the capture file using libsinsp, which reads the meta events
-            // at the beginning of the file. We can't call this via register_init_routine
-            // because we don't have the file path at that point.
-            open_sinsp_capture(sinsp_span, pinfo->rec->rec_header.syscall_header.pathname);
+            // Open the sinsp inspector for this capture. With newer
+            // falcosecurity-libs, this opens the raw_block engine on
+            // the capture's section header + metadata blocks; with
+            // older versions, it falls back to opening the capture file
+            // separately in libsinsp/libscap via open_savefile.
+            open_sinsp_capture(sinsp_span, pinfo->rec->rec_header.syscall_header.wth,
+                               pinfo->rec);
         }
+        // Feed this frame's event block to the raw_block engine (in frame
+        // order). Does nothing if the savefile engine is being used.
+        feed_sinsp_event_block(sinsp_span, pinfo->rec,
+                               tvb_get_ptr(tvb, 0, tvb_captured_length(tvb)),
+                               tvb_captured_length(tvb));
     }
 
     sinsp_field_extract_t *sinsp_fields = NULL;
@@ -1261,6 +1479,10 @@ dissect_sinsp_enriched(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
                 proto_item_set_hidden(ti);
             }
 
+            if (strcmp(hfinfo->abbrev, "user.name") == 0) {
+                pinfo->user_name = wmem_strdup(pinfo->pool, res_str);
+            }
+
             if (hfinfo->id == field_hf_id_proc_name) {
                 proc_name = res_str;
             } else if (hfinfo->id == field_hf_id_fd_name) {
@@ -1289,23 +1511,31 @@ dissect_sinsp_enriched(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
                         bytes_offset = event_param_data->data_bytes_offset;
                         bytes_length = event_param_data->data_bytes_length;
                     }
-                    proto_tree_add_bytes_with_length(parent_tree, bi->hf_ids[hf_idx], tvb, bytes_offset, bytes_length, sinsp_fields[sf_idx].res.str, sinsp_fields[sf_idx].res_len);
+                    proto_tree_add_bytes_with_length(parent_tree, bi->hf_ids[hf_idx], tvb, bytes_offset, bytes_length, (uint8_t*)sinsp_fields[sf_idx].res.str, sinsp_fields[sf_idx].res_len);
                 } else {
                     // XXX Need to differentiate between src and dest. Falco libs supply client vs server and local vs remote.
+                    const mmdb_lookup_t *lookup = NULL;
+
                     if (sinsp_fields[sf_idx].res_len == 4) {
                         ws_in4_addr v4_addr;
                         memcpy(&v4_addr, sinsp_fields[sf_idx].res.bytes, 4);
                         proto_tree_add_ipv4(parent_tree, bi->hf_v4_ids[addr_fld_idx], tvb, 0, 0, v4_addr);
-                        set_address(&pinfo->net_src, AT_IPv4, sizeof(ws_in4_addr), &v4_addr);
+                        alloc_address_wmem(pinfo->pool, &pinfo->net_src, AT_IPv4, sizeof(ws_in4_addr), &v4_addr);
                         copy_address_shallow(&pinfo->src, &pinfo->net_src);
+                        lookup = maxmind_db_lookup_ipv4(&v4_addr);
                     } else if (sinsp_fields[sf_idx].res_len == 16) {
                         ws_in6_addr v6_addr;
                         memcpy(&v6_addr, sinsp_fields[sf_idx].res.bytes, 16);
                         proto_tree_add_ipv6(parent_tree, bi->hf_v6_ids[addr_fld_idx], tvb, 0, 0, &v6_addr);
-                        set_address(&pinfo->net_src, AT_IPv6, sizeof(ws_in6_addr), &v6_addr);
+                        alloc_address_wmem(pinfo->pool, &pinfo->net_src, AT_IPv6, sizeof(ws_in6_addr), &v6_addr);
                         copy_address_shallow(&pinfo->src, &pinfo->net_src);
+                        lookup = maxmind_db_lookup_ipv6(&v6_addr);
                     } else {
                         ws_warning("Invalid length %u for address field %u", sinsp_fields[sf_idx].res_len, sf_idx);
+                    }
+
+                    if (lookup) {
+                        add_geoip_info(tree, bi, bi->hf_geoip_ids[addr_fld_idx * GEOIP_FIELD_COUNT], pinfo, tvb, 0, 0, lookup);
                     }
                     // XXX Add conversation support.
                 }
@@ -1407,7 +1637,7 @@ dissect_sinsp_plugin(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* 
     proto_tree* fb_tree = proto_item_add_subtree(ti, ett_sinsp_span);
     // proto_tree *fb_tree = tree;
 
-    uint8_t* payload = (uint8_t*)tvb_get_ptr(tvb, 0, payload_len);
+    const uint8_t* payload = tvb_get_ptr(tvb, 0, payload_len);
 
     plugin_field_extract_t *sinsp_fields = (plugin_field_extract_t*) wmem_alloc(pinfo->pool, sizeof(plugin_field_extract_t) * bi->visible_fields);
     for (uint32_t fld_idx = 0; fld_idx < bi->visible_fields; fld_idx++) {
@@ -1486,16 +1716,22 @@ dissect_sinsp_plugin(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* 
                 ws_in6_addr v6_addr;
                 proto_tree *addr_tree;
                 proto_item *addr_item = NULL;
+                const mmdb_lookup_t *lookup = NULL;
                 if (ws_inet_pton4(sfe->res.str, &v4_addr)) {
                     addr_tree = proto_item_add_subtree(sf_ti, ett_address);
                     addr_item = proto_tree_add_ipv4(addr_tree, bi->hf_v4_ids[addr_fld_idx], tvb, sfe->data_start, sfe->data_length, v4_addr);
                     set_address(&pinfo->net_src, AT_IPv4, sizeof(ws_in4_addr), &v4_addr);
                     copy_address_shallow(&pinfo->src, &pinfo->net_src);
+                    lookup = maxmind_db_lookup_ipv4(&v4_addr);
                 } else if (ws_inet_pton6(sfe->res.str, &v6_addr)) {
                     addr_tree = proto_item_add_subtree(sf_ti, ett_address);
                     addr_item = proto_tree_add_ipv6(addr_tree, bi->hf_v6_ids[addr_fld_idx], tvb, sfe->data_start, sfe->data_length, &v6_addr);
                     set_address(&pinfo->net_src, AT_IPv6, sizeof(ws_in6_addr), &v6_addr);
                     copy_address_shallow(&pinfo->src, &pinfo->net_src);
+                    lookup = maxmind_db_lookup_ipv6(&v6_addr);
+                }
+                if (lookup) {
+                    add_geoip_info(fb_tree, bi, addr_fld_idx * GEOIP_FIELD_COUNT, pinfo, tvb, sfe->data_start, sfe->data_length, lookup);
                 }
                 if (addr_item) {
                     proto_item_set_generated(addr_item);
@@ -1508,6 +1744,8 @@ dissect_sinsp_plugin(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* 
                     cur_conv_els[1].type = CE_ADDRESS;
                     copy_address(&cur_conv_els[1].addr_val, &pinfo->net_src);
                 }
+            } else if (is_plugin_user_name_field(hfinfo->abbrev)) {
+                pinfo->user_name = wmem_strdup(pinfo->pool, sfe->res.str);
             } else {
                 if (cur_conv_filter) {
                     wmem_strbuf_append_printf(cur_conv_filter->strbuf, "\"%s\"", sfe->res.str);
@@ -1562,7 +1800,7 @@ dissect_sinsp_plugin(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* 
     return payload_len;
 }
 
-const char *st_str_container_total_io = "Total";
+static const char *st_str_container_total_io = "Total";
 
 static void container_io_stats_tree_init(stats_tree* st _U_)
 {
@@ -1606,8 +1844,11 @@ proto_register_falcoplugin(void)
     register_cleanup_routine(&falco_events_cleanup);
 
     proto_falco_events = proto_register_protocol("Falco Events", "Falco Events", "falcoevents");
-    register_dissector("falcoevents", dissect_falco_events, proto_falco_events);
+    register_dissector("falcoevents", dissect_falco_event, proto_falco_events);
     proto_register_alias(proto_falco_events, "falcobridge");
+
+    proto_falco_json_events = proto_register_protocol("Falco JSON Events", "Falco JSON Events", "falcojson");
+    register_dissector("falcojson", dissect_falco_json_event, proto_falco_json_events);
 
     // Register the syscall conversation filters.
     // These show up in the "Conversation Filter" and "Colorize Conversation" context menus.
@@ -1669,8 +1910,8 @@ proto_register_falcoplugin(void)
     char *filename;
     // XXX Falco plugins should probably be installed in a path that reflects
     // the Falco version or its plugin API version.
-    char *spdname = g_build_filename(get_plugins_dir(), "falco", NULL);
-    char *ppdname = g_build_filename(get_plugins_pers_dir(), "falco", NULL);
+    char *spdname = g_build_filename(get_plugins_dir(epan_get_environment_prefix()), "falco", NULL);
+    char *ppdname = g_build_filename(get_plugins_pers_dir(epan_get_environment_prefix()), "falco", NULL);
 
     /*
      * We scan the plugins directory twice. The first time we count how many
@@ -1703,6 +1944,9 @@ proto_register_falcoplugin(void)
 
     if ((dir = ws_dir_open(spdname, 0, NULL)) != NULL) {
         while ((file = ws_dir_read_name(dir)) != NULL) {
+            if (!is_plugin_filename(file)) {
+                continue;
+            }
             filename = g_build_filename(spdname, ws_dir_get_name(file), NULL);
             import_plugin(filename);
             g_free(filename);
@@ -1712,6 +1956,9 @@ proto_register_falcoplugin(void)
 
     if (!files_identical(ppdname, spdname) && (dir = ws_dir_open(ppdname, 0, NULL)) != NULL) {
         while ((file = ws_dir_read_name(dir)) != NULL) {
+            if (!is_plugin_filename(file)) {
+                continue;
+            }
             filename = g_build_filename(ppdname, ws_dir_get_name(file), NULL);
             import_plugin(filename);
             g_free(filename);
@@ -1741,6 +1988,7 @@ proto_register_falcoplugin(void)
         &ett_sinsp_span,
         &ett_address,
         &ett_json,
+        &ett_geoip_info,
     };
 
     /*

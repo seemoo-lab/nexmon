@@ -70,7 +70,7 @@ static value_string_ext field_longname_ext = VALUE_STRING_EXT_INIT(field_longnam
 static int
 dissect_manolito(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissector_data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_item *ti;
 	proto_tree *manolito_tree;
 	char *packet_type = NULL;
@@ -153,9 +153,9 @@ dissect_manolito(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* diss
 		offset++;
 
 		if (dtype == MANOLITO_STRING) {
-			uint8_t *str;
+			const char *str;
 
-			str = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII);
+			str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII);
 			proto_tree_add_string_format(manolito_tree, hf_manolito_string, tvb, start,
 					4+length, str, "%s (%s): %s",
 					field_name_str,

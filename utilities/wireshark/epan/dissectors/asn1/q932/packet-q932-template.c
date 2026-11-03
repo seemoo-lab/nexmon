@@ -21,10 +21,6 @@
 #include "packet-ber.h"
 #include "packet-q932.h"
 
-#define PNAME  "Q.932"
-#define PSNAME "Q932"
-#define PFNAME "q932"
-
 void proto_register_q932(void);
 
 /* Initialize the protocol and registered fields */
@@ -52,13 +48,13 @@ static expert_field ei_q932_asn1_encoded;
 /* ROSE context */
 static rose_ctx_t q932_rose_ctx;
 
-dissector_table_t qsig_arg_local_dissector_table;
-dissector_table_t qsig_res_local_dissector_table;
-dissector_table_t qsig_err_local_dissector_table;
+static dissector_table_t qsig_arg_local_dissector_table;
+static dissector_table_t qsig_res_local_dissector_table;
+static dissector_table_t qsig_err_local_dissector_table;
 
-dissector_table_t etsi_arg_local_dissector_table;
-dissector_table_t etsi_res_local_dissector_table;
-dissector_table_t etsi_err_local_dissector_table;
+static dissector_table_t etsi_arg_local_dissector_table;
+static dissector_table_t etsi_res_local_dissector_table;
+static dissector_table_t etsi_err_local_dissector_table;
 
 #define FACILITY_QSIG	0
 #define FACILITY_ETSI	1
@@ -328,7 +324,7 @@ void proto_register_q932(void) {
   };
 
   /* Register protocol and dissector */
-  proto_q932 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_q932 = proto_register_protocol("Q.932", "Q932", "q932");
   register_dissector("q932.apdu", dissect_q932_apdu, proto_q932);
   q932_ie_handle = register_dissector("q932.ie", dissect_q932_ie, proto_q932);
 

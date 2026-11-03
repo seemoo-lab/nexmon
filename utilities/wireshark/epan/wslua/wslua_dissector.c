@@ -24,8 +24,10 @@
 
 #include <epan/decode_as.h>
 #include <epan/exceptions.h>
+#include <epan/ftypes/ftypes.h>
 #include <epan/show_exception.h>
 #include <epan/dissectors/packet-dcerpc.h>
+#include <epan/uuid_types.h>
 #include <string.h>
 
 
@@ -34,7 +36,7 @@
 
 WSLUA_CLASS_DEFINE(Dissector,NOP);
 /*
-   A refererence to a dissector, used to call a dissector against a packet or a part of it.
+   A reference to a dissector, used to call a dissector against a packet or a part of it.
  */
 
 WSLUA_CONSTRUCTOR Dissector_get (lua_State *L) {
@@ -154,7 +156,7 @@ WSLUA_METHOD Dissector_decrypt(lua_State* L) {
             const int offset = 0;
 
             len = tvb_reported_length(tvb_decrypted);
-            decrypted = (uint8_t *)wmem_alloc(scope, len + 1);
+            decrypted = (char*)wmem_alloc(scope, len + 1);
             tvb_memcpy(tvb_decrypted, decrypted, offset, len);
             decrypted[len] = '\0';
         }
@@ -186,11 +188,43 @@ WSLUA_METAMETHOD Dissector__tostring(lua_State* L) {
     WSLUA_RETURN(1); /* A string of the Dissector's description. */
 }
 
+/* Read-only attributes for debugger introspection. */
+
+/* WSLUA_ATTRIBUTE Dissector_description RO Human-readable description of
+   the dissector (same string returned by tostring/print). */
+WSLUA_ATTRIBUTE_GET(Dissector,description, {
+    const char *desc = obj ? dissector_handle_get_description(obj) : NULL;
+    if (desc) {
+        lua_pushstring(L, desc);
+    } else {
+        lua_pushnil(L);
+    }
+});
+
+/* WSLUA_ATTRIBUTE Dissector_protocol_short_name RO Short name of the
+   protocol the dissector is registered to (e.g. "tcp"); nil if the
+   handle has no backing protocol. */
+WSLUA_ATTRIBUTE_GET(Dissector,protocol_short_name, {
+    const char *short_name = obj ?
+        dissector_handle_get_protocol_short_name(obj) : NULL;
+    if (short_name) {
+        lua_pushstring(L, short_name);
+    } else {
+        lua_pushnil(L);
+    }
+});
+
 /* Gets registered as metamethod automatically by WSLUA_REGISTER_CLASS/META */
 static int Dissector__gc(lua_State* L _U_) {
     /* do NOT free Dissector */
     return 0;
 }
+
+WSLUA_ATTRIBUTES Dissector_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(Dissector,description),
+    WSLUA_ATTRIBUTE_ROREG(Dissector,protocol_short_name),
+    { NULL, NULL, NULL }
+};
 
 WSLUA_METHODS Dissector_methods[] = {
     WSLUA_CLASS_FNREG(Dissector,get),
@@ -208,7 +242,7 @@ WSLUA_META Dissector_meta[] = {
 };
 
 int Dissector_register(lua_State* L) {
-    WSLUA_REGISTER_CLASS(Dissector);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(Dissector);
     return 0;
 }
 
@@ -468,6 +502,41 @@ WSLUA_CONSTRUCTOR DissectorTable_get (lua_State *L) {
     WSLUA_RETURN(1); /* The <<lua_class_DissectorTable,`DissectorTable`>> reference if found, otherwise `nil`. */
 }
 
+static void
+lua_handle_dcerpc_dissector(e_guid_t* uuid, dissector_handle_t guid_handle)
+{
+    guid_key key;
+    dcerpc_uuid_value value;
+
+    key.guid = *uuid;
+    key.ver = 0;
+
+    value.proto_id = dissector_handle_get_protocol_index(guid_handle);
+    value.proto = find_protocol_by_id(value.proto_id);
+    value.ett = -1;
+    value.name = proto_get_protocol_short_name(value.proto);
+    value.procs = NULL;
+    value.opnum_hf = 0;
+
+    int uuid_id = uuid_type_get_id_by_name(DCERPC_TABLE_NAME);
+    if (uuid_type_remove_if_present(uuid_id, &key)) {
+        guids_delete_guid(uuid);
+    }
+
+    /* Duplicates dcerpc_init_finalize() to reduce dependency on specific dissector code */
+
+    guid_key* perm_key = wmem_memdup(wmem_epan_scope(), &key, sizeof(guid_key));
+    dcerpc_uuid_value* perm_value = wmem_memdup(wmem_epan_scope(), &value, sizeof(dcerpc_uuid_value));
+
+    uuid_type_insert(uuid_id, perm_key, perm_value);
+
+    /* Register the GUID with the dissector table */
+    dissector_add_guid("dcerpc.uuid", perm_key, guid_handle);
+
+    /* add this GUID to the global name resolving */
+    guids_add_guid(&perm_key->guid, proto_get_protocol_short_name(perm_value->proto));
+}
+
 WSLUA_METHOD DissectorTable_add (lua_State *L) {
     /*
      Add a <<lua_class_Proto,`Proto`>> with a dissector function or a <<lua_class_Dissector,`Dissector`>> object to the dissector table.
@@ -519,10 +588,10 @@ WSLUA_METHOD DissectorTable_add (lua_State *L) {
         if(strcmp(DCERPC_TABLE_NAME, dt->name) == 0) {
             e_guid_t uuid;
             memcpy(&uuid, guid, sizeof(e_guid_t));
-            dcerpc_init_from_handle(dissector_handle_get_protocol_index(handle), &uuid, 0, handle);
+            lua_handle_dcerpc_dissector(&uuid, handle);
         } else {
             dissector_add_guid(dt->name, &gk, handle);
-            guids_add_uuid(guid, dissector_handle_get_protocol_short_name(handle));
+            guids_add_guid(guid, dissector_handle_get_protocol_short_name(handle));
         }
     } else if ( type == FT_UINT32 || type == FT_UINT16 || type ==  FT_UINT8 || type ==  FT_UINT24 ) {
         /* Either an integer or a range.
@@ -643,10 +712,10 @@ WSLUA_METHOD DissectorTable_set (lua_State *L) {
         if(strcmp(DCERPC_TABLE_NAME, dt->name) == 0) {
             e_guid_t uuid;
             memcpy(&uuid, guid, sizeof(e_guid_t));
-            dcerpc_init_from_handle(dissector_handle_get_protocol_index(handle), &uuid, 0, handle);
+            lua_handle_dcerpc_dissector(&uuid, handle);
         } else {
             dissector_add_guid(dt->name, &gk, handle);
-            guids_add_uuid(guid, dissector_handle_get_protocol_short_name(handle));
+            guids_add_guid(guid, dissector_handle_get_protocol_short_name(handle));
         }
     } else if ( type == FT_UINT32 || type == FT_UINT16 || type ==  FT_UINT8 || type ==  FT_UINT24 ) {
         /* Either an integer or a range. See discussion above in _add. */
@@ -804,7 +873,6 @@ WSLUA_METHOD DissectorTable_try (lua_State *L) {
     Pinfo pinfo = checkPinfo(L,WSLUA_ARG_DissectorTable_try_PINFO);
     TreeItem ti = checkTreeItem(L,WSLUA_ARG_DissectorTable_try_TREE);
     ftenum_t type;
-    bool handled = false;
     const char *volatile error = NULL;
     int len = 0;
 
@@ -818,9 +886,6 @@ WSLUA_METHOD DissectorTable_try (lua_State *L) {
             const char* pattern = luaL_checkstring(L,WSLUA_ARG_DissectorTable_try_PATTERN);
 
             len = dissector_try_string_with_data(dt->table,pattern,tvb->ws_tvb,pinfo->ws_pinfo,ti->tree, true, NULL);
-            if (len > 0) {
-                handled = true;
-            }
         } else if ( type == FT_GUID ) {
             const char* guid_str = luaL_checkstring(L,WSLUA_ARG_DissectorTable_try_PATTERN);
             fvalue_t* fval = fvalue_from_literal(type, guid_str, 0, NULL);
@@ -831,28 +896,15 @@ WSLUA_METHOD DissectorTable_try (lua_State *L) {
                 guid_key gk = {*guid, 0};
 
                 len = dissector_try_guid_with_data(dt->table, &gk,tvb->ws_tvb,pinfo->ws_pinfo,ti->tree, true, NULL);
-                if (len > 0) {
-                    handled = true;
-                }
             }
         } else if ( type == FT_UINT32 || type == FT_UINT16 || type ==  FT_UINT8 || type ==  FT_UINT24 ) {
             uint32_t port = wslua_checkuint32(L, WSLUA_ARG_DissectorTable_try_PATTERN);
 
             len = dissector_try_uint(dt->table,port,tvb->ws_tvb,pinfo->ws_pinfo,ti->tree);
-            if (len > 0) {
-                handled = true;
-            }
         } else if ( type == FT_NONE ) {
             len = dissector_try_payload_with_data(dt->table,tvb->ws_tvb,pinfo->ws_pinfo,ti->tree, true, NULL);
-            if (len > 0) {
-                handled = true;
-            }
         } else {
             error = "No such type of dissector table";
-        }
-
-        if (!handled) {
-            len = call_data_dissector(tvb->ws_tvb, pinfo->ws_pinfo, ti->tree);
         }
         /* XXX Are we sure about this??? is this the right/only thing to catch */
     } CATCH_NONFATAL_ERRORS {
@@ -932,50 +984,82 @@ WSLUA_METHOD DissectorTable_add_for_decode_as (lua_State *L) {
     return 0;
 }
 
+/* Read-only attributes for debugger introspection. These surface the
+ * metadata that is otherwise only accessible through __tostring, so the
+ * Variables view can show it as structured fields. */
+
+/* WSLUA_ATTRIBUTE DissectorTable_name RO The registered name of the
+   DissectorTable (e.g. "tcp.port"). */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(DissectorTable,name,name);
+
+/* WSLUA_ATTRIBUTE DissectorTable_ui_name RO The human-readable UI name of
+   the DissectorTable, or nil if one was not registered. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(DissectorTable,ui_name,ui_name);
+
+/* WSLUA_ATTRIBUTE DissectorTable_type RO The selector ftype (ftenum
+   value) for value-indexed tables, or -1 for heuristic tables. Use
+   `DissectorTable.type_name` for the human-readable string. */
+WSLUA_ATTRIBUTE_GET(DissectorTable,type, {
+    if (obj->table) {
+        lua_pushinteger(L, (lua_Integer)get_dissector_table_selector_type(obj->name));
+    } else if (obj->heur_list) {
+        lua_pushinteger(L, -1);
+    } else {
+        /* A DissectorTable is always backed by either a dissector
+         * table or a heuristic list; the constructors enforce this. */
+        ws_assert_not_reached();
+    }
+});
+
+/* WSLUA_ATTRIBUTE DissectorTable_type_name RO Human-readable string for
+   the selector ftype ("FT_STRING", "FT_UINT32", ..., "FT_NONE" for
+   Decode-As-only tables) or "heuristic" for heuristic tables. */
+WSLUA_ATTRIBUTE_GET(DissectorTable,type_name, {
+    if (obj->table) {
+        ftenum_t type = get_dissector_table_selector_type(obj->name);
+        lua_pushstring(L, ftype_name(type));
+    } else if (obj->heur_list) {
+        lua_pushstring(L, "heuristic");
+    } else {
+        ws_assert_not_reached();
+    }
+});
+
 /* XXX It would be nice to iterate and print which dissectors it has */
 WSLUA_METAMETHOD DissectorTable__tostring(lua_State* L) {
-    /* Gets some debug information about the <<lua_class_DissectorTable,`DissectorTable`>>. */
+    /* Returns a short label of the form
+       `DissectorTable: <name> type=<type_name>` and appends
+       `base=<n>` for integer tables or ` (Decode As only)` for
+       FT_NONE tables. The previous form ended in a colon and
+       embedded a literal newline, which was confusing in
+       single-line listings like the debugger Variables view. */
     DissectorTable dt = checkDissectorTable(L,1);
-    GString* s;
-    ftenum_t type;
 
     if (!dt) return 0;
 
-    type =  get_dissector_table_selector_type(dt->name);
-    s = g_string_new("DissectorTable ");
+    ftenum_t type = get_dissector_table_selector_type(dt->name);
+    GString *s = g_string_new(NULL);
+    g_string_printf(s, "DissectorTable: %s type=%s",
+                    dt->name, ftype_name(type));
 
-    switch(type) {
-        case FT_STRING:
-        {
-            g_string_append_printf(s,"%s String:\n",dt->name);
-            break;
-        }
+    switch (type) {
         case FT_UINT8:
         case FT_UINT16:
         case FT_UINT24:
         case FT_UINT32:
-        {
-            int base = get_dissector_table_param(dt->name);
-            g_string_append_printf(s,"%s Integer(%i):\n",dt->name,base);
+            g_string_append_printf(s, " base=%d",
+                                   get_dissector_table_param(dt->name));
             break;
-        }
-        case FT_GUID:
-        {
-            g_string_append_printf(s,"%s GUID:\n",dt->name);
-            break;
-        }
         case FT_NONE:
-        {
-            g_string_append_printf(s,"%s only for Decode As:\n",dt->name);
+            g_string_append(s, " (Decode As only)");
             break;
-        }
         default:
-            luaL_error(L,"Strange table type");
+            break;
     }
 
-    lua_pushstring(L,s->str);
-    g_string_free(s,TRUE);
-    WSLUA_RETURN(1); /* A string of debug information about the <<lua_class_DissectorTable,`DissectorTable`>>. */
+    lua_pushstring(L, s->str);
+    g_string_free(s, TRUE);
+    WSLUA_RETURN(1); /* A short label identifying the table. */
 }
 
 /* Gets registered as metamethod automatically by WSLUA_REGISTER_CLASS/META */
@@ -1016,8 +1100,16 @@ WSLUA_META DissectorTable_meta[] = {
     { NULL, NULL }
 };
 
+WSLUA_ATTRIBUTES DissectorTable_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(DissectorTable,name),
+    WSLUA_ATTRIBUTE_ROREG(DissectorTable,ui_name),
+    WSLUA_ATTRIBUTE_ROREG(DissectorTable,type),
+    WSLUA_ATTRIBUTE_ROREG(DissectorTable,type_name),
+    { NULL, NULL, NULL }
+};
+
 int DissectorTable_register(lua_State* L) {
-    WSLUA_REGISTER_CLASS(DissectorTable);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(DissectorTable);
 
     lua_newtable (L);
     dissectortable_table_ref = luaL_ref(L, LUA_REGISTRYINDEX);

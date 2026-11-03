@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <stdio.h>
@@ -23,9 +23,10 @@
 
 #include <wsutil/cmdarg_err.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 #include <wsutil/file_util.h>
 #include <wsutil/privileges.h>
-#include <cli_main.h>
+#include <wsutil/report_message.h>
 #include <wsutil/version_info.h>
 #include <wiretap/wtap_opttypes.h>
 
@@ -95,7 +96,7 @@ frame_write(FrameRecord_t *frame, wtap *wth, wtap_dumper *pdh,
             fprintf(stderr,
                     "reordercap: An error occurred while re-reading \"%s\".\n",
                     infile);
-            cfile_read_failure_message(infile, err, err_info);
+            report_cfile_read_failure(infile, err, err_info);
             return false;
         }
     }
@@ -107,12 +108,10 @@ frame_write(FrameRecord_t *frame, wtap *wth, wtap_dumper *pdh,
 
     /* Dump frame to outfile */
     if (!wtap_dump(pdh, rec, &err, &err_info)) {
-        cfile_write_failure_message(infile, outfile, err, err_info, frame->num,
-                                    wtap_file_type_subtype(wth));
+        report_cfile_write_failure(infile, outfile, err, err_info, frame->num,
+                                   wtap_file_type_subtype(wth));
         return false;
     }
-    wtap_rec_reset(rec);
-
     return true;
 }
 
@@ -167,6 +166,8 @@ main(int argc, char *argv[])
     int file_count;
     char *infile;
     const char *outfile;
+    const struct file_extension_info* file_extensions;
+    unsigned num_extensions;
 
     /* Set the program name. */
     g_set_prgname("reordercap");
@@ -174,7 +175,7 @@ main(int argc, char *argv[])
     cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init(vcmdarg_err);
+    ws_log_init(vcmdarg_err, "Reordercap Debug Console");
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -190,7 +191,7 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0]);
+    configuration_init_error = configuration_init(argv[0], "wireshark");
     if (configuration_init_error != NULL) {
         fprintf(stderr,
                 "reordercap: Can't get pathname of directory containing the reordercap program: %s.\n",
@@ -199,11 +200,12 @@ main(int argc, char *argv[])
     }
 
     /* Initialize the version information. */
-    ws_init_version_info("Reordercap", NULL, NULL);
+    ws_init_version_info("Reordercap", NULL, application_get_vcs_version_info, NULL, NULL);
 
     init_report_failure_message("reordercap");
 
-    wtap_init(true);
+    application_file_extensions(&file_extensions, &num_extensions);
+    wtap_init(true, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
     /* Process the options first */
     while ((opt = ws_getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
@@ -245,9 +247,9 @@ main(int argc, char *argv[])
     /* Open infile */
     /* TODO: if reordercap is ever changed to give the user a choice of which
        open_routine reader to use, then the following needs to change. */
-    wth = wtap_open_offline(infile, WTAP_TYPE_AUTO, &err, &err_info, true);
+    wth = wtap_open_offline(infile, WTAP_TYPE_AUTO, &err, &err_info, true, application_configuration_environment_prefix());
     if (wth == NULL) {
-        cfile_open_failure_message(infile, err, err_info);
+        report_cfile_open_failure(infile, err, err_info);
         ret = WS_EXIT_OPEN_ERROR;
         goto clean_exit;
     }
@@ -257,7 +259,7 @@ main(int argc, char *argv[])
     frames = g_ptr_array_new();
 
     /* Read each frame from infile */
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     while (wtap_read(wth, &rec, &err, &err_info, &data_offset)) {
         FrameRecord_t *newFrameRecord;
 
@@ -276,12 +278,11 @@ main(int argc, char *argv[])
 
         g_ptr_array_add(frames, newFrameRecord);
         prevFrame = newFrameRecord;
-        wtap_rec_reset(&rec);
     }
     wtap_rec_cleanup(&rec);
     if (err != 0) {
       /* Print a message noting that the read failed somewhere along the line. */
-      cfile_read_failure_message(infile, err, err_info);
+      report_cfile_read_failure(infile, err, err_info);
     }
 
     printf("%u frames, %u out of order\n", frames->len, wrong_order_count);
@@ -300,17 +301,17 @@ main(int argc, char *argv[])
         /* Open outfile (same filetype/encap as input file) */
         if (strcmp(outfile, "-") == 0) {
           pdh = wtap_dump_open_stdout(wtap_file_type_subtype(wth),
-                                      WTAP_UNCOMPRESSED, &params, &err, &err_info);
+                                      WS_FILE_UNCOMPRESSED, &params, &err, &err_info);
         } else {
           pdh = wtap_dump_open(outfile, wtap_file_type_subtype(wth),
-                               WTAP_UNCOMPRESSED, &params, &err, &err_info);
+                               WS_FILE_UNCOMPRESSED, &params, &err, &err_info);
         }
         g_free(params.idb_inf);
         params.idb_inf = NULL;
 
         if (pdh == NULL) {
-            cfile_dump_open_failure_message(outfile, err, err_info,
-                                            wtap_file_type_subtype(wth));
+            report_cfile_dump_open_failure(outfile, err, err_info,
+                                           wtap_file_type_subtype(wth));
             wtap_dump_params_cleanup(&params);
             ret = OUTPUT_FILE_ERROR;
             goto clean_exit;
@@ -318,7 +319,7 @@ main(int argc, char *argv[])
 
 
         /* Write out each sorted frame in turn */
-        wtap_rec_init(&rec, 1514);
+        wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
         for (i = 0; i < frames->len; i++) {
             FrameRecord_t *frame = (FrameRecord_t *)frames->pdata[i];
 
@@ -334,7 +335,7 @@ main(int argc, char *argv[])
 
         /* Close outfile */
         if (!wtap_dump_close(pdh, NULL, &err, &err_info)) {
-            cfile_close_failure_message(outfile, err, err_info);
+            report_cfile_close_failure(outfile, err, err_info);
             wtap_dump_params_cleanup(&params);
             ret = OUTPUT_FILE_ERROR;
             goto clean_exit;

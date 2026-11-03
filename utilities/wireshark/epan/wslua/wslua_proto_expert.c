@@ -131,15 +131,46 @@ WSLUA_CONSTRUCTOR ProtoExpert_new(lua_State* L) {
     WSLUA_RETURN(1); /* The newly created `ProtoExpert` object. */
 }
 
+/* WSLUA_ATTRIBUTE ProtoExpert_abbrev RO The filter name/abbreviation of the
+   expert field. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(ProtoExpert,abbrev,abbrev);
+
+/* WSLUA_ATTRIBUTE ProtoExpert_text RO The default text of the expert field. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(ProtoExpert,text,text);
+
+/* WSLUA_ATTRIBUTE ProtoExpert_group RO The expert group as a descriptive
+   string (matches expert.group.*). */
+WSLUA_ATTRIBUTE_GET(ProtoExpert,group, {
+    lua_pushstring(L, val_to_str_const(obj->group, expert_group_vals,
+                                       "Unknown"));
+});
+
+/* WSLUA_ATTRIBUTE ProtoExpert_severity RO The severity level as a
+   descriptive string (matches expert.severity.*). */
+WSLUA_ATTRIBUTE_GET(ProtoExpert,severity, {
+    lua_pushstring(L, val_to_str_const(obj->severity, expert_severity_vals,
+                                       "Unknown"));
+});
+
 WSLUA_METAMETHOD ProtoExpert__tostring(lua_State* L) {
-    /* Returns a string with debugging information about a `ProtoExpert` object. */
+    /* Returns a short label of the form
+       `ProtoExpert: <abbrev> severity=<severity> text="<text>"`
+       where <severity> is the human-readable severity name
+       (matching `ProtoExpert.severity`). Replaces the previous
+       integer-only dump of every internal id, which is still
+       reachable via the individual `abbrev`/`text`/`group`/
+       `severity` attributes. */
     ProtoExpert pe = toProtoExpert(L,1);
 
     if (!pe) {
-        lua_pushstring(L,"ProtoExpert pointer is NULL!");
+        lua_pushstring(L, "ProtoExpert: (null)");
     } else {
-        lua_pushfstring(L, "ProtoExpert: ei=%d, hf=%d, abbr=%s, text=%s, group=%d, severity=%d",
-                        pe->ids.ei, pe->ids.hf, pe->abbrev, pe->text, pe->group, pe->severity);
+        const char *sev = val_to_str_const(pe->severity, expert_severity_vals,
+                                           "Unknown");
+        lua_pushfstring(L, "ProtoExpert: %s severity=%s text=\"%s\"",
+                        pe->abbrev ? pe->abbrev : "?",
+                        sev,
+                        pe->text ? pe->text : "");
     }
     return 1;
 }
@@ -175,8 +206,20 @@ WSLUA_META ProtoExpert_meta[] = {
     { NULL, NULL }
 };
 
+/* Registered as a sub-table of the class' metatable so that
+ * ProtoExpert.abbrev, .text, .group and .severity resolve via the wslua
+ * attribute dispatcher. This also lets the Lua debugger drill down into
+ * each ProtoExpert in Proto.experts. */
+WSLUA_ATTRIBUTES ProtoExpert_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(ProtoExpert,abbrev),
+    WSLUA_ATTRIBUTE_ROREG(ProtoExpert,text),
+    WSLUA_ATTRIBUTE_ROREG(ProtoExpert,group),
+    WSLUA_ATTRIBUTE_ROREG(ProtoExpert,severity),
+    { NULL, NULL, NULL }
+};
+
 int ProtoExpert_register(lua_State* L) {
-    WSLUA_REGISTER_CLASS(ProtoExpert);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(ProtoExpert);
     return 0;
 }
 

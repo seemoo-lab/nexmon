@@ -312,9 +312,9 @@ Function PlatformCheck
 
   ${If} ${AtMostWin8.1}
   ${OrIf} ${AtMostWin2012R2}
-  ${OrIfNot} ${AtLeastBuild} 17763
+  ${OrIfNot} ${AtLeastBuild} 19044
     MessageBox MB_OK \
-      "Windows 10, version 1809 or Server 2019 and later are required." /SD IDOK
+      "Windows 10, version 21H2 or Server 2022 and later are required." /SD IDOK
     Quit
   ${EndIf}
 
@@ -348,6 +348,7 @@ WriteUninstaller "$INSTDIR\${UNINSTALLER_NAME}"
 File "${STAGING_DIR}\libwiretap.dll"
 File "${STAGING_DIR}\libwireshark.dll"
 File "${STAGING_DIR}\libwsutil.dll"
+File "${STAGING_DIR}\libuiqt_plugin.dll"
 
 !include stratoshark-manifest.nsh
 
@@ -400,7 +401,7 @@ Delete "$INSTDIR\${VCREDIST_EXE}"
 
 
 ; Global config files
-File "${TOP_SRC_DIR}\resources\share\stratoshark\colorfilters"
+File "${TOP_SRC_DIR}\resources\share\stratoshark\coloring_rules.jsonc"
 File "${TOP_SRC_DIR}\resources\share\stratoshark\dfilter_buttons"
 ;File "${TOP_SRC_DIR}\resources\share\stratoshark\dfilters"
 File "${STAGING_DIR}\smi_modules"
@@ -783,6 +784,16 @@ Call Associate
 ; AdditionalTasks page
 ${Endif}
 
+; Create a dummy configuraton directory for libgcrypt
+; XXX Is there a way to confidently and cleanly remove this?
+CreateDirectory $COMMONPROGRAMDATA\GNU\etc\gcrypt
+; This *should* match the gpg4win installer behavior.
+ExecShellWait "" "$SYSDIR\icacls.exe" '"$COMMONPROGRAMDATA\GNU\etc\gcrypt" /inheritance:r' SW_HIDE
+; BUILTIN\Administrators
+ExecShellWait "" "$SYSDIR\icacls.exe" '"$COMMONPROGRAMDATA\GNU\etc\gcrypt" /grant *S-1-5-32-544:(GA)' SW_HIDE
+; BUILTIN\Users
+ExecShellWait "" "$SYSDIR\icacls.exe" '"$COMMONPROGRAMDATA\GNU\etc\gcrypt" /grant *S-1-5-32-545:(R,RA,REA,RC,GE)' SW_HIDE
+
 SectionEnd ; "Required"
 
 !ifdef QT_DIR
@@ -821,52 +832,31 @@ Section "-Plugins & Extensions"
 
 ;-------------------------------------------
 SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
-File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\falco-events.dll"
+File "${STAGING_DIR}\plugins\stratoshark\${MAJOR_VERSION}.${MINOR_VERSION}\epan\falco-events.dll"
 SetOutPath '$INSTDIR\plugins\falco'
-File "${STAGING_DIR}\plugins\falco\cloudtrail.dll"
-File "${STAGING_DIR}\plugins\falco\gcpaudit.dll"
-File "${STAGING_DIR}\plugins\falco\k8saudit.dll"
+File "${STAGING_DIR}\plugins\stratoshark\falco\cloudtrail.dll"
+File "${STAGING_DIR}\plugins\stratoshark\falco\gcpaudit.dll"
+File "${STAGING_DIR}\plugins\stratoshark\falco\k8saudit.dll"
 !include "custom_plugins.txt"
 
 ;-------------------------------------------
 SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
-File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\stats_tree.dll"
+File "${STAGING_DIR}\plugins\wireshark\${MAJOR_VERSION}.${MINOR_VERSION}\epan\stats_tree.dll"
 
 ;-------------------------------------------
 SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
-File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\mate.dll"
+File "${STAGING_DIR}\plugins\wireshark\${MAJOR_VERSION}.${MINOR_VERSION}\epan\mate.dll"
 
-;-------------------------------------------
-; This should be a function or macro
-SetOutPath '$INSTDIR\profiles\CloudTrail'
-File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\CloudTrail\colorfilters"
-File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\CloudTrail\dfilter_buttons"
-File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\CloudTrail\preferences"
-File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\CloudTrail\profile_settings"
-; File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\CloudTrail\preferences"
-; SetOutPath '$INSTDIR\profiles\Classic'
-; File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\Classic\colorfilters"
-; SetOutPath '$INSTDIR\profiles\No Reassembly'
-; File "${TOP_SRC_DIR}\resources\share\stratoshark\profiles\No Reassembly\preferences"
-
+!include stratoshark-profile-manifest.nsh
 
 !ifdef SMI_DIR
 ;-------------------------------------------
-SetOutPath '$INSTDIR\snmp\mibs'
-File "${SMI_DIR}\share\mibs\iana\*"
-File "${SMI_DIR}\share\mibs\ietf\*"
-File "${SMI_DIR}\share\mibs\irtf\*"
-File "${SMI_DIR}\share\mibs\tubs\*"
-File "${SMI_DIR}\share\pibs\*"
-File "${SMI_DIR}\share\yang\*.yang"
+SetOutPath '$INSTDIR\snmp'
+File /r "${SMI_DIR}\share\mibs"
+File /r "${SMI_DIR}\share\pibs"
+File /r "${SMI_DIR}\share\yang"
 !include "custom_mibs.txt"
 !endif
-
-SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
-File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\transum.dll"
-
-SetOutPath '$INSTDIR\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan'
-File "${STAGING_DIR}\plugins\${MAJOR_VERSION}.${MINOR_VERSION}\epan\stats_tree.dll"
 
 SectionEnd ; "Plugins / Extensions"
 
@@ -908,6 +898,8 @@ File "${STAGING_DIR}\text2pcap.html"
 SectionEnd ; "Tools"
 
 SectionGroup /e "External capture tools (extcap)" SecExtcapGroup
+
+; Dumpcalls is Linux-only
 
 Section "Falcodump" SecFalcodump
 ;-------------------------------------------
@@ -1223,6 +1215,8 @@ Delete "$INSTDIR\printsupport\*.*"
 Delete "$INSTDIR\share\glib-2.0\schemas\*.*"
 Delete "$INSTDIR\snmp\*.*"
 Delete "$INSTDIR\snmp\mibs\*.*"
+Delete "$INSTDIR\snmp\pibs\*.*"
+Delete "$INSTDIR\snmp\yang\*.*"
 Delete "$INSTDIR\styles\translations\*.*"
 Delete "$INSTDIR\styles\*.*"
 Delete "$INSTDIR\protobuf\*.*"
@@ -1272,8 +1266,7 @@ RMDir "$INSTDIR\help"
 RMDir "$INSTDIR\generic"
 RMDir /r "$INSTDIR\Wireshark User's Guide"
 RMDir "$INSTDIR\diameter"
-RMDir "$INSTDIR\snmp\mibs"
-RMDir "$INSTDIR\snmp"
+RMDir /r "$INSTDIR\snmp"
 RMDir "$INSTDIR\radius"
 RMDir "$INSTDIR\dtds"
 RMDir "$INSTDIR\protobuf"
@@ -1306,6 +1299,7 @@ Section "Un.Global Settings" un.SecGlobalSettings
 ;-------------------------------------------
 SectionIn 1 2
 Delete "$INSTDIR\colorfilters"
+Delete "$INSTDIR\coloring_rules.jsonc"
 Delete "$INSTDIR\dfilter_buttons"
 Delete "$INSTDIR\dfilters"
 Delete "$INSTDIR\smi_modules"
@@ -1360,7 +1354,7 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${un.SecUinstall} "Uninstall all ${PROGRAM_NAME} components."
   !insertmacro MUI_DESCRIPTION_TEXT ${un.SecPlugins} "Uninstall all Plugins (even from previous ${PROGRAM_NAME} versions)."
   !insertmacro MUI_DESCRIPTION_TEXT ${un.SecProfiles} "Uninstall all global configuration profiles."
-  !insertmacro MUI_DESCRIPTION_TEXT ${un.SecGlobalSettings} "Uninstall global settings like: $INSTDIR\colorfilters"
+  !insertmacro MUI_DESCRIPTION_TEXT ${un.SecGlobalSettings} "Uninstall global settings like: $INSTDIR\coloring_rules.jsonc"
   !insertmacro MUI_DESCRIPTION_TEXT ${un.SecPersonalSettings} "Uninstall personal settings like your preferences file from your profile: $PROFILE."
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 

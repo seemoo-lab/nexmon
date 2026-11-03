@@ -1075,7 +1075,7 @@ drda_packet_from_server(packet_info *pinfo, uint32_t command, uint8_t dsstyp)
 }
 
 static int
-dissect_fdoca_integer(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset,int length, const drda_pdu_info_t *pdu_info, uint32_t *value)
+dissect_fdoca_integer(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset,unsigned length, const drda_pdu_info_t *pdu_info, int32_t *value)
 {
     unsigned endian;
     switch (pdu_info->typdefnam) {
@@ -1095,7 +1095,7 @@ dissect_fdoca_integer(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset,
 }
 
 static int
-dissect_fdoca_integer64(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset,int length, const drda_pdu_info_t *pdu_info, uint64_t *value)
+dissect_fdoca_integer64(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset,unsigned length, const drda_pdu_info_t *pdu_info, int64_t *value)
 {
     unsigned endian;
     switch (pdu_info->typdefnam) {
@@ -1115,14 +1115,14 @@ dissect_fdoca_integer64(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offse
 }
 
 static int
-dissect_fdoca_fcs(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, int length, const drda_pdu_info_t *pdu_info)
+dissect_fdoca_fcs(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset, unsigned length, const drda_pdu_info_t *pdu_info)
 {
     proto_tree_add_item(tree, hf_index, tvb, offset, length, pdu_info->sbc);
     return offset + length;
 }
 
 static int
-dissect_fdoca_vcs(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, const drda_pdu_info_t *pdu_info)
+dissect_fdoca_vcs(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset, const drda_pdu_info_t *pdu_info)
 {
     uint32_t item_len;
     proto_tree_add_item_ret_uint(tree, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &item_len);
@@ -1132,7 +1132,7 @@ dissect_fdoca_vcs(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, con
 }
 
 static int
-dissect_fdoca_vcm(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, const drda_pdu_info_t *pdu_info)
+dissect_fdoca_vcm(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset, const drda_pdu_info_t *pdu_info)
 {
     uint32_t item_len;
     proto_tree_add_item_ret_uint(tree, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &item_len);
@@ -1142,7 +1142,7 @@ dissect_fdoca_vcm(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, con
 }
 
 static int
-dissect_fdoca_nocs(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, const drda_pdu_info_t *pdu_info)
+dissect_fdoca_nocs(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset, const drda_pdu_info_t *pdu_info)
 {
     uint32_t null_ind, item_length;
     proto_tree_add_item_ret_uint(tree, hf_drda_null_ind, tvb, offset, 1, ENC_NA, &null_ind);
@@ -1157,7 +1157,7 @@ dissect_fdoca_nocs(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, co
 }
 
 static int
-dissect_fdoca_nocm(proto_tree *tree, int hf_index, tvbuff_t *tvb, int offset, const drda_pdu_info_t *pdu_info)
+dissect_fdoca_nocm(proto_tree *tree, int hf_index, tvbuff_t *tvb, unsigned offset, const drda_pdu_info_t *pdu_info)
 {
     uint32_t null_ind, item_length;
     proto_tree_add_item_ret_uint(tree, hf_drda_null_ind, tvb, offset, 1, ENC_NA, &null_ind);
@@ -1175,16 +1175,16 @@ static int
 dissect_drda_typdefnam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
-    const uint8_t *typdefnam;
+    const char *typdefnam;
 
-    proto_tree_add_item_ret_string(tree, hf_drda_typdefnam, tvb, 0, tvb_reported_length(tvb), ENC_UTF_8, pinfo->pool, &typdefnam);
+    proto_tree_add_item_ret_string(tree, hf_drda_typdefnam, tvb, 0, tvb_reported_length(tvb), ENC_UTF_8, pinfo->pool, (const uint8_t**)&typdefnam);
     for (int i = 0; typdefnam_vals[i].name != NULL; i++) {
         if (strcmp(typdefnam_vals[i].name, typdefnam) == 0) {
             pdu_info->typdefnam = typdefnam_vals[i].value;
             break;
         }
     }
-    proto_tree_add_item_ret_string(tree, hf_drda_typdefnam, tvb, 0, tvb_reported_length(tvb), ENC_EBCDIC_CP500, pinfo->pool, &typdefnam);
+    proto_tree_add_item_ret_string(tree, hf_drda_typdefnam, tvb, 0, tvb_reported_length(tvb), ENC_EBCDIC_CP500, pinfo->pool, (const uint8_t**)&typdefnam);
     for (int i = 0; typdefnam_vals[i].name != NULL; i++) {
         if (strcmp(typdefnam_vals[i].name, typdefnam) == 0) {
             pdu_info->typdefnam = typdefnam_vals[i].value;
@@ -1199,7 +1199,7 @@ dissect_drda_sqlstt(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
 {
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
 
-    int offset = 0;
+    unsigned offset = 0;
 
     uint32_t sqlstt_length;
 
@@ -1254,7 +1254,7 @@ dissect_drda_sqldiaggrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_item *ti;
     proto_tree *subtree;
-    int offset = 0;
+    unsigned offset = 0;
 
     uint32_t null_ind;
 
@@ -1283,7 +1283,7 @@ dissect_drda_sqludtgrp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 {
     proto_item *ti;
     proto_tree *subtree;
-    int offset = 0;
+    unsigned offset = 0;
 
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
     uint32_t null_ind;
@@ -1360,7 +1360,7 @@ dissect_drda_sqldxgrp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, v
 {
     proto_item *ti;
     proto_tree *subtree;
-    int offset = 0;
+    unsigned offset = 0;
 
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
     uint32_t null_ind;
@@ -1527,7 +1527,7 @@ dissect_drda_sqldhgrp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, v
 {
     proto_item *sqldhgrp_ti;
     proto_tree *sqldhgrp_tree;
-    int offset = 0, len;
+    unsigned offset = 0, len;
 
     uint32_t null_ind;
 
@@ -1573,7 +1573,7 @@ dissect_drda_sqldoptgrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_item *sqldoptgrp_ti, *expert_ti;
     proto_tree *subtree;
-    int offset = 0;
+    unsigned offset = 0;
 
     uint32_t null_ind;
 
@@ -1685,7 +1685,7 @@ dissect_drda_sqldagrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 {
     proto_item *sqldagrp_ti;
     proto_tree *subtree;
-    int offset = 0;
+    unsigned offset = 0;
 
     //uint32_t null_ind;
 
@@ -1740,7 +1740,7 @@ dissect_drda_sqlcard(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 
     proto_item *ti, *sqlcard_ti;
     proto_tree *subtree, *sqlcard_tree;
-    int offset = 0, len = 4;
+    unsigned offset = 0, len = 4;
 
     uint32_t null_ind, length;
 
@@ -1801,8 +1801,8 @@ dissect_drda_sqlcard(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
              */
             proto_tree_add_item_ret_uint(subtree, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &length);
             offset += 2;
-            int end_offset;
-            while ((end_offset = tvb_find_uint8(tvb, offset, length, 0xFF)) != -1) {
+            unsigned end_offset;
+            while ((tvb_find_uint8_length(tvb, offset, length, 0xFF, &end_offset))) {
                 proto_tree_add_item(subtree, hf_drda_sqlerrmsg, tvb, offset, end_offset - offset, pdu_info->mbc);
                 length -= (end_offset + 1 - offset);
                 offset = end_offset + 1;
@@ -1815,7 +1815,7 @@ dissect_drda_sqlcard(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
              */
             proto_tree_add_item_ret_uint(subtree, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &length);
             offset += 2;
-            while ((end_offset = tvb_find_uint8(tvb, offset, length, 0xFF)) != -1) {
+            while ((tvb_find_uint8_length(tvb, offset, length, 0xFF, &end_offset))) {
                 proto_tree_add_item(subtree, hf_drda_sqlerrmsg, tvb, offset, end_offset - offset, pdu_info->sbc);
                 length -= (end_offset + 1 - offset);
                 offset = end_offset + 1;
@@ -1845,10 +1845,10 @@ dissect_drda_sqlcard(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 static int
 dissect_drda_sqldard(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
 
-    uint32_t numrows;
+    int32_t numrows;
 
     offset = dissect_drda_sqlcard(tvb, pinfo, tree, data);
 
@@ -1856,7 +1856,7 @@ dissect_drda_sqldard(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, vo
         offset += dissect_drda_sqldhgrp(tvb_new_subset_remaining(tvb, offset), pinfo, tree, data);
     }
     offset = dissect_fdoca_integer(tree, hf_drda_sqlnum, tvb, offset, 2, pdu_info, &numrows);
-    for (uint32_t i = 0; i < numrows; ++i) {
+    for (int32_t i = 0; i < numrows; ++i) {
         offset += dissect_drda_sqldagrp(tvb_new_subset_remaining(tvb, offset), pinfo, tree, data);
     }
     return offset;
@@ -1865,7 +1865,7 @@ dissect_drda_sqldard(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, vo
 static int
 dissect_drda_undecoded(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_tree_add_expert(tree, pinfo, &ei_drda_undecoded, tvb, 0, -1);
+    proto_tree_add_expert_remaining(tree, pinfo, &ei_drda_undecoded, tvb, 0);
     return tvb_captured_length(tvb);
 }
 
@@ -1907,7 +1907,7 @@ static int
 dissect_drda_secmec(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
     /* REPEATABLE */
-    int offset = 0;
+    unsigned offset = 0;
     while (tvb_reported_length_remaining(tvb, offset) >= 2) {
         proto_tree_add_item(tree, hf_drda_secmec, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
@@ -2089,7 +2089,7 @@ static int
 dissect_drda_pkgnam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item *ti_length;
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t length;
 
     /* The PKGNAMCSN can have one of the following two formats depending on the
@@ -2164,7 +2164,7 @@ dissect_drda_outexp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
 static int
 dissect_drda_pkgnamct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    int offset;
+    unsigned offset;
 
     offset = dissect_drda_pkgnam(tvb_new_subset_length(tvb, 0, tvb_reported_length_remaining(tvb, 8)), pinfo, tree, data);
 
@@ -2177,7 +2177,7 @@ dissect_drda_pkgnamct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 static int
 dissect_drda_pkgnamcsn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    int offset;
+    unsigned offset;
 
     offset = dissect_drda_pkgnamct(tvb_new_subset_length(tvb, 0, tvb_reported_length_remaining(tvb, 2)), pinfo, tree, data);
 
@@ -2408,7 +2408,7 @@ dissect_drda_mgrlvlls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 
     drda_pdu_info_t *pdu_info = (drda_pdu_info_t*)data;
 
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t mgrlvln;
     uint16_t iParameterCP;
     int iLengthParam = 4;
@@ -2466,11 +2466,11 @@ static int
 dissect_drda_collection(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_tree *drda_tree_sub;
-    proto_item *ti;
-    int offset = 0;
+    proto_item *ti, *ti_length;
+    unsigned offset = 0;
 
-    uint16_t iParameterCP;
-    int iLengthParam;
+    unsigned iParameterCP;
+    unsigned iLengthParam;
 
     /* All objects in DDM are modeled as either scalars or collections.
      * A collection has the length before each element.
@@ -2480,19 +2480,20 @@ dissect_drda_collection(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
     while (tvb_reported_length_remaining(tvb, offset) >= 2)
     {
-        iLengthParam = tvb_get_ntohs(tvb, offset + 0);
-        if (tvb_reported_length_remaining(tvb, offset) >= iLengthParam)
-        {
-            iParameterCP = tvb_get_ntohs(tvb, offset + 2);
-            drda_tree_sub = proto_tree_add_subtree(tree, tvb, offset, iLengthParam,
-                            ett_drda_param, &ti, DRDA_TEXT_PARAM);
-            proto_item_append_text(ti, " (%s)", val_to_str_ext(pinfo->pool, iParameterCP, &drda_opcode_vals_ext, "Unknown (0x%02x)"));
-            proto_tree_add_item(drda_tree_sub, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN);
-            proto_tree_add_item(drda_tree_sub, hf_drda_param_codepoint, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
-            if (!dissector_try_uint_with_data(drda_opcode_table, iParameterCP, tvb_new_subset_length(tvb, offset + 4, iLengthParam - 4), pinfo, drda_tree_sub, false, data)) {
-                proto_tree_add_item(drda_tree_sub, hf_drda_param_data, tvb, offset + 4, iLengthParam - 4, ENC_UTF_8);
-                proto_tree_add_item(drda_tree_sub, hf_drda_param_data_ebcdic, tvb, offset + 4, iLengthParam - 4, ENC_EBCDIC_CP500);
-            }
+        drda_tree_sub = proto_tree_add_subtree(tree, tvb, offset, 4,
+                        ett_drda_param, &ti, DRDA_TEXT_PARAM);
+        ti_length = proto_tree_add_item_ret_uint(drda_tree_sub, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &iLengthParam);
+        if (iLengthParam < 4) {
+            expert_add_info_format(pinfo, ti_length, &ei_drda_opcode_invalid_length, "Invalid length detected (%u): should be at least 4 bytes long", iLengthParam);
+            proto_item_set_len(ti, tvb_reported_length_remaining(tvb, offset));
+            break;
+        }
+        proto_item_set_len(ti, iLengthParam);
+        proto_tree_add_item_ret_uint(drda_tree_sub, hf_drda_param_codepoint, tvb, offset + 2, 2, ENC_BIG_ENDIAN, &iParameterCP);
+        proto_item_append_text(ti, " (%s)", val_to_str_ext(pinfo->pool, iParameterCP, &drda_opcode_vals_ext, "Unknown (0x%02x)"));
+        if (!dissector_try_uint_with_data(drda_opcode_table, iParameterCP, tvb_new_subset_length(tvb, offset + 4, iLengthParam - 4), pinfo, drda_tree_sub, false, data)) {
+            proto_tree_add_item(drda_tree_sub, hf_drda_param_data, tvb, offset + 4, iLengthParam - 4, ENC_UTF_8);
+            proto_tree_add_item(drda_tree_sub, hf_drda_param_data_ebcdic, tvb, offset + 4, iLengthParam - 4, ENC_EBCDIC_CP500);
         }
         offset += iLengthParam;
     }
@@ -2518,7 +2519,7 @@ dissect_drda_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     proto_tree  *drdaroot_tree;
     proto_tree  *drda_tree_sub;
     proto_item  *ti, *ddm_ti, *ti_length;
-    int offset = 0;
+    unsigned offset = 0;
 
     drda_conv_info_t *conv_info;
     drda_flow_t      *flow;
@@ -2526,10 +2527,10 @@ dissect_drda_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     uint64_t flags;
     uint32_t iLength, iCommand, correl;
 
-    uint16_t iParameterCP;
+    unsigned iParameterCP;
     uint8_t dsstyp;
     bool is_server = false;
-    int iLengthParam;
+    unsigned iLengthParam;
 
     static int * const format_flags[] = {
         &hf_drda_ddm_fmt_reserved,
@@ -2574,21 +2575,22 @@ dissect_drda_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
         offset = 10;
         while (tvb_reported_length_remaining(tvb, offset) >= 2)
         {
-            iLengthParam = tvb_get_ntohs(tvb, offset + 0);
+            drda_tree_sub = proto_tree_add_subtree(drdaroot_tree, tvb, offset, 4,
+                            ett_drda_param, &ti, DRDA_TEXT_PARAM);
+            ti_length = proto_tree_add_item_ret_uint(drda_tree_sub, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN, &iLengthParam);
             if (iLengthParam == 0 || iLengthParam == 1)
                 iLengthParam = iLength - 10;
-            if (tvb_reported_length_remaining(tvb, offset) >= iLengthParam)
-            {
-                iParameterCP = tvb_get_ntohs(tvb, offset + 2);
-                drda_tree_sub = proto_tree_add_subtree(drdaroot_tree, tvb, offset, iLengthParam,
-                                ett_drda_param, &ti, DRDA_TEXT_PARAM);
-                proto_item_append_text(ti, " (%s)", val_to_str_ext(pinfo->pool, iParameterCP, &drda_opcode_vals_ext, "Unknown (0x%02x)"));
-                proto_tree_add_item(drda_tree_sub, hf_drda_param_length, tvb, offset, 2, ENC_BIG_ENDIAN);
-                proto_tree_add_item(drda_tree_sub, hf_drda_param_codepoint, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
-                if (!dissector_try_uint_with_data(drda_opcode_table, iParameterCP, tvb_new_subset_length(tvb, offset + 4, iLengthParam - 4), pinfo, drda_tree_sub, false, pdu_info)) {
-                    proto_tree_add_item(drda_tree_sub, hf_drda_param_data, tvb, offset + 4, iLengthParam - 4, ENC_UTF_8);
-                    proto_tree_add_item(drda_tree_sub, hf_drda_param_data_ebcdic, tvb, offset + 4, iLengthParam - 4, ENC_EBCDIC_CP500);
-                }
+            if (iLengthParam < 4) {
+                expert_add_info_format(pinfo, ti_length, &ei_drda_opcode_invalid_length, "Invalid length detected (%u): should be at least 4 bytes long", iLengthParam);
+                proto_item_set_len(ti, tvb_reported_length_remaining(tvb, offset));
+                break;
+            }
+            proto_item_set_len(ti, iLengthParam);
+            proto_tree_add_item_ret_uint(drda_tree_sub, hf_drda_param_codepoint, tvb, offset + 2, 2, ENC_BIG_ENDIAN, &iParameterCP);
+            proto_item_append_text(ti, " (%s)", val_to_str_ext(pinfo->pool, iParameterCP, &drda_opcode_vals_ext, "Unknown (0x%02x)"));
+            if (!dissector_try_uint_with_data(drda_opcode_table, iParameterCP, tvb_new_subset_length(tvb, offset + 4, iLengthParam - 4), pinfo, drda_tree_sub, false, pdu_info)) {
+                proto_tree_add_item(drda_tree_sub, hf_drda_param_data, tvb, offset + 4, iLengthParam - 4, ENC_UTF_8);
+                proto_tree_add_item(drda_tree_sub, hf_drda_param_data_ebcdic, tvb, offset + 4, iLengthParam - 4, ENC_EBCDIC_CP500);
             }
             offset += iLengthParam;
         }

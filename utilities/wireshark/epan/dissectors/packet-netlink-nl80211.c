@@ -14,6 +14,7 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/oui.h>
 #include "packet-ieee80211.h"
 #include "packet-netlink.h"
 
@@ -22,12 +23,14 @@ void proto_reg_handoff_netlink_nl80211(void);
 
 typedef struct  {
     packet_info *pinfo;
+    uint8_t cmd;
 } netlink_nl80211_info_t;
 
 static dissector_handle_t ieee80211_handle;
+static dissector_handle_t eapol_handle;
 static dissector_table_t ieee80211_tag_dissector_table;
 
-/* Extracted using tools/generate-nl80211-fields.py */
+/* Extracted using tools/dissector_generators/generate-nl80211-data.py */
 /* Definitions from linux/nl80211.h {{{ */
 enum ws_nl80211_commands {
     WS_NL80211_CMD_UNSPEC,
@@ -114,7 +117,7 @@ enum ws_nl80211_commands {
     WS_NL80211_CMD_TDLS_OPER,
     WS_NL80211_CMD_TDLS_MGMT,
     WS_NL80211_CMD_UNEXPECTED_FRAME,
-    WS_NL80211_CMD_PROBE_CLIENT,
+    WS_NL80211_CMD_PROBE_PEER,
     WS_NL80211_CMD_REGISTER_BEACONS,
     WS_NL80211_CMD_UNEXPECTED_4ADDR_FRAME,
     WS_NL80211_CMD_SET_NOACK_MAP,
@@ -188,6 +191,16 @@ enum ws_nl80211_commands {
     WS_NL80211_CMD_SET_TID_TO_LINK_MAPPING,
     WS_NL80211_CMD_ASSOC_MLO_RECONF,
     WS_NL80211_CMD_EPCS_CFG,
+    WS_NL80211_CMD_NAN_NEXT_DW_NOTIFICATION,
+    WS_NL80211_CMD_NAN_CLUSTER_JOINED,
+    WS_NL80211_CMD_INCUMBENT_SIGNAL_DETECT,
+    WS_NL80211_CMD_NAN_SET_LOCAL_SCHED,
+    WS_NL80211_CMD_NAN_SCHED_UPDATE_DONE,
+    WS_NL80211_CMD_NAN_SET_PEER_SCHED,
+    WS_NL80211_CMD_NAN_ULW_UPDATE,
+    WS_NL80211_CMD_NAN_CHANNEL_EVAC,
+    WS_NL80211_CMD_START_PD,
+    WS_NL80211_CMD_STOP_PD,
 };
 
 enum ws_nl80211_attrs {
@@ -528,8 +541,37 @@ enum ws_nl80211_attrs {
     WS_NL80211_ATTR_SUPPORTED_SELECTORS,
     WS_NL80211_ATTR_MLO_RECONF_REM_LINKS,
     WS_NL80211_ATTR_EPCS,
-    WS_NL80211_ATTR_ASSOC_MLD_EXT_CAPA_OPS,
+    WS_NL80211_ATTR_EXT_MLD_CAPA_AND_OPS,
     WS_NL80211_ATTR_WIPHY_RADIO_INDEX,
+    WS_NL80211_ATTR_S1G_LONG_BEACON_PERIOD,
+    WS_NL80211_ATTR_S1G_SHORT_BEACON,
+    WS_NL80211_ATTR_BSS_PARAM,
+    WS_NL80211_ATTR_NAN_CONFIG,
+    WS_NL80211_ATTR_NAN_NEW_CLUSTER,
+    WS_NL80211_ATTR_NAN_CAPABILITIES,
+    WS_NL80211_ATTR_S1G_PRIMARY_2MHZ,
+    WS_NL80211_ATTR_EPP_PEER,
+    WS_NL80211_ATTR_UHR_CAPABILITY,
+    WS_NL80211_ATTR_DISABLE_UHR,
+    WS_NL80211_ATTR_INCUMBENT_SIGNAL_INTERFERENCE_BITMAP,
+    WS_NL80211_ATTR_UHR_OPERATION,
+    WS_NL80211_ATTR_NAN_CHANNEL,
+    WS_NL80211_ATTR_NAN_CHANNEL_ENTRY,
+    WS_NL80211_ATTR_NAN_TIME_SLOTS,
+    WS_NL80211_ATTR_NAN_RX_NSS,
+    WS_NL80211_ATTR_NAN_AVAIL_BLOB,
+    WS_NL80211_ATTR_NAN_SCHED_DEFERRED,
+    WS_NL80211_ATTR_NAN_SCHED_UPDATE_SUCCESS,
+    WS_NL80211_ATTR_NAN_NMI_MAC,
+    WS_NL80211_ATTR_NAN_ULW,
+    WS_NL80211_ATTR_NAN_COMMITTED_DW,
+    WS_NL80211_ATTR_NAN_SEQ_ID,
+    WS_NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME,
+    WS_NL80211_ATTR_NAN_PEER_MAPS,
+    WS_NL80211_ATTR_ASSOC_ENCRYPTED,
+    WS_NL80211_ATTR_NPCA_PRIMARY_FREQ,
+    WS_NL80211_ATTR_NPCA_PUNCT_BITMAP,
+    WS_NL80211_ATTR_STA_DUMP_LINK_STATS,
 };
 
 enum ws_nl80211_iftype {
@@ -546,6 +588,8 @@ enum ws_nl80211_iftype {
     WS_NL80211_IFTYPE_P2P_DEVICE,
     WS_NL80211_IFTYPE_OCB,
     WS_NL80211_IFTYPE_NAN,
+    WS_NL80211_IFTYPE_NAN_DATA,
+    WS_NL80211_IFTYPE_PD,
 };
 
 enum ws_nl80211_sta_flags {
@@ -643,6 +687,9 @@ enum ws_nl80211_rate_info {
     WS_NL80211_RATE_INFO_4_MHZ_WIDTH,
     WS_NL80211_RATE_INFO_8_MHZ_WIDTH,
     WS_NL80211_RATE_INFO_16_MHZ_WIDTH,
+    WS_NL80211_RATE_INFO_UHR_MCS,
+    WS_NL80211_RATE_INFO_UHR_ELR,
+    WS_NL80211_RATE_INFO_UHR_IM,
 };
 
 enum ws_nl80211_sta_bss_param {
@@ -760,6 +807,8 @@ enum ws_nl80211_band_iftype_attr {
     WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY,
     WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET,
     WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE,
+    WS_NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC,
+    WS_NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY,
 };
 
 enum ws_nl80211_band_attr {
@@ -823,6 +872,13 @@ enum ws_nl80211_frequency_attr {
     WS_NL80211_FREQUENCY_ATTR_CAN_MONITOR,
     WS_NL80211_FREQUENCY_ATTR_ALLOW_6GHZ_VLP_AP,
     WS_NL80211_FREQUENCY_ATTR_ALLOW_20MHZ_ACTIVITY,
+    WS_NL80211_FREQUENCY_ATTR_NO_4MHZ,
+    WS_NL80211_FREQUENCY_ATTR_NO_8MHZ,
+    WS_NL80211_FREQUENCY_ATTR_NO_16MHZ,
+    WS_NL80211_FREQUENCY_ATTR_S1G_NO_PRIMARY,
+    WS_NL80211_FREQUENCY_ATTR_NO_UHR,
+    WS_NL80211_FREQUENCY_ATTR_CAC_START_TIME,
+    WS_NL80211_FREQUENCY_ATTR_PAD,
 };
 
 enum ws_nl80211_bitrate_attr {
@@ -892,6 +948,7 @@ enum ws_nl80211_reg_rule_flags {
     WS_NL80211_RRF_NO_6GHZ_AFC_CLIENT = 1 << 23,
     WS_NL80211_RRF_ALLOW_6GHZ_VLP_AP = 1 << 24,
     WS_NL80211_RRF_ALLOW_20MHZ_ACTIVITY = 1 << 25,
+    WS_NL80211_RRF_NO_UHR = 1 << 26,
 };
 
 enum ws_nl80211_dfs_regions {
@@ -1096,6 +1153,8 @@ enum ws_nl80211_auth_type {
     WS_NL80211_AUTHTYPE_FILS_SK,
     WS_NL80211_AUTHTYPE_FILS_SK_PFS,
     WS_NL80211_AUTHTYPE_FILS_PK,
+    WS_NL80211_AUTHTYPE_EPPKE,
+    WS_NL80211_AUTHTYPE_IEEE8021X,
 };
 
 enum ws_nl80211_key_type {
@@ -1134,6 +1193,7 @@ enum ws_nl80211_key_attributes {
     WS_NL80211_KEY_DEFAULT_TYPES,
     WS_NL80211_KEY_MODE,
     WS_NL80211_KEY_DEFAULT_BEACON,
+    WS_NL80211_KEY_LTF_SEED,
 };
 
 enum ws_nl80211_tx_rate_attributes {
@@ -1145,6 +1205,9 @@ enum ws_nl80211_tx_rate_attributes {
     WS_NL80211_TXRATE_HE,
     WS_NL80211_TXRATE_HE_GI,
     WS_NL80211_TXRATE_HE_LTF,
+    WS_NL80211_TXRATE_EHT,
+    WS_NL80211_TXRATE_EHT_GI,
+    WS_NL80211_TXRATE_EHT_LTF,
 };
 
 enum ws_nl80211_txrate_gi {
@@ -1454,6 +1517,13 @@ enum ws_nl80211_ext_feature_index {
     WS_NL80211_EXT_FEATURE_OWE_OFFLOAD_AP,
     WS_NL80211_EXT_FEATURE_DFS_CONCURRENT,
     WS_NL80211_EXT_FEATURE_SPP_AMSDU_SUPPORT,
+    WS_NL80211_EXT_FEATURE_BEACON_RATE_EHT,
+    WS_NL80211_EXT_FEATURE_EPPKE,
+    WS_NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION,
+    WS_NL80211_EXT_FEATURE_IEEE8021X_AUTH,
+    WS_NL80211_EXT_FEATURE_ROC_ADDR_FILTER,
+    WS_NL80211_EXT_FEATURE_SET_KEY_LTF_SEED,
+    WS_NL80211_EXT_FEATURE_PROBE_AP,
 };
 
 enum ws_nl80211_probe_resp_offload_support_attr {
@@ -1674,6 +1744,7 @@ enum ws_nl80211_peer_measurement_peer_attrs {
     WS_NL80211_PMSR_PEER_ATTR_CHAN,
     WS_NL80211_PMSR_PEER_ATTR_REQ,
     WS_NL80211_PMSR_PEER_ATTR_RESP,
+    WS_NL80211_PMSR_PEER_ATTR_REQ_TYPE,
 };
 
 enum ws_nl80211_peer_measurement_attrs {
@@ -1683,6 +1754,8 @@ enum ws_nl80211_peer_measurement_attrs {
     WS_NL80211_PMSR_ATTR_RANDOMIZE_MAC_ADDR,
     WS_NL80211_PMSR_ATTR_TYPE_CAPA,
     WS_NL80211_PMSR_ATTR_PEERS,
+    WS_NL80211_PMSR_ATTR_MAX_PEER_ISTA_ROLE,
+    WS_NL80211_PMSR_ATTR_MAX_PEER_RSTA_ROLE,
 };
 
 enum ws_nl80211_peer_measurement_ftm_capa {
@@ -1697,6 +1770,27 @@ enum ws_nl80211_peer_measurement_ftm_capa {
     WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_FTMS_PER_BURST,
     WS_NL80211_PMSR_FTM_CAPA_ATTR_TRIGGER_BASED,
     WS_NL80211_PMSR_FTM_CAPA_ATTR_NON_TRIGGER_BASED,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_6GHZ_SUPPORT,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_LTF_REP,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_LTF_REP,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_STS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_STS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_TX,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_RX,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_RSTA_SUPPORT,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_ISTA_CAPS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_RSTA_CAPS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_NTB,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_TB,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_EDCA,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_TYPE_CAPS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_CONCURRENT_ISTA_RSTA_SUPPORT,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_TX_ANTENNAS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_RX_ANTENNAS,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_EDCA,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_NTB,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_PD_PREAMBLES,
+    WS_NL80211_PMSR_FTM_CAPA_ATTR_PD_BANDWIDTHS,
 };
 
 enum ws_nl80211_peer_measurement_ftm_req {
@@ -1714,6 +1808,16 @@ enum ws_nl80211_peer_measurement_ftm_req {
     WS_NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED,
     WS_NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK,
     WS_NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_RSTA,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_NOMINAL_TIME,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_AW_DURATION,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_NUM_MEASUREMENTS,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_PAD,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_INGRESS,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_EGRESS,
+    WS_NL80211_PMSR_FTM_REQ_ATTR_PD_SUPPRESS_RESULTS,
 };
 
 enum ws_nl80211_peer_measurement_ftm_failure_reasons {
@@ -1750,6 +1854,18 @@ enum ws_nl80211_peer_measurement_ftm_resp {
     WS_NL80211_PMSR_FTM_RESP_ATTR_LCI,
     WS_NL80211_PMSR_FTM_RESP_ATTR_CIVICLOC,
     WS_NL80211_PMSR_FTM_RESP_ATTR_PAD,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_BURST_PERIOD,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_TX_LTF_REPETITION_COUNT,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_RX_LTF_REPETITION_COUNT,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_NUM_TX_SPATIAL_STREAMS,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_NUM_RX_SPATIAL_STREAMS,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_NOMINAL_TIME,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_AVAILABILITY_WINDOW,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_CHANNEL_WIDTH,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_PREAMBLE,
+    WS_NL80211_PMSR_FTM_RESP_ATTR_IS_DELAYED_LMR,
 };
 
 enum ws_nl80211_obss_pd_attributes {
@@ -1843,6 +1959,23 @@ enum ws_nl80211_wiphy_radio_freq_range {
     WS_NL80211_WIPHY_RADIO_FREQ_ATTR_END,
 };
 
+enum ws_nl80211_s1g_short_beacon_attrs {
+    WS___NL80211_S1G_SHORT_BEACON_ATTR_INVALID,
+    WS_NL80211_S1G_SHORT_BEACON_ATTR_HEAD,
+    WS_NL80211_S1G_SHORT_BEACON_ATTR_TAIL,
+};
+
+enum ws_nl80211_nan_capabilities {
+    WS___NL80211_NAN_CAPABILITIES_INVALID,
+    WS_NL80211_NAN_CAPA_CONFIGURABLE_SYNC,
+    WS_NL80211_NAN_CAPA_USERSPACE_DE,
+    WS_NL80211_NAN_CAPA_OP_MODE,
+    WS_NL80211_NAN_CAPA_NUM_ANTENNAS,
+    WS_NL80211_NAN_CAPA_MAX_CHANNEL_SWITCH_TIME,
+    WS_NL80211_NAN_CAPA_CAPABILITIES,
+    WS_NL80211_NAN_CAPA_PHY,
+};
+
 static const value_string ws_nl80211_commands_vals[] = {
     { WS_NL80211_CMD_UNSPEC,                "NL80211_CMD_UNSPEC" },
     { WS_NL80211_CMD_GET_WIPHY,             "NL80211_CMD_GET_WIPHY" },
@@ -1928,7 +2061,7 @@ static const value_string ws_nl80211_commands_vals[] = {
     { WS_NL80211_CMD_TDLS_OPER,             "NL80211_CMD_TDLS_OPER" },
     { WS_NL80211_CMD_TDLS_MGMT,             "NL80211_CMD_TDLS_MGMT" },
     { WS_NL80211_CMD_UNEXPECTED_FRAME,      "NL80211_CMD_UNEXPECTED_FRAME" },
-    { WS_NL80211_CMD_PROBE_CLIENT,          "NL80211_CMD_PROBE_CLIENT" },
+    { WS_NL80211_CMD_PROBE_PEER,            "NL80211_CMD_PROBE_PEER" },
     { WS_NL80211_CMD_REGISTER_BEACONS,      "NL80211_CMD_REGISTER_BEACONS" },
     { WS_NL80211_CMD_UNEXPECTED_4ADDR_FRAME, "NL80211_CMD_UNEXPECTED_4ADDR_FRAME" },
     { WS_NL80211_CMD_SET_NOACK_MAP,         "NL80211_CMD_SET_NOACK_MAP" },
@@ -2002,6 +2135,16 @@ static const value_string ws_nl80211_commands_vals[] = {
     { WS_NL80211_CMD_SET_TID_TO_LINK_MAPPING, "NL80211_CMD_SET_TID_TO_LINK_MAPPING" },
     { WS_NL80211_CMD_ASSOC_MLO_RECONF,      "NL80211_CMD_ASSOC_MLO_RECONF" },
     { WS_NL80211_CMD_EPCS_CFG,              "NL80211_CMD_EPCS_CFG" },
+    { WS_NL80211_CMD_NAN_NEXT_DW_NOTIFICATION, "NL80211_CMD_NAN_NEXT_DW_NOTIFICATION" },
+    { WS_NL80211_CMD_NAN_CLUSTER_JOINED,    "NL80211_CMD_NAN_CLUSTER_JOINED" },
+    { WS_NL80211_CMD_INCUMBENT_SIGNAL_DETECT, "NL80211_CMD_INCUMBENT_SIGNAL_DETECT" },
+    { WS_NL80211_CMD_NAN_SET_LOCAL_SCHED,   "NL80211_CMD_NAN_SET_LOCAL_SCHED" },
+    { WS_NL80211_CMD_NAN_SCHED_UPDATE_DONE, "NL80211_CMD_NAN_SCHED_UPDATE_DONE" },
+    { WS_NL80211_CMD_NAN_SET_PEER_SCHED,    "NL80211_CMD_NAN_SET_PEER_SCHED" },
+    { WS_NL80211_CMD_NAN_ULW_UPDATE,        "NL80211_CMD_NAN_ULW_UPDATE" },
+    { WS_NL80211_CMD_NAN_CHANNEL_EVAC,      "NL80211_CMD_NAN_CHANNEL_EVAC" },
+    { WS_NL80211_CMD_START_PD,              "NL80211_CMD_START_PD" },
+    { WS_NL80211_CMD_STOP_PD,               "NL80211_CMD_STOP_PD" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_commands_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_commands_vals);
@@ -2344,8 +2487,37 @@ static const value_string ws_nl80211_attrs_vals[] = {
     { WS_NL80211_ATTR_SUPPORTED_SELECTORS,  "NL80211_ATTR_SUPPORTED_SELECTORS" },
     { WS_NL80211_ATTR_MLO_RECONF_REM_LINKS, "NL80211_ATTR_MLO_RECONF_REM_LINKS" },
     { WS_NL80211_ATTR_EPCS,                 "NL80211_ATTR_EPCS" },
-    { WS_NL80211_ATTR_ASSOC_MLD_EXT_CAPA_OPS, "NL80211_ATTR_ASSOC_MLD_EXT_CAPA_OPS" },
+    { WS_NL80211_ATTR_EXT_MLD_CAPA_AND_OPS, "NL80211_ATTR_EXT_MLD_CAPA_AND_OPS" },
     { WS_NL80211_ATTR_WIPHY_RADIO_INDEX,    "NL80211_ATTR_WIPHY_RADIO_INDEX" },
+    { WS_NL80211_ATTR_S1G_LONG_BEACON_PERIOD, "NL80211_ATTR_S1G_LONG_BEACON_PERIOD" },
+    { WS_NL80211_ATTR_S1G_SHORT_BEACON,     "NL80211_ATTR_S1G_SHORT_BEACON" },
+    { WS_NL80211_ATTR_BSS_PARAM,            "NL80211_ATTR_BSS_PARAM" },
+    { WS_NL80211_ATTR_NAN_CONFIG,           "NL80211_ATTR_NAN_CONFIG" },
+    { WS_NL80211_ATTR_NAN_NEW_CLUSTER,      "NL80211_ATTR_NAN_NEW_CLUSTER" },
+    { WS_NL80211_ATTR_NAN_CAPABILITIES,     "NL80211_ATTR_NAN_CAPABILITIES" },
+    { WS_NL80211_ATTR_S1G_PRIMARY_2MHZ,     "NL80211_ATTR_S1G_PRIMARY_2MHZ" },
+    { WS_NL80211_ATTR_EPP_PEER,             "NL80211_ATTR_EPP_PEER" },
+    { WS_NL80211_ATTR_UHR_CAPABILITY,       "NL80211_ATTR_UHR_CAPABILITY" },
+    { WS_NL80211_ATTR_DISABLE_UHR,          "NL80211_ATTR_DISABLE_UHR" },
+    { WS_NL80211_ATTR_INCUMBENT_SIGNAL_INTERFERENCE_BITMAP, "NL80211_ATTR_INCUMBENT_SIGNAL_INTERFERENCE_BITMAP" },
+    { WS_NL80211_ATTR_UHR_OPERATION,        "NL80211_ATTR_UHR_OPERATION" },
+    { WS_NL80211_ATTR_NAN_CHANNEL,          "NL80211_ATTR_NAN_CHANNEL" },
+    { WS_NL80211_ATTR_NAN_CHANNEL_ENTRY,    "NL80211_ATTR_NAN_CHANNEL_ENTRY" },
+    { WS_NL80211_ATTR_NAN_TIME_SLOTS,       "NL80211_ATTR_NAN_TIME_SLOTS" },
+    { WS_NL80211_ATTR_NAN_RX_NSS,           "NL80211_ATTR_NAN_RX_NSS" },
+    { WS_NL80211_ATTR_NAN_AVAIL_BLOB,       "NL80211_ATTR_NAN_AVAIL_BLOB" },
+    { WS_NL80211_ATTR_NAN_SCHED_DEFERRED,   "NL80211_ATTR_NAN_SCHED_DEFERRED" },
+    { WS_NL80211_ATTR_NAN_SCHED_UPDATE_SUCCESS, "NL80211_ATTR_NAN_SCHED_UPDATE_SUCCESS" },
+    { WS_NL80211_ATTR_NAN_NMI_MAC,          "NL80211_ATTR_NAN_NMI_MAC" },
+    { WS_NL80211_ATTR_NAN_ULW,              "NL80211_ATTR_NAN_ULW" },
+    { WS_NL80211_ATTR_NAN_COMMITTED_DW,     "NL80211_ATTR_NAN_COMMITTED_DW" },
+    { WS_NL80211_ATTR_NAN_SEQ_ID,           "NL80211_ATTR_NAN_SEQ_ID" },
+    { WS_NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME, "NL80211_ATTR_NAN_MAX_CHAN_SWITCH_TIME" },
+    { WS_NL80211_ATTR_NAN_PEER_MAPS,        "NL80211_ATTR_NAN_PEER_MAPS" },
+    { WS_NL80211_ATTR_ASSOC_ENCRYPTED,      "NL80211_ATTR_ASSOC_ENCRYPTED" },
+    { WS_NL80211_ATTR_NPCA_PRIMARY_FREQ,    "NL80211_ATTR_NPCA_PRIMARY_FREQ" },
+    { WS_NL80211_ATTR_NPCA_PUNCT_BITMAP,    "NL80211_ATTR_NPCA_PUNCT_BITMAP" },
+    { WS_NL80211_ATTR_STA_DUMP_LINK_STATS,  "NL80211_ATTR_STA_DUMP_LINK_STATS" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_attrs_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_attrs_vals);
@@ -2364,6 +2536,8 @@ static const value_string ws_nl80211_iftype_vals[] = {
     { WS_NL80211_IFTYPE_P2P_DEVICE,         "NL80211_IFTYPE_P2P_DEVICE" },
     { WS_NL80211_IFTYPE_OCB,                "NL80211_IFTYPE_OCB" },
     { WS_NL80211_IFTYPE_NAN,                "NL80211_IFTYPE_NAN" },
+    { WS_NL80211_IFTYPE_NAN_DATA,           "NL80211_IFTYPE_NAN_DATA" },
+    { WS_NL80211_IFTYPE_PD,                 "NL80211_IFTYPE_PD" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_iftype_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_iftype_vals);
@@ -2477,6 +2651,9 @@ static const value_string ws_nl80211_rate_info_vals[] = {
     { WS_NL80211_RATE_INFO_4_MHZ_WIDTH,     "NL80211_RATE_INFO_4_MHZ_WIDTH" },
     { WS_NL80211_RATE_INFO_8_MHZ_WIDTH,     "NL80211_RATE_INFO_8_MHZ_WIDTH" },
     { WS_NL80211_RATE_INFO_16_MHZ_WIDTH,    "NL80211_RATE_INFO_16_MHZ_WIDTH" },
+    { WS_NL80211_RATE_INFO_UHR_MCS,         "NL80211_RATE_INFO_UHR_MCS" },
+    { WS_NL80211_RATE_INFO_UHR_ELR,         "NL80211_RATE_INFO_UHR_ELR" },
+    { WS_NL80211_RATE_INFO_UHR_IM,          "NL80211_RATE_INFO_UHR_IM" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_rate_info_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_rate_info_vals);
@@ -2608,6 +2785,8 @@ static const value_string ws_nl80211_band_iftype_attr_vals[] = {
     { WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY, "NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY" },
     { WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET, "NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET" },
     { WS_NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE, "NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE" },
+    { WS_NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC, "NL80211_BAND_IFTYPE_ATTR_UHR_CAP_MAC" },
+    { WS_NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY, "NL80211_BAND_IFTYPE_ATTR_UHR_CAP_PHY" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_band_iftype_attr_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_band_iftype_attr_vals);
@@ -2677,6 +2856,13 @@ static const value_string ws_nl80211_frequency_attr_vals[] = {
     { WS_NL80211_FREQUENCY_ATTR_CAN_MONITOR, "NL80211_FREQUENCY_ATTR_CAN_MONITOR" },
     { WS_NL80211_FREQUENCY_ATTR_ALLOW_6GHZ_VLP_AP, "NL80211_FREQUENCY_ATTR_ALLOW_6GHZ_VLP_AP" },
     { WS_NL80211_FREQUENCY_ATTR_ALLOW_20MHZ_ACTIVITY, "NL80211_FREQUENCY_ATTR_ALLOW_20MHZ_ACTIVITY" },
+    { WS_NL80211_FREQUENCY_ATTR_NO_4MHZ,    "NL80211_FREQUENCY_ATTR_NO_4MHZ" },
+    { WS_NL80211_FREQUENCY_ATTR_NO_8MHZ,    "NL80211_FREQUENCY_ATTR_NO_8MHZ" },
+    { WS_NL80211_FREQUENCY_ATTR_NO_16MHZ,   "NL80211_FREQUENCY_ATTR_NO_16MHZ" },
+    { WS_NL80211_FREQUENCY_ATTR_S1G_NO_PRIMARY, "NL80211_FREQUENCY_ATTR_S1G_NO_PRIMARY" },
+    { WS_NL80211_FREQUENCY_ATTR_NO_UHR,     "NL80211_FREQUENCY_ATTR_NO_UHR" },
+    { WS_NL80211_FREQUENCY_ATTR_CAC_START_TIME, "NL80211_FREQUENCY_ATTR_CAC_START_TIME" },
+    { WS_NL80211_FREQUENCY_ATTR_PAD,        "NL80211_FREQUENCY_ATTR_PAD" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_frequency_attr_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_frequency_attr_vals);
@@ -2758,6 +2944,7 @@ static const value_string ws_nl80211_reg_rule_flags_vals[] = {
     { WS_NL80211_RRF_NO_6GHZ_AFC_CLIENT,    "NL80211_RRF_NO_6GHZ_AFC_CLIENT" },
     { WS_NL80211_RRF_ALLOW_6GHZ_VLP_AP,     "NL80211_RRF_ALLOW_6GHZ_VLP_AP" },
     { WS_NL80211_RRF_ALLOW_20MHZ_ACTIVITY,  "NL80211_RRF_ALLOW_20MHZ_ACTIVITY" },
+    { WS_NL80211_RRF_NO_UHR,                "NL80211_RRF_NO_UHR" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_reg_rule_flags_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_reg_rule_flags_vals);
@@ -2998,6 +3185,8 @@ static const value_string ws_nl80211_auth_type_vals[] = {
     { WS_NL80211_AUTHTYPE_FILS_SK,          "NL80211_AUTHTYPE_FILS_SK" },
     { WS_NL80211_AUTHTYPE_FILS_SK_PFS,      "NL80211_AUTHTYPE_FILS_SK_PFS" },
     { WS_NL80211_AUTHTYPE_FILS_PK,          "NL80211_AUTHTYPE_FILS_PK" },
+    { WS_NL80211_AUTHTYPE_EPPKE,            "NL80211_AUTHTYPE_EPPKE" },
+    { WS_NL80211_AUTHTYPE_IEEE8021X,        "NL80211_AUTHTYPE_IEEE8021X" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_auth_type_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_auth_type_vals);
@@ -3046,6 +3235,7 @@ static const value_string ws_nl80211_key_attributes_vals[] = {
     { WS_NL80211_KEY_DEFAULT_TYPES,         "NL80211_KEY_DEFAULT_TYPES" },
     { WS_NL80211_KEY_MODE,                  "NL80211_KEY_MODE" },
     { WS_NL80211_KEY_DEFAULT_BEACON,        "NL80211_KEY_DEFAULT_BEACON" },
+    { WS_NL80211_KEY_LTF_SEED,              "NL80211_KEY_LTF_SEED" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_key_attributes_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_key_attributes_vals);
@@ -3059,6 +3249,9 @@ static const value_string ws_nl80211_tx_rate_attributes_vals[] = {
     { WS_NL80211_TXRATE_HE,                 "NL80211_TXRATE_HE" },
     { WS_NL80211_TXRATE_HE_GI,              "NL80211_TXRATE_HE_GI" },
     { WS_NL80211_TXRATE_HE_LTF,             "NL80211_TXRATE_HE_LTF" },
+    { WS_NL80211_TXRATE_EHT,                "NL80211_TXRATE_EHT" },
+    { WS_NL80211_TXRATE_EHT_GI,             "NL80211_TXRATE_EHT_GI" },
+    { WS_NL80211_TXRATE_EHT_LTF,            "NL80211_TXRATE_EHT_LTF" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_tx_rate_attributes_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_tx_rate_attributes_vals);
@@ -3420,6 +3613,13 @@ static const value_string ws_nl80211_ext_feature_index_vals[] = {
     { WS_NL80211_EXT_FEATURE_OWE_OFFLOAD_AP, "NL80211_EXT_FEATURE_OWE_OFFLOAD_AP" },
     { WS_NL80211_EXT_FEATURE_DFS_CONCURRENT, "NL80211_EXT_FEATURE_DFS_CONCURRENT" },
     { WS_NL80211_EXT_FEATURE_SPP_AMSDU_SUPPORT, "NL80211_EXT_FEATURE_SPP_AMSDU_SUPPORT" },
+    { WS_NL80211_EXT_FEATURE_BEACON_RATE_EHT, "NL80211_EXT_FEATURE_BEACON_RATE_EHT" },
+    { WS_NL80211_EXT_FEATURE_EPPKE,         "NL80211_EXT_FEATURE_EPPKE" },
+    { WS_NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION, "NL80211_EXT_FEATURE_ASSOC_FRAME_ENCRYPTION" },
+    { WS_NL80211_EXT_FEATURE_IEEE8021X_AUTH, "NL80211_EXT_FEATURE_IEEE8021X_AUTH" },
+    { WS_NL80211_EXT_FEATURE_ROC_ADDR_FILTER, "NL80211_EXT_FEATURE_ROC_ADDR_FILTER" },
+    { WS_NL80211_EXT_FEATURE_SET_KEY_LTF_SEED, "NL80211_EXT_FEATURE_SET_KEY_LTF_SEED" },
+    { WS_NL80211_EXT_FEATURE_PROBE_AP,      "NL80211_EXT_FEATURE_PROBE_AP" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_ext_feature_index_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_ext_feature_index_vals);
@@ -3698,6 +3898,7 @@ static const value_string ws_nl80211_peer_measurement_peer_attrs_vals[] = {
     { WS_NL80211_PMSR_PEER_ATTR_CHAN,       "NL80211_PMSR_PEER_ATTR_CHAN" },
     { WS_NL80211_PMSR_PEER_ATTR_REQ,        "NL80211_PMSR_PEER_ATTR_REQ" },
     { WS_NL80211_PMSR_PEER_ATTR_RESP,       "NL80211_PMSR_PEER_ATTR_RESP" },
+    { WS_NL80211_PMSR_PEER_ATTR_REQ_TYPE,   "NL80211_PMSR_PEER_ATTR_REQ_TYPE" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_peer_measurement_peer_attrs_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_peer_measurement_peer_attrs_vals);
@@ -3709,6 +3910,8 @@ static const value_string ws_nl80211_peer_measurement_attrs_vals[] = {
     { WS_NL80211_PMSR_ATTR_RANDOMIZE_MAC_ADDR, "NL80211_PMSR_ATTR_RANDOMIZE_MAC_ADDR" },
     { WS_NL80211_PMSR_ATTR_TYPE_CAPA,       "NL80211_PMSR_ATTR_TYPE_CAPA" },
     { WS_NL80211_PMSR_ATTR_PEERS,           "NL80211_PMSR_ATTR_PEERS" },
+    { WS_NL80211_PMSR_ATTR_MAX_PEER_ISTA_ROLE, "NL80211_PMSR_ATTR_MAX_PEER_ISTA_ROLE" },
+    { WS_NL80211_PMSR_ATTR_MAX_PEER_RSTA_ROLE, "NL80211_PMSR_ATTR_MAX_PEER_RSTA_ROLE" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_peer_measurement_attrs_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_peer_measurement_attrs_vals);
@@ -3725,6 +3928,27 @@ static const value_string ws_nl80211_peer_measurement_ftm_capa_vals[] = {
     { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_FTMS_PER_BURST, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_FTMS_PER_BURST" },
     { WS_NL80211_PMSR_FTM_CAPA_ATTR_TRIGGER_BASED, "NL80211_PMSR_FTM_CAPA_ATTR_TRIGGER_BASED" },
     { WS_NL80211_PMSR_FTM_CAPA_ATTR_NON_TRIGGER_BASED, "NL80211_PMSR_FTM_CAPA_ATTR_NON_TRIGGER_BASED" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_6GHZ_SUPPORT, "NL80211_PMSR_FTM_CAPA_ATTR_6GHZ_SUPPORT" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_LTF_REP, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_LTF_REP" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_LTF_REP, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_LTF_REP" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_STS, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_TX_STS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_STS, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_RX_STS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_TX, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_TX" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_RX, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_TOTAL_LTF_RX" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_RSTA_SUPPORT, "NL80211_PMSR_FTM_CAPA_ATTR_RSTA_SUPPORT" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_ISTA_CAPS, "NL80211_PMSR_FTM_CAPA_ATTR_ISTA_CAPS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_RSTA_CAPS, "NL80211_PMSR_FTM_CAPA_ATTR_RSTA_CAPS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_NTB, "NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_NTB" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_TB, "NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_TB" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_EDCA, "NL80211_PMSR_FTM_CAPA_ATTR_SUPPORT_EDCA" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_TYPE_CAPS, "NL80211_PMSR_FTM_CAPA_ATTR_TYPE_CAPS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_CONCURRENT_ISTA_RSTA_SUPPORT, "NL80211_PMSR_FTM_CAPA_ATTR_CONCURRENT_ISTA_RSTA_SUPPORT" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_TX_ANTENNAS, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_TX_ANTENNAS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_RX_ANTENNAS, "NL80211_PMSR_FTM_CAPA_ATTR_MAX_NUM_RX_ANTENNAS" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_EDCA, "NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_EDCA" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_NTB, "NL80211_PMSR_FTM_CAPA_ATTR_MIN_INTERVAL_NTB" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_PD_PREAMBLES, "NL80211_PMSR_FTM_CAPA_ATTR_PD_PREAMBLES" },
+    { WS_NL80211_PMSR_FTM_CAPA_ATTR_PD_BANDWIDTHS, "NL80211_PMSR_FTM_CAPA_ATTR_PD_BANDWIDTHS" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_peer_measurement_ftm_capa_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_peer_measurement_ftm_capa_vals);
@@ -3744,6 +3968,16 @@ static const value_string ws_nl80211_peer_measurement_ftm_req_vals[] = {
     { WS_NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED, "NL80211_PMSR_FTM_REQ_ATTR_NON_TRIGGER_BASED" },
     { WS_NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK, "NL80211_PMSR_FTM_REQ_ATTR_LMR_FEEDBACK" },
     { WS_NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR, "NL80211_PMSR_FTM_REQ_ATTR_BSS_COLOR" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_RSTA,    "NL80211_PMSR_FTM_REQ_ATTR_RSTA" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS, "NL80211_PMSR_FTM_REQ_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS, "NL80211_PMSR_FTM_REQ_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_NOMINAL_TIME, "NL80211_PMSR_FTM_REQ_ATTR_NOMINAL_TIME" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_AW_DURATION, "NL80211_PMSR_FTM_REQ_ATTR_AW_DURATION" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_NUM_MEASUREMENTS, "NL80211_PMSR_FTM_REQ_ATTR_NUM_MEASUREMENTS" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_PAD,     "NL80211_PMSR_FTM_REQ_ATTR_PAD" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_INGRESS, "NL80211_PMSR_FTM_REQ_ATTR_INGRESS" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_EGRESS,  "NL80211_PMSR_FTM_REQ_ATTR_EGRESS" },
+    { WS_NL80211_PMSR_FTM_REQ_ATTR_PD_SUPPRESS_RESULTS, "NL80211_PMSR_FTM_REQ_ATTR_PD_SUPPRESS_RESULTS" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_peer_measurement_ftm_req_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_peer_measurement_ftm_req_vals);
@@ -3784,6 +4018,18 @@ static const value_string ws_nl80211_peer_measurement_ftm_resp_vals[] = {
     { WS_NL80211_PMSR_FTM_RESP_ATTR_LCI,    "NL80211_PMSR_FTM_RESP_ATTR_LCI" },
     { WS_NL80211_PMSR_FTM_RESP_ATTR_CIVICLOC, "NL80211_PMSR_FTM_RESP_ATTR_CIVICLOC" },
     { WS_NL80211_PMSR_FTM_RESP_ATTR_PAD,    "NL80211_PMSR_FTM_RESP_ATTR_PAD" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_BURST_PERIOD, "NL80211_PMSR_FTM_RESP_ATTR_BURST_PERIOD" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_TX_LTF_REPETITION_COUNT, "NL80211_PMSR_FTM_RESP_ATTR_TX_LTF_REPETITION_COUNT" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_RX_LTF_REPETITION_COUNT, "NL80211_PMSR_FTM_RESP_ATTR_RX_LTF_REPETITION_COUNT" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS, "NL80211_PMSR_FTM_RESP_ATTR_MAX_TIME_BETWEEN_MEASUREMENTS" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS, "NL80211_PMSR_FTM_RESP_ATTR_MIN_TIME_BETWEEN_MEASUREMENTS" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_NUM_TX_SPATIAL_STREAMS, "NL80211_PMSR_FTM_RESP_ATTR_NUM_TX_SPATIAL_STREAMS" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_NUM_RX_SPATIAL_STREAMS, "NL80211_PMSR_FTM_RESP_ATTR_NUM_RX_SPATIAL_STREAMS" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_NOMINAL_TIME, "NL80211_PMSR_FTM_RESP_ATTR_NOMINAL_TIME" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_AVAILABILITY_WINDOW, "NL80211_PMSR_FTM_RESP_ATTR_AVAILABILITY_WINDOW" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_CHANNEL_WIDTH, "NL80211_PMSR_FTM_RESP_ATTR_CHANNEL_WIDTH" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_PREAMBLE, "NL80211_PMSR_FTM_RESP_ATTR_PREAMBLE" },
+    { WS_NL80211_PMSR_FTM_RESP_ATTR_IS_DELAYED_LMR, "NL80211_PMSR_FTM_RESP_ATTR_IS_DELAYED_LMR" },
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_peer_measurement_ftm_resp_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_peer_measurement_ftm_resp_vals);
@@ -3904,6 +4150,27 @@ static const value_string ws_nl80211_wiphy_radio_freq_range_vals[] = {
     { 0, NULL }
 };
 static value_string_ext ws_nl80211_wiphy_radio_freq_range_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_wiphy_radio_freq_range_vals);
+
+static const value_string ws_nl80211_s1g_short_beacon_attrs_vals[] = {
+    { WS___NL80211_S1G_SHORT_BEACON_ATTR_INVALID, "__NL80211_S1G_SHORT_BEACON_ATTR_INVALID" },
+    { WS_NL80211_S1G_SHORT_BEACON_ATTR_HEAD, "NL80211_S1G_SHORT_BEACON_ATTR_HEAD" },
+    { WS_NL80211_S1G_SHORT_BEACON_ATTR_TAIL, "NL80211_S1G_SHORT_BEACON_ATTR_TAIL" },
+    { 0, NULL }
+};
+static value_string_ext ws_nl80211_s1g_short_beacon_attrs_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_s1g_short_beacon_attrs_vals);
+
+static const value_string ws_nl80211_nan_capabilities_vals[] = {
+    { WS___NL80211_NAN_CAPABILITIES_INVALID, "__NL80211_NAN_CAPABILITIES_INVALID" },
+    { WS_NL80211_NAN_CAPA_CONFIGURABLE_SYNC, "NL80211_NAN_CAPA_CONFIGURABLE_SYNC" },
+    { WS_NL80211_NAN_CAPA_USERSPACE_DE,     "NL80211_NAN_CAPA_USERSPACE_DE" },
+    { WS_NL80211_NAN_CAPA_OP_MODE,          "NL80211_NAN_CAPA_OP_MODE" },
+    { WS_NL80211_NAN_CAPA_NUM_ANTENNAS,     "NL80211_NAN_CAPA_NUM_ANTENNAS" },
+    { WS_NL80211_NAN_CAPA_MAX_CHANNEL_SWITCH_TIME, "NL80211_NAN_CAPA_MAX_CHANNEL_SWITCH_TIME" },
+    { WS_NL80211_NAN_CAPA_CAPABILITIES,     "NL80211_NAN_CAPA_CAPABILITIES" },
+    { WS_NL80211_NAN_CAPA_PHY,              "NL80211_NAN_CAPA_PHY" },
+    { 0, NULL }
+};
+static value_string_ext ws_nl80211_nan_capabilities_vals_ext = VALUE_STRING_EXT_INIT(ws_nl80211_nan_capabilities_vals);
 
 static int hf_nl80211_commands;
 static int hf_nl80211_attrs;
@@ -4029,6 +4296,8 @@ static int hf_nl80211_mbssid_config_attributes;
 static int hf_nl80211_ap_settings_flags;
 static int hf_nl80211_wiphy_radio_attrs;
 static int hf_nl80211_wiphy_radio_freq_range;
+static int hf_nl80211_s1g_short_beacon_attrs;
+static int hf_nl80211_nan_capabilities;
 
 static int ett_nl80211_commands;
 static int ett_nl80211_attrs;
@@ -4154,6 +4423,8 @@ static int ett_nl80211_mbssid_config_attributes;
 static int ett_nl80211_ap_settings_flags;
 static int ett_nl80211_wiphy_radio_attrs;
 static int ett_nl80211_wiphy_radio_freq_range;
+static int ett_nl80211_s1g_short_beacon_attrs;
+static int ett_nl80211_nan_capabilities;
 /* }}} */
 
 
@@ -4170,10 +4441,26 @@ static int hf_nl80211_ifname;
 static int hf_nl80211_mac;
 static int hf_nl80211_alpha2;
 static int hf_nl80211_dbm;
+static int hf_nl80211_software_iftypes;
+static int hf_nl80211_band_iftypes;
+static int hf_nl80211_bss_param;
+static int hf_nl80211_supported_commands;
+static int hf_nl80211_supported_cipher_suite;
+static int hf_nl80211_supported_cipher_suite_oui;
+static int hf_nl80211_supported_cipher_suite_80211_type;
+static int hf_nl80211_supported_cipher_suite_type;
+static int hf_nl80211_mlo_links;
 
 static int ett_nl80211;
 static int ett_nl80211_frame;
 static int ett_nl80211_tag;
+static int ett_nl80211_software_iftypes;
+static int ett_nl80211_band_iftypes;
+static int ett_nl80211_bss_param;
+static int ett_nl80211_supported_commands;
+static int ett_nl80211_supported_cipher_suites;
+static int ett_nl80211_supported_cipher_suite;
+static int ett_nl80211_mlo_links;
 
 static int
 dissect_nl80211_generic(tvbuff_t *tvb, void *data _U_, struct packet_netlink_data *nl_data, proto_tree *tree, int nla_type _U_, int offset, int len)
@@ -4266,15 +4553,7 @@ dissect_tag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int
 static int
 dissect_information_elements(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int len)
 {
-    int offset_end = offset + len;
-    while (offset < offset_end) {
-        int tlen = add_tagged_field(pinfo, tree, tvb, offset, 0, NULL, 0, NULL);
-        if (tlen == 0) {
-            break;
-        }
-        offset += tlen;
-    }
-    return offset;
+    return ieee_80211_add_tagged_parameters(tvb, offset, pinfo, tree, len, 0, NULL);
 }
 
 static int
@@ -4302,12 +4581,35 @@ dissect_nl80211_frequency_attr(tvbuff_t *tvb, void *data, struct packet_netlink_
 }
 
 static int
+dissect_nl80211_band_iftype_attr(tvbuff_t *tvb, void *data, struct packet_netlink_data *nl_data, proto_tree *tree, int nla_type, int offset, int len)
+{
+    static const struct attr_lookup nested[] = {
+        { WS_NL80211_BAND_IFTYPE_ATTR_IFTYPES, &hf_nl80211_band_iftypes, &ett_nl80211_band_iftypes, NULL },
+        { 0, NULL, NULL, NULL }
+    };
+    enum ws_nl80211_band_iftype_attr type = (enum ws_nl80211_band_iftype_attr) nla_type & NLA_TYPE_MASK;
+    int offset_end = offset + len;
+
+    if (offset < offset_end) {
+        offset = dissect_nested_attr(tvb, data, nl_data, tree, nla_type, offset, len, nested);
+    }
+    if (offset < offset_end) {
+        switch (type) {
+        default:
+            offset = dissect_nl80211_generic(tvb, data, nl_data, tree, nla_type, offset, len);
+            break;
+        }
+    }
+    return offset;
+}
+
+static int
 dissect_nl80211_band_attr(tvbuff_t *tvb, void *data, struct packet_netlink_data *nl_data, proto_tree *tree, int nla_type, int offset, int len)
 {
     static const struct attr_lookup nested_arr[] = {
         { WS_NL80211_BAND_ATTR_FREQS, &hf_nl80211_frequency_attr, &ett_nl80211_frequency_attr, dissect_nl80211_frequency_attr },
         { WS_NL80211_BAND_ATTR_RATES, &hf_nl80211_bitrate_attr, &ett_nl80211_bitrate_attr, NULL },
-        { WS_NL80211_BAND_ATTR_IFTYPE_DATA, &hf_nl80211_band_iftype_attr, &ett_nl80211_band_iftype_attr, NULL },
+        { WS_NL80211_BAND_ATTR_IFTYPE_DATA, &hf_nl80211_band_iftype_attr, &ett_nl80211_band_iftype_attr, dissect_nl80211_band_iftype_attr },
         { 0, NULL, NULL, NULL }
     };
     enum ws_nl80211_band_attr type = (enum ws_nl80211_band_attr) nla_type & NLA_TYPE_MASK;
@@ -4317,8 +4619,21 @@ dissect_nl80211_band_attr(tvbuff_t *tvb, void *data, struct packet_netlink_data 
         offset = dissect_nested_attr_array(tvb, data, nl_data, tree, nla_type, offset, len, nested_arr);
     }
     if (offset < offset_end) {
+        netlink_nl80211_info_t *info = (netlink_nl80211_info_t *)data;
         switch (type) {
         /* TODO add more fields here? */
+        case WS_NL80211_BAND_ATTR_HT_MCS_SET:
+            offset = dissect_mcs_set(tree, info->pinfo, tvb, offset, false, false);
+            break;
+        case WS_NL80211_BAND_ATTR_HT_CAPA:
+            offset = dissect_ht_capabilities(tree, tvb, offset, false);
+            break;
+        case WS_NL80211_BAND_ATTR_VHT_MCS_SET:
+            offset = dissect_vht_mcs_set(tree, tvb, offset);
+            break;
+        case WS_NL80211_BAND_ATTR_VHT_CAPA:
+            offset = dissect_vht_capabilities(tree, tvb, offset);
+            break;
         default:
             offset = dissect_nl80211_generic(tvb, data, nl_data, tree, nla_type, offset, len);
             break;
@@ -4450,12 +4765,21 @@ dissect_nl80211_attrs(tvbuff_t *tvb, void *data, struct packet_netlink_data *nl_
         { WS_NL80211_ATTR_NAN_FUNC, &hf_nl80211_nan_func_attributes, &ett_nl80211_nan_func_attributes, NULL },
         { WS_NL80211_ATTR_NAN_MATCH, &hf_nl80211_nan_match_attributes, &ett_nl80211_nan_match_attributes, NULL },
         { WS_NL80211_ATTR_TXQ_STATS, &hf_nl80211_txq_stats, &ett_nl80211_txq_stats, NULL },
+        { WS_NL80211_ATTR_SOFTWARE_IFTYPES, &hf_nl80211_software_iftypes, &ett_nl80211_software_iftypes, NULL },
+        { WS_NL80211_ATTR_BSS_PARAM, &hf_nl80211_bss_param, &ett_nl80211_bss_param, NULL },
+        { WS_NL80211_ATTR_NAN_CAPABILITIES, &hf_nl80211_nan_capabilities, &ett_nl80211_nan_capabilities, NULL },
+        /* Contain nested nl80211_commands */
+        { WS_NL80211_ATTR_SUPPORTED_COMMANDS, &hf_nl80211_supported_commands, &ett_nl80211_supported_commands, NULL },
         { 0, NULL, NULL, NULL }
     };
     static const struct attr_lookup nested_arr[] = {
+        /* Contain nested arrays of other nl80211 enums */
         { WS_NL80211_ATTR_WIPHY_TXQ_PARAMS, &hf_nl80211_txq_attr, &ett_nl80211_txq_attr, NULL },
         { WS_NL80211_ATTR_WIPHY_BANDS, &hf_nl80211_band_attr, &ett_nl80211_band_attr, dissect_nl80211_band_attr },
         { WS_NL80211_ATTR_REG_RULES, &hf_nl80211_reg_rule_attr, &ett_nl80211_reg_rule_attr, NULL },
+        { WS_NL80211_ATTR_WIPHY_RADIOS, &hf_nl80211_wiphy_radio_attrs, &ett_nl80211_wiphy_radio_attrs, NULL },
+        /* Contain nested arrays of nl80211_attrs */
+        { WS_NL80211_ATTR_MLO_LINKS, &hf_nl80211_mlo_links, &ett_nl80211_mlo_links, NULL },
         { 0, NULL, NULL, NULL }
     };
     static const struct attr_lookup values[] = {
@@ -4489,6 +4813,7 @@ dissect_nl80211_attrs(tvbuff_t *tvb, void *data, struct packet_netlink_data *nl_
         { WS_NL80211_ATTR_STA_SUPPORT_P2P_PS, &hf_nl80211_sta_p2p_ps_status, NULL, NULL },
         { WS_NL80211_ATTR_TIMEOUT_REASON, &hf_nl80211_timeout_reason, NULL, NULL },
         { WS_NL80211_ATTR_EXTERNAL_AUTH_ACTION, &hf_nl80211_external_auth_action, NULL, NULL },
+        { WS_NL80211_ATTR_PROTOCOL_FEATURES, &hf_nl80211_protocol_features, NULL, NULL },
         { 0, NULL, NULL, NULL }
     };
     enum ws_nl80211_attrs type = (enum ws_nl80211_attrs) nla_type & NLA_TYPE_MASK;
@@ -4527,7 +4852,41 @@ dissect_nl80211_attrs(tvbuff_t *tvb, void *data, struct packet_netlink_data *nl_
             next_tvb = tvb_new_subset_length(tvb, offset, len);
             subtree = proto_tree_add_subtree(tree, next_tvb, 0, -1, ett_nl80211_frame,
                                              &item, "Attribute Value");
-            call_dissector(ieee80211_handle, next_tvb, info->pinfo, subtree);
+            switch(info->cmd) {
+            case WS_NL80211_CMD_CONTROL_PORT_FRAME:
+                call_dissector(eapol_handle, next_tvb, info->pinfo, subtree);
+                break;
+            default:
+                call_dissector(ieee80211_handle, next_tvb, info->pinfo, subtree);
+            }
+            break;
+        case WS_NL80211_ATTR_CIPHER_SUITES:
+            /* IEEE 802.11 defines the Suite selector format as a 4-byte array
+             * (Figure 8-187 in 802.11-2012, Figure 9-288 in 802.11-2020), but
+             * nl80211 treats it as a u32 in the native encoding (i.e., the
+             * same if Big Endian but reversed if Little Endian.) */
+            subtree = proto_tree_add_subtree(tree, tvb, offset, len, ett_nl80211_supported_cipher_suites,
+                                        &item, "Supported Cipher Suites List");
+            static int * const cipher_suite_80211_fields[] = {
+                &hf_nl80211_supported_cipher_suite_oui,
+                &hf_nl80211_supported_cipher_suite_80211_type,
+                NULL
+            };
+            static int * const cipher_suite_non80211_fields[] = {
+                &hf_nl80211_supported_cipher_suite_oui,
+                &hf_nl80211_supported_cipher_suite_type,
+                NULL
+            };
+            uint32_t cipher_suite;
+            int * const *cipher_suite_fields;
+            while (offset < offset_end) {
+                cipher_suite = tvb_get_uint32(tvb, offset, nl_data->encoding);
+                cipher_suite_fields = ((cipher_suite >> 8) == OUI_RSN) ?
+                    cipher_suite_80211_fields : cipher_suite_non80211_fields;
+                proto_tree_add_bitmask(subtree, tvb, offset, hf_nl80211_supported_cipher_suite,
+                    ett_nl80211_supported_cipher_suite, cipher_suite_fields, nl_data->encoding);
+                offset += 4;
+            }
             break;
         /* TODO add more fields here? */
         default:
@@ -4555,11 +4914,13 @@ dissect_netlink_nl80211(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
     offset = dissect_genl_header(tvb, genl_info, genl_info->nl_data, hf_nl80211_commands);
 
     /* Return if command has no payload */
-    if (!tvb_reported_length_remaining(tvb, offset))
-            /* XXX If you do not set the protocol item, you cannot filter on these messages */
+    if (!tvb_reported_length_remaining(tvb, offset)) {
+            proto_tree_add_item(tree, proto_netlink_nl80211, tvb, offset, 0, ENC_NA);
             return offset;
+    }
 
     info.pinfo = pinfo;
+    info.cmd = genl_info->cmd;
 
     pi = proto_tree_add_item(tree, proto_netlink_nl80211, tvb, offset, -1, ENC_NA);
     nlmsg_tree = proto_item_add_subtree(pi, ett_nl80211);
@@ -4618,750 +4979,816 @@ proto_register_netlink_nl80211(void)
               FT_INT32, BASE_DEC, NULL, 0x00,
               NULL, HFILL }
         },
-/* Extracted using tools/generate-nl80211-fields.py */
+        { &hf_nl80211_software_iftypes,
+            { "Attribute Type", "nl80211.software_iftypes",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_iftype_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_band_iftypes,
+            { "Attribute Type", "nl80211.band_iftypes",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_iftype_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_bss_param,
+            { "Attribute Type", "nl80211.bss_param",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_attrs_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_supported_commands,
+            { "Attribute Type", "nl80211.supported_commands",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_commands_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_supported_cipher_suite,
+            { "Cipher Suite", "nl80211.supported_cipher_suite",
+              FT_UINT32, BASE_HEX,
+              NULL, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_supported_cipher_suite_oui,
+            { "Cipher Suite OUI", "nl80211.supported_cipher_suite.oui",
+              FT_UINT32, BASE_OUI,
+              NULL, 0xffffff00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_supported_cipher_suite_80211_type,
+            { "Cipher Suite Type", "nl80211.supported_cipher_suite.type",
+              FT_UINT32, BASE_DEC,
+              VALS(ieee80211_rsn_cipher_vals), 0x000000ff,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_supported_cipher_suite_type,
+            { "Cipher Suite Type", "nl80211.supported_cipher_suite.type",
+              FT_UINT32, BASE_DEC,
+              NULL, 0x000000ff,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_mlo_links,
+            { "Attribute Type", "nl80211.mlo_links",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_attrs_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+/* Extracted using tools/dissector_generators/generate-nl80211-data.py */
 /* Definitions from linux/nl80211.h {{{ */
         { &hf_nl80211_commands,
             { "Command", "nl80211.cmd",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_commands_vals_ext), 0x00,
+              &ws_nl80211_commands_vals_ext, 0x00,
               "Generic Netlink Command", HFILL },
         },
         { &hf_nl80211_attrs,
             { "Attribute Type", "nl80211.attr_type",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_attrs_vals_ext), 0x00,
+              &ws_nl80211_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_iftype,
             { "Attribute Type", "nl80211.iftype",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_iftype_vals_ext), 0x00,
+              &ws_nl80211_iftype_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sta_flags,
             { "Attribute Type", "nl80211.sta_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sta_flags_vals_ext), 0x00,
+              &ws_nl80211_sta_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sta_p2p_ps_status,
             { "Attribute Value", "nl80211.sta_p2p_ps_status",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sta_p2p_ps_status_vals_ext), 0x00,
+              &ws_nl80211_sta_p2p_ps_status_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_he_gi,
             { "Attribute Type", "nl80211.he_gi",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_he_gi_vals_ext), 0x00,
+              &ws_nl80211_he_gi_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_he_ltf,
             { "Attribute Type", "nl80211.he_ltf",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_he_ltf_vals_ext), 0x00,
+              &ws_nl80211_he_ltf_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_he_ru_alloc,
             { "Attribute Type", "nl80211.he_ru_alloc",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_he_ru_alloc_vals_ext), 0x00,
+              &ws_nl80211_he_ru_alloc_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_eht_gi,
             { "Attribute Type", "nl80211.eht_gi",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_eht_gi_vals_ext), 0x00,
+              &ws_nl80211_eht_gi_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_eht_ru_alloc,
             { "Attribute Type", "nl80211.eht_ru_alloc",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_eht_ru_alloc_vals_ext), 0x00,
+              &ws_nl80211_eht_ru_alloc_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_rate_info,
             { "Attribute Type", "nl80211.rate_info",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_rate_info_vals_ext), 0x00,
+              &ws_nl80211_rate_info_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sta_bss_param,
             { "Attribute Type", "nl80211.sta_bss_param",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sta_bss_param_vals_ext), 0x00,
+              &ws_nl80211_sta_bss_param_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sta_info,
             { "Attribute Type", "nl80211.sta_info",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sta_info_vals_ext), 0x00,
+              &ws_nl80211_sta_info_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tid_stats,
             { "Attribute Type", "nl80211.tid_stats",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tid_stats_vals_ext), 0x00,
+              &ws_nl80211_tid_stats_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_txq_stats,
             { "Attribute Type", "nl80211.txq_stats",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_txq_stats_vals_ext), 0x00,
+              &ws_nl80211_txq_stats_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mpath_flags,
             { "Attribute Type", "nl80211.mpath_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mpath_flags_vals_ext), 0x00,
+              &ws_nl80211_mpath_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mpath_info,
             { "Attribute Type", "nl80211.mpath_info",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mpath_info_vals_ext), 0x00,
+              &ws_nl80211_mpath_info_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_band_iftype_attr,
             { "Attribute Type", "nl80211.band_iftype_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_band_iftype_attr_vals_ext), 0x00,
+              &ws_nl80211_band_iftype_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_band_attr,
             { "Attribute Type", "nl80211.band_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_band_attr_vals_ext), 0x00,
+              &ws_nl80211_band_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wmm_rule,
             { "Attribute Type", "nl80211.wmm_rule",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wmm_rule_vals_ext), 0x00,
+              &ws_nl80211_wmm_rule_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_frequency_attr,
             { "Attribute Type", "nl80211.frequency_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_frequency_attr_vals_ext), 0x00,
+              &ws_nl80211_frequency_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bitrate_attr,
             { "Attribute Type", "nl80211.bitrate_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bitrate_attr_vals_ext), 0x00,
+              &ws_nl80211_bitrate_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_reg_initiator,
             { "Attribute Value", "nl80211.reg_initiator",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_reg_initiator_vals_ext), 0x00,
+              &ws_nl80211_reg_initiator_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_reg_type,
             { "Attribute Value", "nl80211.reg_type",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_reg_type_vals_ext), 0x00,
+              &ws_nl80211_reg_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_reg_rule_attr,
             { "Attribute Type", "nl80211.reg_rule_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_reg_rule_attr_vals_ext), 0x00,
+              &ws_nl80211_reg_rule_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sched_scan_match_attr,
             { "Attribute Type", "nl80211.sched_scan_match_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sched_scan_match_attr_vals_ext), 0x00,
+              &ws_nl80211_sched_scan_match_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_reg_rule_flags,
             { "Attribute Type", "nl80211.reg_rule_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_reg_rule_flags_vals_ext), 0x00,
+              &ws_nl80211_reg_rule_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_dfs_regions,
             { "Attribute Value", "nl80211.dfs_regions",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_dfs_regions_vals_ext), 0x00,
+              &ws_nl80211_dfs_regions_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_user_reg_hint_type,
             { "Attribute Value", "nl80211.user_reg_hint_type",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_user_reg_hint_type_vals_ext), 0x00,
+              &ws_nl80211_user_reg_hint_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_survey_info,
             { "Attribute Type", "nl80211.survey_info",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_survey_info_vals_ext), 0x00,
+              &ws_nl80211_survey_info_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mntr_flags,
             { "Attribute Type", "nl80211.mntr_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mntr_flags_vals_ext), 0x00,
+              &ws_nl80211_mntr_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mesh_power_mode,
             { "Attribute Value", "nl80211.mesh_power_mode",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mesh_power_mode_vals_ext), 0x00,
+              &ws_nl80211_mesh_power_mode_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_meshconf_params,
             { "Attribute Type", "nl80211.meshconf_params",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_meshconf_params_vals_ext), 0x00,
+              &ws_nl80211_meshconf_params_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mesh_setup_params,
             { "Attribute Type", "nl80211.mesh_setup_params",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mesh_setup_params_vals_ext), 0x00,
+              &ws_nl80211_mesh_setup_params_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_txq_attr,
             { "Attribute Type", "nl80211.txq_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_txq_attr_vals_ext), 0x00,
+              &ws_nl80211_txq_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ac,
             { "Attribute Type", "nl80211.ac",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ac_vals_ext), 0x00,
+              &ws_nl80211_ac_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_channel_type,
             { "Attribute Value", "nl80211.channel_type",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_channel_type_vals_ext), 0x00,
+              &ws_nl80211_channel_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_key_mode,
             { "Attribute Type", "nl80211.key_mode",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_key_mode_vals_ext), 0x00,
+              &ws_nl80211_key_mode_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_chan_width,
             { "Attribute Value", "nl80211.chan_width",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_chan_width_vals_ext), 0x00,
+              &ws_nl80211_chan_width_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_scan_width,
             { "Attribute Value", "nl80211.bss_scan_width",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_scan_width_vals_ext), 0x00,
+              &ws_nl80211_bss_scan_width_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_use_for,
             { "Attribute Type", "nl80211.bss_use_for",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_use_for_vals_ext), 0x00,
+              &ws_nl80211_bss_use_for_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_cannot_use_reasons,
             { "Attribute Type", "nl80211.bss_cannot_use_reasons",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_cannot_use_reasons_vals_ext), 0x00,
+              &ws_nl80211_bss_cannot_use_reasons_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss,
             { "Attribute Type", "nl80211.bss",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_vals_ext), 0x00,
+              &ws_nl80211_bss_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_status,
             { "Attribute Value", "nl80211.bss_status",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_status_vals_ext), 0x00,
+              &ws_nl80211_bss_status_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_auth_type,
             { "Attribute Value", "nl80211.auth_type",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_auth_type_vals_ext), 0x00,
+              &ws_nl80211_auth_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_key_type,
             { "Attribute Value", "nl80211.key_type",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_key_type_vals_ext), 0x00,
+              &ws_nl80211_key_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mfp,
             { "Attribute Value", "nl80211.mfp",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mfp_vals_ext), 0x00,
+              &ws_nl80211_mfp_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wpa_versions,
             { "Attribute Type", "nl80211.wpa_versions",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wpa_versions_vals_ext), 0x00,
+              &ws_nl80211_wpa_versions_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_key_default_types,
             { "Attribute Type", "nl80211.key_default_types",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_key_default_types_vals_ext), 0x00,
+              &ws_nl80211_key_default_types_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_key_attributes,
             { "Attribute Type", "nl80211.key_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_key_attributes_vals_ext), 0x00,
+              &ws_nl80211_key_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tx_rate_attributes,
             { "Attribute Type", "nl80211.tx_rate_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tx_rate_attributes_vals_ext), 0x00,
+              &ws_nl80211_tx_rate_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_txrate_gi,
             { "Attribute Type", "nl80211.txrate_gi",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_txrate_gi_vals_ext), 0x00,
+              &ws_nl80211_txrate_gi_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_band,
             { "Attribute Type", "nl80211.band",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_band_vals_ext), 0x00,
+              &ws_nl80211_band_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ps_state,
             { "Attribute Value", "nl80211.ps_state",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ps_state_vals_ext), 0x00,
+              &ws_nl80211_ps_state_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_attr_cqm,
             { "Attribute Type", "nl80211.attr_cqm",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_attr_cqm_vals_ext), 0x00,
+              &ws_nl80211_attr_cqm_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_cqm_rssi_threshold_event,
             { "Attribute Type", "nl80211.cqm_rssi_threshold_event",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_cqm_rssi_threshold_event_vals_ext), 0x00,
+              &ws_nl80211_cqm_rssi_threshold_event_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tx_power_setting,
             { "Attribute Value", "nl80211.tx_power_setting",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tx_power_setting_vals_ext), 0x00,
+              &ws_nl80211_tx_power_setting_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tid_config,
             { "Attribute Type", "nl80211.tid_config",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tid_config_vals_ext), 0x00,
+              &ws_nl80211_tid_config_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tx_rate_setting,
             { "Attribute Type", "nl80211.tx_rate_setting",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tx_rate_setting_vals_ext), 0x00,
+              &ws_nl80211_tx_rate_setting_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tid_config_attr,
             { "Attribute Type", "nl80211.tid_config_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tid_config_attr_vals_ext), 0x00,
+              &ws_nl80211_tid_config_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_packet_pattern_attr,
             { "Attribute Type", "nl80211.packet_pattern_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_packet_pattern_attr_vals_ext), 0x00,
+              &ws_nl80211_packet_pattern_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wowlan_triggers,
             { "Attribute Type", "nl80211.wowlan_triggers",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wowlan_triggers_vals_ext), 0x00,
+              &ws_nl80211_wowlan_triggers_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wowlan_tcp_attrs,
             { "Attribute Type", "nl80211.wowlan_tcp_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wowlan_tcp_attrs_vals_ext), 0x00,
+              &ws_nl80211_wowlan_tcp_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_attr_coalesce_rule,
             { "Attribute Type", "nl80211.attr_coalesce_rule",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_attr_coalesce_rule_vals_ext), 0x00,
+              &ws_nl80211_attr_coalesce_rule_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_coalesce_condition,
             { "Attribute Type", "nl80211.coalesce_condition",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_coalesce_condition_vals_ext), 0x00,
+              &ws_nl80211_coalesce_condition_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_iface_limit_attrs,
             { "Attribute Type", "nl80211.iface_limit_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_iface_limit_attrs_vals_ext), 0x00,
+              &ws_nl80211_iface_limit_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_if_combination_attrs,
             { "Attribute Type", "nl80211.if_combination_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_if_combination_attrs_vals_ext), 0x00,
+              &ws_nl80211_if_combination_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_plink_state,
             { "Attribute Value", "nl80211.plink_state",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_plink_state_vals_ext), 0x00,
+              &ws_nl80211_plink_state_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_plink_action,
             { "Attribute Value", "nl80211.plink_action",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_plink_action_vals_ext), 0x00,
+              &ws_nl80211_plink_action_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_rekey_data,
             { "Attribute Type", "nl80211.rekey_data",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_rekey_data_vals_ext), 0x00,
+              &ws_nl80211_rekey_data_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_hidden_ssid,
             { "Attribute Type", "nl80211.hidden_ssid",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_hidden_ssid_vals_ext), 0x00,
+              &ws_nl80211_hidden_ssid_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sta_wme_attr,
             { "Attribute Type", "nl80211.sta_wme_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sta_wme_attr_vals_ext), 0x00,
+              &ws_nl80211_sta_wme_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_pmksa_candidate_attr,
             { "Attribute Type", "nl80211.pmksa_candidate_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_pmksa_candidate_attr_vals_ext), 0x00,
+              &ws_nl80211_pmksa_candidate_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tdls_operation,
             { "Attribute Value", "nl80211.tdls_operation",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tdls_operation_vals_ext), 0x00,
+              &ws_nl80211_tdls_operation_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ap_sme_features,
             { "Attribute Type", "nl80211.ap_sme_features",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ap_sme_features_vals_ext), 0x00,
+              &ws_nl80211_ap_sme_features_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_feature_flags,
             { "Attribute Type", "nl80211.feature_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_feature_flags_vals_ext), 0x00,
+              &ws_nl80211_feature_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ext_feature_index,
             { "Attribute Type", "nl80211.ext_feature_index",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ext_feature_index_vals_ext), 0x00,
+              &ws_nl80211_ext_feature_index_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_probe_resp_offload_support_attr,
             { "Attribute Type", "nl80211.probe_resp_offload_support_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_probe_resp_offload_support_attr_vals_ext), 0x00,
+              &ws_nl80211_probe_resp_offload_support_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_connect_failed_reason,
             { "Attribute Value", "nl80211.connect_failed_reason",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_connect_failed_reason_vals_ext), 0x00,
+              &ws_nl80211_connect_failed_reason_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_timeout_reason,
             { "Attribute Value", "nl80211.timeout_reason",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_timeout_reason_vals_ext), 0x00,
+              &ws_nl80211_timeout_reason_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_scan_flags,
             { "Attribute Type", "nl80211.scan_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_scan_flags_vals_ext), 0x00,
+              &ws_nl80211_scan_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_acl_policy,
             { "Attribute Value", "nl80211.acl_policy",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_acl_policy_vals_ext), 0x00,
+              &ws_nl80211_acl_policy_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_smps_mode,
             { "Attribute Value", "nl80211.smps_mode",
               FT_UINT8, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_smps_mode_vals_ext), 0x00,
+              &ws_nl80211_smps_mode_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_radar_event,
             { "Attribute Value", "nl80211.radar_event",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_radar_event_vals_ext), 0x00,
+              &ws_nl80211_radar_event_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_dfs_state,
             { "Attribute Type", "nl80211.dfs_state",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_dfs_state_vals_ext), 0x00,
+              &ws_nl80211_dfs_state_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_protocol_features,
-            { "Attribute Type", "nl80211.protocol_features",
-              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_protocol_features_vals_ext), 0x00,
+            { "Attribute Value", "nl80211.protocol_features",
+              FT_UINT32, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_protocol_features_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_crit_proto_id,
             { "Attribute Value", "nl80211.crit_proto_id",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_crit_proto_id_vals_ext), 0x00,
+              &ws_nl80211_crit_proto_id_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_rxmgmt_flags,
             { "Attribute Type", "nl80211.rxmgmt_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_rxmgmt_flags_vals_ext), 0x00,
+              &ws_nl80211_rxmgmt_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_tdls_peer_capability,
             { "Attribute Type", "nl80211.tdls_peer_capability",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_tdls_peer_capability_vals_ext), 0x00,
+              &ws_nl80211_tdls_peer_capability_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sched_scan_plan,
             { "Attribute Type", "nl80211.sched_scan_plan",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sched_scan_plan_vals_ext), 0x00,
+              &ws_nl80211_sched_scan_plan_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_select_attr,
             { "Attribute Type", "nl80211.bss_select_attr",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_select_attr_vals_ext), 0x00,
+              &ws_nl80211_bss_select_attr_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_function_type,
             { "Attribute Type", "nl80211.nan_function_type",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_function_type_vals_ext), 0x00,
+              &ws_nl80211_nan_function_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_publish_type,
             { "Attribute Type", "nl80211.nan_publish_type",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_publish_type_vals_ext), 0x00,
+              &ws_nl80211_nan_publish_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_func_term_reason,
             { "Attribute Type", "nl80211.nan_func_term_reason",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_func_term_reason_vals_ext), 0x00,
+              &ws_nl80211_nan_func_term_reason_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_func_attributes,
             { "Attribute Type", "nl80211.nan_func_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_func_attributes_vals_ext), 0x00,
+              &ws_nl80211_nan_func_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_srf_attributes,
             { "Attribute Type", "nl80211.nan_srf_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_srf_attributes_vals_ext), 0x00,
+              &ws_nl80211_nan_srf_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_nan_match_attributes,
             { "Attribute Type", "nl80211.nan_match_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_nan_match_attributes_vals_ext), 0x00,
+              &ws_nl80211_nan_match_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_external_auth_action,
             { "Attribute Value", "nl80211.external_auth_action",
               FT_UINT32, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_external_auth_action_vals_ext), 0x00,
+              &ws_nl80211_external_auth_action_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ftm_responder_attributes,
             { "Attribute Type", "nl80211.ftm_responder_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ftm_responder_attributes_vals_ext), 0x00,
+              &ws_nl80211_ftm_responder_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ftm_responder_stats,
             { "Attribute Type", "nl80211.ftm_responder_stats",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ftm_responder_stats_vals_ext), 0x00,
+              &ws_nl80211_ftm_responder_stats_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_preamble,
             { "Attribute Type", "nl80211.preamble",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_preamble_vals_ext), 0x00,
+              &ws_nl80211_preamble_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_type,
             { "Attribute Type", "nl80211.peer_measurement_type",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_type_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_status,
             { "Attribute Type", "nl80211.peer_measurement_status",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_status_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_status_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_req,
             { "Attribute Type", "nl80211.peer_measurement_req",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_req_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_req_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_resp,
             { "Attribute Type", "nl80211.peer_measurement_resp",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_resp_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_resp_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_peer_attrs,
             { "Attribute Type", "nl80211.peer_measurement_peer_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_peer_attrs_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_peer_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_attrs,
             { "Attribute Type", "nl80211.peer_measurement_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_attrs_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_ftm_capa,
             { "Attribute Type", "nl80211.peer_measurement_ftm_capa",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_ftm_capa_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_ftm_capa_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_ftm_req,
             { "Attribute Type", "nl80211.peer_measurement_ftm_req",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_ftm_req_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_ftm_req_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_ftm_failure_reasons,
             { "Attribute Type", "nl80211.peer_measurement_ftm_failure_reasons",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_ftm_failure_reasons_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_ftm_failure_reasons_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_peer_measurement_ftm_resp,
             { "Attribute Type", "nl80211.peer_measurement_ftm_resp",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_peer_measurement_ftm_resp_vals_ext), 0x00,
+              &ws_nl80211_peer_measurement_ftm_resp_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_obss_pd_attributes,
             { "Attribute Type", "nl80211.obss_pd_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_obss_pd_attributes_vals_ext), 0x00,
+              &ws_nl80211_obss_pd_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_bss_color_attributes,
             { "Attribute Type", "nl80211.bss_color_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_bss_color_attributes_vals_ext), 0x00,
+              &ws_nl80211_bss_color_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_iftype_akm_attributes,
             { "Attribute Type", "nl80211.iftype_akm_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_iftype_akm_attributes_vals_ext), 0x00,
+              &ws_nl80211_iftype_akm_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_fils_discovery_attributes,
             { "Attribute Type", "nl80211.fils_discovery_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_fils_discovery_attributes_vals_ext), 0x00,
+              &ws_nl80211_fils_discovery_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_unsol_bcast_probe_resp_attributes,
             { "Attribute Type", "nl80211.unsol_bcast_probe_resp_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_unsol_bcast_probe_resp_attributes_vals_ext), 0x00,
+              &ws_nl80211_unsol_bcast_probe_resp_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sae_pwe_mechanism,
             { "Attribute Type", "nl80211.sae_pwe_mechanism",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sae_pwe_mechanism_vals_ext), 0x00,
+              &ws_nl80211_sae_pwe_mechanism_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sar_type,
             { "Attribute Type", "nl80211.sar_type",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sar_type_vals_ext), 0x00,
+              &ws_nl80211_sar_type_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sar_attrs,
             { "Attribute Type", "nl80211.sar_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sar_attrs_vals_ext), 0x00,
+              &ws_nl80211_sar_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_sar_specs_attrs,
             { "Attribute Type", "nl80211.sar_specs_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_sar_specs_attrs_vals_ext), 0x00,
+              &ws_nl80211_sar_specs_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_mbssid_config_attributes,
             { "Attribute Type", "nl80211.mbssid_config_attributes",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_mbssid_config_attributes_vals_ext), 0x00,
+              &ws_nl80211_mbssid_config_attributes_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_ap_settings_flags,
             { "Attribute Type", "nl80211.ap_settings_flags",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_ap_settings_flags_vals_ext), 0x00,
+              &ws_nl80211_ap_settings_flags_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wiphy_radio_attrs,
             { "Attribute Type", "nl80211.wiphy_radio_attrs",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wiphy_radio_attrs_vals_ext), 0x00,
+              &ws_nl80211_wiphy_radio_attrs_vals_ext, 0x00,
               NULL, HFILL },
         },
         { &hf_nl80211_wiphy_radio_freq_range,
             { "Attribute Type", "nl80211.wiphy_radio_freq_range",
               FT_UINT16, BASE_DEC | BASE_EXT_STRING,
-              VALS_EXT_PTR(&ws_nl80211_wiphy_radio_freq_range_vals_ext), 0x00,
+              &ws_nl80211_wiphy_radio_freq_range_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_s1g_short_beacon_attrs,
+            { "Attribute Type", "nl80211.s1g_short_beacon_attrs",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_s1g_short_beacon_attrs_vals_ext, 0x00,
+              NULL, HFILL },
+        },
+        { &hf_nl80211_nan_capabilities,
+            { "Attribute Type", "nl80211.nan_capabilities",
+              FT_UINT16, BASE_DEC | BASE_EXT_STRING,
+              &ws_nl80211_nan_capabilities_vals_ext, 0x00,
               NULL, HFILL },
         },
 /* }}} */
@@ -5371,7 +5798,14 @@ proto_register_netlink_nl80211(void)
         &ett_nl80211,
         &ett_nl80211_frame,
         &ett_nl80211_tag,
-/* Extracted using tools/generate-nl80211-fields.py */
+        &ett_nl80211_software_iftypes,
+        &ett_nl80211_band_iftypes,
+        &ett_nl80211_bss_param,
+        &ett_nl80211_supported_commands,
+        &ett_nl80211_supported_cipher_suites,
+        &ett_nl80211_supported_cipher_suite,
+        &ett_nl80211_mlo_links,
+/* Extracted using tools/dissector_generators/generate-nl80211-data.py */
 /* Definitions from linux/nl80211.h {{{ */
         &ett_nl80211_commands,
         &ett_nl80211_attrs,
@@ -5497,6 +5931,8 @@ proto_register_netlink_nl80211(void)
         &ett_nl80211_ap_settings_flags,
         &ett_nl80211_wiphy_radio_attrs,
         &ett_nl80211_wiphy_radio_freq_range,
+        &ett_nl80211_s1g_short_beacon_attrs,
+        &ett_nl80211_nan_capabilities,
 /* }}} */
     };
 
@@ -5506,6 +5942,7 @@ proto_register_netlink_nl80211(void)
 
     netlink_nl80211_handle = register_dissector("nl80211", dissect_netlink_nl80211, proto_netlink_nl80211);
     ieee80211_handle = find_dissector_add_dependency("wlan", proto_netlink_nl80211);
+    eapol_handle = find_dissector_add_dependency("eapol", proto_netlink_nl80211);
     ieee80211_tag_dissector_table = find_dissector_table("wlan.tag.number");
 }
 

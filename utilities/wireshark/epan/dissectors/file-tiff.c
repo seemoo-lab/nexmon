@@ -8,7 +8,7 @@
  * Copyright 1998 Gerald Combs
  *
  * The TIFF 6 specification can be found at:
- * https://www.adobe.io/content/dam/udp/en/open/standards/tiff/TIFF6.pdf
+ * https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -44,6 +44,7 @@ static int hf_tiff_entry_unknown;
 static expert_field ei_tiff_unknown_tag;
 static expert_field ei_tiff_bad_entry;
 static expert_field ei_tiff_zero_denom;
+static expert_field ei_tiff_bad_ifd;
 
 
 static int ett_tiff;
@@ -156,7 +157,7 @@ static int hf_tiff_gray_response_unit;
 #define TIFF_TAG_T6_OPTIONS 293
 static int hf_tiff_t6_options;
 static int hf_tiff_t6_unused;
-static int hf_tiff_t6_allow_uncompresed;
+static int hf_tiff_t6_allow_uncompressed;
 
 #define TIFF_TAG_RESOLUTION_UNIT 296
 static int hf_tiff_resolution_unit;
@@ -629,7 +630,7 @@ dissect_tiff_single_urational(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
         proto_item_set_generated(approx_item);
     }
     else {
-        expert_add_info_format(pinfo, denom_ti, &ei_tiff_zero_denom, "Denominator is zero");
+        expert_add_info(pinfo, denom_ti, &ei_tiff_zero_denom);
     }
 }
 
@@ -648,7 +649,7 @@ dissect_tiff_t6_options(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uns
     proto_item *t6_ti = proto_tree_add_item(tree, hf_tiff_t6_options, tvb, offset, 4, encoding);
     proto_tree *t6_tree = proto_item_add_subtree(t6_ti, ett_t6);
     proto_tree_add_item(t6_tree, hf_tiff_t6_unused, tvb, offset, 4, encoding);
-    proto_tree_add_item(t6_tree, hf_tiff_t6_allow_uncompresed, tvb, offset, 4, encoding);
+    proto_tree_add_item(t6_tree, hf_tiff_t6_allow_uncompressed, tvb, offset, 4, encoding);
 }
 
 static void
@@ -798,6 +799,11 @@ dissect_tiff_ifd(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32
 
     proto_tree_add_item(ifd_tree, hf_tiff_ifd_next, tvb, offset, 4, encoding);
     uint32_t ifd_next = tvb_get_uint32(tvb, offset, encoding);
+
+    if (ifd_next <= offset) {
+        expert_add_info_format(pinfo, ifd_tree, &ei_tiff_bad_ifd, "Next IFD offset (%u) is less than or equal to current IFD offset (%u)", ifd_next, offset);
+        ifd_next = 0;
+    }
 
     return ifd_next;
 }
@@ -1046,7 +1052,7 @@ proto_register_tiff(void)
             FT_UINT32, BASE_HEX, NULL,
             0xFFFFFFFD, NULL, HFILL }
         },
-        { &hf_tiff_t6_allow_uncompresed,
+        { &hf_tiff_t6_allow_uncompressed,
             { "Allow Uncompressed", "tiff.t6.allow_uncompressed",
             FT_BOOLEAN, 32, TFS(&tfs_allowed_not_allowed),
             0x00000002, NULL, HFILL }
@@ -1130,9 +1136,12 @@ proto_register_tiff(void)
         },
         { &ei_tiff_zero_denom,
             { "tiff.zero_denom", PI_PROTOCOL, PI_WARN,
-            "Zero denominator", EXPFILL }
+            "Denominator is zero", EXPFILL }
         },
-
+        { &ei_tiff_bad_ifd,
+            { "tiff.bad_ifd", PI_PROTOCOL, PI_ERROR,
+            "Invalid IFD offset", EXPFILL }
+        },
     };
 
     proto_tiff = proto_register_protocol("Tagged Image File Format", "TIFF image", "tiff");

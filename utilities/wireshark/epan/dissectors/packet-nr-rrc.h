@@ -4,7 +4,7 @@
 /* asn2wrs.py -L -q -L -p nr-rrc -c ./nr-rrc.cnf -s ./packet-nr-rrc-template -D . -O ../.. NR-InterNodeDefinitions.asn NR-RRC-Definitions.asn PC5-RRC-Definitions.asn */
 
 /* packet-nr-rrc-template.h
- * Copyright 2018-2025, Pascal Quantin
+ * Copyright 2018-2026, Pascal Quantin
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -15,6 +15,8 @@
 
 #ifndef PACKET_NR_RRC_H
 #define PACKET_NR_RRC_H
+
+#include <epan/asn1.h>
 
 int dissect_nr_rrc_HandoverCommand_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_HandoverPreparationInformation_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -28,6 +30,7 @@ int dissect_nr_rrc_ConfigRestrictInfoSCG_PDU(tvbuff_t *tvb _U_, packet_info *pin
 int dissect_nr_rrc_PH_TypeListMCG_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_FeatureSetEntryIndex_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_MeasurementTimingConfiguration_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_MeasTiming_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_UERadioPagingInformation_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_UL_DCCH_Message_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_MBSInterestIndication_r17_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -73,13 +76,31 @@ int dissect_nr_rrc_SIB22_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, prot
 int dissect_nr_rrc_SIB23_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_SIB24_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_SIB25_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_SIB26_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_OD_SIB1_Config_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_SIB27_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_IntendedServiceAreaInfo_areaCoordinates_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_SIB28_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_CellGroupConfig_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_CondReconfigExecCondSCG_r17_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_DRX_Config_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_EarlyUL_SyncConfig_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_LocationMeasurementInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_UE_MeasuredTA_ID_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_NZP_CSI_RS_ResourceToAddModList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_NZP_CSI_RS_ResourceToReleaseList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_NZP_CSI_RS_ResourceSetToAddModList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_NZP_CSI_RS_ResourceSetToReleaseList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_IM_ResourceToAddModList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_IM_ResourceToReleaseList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_IM_ResourceSetToAddModList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_IM_ResourceSetToReleaseList_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_NoSecurityChangeId_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_ReferenceConfiguration_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_LTM_CSI_ResourceConfigToAddModList_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_LTM_CSI_ResourceConfigToReleaseList_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_ReportConfig_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_LTM_CSI_ReportConfigId_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_LTM_TCI_Info_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_MeasConfig_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_MeasGapConfig_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -95,6 +116,7 @@ int dissect_nr_rrc_NeedForGapNCSG_InfoNR_r17_PDU(tvbuff_t *tvb _U_, packet_info 
 int dissect_nr_rrc_NeedForInterruptionInfoNR_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_NonCellDefiningSSB_r17_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_NZP_CSI_RS_Resource_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_NZP_CSI_RS_ResourceSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_P_Max_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_PDCCH_ConfigSIB1_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_RACH_ConfigCommon_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -104,6 +126,9 @@ int dissect_nr_rrc_ReferenceTime_r16_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 int dissect_nr_rrc_ReportConfigToAddMod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_RLC_BearerConfig_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_SchedulingRequestResourceConfig_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_SBFD_Subband_Allocation_r19_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_SRS_Resource_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+int dissect_nr_rrc_Tag_Id_ptr_r18_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_TCI_StateId_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_TCI_UL_StateId_r17_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_nr_rrc_TDD_UL_DL_ConfigCommon_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);

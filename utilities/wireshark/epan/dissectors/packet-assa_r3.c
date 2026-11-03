@@ -181,7 +181,7 @@ typedef enum
   CMDMFG_TESTWDT,               /* 25 - Test watchdog */
   CMDMFG_QUERYCKSUM,            /* 26 - Query NVRAM checksum value */
   CMDMFG_VALIDATECHECKSUMS,     /* 27 - Validate checksums */
-  CMDMFG_REBUILDLRUCACHE,       /* 28 - Rebuild LRC cache */
+  CMDMFG_REBUILDLRUCACHE,       /* 28 - Rebuild LRU cache */
   CMDMFG_TZUPDATE,              /* 29 - Send TZCHANGE to tod.c */
   CMDMFG_TESTPRESERVE,          /* 30 - Test preserve save/restore code */
   CMDMFG_MORTISESTATELOGDUMP,   /* 31 - Dump the mortise state log */
@@ -1866,7 +1866,7 @@ mortiseEvent_e;
  */
 static const value_string r3_accessmodenames [] =
 {
-  { ACCESSMODE_NONE,            "ACCESMODE_NONE" },
+  { ACCESSMODE_NONE,            "ACCESSMODE_NONE" },
   { ACCESSMODE_PRIMARYONLY,     "ACCESSMODE_PRIMARYONLY" },
   { ACCESSMODE_PRIMARYORAUX,    "ACCESSMODE_PRIMARYORAUX" },
   { ACCESSMODE_PRIMARYANDAUX,   "ACCESSMODE_PRIMARYANDAUX" },
@@ -2269,8 +2269,8 @@ static value_string_ext r3_dispositionnames_ext = VALUE_STRING_EXT_INIT(r3_dispo
 
 static const value_string r3_deleteusersnames [] =
 {
-  { DELETEUSERS_ALL,    "DELETEUSER_ALL" },
-  { DELETEUSERS_CACHED, "DELETEUSER_CACHED" },
+  { DELETEUSERS_ALL,    "DELETEUSERS_ALL" },
+  { DELETEUSERS_CACHED, "DELETEUSERS_CACHED" },
   { 0,                  NULL }
 };
 static value_string_ext r3_deleteusersnames_ext = VALUE_STRING_EXT_INIT(r3_deleteusersnames);
@@ -3075,7 +3075,7 @@ static int * const r3_nvramclearoptions[] = {
 /*
  *  Mapping table so dissect_r3_cmd_setconfig() knows what the configuration item type is
  */
-static configType_e configMap [] =
+static const configType_e configMap [] =
 {
   /* CONFIGITEM_SERIAL_NUMBER */               CONFIGTYPE_STRING,
   /* CONFIGITEM_CRYPT_KEY */                   CONFIGTYPE_STRING,
@@ -3273,7 +3273,7 @@ static void dissect_r3_cmd_mfgcommand (tvbuff_t *tvb, uint32_t start_offset, uin
 static void dissect_r3_cmd_nvrambackup (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 static void dissect_r3_cmd_extendedresponse (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 
-static void (*r3command_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
+static void (* const r3command_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
 {
   /* CMD_RESPONSE */                dissect_r3_cmd_response,
   /* CMD_HANDSHAKE */               dissect_r3_cmd_handshake,
@@ -3345,7 +3345,7 @@ static void dissect_r3_cmdmfg_mortisestatelogclear (tvbuff_t *tvb, uint32_t star
 static void dissect_r3_cmdmfg_mortisepins (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 static void dissect_r3_cmdmfg_haltandcatchfire (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 
-static void (*r3commandmfg_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
+static void (* const r3commandmfg_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
 {
   /* CMDMFG_SETSERIALNUMBER */       dissect_r3_cmdmfg_setserialnumber,
   /* CMDMFG_SETCRYPTKEY */           dissect_r3_cmdmfg_setcryptkey,
@@ -3387,7 +3387,7 @@ static void (*r3commandmfg_dissect []) (tvbuff_t *tvb, uint32_t start_offset, ui
 static void dissect_r3_response_singlebyte (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 static void dissect_r3_response_hasdata (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 
-static void (*r3response_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
+static void (* const r3response_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
 {
   /* RESPONSETYPE_OK */                  dissect_r3_response_singlebyte,
   /* RESPONSETYPE_ERROR */               dissect_r3_response_singlebyte,
@@ -3469,7 +3469,7 @@ static void dissect_r3_upstreamcommand_connectcommuser (tvbuff_t *tvb, uint32_t 
 static void dissect_r3_upstreamcommand_commandalarm (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 static void dissect_r3_upstreamcommand_dumpdebuglog (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 
-static void (*r3upstreamcommand_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
+static void (* const r3upstreamcommand_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
 {
   /* UPSTREAMCOMMAND_RESERVED */           dissect_r3_upstreamcommand_reserved,
   /* UPSTREAMCOMMAND_DEBUGMSG */           dissect_r3_upstreamcommand_debugmsg,
@@ -3518,7 +3518,7 @@ static void dissect_r3_upstreammfgfield_keypadchar (tvbuff_t *tvb, uint32_t star
 static void dissect_r3_upstreammfgfield_magcard (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 static void dissect_r3_upstreammfgfield_proxcard (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *tree);
 
-static void (*r3upstreammfgfield_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
+static void (* const r3upstreammfgfield_dissect []) (tvbuff_t *tvb, uint32_t start_offset, uint32_t length, packet_info *pinfo, proto_tree *r3_tree) =
 {
   /* MFGFIELD_IOPINS */              dissect_r3_upstreammfgfield_iopins,
   /* MFGFIELD_ADCS */                dissect_r3_upstreammfgfield_adcs,
@@ -3558,23 +3558,23 @@ dissect_serialnumber (tvbuff_t *tvb, uint32_t start_offset, uint32_t length _U_,
   sn_item = proto_tree_add_item (tree, hf_index, tvb, start_offset, 16, ENC_ASCII|ENC_NA);
   sn_tree = proto_item_add_subtree (sn_item, ett_r3serialnumber);
 
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset +  0, 2, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset +  0, 2, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_manufacturer, tvb, start_offset +  0, 2, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snmanufacturernames, "[Unknown]"));
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset +  2, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset +  2, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_year, tvb, start_offset +  2, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snyearnames, "[Unknown]"));
   proto_tree_add_item(sn_tree, hf_r3_sn_week, tvb, start_offset +  3, 2, ENC_ASCII);
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset +  5, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset +  5, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_model, tvb, start_offset +  5, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snmodelnames, "[Unknown]"));
   proto_tree_add_item(sn_tree, hf_r3_sn_sequence, tvb, start_offset +  6, 4, ENC_ASCII);
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset + 10, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset + 10, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_group, tvb, start_offset + 10, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_sngroupnames, "[Unknown]"));
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset + 11, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset + 11, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_nid, tvb, start_offset + 11, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snnidnames, "[Unknown]"));
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset + 12, 2, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset + 12, 2, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_hid, tvb, start_offset + 12, 2, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snhidnames, "[Unknown]"));
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset + 14, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset + 14, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_power_supply, tvb, start_offset + 14, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snpowersupplynames, "[Unknown]"));
-  s = tvb_get_string_enc (pinfo->pool, tvb, start_offset + 15, 1, ENC_ASCII|ENC_NA);
+  s = (char *)tvb_get_string_enc (pinfo->pool, tvb, start_offset + 15, 1, ENC_ASCII|ENC_NA);
   proto_tree_add_string_format_value(sn_tree, hf_r3_sn_mortise, tvb, start_offset + 15, 1, s, "%s (%s)", s, str_to_str_wmem(pinfo->pool, s, r3_snmortisenames, "[Unknown]"));
 }
 
@@ -4204,11 +4204,11 @@ dissect_r3_upstreamcommand_dumpdebuglog (tvbuff_t *tvb, uint32_t start_offset, u
 static void
 dissect_r3_upstreammfgfield_iopins (tvbuff_t *tvb, uint32_t start_offset, uint32_t length _U_, packet_info *pinfo, proto_tree *tree)
 {
-  int len;
+  unsigned len;
 
   DISSECTOR_ASSERT(start_offset == 0);
 
-  len = MAX(0, tvb_reported_length_remaining(tvb, start_offset));
+  len = tvb_reported_length_remaining(tvb, start_offset);
   if (len % 3 != 0)
   {
     expert_add_info_format(pinfo, proto_tree_get_parent (tree), &ei_r3_malformed_length, "IOPINS data length not modulo 3 == 0");
@@ -4216,12 +4216,11 @@ dissect_r3_upstreammfgfield_iopins (tvbuff_t *tvb, uint32_t start_offset, uint32
   else
   {
     char portname = 'A';
-    int i;
 
     if (!tree)
       return;
 
-    for (i = 0; i < len; i += 3, portname++)
+    for (unsigned i = 0; i < len; i += 3, portname++)
     {
       proto_tree *port_tree = proto_tree_add_subtree_format(tree, tvb, i, 3, ett_r3iopins, NULL,
                                                    "Port %c Configuration", (portname == 'I') ? ++portname : portname);
@@ -4299,10 +4298,9 @@ dissect_r3_upstreammfgfield_checkpointlog (tvbuff_t *tvb, uint32_t start_offset,
     proto_tree  *cpe_tree;
     unsigned     resettype;
     const char *desc;
-    static const char *resets [] = { "Stack underflow", "Stack overflow", "Power-On",
-                                      "Software", "Brown-out", "MCLR in sleep", "WDT",
-                                      "Normal", "[Unknown Reset Type]" };
-
+    static const char * const resets [] = { "Stack underflow", "Stack overflow", "Power-On",
+                                           "Software", "Brown-out", "MCLR in sleep", "WDT",
+                                           "Normal", "[Unknown Reset Type]" };
 
     cpe_tree = proto_tree_add_subtree_format(cpl_tree, tvb, i + 0, 2, ett_r3checkpointlogentry, &cpe_item,
                             "Checkpoint Log Entry %u", counter);
@@ -4528,13 +4526,13 @@ dissect_r3_upstreammfgfield_cpuregisters (tvbuff_t *tvb, uint32_t start_offset, 
 static void
 dissect_r3_upstreammfgfield_taskflags (tvbuff_t *tvb, uint32_t start_offset, uint32_t length _U_, packet_info *pinfo _U_, proto_tree *tree)
 {
-  int len;
-  int i;
+  unsigned len;
+  unsigned i;
   proto_tree *tfg_tree;
 
   DISSECTOR_ASSERT(start_offset == 0);
 
-  len      = MAX(0, tvb_reported_length_remaining (tvb, 0));
+  len      = tvb_reported_length(tvb);
   tfg_tree = proto_tree_add_subtree_format(tree, tvb, 0, -1, ett_r3taskflags, NULL,
       "Task Flags (%u tasks)", len / 5);
 
@@ -4709,15 +4707,15 @@ static void
 dissect_r3_upstreammfgfield_capabilities (tvbuff_t *tvb, uint32_t start_offset, uint32_t length _U_, packet_info *pinfo, proto_tree *tree)
 {
   proto_tree *cf_tree;
-  int         len;
+  unsigned    len;
   unsigned    items;
   unsigned    octets;
-  int         i;
+  unsigned    i;
   uint8_t     step;
 
   DISSECTOR_ASSERT(start_offset == 0);
 
-  len = MAX(0, tvb_reported_length_remaining (tvb, 0));
+  len = tvb_reported_length(tvb);
 
   items = 0;
   i     = 0;
@@ -4874,11 +4872,11 @@ dissect_r3_upstreammfgfield_nvramchecksumvalue (tvbuff_t *tvb, uint32_t start_of
 static void
 dissect_r3_upstreammfgfield_checksumresults (tvbuff_t *tvb, uint32_t start_offset, uint32_t length _U_, packet_info *pinfo, proto_tree *tree)
 {
-  int len;
+  unsigned len;
 
   DISSECTOR_ASSERT(start_offset == 0);
 
-  len = MAX(0, tvb_reported_length_remaining(tvb, 0));
+  len = tvb_reported_length(tvb);
   if (len % 3 != 0)
   {
     expert_add_info_format(pinfo, proto_tree_get_parent (tree), &ei_r3_malformed_length, "Checksum results data length not modulo 3 == 0");
@@ -4887,7 +4885,7 @@ dissect_r3_upstreammfgfield_checksumresults (tvbuff_t *tvb, uint32_t start_offse
   {
     proto_tree *cksum_tree;
     uint32_t    error = false;
-    int         i;
+    unsigned    i;
     uint8_t     step;
 
     if (!tree)
@@ -5684,8 +5682,7 @@ dissect_r3_cmd_alarmconfigure (tvbuff_t *tvb, uint32_t start_offset, uint32_t le
     alarmcfg_tree = proto_tree_add_subtree_format(alarm_tree, payload_tvb, offset, tvb_get_uint8 (payload_tvb, offset),
                                          ett_r3alarmcfg, NULL, "Alarm Item (%s, %s)", ai, as);
 
-    alarm_len = tvb_get_uint8 (payload_tvb, offset + 0);
-    pi = proto_tree_add_item (alarmcfg_tree, hf_r3_alarm_length, payload_tvb, offset + 0, 1, ENC_LITTLE_ENDIAN);
+    pi = proto_tree_add_item_ret_uint (alarmcfg_tree, hf_r3_alarm_length, payload_tvb, offset + 0, 1, ENC_LITTLE_ENDIAN, &alarm_len);
     if (alarm_len == 0) {
       expert_add_info_format (pinfo, pi, &ei_r3_malformed_length,
                               "Alarm length equal to 0. Payload could be partially decoded");

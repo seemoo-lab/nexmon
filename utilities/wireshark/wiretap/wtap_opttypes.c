@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
-#include "wtap_opttypes.h"
-
 #define WS_LOG_DOMAIN LOG_DOMAIN_WIRETAP
+
+#include "wtap_opttypes.h"
 
 #include <glib.h>
 #include <string.h>
@@ -872,6 +872,19 @@ wtap_block_get_uint64_option_value(wtap_block_t block, unsigned option_id, uint6
     wtap_optval_t *optval;
 
     ret = wtap_block_get_option_common(block, option_id, WTAP_OPTTYPE_UINT64, &optval);
+    if (ret != WTAP_OPTTYPE_SUCCESS)
+        return ret;
+    *value = optval->uint64val;
+    return WTAP_OPTTYPE_SUCCESS;
+}
+
+wtap_opttype_return_val
+wtap_block_get_nth_uint64_option_value(wtap_block_t block, unsigned option_id, unsigned idx, uint64_t *value)
+{
+    wtap_opttype_return_val ret;
+    wtap_optval_t *optval;
+
+    ret = wtap_block_get_nth_option_common(block, option_id, WTAP_OPTTYPE_UINT64, idx, &optval);
     if (ret != WTAP_OPTTYPE_SUCCESS)
         return ret;
     *value = optval->uint64val;
@@ -1862,6 +1875,17 @@ static void dsb_copy_mand(wtap_block_t dest_block, wtap_block_t src_block)
     dst->secrets_data = (uint8_t *)g_memdup2(src->secrets_data, src->secrets_len);
 }
 
+static void pib_create(wtap_block_t block)
+{
+    block->mandatory_data = g_new0(wtapng_process_info_mandatory_t, 1);
+}
+
+static void pib_copy_mand(wtap_block_t dest_block, wtap_block_t src_block)
+{
+    memcpy(dest_block->mandatory_data, src_block->mandatory_data,
+           sizeof(wtapng_process_info_mandatory_t));
+}
+
 static void pkt_create(wtap_block_t block)
 {
     /* Commented out for now, there's no mandatory data that isn't handled by
@@ -2120,6 +2144,64 @@ void wtap_opttypes_initialize(void)
         NULL
     };
 
+    static wtap_blocktype_t pib_block = {
+        WTAP_BLOCK_PROCESS_INFORMATION, /* block_type */
+        "PIB",                          /* name */
+        "Process Information Block",    /* description */
+        pib_create,                     /* create */
+        NULL,                           /* free_mand */
+        pib_copy_mand,                  /* copy_mand */
+        NULL                            /* options */
+    };
+    static const wtap_opttype_t pib_name = {
+        "name",
+        "PIB Process Name",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+    static const wtap_opttype_t pib_path = {
+        "path",
+        "PIB Executable Path",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+    static const wtap_opttype_t pib_cmdline = {
+        "cmdline",
+        "PIB Command Line",
+        WTAP_OPTTYPE_BYTES,
+        0
+    };
+    static const wtap_opttype_t pib_ppid = {
+        "ppid",
+        "PIB Parent Process ID",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pib_uid = {
+        "uid",
+        "PIB User ID",
+        WTAP_OPTTYPE_UINT32,
+        0
+    };
+    static const wtap_opttype_t pib_user = {
+        "user",
+        "PIB User Name",
+        WTAP_OPTTYPE_STRING,
+        0
+    };
+    static const wtap_opttype_t pib_uuid = {
+        "uuid",
+        "PIB Executable UUID",
+        WTAP_OPTTYPE_BYTES,
+        0
+    };
+    static const wtap_opttype_t pib_starttime = {
+        "starttime",
+        "PIB Start Time",
+        WTAP_OPTTYPE_UINT64,
+        0
+    };
+
     static wtap_blocktype_t pkt_block = {
         WTAP_BLOCK_PACKET,            /* block_type */
         "EPB/SPB/PB",                 /* name */
@@ -2169,7 +2251,7 @@ void wtap_opttypes_initialize(void)
         "procidthreadid",
         "Process ID thread ID",
         WTAP_OPTTYPE_UINT64,
-        0
+        WTAP_OPTTYPE_FLAG_MULTIPLE_ALLOWED  /* one per process that could have sent or received the packet */
     };
     static const wtap_opttype_t pkt_darwin_peb_id = {
         "darwin_peb_id",
@@ -2196,38 +2278,38 @@ void wtap_opttypes_initialize(void)
         0
     };
     static const wtap_opttype_t pkt_darwin_flow_id = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_flow_id",
+        "Darwin flow id",
         WTAP_OPTTYPE_UINT32,
         0
     };
     static const wtap_opttype_t pkt_darwin_trace_tag = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_trace_tag",
+        "Darwin trace tag",
         WTAP_OPTTYPE_UINT32,
         0
     };
     static const wtap_opttype_t pkt_darwin_drop_reason = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_drop_reason",
+        "Darwin drop reason",
         WTAP_OPTTYPE_UINT32,
         0
     };
     static const wtap_opttype_t pkt_darwin_drop_line = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_drop_line",
+        "Darwin drop line",
         WTAP_OPTTYPE_UINT32,
         0
     };
     static const wtap_opttype_t pkt_darwin_drop_func = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_drop_func",
+        "Darwin drop function",
         WTAP_OPTTYPE_STRING,
         0
     };
     static const wtap_opttype_t pkt_darwin_comp_gencnt = {
-        "darwin_md_flags",
-        "Darwin metadata flags",
+        "darwin_com_gencount",
+        "Darwin compression generation count",
         WTAP_OPTTYPE_UINT32,
         0
     };
@@ -2384,16 +2466,19 @@ void wtap_opttypes_initialize(void)
      * dependent on the file type.
      */
     wtap_opttype_block_register(&ft_specific_information_block);
-#if 0
+
     /*
-     * Register the Legacy DPEB and the options that can appear in it.
+     * Register the PIB and the options that can appear in it.
      */
-     wtap_opttype_block_register(&dpeb_block);
-     wtap_opttype_option_register(&dpeb_block, OPT_DPEB_NAME, &dpeb_name);
-     wtap_opttype_option_register(&dpeb_block, OPT_DPEB_UUID, &dpeb_uuid);
-#endif
-
-
+    wtap_opttype_block_register(&pib_block);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_NAME, &pib_name);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_PATH, &pib_path);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_CMDLINE, &pib_cmdline);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_PPID, &pib_ppid);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_UID, &pib_uid);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_USER, &pib_user);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_UUID, &pib_uuid);
+    wtap_opttype_option_register(&pib_block, OPT_PIB_STARTTIME, &pib_starttime);
 
 #ifdef DEBUG_COUNT_REFS
     memset(blocks_active, 0, sizeof(blocks_active));

@@ -76,7 +76,7 @@ enum meta_direction {
 };
 
 static int proto_meta;
-extern int proto_sscop;
+static int proto_sscop;
 
 /* fields */
 static int hf_meta_schema;
@@ -201,9 +201,9 @@ static value_string_ext meta_id_vals_ext = VALUE_STRING_EXT_INIT(meta_id_vals);
 #define META_AAL5PROTO_NBAP     6
 static const value_string meta_aal5proto_vals[] = {
     { META_AAL5PROTO_MTP3,  "SSCOP MTP3" },
+    { META_AAL5PROTO_NS,    "GPRS NS" },
     { META_AAL5PROTO_ALCAP, "SSCOP ALCAP" },
     { META_AAL5PROTO_NBAP,  "SSCOP NBAP" },
-    { META_AAL5PROTO_NS,    "GPRS NS" },
     { 0, NULL }
 };
 
@@ -578,8 +578,8 @@ dissect_meta(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                     break;
                 case META_PROTO_DXT_HDLC:
                     next_dissector = mtp2_handle;
-                    next_tvb = tvb_new_subset_length_caplen(tvb, item_len + META_HEADER_SIZE,
-                        tvb_reported_length(tvb)-item_len-META_HEADER_SIZE-2, -1);
+                    next_tvb = tvb_new_subset_length(tvb, item_len + META_HEADER_SIZE,
+                        tvb_reported_length_remaining(tvb, item_len + META_HEADER_SIZE + 2));
                     break;
                 default:
                     next_dissector =
@@ -792,6 +792,7 @@ proto_reg_handoff_meta(void)
     meta_handle          = find_dissector("meta");
     dissector_add_uint("wtap_encap", WTAP_ENCAP_META, meta_handle);
 #endif
+    proto_sscop          = proto_get_id_by_filter_name("sscop");
     data_handle          = find_dissector("data");
     alcap_handle         = find_dissector_add_dependency("alcap", proto_meta);
     atm_untrunc_handle   = find_dissector_add_dependency("atm_untruncated", proto_meta);

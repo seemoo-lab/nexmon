@@ -639,7 +639,7 @@ static void dissect_wifi_p2p_device_info(packet_info *pinfo,
                              tvb, s_offset, 2, ENC_BIG_ENDIAN);
   attr_type = tvb_get_ntohs(tvb, s_offset);
   if (attr_type != 0x1011) {
-    expert_add_info_format(pinfo, item, &ei_wifi_p2p_attr_dev_info_dev_name_type, "Incorrect Device Name attribute type");
+    expert_add_info(pinfo, item, &ei_wifi_p2p_attr_dev_info_dev_name_type);
   }
   s_offset += 2;
   item = proto_tree_add_item(tlv_root, hf_p2p_attr_dev_info_dev_name_len,
@@ -862,7 +862,7 @@ static void dissect_wifi_p2p_group_info(packet_info *pinfo,
                                tvb, s_offset, 2, ENC_BIG_ENDIAN);
     attr_type = tvb_get_ntohs(tvb, s_offset);
     if (attr_type != 0x1011) {
-      expert_add_info_format(pinfo, item, &ei_wifi_p2p_attr_dev_info_dev_name_type, "Incorrect Device Name attribute type");
+      expert_add_info(pinfo, item, &ei_wifi_p2p_attr_dev_info_dev_name_type);
     }
     s_offset += 2;
     item = proto_tree_add_item(tree, hf_p2p_attr_gi_dev_name_len,
@@ -1222,7 +1222,7 @@ dissect_wifi_p2p_anqp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, v
                              offset, 2, ENC_LITTLE_ENDIAN);
   offset += 2;
 
-  while (tvb_reported_length_remaining(tvb, offset) >= (anqp_data->request ? 4 : 5)) {
+  while (tvb_reported_length_remaining(tvb, offset) >= (anqp_data->request ? 4U : 5U)) {
     uint16_t len;
     proto_tree *tlv;
     uint8_t type, id, sd_proto;

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CaptureCardWidget</class>
+ <widget class="QFrame" name="CaptureCardWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>550</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="frameShape">
+   <enum>QFrame::Shape::NoFrame</enum>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,1">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="ClickableLabel" name="captureHeader">
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Capture live packets from your network.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="accessibleName">
+      <string>Capture</string>
+     </property>
+     <property name="accessibleDescription">
+      <string>Start a new capture session</string>
+     </property>
+     <property name="text">
+      <string>&lt;h2&gt;Capture&lt;/h2&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="captureFilterRow" native="true">
+     <layout class="QHBoxLayout" name="captureFilterLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="captureFilterLabel">
+        <property name="text">
+         <string>…using this filter:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="CaptureFilterEntry" name="captureFilterEntry">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="accessibleName">
+         <string>Capture filter</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Enter a capture filter expression to limit which data is recorded during live capture.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="captureInterfaceTypeButton">
+        <property name="accessibleName">
+         <string>Interface type filter</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Filters the capture source list by type. Shows how many sources are currently visible and how many are hidden by the active filter.</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="InterfaceFrame" name="captureInterfaceFrame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="accessibleName">
+      <string>Capture sources</string>
+     </property>
+     <property name="accessibleDescription">
+      <string>Lists available capture sources. Select one or more to capture from.</string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ClickableLabel</class>
+   <extends>QLabel</extends>
+   <header>widgets/clickable_label.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CaptureFilterEntry</class>
+   <extends>QLineEdit</extends>
+   <header>widgets/capture_filter_entry.h</header>
+  </customwidget>
+  <customwidget>
+   <class>InterfaceFrame</class>
+   <extends>QFrame</extends>
+   <header>interface_frame.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

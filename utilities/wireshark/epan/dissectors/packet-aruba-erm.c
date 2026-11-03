@@ -96,9 +96,6 @@
 
 #include <wsutil/802_11-utils.h>
 
-#define PROTO_SHORT_NAME "ARUBA_ERM"
-#define PROTO_LONG_NAME  "Aruba Networks encapsulated remote mirroring"
-
 #define TYPE_PCAP 0
 #define TYPE_PEEK 1
 #define TYPE_AIRMAGNET 2
@@ -165,7 +162,7 @@ static dissector_handle_t radiotap_handle;
 static dissector_table_t aruba_erm_subdissector_table;
 
 static int
-dissect_aruba_erm_pcap(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *aruba_erm_tree, int offset)
+dissect_aruba_erm_pcap(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *aruba_erm_tree, unsigned offset)
 {
     proto_tree_add_item(aruba_erm_tree, hf_aruba_erm_time, tvb, offset, 8, ENC_TIME_SECS_USECS|ENC_BIG_ENDIAN);
     offset +=8;
@@ -180,14 +177,14 @@ dissect_aruba_erm_pcap(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *aruba_
 }
 
 static proto_tree *
-dissect_aruba_erm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset _U_)
+dissect_aruba_erm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned *offset _U_)
 {
 
     proto_item *ti;
     proto_tree *aruba_erm_tree;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-    col_set_str(pinfo->cinfo, COL_INFO, PROTO_SHORT_NAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ARUBA_ERM");
+    col_set_str(pinfo->cinfo, COL_INFO, "ARUBA_ERM");
 
 
     ti = proto_tree_add_item(tree, proto_aruba_erm, tvb, 0, 0, ENC_NA);
@@ -202,13 +199,13 @@ dissect_aruba_erm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in
 static int
 dissect_aruba_erm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     if (!dissector_try_payload_with_data(aruba_erm_subdissector_table, tvb, pinfo, tree, true, NULL)) {
 
         dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
         /* Add Expert info how decode...*/
-        proto_tree_add_expert(tree, pinfo, &ei_aruba_erm_decode, tvb, offset, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_aruba_erm_decode, tvb, offset);
         call_data_dissector(tvb, pinfo, tree);
     }
 
@@ -220,7 +217,7 @@ static int
 dissect_aruba_erm_type0(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     tvbuff_t * next_tvb;
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *aruba_erm_tree;
 
     aruba_erm_tree = dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
@@ -238,7 +235,7 @@ dissect_aruba_erm_type0(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_aruba_erm_type1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
 
@@ -251,12 +248,12 @@ dissect_aruba_erm_type1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_aruba_erm_type2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
 
     /* Not (yet) supported launch data dissector */
-    proto_tree_add_expert(tree, pinfo, &ei_aruba_erm_airmagnet, tvb, offset, -1);
+    proto_tree_add_expert_remaining(tree, pinfo, &ei_aruba_erm_airmagnet, tvb, offset);
     call_data_dissector(tvb, pinfo, tree);
 
     return tvb_captured_length(tvb);
@@ -266,7 +263,7 @@ static int
 dissect_aruba_erm_type3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     tvbuff_t * next_tvb;
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *aruba_erm_tree;
     struct ieee_802_11_phdr phdr;
     uint32_t signal_strength;
@@ -341,7 +338,7 @@ dissect_aruba_erm_type3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_aruba_erm_type4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
 
@@ -354,7 +351,7 @@ dissect_aruba_erm_type4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_aruba_erm_type5(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
 
@@ -367,7 +364,7 @@ dissect_aruba_erm_type5(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 static int
 dissect_aruba_erm_type6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     dissect_aruba_erm_common(tvb, pinfo, tree, &offset);
 
@@ -443,7 +440,7 @@ proto_register_aruba_erm(void)
 
     expert_module_t* expert_aruba_erm;
 
-    proto_aruba_erm = proto_register_protocol(PROTO_LONG_NAME, "ARUBA_ERM" , "aruba_erm");
+    proto_aruba_erm = proto_register_protocol("Aruba Networks encapsulated remote mirroring", "ARUBA_ERM" , "aruba_erm");
     proto_aruba_erm_type0 = proto_register_protocol_in_name_only("Aruba Networks encapsulated remote mirroring - PCAP (Type 0)", "ARUBA ERM PCAP (Type 0)", "aruba_erm_type0", proto_aruba_erm, FT_PROTOCOL);
     proto_aruba_erm_type1 = proto_register_protocol_in_name_only("Aruba Networks encapsulated remote mirroring - PEEK (Type 1)", "ARUBA ERM PEEK (type 1)", "aruba_erm_type1", proto_aruba_erm, FT_PROTOCOL);
     proto_aruba_erm_type2 = proto_register_protocol_in_name_only("Aruba Networks encapsulated remote mirroring - AIRMAGNET (Type 2)", "ARUBA ERM AIRMAGNET (Type 2)", "aruba_erm_type2", proto_aruba_erm, FT_PROTOCOL);

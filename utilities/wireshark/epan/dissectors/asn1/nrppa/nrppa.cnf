@@ -19,13 +19,19 @@ SRSResourceID-Item
 #.EXPORTS
 Assistance-Information_PDU
 AssistanceInformationFailureList_PDU
+SpatialRelationInfo_PDU
+SpatialRelationPerSRSResource_PDU
 SRSConfiguration_PDU
+SRSResourceSetID_PDU
 
 #.PDU
 Assistance-Information
 AssistanceInformationFailureList
 NRPPA-PDU
+SpatialRelationInfo
+SpatialRelationPerSRSResource
 SRSConfiguration
+SRSResourceSetID
 
 #.TYPE_RENAME
 InitiatingMessage/value InitiatingMessage_value
@@ -111,6 +117,7 @@ id-pRSConfigurationExchange              ProcedureCode
 id-measurementPreconfiguration           ProcedureCode
 id-measurementActivation                 ProcedureCode
 id-sRSInformationReservationNotification ProcedureCode
+id-positioningDataCollectionReport       ProcedureCode
 
 # ProtocolIE-ID
 
@@ -279,6 +286,14 @@ id-PreconfiguredSRSInformation                      ProtocolIE-ID
 id-DL-reference-signal-UERxTx-TD                    ProtocolIE-ID
 id-SRSPosPeriodicConfigHyperSFNIndex                ProtocolIE-ID
 id-ValidityAreaSpecificSRSInformationExtended       ProtocolIE-ID
+id-E-CID-AoA-NR-per-TRP                             ProtocolIE-ID
+id-WAB-MT-UE-ID                                     ProtocolIE-ID
+id-ChannelResponseInformation                       ProtocolIE-ID
+id-UL-SRS-TDCT                                      ProtocolIE-ID
+id-PositioningDataInformation                       ProtocolIE-ID
+id-PositioningDataUnavailable                       ProtocolIE-ID
+id-PositioningDataCollectionNeeded                  ProtocolIE-ID
+id-Inferred-measurement                             ProtocolIE-ID
 
 #.REGISTER
 #NRPPA-PROTOCOL-IES
@@ -321,6 +336,7 @@ Measurement-ID                                   N nrppa.ies id-LMF-Measurement-
 Measurement-ID                                   N nrppa.ies id-RAN-Measurement-ID
 TRP-MeasurementRequestList                       N nrppa.ies id-TRP-MeasurementRequestList
 TRP-MeasurementResponseList                      N nrppa.ies id-TRP-MeasurementResponseList
+TRP-MeasurementResponseList                      N nrppa.ies id-TRP-MeasurementReportList
 SRSType                                          N nrppa.ies id-SRSType
 RelativeTime1900                                 N nrppa.ies id-ActivationTime
 TRPList                                          N nrppa.ies id-TRPList
@@ -334,7 +350,6 @@ ResultEUTRA                                      N nrppa.ies id-ResultEUTRA
 TRPInformationTypeItem                           N nrppa.ies id-TRPInformationTypeItem
 CGI-NR                                           N nrppa.ies id-CGI-NR
 SFNInitialisationTime-EUTRA                      N nrppa.ies id-SFNInitialisationTime-NR
-CGI-NR                                           N nrppa.ies id-Cell-ID
 SrsFrequency                                     N nrppa.ies id-SrsFrequency
 TRPType                                          N nrppa.ies id-TRPType
 MeasurementPeriodicityExtended                   N nrppa.ies id-MeasurementPeriodicityExtended
@@ -397,6 +412,10 @@ Remote-UE-Indication                             N nrppa.ies id-Remote-UE-Indica
 Remote-UE-Status                                 N nrppa.ies id-Remote-UE-Status
 LocalOrigin                                      N nrppa.ies id-LocalOrigin
 RequestedSRSPreconfigurationCharacteristics-List N nrppa.ies id-PreconfiguredSRSInformation
+E-CID-AoA-NR-per-TRP                             N nrppa.ies id-E-CID-AoA-NR-per-TRP
+UL-SRS-TDCT                                      N nrppa.ies id-UL-SRS-TDCT
+PositioningDataInformation                       N nrppa.ies id-PositioningDataInformation
+PositioningDataUnavailable                       N nrppa.ies id-PositioningDataUnavailable
 
 
 #NRPPA-PROTOCOL-EXTENSION
@@ -448,6 +467,11 @@ UEReportingInterval-milliseconds           N nrppa.extension id-UEReportingInter
 DL-reference-signal-UERxTx-TD              N nrppa.extension id-DL-reference-signal-UERxTx-TD
 SRSPosPeriodicConfigHyperSFNIndex          N nrppa.extension id-SRSPosPeriodicConfigHyperSFNIndex
 ValidityAreaSpecificSRSInformationExtended N nrppa.extension id-ValidityAreaSpecificSRSInformationExtended
+WAB-MT-UE-ID                               N nrppa.extension id-WAB-MT-UE-ID
+ChannelResponseInformation                 N nrppa.extension id-ChannelResponseInformation
+PositioningDataCollectionNeeded            N nrppa.extension id-PositioningDataCollectionNeeded
+Inferred-measurement                       N nrppa.extension id-Inferred-measurement
+CGI-NR                                     N nrppa.extension id-Cell-ID
 
 
 #LPPA-ELEMENTARY-PROCEDURE
@@ -512,3 +536,5 @@ MeasurementPreconfigurationRefuse          N nrppa.proc.uout id-measurementPreco
 MeasurementActivation                      N nrppa.proc.imsg id-measurementActivation
 
 SRSInformationReservationNotification      N nrppa.proc.imsg id-sRSInformationReservationNotification
+
+PositioningDataCollectionReport            N nrppa.proc.imsg id-positioningDataCollectionReport

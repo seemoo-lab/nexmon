@@ -40,11 +40,11 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_item	*ti, *hidden_item;
 	proto_tree	*gift_tree, *cmd_tree;
 	bool	is_request;
-	int             offset = 0;
+	unsigned        offset = 0;
 	const unsigned char    *line;
-	int             next_offset;
-	int             linelen;
-	int             tokenlen;
+	unsigned        next_offset;
+	unsigned        linelen;
+	unsigned        tokenlen;
 	const unsigned char    *next_token;
 
 	/* set "Protocol" column text */
@@ -56,13 +56,13 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	else
 		is_request = false;
 
-	linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+	tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset);
 	line = tvb_get_ptr(tvb, offset, linelen);
 
 	/* set "Info" column text */
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s: %s",
 			     is_request ? "Request" : "Response",
-			     format_text(pinfo->pool, line, linelen));
+			     format_text(pinfo->pool, (char*)line, linelen));
 
 	/* if tree != NULL, build protocol tree */
 	if (tree) {
@@ -83,10 +83,10 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		if (tokenlen != 0) {
 			if (is_request) {
 				proto_tree_add_string(cmd_tree, hf_gift_request_cmd, tvb, offset,
-						    tokenlen, format_text(pinfo->pool, line, tokenlen));
+						    tokenlen, format_text(pinfo->pool, (char*)line, tokenlen));
 			} else {
 				proto_tree_add_string(cmd_tree, hf_gift_response_cmd, tvb, offset,
-						    tokenlen, format_text(pinfo->pool, line, tokenlen));
+						    tokenlen, format_text(pinfo->pool, (char*)line, tokenlen));
 			}
 			offset += (int) (next_token - line);
 			linelen -= (int) (next_token - line);
@@ -96,10 +96,10 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		if (linelen != 0) {
 			if (is_request) {
 				proto_tree_add_string(cmd_tree, hf_gift_request_arg, tvb, offset,
-						    linelen, format_text(pinfo->pool, line, linelen));
+						    linelen, format_text(pinfo->pool, (char*)line, linelen));
 			} else {
 				proto_tree_add_string(cmd_tree, hf_gift_response_arg, tvb, offset,
-						    linelen, format_text(pinfo->pool, line, linelen));
+						    linelen, format_text(pinfo->pool, (char*)line, linelen));
 			}
 		}
 	}

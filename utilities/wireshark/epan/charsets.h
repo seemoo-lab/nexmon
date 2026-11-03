@@ -7,9 +7,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-#ifndef __CHARSETS_H__
-#define __CHARSETS_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
@@ -65,30 +63,48 @@ extern const gunichar2 charset_table_ebcdic[256];
 extern const gunichar2 charset_table_ebcdic_cp037[256];
 extern const gunichar2 charset_table_ebcdic_cp500[256];
 
-/*
- * Given a wmem scope, a pointer, and a length, treat the string of bytes
- * referred to by the pointer and length as an ASCII string, with all bytes
- * with the high-order bit set being invalid, and return a pointer to a
- * UTF-8 string, allocated using the wmem scope.
+/**
+ * @brief Convert an ASCII byte sequence to a UTF‑8 string using a wmem scope.
  *
- * Octets with the highest bit set will be converted to the Unicode
+ * Given a wmem scope, a pointer, and a length, treat the referenced bytes
+ * as an ASCII string, with any byte having the high‑order bit set considered
+ * invalid, and return a UTF‑8 string allocated using the wmem scope.
+ *
+ * Octets with the high‑order bit set are converted to the Unicode
  * REPLACEMENT CHARACTER.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the ASCII byte sequence.
+ * @param length Number of bytes to process from the sequence.
+ *
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_ascii_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_ascii_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
-/*
+/**
+ * @brief Validate and normalize a UTF‑8 byte sequence, replacing invalid
+ *        sequences with the Unicode REPLACEMENT CHARACTER.
+ *
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
  * referred to by the pointer and length as a UTF-8 string, and return a
  * pointer to a UTF-8 string, allocated using the wmem scope, with all
  * ill-formed sequences replaced with the Unicode REPLACEMENT CHARACTER
  * according to the recommended "best practices" given in the Unicode
  * Standard and specified by W3C/WHATWG.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the UTF‑8 byte sequence.
+ * @param length Number of bytes to process from the sequence.
+ *
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_utf_8_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_utf_8_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
-/*
+/**
+ * @brief Convert a string encoded in an ISO 646-based character set to UTF‑8.
+ *
  * Given a wmem scope, a pointer, a length, and a translation table,
  * treat the string of bytes referred to by the pointer and length as a
  * string encoded using one octet per character, with octets with the
@@ -97,19 +113,35 @@ get_utf_8_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
  * CHARACTER) and octets with the high-order bit set being mapped to
  * REPLACEMENT CHARACTER, and return a pointer to a UTF-8 string,
  * allocated using the wmem scope.
+ *
+ * @param scope   The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr     Pointer to the ISO 646 sequence.
+ * @param length  Number of bytes to process from the sequence.
+ * @param table   Translation table with 128 entries mapping octets with the high-order bit clear to Unicode code points.
+ *
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_iso_646_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[0x80]);
+get_iso_646_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, const gunichar2 table[0x80]);
 
-/*
+/**
+ * @brief Convert an ISO 8859/1 string to UTF‑8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
  * referred to by the pointer and length as an ISO 8859/1 string, and
  * return a pointer to a UTF-8 string, allocated using the wmem scope.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the ISO 8859/1 sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_8859_1_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_8859_1_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
-/*
+/**
+ * @brief Convert a string encoded in an extended ASCII character set to UTF‑8.
+ *
  * Given a wmem scope, a pointer, a length, and a translation table with
  * 128 entries, treat the string of bytes referred to by the pointer and
  * length as a string encoded using one octet per character, with octets
@@ -117,11 +149,19 @@ get_8859_1_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
  * bit set being mapped by the translation table to 2-byte Unicode Basic
  * Multilingual Plane characters (including REPLACEMENT CHARACTER), and
  * return a pointer to a UTF-8 string, allocated using the wmem scope.
+ *
+ * @param scope Memory allocation scope for the resulting string.
+ * @param ptr Pointer to the UCS-2 encoded string.
+ * @param length Length of the UCS-2 encoded string in bytes.
+ * @param table Conversion table from UCS-2 to UTF-8 characters.
+ * @return Pointer to a newly allocated UTF-8 string.
  */
 WS_DLL_PUBLIC uint8_t *
-get_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[0x80]);
+get_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, const gunichar2 table[0x80]);
 
-/*
+/**
+ * @brief Convert a UCS‑2 encoded string to UTF‑8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
  * referred to by the pointer and length as a UCS-2 encoded string
  * containing characters from the Basic Multilingual Plane (plane 0) of
@@ -132,11 +172,18 @@ get_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, con
  * possibly ORed with ENC_BOM.
  *
  * Specify length in bytes.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the UCS-2 sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_ucs_2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
+get_ucs_2_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, unsigned encoding);
 
-/*
+/**
+ * @brief Convert a UTF‑16 encoded string to UTF‑8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
  * referred to by the pointer and length as a UTF-16 encoded string, and
  * return a pointer to a UTF-8 string, allocated with the wmem scope.
@@ -147,11 +194,18 @@ get_ucs_2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsign
  * possibly ORed with ENC_BOM.
  *
  * Specify length in bytes.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the UTF‑16 sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_utf_16_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
+get_utf_16_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, unsigned encoding);
 
-/*
+/**
+ * @brief Convert a UCS‑4 encoded string to UTF‑8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the string of bytes
  * referred to by the pointer and length as a UCS-4 encoded string, and
  * return a pointer to a UTF-8 string, allocated with the wmem scope.
@@ -160,38 +214,90 @@ get_utf_16_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsig
  * possibly ORed with ENC_BOM.
  *
  * Specify length in bytes.
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string.
+ * @param ptr Pointer to the UCS-4 sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @return A UTF‑8 string allocated in the given scope.
  */
 WS_DLL_PUBLIC uint8_t *
-get_ucs_4_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, unsigned encoding);
+get_ucs_4_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, unsigned encoding);
 
+/**
+ * @brief Extracts a 7-bit encoded string from packed data.
+ *
+ * This function extracts a sequence of 7-bit encoded characters from a packed byte array,
+ * starting at a specified bit offset and unpacking them into a new buffer.
+ *
+ * @param scope Memory allocator for the returned string.
+ * @param ptr Pointer to the packed data.
+ * @param bit_offset Bit offset within the first byte where extraction begins.
+ * @param no_of_chars Number of characters to extract.
+ * @return A pointer to the newly allocated unpacked string, or NULL on failure.
+ */
 WS_DLL_PUBLIC uint8_t *
 get_ts_23_038_7bits_string_packed(wmem_allocator_t *scope, const uint8_t *ptr,
-        const int bit_offset, int no_of_chars);
+        const size_t bit_offset, size_t no_of_chars);
 
+/**
+ * @brief Extracts a 7-bit string from TS 23.038 data.
+ *
+ * @param scope Memory allocation scope for the resulting string.
+ * @param ptr Pointer to the input data buffer.
+ * @param length Length of the input data buffer.
+ * @return Pointer to the extracted 7-bit string.
+ */
 WS_DLL_PUBLIC uint8_t *
 get_ts_23_038_7bits_string_unpacked(wmem_allocator_t *scope, const uint8_t *ptr,
-        int length);
+        size_t length);
 
+/**
+ * @brief Retrieves a string based on ETSI TS 102 221 Annex A encoding.
+ *
+ * @param scope Memory allocation scope for the resulting string.
+ * @param ptr Pointer to the input data.
+ * @param length Length of the input data.
+ * @return Pointer to the allocated string, or an empty string if input is invalid.
+ */
 WS_DLL_PUBLIC uint8_t *
 get_etsi_ts_102_221_annex_a_string(wmem_allocator_t *scope, const uint8_t *ptr,
-        int length);
+        size_t length);
 
+/**
+ * @brief Convert a sequence of 7-bit ASCII characters to a Unicode string.
+ *
+ * @param scope Memory allocation scope for the resulting string buffer.
+ * @param ptr Pointer to the input byte array.
+ * @param bit_offset Bit offset within the first byte of the input data.
+ * @param no_of_chars Number of characters to convert from the input data.
+ * @return A new string buffer containing the converted Unicode string.
+ */
 WS_DLL_PUBLIC uint8_t *
 get_ascii_7bits_string(wmem_allocator_t *scope, const uint8_t *ptr,
-        const int bit_offset, int no_of_chars);
+        const size_t bit_offset, size_t no_of_chars);
 
-/*
+/**
+ * @brief Convert a GB18030 encoded string to a UTF-8 string, substituting REPLACEMENT CHARACTER for non-ASCII characters.
+ *
  * Given a wmem scope, a pointer, a length, and a translation table with
  * 256 entries, treat the string of bytes referred to by the pointer and
  * length as a string encoded using one octet per character, with octets
  * being mapped by the translation table to 2-byte Unicode Basic Multilingual
  * Plane characters (including REPLACEMENT CHARACTER), and return a
  * pointer to a UTF-8 string, allocated using the wmem scope.
+ *
+ * @param scope Memory allocation scope for the resulting string.
+ * @param ptr Pointer to the input GB18030 encoded string.
+ * @param length Length of the input string in bytes.
+ * @param table Unicode substitution table for non-ASCII characters.
+ * @return A pointer to a UTF-8 encoded string allocated using the provided wmem scope, or NULL on failure.
  */
 WS_DLL_PUBLIC uint8_t *
-get_nonascii_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int length, const gunichar2 table[256]);
+get_nonascii_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, const gunichar2 table[256]);
 
-/*
+/**
+ * @brief Convert a GB18030 encoded string to UTF-8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the bytes referred to
  * by the pointer and length as a GB18030 encoded string, and return a pointer
  * to a UTF-8 string, allocated using the wmem scope, converted having
@@ -200,31 +306,102 @@ get_nonascii_unichar2_string(wmem_allocator_t *scope, const uint8_t *ptr, int le
  * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
  *
  * As expected, this will also decode GBK and GB2312 strings.
+ *
+ * @param scope Memory allocation scope.
+ * @param ptr Pointer to the input GB18030 encoded string.
+ * @param length Length of the input string.
+ * @return A pointer to a UTF-8 encoded string, or NULL on failure.
  */
 WS_DLL_PUBLIC uint8_t *
-get_gb18030_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_gb18030_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
-/*
+/**
+ * @brief Convert a EUC-KR encoded string to UTF-8.
+ *
  * Given a wmem scope, a pointer, and a length, treat the bytes referred to
  * by the pointer and length as a EUC-KR encoded string, and return a pointer
  * to a UTF-8 string, allocated using the wmem scope, converted having
  * substituted REPLACEMENT CHARACTER according to the Unicode Standard
  * 5.22 U+FFFD Substitution for Conversion.
  * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
+ *
+ * @param scope Memory allocation scope for the returned string.
+ * @param ptr Pointer to the input EUC-KR encoded string.
+ * @param length Length of the input string.
+ * @return uint8_t* Pointer to the allocated UTF-8 encoded string, or NULL on failure.
  */
 WS_DLL_PUBLIC uint8_t *
-get_euc_kr_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_euc_kr_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
+/**
+ * @brief Converts a T.61 encoded string to a UTF-8 string.
+ *
+ * @param scope Memory allocation scope for the resulting string.
+ * @param ptr Pointer to the input T.61 encoded data.
+ * @param length Length of the input data in bytes.
+ * @return uint8_t* Pointer to the newly allocated UTF-8 encoded string, or NULL on failure.
+ */
 WS_DLL_PUBLIC uint8_t *
-get_t61_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_t61_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
 
+/**
+ * @brief Converts a DECT standard 8-bit string to a Unicode string.
+ *
+ * @param scope Memory allocation scope for the resulting string buffer.
+ * @param ptr Pointer to the input 8-bit string data.
+ * @param length Length of the input string data in bytes.
+ * @return A pointer to the converted Unicode string, or NULL on failure.
+ */
 WS_DLL_PUBLIC uint8_t *
-get_dect_standard_8bits_string(wmem_allocator_t *scope, const uint8_t *ptr, int length);
+get_dect_standard_8bits_string(wmem_allocator_t *scope, const uint8_t *ptr, size_t length);
+
+/**
+ * @brief Convert a byte sequence in an arbitrary encoding (supported by iconv) to UTF‑8.
+ *
+ * Given a wmem scope, a pointer, a length, and an encoding name recognized
+ * by iconv, treat the bytes referred to by the pointer and length as a string
+ * in that encoding, and return a pointer to a UTF-8 string, allocated using
+ * the wmem scope, converted from the original encoding having substituted
+ * REPLACEMENT CHARACTER according to the Unicode Standard 5.22 U+FFFD
+ * Substitution for Conversion.
+ * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string (NULL for g_malloc).
+ * @param ptr Pointer to the encoded byte sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @param encoding The source encoding name (as recognized by iconv).
+ *
+ * @return A UTF‑8 wmem_strbuf_t allocated in the given scope.
+ *
+ * @note This is useful when the byte sequence may have internal NUL bytes.
+ */
+WS_DLL_PUBLIC wmem_strbuf_t *
+get_strbuf_enc_iconv(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, const char *encoding);
+
+/**
+ * @brief Convert a string in an arbitrary encoding (supported by iconv) to UTF‑8.
+ *
+ * Given a wmem scope, a pointer, a length, and an encoding name recognized
+ * by iconv, treat the bytes referred to by the pointer and length as a string
+ * in that encoding, and return a pointer to a UTF-8 string, allocated using
+ * the wmem scope, converted from the original encoding having substituted
+ * REPLACEMENT CHARACTER according to the Unicode Standard 5.22 U+FFFD
+ * Substitution for Conversion.
+ * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
+ *
+ * @param scope The wmem allocator scope used for the returned UTF‑8 string (NULL for g_malloc).
+ * @param ptr Pointer to the encoded byte sequence.
+ * @param length Number of bytes to process from the sequence.
+ * @param encoding The source encoding name (as recognized by iconv).
+ *
+ * @return A UTF‑8 string allocated in the given scope.
+ */
+WS_DLL_PUBLIC uint8_t *
+get_string_enc_iconv(wmem_allocator_t *scope, const uint8_t *ptr, size_t length, const char *encoding);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __CHARSETS_H__ */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

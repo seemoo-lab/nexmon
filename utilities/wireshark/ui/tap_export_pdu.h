@@ -16,17 +16,20 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/**
+ * @brief Holds the state and metadata required to export PDUs to a pcapng output file.
+ */
 typedef struct _exp_pdu_t {
-    char*        pathname;
-    int          pkt_encap;
-    wtap_dumper* wdh;
-    GArray* shb_hdrs;
-    wtapng_iface_descriptions_t* idb_inf;
-    uint32_t     framenum;
+    char                        *pathname;  /**< Path to the output file to which exported PDUs are written. */
+    int                          pkt_encap; /**< wtap encapsulation type applied to exported packets. */
+    wtap_dumper                 *wdh;       /**< Handle to the wtap dumper used to write packets to the output file. */
+    GArray                      *shb_hdrs;  /**< Array of Section Header Block (SHB) headers to write into the output file. */
+    wtapng_iface_descriptions_t *idb_inf;   /**< Interface Description Block (IDB) metadata written into the output file. */
+    uint32_t                     framenum;  /**< Frame number of the packet currently being exported. */
 } exp_pdu_t;
 
 /**
-* Registers the tap listener which will add matching packets to the exported
+* @brief Registers the tap listener which will add matching packets to the exported
 * file. Must be called before exp_pdu_open.
 *
 * @param tap_name  One of the names registered with register_export_pdu_tap().
@@ -39,9 +42,15 @@ char *exp_pdu_pre_open(const char *tap_name, const char *filter,
     exp_pdu_t *exp_pdu_tap_data);
 
 /**
-* Use the given file descriptor for writing an output file. Can only be called
+* @brief Use the given file descriptor for writing an output file. Can only be called
 * once and exp_pdu_pre_open() must be called before.
 *
+* @param data The export PDU tap data structure.
+* @param pathname The name of the file to write to. This is used for error reporting
+* and may be NULL if the file descriptor is valid.
+* @param file_type_subtype The file type and subtype to use for the output file.
+* @param fd The file descriptor to use for writing the output file.
+* @param comment A comment to add to the output file, or NULL if no comment should be added.
 * @param[out] err Will be set to an error code on failure.
 * @param[out] err_info for some errors, a string giving more details of
 * the error
@@ -51,6 +60,14 @@ bool exp_pdu_open(exp_pdu_t *data, char *pathname, int file_type_subtype,
     int fd, const char *comment, int *err, char **err_info);
 
 /* Stops the PDUs export. */
+/**
+ * @brief Closes an exported PDU tap.
+ *
+ * @param exp_pdu_tap_data Pointer to the export PDU tap data structure.
+ * @param err Pointer to an integer that will receive an error code if an error occurs.
+ * @param err_info Pointer to a string that will receive an error message if an error occurs.
+ * @return True if the tap was successfully closed, false otherwise.
+ */
 bool exp_pdu_close(exp_pdu_t *exp_pdu_tap_data, int *err, char **err_info);
 
 #ifdef __cplusplus

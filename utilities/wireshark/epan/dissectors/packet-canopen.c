@@ -795,7 +795,7 @@ sdo_cmd_fields_ccs(unsigned cs, unsigned subcommand)
 static void
 dissect_sdo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *canopen_type_tree, unsigned function_code)
 {
-    int offset = 0;
+    unsigned offset = 0;
     /*number of data bytes*/
     uint8_t sdo_data = 0;
     /*Field existence*/
@@ -1008,17 +1008,15 @@ dissect_sdo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *canopen_type_tree, un
 static void
 dissect_lss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *canopen_type_tree, unsigned msg_type_id)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int reserved = 0;
     uint8_t lss_cs;
     uint8_t lss_bc_mask;
     uint16_t lss_abt_delay;
 
-    proto_tree_add_item(canopen_type_tree,
-            hf_canopen_lss_cs, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-
     /* LSS command specifier */
-    lss_cs = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint8(canopen_type_tree,
+            hf_canopen_lss_cs, tvb, offset, 1, ENC_LITTLE_ENDIAN, &lss_cs);
     col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", val_to_str(pinfo->pool, lss_cs, lss_cs_code, "Unknown (0x%x)"));
     offset++;
 
@@ -1238,7 +1236,7 @@ dissect_canopen(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     nstime_t     time_stamp;
     int          can_data_len = tvb_reported_length(tvb);
     const char *function_code_str;
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t nmt_node_id;
 
     proto_item *ti, *cob_ti;

@@ -21,10 +21,11 @@
 #include <epan/conversation.h>
 #include <epan/to_str.h>
 #include <epan/aftypes.h>
-#include <epan/ipproto.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/ws_padding_to.h>
+
 
 void proto_register_dtpt(void);
 
@@ -226,7 +227,7 @@ dissect_dtpt_wstring(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_in
 	uint32_t	wstring_padding = 0;
 
 	wstring_length = tvb_get_letohl(tvb, offset);
-	wstring_data = tvb_get_string_enc(pinfo->pool, tvb, offset+4, wstring_length, ENC_UTF_16|ENC_LITTLE_ENDIAN);
+	wstring_data = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset+4, wstring_length, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	wstring_size = wstring_length;
 	wstring_padding = WS_PADDING_TO_4(wstring_size);
 	wstring_size += wstring_padding;

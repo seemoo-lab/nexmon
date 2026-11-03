@@ -15,6 +15,7 @@
 
 #include <wsutil/utf8_entities.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 
 #include <ui/qt/main_application.h>
 #include <ui/qt/filter_action.h>
@@ -66,7 +67,9 @@ int TabData::protoId() const
 
 
 TrafficTab::TrafficTab(QWidget * parent) :
-    DetachableTabWidget(parent)
+    DetachableTabWidget(parent),
+    _recentList(nullptr),
+    _recentColumnList(nullptr)
 {
     _createModel = nullptr;
     _createDelegate = nullptr;
@@ -340,7 +343,7 @@ void TrafficTab::insertProtoTab(int protoId, bool emitSignals)
 
     /* We reset the correct tab idxs. That operations is costly, but it is only
      * called during this operation and ensures, that other operations do not
-     * need to iterate, but rather can lookup the indeces. */
+     * need to iterate, but rather can lookup the indices. */
     _tabs.clear();
     for (int idx = 0; idx < count(); idx++) {
         TabData tabData = qvariant_cast<TabData>(tabBar()->tabData(idx));
@@ -372,7 +375,7 @@ void TrafficTab::removeProtoTab(int protoId, bool emitSignals)
 
     /* We reset the correct tab idxs. That operations is costly, but it is only
     * called during this operation and ensures, that other operations do not
-    * need to iterate, but rather can lookup the indeces. */
+    * need to iterate, but rather can lookup the indices. */
     _tabs.clear();
     for (int idx = 0; idx < count(); idx++) {
         TabData tabData = qvariant_cast<TabData>(tabBar()->tabData(idx));
@@ -674,11 +677,11 @@ TrafficTab::writeGeoIPMapFile(QFile * fp, bool json_only, TrafficDataFilterProxy
     QTextStream out(fp);
 
     if (!json_only) {
-        QFile ipmap(get_datafile_path("ipmap.html"));
+        QFile ipmap(get_datafile_path("ipmap.html", application_configuration_environment_prefix()));
 
         if (!ipmap.open(QIODevice::ReadOnly)) {
             QMessageBox::warning(this, tr("Map file error"), tr("Could not open base file %1 for reading: %2")
-                .arg(get_datafile_path("ipmap.html"), g_strerror(errno))
+                .arg(get_datafile_path("ipmap.html", application_configuration_environment_prefix()), g_strerror(errno))
             );
             return false;
         }

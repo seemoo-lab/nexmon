@@ -33,7 +33,6 @@ void proto_reg_handoff_autosar_ipdu_multiplexer(void);
 
 /* this protocol */
 static int proto_ipdu_multiplexer;
-#define IPDUM_NAME "AUTOSAR I-PduM"
 
 /* dissector handles - incoming messages */
 static dissector_handle_t ipdum_handle_can;
@@ -658,8 +657,8 @@ get_pdu_transport_mapping(uint32_t pdu_transport_id) {
 
 static int
 dissect_ipdum_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, uint32_t id) {
-    int offset = 0;
-    int length = tvb_captured_length_remaining(tvb, 0);
+    unsigned offset = 0;
+    unsigned length = tvb_captured_length_remaining(tvb, 0);
 
     proto_item *ti = proto_tree_add_item(root_tree, proto_ipdu_multiplexer, tvb, offset, -1, ENC_NA);
     proto_tree *tree = proto_item_add_subtree(ti, ett_ipdum);
@@ -667,8 +666,8 @@ dissect_ipdum_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, 
     ipdum_message_list_t *config = get_message_config(id);
     unsigned i;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, IPDUM_NAME);
-    col_set_str(pinfo->cinfo, COL_INFO, IPDUM_NAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "AUTOSAR I-PduM");
+    col_set_str(pinfo->cinfo, COL_INFO, "AUTOSAR I-PduM");
 
     if (config == NULL || config->num_of_items == 0) {
         proto_tree_add_item(tree, hf_payload_unparsed, tvb, offset, length, ENC_NA);
@@ -684,13 +683,13 @@ dissect_ipdum_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, 
             }
 
             if (update_bit_ok) {
-                int start_byte = config->items[i].start_pos / 8;
-                int end_byte = (config->items[i].start_pos + config->items[i].bit_length) / 8;
+                unsigned start_byte = config->items[i].start_pos / 8;
+                unsigned end_byte = (config->items[i].start_pos + config->items[i].bit_length) / 8;
                 if ((config->items[i].start_pos + config->items[i].bit_length) % 8 != 0) {
                     end_byte++;
                 }
 
-                int pdu_len = end_byte - start_byte;
+                unsigned pdu_len = end_byte - start_byte;
                 if (pdu_len > tvb_captured_length_remaining(tvb, offset + start_byte)) {
                     pdu_len = tvb_captured_length_remaining(tvb, offset + start_byte);
                 }
@@ -859,7 +858,7 @@ proto_register_autosar_ipdu_multiplexer(void) {
     };
 
 
-    proto_ipdu_multiplexer = proto_register_protocol("AUTOSAR I-PDU Multiplexer", IPDUM_NAME, "ipdum");
+    proto_ipdu_multiplexer = proto_register_protocol("AUTOSAR I-PDU Multiplexer", "AUTOSAR I-PduM", "ipdum");
     ipdum_module = prefs_register_protocol(proto_ipdu_multiplexer, NULL);
 
     proto_register_field_array(proto_ipdu_multiplexer, hf, array_length(hf));

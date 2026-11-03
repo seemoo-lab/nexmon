@@ -13,15 +13,25 @@
 
 #include "epan/prefs.h"
 
-#include <ui/qt/utils/qt_ui_utils.h>
-#include "ui/capture_globals.h"
+#include "capture/capture_ifinfo.h"
+
+#include "extcap.h"
+
 #include "wsutil/utf8_entities.h"
 
 #include "wiretap/wtap.h"
 
-#include "main_application.h"
+#include "ui/capture_globals.h"
+#include "ui/capture_ui_utils.h"
+#include "ui/ws_ui_util.h"
+
+#include <ui/qt/main_application.h>
+#include <ui/qt/main_window.h>
+#include <ui/qt/manager/interface_list_manager.h>
+#include <ui/qt/utils/qt_ui_utils.h>
 
 #include <QIdentityProxyModel>
+#include <QSet>
 
 InterfaceTreeCacheModel::InterfaceTreeCacheModel(QObject *parent) :
     QIdentityProxyModel(parent)
@@ -35,10 +45,10 @@ InterfaceTreeCacheModel::InterfaceTreeCacheModel(QObject *parent) :
     storage = new QMap<int, QSharedPointer<QMap<InterfaceTreeColumns, QVariant> > >();
 
     checkableColumns << IFTREE_COL_HIDDEN << IFTREE_COL_PROMISCUOUSMODE;
-    checkableColumns << IFTREE_COL_MONITOR_MODE;
+    checkableColumns << IFTREE_COL_MONITOR_MODE << IFTREE_COL_OPTIMIZE;
 
     editableColumns << IFTREE_COL_COMMENT << IFTREE_COL_SNAPLEN << IFTREE_COL_PIPE_PATH;
-    editableColumns << IFTREE_COL_BUFFERLEN;
+    editableColumns << IFTREE_COL_BUFFERLEN << IFTREE_COL_CAPTURE_FILTER << IFTREE_COL_DLT;
 }
 
 InterfaceTreeCacheModel::~InterfaceTreeCacheModel()
@@ -75,7 +85,7 @@ void InterfaceTreeCacheModel::saveNewDevices()
 {
     QList<interface_t>::const_iterator it = newDevices.constBegin();
     /* idx is used for iterating only over the indices of the new devices. As all new
-     * devices are stored with an index higher then sourceModel->rowCount(), we start
+     * devices are stored with an index higher than sourceModel->rowCount(), we start
      * only with those storage indices.
      * it is just the iterator over the new devices. A new device must not necessarily
      * have storage, which will lead to that device not being stored in global_capture_opts */
@@ -173,6 +183,32 @@ void InterfaceTreeCacheModel::save()
                     /* Hidden is de-selection, therefore inverted logic here */
                     device->hidden = (saveValue == Qt::Unchecked);
                 }
+                else if (col == IFTREE_COL_CAPTURE_FILTER)
+                {
+                    /* Applies to extcap interfaces as well, so this is handled
+                     * before the extcap gate below. Not persisted to preferences;
+                     * prefs.capture_devices_filter is legacy and unused elsewhere. */
+                    g_free(device->cfilter);
+                    QString filterValue = saveValue.toString();
+                    device->cfilter = filterValue.isEmpty() ? NULL : qstring_strdup(filterValue);
+                }
+                else if (col == IFTREE_COL_DLT)
+                {
+                    /* Applies to extcap interfaces as well, so this is handled
+                     * before the extcap gate below. The cached value is the
+                     * link-type name as shown to the user; map it back to the
+                     * device's link_row list to find the matching DLT. */
+                    QString linkName = saveValue.toString();
+                    for (GList *list = device->links; list != NULL; list = gxx_list_next(list))
+                    {
+                        link_row *linkr = gxx_list_data(link_row *, list);
+                        if (linkName == QString(linkr->name))
+                        {
+                            device->active_dlt = linkr->dlt;
+                            break;
+                        }
+                    }
+                }
                 else if (device->if_info.type == IF_EXTCAP)
                 {
                     /* extcap interfaces do not have the following columns.
@@ -204,6 +240,11 @@ void InterfaceTreeCacheModel::save()
                 else if (col == IFTREE_COL_BUFFERLEN)
                 {
                     device->buffer = saveValue.toInt();
+                }
+                else if (col == IFTREE_COL_OPTIMIZE)
+                {
+                    /* Rarely changed, so not persisted to preferences below. */
+                    device->optimize = saveValue.toBool();
                 }
                 ++it;
             }
@@ -264,13 +305,262 @@ void InterfaceTreeCacheModel::save()
     {
         char ** key = it.key();
 
-        g_free(*key);
-        *key = qstring_strdup(it.value().join(","));
+        wmem_free(wmem_epan_scope(), *key);
+        *key = wmem_strdup(wmem_epan_scope(), it.value().join(",").toUtf8().constData());
 
         ++it;
     }
 
-    mainApp->emitAppSignal(MainApplication::LocalInterfacesChanged);
+    // Edits to existing interfaces: notify subscribers without a rescan.
+    MainWindow *mainWindow = mainApp->mainWindow();
+    if (mainWindow && mainWindow->interfaceListManager())
+        mainWindow->interfaceListManager()->notifyListChanged();
+}
+
+/*
+ * Normal and monitor mode linktypes can differ, so we need to fetch our
+ * device capabilities each time we toggle monitor mode.
+ */
+void InterfaceTreeCacheModel::refreshCapabilities(const QModelIndex &index, bool monitor_mode)
+{
+    int row = index.row();
+    if (! global_capture_opts.all_ifaces || (unsigned int) row >= global_capture_opts.all_ifaces->len)
+        return;
+
+    interface_t *device = &g_array_index(global_capture_opts.all_ifaces, interface_t, row);
+
+    set_active_dlt(device, global_capture_opts.default_options.linktype);
+
+    char *auth_str = NULL;
+#ifdef HAVE_PCAP_REMOTE
+    if (device->remote_opts.remote_host_opts.auth_type == CAPTURE_AUTH_PWD) {
+        auth_str = ws_strdup_printf("%s:%s", device->remote_opts.remote_host_opts.auth_username,
+                                   device->remote_opts.remote_host_opts.auth_password);
+    }
+#endif
+
+    if_capabilities_t *caps = capture_get_if_capabilities(device->name, monitor_mode, auth_str, NULL, NULL, main_window_update);
+    g_free(auth_str);
+
+    if (caps != NULL)
+    {
+#if GLIB_CHECK_VERSION(2, 68, 0)
+        g_list_free_full(g_steal_pointer(&device->links), capture_opts_free_link_row);
+#else
+        g_list_free_full((GList*)g_steal_pointer(&device->links), capture_opts_free_link_row);
+#endif
+        device->active_dlt = -1;
+        device->monitor_mode_supported = caps->can_set_rfmon;
+        device->monitor_mode_enabled = monitor_mode && caps->can_set_rfmon;
+        GList *lt_list = device->monitor_mode_enabled ? caps->data_link_types_rfmon : caps->data_link_types;
+
+        QString active_dlt_name;
+        for (GList *lt_entry = lt_list; lt_entry != NULL; lt_entry = gxx_list_next(lt_entry)) {
+            link_row *linkr = g_new(link_row, 1);
+            data_link_info_t *data_link_info = gxx_list_data(data_link_info_t *, lt_entry);
+            /*
+             * For link-layer types libpcap/Npcap doesn't know about, the
+             * name will be "DLT n" and the description will be null. Mark
+             * those as unsupported; capture filters won't work on them.
+             */
+            if (data_link_info->description != NULL) {
+                linkr->dlt = data_link_info->dlt;
+                if (active_dlt_name.isEmpty()) {
+                    device->active_dlt = data_link_info->dlt;
+                    active_dlt_name = data_link_info->description;
+                }
+                linkr->name = g_strdup(data_link_info->description);
+            } else {
+                char *str = ws_strdup_printf("%s (not supported)", data_link_info->name);
+                linkr->dlt = -1;
+                linkr->name = g_strdup(str);
+                g_free(str);
+            }
+            device->links = g_list_append(device->links, linkr);
+        }
+        free_if_capabilities(caps);
+    }
+    else
+    {
+        /* We don't know whether this supports monitor mode or not. Fall back to "no". */
+        device->monitor_mode_enabled = false;
+        device->monitor_mode_supported = false;
+    }
+
+    /* The query may have overridden the requested state (e.g. monitor mode
+     * turned out to be unsupported), so the cached checkbox value has to be
+     * corrected to match reality. */
+    QSharedPointer<QMap<InterfaceTreeColumns, QVariant> > dataField = storage->value(row, 0);
+    if (dataField)
+        dataField->insert(IFTREE_COL_MONITOR_MODE, device->monitor_mode_enabled ? Qt::Checked : Qt::Unchecked);
+
+    emit dataChanged(this->index(row, IFTREE_COL_DLT), this->index(row, IFTREE_COL_DLT));
+    emit dataChanged(this->index(row, IFTREE_COL_MONITOR_MODE), this->index(row, IFTREE_COL_MONITOR_MODE));
+}
+
+bool InterfaceTreeCacheModel::renameBookmark(const QModelIndex &index, const QString &newName)
+{
+    const interface_t *device = lookup(index);
+    if (! device || device->if_info.type != IF_EXTCAP)
+        return false;
+
+    char *old_bookmark_name = extcap_get_bookmark_name(device->if_info.name);
+    if (! old_bookmark_name)
+        return false;
+
+    QString trimmedName = newName.trimmed();
+    bool unchanged = trimmedName == QString::fromUtf8(old_bookmark_name);
+    g_free(old_bookmark_name);
+
+    if (trimmedName.isEmpty() || trimmedName.size() > InterfaceTreeModel::maxBookmarkNameLength)
+        return false;
+
+    if (unchanged)
+        return true;
+
+    if (bookmarkNameInUse(index, trimmedName))
+        return false;
+
+    QByteArray bookmarkName = trimmedName.toUtf8();
+    char *new_ifname = extcap_set_bookmark(device->if_info.name, bookmarkName.constData());
+    if (! new_ifname)
+        return false;
+    g_free(new_ifname);
+
+    /* The rename leaves a stale entry under the old bookmark name registered
+     * until we reload; ask for a rescan so the tree picks up the new one. */
+    MainWindow *mainWindow = mainApp->mainWindow();
+    if (mainWindow && mainWindow->interfaceListManager())
+        mainWindow->interfaceListManager()->requestRefresh(true, true);
+
+    return true;
+}
+
+QModelIndex InterfaceTreeCacheModel::addBookmark(const QModelIndex &index)
+{
+    const interface_t *device = lookup(index);
+    if (! device || device->if_info.type != IF_EXTCAP)
+        return QModelIndex();
+
+    char *parent_ifname = extcap_get_parent_ifname(device->if_info.name);
+    if (! parent_ifname)
+        return QModelIndex();
+    QByteArray parentIfname = gchar_free_to_qbytearray(parent_ifname);
+
+    QByteArray bookmarkName = nextBookmarkName(QString::fromUtf8(parentIfname)).toUtf8();
+
+    char *new_ifname = extcap_set_bookmark(parentIfname.constData(), bookmarkName.constData());
+    if (! new_ifname)
+        return QModelIndex();
+    QByteArray newIfname = gchar_free_to_qbytearray(new_ifname);
+
+    /* Unlike renameBookmark(), the caller needs the new bookmark's row right
+     * away (to select and start editing it), so refresh synchronously
+     * instead of just requesting one. */
+    MainWindow *mainWindow = mainApp->mainWindow();
+    if (mainWindow && mainWindow->interfaceListManager())
+        mainWindow->interfaceListManager()->refreshNow(true);
+
+    if (! global_capture_opts.all_ifaces)
+        return QModelIndex();
+
+    for (unsigned int idx = 0; idx < global_capture_opts.all_ifaces->len; idx++)
+    {
+        interface_t *newDevice = &g_array_index(global_capture_opts.all_ifaces, interface_t, idx);
+        if (newDevice->if_info.type == IF_EXTCAP &&
+                g_strcmp0(newDevice->if_info.name, newIfname.constData()) == 0)
+            return this->index((int)idx, IFTREE_COL_DISPLAY_NAME);
+    }
+
+    return QModelIndex();
+}
+
+bool InterfaceTreeCacheModel::deleteBookmarks(const QModelIndexList &indexes)
+{
+    bool anyRemoved = false;
+
+    for (const QModelIndex &index : indexes)
+    {
+        const interface_t *device = lookup(index);
+        if (! device || device->if_info.type != IF_EXTCAP)
+            continue;
+
+        if (extcap_remove_bookmark(device->if_info.name))
+            anyRemoved = true;
+    }
+
+    if (anyRemoved)
+    {
+        /* The removed bookmarks stay registered (and thus visible) until we
+         * reload; ask for a rescan so the tree drops them. */
+        MainWindow *mainWindow = mainApp->mainWindow();
+        if (mainWindow && mainWindow->interfaceListManager())
+            mainWindow->interfaceListManager()->requestRefresh(true, true);
+    }
+
+    return anyRemoved;
+}
+
+bool InterfaceTreeCacheModel::bookmarkNameInUse(const QModelIndex &excludeIndex, const QString &bookmarkName) const
+{
+    if (! global_capture_opts.all_ifaces)
+        return false;
+
+    int excludeRow = excludeIndex.row();
+
+    for (unsigned int idx = 0; idx < global_capture_opts.all_ifaces->len; idx++)
+    {
+        if ((int)idx == excludeRow)
+            continue;
+
+        interface_t *device = &g_array_index(global_capture_opts.all_ifaces, interface_t, idx);
+        if (device->if_info.type != IF_EXTCAP)
+            continue;
+
+        char *other_bookmark_name = extcap_get_bookmark_name(device->if_info.name);
+        bool matches = other_bookmark_name && bookmarkName == QString::fromUtf8(other_bookmark_name);
+        g_free(other_bookmark_name);
+
+        if (matches)
+            return true;
+    }
+
+    return false;
+}
+
+QString InterfaceTreeCacheModel::nextBookmarkName(const QString &parentIfname) const
+{
+    QString prefix = parentIfname + QStringLiteral(" bookmark ");
+    QSet<int> usedNumbers;
+
+    if (global_capture_opts.all_ifaces)
+    {
+        for (unsigned int idx = 0; idx < global_capture_opts.all_ifaces->len; idx++)
+        {
+            interface_t *device = &g_array_index(global_capture_opts.all_ifaces, interface_t, idx);
+            if (device->if_info.type != IF_EXTCAP)
+                continue;
+
+            char *bookmark_name = extcap_get_bookmark_name(device->if_info.name);
+            if (! bookmark_name)
+                continue;
+            QString name = gchar_free_to_qstring(bookmark_name);
+
+            if (! name.startsWith(prefix))
+                continue;
+
+            bool ok = false;
+            int number = name.mid(prefix.size()).toInt(&ok);
+            if (ok && number > 0)
+                usedNumbers.insert(number);
+        }
+    }
+
+    int nextNumber = 1;
+    while (usedNumbers.contains(nextNumber))
+        nextNumber++;
+
+    return prefix + QString::number(nextNumber);
 }
 #endif
 
@@ -333,7 +623,7 @@ bool InterfaceTreeCacheModel::isAllowedToBeEdited(const QModelIndex &index) cons
         /* extcap interfaces do not have those settings */
         if (col == IFTREE_COL_PROMISCUOUSMODE || col == IFTREE_COL_SNAPLEN)
             return false;
-        if (col == IFTREE_COL_BUFFERLEN)
+        if (col == IFTREE_COL_BUFFERLEN || col == IFTREE_COL_OPTIMIZE)
             return false;
     }
 #endif
@@ -358,6 +648,11 @@ bool InterfaceTreeCacheModel::isAvailableField(const QModelIndex &index) const
         if (! g_strcmp0(prefs.capture_device, device->display_name))
             return false;
     }
+    else if (col == IFTREE_COL_MONITOR_MODE && ! device->monitor_mode_supported)
+    {
+        // Nothing to show or toggle for interfaces that can't do monitor mode.
+        return false;
+    }
 #endif
 
     return true;
@@ -371,6 +666,23 @@ Qt::ItemFlags InterfaceTreeCacheModel::flags(const QModelIndex &index) const
     Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
     InterfaceTreeColumns col = (InterfaceTreeColumns) index.column();
+
+#ifdef HAVE_LIBPCAP
+    if (col == IFTREE_COL_DISPLAY_NAME)
+    {
+        const interface_t *device = bookmarkRenameEnabled ? lookup(index) : nullptr;
+        if (device && device->if_info.type == IF_EXTCAP)
+        {
+            char *bookmark_name = extcap_get_bookmark_name(device->if_info.name);
+            if (bookmark_name)
+            {
+                g_free(bookmark_name);
+                flags |= Qt::ItemIsEditable;
+            }
+        }
+        return flags;
+    }
+#endif
 
     if (changeIsAllowed(col) && isAvailableField(index) && isAllowedToBeEdited(index))
     {
@@ -398,6 +710,13 @@ bool InterfaceTreeCacheModel::setData(const QModelIndex &index, const QVariant &
     int row = index.row();
     InterfaceTreeColumns col = (InterfaceTreeColumns)index.column();
 
+#ifdef HAVE_LIBPCAP
+    if (bookmarkRenameEnabled && col == IFTREE_COL_DISPLAY_NAME && role == Qt::EditRole)
+    {
+        return renameBookmark(index, value.toString());
+    }
+#endif
+
     if (role == Qt::CheckStateRole || role == Qt::EditRole)
     {
         if (changeIsAllowed(col) )
@@ -414,6 +733,13 @@ bool InterfaceTreeCacheModel::setData(const QModelIndex &index, const QVariant &
             }
 
             dataField->insert(col, saveValue);
+
+#ifdef HAVE_LIBPCAP
+            if (col == IFTREE_COL_MONITOR_MODE && role == Qt::CheckStateRole)
+            {
+                refreshCapabilities(index, saveValue.toInt() == Qt::Checked);
+            }
+#endif
 
             return true;
         }
@@ -580,7 +906,9 @@ void InterfaceTreeCacheModel::deleteDevice(const QModelIndex &index)
         capture_opts_free_interface_t(device);
         global_capture_opts.all_ifaces = g_array_remove_index(global_capture_opts.all_ifaces, row);
         emit endRemoveRows();
-        mainApp->emitAppSignal(MainApplication::LocalInterfacesChanged);
+        MainWindow *mainWindow = mainApp->mainWindow();
+        if (mainWindow && mainWindow->interfaceListManager())
+            mainWindow->interfaceListManager()->notifyListChanged();
     }
 }
 #endif

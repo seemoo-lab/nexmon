@@ -65,8 +65,8 @@
 #define SC_CM_FWD_OPEN              0x54
 #define SC_CM_GET_CONN_DATA         0x56
 #define SC_CM_SEARCH_CONN_DATA      0x57
-#define SC_CM_LARGE_FWD_OPEN        0x5B
 #define SC_CM_GET_CONN_OWNER        0x5A
+#define SC_CM_LARGE_FWD_OPEN        0x5B
 #define SC_CM_CONCURRENT_FWD_OPEN   0x5C
 #define SC_CM_CONCURRENT_FWD_CLOSE  0x5E
 
@@ -91,6 +91,15 @@
 #define SC_CCO_GET_STATUS            0x50
 #define SC_CCO_CHANGE_COMPLETE       0x51
 #define SC_CCO_AUDIT_CHANGE          0x52
+
+/* Process Device Diagnostics Object services */
+#define SC_PDD_RESET_DIAGNOSTICS_COUNTER              0x4B
+#define SC_PDD_GET_NEXT_ACTIVE_INSTANCE               0x4C
+#define SC_PDD_GET_ACTIVE_INSTANCES                   0x4D
+#define SC_PDD_GET_INSTANCES_BY_USER_DIAG_GRP         0x4E
+#define SC_PDD_GET_ACTIVE_INSTANCES_BY_STATUS_SIGNAL  0x4F
+#define SC_PDD_GET_INSTANCES_BY_COMPONENT             0x50
+
 
 /* CIP General status codes */
 #define CI_GRC_SUCCESS              0x00
@@ -307,7 +316,10 @@
 #define PCCC_CPU_80_TEST_SINGLE 0x08
 #define PCCC_CPU_80_TEST_DEBUG  0x09
 
-
+/* File Object */
+#define FILE_SAVE_PARAM_SAVE_METHOD_MASK  0x0F
+#define FILE_SAVE_PARAM_SAVE_STATUS_MASK  0x10
+#define FILE_SAVE_PARAM_RESERVED_MASK     0xE0
 
 /* IOI Path types */
 #define CI_SEGMENT_TYPE_MASK        0xE0
@@ -424,6 +436,11 @@ typedef struct cip_simple_request_info {
    uint32_t iConnPoint;
 
    bool hasSimpleData;
+   bool hasSymbolData;
+
+   bool hasEkey;
+   uint16_t deviceType;
+   uint16_t productCode;
 } cip_simple_request_info_t;
 
 enum cip_datatype {
@@ -452,6 +469,7 @@ enum cip_datatype {
    cip_string2,
    cip_stringi,
    cip_byte,
+   cip_byte_array,
    cip_word,
    cip_dword,
    cip_lword,
@@ -459,8 +477,7 @@ enum cip_datatype {
    cip_time_of_day,
    cip_date_and_time,
    cip_dissector_func,
-
-   /* Currently not supported */
+   cip_engunit,
    cip_stringN,
 };
 
@@ -612,8 +629,9 @@ extern void dissect_epath( tvbuff_t *tvb, packet_info *pinfo, proto_tree *path_t
 // Elementary Data Types.
 enum cip_elem_data_types {
     CIP_STRING_TYPE = 0xD0,
-    CIP_SHORT_STRING_TYPE = 0xDA,
-    CIP_STRING2_TYPE = 0xD5
+    CIP_STRING2_TYPE = 0xD5,
+    CIP_STRINGN_TYPE = 0xD9,
+    CIP_SHORT_STRING_TYPE = 0xDA
 };
 
 extern void add_cip_service_to_info_column(packet_info *pinfo, uint8_t service, const value_string* service_vals);
@@ -677,6 +695,7 @@ extern const value_string cip_con_time_mult_vals[];
 extern const value_string cip_class_names_vals[];
 extern const value_string cip_port_number_vals[];
 extern const value_string cip_id_state_vals[];
+extern const value_string cip_con_fw_vals[];
 extern value_string_ext cip_gs_vals_ext;
 extern value_string_ext cip_cm_ext_st_vals_ext;
 extern value_string_ext cip_vendor_vals_ext;

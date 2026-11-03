@@ -2303,8 +2303,8 @@ dissect_ocp1_msg_keepalive(tvbuff_t *tvb, int offset, int length, proto_tree *tr
     return offset + length;
 }
 
-static int
-dissect_ocp1_msg_command(tvbuff_t *tvb, int offset, int length, packet_info *pinfo, proto_tree *tree, unsigned msg_counter)
+static unsigned
+dissect_ocp1_msg_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned msg_counter)
 {
     proto_tree *message_tree, *method_tree;
     proto_item *ti, *tf, *t_occ, *r_pkt;
@@ -2313,50 +2313,49 @@ dissect_ocp1_msg_command(tvbuff_t *tvb, int offset, int length, packet_info *pin
     struct oca_request_hash_key request_key, *new_request_key;
     struct oca_request_hash_val *request_val=NULL;
 
+    message_tree = proto_tree_add_subtree_format(tree, tvb, 0, tvb_reported_length(tvb), ett_ocp1_keepalive, &ti, "Command Message %d", msg_counter);
 
-    message_tree = proto_tree_add_subtree_format(tree, tvb, offset, length, ett_ocp1_keepalive, &ti, "Command Message %d", msg_counter);
-
-    int offset_m = offset;
+    unsigned offset_m = 0;
+    uint32_t handle, ono;
+    uint16_t tree_level, method_index;
+    uint8_t parameter_count;
 
     proto_tree_add_item(message_tree, hf_ocp1_message_size, tvb, offset_m, OCP1_MESSAGE_SIZE_LEN, ENC_BIG_ENDIAN);
     offset_m += OCP1_MESSAGE_SIZE_LEN;
 
-    proto_tree_add_item(message_tree, hf_ocp1_message_handle, tvb, offset_m, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(message_tree, hf_ocp1_message_handle, tvb, offset_m, 4, ENC_BIG_ENDIAN, &handle);
     offset_m += 4;
 
     t_occ = proto_tree_add_item(message_tree, hf_ocp1_message_occ, tvb, offset_m, 8, ENC_BIG_ENDIAN);
     proto_item_set_generated(t_occ);
-    proto_tree_add_item(message_tree, hf_ocp1_message_target_ono, tvb, offset_m, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(message_tree, hf_ocp1_message_target_ono, tvb, offset_m, 4, ENC_BIG_ENDIAN, &ono);
     offset_m += 4;
 
     tf = proto_tree_add_item(message_tree, hf_ocp1_message_method_id, tvb, offset_m, 4, ENC_BIG_ENDIAN);
     method_tree = proto_item_add_subtree(tf, ett_ocp1_message_method);
 
-    proto_tree_add_item(method_tree, hf_ocp1_message_method_tree_level, tvb, offset_m, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(method_tree, hf_ocp1_message_method_tree_level, tvb, offset_m, 2, ENC_BIG_ENDIAN, &tree_level);
     offset_m += 2;
 
-    proto_tree_add_item(method_tree, hf_ocp1_message_method_index, tvb, offset_m, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(method_tree, hf_ocp1_message_method_index, tvb, offset_m, 2, ENC_BIG_ENDIAN, &method_index);
     offset_m += 2;
 
-    proto_tree_add_item(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN, &parameter_count);
     offset_m += 1;
 
-    if (length-(offset_m - offset) > 0) {
-        decode_params(tvb, pinfo, offset_m, length-(offset_m - offset),
-            tvb_get_uint32(tvb, offset + 8, ENC_BIG_ENDIAN),
-            tvb_get_uint16(tvb, offset + 12, ENC_BIG_ENDIAN),
-            tvb_get_uint16(tvb, offset + 14, ENC_BIG_ENDIAN),
-            tvb_get_uint8(tvb, offset + 16),
+    if (tvb_reported_length_remaining(tvb, offset_m)) {
+        decode_params(tvb, pinfo, offset_m,
+            tvb_reported_length_remaining(tvb, offset_m),
+            ono, tree_level, method_index, parameter_count,
             true, message_tree);
     }
 
     /* Handle wmem for lookup */
     conversation = find_or_create_conversation(pinfo);
     request_key.conv_index = conversation->conv_index;
-    request_key.handle     = tvb_get_uint32(tvb, offset + 4, ENC_BIG_ENDIAN);
+    request_key.handle     = handle;
 
     request_val = (struct oca_request_hash_val *) wmem_map_lookup(oca_request_hash_map, &request_key);
-
 
     if(!request_val) {
         new_request_key = wmem_new(wmem_file_scope(), struct oca_request_hash_key);
@@ -2365,9 +2364,9 @@ dissect_ocp1_msg_command(tvbuff_t *tvb, int offset, int length, packet_info *pin
         request_val = wmem_new(wmem_file_scope(), struct oca_request_hash_val);
         request_val->pnum         = pinfo->num;
         request_val->pnum_resp    = 0;
-        request_val->ono          = tvb_get_uint32(tvb, offset + 8, ENC_BIG_ENDIAN);
-        request_val->tree_level   = tvb_get_uint16(tvb, offset + 12, ENC_BIG_ENDIAN);
-        request_val->method_index = tvb_get_uint16(tvb, offset + 14, ENC_BIG_ENDIAN);
+        request_val->ono          = ono;
+        request_val->tree_level   = tree_level;
+        request_val->method_index = method_index;
 
         wmem_map_insert(oca_request_hash_map, new_request_key, request_val);
     } else {
@@ -2379,44 +2378,47 @@ dissect_ocp1_msg_command(tvbuff_t *tvb, int offset, int length, packet_info *pin
         }
     }
 
-    return length;
+    return tvb_reported_length(tvb);
 }
 
-static int
-dissect_ocp1_msg_notification(tvbuff_t *tvb, packet_info* pinfo, int offset, int length, proto_tree *tree, unsigned msg_counter)
+static unsigned
+dissect_ocp1_msg_notification(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned msg_counter)
 {
     proto_tree *message_tree, *context_tree, *method_tree, *eventdata_tree, *eventid_tree;
     proto_item *ti, *tf, *te, *teid, *t_occ, *ti_context;
 
-    message_tree = proto_tree_add_subtree_format(tree, tvb, offset, length, ett_ocp1_keepalive, &ti, "Notification Message %d", msg_counter);
+    message_tree = proto_tree_add_subtree_format(tree, tvb, 0, tvb_reported_length(tvb), ett_ocp1_keepalive, &ti, "Notification Message %d", msg_counter);
 
-    int offset_m = offset;
+    unsigned offset_m = 0;
+    uint32_t ono;
+    uint16_t tree_level, method_index;
+    uint8_t parameter_count;
 
     proto_tree_add_item(message_tree, hf_ocp1_message_size, tvb, offset_m, OCP1_MESSAGE_SIZE_LEN, ENC_BIG_ENDIAN);
     offset_m += OCP1_MESSAGE_SIZE_LEN;
 
     t_occ = proto_tree_add_item(message_tree, hf_ocp1_message_occ, tvb, offset_m, 8, ENC_BIG_ENDIAN);
     proto_item_set_generated(t_occ);
-    proto_tree_add_item(message_tree, hf_ocp1_message_target_ono, tvb, offset_m, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(message_tree, hf_ocp1_message_target_ono, tvb, offset_m, 4, ENC_BIG_ENDIAN, &ono);
     offset_m += 4;
 
     tf = proto_tree_add_item(message_tree, hf_ocp1_message_method_id, tvb, offset_m, 4, ENC_BIG_ENDIAN);
     method_tree = proto_item_add_subtree(tf, ett_ocp1_message_method);
 
-    proto_tree_add_item(method_tree, hf_ocp1_message_method_tree_level, tvb, offset_m, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(method_tree, hf_ocp1_message_method_tree_level, tvb, offset_m, 2, ENC_BIG_ENDIAN, &tree_level);
     offset_m += 2;
 
-    proto_tree_add_item(method_tree, hf_ocp1_message_method_index, tvb, offset_m, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(method_tree, hf_ocp1_message_method_index, tvb, offset_m, 2, ENC_BIG_ENDIAN, &method_index);
     offset_m += 2;
 
-    proto_tree_add_item(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN, &parameter_count);
     offset_m += 1;
 
     ti_context = proto_tree_add_item(message_tree, hf_ocp1_notification_parameter_context, tvb, offset_m, tvb_get_uint16(tvb, offset_m, ENC_BIG_ENDIAN) + 2, ENC_NA);
     context_tree = proto_item_add_subtree(ti_context, ett_ocp1_context);
     offset_m += decode_params_OcaBlob(tvb, offset_m, context_tree, "Context");
 
-    eventdata_tree = proto_tree_add_subtree(message_tree, tvb, offset_m, length-(offset_m - offset), ett_ocp1_event_data, &te, "Event Data");
+    eventdata_tree = proto_tree_add_subtree(message_tree, tvb, offset_m, tvb_reported_length_remaining(tvb, offset_m), ett_ocp1_event_data, &te, "Event Data");
     proto_tree_add_item(eventdata_tree, hf_ocp1_message_emitter_ono, tvb, offset_m, 4, ENC_BIG_ENDIAN);
     offset_m += 4;
 
@@ -2429,20 +2431,17 @@ dissect_ocp1_msg_notification(tvbuff_t *tvb, packet_info* pinfo, int offset, int
     proto_tree_add_item(eventid_tree, hf_ocp1_message_event_index, tvb, offset_m, 2, ENC_BIG_ENDIAN);
     offset_m += 2;
 
-    if (length-(offset_m - offset) > 0) {
-        decode_params(tvb, pinfo, offset_m, length-(offset_m - offset),
-            tvb_get_uint32(tvb, offset + 4, ENC_BIG_ENDIAN),
-            tvb_get_uint16(tvb, offset + 8, ENC_BIG_ENDIAN),
-            tvb_get_uint16(tvb, offset + 10, ENC_BIG_ENDIAN),
-            tvb_get_uint8(tvb, offset + 12),
+    if (tvb_reported_length_remaining(tvb, offset_m)) {
+        decode_params(tvb, pinfo, offset_m, tvb_reported_length_remaining(tvb, offset_m),
+            ono, tree_level, method_index, parameter_count,
             false, eventdata_tree);
     }
 
-    return length;
+    return tvb_reported_length(tvb);
 }
 
-static int
-dissect_ocp1_msg_response(tvbuff_t *tvb, int offset, int length, packet_info *pinfo, proto_tree *tree, unsigned msg_counter)
+static unsigned
+dissect_ocp1_msg_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned msg_counter)
 {
     proto_tree *message_tree;
     proto_item *ti, *r_pkt;
@@ -2450,14 +2449,16 @@ dissect_ocp1_msg_response(tvbuff_t *tvb, int offset, int length, packet_info *pi
     struct oca_request_hash_key request_key;
     struct oca_request_hash_val *request_val=NULL, request_val_empty;
 
-    message_tree = proto_tree_add_subtree_format(tree, tvb, offset, length, ett_ocp1_keepalive, &ti, "Response Message %d", msg_counter);
+    message_tree = proto_tree_add_subtree_format(tree, tvb, 0, tvb_reported_length(tvb), ett_ocp1_keepalive, &ti, "Response Message %d", msg_counter);
 
-    int offset_m = offset;
+    unsigned offset_m = 0;
+    uint32_t handle;
+    uint8_t parameter_count;
 
     proto_tree_add_item(message_tree, hf_ocp1_message_size, tvb, offset_m, OCP1_MESSAGE_SIZE_LEN, ENC_BIG_ENDIAN);
     offset_m += OCP1_MESSAGE_SIZE_LEN;
 
-    proto_tree_add_item(message_tree, hf_ocp1_message_handle, tvb, offset_m, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(message_tree, hf_ocp1_message_handle, tvb, offset_m, 4, ENC_BIG_ENDIAN, &handle);
     offset_m += 4;
 
     proto_tree_add_item(message_tree, hf_ocp1_message_status_code, tvb, offset_m, 1, ENC_BIG_ENDIAN);
@@ -2466,13 +2467,13 @@ dissect_ocp1_msg_response(tvbuff_t *tvb, int offset, int length, packet_info *pi
     }
     offset_m += 1;
 
-    proto_tree_add_item(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(message_tree, hf_ocp1_message_parameter_count, tvb, offset_m, 1, ENC_BIG_ENDIAN, &parameter_count);
     offset_m += 1;
 
     /* Find request info */
     conversation = find_or_create_conversation(pinfo);
     request_key.conv_index = conversation->conv_index;
-    request_key.handle     = tvb_get_uint32(tvb, offset + 4, ENC_BIG_ENDIAN);
+    request_key.handle     = handle;
 
     /* build an empty oca_request_val
      * if wmem lookup fails, reference this one to force the parameter dissectors to fail */
@@ -2483,12 +2484,13 @@ dissect_ocp1_msg_response(tvbuff_t *tvb, int offset, int length, packet_info *pi
         request_val = &request_val_empty;
     }
 
-    if (length-(offset_m - offset) > 0) {
-        decode_params(tvb, pinfo, offset_m, length-(offset_m - offset),
+    if (tvb_reported_length_remaining(tvb, offset_m)) {
+        decode_params(tvb, pinfo, offset_m,
+            tvb_reported_length_remaining(tvb, offset_m),
             request_val->ono,
             request_val->tree_level,
             request_val->method_index,
-            tvb_get_uint8(tvb, offset + 9),
+            parameter_count,
             false, message_tree);
     }
 
@@ -2502,7 +2504,7 @@ dissect_ocp1_msg_response(tvbuff_t *tvb, int offset, int length, packet_info *pi
     }
 
 
-    return length;
+    return tvb_reported_length(tvb);
 }
 
 static int
@@ -2587,7 +2589,7 @@ dissect_ocp1_pdu(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree
                     return 0;
                 }
 
-                dissect_ocp1_msg_command(tvb, offset_m, tvb_get_uint32(tvb, offset_m, ENC_BIG_ENDIAN), pinfo, pdu_tree, msg_counter);
+                dissect_ocp1_msg_command(tvb_new_subset_length(tvb, offset_m, message_size), pinfo, pdu_tree, msg_counter);
                 offset_m += message_size;
                 msg_counter++;
             }
@@ -2603,7 +2605,7 @@ dissect_ocp1_pdu(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree
                     return 0;
                 }
 
-                dissect_ocp1_msg_notification(tvb, pinfo, offset_m, tvb_get_uint32(tvb, offset_m, ENC_BIG_ENDIAN), pdu_tree, msg_counter);
+                dissect_ocp1_msg_notification(tvb_new_subset_length(tvb, offset_m, message_size), pinfo, pdu_tree, msg_counter);
                 offset_m += message_size;
                 msg_counter++;
             }
@@ -2618,7 +2620,7 @@ dissect_ocp1_pdu(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree
                     expert_add_info(pinfo, pdu_tree, &ei_ocp1_invalid_length);
                     return 0;
                 }
-                dissect_ocp1_msg_response(tvb, offset_m, tvb_get_uint32(tvb, offset_m, ENC_BIG_ENDIAN), pinfo, pdu_tree, msg_counter);
+                dissect_ocp1_msg_response(tvb_new_subset_length(tvb, offset_m, message_size), pinfo, pdu_tree, msg_counter);
                 offset_m += message_size;
                 msg_counter++;
             }
@@ -2745,7 +2747,7 @@ test_ocp1(tvbuff_t *tvb)
 
     /* Check packet length
         * - PDU's header size can be larger than packet (fragmentation)
-        * - packet could be larger then header's PDU size (multiple PDUs)
+        * - packet could be larger than header's PDU size (multiple PDUs)
         *   If the byte after message one is SyncVal again and there are enough remaining bytes
         *   for at least a header, then it smells like OCP.1, really...but don't iterate through every possible PDU
         *   (Header's PDU size field includes header and message length but excludes SyncVal (1 byte))

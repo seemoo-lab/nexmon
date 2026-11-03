@@ -42,9 +42,6 @@
  *  pinfo->src or pinfo->dst structure before calling next dissector.
 */
 
-
-
-
 #include "config.h"
 
 #include <epan/packet.h>
@@ -260,7 +257,7 @@ static int display_address(packet_info *pinfo, tvbuff_t *tvb, int offset, proto_
         char* str;
 
         len = tvb_get_uint8(tvb, offset);
-        str = tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
+        str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
         proto_tree_add_string(tree, hf_socks_remote_name, tvb, offset, len+1, str);
         offset += (len+1);
         }
@@ -578,12 +575,12 @@ client_display_socks_v5(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
             /* process user name */
             len = tvb_get_uint8(tvb, offset);
-            str = tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
+            str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
             proto_tree_add_string(tree, hf_socks_username, tvb, offset, len+1, str);
             offset += (len+1);
 
             len = tvb_get_uint8(tvb, offset);
-            str = tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
+            str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset+1, len, ENC_ASCII);
             proto_tree_add_string(tree, hf_socks_password, tvb, offset, len+1, str);
             /* offset += (len+1); */
             break;
@@ -650,8 +647,7 @@ server_display_socks_v5(tvbuff_t *tvb, int offset, packet_info *pinfo,
         proto_tree_add_item( tree, hf_socks_subnegotiation_version, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        auth_status = tvb_get_uint8(tvb, offset);
-        ti = proto_tree_add_item(tree, hf_server_auth_status, tvb, offset, 1, ENC_BIG_ENDIAN);
+        ti = proto_tree_add_item_ret_uint8(tree, hf_server_auth_status, tvb, offset, 1, ENC_BIG_ENDIAN, &auth_status);
         if(auth_status != 0)
             proto_item_append_text(ti, " (failure)");
         else
@@ -922,13 +918,11 @@ server_state_machine_v5( socks_hash_entry_t *hash_info, tvbuff_t *tvb,
 
 
 static void
-display_ping_and_tracert(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, socks_hash_entry_t *hash_info) {
+display_ping_and_tracert(tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree *tree, socks_hash_entry_t *hash_info) {
 
 /* Display the ping/trace_route conversation */
 
-    const unsigned char *data, *dataend;
-    const unsigned char *lineend, *eol;
-    int           linelen;
+    unsigned      linelen;
 
                 /* handle the end command */
     if ( pinfo->destport == pinfo->match_uint){
@@ -942,17 +936,14 @@ display_ping_and_tracert(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
         if ( tree){
             proto_tree_add_item(tree, (hash_info->command  == PING_COMMAND) ? hf_socks_ping_results : hf_socks_traceroute_results, tvb, offset, -1, ENC_NA);
 
-            data = tvb_get_ptr(tvb, offset, -1);
-            dataend = data + tvb_captured_length_remaining(tvb, offset);
-
-            while (data < dataend) {
-
-                lineend = find_line_end(data, dataend, &eol);
-                linelen = (int)(lineend - data);
+            while (tvb_captured_length_remaining(tvb, offset)) {
+                unsigned next_offset;
+                tvb_find_line_end_remaining(tvb, offset, NULL, &next_offset);
+                /* Use the linelen including the line terminator. */
+                linelen = next_offset - offset;
 
                 proto_tree_add_format_text( tree, tvb, offset, linelen);
-                offset += linelen;
-                data = lineend;
+                offset = next_offset;
             }
         }
     }

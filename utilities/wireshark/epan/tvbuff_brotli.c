@@ -46,7 +46,7 @@ brotli_g_free_wrapper(void *opaque _U_, void *address)
  */
 
 tvbuff_t *
-tvb_uncompress_brotli(tvbuff_t *tvb, const int offset, int comprlen)
+tvb_uncompress_brotli(tvbuff_t *tvb, const unsigned offset, unsigned comprlen)
 {
     uint8_t             *compr;
     uint8_t             *uncompr        = NULL;
@@ -146,7 +146,7 @@ tvb_uncompress_brotli(tvbuff_t *tvb, const int offset, int comprlen)
         }
     }
 
-    uncompr_tvb = tvb_new_real_data((uint8_t *)uncompr, (unsigned)total_out, (int)total_out);
+    uncompr_tvb = tvb_new_real_data((uint8_t *)uncompr, (unsigned)total_out, (unsigned)total_out);
     tvb_set_free_cb(uncompr_tvb, g_free);
 
     g_free(strmbuf);
@@ -163,14 +163,14 @@ cleanup:
 }
 #else
 tvbuff_t *
-tvb_uncompress_brotli(tvbuff_t *tvb _U_, const int offset _U_, int comprlen _U_)
+tvb_uncompress_brotli(tvbuff_t *tvb _U_, const unsigned offset _U_, unsigned comprlen _U_)
 {
     return NULL;
 }
 #endif
 
 tvbuff_t *
-tvb_child_uncompress_brotli(tvbuff_t *parent, tvbuff_t *tvb, const int offset, int comprlen)
+tvb_child_uncompress_brotli(tvbuff_t *parent, tvbuff_t *tvb, const unsigned offset, unsigned comprlen)
 {
     tvbuff_t *new_tvb = tvb_uncompress_brotli(tvb, offset, comprlen);
     if (new_tvb)

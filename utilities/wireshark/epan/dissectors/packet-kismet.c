@@ -52,21 +52,21 @@ dissect_kismet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * da
 	proto_tree *kismet_tree=NULL, *reqresp_tree=NULL;
 	proto_item *ti;
 	proto_item *tmp_item;
-	int offset = 0;
+	unsigned offset = 0;
 	const unsigned char *line;
-	int next_offset;
-	int linelen;
-	int tokenlen;
+	unsigned next_offset;
+	unsigned linelen;
+	unsigned tokenlen;
 	const unsigned char *next_token;
 
 	/*
 	 * Find the end of the first line.
 	 *
-	 * Note that "tvb_find_line_end()" will return a value that is
+	 * Note that "tvb_find_line_end_remaining()" will return a value that is
 	 * not longer than what's in the buffer, so the "tvb_get_ptr()"
 	 * call won't throw an exception.
 	 */
-	linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+	tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset);
 	line = tvb_get_ptr(tvb, offset, linelen);
 
 	/*
@@ -106,7 +106,7 @@ dissect_kismet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * da
 	else
 		col_add_fstr(pinfo->cinfo, COL_INFO, "%s: %s",
 				is_request ? "Request" : "Response",
-				format_text(pinfo->pool, line, linelen));
+				format_text(pinfo->pool, (char*)line, linelen));
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_kismet, tvb, offset, -1, ENC_NA);
@@ -134,9 +134,7 @@ dissect_kismet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * da
 		/*
 		 * Find the end of the line.
 		 */
-		linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
-
-		if (linelen) {
+		if (tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset)) {
 			/*
 			 * Put this line.
 			 */
@@ -146,8 +144,8 @@ dissect_kismet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * da
 					next_offset - offset - 1));
 			tokenlen = get_token_len(line, line + linelen, &next_token);
 			if (tokenlen != 0) {
-				uint8_t *reqresp;
-				reqresp = tvb_get_string_enc(pinfo->pool, tvb, offset, tokenlen, ENC_ASCII);
+				char *reqresp;
+				reqresp = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, tokenlen, ENC_ASCII);
 				if (is_request) {
 					/*
 					 * No request dissection
@@ -210,7 +208,7 @@ dissect_kismet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * da
 						tokenlen = get_token_len(line, line + linelen, &next_token);
 
 						/* Convert form ascii to nstime */
-						if (ws_strtou64(format_text(pinfo->pool, line, tokenlen), NULL, (uint64_t*)&t.secs)) {
+						if (ws_strtou64(format_text(pinfo->pool, (char*)line, tokenlen), NULL, (uint64_t*)&t.secs)) {
 
 							/*
 							 * Format ascii representation of time

@@ -370,9 +370,7 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
                                         avp_group_tree = proto_tree_add_subtree(single_avp_tree,
                                                                                 tvb, offset, avp_data_length,
                                                                                 ett_pana_avp, NULL, "Grouped AVP");
-                                        group_tvb = tvb_new_subset_length_caplen(tvb, offset,
-                                                                   MIN(avp_data_length, tvb_reported_length(tvb)-offset),
-                                                                   avp_data_length);
+                                        group_tvb = tvb_new_subset_length(tvb, offset, avp_data_length);
                                         // We recurse here, but we'll run out of packet before we run out of stack.
                                         dissect_avps(group_tvb, pinfo, avp_group_tree);
                                         break;
@@ -466,7 +464,7 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         conversation_t     *conversation;
         pana_conv_info_t   *pana_info;
         pana_transaction_t *pana_trans;
-        int offset = 0;
+        unsigned offset = 0;
 
         col_set_str(pinfo->cinfo, COL_PROTOCOL, "PANA");
         col_clear(pinfo->cinfo,   COL_INFO);

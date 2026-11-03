@@ -68,9 +68,11 @@ struct wtap {
     GArray                      *nrbs;                  /**< Holds the Name Res Blocks, or NULL */
     GArray                      *dsbs;                  /**< An array of DSBs (of type wtap_block_t), or NULL if not supported. */
     GArray                      *meta_events;           /**< An array of meta events (of type wtap_block_t), or NULL if not supported. */
-    GArray                      *dpibs;                 /**< An array of DPIBs (of type wtap_block_t), or NULL if not supported. */
-    unsigned                    next_dpib_id;           /**< Next DPIB id  */
+    GArray                      *pibs;                  /**< An array of process information blocks (of type wtap_block_t), or NULL if not supported. */
+    GHashTable                  *pibs_by_pid;           /**< Maps a process ID to a GArray of the indices in pibs of the blocks for it, in file order, or NULL. */
+    GArray                      *pib_offsets;           /**< For each block in pibs, the file offset just after it (of type int64_t), or NULL. */
     char                        *pathname;              /**< File pathname; might just be "-" */
+    const char                  *app_env_var_prefix;    /**< Application specific environment variable prefix, used to determine certain behavior */
 
     void                        *priv;                  /**< Stores per-file state and is free'd automatically by wtap_close() */
     void                        *wslua_data;            /**< Stores wslua state info and is not free'd */
@@ -110,6 +112,8 @@ struct wtap {
     wtap_new_ipv4_callback_t    add_new_ipv4;    /**< Callback for new IPv4 addresses. */
     wtap_new_ipv6_callback_t    add_new_ipv6;    /**< Callback for new IPv6 addresses. */
     wtap_new_secrets_callback_t add_new_secrets; /**< Callback for new secrets. */
+    wtap_pcapng_block_callback_t pcapng_block_cb;     /**< Callback for pcapng blocks. */
+    void                        *pcapng_block_cb_data; /**< User data for pcapng_block_cb. */
     GPtrArray                   *fast_seek;      /**< Fast seek index. */
 };
 
@@ -169,9 +173,10 @@ struct wtap_dumper {
                                               * types rather than per-packet
                                               * encapsulation types
                                               */
-    wtap_compression_type   compression_type; /**< Compression type used for output. */
+    ws_compression_type     compression_type; /**< Compression type used for output. */
+    int                     zstd_compression_level; /**< Zstandard output level; 0 uses the library default. */
     bool                    needs_reload;    /**< true if the file requires re-loading after saving with wtap */
-    int64_t                 bytes_dumped;    /**< Total bytes written. */
+    uint64_t                bytes_dumped;    /**< Total bytes written. */
 
     void                    *priv;           /**< this one holds per-file state and is free'd automatically by wtap_dump_close() */
     void                    *wslua_data;     /**< this one holds wslua state info and is not free'd */
@@ -193,11 +198,11 @@ struct wtap_dumper {
     const GArray            *nrbs_growing;          /**< A reference to an array of NRBs (of type wtap_block_t) */
     const GArray            *dsbs_growing;          /**< A reference to an array of DSBs (of type wtap_block_t) */
     const GArray            *mevs_growing;          /**< A reference to an array of Sysdig meta events (of type wtap_block_t) */
-    const GArray            *dpibs_growing;          /**< A reference to an array of DPIBs (of type wtap_block_t) */
+    const GArray            *pibs_growing;           /**< A reference to an array of process information blocks (of type wtap_block_t) */
     unsigned                nrbs_growing_written;   /**< Number of already processed NRBs in nrbs_growing. */
     unsigned                dsbs_growing_written;   /**< Number of already processed DSBs in dsbs_growing. */
     unsigned                mevs_growing_written;   /**< Number of already processed meta events in mevs_growing. */
-    unsigned                dpibs_growing_written;   /**< Number of already processed DPIBs in dsbs_growing. */
+    unsigned                pibs_growing_written;    /**< Number of already processed process information blocks in pibs_growing. */
 };
 
 /**
@@ -220,6 +225,10 @@ WS_DLL_PUBLIC bool wtap_dump_file_write(wtap_dumper *wdh, const void *buf,
  * @param whence Seek origin (e.g., SEEK_SET).
  * @param err Optional error code output.
  * @return New file position on success, -1 on failure.
+ *
+ * @note If a module uses this function, it should set writing_must_seek
+ * to true in its file_type_subtype_info. Seeking is not supported when
+ * writing compressed files.
  */
 WS_DLL_PUBLIC int64_t wtap_dump_file_seek(wtap_dumper *wdh, int64_t offset,
                                           int whence, int *err);
@@ -230,6 +239,11 @@ WS_DLL_PUBLIC int64_t wtap_dump_file_seek(wtap_dumper *wdh, int64_t offset,
  * @param wdh Wiretap dumper handle.
  * @param err Optional error code output.
  * @return Current file position on success, -1 on failure.
+ *
+ * @note If a module uses this function, it should set writing_must_seek
+ * to true in its file_type_subtype_info. If a module never seeks but
+ * needs to know the number of bytes written, use the bytes_dumped
+ * member of wtap_dumper in order to preserve support for compression.
  */
 WS_DLL_PUBLIC int64_t wtap_dump_file_tell(wtap_dumper *wdh, int *err);
 
@@ -354,15 +368,18 @@ void
 wtap_add_idb(wtap *wth, wtap_block_t idb);
 
 /**
- * @brief Add a DPIB to the dpibs list for a file.
+ * @brief Add a process information block to the pibs list for a file.
  *
- * Used during parsing to register a Decryption Parameters Info Block (DPIB).
+ * Used during parsing to register a process information block; the
+ * list takes ownership of the block.
  *
  * @param wth Wiretap handle.
- * @param dpib DPIB block to add.
+ * @param pib Process information block to add.
+ * @param offset The file offset just after the block, so that a packet can
+ * be matched with the blocks that precede it, or -1 if not known.
  */
 void
-wtap_add_dpib(wtap *wth, wtap_block_t dpib);
+wtap_add_pib(wtap *wth, wtap_block_t pib, int64_t offset);
 
 /**
  * @brief Invoke the registered callback with a Name Resolution Block (NRB).

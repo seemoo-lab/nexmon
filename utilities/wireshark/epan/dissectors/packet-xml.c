@@ -14,7 +14,6 @@
  */
 
 #include "config.h"
-
 #define WS_LOG_DOMAIN "XML"
 
 #include <string.h>
@@ -28,12 +27,12 @@
 #include <epan/expert.h>
 #include <epan/iana_charsets.h>
 #include <epan/asn1.h>
+#include <epan/read_keytab_file.h>
 #include <wsutil/str_util.h>
 #include <wsutil/report_message.h>
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/array.h>
 #include "packet-kerberos.h"
-#include "read_keytab_file.h"
 
 #include <libxml/parser.h>
 
@@ -145,7 +144,7 @@ static wmem_array_t *hf_arr;
 static GArray *ett_arr;
 static GRegex* encoding_pattern;
 
-static const char *default_media_types[] = {
+static const char * const default_media_types[] = {
     "text/xml",
     "text/vnd.wap.wml",
     "text/vnd.wap.si",
@@ -385,15 +384,15 @@ dissect_xml(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     if (try_bom == 0xFEFF) {
         /* UTF-16BE */
         const uint8_t *data_str = tvb_get_string_enc(pinfo->pool, tvb, 0, tvb_captured_length(tvb), ENC_UTF_16|ENC_BIG_ENDIAN);
-        size_t l = strlen(data_str);
-        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (int)l);
+        size_t l = strlen((const char*)data_str);
+        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (unsigned)l);
         add_new_data_source(pinfo, decoded, "Decoded UTF-16BE text");
     }
     else if(try_bom == 0xFFFE) {
         /* UTF-16LE (or possibly UTF-32LE, but Wireshark doesn't support UTF-32) */
         const uint8_t *data_str = tvb_get_string_enc(pinfo->pool, tvb, 0, tvb_captured_length(tvb), ENC_UTF_16|ENC_LITTLE_ENDIAN);
-        size_t l = strlen(data_str);
-        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (int)l);
+        size_t l = strlen((const char*)data_str);
+        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (unsigned)l);
         add_new_data_source(pinfo, decoded, "Decoded UTF-16LE text");
     }
     /* Could also test if try_bom is 0xnn00 or 0x00nn to guess endianness if we wanted */
@@ -404,8 +403,8 @@ dissect_xml(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
         /* Encoding string with encoding, either with or without BOM */
         const uint8_t *data_str = tvb_get_string_enc(pinfo->pool, tvb, 0, tvb_captured_length(tvb), encoding);
-        size_t l = strlen(data_str);
-        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (int)l);
+        size_t l = strlen((const char*)data_str);
+        decoded = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (unsigned)l);
         add_new_data_source(pinfo, decoded, wmem_strdup_printf(pinfo->pool, "Decoded %s text", encoding_name));
     }
 
@@ -468,8 +467,8 @@ static bool dissect_xml_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         }
 
         data_str    = tvb_get_string_enc(pinfo->pool, tvb, 0, tvb_captured_length(tvb), enc);
-        l           = strlen(data_str);
-        unicode_tvb = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (int)l);
+        l           = strlen((const char*)data_str);
+        unicode_tvb = tvb_new_child_real_data(tvb, data_str, (unsigned)l, (unsigned)l);
         if (tvbparse_peek(tvbparse_init(pinfo->pool, unicode_tvb, 0, -1, NULL, want_ignore), want_heur)) {
             add_new_data_source(pinfo, unicode_tvb, "UTF8");
             dissect_xml(unicode_tvb, pinfo, tree, data);
@@ -603,7 +602,7 @@ static void before_xmpli(void *tvbparse_data, const void *wanted_data _U_, tvbpa
     proto_item      *pi;
     proto_tree      *pt;
     tvbparse_elem_t *name_tok      = tok->sub->next;
-    char            *name          = tvb_get_string_enc(current_frame->pinfo->pool, name_tok->tvb, name_tok->offset, name_tok->len, ENC_ASCII);
+    char            *name          = (char*)tvb_get_string_enc(current_frame->pinfo->pool, name_tok->tvb, name_tok->offset, name_tok->len, ENC_ASCII);
     xml_ns_t        *ns            = (xml_ns_t *)wmem_map_lookup(xmpli_names, name);
     xml_frame_t     *new_frame;
 
@@ -691,7 +690,7 @@ static void before_tag(void *tvbparse_data, const void *wanted_data _U_, tvbpars
         }
 
     } else {
-        name = tvb_get_string_enc(current_frame->pinfo->pool, name_tok->tvb, name_tok->offset, name_tok->len, ENC_ASCII);
+        name = (char*)tvb_get_string_enc(current_frame->pinfo->pool, name_tok->tvb, name_tok->offset, name_tok->len, ENC_ASCII);
         name_orig_case = wmem_strdup(current_frame->pinfo->pool, name);
         ascii_strdown_inplace(name);
 
@@ -769,16 +768,24 @@ static void P_SHA1(const uint8_t *Secret, size_t Secret_len,
 {
     gcry_md_hd_t hd = NULL;
     uint8_t *digest = NULL;
+    gcry_error_t err;
 
-    /*
-     * https://social.microsoft.com/Forums/en-US/c485d98b-6e0b-49e7-ab34-8ecf8d694d31/signing-soap-message-request-via-adfs?forum=crmdevelopment#6cee9fa8-dc24-4524-a5a2-c3d17e05d50e
-     */
-    gcry_md_open(&hd, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
-    gcry_md_setkey(hd, Secret, Secret_len);
+    err = gcry_md_open(&hd, GCRY_MD_SHA1, GCRY_MD_FLAG_HMAC);
+    if (err != 0) {
+        ws_warning("error opening sha1 message digest handle: %s", gcry_strerror(err));
+        return;
+    }
+
+    err = gcry_md_setkey(hd, Secret, Secret_len);
+    if (err != 0) {
+        gcry_md_close(hd);
+        ws_warning("error setting key: %s", gcry_strerror(err));
+        return;
+    }
+
     gcry_md_write(hd, Seed, Seed_len);
     digest = gcry_md_read(hd, GCRY_MD_SHA1);
     memcpy(Result, digest, HASH_SHA1_LENGTH);
-
     gcry_md_close(hd);
 }
 #endif /* HAVE_KERBEROS */
@@ -813,7 +820,7 @@ static void after_untag(void *tvbparse_data, const void *wanted_data _U_, tvbpar
         xml_frame_t *nonce_frame = xml_get_tag(current_frame, "Nonce");
         xml_frame_t *nonce_cdata = NULL;
         tvbuff_t *nonce_tvb = NULL;
-        enc_key_t *ek = NULL;
+        const enc_key_t *ek = NULL;
         uint8_t seed[64];
         size_t seed_length = 16; // TODO
         const size_t key_length = 16; //TODO
@@ -835,7 +842,7 @@ static void after_untag(void *tvbparse_data, const void *wanted_data _U_, tvbpar
                 read_keytab_file_from_preferences();
             }
 
-            for (ek=enc_key_list;ek;ek=ek->next) {
+            for (ek=keytab_get_enc_key_list();ek;ek=ek->next) {
                 if (ek->fd_num == (int)current_frame->pinfo->num) {
                     break;
                 }
@@ -991,7 +998,7 @@ static void after_attrib(void *tvbparse_data, const void *wanted_data _U_, tvbpa
     proto_item      *pi;
     xml_frame_t     *new_frame;
 
-    name           = tvb_get_string_enc(current_frame->pinfo->pool, tok->sub->tvb, tok->sub->offset, tok->sub->len, ENC_ASCII);
+    name           = (char*)tvb_get_string_enc(current_frame->pinfo->pool, tok->sub->tvb, tok->sub->offset, tok->sub->len, ENC_ASCII);
     name_orig_case = wmem_strdup(current_frame->pinfo->pool, name);
     ascii_strdown_inplace(name);
 
@@ -1637,7 +1644,7 @@ static dtd_build_data_t* g_build_data;
 
 static void dtd_pi_cb(void* ctx _U_, const xmlChar* target, const xmlChar* data)
 {
-    if (strcmp(target, "wireshark-protocol") == 0) {
+    if (xmlStrcmp(target, (const xmlChar*)"wireshark-protocol") == 0) {
 
         xmlDocPtr fake_doc;
         char* fake_element;
@@ -1655,29 +1662,29 @@ static void dtd_pi_cb(void* ctx _U_, const xmlChar* target, const xmlChar* data)
                 {
                     if (xmlStrcmp(attr->name, (const xmlChar*)"proto_name") == 0) {
                         value = xmlNodeListGetString(fake_doc, attr->children, 1);
-                        char* lower_proto = g_ascii_strdown(value, -1);
+                        char* lower_proto = g_ascii_strdown((const char*)value, -1);
                         g_build_data->proto_name = wmem_strdup(wmem_epan_scope(), lower_proto);
                         g_free(lower_proto);
                         xmlFree(value);
                     }
                     if (xmlStrcmp(attr->name, (const xmlChar*)"root") == 0) {
                         value = xmlNodeListGetString(fake_doc, attr->children, 1);
-                        g_build_data->proto_root = g_ascii_strdown(value, -1);
+                        g_build_data->proto_root = g_ascii_strdown((const char*)value, -1);
                         xmlFree(value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"media") == 0) {
                         value = xmlNodeListGetString(fake_doc, attr->children, 1);
-                        g_build_data->media_type = wmem_strdup(wmem_epan_scope(), value);
+                        g_build_data->media_type = wmem_strdup(wmem_epan_scope(), (const char*)value);
                         xmlFree(value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"description") == 0) {
                         value = xmlNodeListGetString(fake_doc, attr->children, 1);
-                        g_build_data->description = wmem_strdup(wmem_epan_scope(), value);
+                        g_build_data->description = wmem_strdup(wmem_epan_scope(), (const char*)value);
                         xmlFree(value);
                     }
                     else if (xmlStrcmp(attr->name, (const xmlChar*)"hierarchy") == 0) {
                         value = xmlNodeListGetString(fake_doc, attr->children, 1);
-                        g_build_data->recursion = (g_ascii_strcasecmp(value, "yes") == 0) ? true : false;
+                        g_build_data->recursion = (g_ascii_strcasecmp((const char*)value, "yes") == 0) ? true : false;
                         xmlFree(value);
                     }
                 }
@@ -1724,7 +1731,7 @@ static void dtd_elementDecl_cb(void* ctx _U_, const xmlChar* name, int type, xml
     if (type == XML_ELEMENT_TYPE_MIXED) {
         /* The first child is always "#PCDATA", which we don't care about
          * as we always create a .cdata field regardless. */
-        ws_assert(len && (xmlStrcmp("#PCDATA", children[0]) == 0));
+        ws_assert(len && (xmlStrcmp((const xmlChar*)"#PCDATA", children[0]) == 0));
         i = 1;
     }
     for (; i < len; ++i) {
@@ -1922,12 +1929,12 @@ static void init_xml_names(void)
 
     xml_new_namespace(xmpli_names, "xml", "version", "encoding", "standalone", NULL);
 
-    dirname = get_persconffile_path("dtds", false);
+    dirname = get_persconffile_path("dtds", false, epan_get_environment_prefix());
 
     if (test_for_directory(dirname) != EISDIR) {
         /* Although dir isn't a directory it may still use memory */
         g_free(dirname);
-        dirname = get_datafile_path("dtds");
+        dirname = get_datafile_path("dtds", epan_get_environment_prefix());
     }
 
     if (test_for_directory(dirname) == EISDIR) {

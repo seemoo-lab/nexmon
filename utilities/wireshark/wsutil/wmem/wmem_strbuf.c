@@ -167,7 +167,7 @@ int _strbuf_vsnprintf(wmem_strbuf_t *strbuf, const char *format, va_list ap)
     }
     if ((size_t)want_len < buffer_size) {
         /* Success. */
-        strbuf->len += want_len;
+        strbuf->len += (size_t)want_len;
         return 0;
     }
 
@@ -192,7 +192,7 @@ wmem_strbuf_append_vprintf(wmem_strbuf_t *strbuf, const char *fmt, va_list ap)
         return;
 
     /* Resize buffer and try again. */
-    wmem_strbuf_grow(strbuf, want_len);
+    wmem_strbuf_grow(strbuf, (size_t)want_len);
     want_len = _strbuf_vsnprintf(strbuf, fmt, ap);
     /* Second time must succeed or error out. */
     ws_assert(want_len <= 0);
@@ -235,7 +235,7 @@ wmem_strbuf_append_unichar(wmem_strbuf_t *strbuf, const gunichar c)
     char buf[6];
     size_t charlen;
 
-    charlen = g_unichar_to_utf8(c, buf);
+    charlen = (size_t)g_unichar_to_utf8(c, buf);
 
     wmem_strbuf_grow(strbuf, charlen);
 
@@ -371,7 +371,7 @@ wmem_strbuf_strcmp(const wmem_strbuf_t *sb1, const wmem_strbuf_t *sb2)
 const char *
 wmem_strbuf_strstr(const wmem_strbuf_t *haystack, const wmem_strbuf_t *needle)
 {
-    return ws_memmem(haystack->str, haystack->len, needle->str, needle->len);
+    return (const char*)ws_memmem(haystack->str, haystack->len, needle->str, needle->len);
 }
 
 /* Truncates the allocated memory down to the minimal amount, frees the header
@@ -445,7 +445,7 @@ wmem_strbuf_utf8_validate(wmem_strbuf_t *strbuf, const char **endpptr)
 void
 wmem_strbuf_utf8_make_valid(wmem_strbuf_t *strbuf)
 {
-    wmem_strbuf_t *tmp = ws_utf8_make_valid_strbuf(strbuf->allocator, strbuf->str, strbuf->len);
+    wmem_strbuf_t *tmp = ws_utf8_make_valid_strbuf(strbuf->allocator, (const uint8_t*)strbuf->str, strbuf->len);
 
     wmem_free(strbuf->allocator, strbuf->str);
     strbuf->str = tmp->str;

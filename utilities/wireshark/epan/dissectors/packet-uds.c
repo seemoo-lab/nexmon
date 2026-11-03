@@ -585,7 +585,7 @@ static const value_string _uds_rsdbi_units[] = {
     {0x25, "Bar [bar]"},
     {0x26, "Atmosphere [atm]"},
     {0x27, "Pound force per square inch [psi]"},
-    {0x28, "Becqerel [Bq]"},
+    {0x28, "Becquerel [Bq]"},
     {0x29, "Lumen [lm]"},
     {0x2a, "Lux [lx]"},
     {0x2b, "Litre [l]"},
@@ -1130,8 +1130,8 @@ static int hf_uds_roe_dtc_status_mask_TNCTOC;
 static int hf_uds_roe_dtc_status_mask_WIR;
 static int hf_uds_roe_identifier;
 static int hf_uds_roe_did;
-static int hf_uds_roe_comparision;
-static int hf_uds_roe_comparision_value;
+static int hf_uds_roe_comparison;
+static int hf_uds_roe_comparison_value;
 static int hf_uds_roe_hysteresis_value;
 static int hf_uds_roe_localization;
 static int hf_uds_roe_localization_sign;
@@ -2340,7 +2340,7 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
     service = sid & UDS_SID_MASK;
 
     if (service < UDS_SERVICES_MIN && uds_dissect_small_sids_with_obd_ii && (obd_ii_handle != NULL)) {
-        return call_dissector(obd_ii_handle, tvb_new_subset_length_caplen(tvb, offset, -1, -1), pinfo, tree);
+        return call_dissector(obd_ii_handle, tvb_new_subset_remaining(tvb, offset), pinfo, tree);
     }
 
     service_name = val_to_str_ext(pinfo->pool, service, &uds_services_ext, "Unknown (0x%02x)");
@@ -3281,7 +3281,7 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
                 {
                     if( numOfEvents)
                     {
-                        /* here only the first head can be easy parsed, because information of the request is requiered */
+                        /* here only the first head can be easy parsed, because information of the request is required */
                         proto_tree_add_item( uds_tree, hf_uds_roe_EVOAE, tvb, offset, 1, ENC_NA);
                         offset += 1;
                         proto_tree_add_item( uds_tree, hf_uds_roe_window_time, tvb, offset, 1, ENC_NA);
@@ -3323,9 +3323,9 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16
                     {
                         proto_tree_add_item( uds_tree, hf_uds_roe_did, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
-                        proto_tree_add_item( uds_tree, hf_uds_roe_comparision, tvb, offset, 1, ENC_NA);
+                        proto_tree_add_item( uds_tree, hf_uds_roe_comparison, tvb, offset, 1, ENC_NA);
                         offset += 1;
-                        proto_tree_add_item( uds_tree, hf_uds_roe_comparision_value, tvb, offset, 4, ENC_BIG_ENDIAN);
+                        proto_tree_add_item( uds_tree, hf_uds_roe_comparison_value, tvb, offset, 4, ENC_BIG_ENDIAN);
                         offset += 4;
                         proto_tree_add_item( uds_tree, hf_uds_roe_hysteresis_value, tvb, offset, 1, ENC_NA);
                         offset += 1;
@@ -3459,7 +3459,7 @@ proto_register_uds(void) {
         { &hf_uds_diag_target_addr_name, {
             "Diagnostic Target Address Name", "uds.diag_addr_target_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_uds_service, {
-            "Service Identifier", "uds.sid", FT_UINT8,  BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_services_ext), UDS_SID_MASK, NULL, HFILL } },
+            "Service Identifier", "uds.sid", FT_UINT8,  BASE_HEX | BASE_EXT_STRING, &uds_services_ext, UDS_SID_MASK, NULL, HFILL } },
         { &hf_uds_reply, {
             "Reply Flag", "uds.reply", FT_UINT8, BASE_HEX, NULL, UDS_REPLY_MASK, NULL, HFILL } },
 
@@ -3510,7 +3510,7 @@ proto_register_uds(void) {
             "Memory Selection", "uds.cdtci.memory_selection", FT_UINT8, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL } },
 
         { &hf_uds_rdtci_subfunction, {
-            "SubFunction", "uds.rdtci.subfunction", FT_UINT8, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_rdtci_types_ext), 0x0, NULL, HFILL } },
+            "SubFunction", "uds.rdtci.subfunction", FT_UINT8, BASE_HEX | BASE_EXT_STRING, &uds_rdtci_types_ext, 0x0, NULL, HFILL } },
         { &hf_uds_rdtci_dtc_status_mask, {
             "DTC Status Mask", "uds.rdtci.dtc_status_mask", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_uds_rdtci_dtc_status_mask_tf, {
@@ -3628,7 +3628,7 @@ proto_register_uds(void) {
         { &hf_uds_rsdbi_formula_constant_mantissa, {
             "Constant", "uds.rsdbi.scaling_byte_ext.formulat_constant", FT_UINT16, BASE_HEX, NULL, 0x0FFF, NULL, HFILL } },
         { &hf_uds_rsdbi_unit, {
-            "Unit Identifier", "uds.rsdbi.scaling_byte_ext.unit", FT_UINT8, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_rsdbi_units_ext), 0x0, NULL, HFILL } },
+            "Unit Identifier", "uds.rsdbi.scaling_byte_ext.unit", FT_UINT8, BASE_HEX | BASE_EXT_STRING, &uds_rsdbi_units_ext, 0x0, NULL, HFILL } },
 
         { &hf_uds_sa_subfunction, {
             "SubFunction", "uds.sa.subfunction", FT_UINT8, BASE_CUSTOM, CF_FUNC(uds_sa_subfunction_format), 0x0, NULL, HFILL } },
@@ -3782,9 +3782,9 @@ proto_register_uds(void) {
             "SubFunction (without Suppress)", "uds.tp.subfunction_without_suppress", FT_UINT8, BASE_HEX, NULL, UDS_SUBFUNCTION_MASK, NULL, HFILL } },
 
         { &hf_uds_err_sid,  {
-            "Service Identifier", "uds.err.sid", FT_UINT8, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_services_ext), 0x0, NULL, HFILL } },
+            "Service Identifier", "uds.err.sid", FT_UINT8, BASE_HEX | BASE_EXT_STRING, &uds_services_ext, 0x0, NULL, HFILL } },
         { &hf_uds_err_code, {
-            "Code", "uds.err.code",  FT_UINT8, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_response_codes_ext), 0x0, NULL, HFILL }  },
+            "Code", "uds.err.code",  FT_UINT8, BASE_HEX | BASE_EXT_STRING, &uds_response_codes_ext, 0x0, NULL, HFILL }  },
 
         { &hf_uds_sdt_administrative_param, {
             "Administrative Parameter", "uds.sdt.admin_param",  FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
@@ -3807,7 +3807,7 @@ proto_register_uds(void) {
         { &hf_uds_sdt_encapsulated_message, {
             "Encapsulated Message", "uds.sdt.encapsulated_message",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_uds_sdt_encapsulated_message_sid, {
-            "Service Identifier", "uds.sdt.encapsulated_message.sid",  FT_UINT8, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&uds_services_ext), UDS_SID_MASK, NULL, HFILL } },
+            "Service Identifier", "uds.sdt.encapsulated_message.sid",  FT_UINT8, BASE_HEX | BASE_EXT_STRING, &uds_services_ext, UDS_SID_MASK, NULL, HFILL } },
         { &hf_uds_sdt_encapsulated_message_sid_reply, {
             "Reply Flag", "uds.sdt.encapsulated_message.reply", FT_UINT8, BASE_HEX, NULL, UDS_REPLY_MASK, NULL, HFILL } },
         { &hf_uds_sdt_signature_mac, {
@@ -3858,10 +3858,10 @@ proto_register_uds(void) {
             "Identifier", "uds.roe.identifier", FT_UINT16, BASE_HEX, 0, 0, NULL, HFILL}},
         { &hf_uds_roe_did, {
             "DID", "uds.roe.did", FT_UINT16, BASE_HEX, 0, 0, NULL, HFILL}},
-        { &hf_uds_roe_comparision, {
+        { &hf_uds_roe_comparison, {
             "Comparison logic", "uds.roe.ocov.logic", FT_UINT8, BASE_DEC, VALS( uds_roe_ocov_logic_types), 0, NULL, HFILL }},
-        { &hf_uds_roe_comparision_value, {
-            "Comparision Value", "uds.roe.ocov.value", FT_UINT32, BASE_DEC_HEX, 0, 0, NULL, HFILL }},
+        { &hf_uds_roe_comparison_value, {
+            "Comparison Value", "uds.roe.ocov.value", FT_UINT32, BASE_DEC_HEX, 0, 0, NULL, HFILL }},
         { &hf_uds_roe_hysteresis_value, {
             "hysteresis value[%]", "uds.roe.ocov.hysteresis", FT_UINT8, BASE_DEC, 0, 0, NULL, HFILL}},
         { &hf_uds_roe_localization, {

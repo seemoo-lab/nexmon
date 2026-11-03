@@ -27,8 +27,8 @@
  */
 
 
-#define WS_LOG_DOMAIN "packet-snort"
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-snort"
 #include <wireshark.h>
 
 #include <epan/packet.h>
@@ -316,7 +316,7 @@ static bool look_for_pcre(content_t *content, tvbuff_t *tvb, unsigned start_offs
     }
 
     /* Create regex */
-    regex = g_regex_new(content->translated_str,
+    regex = g_regex_new((char*)content->translated_str,
                         regex_compile_flags,
                         (GRegexMatchFlags)0, NULL);
 
@@ -358,14 +358,14 @@ static bool look_for_content(content_t *content, tvbuff_t *tvb, unsigned start_o
     for (unsigned m=start_offset; m <= (tvb_len-converted_content_length); m++) {
         const uint8_t *ptr = tvb_get_ptr(tvb, m, converted_content_length);
         if (content->nocase) {
-            if (content_compare_case_insensitive(ptr, content->translated_str, content->translated_length)) {
+            if (content_compare_case_insensitive(ptr, (char*)content->translated_str, content->translated_length)) {
                 *match_offset = m;
                 *match_length = content->translated_length;
                 return true;
             }
         }
         else {
-            if (content_compare_case_sensitive(ptr, content->translated_str, content->translated_length)) {
+            if (content_compare_case_sensitive(ptr, (char*)content->translated_str, content->translated_length)) {
                 *match_offset = m;
                 *match_length = content->translated_length;
                 return true;
@@ -709,32 +709,6 @@ static void snort_show_alert(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
     proto_tree *rule_tree;
     Rule_t *rule = alert->matched_rule;
 
-    /* May need to move to reassembled frame to show there instead of here */
-
-    if (snort_alert_in_reassembled_frame && pinfo->fd->visited && (tree != NULL)) {
-        unsigned reassembled_frame = get_reassembled_in_frame(tree);
-
-        if (reassembled_frame && (reassembled_frame != pinfo->num)) {
-            Alerts_t *alerts;
-
-            /* Look up alerts for this frame */
-            alerts = (Alerts_t*)wmem_tree_lookup32(current_session.alerts_tree, pinfo->num);
-
-            if (!alerts->alerts[0].reassembled_frame) {
-                /* Update all alerts from this frame! */
-                for (n=0; n < alerts->num_alerts; n++) {
-
-                    /* Set forward/back frame numbers */
-                    alerts->alerts[n].original_frame = pinfo->num;
-                    alerts->alerts[n].reassembled_frame = reassembled_frame;
-
-                    /* Add these alerts to reassembled frame */
-                    add_alert_to_session_tree(reassembled_frame, &alerts->alerts[n]);
-                }
-            }
-        }
-    }
-
     /* Can only find start if we have the rule and know the protocol */
     unsigned content_start_match = 0;
     unsigned payload_start = 0;
@@ -847,7 +821,7 @@ static void snort_show_alert(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo
 
         /* Show rule string itself. Add it as a separate data source so can read it all */
         if (rule_string_length > 60) {
-            tvbuff_t *rule_string_tvb = tvb_new_child_real_data(tvb, rule->rule_string,
+            tvbuff_t *rule_string_tvb = tvb_new_child_real_data(tvb, (uint8_t*)rule->rule_string,
                                                                 (unsigned)rule_string_length,
                                                                 (unsigned)rule_string_length);
             add_new_data_source(pinfo, rule_string_tvb, "Rule String");
@@ -1173,7 +1147,7 @@ snort_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
                 params.snaplen = WTAP_MAX_PACKET_SIZE_STANDARD;
                 current_session.pdh = wtap_dump_fdopen(current_session.in,
                                                        wtap_pcap_file_type_subtype(),
-                                                       WTAP_UNCOMPRESSED,
+                                                       WS_FILE_UNCOMPRESSED,
                                                        &params,
                                                        &open_err,
                                                        &open_err_info);
@@ -1225,6 +1199,27 @@ snort_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
     /* Now look up stored alerts for this packet number, and display if found */
     if (current_session.alerts_tree && (alerts = (Alerts_t*)wmem_tree_lookup32(current_session.alerts_tree, pinfo->fd->num))) {
         unsigned n;
+
+        /* May need to move to reassembled frame to show there instead of here */
+
+        if (snort_alert_in_reassembled_frame && pinfo->fd->visited && (tree != NULL)) {
+            unsigned reassembled_frame = get_reassembled_in_frame(tree);
+
+            if (reassembled_frame && (reassembled_frame != pinfo->num)) {
+                if (!alerts->alerts[0].reassembled_frame) {
+                    /* Update all alerts from this frame! */
+                    for (n=0; n < alerts->num_alerts; n++) {
+
+                        /* Set forward/back frame numbers */
+                        alerts->alerts[n].original_frame = pinfo->num;
+                        alerts->alerts[n].reassembled_frame = reassembled_frame;
+
+                        /* Add these alerts to reassembled frame */
+                        add_alert_to_session_tree(reassembled_frame, &alerts->alerts[n]);
+                    }
+                }
+            }
+        }
 
         for (n=0; n < alerts->num_alerts; n++) {
             snort_show_alert(tree, tvb, pinfo, &(alerts->alerts[n]));

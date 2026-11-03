@@ -6,10 +6,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __OSI_UTILS_H__
-#define __OSI_UTILS_H__
-
+#pragma once
 /* OSI Global defines, common for all OSI protocols */
 
 #define MAX_NSAP_LEN          30
@@ -98,17 +95,84 @@
 #define NSAP_IDI_ITU_T_IND_DEC_GROUP       0xE2 /* ITU-T IND, decimal */
 #define NSAP_IDI_ITU_T_IND_BIN_GROUP       0xE3 /* ITU-T IND, binary */
 
-char*     print_nsap_net ( wmem_allocator_t *, tvbuff_t *, const int, int );
-char*     print_area     ( wmem_allocator_t *, tvbuff_t *, const int, int );
-char*     print_system_id(wmem_allocator_t *, const uint8_t *, int );
-char*     tvb_print_system_id( wmem_allocator_t *, tvbuff_t *, const int, int );
-void       print_system_id_buf( const uint8_t *, int, char *, int);
-char*     print_address_prefix( wmem_allocator_t *, tvbuff_t *, const int, int );
+/**
+ * @brief Prints an NSAP network address.
+ *
+ * @param scope Memory allocation scope.
+ * @param tvb The TV buffer containing the data.
+ * @param offset The starting offset of the data in the TV buffer.
+ * @param length The length of the data to be printed.
+ * @return A string representation of the NSAP network address.
+ */
+WS_DLL_PUBLIC char* print_nsap_net ( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length );
 
-int        get_osi_address_type(void);
-void       register_osi_address_type(void);
+/**
+ * @brief Prints an area of a TVB buffer as a string.
+ *
+ * @param scope Memory allocator scope for the output string.
+ * @param tvb The TVB buffer containing the data to print.
+ * @param offset The starting offset within the TVB buffer.
+ * @param length The length of the data to print, in units of half-octets.
+ * @return A dynamically allocated string representing the area of the TVB buffer.
+ */
+WS_DLL_PUBLIC char* print_area ( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length );
 
-#endif /* __OSI_UTILS_H__ */
+/**
+ * @brief Prints a system ID as a string.
+ *
+ * @param scope Memory allocation scope.
+ * @param ad Pointer to the system ID data.
+ * @param length Length of the system ID data.
+ * @return char* A newly allocated string containing the printed system ID.
+ */
+char* print_system_id(wmem_allocator_t *scope, const uint8_t *ad, int length);
+
+/**
+ * @brief Prints a formatted string representation of a system ID buffer.
+ *
+ * @param scope Memory allocation scope for the output string.
+ * @param tvb The TVB buffer containing the system ID data.
+ * @param offset The starting offset within the TVB buffer where the system ID data is located
+ * @param length The length of the system ID data to print, in bytes.
+ * @return A dynamically allocated string representing the system ID.
+ */
+WS_DLL_PUBLIC char* tvb_print_system_id( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length);
+
+/**
+ * @brief Prints a formatted string representation of a system ID buffer.
+ *
+ * @param ad Pointer to the input byte array containing the system ID.
+ * @param length Length of the input byte array.
+ * @param buf Buffer where the formatted string will be stored.
+ * @param buf_len Size of the output buffer.
+ */
+void print_system_id_buf( const uint8_t *ad, int length, char *buf, int buf_len);
+
+/**
+ * @brief Prints an OSI address prefix.
+ *
+ * @param scope Memory allocation scope.
+ * @param tvb The TV buffer containing the address data.
+ * @param offset The starting offset of the address in the TV buffer.
+ * @param length The length of the address in bytes.
+ * @return A string representing the formatted address prefix.
+ */
+WS_DLL_PUBLIC char* print_address_prefix( wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length );
+
+/**
+ * @brief Retrieves the current OSI address type.
+ *
+ * @return The OSI address type.
+ */
+WS_DLL_PUBLIC int get_osi_address_type(void);
+
+/**
+ * @brief Registers the OSI address type if not already registered.
+ *
+ * This function registers the OSI address type using the provided dissector functions.
+ * If the OSI address type is already registered, it does nothing.
+ */
+WS_DLL_PUBLIC void register_osi_address_type(void);
 
 /*
  * Editor modelines

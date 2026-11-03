@@ -11,7 +11,7 @@
  * Updated 1 Dec 10 jjm
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_EPAN
 
 #include <glib.h>
@@ -21,12 +21,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <wsutil/application_flavor.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/file_util.h>
 #include <wsutil/report_message.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_assert.h>
+#include <wsutil/wmem/wmem_list.h>
+#include <wsutil/wsjson.h>
+#include <wsutil/json_dumper.h>
 
 #include <epan/packet.h>
 #include "color_filters.h"
@@ -36,7 +38,20 @@
 #include <epan/epan_dissect.h>
 
 /*
- * Each line in the colorfilters file has the following format:
+ * The coloring_rules.jsonc file is formatted as JSONC (jsonc.org). It
+ * must contain an array of named objects with the following key:value
+ * pairs:
+ * [
+ *   { "Filter name": {
+ *       "filter": "<display filter string>",
+ *       "foreground": "#rrggbb or rrggbb",
+ *       "background": "#rrggbb or rrggbb",
+ *       "enabled": "<boolean value>",
+ *     }
+ *   }
+ * ]
+ *
+ * Each line in the legacy colorfilters file has the following format:
  *
  * @<filter name>@<filter string>@[<background>][<foreground>]
  * Background and foreground colors are 16-bit comma-separated RGB
@@ -45,11 +60,8 @@
  * such as #RRGGBB instead.
  */
 
-#define RED_COMPONENT(x)   (uint16_t) (((((x) >> 16) & 0xff) * 65535 / 255))
-#define GREEN_COMPONENT(x) (uint16_t) (((((x) >>  8) & 0xff) * 65535 / 255))
-#define BLUE_COMPONENT(x)  (uint16_t) ( (((x)        & 0xff) * 65535 / 255))
-
 static int read_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_cb_func add_cb);
+static int read_legacy_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_cb_func add_cb);
 
 /* the currently active filters */
 static GSList *color_filter_list;
@@ -62,6 +74,9 @@ static GSList *color_filter_valid_list;
 /* Color Filters can en-/disabled. */
 static bool filters_enabled = true;
 
+/* Session-level disabled (paused) filters */
+static GHashTable *session_disabled_filters;
+
 /* Remember if there are temporary coloring filters set to
  * add sensitivity to the "Reset Coloring 1-10" menu item
  */
@@ -73,7 +88,7 @@ color_filter_new(const char *name,          /* The name of the filter to create 
                  const char *filter_string, /* The string representing the filter */
                  color_t     *bg_color,      /* The background color */
                  color_t     *fg_color,      /* The foreground color */
-                 bool         disabled)      /* Is the filter disabled? */
+                 bool         enabled)       /* Is the filter enabled? */
 {
     color_filter_t *colorf;
 
@@ -82,7 +97,7 @@ color_filter_new(const char *name,          /* The name of the filter to create 
     colorf->filter_text         = g_strdup(filter_string);
     colorf->bg_color            = *bg_color;
     colorf->fg_color            = *fg_color;
-    colorf->disabled            = disabled;
+    colorf->enabled             = enabled;
     return colorf;
 }
 
@@ -115,7 +130,7 @@ color_filters_add_tmp(GSList **cfl)
         bg_color.red = RED_COMPONENT(cval);
         bg_color.green = GREEN_COMPONENT(cval);
         bg_color.blue = BLUE_COMPONENT(cval);
-        colorf = color_filter_new(name, NULL, &bg_color, &fg_color, true);
+        colorf = color_filter_new(name, NULL, &bg_color, &fg_color, false);
         colorf->filter_text = g_strdup("frame");
         *cfl = g_slist_append(*cfl, colorf);
 
@@ -151,7 +166,7 @@ color_filters_get_tmp(uint8_t filt_nr)
     cfl = g_slist_find_custom(color_filter_list, name, color_filters_find_by_name_cb);
     colorf = (color_filter_t*)cfl->data;
 
-    if (!colorf->disabled)
+    if (colorf->enabled)
         filter = g_strdup(colorf->filter_text);
 
     g_free(name);
@@ -161,7 +176,7 @@ color_filters_get_tmp(uint8_t filt_nr)
 
 /* Set the filter off a temporary colorfilters and enable it */
 bool
-color_filters_set_tmp(uint8_t filt_nr, const char *filter, bool disabled, char **err_msg)
+color_filters_set_tmp(uint8_t filt_nr, const char *filter, bool enabled, char **err_msg)
 {
     char           *name = NULL;
     const char     *tmpfilter = NULL;
@@ -202,7 +217,7 @@ color_filters_set_tmp(uint8_t filt_nr, const char *filter, bool disabled, char *
                 dfilter_free(colorf->c_colorfilter);
                 colorf->filter_text = g_strdup(tmpfilter);
                 colorf->c_colorfilter = compiled_filter;
-                colorf->disabled = ((i!=filt_nr) ? true : disabled);
+                colorf->enabled = ((i!=filt_nr) ? false : enabled);
                 /* Remember that there are now temporary coloring filters set */
                 if( filter )
                     tmp_colors_set = true;
@@ -236,7 +251,7 @@ color_filters_reset_tmp(char **err_msg)
     uint8_t i;
 
     for ( i=1 ; i<=10 ; i++ ) {
-        if (!color_filters_set_tmp(i, NULL, true, err_msg))
+        if (!color_filters_set_tmp(i, NULL, false, err_msg))
             return false;
     }
     /* Remember that there are now *no* temporary coloring filters set */
@@ -282,7 +297,7 @@ color_filter_clone(color_filter_t *colorf)
     new_colorf->filter_text         = g_strdup(colorf->filter_text);
     new_colorf->bg_color            = colorf->bg_color;
     new_colorf->fg_color            = colorf->fg_color;
-    new_colorf->disabled            = colorf->disabled;
+    new_colorf->enabled             = colorf->enabled;
     new_colorf->c_colorfilter       = NULL;
 
     return new_colorf;
@@ -310,7 +325,7 @@ color_filter_list_clone(GSList *cfl)
 }
 
 static bool
-color_filters_get(char** err_msg, color_filter_add_cb_func add_cb)
+color_filters_get(char** err_msg, color_filter_add_cb_func add_cb, const char* app_env_var_prefix)
 {
     char     *path;
     FILE     *f;
@@ -320,12 +335,13 @@ color_filters_get(char** err_msg, color_filter_add_cb_func add_cb)
     color_filters_add_tmp(&color_filter_list);
 
     /*
-     * Try to get the user's filters.
+     * Try to get the user's legacy filters first, for backward
+     * compatibility.
      *
      * Get the path for the file that would have their filters, and
      * try to open it.
      */
-    path = get_persconffile_path(COLORFILTERS_FILE_NAME, true);
+    path = get_persconffile_path(COLORFILTERS_FILE_NAME, true, app_env_var_prefix);
     if ((f = ws_fopen(path, "r")) == NULL) {
         if (errno != ENOENT) {
             /* Error trying to open the file; give up. */
@@ -333,43 +349,70 @@ color_filters_get(char** err_msg, color_filter_add_cb_func add_cb)
                                        g_strerror(errno));
             g_free(path);
             return false;
-	}
-        /* They don't have any filters; try to read the global filters */
+        }
         g_free(path);
-        return color_filters_read_globals(&color_filter_list, err_msg, add_cb);
+        /* Try the personal coloring_rules.jsonc below. */
+    } else {
+        ret = read_legacy_filters_file(path, f, &color_filter_list, add_cb);
+        fclose(f);
+        g_free(path);
+        if (ret != 0) {
+            *err_msg = ws_strdup_printf("Error reading filter file\n\"%s\": %s.",
+                                       path, g_strerror(errno));
+            return false;
+        }
     }
 
     /*
-     * We've opened it; try to read it.
+     * Now try to read the user's coloring rules, in the current JSONC
+     * format. Legacy rules with the same name will be replaced.
      */
+    path = get_persconffile_path(COLORING_RULES_FILE_NAME, true, app_env_var_prefix);
+    if ((f = ws_fopen(path, "r")) == NULL) {
+        if (errno != ENOENT) {
+            *err_msg = ws_strdup_printf("Could not open coloring rules file\n\"%s\": %s.", path,
+                                       g_strerror(errno));
+            g_free(path);
+            return false;
+        }
+        /* They don't have any filters; try to read the global filters */
+        g_free(path);
+        return color_filters_read_globals(&color_filter_list, err_msg, add_cb, app_env_var_prefix);
+    }
+
     ret = read_filters_file(path, f, &color_filter_list, add_cb);
+    fclose(f);
     if (ret != 0) {
-        *err_msg = ws_strdup_printf("Error reading filter file\n\"%s\": %s.",
+        *err_msg = ws_strdup_printf("Error reading coloring rules file\n\"%s\": %s.",
                                    path, g_strerror(errno));
-        fclose(f);
         g_free(path);
         return false;
     }
 
-    /* Success. */
-    fclose(f);
     g_free(path);
     return true;
 }
 
 /* Initialize the filter structures (reading from file) for general running, including app startup */
 bool
-color_filters_init(char** err_msg, color_filter_add_cb_func add_cb)
+color_filters_init(char** err_msg, color_filter_add_cb_func add_cb, const char* app_env_var_prefix)
 {
     /* delete all currently existing filters */
     color_filter_list_delete(&color_filter_list);
 
     /* now try to construct the filters list */
-    return color_filters_get(err_msg, add_cb);
+    bool result = color_filters_get(err_msg, add_cb, app_env_var_prefix);
+
+    /* Load paused filters from profile after loading color filters */
+    if (result) {
+        color_filter_read_paused(app_env_var_prefix);
+    }
+
+    return result;
 }
 
 bool
-color_filters_reload(char** err_msg, color_filter_add_cb_func add_cb)
+color_filters_reload(char** err_msg, color_filter_add_cb_func add_cb, const char* app_env_var_prefix)
 {
     /* "move" old entries to the deleted list
      * we must keep them until the dissection no longer needs them */
@@ -377,7 +420,7 @@ color_filters_reload(char** err_msg, color_filter_add_cb_func add_cb)
     color_filter_list = NULL;
 
     /* now try to construct the filters list */
-    return color_filters_get(err_msg, add_cb);
+    return color_filters_get(err_msg, add_cb, app_env_var_prefix);
 }
 
 void
@@ -385,6 +428,11 @@ color_filters_cleanup(void)
 {
     /* delete the previously deleted filters */
     color_filter_list_delete(&color_filter_deleted_list);
+
+    if (session_disabled_filters) {
+        g_hash_table_destroy(session_disabled_filters);
+        session_disabled_filters = NULL;
+    }
 }
 
 typedef struct _color_clone
@@ -423,7 +471,7 @@ color_filter_compile_cb(void *filter_arg, void *err)
     ws_assert(colorf->c_colorfilter == NULL);
 
     /* If the filter is disabled it doesn't matter if it compiles or not. */
-    if (colorf->disabled) return;
+    if (!colorf->enabled) return;
 
     if (!dfilter_compile(colorf->filter_text, &colorf->c_colorfilter, &df_err)) {
         *err_msg = ws_strdup_printf("Could not compile color filter name: \"%s\" text: \"%s\".\n%s",
@@ -445,7 +493,7 @@ color_filter_validate_cb(void *filter_arg, void *err)
     ws_assert(colorf->c_colorfilter == NULL);
 
     /* If the filter is disabled it doesn't matter if it compiles or not. */
-    if (colorf->disabled) return;
+    if (!colorf->enabled) return;
 
     if (!dfilter_compile(colorf->filter_text, &colorf->c_colorfilter, &df_err)) {
         *err_msg = ws_strdup_printf("Disabling color filter name: \"%s\" filter: \"%s\".\n%s",
@@ -453,7 +501,7 @@ color_filter_validate_cb(void *filter_arg, void *err)
         df_error_free(&df_err);
 
         /* Disable the color filter in the list of color filters. */
-        colorf->disabled = true;
+        colorf->enabled = false;
     }
 
     /* XXX: What if the color filter tests "frame.coloring_rule.name" or
@@ -536,7 +584,7 @@ find_hfid(const void *data, const void *user_data)
     color_filter_t *colorf = (color_filter_t *)data;
     int hfid = GPOINTER_TO_INT(user_data);
 
-    if ((!colorf->disabled) && colorf->c_colorfilter != NULL) {
+    if ((colorf->enabled) && colorf->c_colorfilter != NULL) {
         if (dfilter_interested_in_field(colorf->c_colorfilter, hfid)) {
             return 0;
         }
@@ -559,7 +607,7 @@ find_proto(const void *data, const void *user_data)
     color_filter_t *colorf = (color_filter_t *)data;
     int proto_id = GPOINTER_TO_INT(user_data);
 
-    if ((!colorf->disabled) && colorf->c_colorfilter != NULL) {
+    if ((colorf->enabled) && colorf->c_colorfilter != NULL) {
         if (dfilter_interested_in_proto(colorf->c_colorfilter, proto_id)) {
             return 0;
         }
@@ -589,9 +637,10 @@ color_filters_colorize_packet(epan_dissect_t *edt)
 
         while(curr != NULL) {
             colorf = (color_filter_t *)curr->data;
-            if ( (!colorf->disabled) &&
+            if ( (colorf->enabled) &&
                  (colorf->c_colorfilter != NULL) &&
-                 dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+                 dfilter_apply_edt(colorf->c_colorfilter, edt) &&
+                 !color_filter_is_session_disabled(colorf->filter_name)) {
                 return colorf;
             }
             curr = g_slist_next(curr);
@@ -601,11 +650,335 @@ color_filters_colorize_packet(epan_dissect_t *edt)
     return NULL;
 }
 
-/* read filters from the given file */
-/* XXX - Would it make more sense to use GStrings here instead of reallocing
-   our buffers? */
+const color_filter_t *
+color_filters_colorize_packet_all(epan_dissect_t *edt,
+        wmem_allocator_t *scope, wmem_list_t **matches)
+{
+    const color_filter_t *first_match = NULL;
+
+    if (matches) {
+        *matches = NULL;
+    }
+
+    /* If we have color filters, collect ALL matching ones. */
+    if ((edt->tree != NULL) && (color_filters_used())) {
+        for (GSList *curr = color_filter_list; curr != NULL; curr = g_slist_next(curr)) {
+            color_filter_t *colorf = (color_filter_t *)curr->data;
+            if ((colorf->enabled) &&
+                (colorf->c_colorfilter != NULL) &&
+                dfilter_apply_edt(colorf->c_colorfilter, edt)) {
+
+                bool is_session_disabled = color_filter_is_session_disabled(colorf->filter_name);
+
+                /* Add to matches list even if paused (for Frame tree display) */
+                if (matches) {
+                    if (*matches == NULL) {
+                        *matches = wmem_list_new(scope);
+                    }
+                    wmem_list_append(*matches, colorf);
+                }
+
+                /* Only use non-paused filters for first_match */
+                if (!first_match && !is_session_disabled) {
+                    first_match = colorf;  /* Backward compatibility */
+                }
+            }
+        }
+    }
+
+    return first_match;
+}
+
+void
+color_filter_set_session_disabled(const char *filter_name, bool disabled)
+{
+    if (!filter_name) return;
+
+    if (!session_disabled_filters) {
+        session_disabled_filters = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    }
+
+    if (disabled) {
+        g_hash_table_insert(session_disabled_filters, g_strdup(filter_name), GINT_TO_POINTER(1));
+    } else {
+        g_hash_table_remove(session_disabled_filters, filter_name);
+    }
+
+    /* Auto-save to profile directory after every change */
+    color_filter_write_paused(NULL);  /* NULL uses default env prefix */
+}
+
+bool
+color_filter_is_session_disabled(const char *filter_name)
+{
+    if (!filter_name || !session_disabled_filters) {
+        return false;
+    }
+    return g_hash_table_contains(session_disabled_filters, filter_name);
+}
+
+void
+color_filter_clear_session_disabled(void)
+{
+    if (session_disabled_filters) {
+        g_hash_table_remove_all(session_disabled_filters);
+    }
+    /* Restore from profile directory after clearing (workaround for rescan) */
+    color_filter_read_paused(NULL);
+}
+
+#define PAUSED_FILTERS_FILE "paused_filters"
+
+/* Get profile-specific paused filters file path */
+static char *
+get_paused_filters_path(const char *app_env_var_prefix)
+{
+    /* Use profile-specific path (true = use profile directory) */
+    return get_persconffile_path(PAUSED_FILTERS_FILE, true, app_env_var_prefix);
+}
+
+/* Save paused filters to profile directory */
+void
+color_filter_write_paused(const char *app_env_var_prefix)
+{
+    if (!session_disabled_filters) return;
+
+    char *path = get_paused_filters_path(app_env_var_prefix);
+    if (!path) return;
+
+    FILE *f = ws_fopen(path, "w");
+    if (!f) {
+        g_free(path);
+        return;
+    }
+
+    /* Write each paused filter name, one per line */
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, session_disabled_filters);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        fprintf(f, "%s\n", (const char*)key);
+    }
+
+    fclose(f);
+    g_free(path);
+}
+
+/* Read paused filters from profile directory */
+void
+color_filter_read_paused(const char *app_env_var_prefix)
+{
+    char *path = get_paused_filters_path(app_env_var_prefix);
+    if (!path) return;
+
+    FILE *f = ws_fopen(path, "r");
+    g_free(path);
+
+    if (!f) return;  /* File doesn't exist yet - that's OK */
+
+    char line[1024];
+    while (fgets(line, sizeof(line), f)) {
+        /* Remove trailing newline/whitespace */
+        line[strcspn(line, "\r\n")] = 0;
+        g_strstrip(line);  /* GLib function to trim whitespace */
+
+        if (line[0] && line[0] != '#') {  /* Skip empty lines and comments */
+            /* Add to session_disabled_filters without triggering auto-save */
+            if (!session_disabled_filters) {
+                session_disabled_filters = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+            }
+            g_hash_table_insert(session_disabled_filters, g_strdup(line), GINT_TO_POINTER(1));
+        }
+    }
+
+    fclose(f);
+}
+
+/* Resume all paused filters (clears all and saves empty file) */
+void
+color_filter_resume_all(const char *app_env_var_prefix)
+{
+    /* Clear the hash table */
+    if (session_disabled_filters) {
+        g_hash_table_remove_all(session_disabled_filters);
+    }
+
+    /* Write empty file to profile directory */
+    char *path = get_paused_filters_path(app_env_var_prefix);
+    if (!path) return;
+
+    FILE *f = ws_fopen(path, "w");
+    if (f) {
+        /* Write empty file (or just close it) */
+        fclose(f);
+    }
+    g_free(path);
+}
+
+/* Parse a "#rrggbb" or "rrggbb" string into a color_t. Returns false (and
+ * leaves *color untouched) if str is NULL or not a valid hex triplet. */
+static bool
+hex_str_to_color(const char *str, color_t *color)
+{
+    unsigned long cval;
+
+    if (str == NULL) {
+        return false;
+    }
+    if (str[0] == '#') {
+        str++;
+    }
+    if (strlen(str) != 6 || strspn(str, "0123456789abcdefABCDEF") != 6) {
+        return false;
+    }
+
+    cval = strtoul(str, NULL, 16);
+    color->red   = RED_COMPONENT(cval);
+    color->green = GREEN_COMPONENT(cval);
+    color->blue  = BLUE_COMPONENT(cval);
+    return true;
+}
+
 static int
 read_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_cb_func add_cb)
+{
+    long        size;
+    char       *buf;
+    size_t      nread;
+    int         num_tokens;
+    jsmntok_t  *tokens;
+    int         array_len;
+    jsmntok_t  *element;
+
+    if (fseek(f, 0, SEEK_END) == -1) {
+        return errno;
+    }
+    size = ftell(f);
+    if (size < 0) {
+        return errno;
+    }
+    if (fseek(f, 0, SEEK_SET) == -1) {
+        return errno;
+    }
+    if (size == 0) {
+        return 0;
+    }
+
+    buf = (char *)g_malloc(size + 1);
+    nread = fread(buf, 1, size, f);
+    if (ferror(f)) {
+        int ret = errno;
+        g_free(buf);
+        return ret;
+    }
+    buf[nread] = '\0';
+
+    if (!json_strip_jsonc_comments(buf)) {
+        report_warning("Error parsing coloring rules file\n\"%s\": unterminated block comment.", path);
+        g_free(buf);
+        return 0;
+    }
+
+    num_tokens = json_parse(buf, NULL, 0);
+    if (num_tokens <= 0) {
+        /* All comments/whitespace) or invalid. Just treat it as empty. */
+        g_free(buf);
+        return 0;
+    }
+
+    tokens = (jsmntok_t *)g_malloc(num_tokens * sizeof(jsmntok_t));
+    if (json_parse(buf, tokens, num_tokens) <= 0 || tokens[0].type != JSMN_ARRAY) {
+        report_warning("Error parsing coloring rules file\n\"%s\": invalid JSON.", path);
+        g_free(tokens);
+        g_free(buf);
+        return 0;
+    }
+
+    array_len = json_get_array_len(&tokens[0]);
+    element = json_get_array_index(&tokens[0], 0);
+
+    for (int i = 0; i < array_len; i++, element = json_get_next_object(element)) {
+        char       *name, *filter_str, *fg_str, *bg_str;
+        bool        enabled = true;
+        color_t     fg_color = { 0, 0, 0 }, bg_color = { 0, 0, 0 };
+        dfilter_t  *temp_dfilter = NULL;
+        df_error_t *df_err = NULL;
+        const char *filter_exp;
+        color_filter_t *colorf;
+        jsmntok_t  *name_tok, *properties_tok;
+
+        if (element->type != JSMN_OBJECT || element->size != 1) {
+            continue;
+        }
+
+        /* "<filter name>": { ... } */
+        name_tok = element + 1;
+        properties_tok = name_tok + 1;
+        if (name_tok->type != JSMN_STRING || properties_tok->type != JSMN_OBJECT) {
+            continue;
+        }
+
+        name = g_strndup(&buf[name_tok->start], (gsize)(name_tok->end - name_tok->start));
+        if (!json_decode_string_inplace(name)) {
+            g_free(name);
+            continue;
+        }
+
+        filter_str = json_get_string(buf, properties_tok, "filter");
+        fg_str = json_get_string(buf, properties_tok, "foreground");
+        bg_str = json_get_string(buf, properties_tok, "background");
+        json_get_boolean(buf, properties_tok, "enabled", &enabled);
+
+        hex_str_to_color(fg_str, &fg_color);
+        hex_str_to_color(bg_str, &bg_color);
+
+        filter_exp = filter_str ? filter_str : "";
+
+        if (enabled && !dfilter_compile(filter_exp, &temp_dfilter, &df_err)) {
+            report_warning("Disabling color filter: Could not compile \"%s\" in coloring rules file \"%s\".\n%s",
+                            name, path, df_err->msg);
+            df_error_free(&df_err);
+            enabled = false;
+        }
+
+        colorf = color_filter_new(name, filter_exp, &bg_color, &fg_color, enabled);
+        g_free(name);
+
+        if (user_data == &color_filter_list) {
+            GSList **cfl = (GSList **)user_data;
+            GSList  *existing;
+
+            /* internal call */
+            colorf->c_colorfilter = temp_dfilter;
+
+            /* A JSONC rule with the same name as an already-loaded
+             * (legacy) rule replaces it, rather than duplicating it. */
+            existing = g_slist_find_custom(*cfl, colorf->filter_name, color_filters_find_by_name_cb);
+            if (existing != NULL) {
+                color_filter_delete((color_filter_t *)existing->data);
+                existing->data = colorf;
+            } else {
+                *cfl = g_slist_append(*cfl, colorf);
+            }
+        } else {
+            /* external call */
+            /* just editing, don't need the compiled filter */
+            dfilter_free(temp_dfilter);
+            add_cb(colorf, user_data);
+        }
+    }
+
+    g_free(tokens);
+    g_free(buf);
+    return 0;
+}
+
+/* Read legacy (@-delimited) filters from the given file */
+/* XXX At what point do we drop support? */
+/* XXX Would it make more sense to use GStrings here instead of reallocing
+   our buffers? */
+static int
+read_legacy_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_cb_func add_cb)
 {
 #define INIT_BUF_SIZE 128
     char     *name;
@@ -731,7 +1104,7 @@ read_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_c
             bg_color.blue = bg_b;
 
             colorf = color_filter_new(name, filter_exp, &bg_color,
-                                      &fg_color, disabled);
+                                      &fg_color, !disabled);
             if(user_data == &color_filter_list) {
                 GSList **cfl = (GSList **)user_data;
 
@@ -759,7 +1132,7 @@ read_filters_file(const char *path, FILE *f, void *user_data, color_filter_add_c
 
 /* read filters from the filter file */
 bool
-color_filters_read_globals(void *user_data, char** err_msg, color_filter_add_cb_func add_cb)
+color_filters_read_globals(void *user_data, char** err_msg, color_filter_add_cb_func add_cb, const char* app_env_var_prefix)
 {
     char     *path;
     FILE     *f;
@@ -771,34 +1144,35 @@ color_filters_read_globals(void *user_data, char** err_msg, color_filter_add_cb_
      * Get the path for the file that would have the global filters, and
      * try to open it.
      */
-    path = get_datafile_path(COLORFILTERS_FILE_NAME);
+    path = get_datafile_path(COLORING_RULES_FILE_NAME, app_env_var_prefix);
     if ((f = ws_fopen(path, "r")) == NULL) {
         if (errno != ENOENT) {
             /* Error trying to open the file; give up. */
-            *err_msg = ws_strdup_printf("Could not open global filter file\n\"%s\": %s.", path,
+            *err_msg = ws_strdup_printf("Could not open global coloring rules file\n\"%s\": %s.", path,
                                        g_strerror(errno));
             g_free(path);
             return false;
         }
 
         /*
-         * There is no global filter file; treat that as equivalent to
+         * There is no global rules file; treat that as equivalent to
          * that file existing bug being empty, and say we succeeded.
          */
         g_free(path);
         return true;
     }
 
+    /* Don't try to read the legacy colorfilters file, unlike the personal config. */
+
     ret = read_filters_file(path, f, user_data, add_cb);
+    fclose(f);
     if (ret != 0) {
-        *err_msg = ws_strdup_printf("Error reading global filter file\n\"%s\": %s.",
+        *err_msg = ws_strdup_printf("Error reading global coloring rules file\n\"%s\": %s.",
                                    path, g_strerror(errno));
-        fclose(f);
         g_free(path);
         return false;
     }
 
-    fclose(f);
     g_free(path);
     return true;
 }
@@ -816,7 +1190,13 @@ color_filters_import(const char *path, void *user_data, char **err_msg, color_fi
         return false;
     }
 
-    ret = read_filters_file(path, f, user_data, add_cb);
+    /*
+     * The file being imported might be in the legacy @-delimited
+     * format or the newer JSONC format. Try the legacy format first,
+     * then the JSONC format. Each parser simply finds no filters if
+     * the file isn't in the expected format.
+     */
+    ret = read_legacy_filters_file(path, f, user_data, add_cb);
     if (ret != 0) {
         *err_msg = ws_strdup_printf("Error reading filter file\n\"%s\": %s.",
                                    path, g_strerror(errno));
@@ -824,7 +1204,15 @@ color_filters_import(const char *path, void *user_data, char **err_msg, color_fi
         return false;
     }
 
+    /* read_filters_file() seeks to the start of the file. */
+    ret = read_filters_file(path, f, user_data, add_cb);
     fclose(f);
+    if (ret != 0) {
+        *err_msg = ws_strdup_printf("Error reading filter file\n\"%s\": %s.",
+                                   path, g_strerror(errno));
+        return false;
+    }
+
     return true;
 }
 
@@ -834,9 +1222,9 @@ struct write_filter_data
     bool      only_selected;
 };
 
-/* save a single filter */
+/* save a single filter, in the legacy @-delimited format */
 static void
-write_filter(void *filter_arg, void *data_arg)
+write_legacy_filter(void *filter_arg, void *data_arg)
 {
     struct write_filter_data *data = (struct write_filter_data *)data_arg;
     color_filter_t *colorf = (color_filter_t *)filter_arg;
@@ -845,7 +1233,7 @@ write_filter(void *filter_arg, void *data_arg)
     if ( (!data->only_selected) &&
          (strstr(colorf->filter_name,CONVERSATION_COLOR_PREFIX)==NULL) ) {
         fprintf(f,"%s@%s@%s@[%u,%u,%u][%u,%u,%u]\n",
-                colorf->disabled ? "!" : "",
+                colorf->enabled ? "" : "!",
                 colorf->filter_name,
                 colorf->filter_text,
                 colorf->bg_color.red,
@@ -857,53 +1245,128 @@ write_filter(void *filter_arg, void *data_arg)
     }
 }
 
-/* save filters in a filter file */
+/* save filters in a filter file, in the legacy @-delimited format */
 static bool
-write_filters_file(GSList *cfl, FILE *f, bool only_selected)
+write_legacy_filters_file(GSList *cfl, FILE *f, bool only_selected, const char* app_name)
 {
     struct write_filter_data data;
 
     data.f = f;
     data.only_selected = only_selected;
 
-    fprintf(f,"# This file was created by %s. Edit with care.\n", application_flavor_name_proper());
-    g_slist_foreach(cfl, write_filter, &data);
+    fprintf(f,"# This file was created by %s. Edit with care.\n", app_name);
+    g_slist_foreach(cfl, write_legacy_filter, &data);
     return true;
 }
 
-/* save filters in users filter file */
+struct write_filter_jsonc_data
+{
+    json_dumper *dumper;
+    bool         only_selected;
+};
+
+/* save a single filter, in JSONC format */
+static void
+write_jsonc_filter(void *filter_arg, void *data_arg)
+{
+    struct write_filter_jsonc_data *data = (struct write_filter_jsonc_data *)data_arg;
+    color_filter_t *colorf = (color_filter_t *)filter_arg;
+    json_dumper *dumper = data->dumper;
+    char *fg_str, *bg_str;
+
+    if ( (!data->only_selected) &&
+         (strstr(colorf->filter_name,CONVERSATION_COLOR_PREFIX)==NULL) ) {
+        fg_str = ws_strdup_printf("#%06x", color_t_to_rgb(&colorf->fg_color));
+        bg_str = ws_strdup_printf("#%06x", color_t_to_rgb(&colorf->bg_color));
+
+        json_dumper_begin_object(dumper);
+        json_dumper_set_member_name(dumper, colorf->filter_name);
+        json_dumper_begin_object(dumper);
+        json_dumper_set_member_name_const(dumper, "filter");
+        json_dumper_value_string(dumper, colorf->filter_text);
+        json_dumper_set_member_name_const(dumper, "foreground");
+        json_dumper_value_string(dumper, fg_str);
+        json_dumper_set_member_name_const(dumper, "background");
+        json_dumper_value_string(dumper, bg_str);
+        json_dumper_set_member_name_const(dumper, "enabled");
+        json_dumper_value_anyf(dumper, "%s", colorf->enabled ? "true" : "false");
+        json_dumper_end_object(dumper);
+        json_dumper_end_object(dumper);
+
+        g_free(fg_str);
+        g_free(bg_str);
+    }
+}
+
+/* save filters in a coloring rules file, in JSONC format */
+static bool
+write_filters_file(GSList *cfl, FILE *f, bool only_selected, const char* app_name)
+{
+    struct write_filter_jsonc_data data;
+    json_dumper dumper = {
+        .output_file = f,
+        .flags = JSON_DUMPER_FLAGS_PRETTY_PRINT,
+    };
+
+    data.dumper = &dumper;
+    data.only_selected = only_selected;
+
+    fprintf(f, "// This file was created by %s. Edit with care.\n", app_name);
+
+    json_dumper_begin_array(&dumper);
+    g_slist_foreach(cfl, write_jsonc_filter, &data);
+    json_dumper_end_array(&dumper);
+
+    return json_dumper_finish(&dumper);
+}
+
+/* save filters in users filter file(s) */
 bool
-color_filters_write(GSList *cfl, char** err_msg)
+color_filters_write(GSList *cfl, const char* app_name, const char* app_env_var_prefix, char** err_msg)
 {
     char *pf_dir_path;
     char *path;
     FILE  *f;
 
     /* Create the directory that holds personal configuration files,
-       if necessary.  */
-    if (create_persconffile_dir(&pf_dir_path) == -1) {
+       if necessary. */
+    if (create_persconffile_dir(app_env_var_prefix, &pf_dir_path) == -1) {
         *err_msg = ws_strdup_printf("Can't create directory\n\"%s\"\nfor color files: %s.",
                       pf_dir_path, g_strerror(errno));
         g_free(pf_dir_path);
         return false;
     }
 
-    path = get_persconffile_path(COLORFILTERS_FILE_NAME, true);
+    /* Only write the legacy colorfilters file if it already exists. */
+    path = get_persconffile_path(COLORFILTERS_FILE_NAME, true, app_env_var_prefix);
+    if (g_file_test(path, G_FILE_TEST_EXISTS)) {
+        if ((f = ws_fopen(path, "w+")) == NULL) {
+            *err_msg = ws_strdup_printf("Could not open\n%s\nfor writing: %s.",
+                          path, g_strerror(errno));
+            g_free(path);
+            return false;
+        }
+        write_legacy_filters_file(cfl, f, false, app_name);
+        fclose(f);
+    }
+    g_free(path);
+
+    path = get_persconffile_path(COLORING_RULES_FILE_NAME, true, app_env_var_prefix);
     if ((f = ws_fopen(path, "w+")) == NULL) {
         *err_msg = ws_strdup_printf("Could not open\n%s\nfor writing: %s.",
                       path, g_strerror(errno));
         g_free(path);
         return false;
     }
-    g_free(path);
-    write_filters_file(cfl, f, false);
+    write_filters_file(cfl, f, false, app_name);
     fclose(f);
+    g_free(path);
     return true;
 }
 
-/* save filters in some other filter file (export) */
+/* Save filters in the specified file (export) */
 bool
-color_filters_export(const char *path, GSList *cfl, bool only_marked, char** err_msg)
+color_filters_export(const char *path, GSList *cfl, bool only_marked, const char* app_name, char** err_msg)
 {
     FILE *f;
 
@@ -912,7 +1375,7 @@ color_filters_export(const char *path, GSList *cfl, bool only_marked, char** err
                       path, g_strerror(errno));
         return false;
     }
-    write_filters_file(cfl, f, only_marked);
+    write_filters_file(cfl, f, only_marked, app_name);
     fclose(f);
     return true;
 }

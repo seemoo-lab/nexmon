@@ -17,13 +17,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Choco install
-        run: choco install -y --force --no-progress xsltproc nsis winflexbison3 cmake
+        run: choco install -y --force --no-progress xsltproc nsis
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           arch: win64_msvc2022_64
           version: 6.8.3
-          modules: 'qt5compat'
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v3
         with:
@@ -35,7 +34,7 @@ jobs:
       - name: Mkdir
         run: mkdir build
       - name: Cmake
-        run: cmake -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ..
+        run: cmake -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -G "Visual Studio 17 2022" -A x64 ..
         env:
           PLATFORM: x64
           WIRESHARK_BASE_DIR: C:/wireshark-libs

@@ -9,33 +9,36 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
 */
-
-#ifndef __CRC16_TVB_H__
-#define __CRC16_TVB_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/** Compute CRC16 CCITT checksum of a tv buffer.
- @param tvb The tv buffer containing the data.
- @param len The number of bytes to include in the computation.
- @return The CRC16 CCITT checksum. */
+/**
+ * @brief Compute CRC16 CCITT checksum of a tv buffer.
+ * @param tvb The tv buffer containing the data.
+ * @param len The number of bytes to include in the computation.
+ * @return The CRC16 CCITT checksum.
+ */
 WS_DLL_PUBLIC uint16_t crc16_ccitt_tvb(tvbuff_t *tvb, unsigned len);
 
-/** Compute CRC16 X.25 CCITT checksum of a tv buffer.
- @param tvb The tv buffer containing the data.
- @param len The number of bytes to include in the computation.
- @return The CRC16 X.25 CCITT checksum. */
+/**
+ * @brief Compute CRC16 X.25 CCITT checksum of a tv buffer.
+ * @param tvb The tv buffer containing the data.
+ * @param len The number of bytes to include in the computation.
+ * @return The CRC16 X.25 CCITT checksum.
+ */
 WS_DLL_PUBLIC uint16_t crc16_x25_ccitt_tvb(tvbuff_t *tvb, unsigned len);
 
-/** Compute CRC16 ASSA R3 CCITT checksum of a tv buffer.
- @param tvb The tv buffer containing the data.
- @param offset The offset into tv buffer containing the data.
- @param len The number of bytes to include in the computation.
- @return The CRC16 X.25 CCITT checksum. */
+/**
+ * @brief Compute CRC16 ASSA R3 CCITT checksum of a tv buffer.
+ * @param tvb The tv buffer containing the data.
+ * @param offset The offset into tv buffer containing the data.
+ * @param len The number of bytes to include in the computation.
+ * @return The CRC16 X.25 CCITT checksum.
+ */
 WS_DLL_PUBLIC uint16_t crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, unsigned len);
 
 /** Compute CRC16 CCITT checksum of a tv buffer.
@@ -139,5 +142,3 @@ WS_DLL_PUBLIC uint16_t crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, unsigned offs
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* crc16-tvb.h */

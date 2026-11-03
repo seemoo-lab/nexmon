@@ -1866,14 +1866,14 @@ decode_ip_device_routing(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
             if (parameter_length > 0) {
                 switch (parameter_id) {
                 case 0x00: /* Identifier */
-                    proto_tree_add_item(ua3g_param_tree, hf_ua3g_ip_device_routing_appl_parameter_id, tvb, offset, parameter_length, ENC_STRING);
+                    proto_tree_add_item(ua3g_param_tree, hf_ua3g_ip_device_routing_appl_parameter_id, tvb, offset, parameter_length, ENC_ASCII);
                     break;
                 case 0x01: /* Enable */
                     proto_tree_add_item(ua3g_param_tree, hf_ua3g_ip_device_routing_appl_parameter_enable, tvb, offset, parameter_length, ENC_BIG_ENDIAN);
                     break;
                 case 0x02: /* URL */
                 {
-                    proto_tree_add_item(ua3g_param_tree, hf_ua3g_ip_device_routing_appl_parameter_url, tvb, offset, parameter_length, ENC_STRING);
+                    proto_tree_add_item(ua3g_param_tree, hf_ua3g_ip_device_routing_appl_parameter_url, tvb, offset, parameter_length, ENC_ASCII);
                     break;
                 }
                 default:
@@ -2465,11 +2465,10 @@ decode_beep(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
             }
         case 0x05:
             {
-                int i, nb_of_notes, beep_number;
+                uint8_t nb_of_notes, beep_number;
                 proto_tree* note_tree;
 
-                beep_number = tvb_get_uint8(tvb, offset);
-                proto_tree_add_item(ua3g_body_tree, hf_ua3g_beep_beep_number, tvb, offset, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint8(ua3g_body_tree, hf_ua3g_beep_beep_number, tvb, offset, 1, ENC_BIG_ENDIAN, &beep_number);
                 offset++;
                 length--;
 
@@ -2478,13 +2477,12 @@ decode_beep(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
                 else
                     beep_number = 0xFF;
 
-                nb_of_notes = tvb_get_uint8(tvb, offset);
-                proto_tree_add_item(ua3g_body_tree, hf_ua3g_beep_number_of_notes, tvb, offset, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint8(ua3g_body_tree, hf_ua3g_beep_number_of_notes, tvb, offset, 1, ENC_BIG_ENDIAN, &nb_of_notes);
                 offset++;
                 length--;
 
                 while (length > 0) {
-                    for (i = 1; i <= nb_of_notes; i++) {
+                    for (unsigned i = 1; i <= nb_of_notes; i++) {
                         note_tree = proto_tree_add_subtree_format(ua3g_body_tree, tvb, offset, 3,
                                         ett_ua3g_note, NULL, "Note %d", i);
                         proto_tree_add_uint_format(note_tree, hf_ua3g_beep_freq_sample, tvb, offset, 1, tvb_get_uint8(tvb, offset),
@@ -3720,7 +3718,7 @@ decode_unsolicited_msg(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
     case 0x01: /* Software Reset Acknowledge */
     case 0xFF: /* Opcode = 0x21 : Version Response */
         {
-            int link, vta_type;
+            uint8_t link, vta_type;
 
             proto_tree_add_item(ua3g_body_tree, hf_ua3g_unsolicited_msg_device_type, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
@@ -3736,9 +3734,7 @@ decode_unsolicited_msg(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
                 length--;
             }
 
-            vta_type = tvb_get_uint8(tvb, offset);
-
-            proto_tree_add_item(ua3g_body_tree, hf_ua3g_unsolicited_msg_vta_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint8(ua3g_body_tree, hf_ua3g_unsolicited_msg_vta_type, tvb, offset, 1, ENC_BIG_ENDIAN, &vta_type);
             offset++;
             length--;
 
@@ -3780,8 +3776,7 @@ decode_unsolicited_msg(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
                 }
             default:
                 {
-                    link = tvb_get_uint8(tvb, offset);
-                    proto_tree_add_item(ua3g_body_tree, hf_ua3g_unsolicited_msg_other_information_1, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    proto_tree_add_item_ret_uint8(ua3g_body_tree, hf_ua3g_unsolicited_msg_other_information_1, tvb, offset, 1, ENC_BIG_ENDIAN, &link);
                     offset++;
                     length--;
 

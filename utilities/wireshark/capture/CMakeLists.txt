@@ -58,6 +58,8 @@ endif()
 set(CAPCHILD_SRC
 	capture_ifinfo.c
 	capture_sync.c
+	sync_pipe_read.c
+	sync_pipe_write.c
 )
 
 set_source_files_properties(
@@ -66,7 +68,7 @@ set_source_files_properties(
 	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
 )
 
-file(GLOB CAPCHILD_HEADERS capture_session.h)
+file(GLOB CAPCHILD_HEADERS capture_session.h sync_pipe.h)
 
 add_library(capchild STATIC
 	${CAPCHILD_SRC}

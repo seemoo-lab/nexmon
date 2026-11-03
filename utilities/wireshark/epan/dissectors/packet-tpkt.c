@@ -65,21 +65,21 @@ static dissector_handle_t tpkt_handle;
  * TPKT header must be at least "4+min_len" in order for this to be a
  * valid TPKT PDU for the protocol in question.
  */
-int
-is_tpkt(tvbuff_t *tvb, int min_len)
+bool
+is_tpkt(tvbuff_t *tvb, unsigned min_len, unsigned *pkt_len)
 {
-    uint16_t pkt_len;
+    unsigned t_pkt_len;
 
     /*
      * If TPKT is disabled, don't dissect it, just return -1, meaning
      * "this isn't TPKT".
      */
     if (!proto_is_protocol_enabled(proto_tpkt_ptr))
-        return -1;
+        return false;
 
     /* There should at least be 4 bytes left in the frame */
     if (tvb_captured_length(tvb) < 4)
-        return -1;  /* there aren't */
+        return false;  /* there aren't */
 
     /*
      * The first octet should be 3 and the second one should be 0
@@ -87,20 +87,23 @@ is_tpkt(tvbuff_t *tvb, int min_len)
      * always be the case....
      */
     if (!(tvb_get_uint8(tvb, 0) == 3 && tvb_get_uint8(tvb, 1) == 0))
-        return -1;  /* they're not */
+        return false;  /* they're not */
 
     /*
      * Get the length from the TPKT header.  Make sure it's large
      * enough.
      */
-    pkt_len = tvb_get_ntohs(tvb, 2);
-    if (pkt_len < 4 + min_len)
-        return -1;  /* it's not */
+    t_pkt_len = tvb_get_ntohs(tvb, 2);
+    if (t_pkt_len < 4 + min_len)
+        return false;  /* it's not */
 
     /*
      * Return the length from the header.
      */
-    return pkt_len;
+    if (pkt_len) {
+        *pkt_len = t_pkt_len;
+    }
+    return true;
 }
 uint16_t
 is_asciitpkt(tvbuff_t *tvb)
@@ -211,13 +214,10 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
     proto_item *ti = NULL;
     proto_tree *tpkt_tree = NULL;
-    volatile int offset = 0;
-    int length_remaining;
+    volatile unsigned offset = 0;
     int data_len;
     volatile int mgcp_packet_len = 0;
-    int mgcp_version = 0;
-    int mgcp_reserved = 0;
-    volatile int length;
+    int mgcp_version, mgcp_reserved;
     tvbuff_t *volatile next_tvb;
     const char *saved_proto;
     uint8_t string[4];
@@ -258,8 +258,6 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             }
             return;
         }
-
-        length_remaining = tvb_captured_length_remaining(tvb, offset);
 
         /*
          * Get the length from the TPKT header.
@@ -317,11 +315,8 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
         /* Skip the TPKT header. */
         offset += TEXT_LAYER_LENGTH;
-        length = length_remaining - TEXT_LAYER_LENGTH;
-        if (length > data_len)
-            length = data_len;
 
-        next_tvb = tvb_new_subset_length_caplen(tvb, offset,length, data_len);
+        next_tvb = tvb_new_subset_length(tvb, offset, data_len);
 
         /*
          * Call the subdissector.
@@ -361,12 +356,13 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
     proto_item *ti = NULL;
     proto_tree *tpkt_tree = NULL;
-    volatile int offset = 0;
-    int length_remaining;
-    int data_len;
-    volatile int length;
+    volatile unsigned offset = 0;
+    unsigned length_remaining;
+    volatile unsigned data_len;
+    volatile unsigned length;
     tvbuff_t *volatile next_tvb;
     const char *saved_proto;
+    bool save_fragmented;
     heur_dtbl_entry_t *hdtbl_entry;
 
     /*
@@ -443,6 +439,30 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
          */
         data_len = tvb_get_ntohs(tvb, offset + 2);
 
+        if (data_len < 4) {
+            /*
+             * The length includes the TPKT header, so this can't be a valid
+             * TPKT header. We only checked one byte above, so we might be in
+             * the middle of TPKT data. Call it continuation as above.
+             */
+            if (dissector_try_heuristic(tpkt_heur_subdissector_list, tvb,
+                                        pinfo, proto_tree_get_root(tree),
+                                        &hdtbl_entry, NULL)) {
+                return;
+            }
+
+            col_set_str(pinfo->cinfo, COL_PROTOCOL, "TPKT");
+            col_set_str(pinfo->cinfo, COL_INFO, "Continuation");
+            if (tree) {
+                ti = proto_tree_add_item(tree, proto_tpkt, tvb,
+                    offset, -1, ENC_NA);
+                tpkt_tree = proto_item_add_subtree(ti, ett_tpkt);
+
+                proto_tree_add_item(tpkt_tree, hf_tpkt_continuation_data, tvb, offset, -1, ENC_NA);
+            }
+            return;
+        }
+
         /*
          * Can we do reassembly?
          */
@@ -514,26 +534,19 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         data_len -= 4;
 
         /*
-         * Construct a tvbuff containing the amount of the payload
-         * we have available.  Make its reported length the
+         * Construct a tvbuff with reported length the amount
          * amount of data in this TPKT packet.
          *
-         * XXX - if reassembly isn't enabled. the subdissector
-         * will throw a BoundsError exception, rather than a
-         * ReportedBoundsError exception.  We really want
-         * a tvbuff where the length is "length", the reported
-         * length is "plen + 2", and the "if the snapshot length
-         * were infinite" length were the minimum of the
-         * reported length of the tvbuff handed to us and "plen+2",
-         * with a new type of exception thrown if the offset is
-         * within the reported length but beyond that third length,
-         * with that exception getting the "Unreassembled Packet"
-         * error.
+         * If reassembly isn't enabled, and we don't have all the
+         * payload, mark the packet as fragmented, so that
+         * FragmentBoundsError is thrown instead of ReportedBoundsError.
          */
+        save_fragmented = pinfo->fragmented;
         length = length_remaining - 4;
-        if (length > data_len)
-            length = data_len;
-        next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, data_len);
+        if (length < data_len) {
+            pinfo->fragmented = true;
+        }
+        next_tvb = tvb_new_subset_length(tvb, offset, data_len);
 
         /*
          * Call the subdissector.
@@ -557,10 +570,12 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         }
         ENDTRY;
 
+        pinfo->fragmented = save_fragmented;
+
         /*
          * Skip the payload.
          */
-        offset += length;
+        offset += data_len;
     }
 }
 
@@ -594,7 +609,8 @@ dissect_ascii_tpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 static int
 dissect_tpkt_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    if (is_tpkt(tvb, 0) == -1) {
+    unsigned pkt_len;
+    if (!is_tpkt(tvb, 0, &pkt_len)) {
         /* Doesn't look like TPKT directly. Might be over TLS, so reject
          * and let the TLS heuristic dissector take a look
          */
@@ -702,9 +718,9 @@ proto_reg_handoff_tpkt(void)
      * use the heuristic dissector by default just on the RDP port, and
      * if rejected the TLS heuristic dissector will be tried.
      */
-    dissector_add_uint("tls.port", TCP_PORT_RDP, tpkt_handle);
     dissector_add_uint("tcp.port", TCP_PORT_RDP, create_dissector_handle(dissect_tpkt_tcp, proto_tpkt_heur));
     heur_dissector_add("tcp", dissect_tpkt_heur, "TPKT over TCP", "tpkt_tcp", proto_tpkt, HEURISTIC_DISABLE);
+    heur_dissector_add("tls", dissect_tpkt_heur, "TPKT over TLS", "tpkt_tls", proto_tpkt, HEURISTIC_ENABLE);
 
     /*
     tpkt_ascii_handle = create_dissector_handle(dissect_ascii_tpkt, proto_tpkt);

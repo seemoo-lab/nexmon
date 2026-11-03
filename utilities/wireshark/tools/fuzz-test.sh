@@ -56,20 +56,22 @@ RUN_START_SECONDS=$SECONDS
 RUN_MAX_SECONDS=$(( RUN_START_SECONDS + 86400 ))
 
 # To do: add options for file names and limits
-while getopts "2b:C:d:e:agp:P:o:t:U" OPTCHAR ; do
+while getopts "2ab:C:d:e:go:p:P:t:U?" OPTCHAR ; do
     case $OPTCHAR in
-        a) ASAN=1 ;;
         2) TWO_PASS="-2 " ;;
+        a) ASAN=1 ;;
         b) WIRESHARK_BIN_DIR=$OPTARG ;;
         C) CONFIG_PROFILE="-C $OPTARG " ;;
         d) TMP_DIR=$OPTARG ;;
         e) ERR_PROB=$OPTARG ;;
         g) VALGRIND=1 ; CHECK_UTF_8= ;;
+        o) CHANGE_OFFSET=$OPTARG ;;
         p) MAX_PASSES=$OPTARG ;;
         P) MIN_PLUGINS=$OPTARG ;;
-        o) CHANGE_OFFSET=$OPTARG ;;
         t) RUN_MAX_SECONDS=$(( RUN_START_SECONDS + OPTARG )) ;;
         U) CHECK_UTF_8= ;; # disable
+        ?) printf "Usage: %s: [-2] [-a] [-b <bindir>] [-C <profile>] [-d <tmpdir>] [-e <errprob>] [-g] [-o <offset>] [-p <maxpass>] [-P <minplugin>] [-t <runtime>] [-U] capture_file [...]  \n" "$( basename "$0" )"
+           exit 2;;
         *) printf "Unknown option %s\n" "$OPTCHAR"
     esac
 done
@@ -122,11 +124,7 @@ for CF in "$@" ; do
 done
 
 if [ $FOUND -eq 0 ] ; then
-    cat <<FIN
-Error: No valid capture files found.
-
-Usage: $( basename "$0" ) [-2] [-b bin_dir] [-C config_profile] [-d work_dir] [-e error probability] [-o changes offset] [-g] [-a] [-p passes] capture file 1 [capture file 2]...
-FIN
+    echo "Error: No valid capture files found."
     exit 1
 fi
 

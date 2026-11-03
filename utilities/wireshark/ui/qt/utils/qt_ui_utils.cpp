@@ -10,15 +10,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ws_posix_compat.h> // SSIZE_MAX
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include <ui/qt/utils/qt_ui_utils.h>
 
 #include <epan/addr_resolv.h>
+#include <epan/guid-utils.h>
 #include <epan/range.h>
 #include <epan/to_str.h>
 #include <wsutil/value_string.h>
 
 #include <ui/recent.h>
+#ifdef HAVE_LIBPCAP
+#include <ui/capture_opts.h>
+#include <ui/capture_globals.h>
+#endif
 #include <ui/util.h>
 #include "ui/ws_ui_util.h"
 
@@ -33,10 +43,11 @@
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QProcess>
+#include <QRegularExpression>
 #include <QUrl>
 #include <QScreen>
 
-#if defined(Q_OS_MAC)
+#if defined(Q_OS_MACOS)
 #include <ui/macosx/cocoa_bridge.h>
 #elif !defined(Q_OS_WIN) && defined(QT_DBUS_LIB)
 #include <QtDBus/QDBusConnection>
@@ -76,6 +87,16 @@ QByteArray gbytearray_free_to_qbytearray(GByteArray *glib_array)
 {
     QByteArray qt_ba(reinterpret_cast<char *>(glib_array->data), glib_array->len);
     g_byte_array_free(glib_array, true);
+    return qt_ba;
+}
+
+QByteArray gbytes_free_to_qbytearray(GBytes *glib_bytes)
+{
+    size_t size;
+    const char* bytes = reinterpret_cast<const char *>(g_bytes_get_data(glib_bytes, &size));
+    Q_ASSERT(size <= SSIZE_MAX);
+    QByteArray qt_ba(bytes, size);
+    g_bytes_unref(glib_bytes);
     return qt_ba;
 }
 
@@ -173,18 +194,35 @@ const QString time_t_to_qstring(time_t ti_time)
     return time_str;
 }
 
+QUuid e_guid_t_to_quuid(const e_guid_t &guid)
+{
+    return QUuid(guid.data1, guid.data2, guid.data3,
+        guid.data4[0], guid.data4[1], guid.data4[2], guid.data4[3],
+        guid.data4[4], guid.data4[5], guid.data4[6], guid.data4[7]);
+}
+
 QString html_escape(const QString plain_string) {
     return plain_string.toHtmlEscaped();
 }
 
+// This matches line terminators plus whitespace before or after.
+static const QRegularExpression join_lines_regexp("\\s*\\R\\s*");
+
+QString join_lines(const QString multiline_string) {
+    // Replace all nonoverlapping matches with a single space.
+    // Certain file formats (prefs, filter files, etc.) expect one entry
+    // per line and newlines create unexpected behavior.
+    // Removing line terminators outside quotes doesn't change the behavior
+    // of a filter, but it does to remove non-escaped line terminators inside
+    // string and character literals (which are arguably user error.)
+    // A more complicated algorithm could try to escape things inside
+    // quotes, which would work for normal string and character literals
+    // but not for raw string literals, which just break with newlines.
+    return QString(multiline_string).replace(join_lines_regexp, QStringLiteral(" "));
+}
 
 void smooth_font_size(QFont &font) {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     QList<int> size_list = QFontDatabase::smoothSizes(font.family(), font.styleName());
-#else
-    QFontDatabase fdb;
-    QList<int> size_list = fdb.smoothSizes(font.family(), font.styleName());
-#endif
 
     if (size_list.size() < 2) return;
 
@@ -227,7 +265,7 @@ void desktop_show_in_folder(const QString file_path)
     QString path = QDir::toNativeSeparators(file_path);
     arguments << "/select," << path + "";
     success = QProcess::startDetached(command, arguments);
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
     CocoaBridge::showInFinder(file_path.toUtf8());
     success = true;
 #elif defined(QT_DBUS_LIB)
@@ -286,13 +324,6 @@ bool rect_on_screen(const QRect &rect)
     }
 
     return false;
-}
-
-void set_action_shortcuts_visible_in_context_menu(QList<QAction *> actions)
-{
-    // For QT_VERSION >= 5.13.0 we call styleHints()->setShowShortcutsInContextMenus(true)
-    // in WiresharkApplication.
-    Q_UNUSED(actions)
 }
 
 QVector<rtpstream_id_t *>qvector_rtpstream_ids_copy(QVector<rtpstream_id_t *> stream_ids)
@@ -402,3 +433,12 @@ bool filePathsMatch(const QString &path1, const QString &path2)
     return abs1.compare(abs2, cs) == 0;
 }
 
+QString tempPath()
+{
+#ifdef HAVE_LIBPCAP
+    /* One place decides this, so the C and Qt sides cannot disagree. */
+    return QString(capture_opts_get_temp_dir(&global_capture_opts));
+#else
+    return QDir::tempPath();
+#endif
+}

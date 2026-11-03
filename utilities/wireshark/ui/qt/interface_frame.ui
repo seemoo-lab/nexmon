@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+   <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -65,6 +65,12 @@
    </item>
    <item>
     <widget class="QTreeView" name="interfaceTree">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>

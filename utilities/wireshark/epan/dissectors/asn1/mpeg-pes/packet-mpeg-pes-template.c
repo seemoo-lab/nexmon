@@ -80,6 +80,7 @@ static expert_field ei_mpeg_pes_length_zero;
 static dissector_handle_t mpeg_handle;
 
 static dissector_table_t stream_type_table;
+static dissector_table_t registration_id_table;
 
 static int mpeg_pes_follow_tap;
 
@@ -244,7 +245,7 @@ dissect_mpeg_pes_header_data(tvbuff_t *tvb, packet_info *pinfo _U_,
 			0, -1, ENC_NA);
 	proto_tree *tree = proto_item_add_subtree(item, ett_mpeg_pes_header_data);
 
-	int offset = 0;
+	unsigned offset = 0;
 	if (flags & PTS_FLAG) {
 		nstime_t nst;
 		decode_time_stamp(tvb, offset, &nst);
@@ -419,8 +420,9 @@ dissect_mpeg_pes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	int prefix;
 	int stream;
 	asn1_ctx_t asn1_ctx;
-	int offset = 0;
-	uint8_t stream_type;
+	unsigned offset = 0;
+	uint8_t stream_type = 0;
+	uint32_t registration_id = 0;
 
 	if (!tvb_bytes_exist(tvb, 0, 3))
 		return 0;	/* not enough bytes for a PES prefix */
@@ -434,9 +436,14 @@ dissect_mpeg_pes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	stream = tvb_get_uint8(tvb, 3);
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str(pinfo->pool, stream, mpeg_pes_T_stream_vals, "Unknown stream: %d"));
 
-	/* Were we called from MP2T providing a stream type from a PMT? */
-	stream_type = GPOINTER_TO_UINT(data);
-	/* Luckily, stream_type 0 is reserved, so a null value is fine.
+	/* Were we called from MP2T providing stream metadata from a PMT? */
+	if (data != NULL) {
+		const mpeg_pes_stream_info_t *stream_info = (const mpeg_pes_stream_info_t *)data;
+
+		stream_type = stream_info->stream_type;
+		registration_id = stream_info->registration_id;
+	}
+	/* Luckily, stream_type 0 is reserved, so zero is fine.
 	 * XXX: Implement Program Stream Map for Program Stream (similar
 	 * to PMT but maps stream_ids to stream_types instead of PIDs.)
 	 */
@@ -599,11 +606,21 @@ dissect_mpeg_pes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
                          * units shall not be sent per PES packet unless they
                          * fit in the same transport packet (ETSI TS 101 154).
                          * This is not guaranteed for audio frames, so proper
-                         * dissction there should involve looking for frame
+                         * dissection there should involve looking for frame
                          * sync and reassembling across PES packet boundaries
                          * if necessary.
                          */
-			if (!dissector_try_uint_with_data(stream_type_table, stream_type, es, pinfo, tree, true, NULL)) {
+			bool handled = false;
+
+			if (registration_id != 0) {
+				handled = dissector_try_uint_with_data(registration_id_table,
+						registration_id, es, pinfo, tree, true, NULL);
+			}
+			if (!handled) {
+				handled = dissector_try_uint_with_data(stream_type_table,
+						stream_type, es, pinfo, tree, true, NULL);
+			}
+			if (!handled) {
 				/* If we didn't get a stream type, then assume
 				 * MPEG-1/2 Audio or Video.
 				 */
@@ -787,6 +804,9 @@ proto_register_mpeg_pes(void)
 	expert_register_field_array(expert_mpeg_pes, ei_pes, array_length(ei_pes));
 
 	stream_type_table = register_dissector_table("mpeg-pes.stream", "MPEG PES stream type", proto_mpeg_pes, FT_UINT8, BASE_HEX);
+	registration_id_table = register_dissector_table(
+			"mpeg-pes.registration", "MPEG PES registration format identifier",
+			proto_mpeg_pes, FT_UINT32, BASE_HEX);
 
 	mpeg_pes_follow_tap = register_tap("mpeg-pes_follow");
 

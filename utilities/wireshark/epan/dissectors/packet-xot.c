@@ -19,7 +19,7 @@
 #include "packet-tcp.h"
 
 #define TCP_PORT_XOT 1998
-#define XOT_HEADER_LENGTH 4
+#define XOT_HEADER_LENGTH 4U
 #define XOT_VERSION 0
 #define XOT_PVC_SETUP 0xF5
 
@@ -98,7 +98,7 @@ static unsigned get_xot_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                              int offset, void *data _U_)
 {
    uint16_t plen;
-   int remain = tvb_captured_length_remaining(tvb, offset);
+   unsigned remain = tvb_captured_length_remaining(tvb, offset);
    if ( remain < XOT_HEADER_LENGTH){
       /* We did not get the data we asked for, use up what we can */
       return remain;
@@ -116,7 +116,7 @@ static unsigned get_xot_pdu_len_mult(packet_info *pinfo _U_, tvbuff_t *tvb,
 {
    int offset_before = offset; /* offset where we start this test */
    int offset_next = offset + XOT_HEADER_LENGTH + X25_MIN_HEADER_LENGTH;
-   int tvb_len;
+   unsigned tvb_len;
 
    while ((tvb_len = tvb_captured_length_remaining(tvb, offset)) > 0){
       uint16_t plen = 0;
@@ -234,13 +234,11 @@ static int dissect_xot_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
          hdr_offset += 1;
          proto_tree_add_item(xot_tree, hf_xot_pvc_status, tvb, hdr_offset, 1, ENC_BIG_ENDIAN);
          hdr_offset += 1;
-         proto_tree_add_item(xot_tree, hf_xot_pvc_init_itf_name_len, tvb, hdr_offset, 1, ENC_BIG_ENDIAN);
-         init_itf_name_len = tvb_get_uint8(tvb, hdr_offset);
+         proto_tree_add_item_ret_uint(xot_tree, hf_xot_pvc_init_itf_name_len, tvb, hdr_offset, 1, ENC_BIG_ENDIAN, &init_itf_name_len);
          hdr_offset += 1;
          proto_tree_add_item(xot_tree, hf_xot_pvc_init_lcn, tvb, hdr_offset, 2, ENC_BIG_ENDIAN);
          hdr_offset += 2;
-         proto_tree_add_item(xot_tree, hf_xot_pvc_resp_itf_name_len, tvb, hdr_offset, 1, ENC_BIG_ENDIAN);
-         resp_itf_name_len = tvb_get_uint8(tvb, hdr_offset);
+         proto_tree_add_item_ret_uint(xot_tree, hf_xot_pvc_resp_itf_name_len, tvb, hdr_offset, 1, ENC_BIG_ENDIAN, &resp_itf_name_len);
          hdr_offset += 1;
          proto_tree_add_item(xot_tree, hf_xot_pvc_resp_lcn, tvb, hdr_offset, 2, ENC_BIG_ENDIAN);
          hdr_offset += 2;
@@ -268,10 +266,10 @@ static int dissect_xot_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
 static int dissect_xot_mult(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-   int offset = 0;
-   int len = get_xot_pdu_len_mult(pinfo, tvb, offset, NULL);
+   unsigned offset = 0;
+   unsigned len = get_xot_pdu_len_mult(pinfo, tvb, offset, NULL);
    tvbuff_t   *next_tvb;
-   int offset_max = offset+MIN(len,tvb_captured_length_remaining(tvb, offset));
+   unsigned offset_max = offset+MIN(len,tvb_captured_length_remaining(tvb, offset));
    proto_item *ti;
    proto_tree *xot_tree;
 

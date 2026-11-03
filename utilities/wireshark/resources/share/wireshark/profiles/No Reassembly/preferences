@@ -67,6 +67,7 @@ ippusb.attempt_reassembly: FALSE
 iscsi.desegment_iscsi_messages: FALSE
 isns.desegment: FALSE
 iwarp_ddp_rdmap.reassemble_iwarp_rdma_send: FALSE
+json.plus_desegment: FALSE
 jxta.desegment: FALSE
 kip.desegment: FALSE
 kpasswd.desegment: FALSE
@@ -93,8 +94,10 @@ ncp.desegment: FALSE
 ndmp.desegment: FALSE
 ndps.desegment_tcp: FALSE
 ndps.desegment_spx: FALSE
+netperfmeter.desegment: FALSE
 netsync.desegment_netsync_messages: FALSE
 nmf.reassemble_nmf: FALSE
+oran_fh_cus.oran.attempt_reassembly: FALSE
 opa.mad.reassemble_rmpp: FALSE
 openflow.desegment: FALSE
 openwire.desegment: FALSE
@@ -110,6 +113,8 @@ pvfs.desegment: FALSE
 q931.desegment_h323_messages: FALSE
 q931.reassembly: FALSE
 quic.reassemble_crypto_out_of_order: FALSE
+quic.reassemble_stream_out_of_order: FALSE
+radius.desegment: FALSE
 resp.desegment_data: FALSE
 rlc.perform_reassembly: FALSE
 rlc-lte.reassembly: FALSE
@@ -119,6 +124,7 @@ rpcap.desegment_pdus: FALSE
 rsync.desegment: FALSE
 rtmpt.desegment: FALSE
 rtp.desegment_rtp_streams: FALSE
+rtps.enable_rtps_reassembly: FALSE
 rtsp.desegment_headers: FALSE
 rtsp.desegment_body: FALSE
 sametime.reassemble: FALSE

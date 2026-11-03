@@ -14,7 +14,6 @@
 #include <epan/capture_dissectors.h>
 #include <wsutil/pint.h>
 #include <epan/oui.h>
-#include <epan/ppptypes.h>
 #include <epan/expert.h>
 #include <epan/crc10-tvb.h>
 #include <epan/crc32-tvb.h>
@@ -25,6 +24,8 @@
 #include "packet-snmp.h"
 #include <epan/prefs.h>
 #include "packet-pw-atm.h"
+#include "packet-ppp.h"
+
 
 void proto_register_atm(void);
 void proto_reg_handoff_atm(void);
@@ -277,8 +278,7 @@ dissect_lan_destination(tvbuff_t *tvb, int offset, const char *type, proto_tree 
 
   dest_tree = proto_tree_add_subtree_format(tree, tvb, offset, 8,
                                     ett_atm_lane_lc_lan_dest, NULL, "%s LAN destination", type);
-  tag = tvb_get_ntohs(tvb, offset);
-  proto_tree_add_item(dest_tree, hf_atm_lan_destination_tag, tvb, offset, 2, ENC_BIG_ENDIAN );
+  proto_tree_add_item_ret_uint16(dest_tree, hf_atm_lan_destination_tag, tvb, offset, 2, ENC_BIG_ENDIAN, &tag);
   offset += 2;
 
   switch (tag) {
@@ -392,12 +392,10 @@ dissect_le_configure_join_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, p
   proto_tree_add_item(tree, hf_atm_le_configure_join_frame_max_frame_size, tvb, offset, 1, ENC_NA);
   offset += 1;
 
-  num_tlvs = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(tree, hf_atm_le_configure_join_frame_num_tlvs, tvb, offset, 1, ENC_NA);
+  proto_tree_add_item_ret_uint8(tree, hf_atm_le_configure_join_frame_num_tlvs, tvb, offset, 1, ENC_NA, &num_tlvs);
   offset += 1;
 
-  name_size = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(tree, hf_atm_le_configure_join_frame_elan_name_size, tvb, offset, 1, ENC_NA);
+  proto_tree_add_item_ret_uint8(tree, hf_atm_le_configure_join_frame_elan_name_size, tvb, offset, 1, ENC_NA, &name_size);
   offset += 1;
 
   proto_tree_add_item(tree, hf_atm_target_atm, tvb, offset, 20, ENC_NA);
@@ -430,8 +428,7 @@ dissect_le_registration_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, pro
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  num_tlvs = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(tree, hf_atm_le_registration_frame_num_tlvs, tvb, offset, 1, ENC_NA);
+  proto_tree_add_item_ret_uint8(tree, hf_atm_le_registration_frame_num_tlvs, tvb, offset, 1, ENC_NA, &num_tlvs);
   offset += 1;
 
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 53, ENC_NA);
@@ -457,8 +454,7 @@ dissect_le_arp_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  num_tlvs = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(tree, hf_atm_le_arp_frame_num_tlvs, tvb, offset, 1, ENC_NA);
+  proto_tree_add_item_ret_uint8(tree, hf_atm_le_arp_frame_num_tlvs, tvb, offset, 1, ENC_NA, &num_tlvs);
   offset += 1;
 
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 1, ENC_NA);
@@ -481,8 +477,7 @@ dissect_le_verify_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tre
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 38, ENC_NA);
   offset += 38;
 
-  num_tlvs = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(tree, hf_atm_le_verify_frame_num_tlvs, tvb, offset, 1, ENC_NA);
+  proto_tree_add_item_ret_uint8(tree, hf_atm_le_verify_frame_num_tlvs, tvb, offset, 1, ENC_NA, &num_tlvs);
   offset += 1;
 
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 1, ENC_NA);
@@ -1999,7 +1994,7 @@ proto_register_atm(void)
   static build_valid_func atm_da_build_value[1] = {atm_value};
   static decode_as_value_t atm_da_values = {atm_prompt, 1, atm_da_build_value};
   static decode_as_t atm_da = {"atm", "atm.aal2.type", 1, 0, &atm_da_values, NULL, NULL,
-                                decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
   proto_atm    = proto_register_protocol("Asynchronous Transfer Mode", "ATM", "atm");
   proto_aal1   = proto_register_protocol("ATM AAL1", "AAL1", "aal1");

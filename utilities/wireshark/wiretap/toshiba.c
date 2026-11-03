@@ -65,7 +65,7 @@ Password:*******
 tr600>snoop dump b1
  Trace start?(on/off/dump/dtl)->dump
  IP Address?->b1
-B1 Port Filetering
+B1 Port Filtering
 Trace start(Dump Mode)...
 
 tr600>[No.1] 00:00:09.14 B1:1 Tx 207.193.26.136->151.164.1.8 DNS  SPORT=1028 LEN=38 CHKSUM=4FD4 ID=2390 Query RD QCNT=1 pow.zing.org?
@@ -302,10 +302,12 @@ parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err, char **err_info)
 		}
 
 		/* Check for "OFFSET 0001-0203" at beginning of line */
-		line[16] = '\0';
-
-	} while (strcmp(line, "OFFSET 0001-0203") != 0);
-
+	} while (strncmp(line, "OFFSET 0001-0203", 16) != 0);
+	if (strlen(line) < 68) {
+		*err = WTAP_ERR_BAD_FILE;
+		*err_info = g_strdup("toshiba: OFFSET line doesn't have valid LEN item");
+		return false;
+	}
 	num_items_scanned = sscanf(line+64, "LEN=%9d", &pkt_len);
 	if (num_items_scanned != 1) {
 		*err = WTAP_ERR_BAD_FILE;

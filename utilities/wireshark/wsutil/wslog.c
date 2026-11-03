@@ -16,7 +16,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-/* Because ws_assert() dependes on ws_error() we do not use it
+/* Because ws_assert() depends on ws_error() we do not use it
  * here and fall back on assert() instead. */
 #include <assert.h>
 #ifdef HAVE_UNISTD_H
@@ -37,6 +37,7 @@
 #include "console_win32.h"
 #endif
 
+
 #define ASSERT(expr)    assert(expr)
 
 /* Runtime log level. */
@@ -51,6 +52,9 @@
 /* Log level that generates a trap and aborts. Can be "critical"
  * or "warning". */
 #define ENV_VAR_FATAL       "WIRESHARK_LOG_FATAL"
+
+/* Fatal log count before program is trapped. */
+#define ENV_VAR_FATAL_COUNT "WIRESHARK_LOG_FATAL_COUNT"
 
 /* Log domains that are fatal. */
 #define ENV_VAR_FATAL_DOMAIN    "WIRESHARK_LOG_FATAL_DOMAIN"
@@ -119,6 +123,8 @@ static ws_log_writer_free_data_cb *registered_log_writer_data_free;
 static FILE *custom_log;
 
 static enum ws_log_level fatal_log_level = LOG_LEVEL_ERROR;
+
+static uint32_t fatal_log_count = 1;
 
 #ifdef WS_DEBUG
 static bool init_complete;
@@ -433,6 +439,12 @@ int ws_log_parse_args(int* argc, char* argv[],
                     "Fatal log level must be \"critical\" or \"warning\", not \"%s\".\n", ws_optarg);
             }
             break;
+        case LONGOPT_WSLOG_LOG_FATAL_COUNT:
+            if (!ws_log_set_fatal_count_str(ws_optarg)) {
+                print_err(vcmdarg_err, exit_failure,
+                    "Fatal log count must be decimal and larger than 0, not \"%s\".\n", ws_optarg);
+            }
+            break;
         case LONGOPT_WSLOG_LOG_FATAL_DOMAIN:
             ws_log_set_fatal_domain_filter(ws_optarg);
             break;
@@ -453,7 +465,7 @@ int ws_log_parse_args(int* argc, char* argv[],
                     break;
                 }
 
-                if (!ws_basestrtou32(mask_str, NULL, &mask, 10)) {
+                if (!ws_strtou32(mask_str, NULL, &mask)) {
                     print_err(vcmdarg_err, exit_failure,
                         "%s is not a valid decimal number.", mask_str);
                     break;
@@ -608,6 +620,25 @@ enum ws_log_level ws_log_set_fatal_level_str(const char *str_level)
     return ws_log_set_fatal_level(level);
 }
 
+void ws_log_set_fatal_count(uint32_t count)
+{
+    fatal_log_count = MIN(1, count);
+}
+
+bool ws_log_set_fatal_count_str(const char *str_count)
+{
+    const char *endptr;
+    uint32_t count;
+    bool result = ws_strtou32(str_count, &endptr, &count);
+
+    if (result && count < 1)
+        result = false;
+
+    if (result)
+        ws_log_set_fatal_count(count);
+
+    return result;
+}
 
 void ws_log_set_writer(ws_log_writer_cb *writer)
 {
@@ -684,6 +715,8 @@ static void load_registry(void)
 
     ws_log_console_open = (ws_log_console_open_pref)data;
 }
+
+static const char* log_console_title = "Debug Console";
 #endif
 
 
@@ -692,7 +725,7 @@ static void load_registry(void)
  * to communicate with the parent and it will block. We have to use
  * vcmdarg_err to report errors.
  */
-void ws_log_init(void (*vcmdarg_err)(const char *, va_list ap))
+void ws_log_init(void (*vcmdarg_err)(const char *, va_list ap), const char* console_title _U_)
 {
     const char *env;
     int fd;
@@ -712,12 +745,13 @@ void ws_log_init(void (*vcmdarg_err)(const char *, va_list ap))
     g_log_set_default_handler(glib_log_handler, NULL);
 
 #ifdef _WIN32
+    log_console_title = console_title;
+
     load_registry();
 
     /* if the user wants a console to be always there, well, we should open one for him */
-    if (ws_log_console_open == LOG_CONSOLE_OPEN_ALWAYS) {
-        create_console();
-    }
+    if (ws_log_console_open == LOG_CONSOLE_OPEN_ALWAYS)
+        create_console(log_console_title);
 #endif
 
     atexit(ws_log_cleanup);
@@ -739,6 +773,15 @@ void ws_log_init(void (*vcmdarg_err)(const char *, va_list ap))
             print_err(vcmdarg_err, LOG_ARGS_NOEXIT,
                         "Ignoring invalid environment value %s=\"%s\"",
                         ENV_VAR_FATAL, env);
+        }
+    }
+
+    env = g_getenv(ENV_VAR_FATAL_COUNT);
+    if (env != NULL) {
+        if (!ws_log_set_fatal_count_str(env)) {
+            print_err(vcmdarg_err, LOG_ARGS_NOEXIT,
+                        "Ignoring invalid environment value %s=\"%s\"",
+                        ENV_VAR_FATAL_COUNT, env);
         }
     }
 
@@ -769,21 +812,21 @@ void ws_log_init(void (*vcmdarg_err)(const char *, va_list ap))
 
 
 void ws_log_init_with_writer(ws_log_writer_cb *writer,
-                            void (*vcmdarg_err)(const char *, va_list ap))
+                            void (*vcmdarg_err)(const char *, va_list ap), const char* console_title)
 {
     registered_log_writer = writer;
-    ws_log_init(vcmdarg_err);
+    ws_log_init(vcmdarg_err, console_title);
 }
 
 
 void ws_log_init_with_writer_and_data(ws_log_writer_cb *writer,
                             void *user_data,
                             ws_log_writer_free_data_cb *free_user_data,
-                            void (*vcmdarg_err)(const char *, va_list ap))
+                            void (*vcmdarg_err)(const char *, va_list ap), const char* console_title)
 {
     registered_log_writer_data = user_data;
     registered_log_writer_data_free = free_user_data;
-    ws_log_init_with_writer(writer, vcmdarg_err);
+    ws_log_init_with_writer(writer, vcmdarg_err, console_title);
 }
 
 
@@ -843,7 +886,7 @@ static void log_write_do_work(FILE *fp, bool use_color,
 
 #ifdef WS_DEBUG
     if (!init_complete)
-        fputs(" no init!", fp);
+        fputs(" no init.", fp);
 #endif
 
     /* Process */
@@ -937,7 +980,7 @@ static void log_write_dispatch(const char *domain, enum ws_log_level level,
 
 #ifdef _WIN32
     if (ws_log_console_open != LOG_CONSOLE_OPEN_NEVER) {
-        create_console();
+        create_console(log_console_title);
     }
 #endif /* _WIN32 */
 
@@ -977,7 +1020,8 @@ static void log_write_dispatch(const char *domain, enum ws_log_level level,
 #endif /* _WIN32 */
 
     if (fatal_event) {
-        abort();
+        if (--fatal_log_count == 0)
+            abort();
     }
 }
 
@@ -1250,6 +1294,9 @@ void ws_log_add_custom_file(FILE *fp)
 #define USAGE_FATAL \
     "sets level to abort the program (\"critical\" or \"warning\")"
 
+#define USAGE_FATAL_COUNT \
+    "sets the number of fatal errors before aborting the program"
+
 #define USAGE_DOMAINS \
     "comma-separated list of the active log domains"
 
@@ -1268,12 +1315,13 @@ void ws_log_add_custom_file(FILE *fp)
 void ws_log_print_usage(FILE *fp)
 {
     fprintf(fp, "Diagnostic output:\n");
-    fprintf(fp, "  --log-level <level>      " USAGE_LEVEL "\n");
-    fprintf(fp, "  --log-fatal <level>      " USAGE_FATAL "\n");
-    fprintf(fp, "  --log-domains <[!]list>  " USAGE_DOMAINS "\n");
+    fprintf(fp, "  --log-level <level>       " USAGE_LEVEL "\n");
+    fprintf(fp, "  --log-fatal <level>       " USAGE_FATAL "\n");
+    fprintf(fp, "  --log-fatal-count <count> " USAGE_FATAL_COUNT "\n");
+    fprintf(fp, "  --log-domains <[!]list>   " USAGE_DOMAINS "\n");
     fprintf(fp, "  --log-fatal-domains <list>\n");
-    fprintf(fp, "                           " USAGE_FATAL_DOMAINS "\n");
-    fprintf(fp, "  --log-debug <[!]list>    " USAGE_DEBUG "\n");
-    fprintf(fp, "  --log-noisy <[!]list>    " USAGE_NOISY "\n");
-    fprintf(fp, "  --log-file <path>        " USAGE_FILE "\n");
+    fprintf(fp, "                            " USAGE_FATAL_DOMAINS "\n");
+    fprintf(fp, "  --log-debug <[!]list>     " USAGE_DEBUG "\n");
+    fprintf(fp, "  --log-noisy <[!]list>     " USAGE_NOISY "\n");
+    fprintf(fp, "  --log-file <path>         " USAGE_FILE "\n");
 }

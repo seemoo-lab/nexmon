@@ -45,11 +45,9 @@
 #include <epan/tap.h>
 #include <epan/srt_table.h>
 #include <epan/exported_pdu.h>
-#include <epan/sctpppids.h>
 #include <epan/show_exception.h>
 #include <epan/to_str.h>
 #include <epan/strutil.h>
-#include <epan/afn.h>
 #include <epan/tfs.h>
 
 #include <wsutil/filesystem.h>
@@ -60,6 +58,7 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <wsutil/strtoi.h>
+#include <epan/iana-info.h>
 #include "packet-tcp.h"
 #include "packet-diameter.h"
 #include "packet-tls.h"
@@ -67,6 +66,7 @@
 #include "packet-e212.h"
 #include "packet-e164.h"
 #include "packet-eap.h"
+#include "packet-sctp.h"
 
 void proto_register_diameter(void);
 void proto_reg_handoff_diameter(void);
@@ -172,9 +172,9 @@ typedef struct _address_avp_t {
 } address_avp_t;
 
 typedef enum {
-	REASEMBLE_NEVER = 0,
-	REASEMBLE_AT_END,
-	REASEMBLE_BY_LENGTH
+	REASSEMBLE_NEVER = 0,
+	REASSEMBLE_AT_END,
+	REASSEMBLE_BY_LENGTH
 } avp_reassemble_mode_t;
 
 typedef struct _proto_avp_t {
@@ -387,6 +387,22 @@ static GHashTable* diameterstat_cmd_str_hash;
 #define DIAMETER_NUM_PROCEDURES     1
 
 static void
+add_group_str(packet_info *pinfo, diam_sub_dis_t *diam_sub_dis_inf, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (diam_sub_dis_inf->group_avp_str) {
+		wmem_strbuf_append(diam_sub_dis_inf->group_avp_str, ", ");
+	} else {
+		diam_sub_dis_inf->group_avp_str = wmem_strbuf_new(pinfo->pool, "");
+	}
+	wmem_strbuf_append_vprintf(diam_sub_dis_inf->group_avp_str, fmt, ap);
+
+	va_end(ap);
+}
+
+static void
 diameterstat_init(struct register_srt* srt _U_, GArray* srt_array)
 {
 	srt_stat_table *diameter_srt_table;
@@ -448,7 +464,7 @@ diameterstat_packet(void *pss, packet_info *pinfo, epan_dissect_t *edt _U_, cons
 static int
 dissect_diameter_vendor_id(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	proto_tree_add_item(tree, hf_diameter_vendor_id, tvb, 0, 4, ENC_BIG_ENDIAN);
 
@@ -481,6 +497,16 @@ dissect_diameter_eap_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 	col_set_writable(pinfo->cinfo, COL_PROTOCOL, save_writable);
 	return tvb_reported_length(tvb);
+}
+
+static int
+dissect_diameter_3gpp_crbn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	int length = tvb_reported_length(tvb);
+	diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
+
+	add_group_str(pinfo, diam_sub_dis_inf, "CRBN=%s", tvb_get_string_enc(pinfo->pool, tvb, 0, length, ENC_UTF_8|ENC_BIG_ENDIAN));
+	return length;
 }
 
 /* https://www.3gpp2.org/Public_html/X/VSA-VSE.cfm */
@@ -582,6 +608,7 @@ dissect_diameter_user_name(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 	case DIAM_APPID_3GPP_SLH:
 	case DIAM_APPID_3GPP_S7A:
 	case DIAM_APPID_3GPP_S13:
+	case DIAM_APPID_3GPP_S6C:
 		str_len = tvb_reported_length(tvb);
 		imsi = dissect_e212_utf8_imsi(tvb, pinfo, tree, 0, str_len);
 		if (gbl_diameter_session_imsi && !diam_sub_dis->imsi) {
@@ -684,6 +711,7 @@ dissect_diameter_result_code(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
 {
 	proto_item *pi;
 	diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
+	uint32_t result_code;
 
 	if (!diam_sub_dis_inf->dis_gouped) {
 		// Do not check length. This is done in function "unsigned32_avp"
@@ -697,10 +725,36 @@ dissect_diameter_result_code(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
 		// Do not check length. This is done in function "unsigned32_avp"
 		pi = proto_tree_add_item(tree, hf_diameter_result_code_mscc_level, tvb, 0, 4, ENC_BIG_ENDIAN);
 		proto_item_set_generated(pi);
+
+		result_code = tvb_get_uint32(tvb, 0, ENC_BIG_ENDIAN);
+		add_group_str(pinfo, diam_sub_dis_inf, "RC=%d", result_code);
+
 		return 4;
 	}
 
 	return 0;
+}
+
+/* AVP Code: 421 CC-Total-Octets */
+static int
+dissect_diameter_cc_total_octets(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	uint64_t total_octets = tvb_get_uint64(tvb, 0, ENC_BIG_ENDIAN);
+	diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
+	add_group_str(pinfo, diam_sub_dis_inf, "Total-Octets=%d", total_octets);
+
+	return 16;
+}
+
+/* AVP Code: 432 Rating-Group */
+static int
+dissect_diameter_rating_group(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data)
+{
+	uint32_t rg = tvb_get_uint32(tvb, 0, ENC_BIG_ENDIAN);
+	diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
+	add_group_str(pinfo, diam_sub_dis_inf, "RG=%d", rg);
+
+	return 4;
 }
 
 /* AVP Code: 443 Subscription-Id */
@@ -731,19 +785,21 @@ dissect_diameter_subscription_id_data(tvbuff_t *tvb, packet_info *pinfo, proto_t
 	uint32_t str_len;
 	diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
 	uint32_t subscription_id_type = diam_sub_dis_inf->subscription_id_type;
-	const char *imsi = NULL;
+	const char *id_data = NULL;
 
 	switch (subscription_id_type) {
 	case SUBSCRIPTION_ID_TYPE_IMSI:
 		str_len = tvb_reported_length(tvb);
-		imsi = dissect_e212_utf8_imsi(tvb, pinfo, tree, 0, str_len);
+		id_data = dissect_e212_utf8_imsi(tvb, pinfo, tree, 0, str_len);
 		if (gbl_diameter_session_imsi && !diam_sub_dis_inf->imsi) {
-			diam_sub_dis_inf->imsi = imsi;
+			diam_sub_dis_inf->imsi = id_data;
 		}
+		add_group_str(pinfo, diam_sub_dis_inf, "IMSI=%s", id_data);
 		return str_len;
 	case SUBSCRIPTION_ID_TYPE_E164:
 		str_len = tvb_reported_length(tvb);
-		dissect_e164_msisdn(tvb, pinfo, tree, 0, str_len, E164_ENC_UTF8);
+		id_data = dissect_e164_msisdn(tvb, pinfo, tree, 0, str_len, E164_ENC_UTF8);
+		add_group_str(pinfo, diam_sub_dis_inf, "MSISDN=%s", id_data);
 		return str_len;
 	}
 
@@ -993,7 +1049,20 @@ dissect_diameter_avp(diam_ctx_t *c, tvbuff_t *tvb, int offset, diam_sub_dis_t *d
 	offset += 1;
 
 	/* Length */
-	proto_tree_add_item(avp_tree,hf_diameter_avp_len,tvb,offset,3,ENC_BIG_ENDIAN);
+	pi = proto_tree_add_item(avp_tree,hf_diameter_avp_len,tvb,offset,3,ENC_BIG_ENDIAN);
+	if (len < (vendor_flag ? 12U : 8U)) {
+		/*
+		 * "[I]ncluding the AVP Code field, AVP Length field, AVP Flags
+		 * field, Vendor-ID field (if present), and the AVP Data field.
+		 * If a message is received with an invalid attribute length,
+		 * the message MUST be rejected" - RFC 6733, 4.1 AVP Header
+		 */
+		expert_add_info_format(c->pinfo, pi, &ei_diameter_invalid_avp_len,
+			"Invalid AVP length %u < %u",
+			len, 8 + (vendor_flag?4:0));
+		// Throw(ReportedBoundsError)?
+		return tvb_reported_length(tvb);
+	}
 	offset += 3;
 
 	/* Vendor flag */
@@ -1109,16 +1178,16 @@ address_rfc_avp(diam_ctx_t *c, diam_avp_t *a, tvbuff_t *tvb, diam_sub_dis_t *dia
 	len = len-2;
 
 	proto_tree_add_item_ret_uint(pt, t->hf_address_type, tvb, 0, 2, ENC_NA, &addr_type);
-	/* See afn.h and https://www.iana.org/assignments/address-family-numbers/address-family-numbers.xhtml */
+	/* See iana-info.h and https://www.iana.org/assignments/address-family-numbers/address-family-numbers.xhtml */
 	switch (addr_type ) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			if (len != 4) {
 				proto_tree_add_expert_format(pt, c->pinfo, &ei_diameter_avp_len, tvb, 2, len, "Wrong length for IPv4 Address: %d instead of 4", len);
 				return "[Malformed]";
 			}
 			pi = proto_tree_add_item(pt,t->hf_ipv4,tvb,2,4,ENC_BIG_ENDIAN);
 			break;
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			if (len != 16) {
 				proto_tree_add_expert_format(pt, c->pinfo, &ei_diameter_avp_len, tvb, 2, len, "Wrong length for IPv6 Address: %d instead of 16", len);
 				return "[Malformed]";
@@ -1431,16 +1500,20 @@ float64_avp(diam_ctx_t *c, diam_avp_t *a, tvbuff_t *tvb, diam_sub_dis_t *diam_su
 static const char *
 grouped_avp(diam_ctx_t *c, diam_avp_t *a, tvbuff_t *tvb, diam_sub_dis_t *diam_sub_dis_inf)
 {
-	int offset = 0;
-	int len = tvb_reported_length(tvb);
+	unsigned offset = 0;
+	unsigned len = tvb_reported_length(tvb);
+	wmem_strbuf_t *group_avp_str = NULL;
+	const char *group_avp_str_char = NULL;
 	proto_item *pi = proto_tree_add_item(c->tree, a->hf_value, tvb , 0 , -1, ENC_BIG_ENDIAN);
-	proto_tree *pt = c->tree;
-
-	c->tree = proto_item_add_subtree(pi,a->ett);
+	proto_item_set_generated(pi);
 
 	/* Set the flag that we are dissecting a grouped AVP */
 	diam_sub_dis_inf->dis_gouped = true;
 	diam_sub_dis_inf->group_avp_code = a->code;
+
+	group_avp_str = diam_sub_dis_inf->group_avp_str;
+	diam_sub_dis_inf->group_avp_str = NULL;
+
 	while (offset < len) {
 		offset += dissect_diameter_avp(c, tvb, offset, diam_sub_dis_inf, false);
 	}
@@ -1450,9 +1523,12 @@ grouped_avp(diam_ctx_t *c, diam_avp_t *a, tvbuff_t *tvb, diam_sub_dis_t *diam_su
 	diam_sub_dis_inf->group_avp_code = 0;
 	diam_sub_dis_inf->avp_str = NULL;
 
-	c->tree = pt;
+	if (diam_sub_dis_inf->group_avp_str) {
+		group_avp_str_char = wmem_strbuf_get_str(diam_sub_dis_inf->group_avp_str);
+	}
+	diam_sub_dis_inf->group_avp_str = group_avp_str;
 
-	return NULL;
+	return group_avp_str_char;
 }
 
 static int * const diameter_flags_fields[] = {
@@ -1472,7 +1548,7 @@ dissect_diameter_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
 	uint32_t version;
 	uint64_t flags_bits;
-	int packet_len;
+	uint32_t packet_len;
 	proto_item *pi, *cmd_item, *app_item, *version_item;
 	proto_tree *diam_tree;
 	diam_ctx_t *c = wmem_new0(pinfo->pool, diam_ctx_t);
@@ -1637,7 +1713,7 @@ dissect_diameter_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 	offset = 20;
 
 	/* Dissect AVPs until the end of the packet is reached */
-	while (offset < packet_len) {
+	while (offset < (int)packet_len) {
 		offset += dissect_diameter_avp(c, tvb, offset, diam_sub_dis_inf, false);
 	}
 
@@ -1650,7 +1726,7 @@ dissect_diameter_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 		if (diam_sub_dis_inf->session_id) {
 			char *imsi = (char *)wmem_map_lookup(diam_session_imsi, diam_sub_dis_inf->session_id);
 			if (imsi) {
-				add_assoc_imsi_item(tvb, diam_tree, imsi);
+				add_assoc_imsi_item(tvb, pinfo, diam_tree, imsi);
 			}
 		}
 	}
@@ -1785,7 +1861,7 @@ dissect_diameter_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 {
 	proto_item *pi;
 	proto_tree *diam_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	diam_ctx_t *c = wmem_new0(pinfo->pool, diam_ctx_t);
 	diam_sub_dis_t *diam_sub_dis_inf = wmem_new0(pinfo->pool, diam_sub_dis_t);
 
@@ -2014,7 +2090,7 @@ build_proto_avp(avp_constructor_data_t* constructor_data)
 
 	t->name = (char *)constructor_data->data;
 	t->handle = NULL;
-	t->reassemble_mode = REASEMBLE_NEVER;
+	t->reassemble_mode = REASSEMBLE_NEVER;
 
 	g_ptr_array_add(constructor_data->ett_array, ettp);
 
@@ -2192,7 +2268,7 @@ ddictionary_populate_application(void* data, void* user_data)
 	value_string item;
 
 	item.value = a->code;
-	item.strptr = wmem_strdup(wmem_epan_scope(), a->name);
+	item.strptr = wmem_strdup(wmem_epan_scope(), (const char*)a->name);
 	if (!a->name) {
 		report_failure("Diameter Dictionary: Invalid Application (empty name): id=%d\n", a->code);
 		return;
@@ -2313,7 +2389,7 @@ ddictionary_populate_command(void* data, void* user_data)
 		value_string item;
 
 		item.value = c->code;
-		item.strptr = wmem_strdup(wmem_epan_scope(), c->name);
+		item.strptr = wmem_strdup(wmem_epan_scope(), (const char*)c->name);
 
 		g_array_append_val(pop_data->cmds, item);
 	}
@@ -2479,7 +2555,7 @@ ddictionary_populate_enum(void* data, void* user_data)
 	ddict_avp_enum_t* e = (ddict_avp_enum_t*)data;
 	wmem_array_t* arr = (wmem_array_t*)user_data;
 
-	value_string item = { e->code, wmem_strdup(wmem_epan_scope(), e->name) };
+	value_string item = { e->code, wmem_strdup(wmem_epan_scope(), (const char*)e->name) };
 	wmem_array_append_one(arr, item);
 }
 
@@ -2505,7 +2581,7 @@ ddictionary_populate_avp(void* data, void* user_data)
 		value_string vndvs;
 
 		vndvs.value = a->code;
-		vndvs.strptr = wmem_strdup(wmem_epan_scope(), a->name);
+		vndvs.strptr = wmem_strdup(wmem_epan_scope(), (const char*)a->name);
 
 		wmem_array_append_one(vnd->vs_avps, vndvs);
 	}
@@ -2532,7 +2608,7 @@ ddictionary_populate_avp(void* data, void* user_data)
 			static avp_type_t proto_type = { "proto", proto_avp, FT_UINT32, BASE_HEX, build_proto_avp };
 			type = &proto_type;
 
-			avp_data = wmem_strdup(wmem_epan_scope(), x->value);
+			avp_data = wmem_strdup(wmem_epan_scope(), (const char*)x->value);
 			break;
 		}
 	}
@@ -2543,7 +2619,7 @@ ddictionary_populate_avp(void* data, void* user_data)
 	if (type == NULL)
 		type = &basic_types[0];
 
-	char* avp_name = wmem_strdup(wmem_epan_scope(), a->name);
+	char* avp_name = wmem_strdup(wmem_epan_scope(), (const char*)a->name);
 	avp_constructor_data_t avp_constructor = { type, a->code, vnd, avp_name, vs, avp_data, pop_data->hf_array, pop_data->ett_array };
 	diam_avp_t* avp = type->build(&avp_constructor);
 	if (avp != NULL) {
@@ -2603,12 +2679,12 @@ ddictionary_print_avp(void* data, void* user_data)
 static bool
 ddictionary_process_command(xmlNodePtr command, GSList** commands)
 {
-	ddict_command_t* element = g_new(ddict_command_t, 1);
+	ddict_command_t* element = g_new0(ddict_command_t, 1);
 	element->name = xmlGetProp(command, (const xmlChar*)"name");
 	element->vendor = xmlGetProp(command, (const xmlChar*)"vendor-id");
 	xmlChar* code = xmlGetProp(command, (const xmlChar*)"code");
 	if (code != NULL) {
-		ws_strtou32(code, NULL, &element->code);
+		ws_strtou32((const char*)code, NULL, &element->code);
 		xmlFree(code);
 	}
 
@@ -2627,7 +2703,7 @@ ddictionary_process_avp(xmlNodePtr avp, GSList** avps)
 	element->vendor = xmlGetProp(avp, (const xmlChar*)"vendor-id");
 	xmlChar* code = xmlGetProp(avp, (const xmlChar*)"code");
 	if (code != NULL) {
-		ws_strtou32(code, NULL, &element->code);
+		ws_strtou32((const char*)code, NULL, &element->code);
 		xmlFree(code);
 	}
 
@@ -2640,7 +2716,7 @@ ddictionary_process_avp(xmlNodePtr avp, GSList** avps)
 			element->type = xmlGetProp(current_node, (const xmlChar*)"type-name");
 		}
 		else if (xmlStrcmp(current_node->name, (const xmlChar*)"enum") == 0) {
-			ddict_avp_enum_t* avp_enum = g_new(ddict_avp_enum_t, 1);
+			ddict_avp_enum_t* avp_enum = g_new0(ddict_avp_enum_t, 1);
 
 			avp_enum->name = xmlGetProp(current_node, (const xmlChar*)"name");
 			code = xmlGetProp(current_node, (const xmlChar*)"code");
@@ -2648,11 +2724,11 @@ ddictionary_process_avp(xmlNodePtr avp, GSList** avps)
 				if (code[0] == '-') {
 					//Enumerated values can be 32-bit integers, but treat them as unsigned
 					int32_t tmp;
-					ws_strtoi32(code, NULL, &tmp);
+					ws_strtoi32((const char*)code, NULL, &tmp);
 					avp_enum->code = (unsigned)tmp;
 				}
 				else {
-					ws_strtou32(code, NULL, &avp_enum->code);
+					ws_strtou32((const char*)code, NULL, &avp_enum->code);
 				}
 				xmlFree(code);
 			}
@@ -2660,7 +2736,7 @@ ddictionary_process_avp(xmlNodePtr avp, GSList** avps)
 		}
 		else if (xmlStrcmp(current_node->name, (const xmlChar*)"grouped") == 0) {
 			//All AVPs under the grouped element are considered Grouped type
-			element->type = xmlStrdup("Grouped");
+			element->type = xmlStrdup((const xmlChar*)"Grouped");
 
 			for (xmlNodePtr group_children = current_node->children; group_children != NULL; group_children = group_children->next) {
 				if (group_children->type != XML_ELEMENT_NODE)
@@ -2778,14 +2854,14 @@ ddictionary_process_file(const char* dir, const char* filename, ddict_t* dict)
 				key_start += strlen("key=\"");
 				char* key_end = strchr(key_start, '"');
 				if (key_end) {
-					element->key = xmlStrndup(key_start, (int)(key_end - key_start));
+					element->key = xmlStrndup((const xmlChar*)key_start, (int)(key_end - key_start));
 				}
 			}
 			if (value_start) {
 				value_start += strlen("key=\"");
 				char* value_end = strchr(value_start, '"');
 				if (value_end) {
-					element->value = xmlStrndup(value_start, (int)(value_end - value_start));
+					element->value = xmlStrndup((const xmlChar*)value_start, (int)(value_end - value_start));
 				}
 			}
 
@@ -2826,7 +2902,7 @@ ddictionary_process_file(const char* dir, const char* filename, ddict_t* dict)
 				element->name = xmlGetProp(current_node, (const xmlChar*)"name");
 				xmlChar* id = xmlGetProp(current_node, (const xmlChar*)"id");
 				if (id != NULL) {
-					ws_strtou32(id, NULL, &element->code);
+					ws_strtou32((const char*)id, NULL, &element->code);
 					xmlFree(id);
 				}
 
@@ -2852,7 +2928,7 @@ ddictionary_process_file(const char* dir, const char* filename, ddict_t* dict)
 				element->name = xmlGetProp(current_node, (const xmlChar*)"vendor-id");
 				element->desc = xmlGetProp(current_node, (const xmlChar*)"name");
 				if (code != NULL) {
-					ws_strtou32(code, NULL, &element->code);
+					ws_strtou32((const char*)code, NULL, &element->code);
 					xmlFree(code);
 				}
 
@@ -2921,7 +2997,7 @@ ddictionary_load(wmem_array_t* hf_array, GPtrArray* ett_array)
 	}
 
 	/* load the dictionary */
-	dir = wmem_strdup_printf(NULL, "%s" G_DIR_SEPARATOR_S "diameter", get_datafile_dir());
+	dir = wmem_strdup_printf(NULL, "%s" G_DIR_SEPARATOR_S "diameter", get_datafile_dir(epan_get_environment_prefix()));
 	bool success = ddictionary_process_file(dir, "./dictionary.xml", &all_data);
 	wmem_free(NULL, dir);
 
@@ -3327,6 +3403,12 @@ proto_reg_handoff_diameter(void)
 	/* AVP Code: 268 Result-Code */
 	dissector_add_uint("diameter.base", 268, create_dissector_handle(dissect_diameter_result_code, proto_diameter));
 
+	/* AVP Code: 421 CC-Total-Octets */
+	dissector_add_uint("diameter.base", 421, create_dissector_handle(dissect_diameter_cc_total_octets, proto_diameter));
+
+	/* AVP Code: 432 Rating-Groupd */
+	dissector_add_uint("diameter.base", 432, create_dissector_handle(dissect_diameter_rating_group, proto_diameter));
+
 	/* AVP Code: 443 Subscription-Id */
 	dissector_add_uint("diameter.base", 443, create_dissector_handle(dissect_diameter_subscription_id, proto_diameter));
 
@@ -3352,6 +3434,9 @@ proto_reg_handoff_diameter(void)
 
 	/* Register dissector for Experimental result code, with 3GPP2's vendor Id */
 	dissector_add_uint("diameter.vnd_exp_res", VENDOR_THE3GPP2, create_dissector_handle(dissect_diameter_3gpp2_exp_res, proto_diameter));
+
+	/* AVP Code: 1004 Charging-Rule-Base-Name */
+	dissector_add_uint("diameter.3gpp", 1004, create_dissector_handle(dissect_diameter_3gpp_crbn, proto_diameter));
 
 	dissector_add_uint_range_with_preference("tcp.port", DEFAULT_DIAMETER_PORT_RANGE, diameter_tcp_handle);
 	dissector_add_uint_range_with_preference("udp.port", "", diameter_udp_handle);

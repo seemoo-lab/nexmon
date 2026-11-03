@@ -14,7 +14,7 @@
 # + udplite - it's sharing most of code with UDP.
 set(FUZZ_DISABLED_DISSECTORS ip udp udplite ospf bgp dhcp json)
 
-set(FUZZ_DISSECTORS ip)
+set(FUZZ_DISSECTORS ip dis)
 set(FUZZ_IP_PROTO_DISSECTORS udp ospf)
 
 set(FUZZ_TCP_PORT_DISSECTORS bgp)
@@ -40,6 +40,7 @@ if(OSS_FUZZ)
 endif()
 set(fuzzshark_FILES
 	fuzzshark.c
+	../app/wireshark_flavor.c
 )
 set(FUZZ_LINK_FLAGS "${WS_LINK_FLAGS}")
 if(ENABLE_FUZZER)

@@ -13,15 +13,22 @@ import hashlib
 import os
 import socket
 import subprocess
-import subprocesstest
-from subprocesstest import cat_dhcp_command, cat_cap_file_command, count_output, grep_output, check_packet_count
-from suite_text2pcap import check_capinfos_info
 import sys
+import sysconfig
 import threading
 import time
 import uuid
-import sysconfig
+
 import pytest
+
+import subprocesstest
+from subprocesstest import (
+    cat_cap_file_command,
+    cat_dhcp_command,
+    check_packet_count,
+    grep_output,
+)
+from suite_text2pcap import check_capinfos_info
 
 capture_duration = 5
 
@@ -33,12 +40,13 @@ class UdpTrafficGenerator(threading.Thread):
     def __init__(self):
         super().__init__(daemon=True)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.destination = ('127.0.0.1', 9)
         self.stopped = False
 
     def run(self):
         while not self.stopped:
             time.sleep(.05)
-            self.sock.sendto(b'Wireshark test\n', ('127.0.0.1', 9))
+            self.sock.sendto(b'Wireshark test\n', self.destination)
 
     def stop(self):
         if not self.stopped:
@@ -75,7 +83,7 @@ def wireshark_k(wireshark_command):
 
 def capture_command(*args, shell=False, quoted=False):
     cmd_args = list(args)
-    if type(cmd_args[0]) != str:
+    if type(cmd_args[0]) is not str:
         # Assume something like ['wireshark', '-k']
         cmd_args = list(cmd_args[0]) + list(cmd_args)[1:]
     if shell:
@@ -93,12 +101,12 @@ def check_capture_10_packets(capture_interface, cmd_capinfos, traffic_generator,
         stop_traffic = start_traffic()
         if to_stdout:
             subprocesstest.check_run(capture_command(cmd,
-                '-i', '"{}"'.format(capture_interface),
+                '-i', f'"{capture_interface}"',
                 '-p',
                 '-w', '-',
                 '-c', '10',
-                '-a', 'duration:{}'.format(capture_duration),
-                '-f', '"{}"'.format(cfilter),
+                '-a', f'duration:{capture_duration}',
+                '-f', f'"{cfilter}"',
                 '>', testout_file,
                 shell=True
             ),
@@ -109,7 +117,7 @@ def check_capture_10_packets(capture_interface, cmd_capinfos, traffic_generator,
                 '-p',
                 '-w', testout_file,
                 '-c', '10',
-                '-a', 'duration:{}'.format(capture_duration),
+                '-a', f'duration:{capture_duration}',
                 '-f', cfilter,
             ), env=env)
         stop_traffic()
@@ -134,13 +142,13 @@ def check_capture_fifo(cmd_capinfos, result_file):
         os.mkfifo(fifo_file)
         slow_dhcp_cmd = cat_dhcp_command('slow')
         fifo_proc = subprocess.Popen(
-            ('{0} > {1}'.format(slow_dhcp_cmd, fifo_file)),
+            (f'{slow_dhcp_cmd} > {fifo_file}'),
             shell=True)
         subprocesstest.check_run(capture_command(cmd,
             '-i', fifo_file,
             '-p',
             '-w', testout_file,
-            '-a', 'duration:{}'.format(capture_duration),
+            '-a', f'duration:{capture_duration}',
         ), env=env)
         fifo_proc.kill()
         assert os.path.isfile(testout_file)
@@ -159,21 +167,20 @@ def check_capture_stdin(cmd_capinfos, result_file):
         capture_cmd = capture_command(cmd,
             '-i', '-',
             '-w', f'"{testout_file}"',
-            '-a', 'duration:{}'.format(capture_duration),
+            '-a', f'duration:{capture_duration}',
             shell=True
         )
-        is_gui = type(cmd) != str and '-k' in cmd[0]
+        is_gui = type(cmd) is not str and '-k' in cmd[1:]
         if is_gui:
             capture_cmd += ' --log-level=info'
         if sysconfig.get_platform().startswith('mingw'):
             pytest.skip('FIXME Pipes are broken with the MSYS2 shell')
         pipe_proc = subprocesstest.check_run(slow_dhcp_cmd + ' | ' + capture_cmd, shell=True, capture_output=True, env=env)
         if is_gui:
-            # Wireshark uses stdout and not stderr for diagnostic messages
-            # XXX: Confirm this
+            # N.B. console_file() in wsutil/wslog.c determines stderr vs stdout
             assert grep_output(pipe_proc.stdout, 'Wireshark is up and ready to go'), 'No startup message.'
-            assert grep_output(pipe_proc.stdout, 'Capture started'), 'No capture start message.'
-            assert grep_output(pipe_proc.stdout, 'Capture stopped'), 'No capture stop message.'
+            assert grep_output(pipe_proc.stderr, 'Capture started'), 'No capture start message.'
+            assert grep_output(pipe_proc.stderr, 'Capture stopped'), 'No capture stop message.'
         assert os.path.isfile(testout_file)
         check_packet_count(cmd_capinfos, 8, testout_file)
     return check_capture_stdin_real
@@ -193,7 +200,7 @@ def check_capture_read_filter(capture_interface, traffic_generator, cmd_capinfos
             '-2',
             '-R', 'dcerpc.cn_call_id==123456', # Something unlikely.
             '-c', '10',
-            '-a', 'duration:{}'.format(capture_duration),
+            '-a', f'duration:{capture_duration}',
             '-f', cfilter,
         ), env=env)
         stop_traffic()
@@ -212,7 +219,7 @@ def check_capture_snapshot_len(capture_interface, cmd_tshark, traffic_generator,
             '-p',
             '-w', testout_file,
             '-s', str(snapshot_len),
-            '-a', 'duration:{}'.format(capture_duration),
+            '-a', f'duration:{capture_duration}',
             '-f', cfilter,
         ), env=env)
         stop_traffic()
@@ -224,7 +231,7 @@ def check_capture_snapshot_len(capture_interface, cmd_tshark, traffic_generator,
         subprocesstest.check_run((cmd_tshark,
             '-r', testout_file,
             '-w', testout2_file,
-            '-Y', 'frame.cap_len>{}'.format(snapshot_len),
+            '-Y', f'frame.cap_len>{snapshot_len}',
         ), env=env)
         check_packet_count(cmd_capinfos, 0, testout2_file)
     return check_capture_snapshot_len_real
@@ -239,13 +246,13 @@ def check_dumpcap_autostop_stdin(cmd_dumpcap, cmd_capinfos, result_file):
         condition='oops:invalid'
 
         if packets is not None:
-            condition = 'packets:{}'.format(packets)
+            condition = f'packets:{packets}'
         elif filesize is not None:
-            condition = 'filesize:{}'.format(filesize)
+            condition = f'filesize:{filesize}'
         else:
             raise AssertionError('Need one of packets or filesize')
 
-        cmd_ = '"{}"'.format(cmd_dumpcap)
+        cmd_ = f'"{cmd_dumpcap}"'
         capture_cmd = ' '.join((cmd_,
             '-i', '-',
             '-w', testout_file,
@@ -269,19 +276,19 @@ def check_dumpcap_ringbuffer_stdin(cmd_dumpcap, cmd_capinfos, result_file):
     def check_dumpcap_ringbuffer_stdin_real(self, packets=None, filesize=None, env=None):
         # Similar to check_capture_stdin.
         rb_unique = 'dhcp_rb_' + uuid.uuid4().hex[:6] # Random ID
-        testout_file = result_file('testout.{}.pcapng'.format(rb_unique))
-        testout_glob = result_file('testout.{}_*.pcapng'.format(rb_unique))
+        testout_file = result_file(f'testout.{rb_unique}.pcapng')
+        testout_glob = result_file(f'testout.{rb_unique}_*.pcapng')
         cat100_dhcp_cmd = cat_dhcp_command('cat100')
         condition='oops:invalid'
 
         if packets is not None:
-            condition = 'packets:{}'.format(packets)
+            condition = f'packets:{packets}'
         elif filesize is not None:
-            condition = 'filesize:{}'.format(filesize)
+            condition = f'filesize:{filesize}'
         else:
             raise AssertionError('Need one of packets or filesize')
 
-        cmd_ = '"{}"'.format(cmd_dumpcap)
+        cmd_ = f'"{cmd_dumpcap}"'
         capture_cmd = ' '.join((cmd_,
             '-i', '-',
             '-w', testout_file,
@@ -355,15 +362,16 @@ def check_dumpcap_pcapng_sections(cmd_dumpcap, cmd_tshark, cmd_capinfos, capture
         autostop_packets = 40
 
         for in_files in in_files_l:
-            fifo_file = result_file('dumpcap_pcapng_sections_{}.fifo'.format(len(fifo_files) + 1))
+            fifo_file = result_file(f'dumpcap_pcapng_sections_{len(fifo_files) + 1}.fifo')
             fifo_files.append(fifo_file)
             # If a previous test left its fifo laying around, e.g. from a failure, remove it.
             try:
                 os.unlink(fifo_file)
-            except Exception: pass
+            except Exception:
+                pass
             os.mkfifo(fifo_file)
             cat_cmd = cat_cap_file_command(in_files)
-            fifo_procs.append(subprocess.Popen(('{0} > {1}'.format(cat_cmd, fifo_file)), shell=True))
+            fifo_procs.append(subprocess.Popen((f'{cat_cmd} > {fifo_file}'), shell=True))
 
             for in_file in in_files:
                 cap_info = check_capinfos_info(cmd_capinfos, in_file)
@@ -390,8 +398,8 @@ def check_dumpcap_pcapng_sections(cmd_dumpcap, cmd_tshark, cmd_capinfos, capture
 
         if multi_output:
             rb_unique = 'sections_rb_' + uuid.uuid4().hex[:6] # Random ID
-            testout_file = result_file('testout.{}.pcapng'.format(rb_unique))
-            testout_glob = result_file('testout.{}_*.pcapng'.format(rb_unique))
+            testout_file = result_file(f'testout.{rb_unique}.pcapng')
+            testout_glob = result_file(f'testout.{rb_unique}_*.pcapng')
             # check_vals[]['filename'] will be filled in below
         else:
             testout_file = result_file(testout_pcapng)
@@ -409,7 +417,8 @@ def check_dumpcap_pcapng_sections(cmd_dumpcap, cmd_tshark, cmd_capinfos, capture
         capture_cmd = capture_command(cmd_dumpcap, *capture_cmd_args)
 
         subprocesstest.check_run(capture_cmd, env=env)
-        for fifo_proc in fifo_procs: fifo_proc.kill()
+        for fifo_proc in fifo_procs:
+            fifo_proc.kill()
 
         rb_files = []
         if multi_output:
@@ -506,6 +515,45 @@ class TestWiresharkCapture:
             pytest.skip('GUI tests are disabled via --disable-gui')
         with make_screenshot_on_error():
             check_capture_snapshot_len(self, cmd=wireshark_k, env=test_env)
+
+
+class TestWiresharkCaptureProcessInfo:
+    '''Wireshark records processes as its capture.process_info preference
+    says, which must never make a capture fail.'''
+    def check(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env, **kwargs):
+        if request.config.getoption('--disable-gui', default=False):
+            pytest.skip('GUI tests are disabled via --disable-gui')
+        # Where processes can't be looked up Wireshark records none, rather than fail.
+        cmd_dumpcap = request.getfixturevalue('cmd_dumpcap')
+        proc = subprocesstest.run((cmd_dumpcap, '--process-info', '-D'), capture_output=True, env=test_env)
+        if proc.returncode != 0 and 'not supported' in proc.stderr:
+            pytest.skip('Process information is not supported on this platform')
+        with make_screenshot_on_error():
+            check_capture_process_info(self, cmd=wireshark_k, env=test_env, **kwargs)
+
+    def test_wireshark_capture_process_info_default(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env):
+        '''By default Wireshark records what identifies the processes'''
+        self.check(request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env, option=())
+
+    def test_wireshark_capture_process_info_pref_full(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env):
+        '''The preference can ask for everything about the processes'''
+        self.check(request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env,
+                   option=('-o', 'capture.process_info:FULL'), full=True)
+
+    def test_wireshark_capture_process_info_pref_none(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env):
+        '''The preference can turn it off'''
+        self.check(request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env,
+                   option=('-o', 'capture.process_info:NONE'), none=True)
+
+    def test_wireshark_capture_process_info_option_over_pref(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env):
+        '''The command line wins over the preference'''
+        self.check(request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env,
+                   option=('-o', 'capture.process_info:FULL', '--process-info=basic'))
+
+    def test_wireshark_capture_process_info_pcap(self, request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env):
+        '''A pcap file has no room for processes; the capture must work all the same'''
+        self.check(request, wireshark_k, check_capture_process_info, make_screenshot_on_error, test_env,
+                   option=('-F', 'pcap'), none=True)
 
 
 class TestTsharkCapture:
@@ -617,3 +665,151 @@ class TestDumpcapPcapngMixedEndian:
     # def test_dumpcap_pcapng_multi_in_single_out(self, check_dumpcap_pcapng_sections, base_env):
     #     '''Capture from a single pcapng source using Dumpcap and write a single file'''
     #     check_dumpcap_pcapng_sections(self, multi_input=True, mixed_endian=True, env=base_env)
+
+
+class BoundUdpTrafficGenerator(UdpTrafficGenerator):
+    '''UDP traffic from a known port, so that a capture filter can pick out
+    this process's traffic when tests run in parallel.'''
+    def __init__(self):
+        super().__init__()
+        self.sock.bind(('0.0.0.0', 0))
+        self.port = self.sock.getsockname()[1]
+
+
+@pytest.fixture
+def check_capture_process_info(capture_interface, cmd_tshark, cmd_capinfos, result_file):
+    def check_capture_process_info_real(self, cmd=None, env=None, option='--process-info', full=False, none=False):
+        assert cmd is not None
+        options = (option,) if isinstance(option, str) else tuple(option)
+        testout_file = result_file(testout_pcapng)
+        generator = BoundUdpTrafficGenerator()
+        generator.start()
+        try:
+            proc = subprocesstest.run(capture_command(cmd,
+                '-i', capture_interface,
+                '-p',
+                '-w', testout_file,
+                '-c', '10',
+                '-a', f'duration:{capture_duration}',
+                '-f', f'udp src port {generator.port} and udp dst port 9',
+                *options,
+            ), capture_output=True, env=env)
+        finally:
+            generator.stop()
+        if proc.returncode != 0 and 'not supported' in proc.stderr:
+            pytest.skip('Process information is not supported on this platform')
+        assert proc.returncode == 0, proc.stderr
+        check_packet_count(cmd_capinfos, 10, testout_file)
+
+        # The traffic comes from this very process, so every packet must be
+        # attributed to it, and the file must describe it: with what
+        # identifies it, and with the rest only if that was asked for.
+        proc = subprocesstest.check_run((cmd_tshark, '-r', testout_file,
+            '-T', 'fields',
+            '-e', 'frame.process.pid',
+            '-e', 'frame.process.name',
+            '-e', 'frame.process.start_time',
+            '-e', 'frame.process.path',
+            '-e', 'frame.process.cmdline',
+            '-e', 'frame.process.ppid',
+            '-e', 'frame.process.user',
+        ), capture_output=True, env=env)
+        lines = proc.stdout.splitlines()
+        assert len(lines) == 10
+        for line in lines:
+            pid, name, start_time, path, cmdline, ppid, user = line.split('\t')
+            if none:
+                assert line.strip() == '', line
+                continue
+            assert pid == str(os.getpid()), line
+            assert 'python' in name.lower() or 'pytest' in name.lower(), line
+            assert start_time != '', line
+            if full:
+                assert path != '' and cmdline != '' and ppid != '' and user != '', line
+            else:
+                assert (path, cmdline, ppid, user) == ('', '', '', ''), line
+    return check_capture_process_info_real
+
+
+class TestCaptureProcessInfo:
+    def test_dumpcap_capture_process_info(self, cmd_dumpcap, check_capture_process_info, base_env):
+        '''Capture with dumpcap, recording what identifies the processes the
+        packets belong to, which is what the option does by default'''
+        check_capture_process_info(self, cmd=cmd_dumpcap, env=base_env)
+
+    def test_dumpcap_capture_process_info_full(self, cmd_dumpcap, check_capture_process_info, base_env):
+        '''Capture with dumpcap, recording everything about the processes'''
+        check_capture_process_info(self, cmd=cmd_dumpcap, env=base_env, option='--process-info=full', full=True)
+
+    def test_tshark_capture_process_info(self, cmd_tshark, check_capture_process_info, test_env):
+        '''Capture with TShark, which has to pass the level on to dumpcap'''
+        check_capture_process_info(self, cmd=cmd_tshark, env=test_env, option='--process-info=basic')
+
+    def test_tshark_capture_process_info_full(self, cmd_tshark, check_capture_process_info, test_env):
+        '''Capture with TShark, recording everything about the processes'''
+        check_capture_process_info(self, cmd=cmd_tshark, env=test_env, option='--process-info=full', full=True)
+
+    def test_dumpcap_process_info_bad_level(self, cmd_dumpcap, base_env):
+        '''A level that does not exist is refused.'''
+        proc = subprocesstest.run((cmd_dumpcap, '--process-info=everything', '-D'), capture_output=True, env=base_env)
+        assert proc.returncode != 0
+        if 'not supported' in proc.stderr:
+            pytest.skip('Process information is not supported on this platform')
+        assert 'must be "basic" or "full"' in proc.stderr, proc.stderr
+
+    def test_dumpcap_capture_process_info_receivers(self, cmd_dumpcap, cmd_tshark, capture_interface, result_file, base_env):
+        '''A datagram to a port that two other processes have a socket on is
+        attributed to this process, the sender, and to both of them.'''
+        receiver_script = (
+            'import socket, sys\n'
+            's = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\n'
+            's.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\n'
+            "if hasattr(socket, 'SO_REUSEPORT'):\n"
+            '    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)\n'
+            "s.bind(('0.0.0.0', int(sys.argv[1])))\n"
+            "print('ready', flush=True)\n"
+            'while True:\n'
+            '    s.recv(1500)\n'
+        )
+        testout_file = result_file(testout_pcapng)
+        # A port for the receivers; it is free again by the time they bind it.
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        probe.bind(('0.0.0.0', 0))
+        port = probe.getsockname()[1]
+        probe.close()
+        receivers = [subprocess.Popen((sys.executable, '-c', receiver_script, str(port)),
+                                      stdout=subprocess.PIPE, encoding='utf-8')
+                     for _ in range(2)]
+        try:
+            for receiver in receivers:
+                assert receiver.stdout.readline().strip() == 'ready'
+            sender = BoundUdpTrafficGenerator()
+            sender.destination = ('127.0.0.1', port)
+            sender.start()
+            try:
+                proc = subprocesstest.run(capture_command(cmd_dumpcap,
+                    '-i', capture_interface,
+                    '-p',
+                    '-w', testout_file,
+                    '-c', '10',
+                    '-a', f'duration:{capture_duration}',
+                    '-f', f'udp src port {sender.port} and udp dst port {port}',
+                    '--process-info',
+                ), capture_output=True, env=base_env)
+            finally:
+                sender.stop()
+            if proc.returncode != 0 and 'not supported' in proc.stderr:
+                pytest.skip('Process information is not supported on this platform')
+            assert proc.returncode == 0, proc.stderr
+            proc = subprocesstest.check_run((cmd_tshark, '-r', testout_file,
+                '-T', 'fields', '-e', 'frame.process.pid',
+            ), capture_output=True, env=base_env)
+            lines = proc.stdout.splitlines()
+            assert len(lines) == 10
+            expected = {str(os.getpid())} | {str(receiver.pid) for receiver in receivers}
+            for line in lines:
+                assert set(line.split(',')) == expected, line
+        finally:
+            for receiver in receivers:
+                receiver.kill()
+                receiver.wait()

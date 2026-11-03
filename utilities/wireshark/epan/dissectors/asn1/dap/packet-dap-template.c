@@ -1,5 +1,5 @@
 /* packet-dap.c
- * Routines for X.511 (X.500 Directory Asbtract Service) and X.519 DAP  packet dissection
+ * Routines for X.511 (X.500 Directory Abstract Service) and X.519 DAP  packet dissection
  * Graeme Lunt 2005
  *
  * Wireshark - Network traffic analyzer
@@ -33,12 +33,6 @@
 #include "packet-disp.h"
 #include "packet-dap.h"
 #include <epan/strutil.h>
-
-/* we don't have a separate dissector for X519 -
-   most of DAP is defined in X511 */
-#define PNAME  "X.519 Directory Access Protocol"
-#define PSNAME "DAP"
-#define PFNAME "dap"
 
 void proto_register_dap(void);
 void proto_reg_handoff_dap(void);
@@ -98,7 +92,7 @@ void proto_register_dap(void) {
   expert_module_t* expert_dap;
 
   /* Register protocol */
-  proto_dap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_dap = proto_register_protocol("X.519 Directory Access Protocol", "DAP", "dap");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_dap, hf, array_length(hf));

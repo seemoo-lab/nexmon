@@ -348,7 +348,7 @@ static expert_field ei_netmon_process_user_sid;
 static dissector_table_t wtap_encap_table;
 
 void
-netmon_etl_field(proto_tree *tree, tvbuff_t *tvb, int* offset, int hf, uint16_t flags)
+netmon_etl_field(proto_tree *tree, tvbuff_t *tvb, unsigned* offset, int hf, uint16_t flags)
 {
 	if (flags & EVENT_HEADER_FLAG_64_BIT_HEADER) {
 		/* XXX - This seems to be how values are displayed in Network Monitor */
@@ -362,7 +362,7 @@ netmon_etl_field(proto_tree *tree, tvbuff_t *tvb, int* offset, int hf, uint16_t 
 }
 
 void
-netmon_sid_field(proto_tree *tree, tvbuff_t *tvb, int* offset, packet_info *pinfo,
+netmon_sid_field(proto_tree *tree, tvbuff_t *tvb, unsigned* offset, packet_info *pinfo,
 				int hf_revision, int hf_subauthority_count, int hf_sid_id, int hf_sid_authority, expert_field* invalid_sid, bool conformant _U_)
 {
 	proto_item *ti, *sid_item;
@@ -410,7 +410,7 @@ dissect_netmon_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 	header_tree = proto_item_add_subtree(ti, ett_netmon_header);
 
 	if (pinfo->pseudo_header->netmon.title != NULL) {
-		ti = proto_tree_add_string(header_tree, hf_netmon_header_title_comment, tvb, 0, 0, pinfo->pseudo_header->netmon.title);
+		ti = proto_tree_add_string(header_tree, hf_netmon_header_title_comment, tvb, 0, 0, (char*)pinfo->pseudo_header->netmon.title);
 		proto_item_set_generated(ti);
 	}
 
@@ -420,7 +420,7 @@ dissect_netmon_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 		 */
 
 		/* Ensure string termination */
-		comment = wmem_strndup(pinfo->pool, pinfo->pseudo_header->netmon.description, pinfo->pseudo_header->netmon.descLength);
+		comment = wmem_strndup(pinfo->pool, (char*)pinfo->pseudo_header->netmon.description, pinfo->pseudo_header->netmon.descLength);
 
 		ti = proto_tree_add_string(header_tree, hf_netmon_header_description_comment, tvb, 0, 0, comment);
 		proto_item_set_generated(ti);
@@ -461,7 +461,6 @@ dissect_netmon_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 	proto_tree *event_tree, *event_desc_tree, *extended_data_tree, *buffer_context_tree;
 	int offset = 0, extended_data_count_offset;
 	uint32_t i, thread_id, process_id, extended_data_count, extended_data_size, user_data_size;
-	nstime_t timestamp;
 	tvbuff_t *provider_id_tvb;
 	guid_key provider_guid;
 	struct netmon_provider_id_data provider_id_data;
@@ -506,10 +505,7 @@ dissect_netmon_event(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 	proto_tree_add_item_ret_uint(event_tree, hf_netmon_event_process_id, tvb, offset, 4, ENC_LITTLE_ENDIAN, &process_id);
 	offset += 4;
 
-	timestamp.secs = 0;
-	timestamp.nsecs = 0;
-	filetime_to_nstime(&timestamp, tvb_get_letoh64(tvb, offset));
-	proto_tree_add_time(event_tree, hf_netmon_event_timestamp, tvb, offset, 8, &timestamp);
+	proto_tree_add_item(event_tree, hf_netmon_event_timestamp, tvb, offset, 8, ENC_TIME_WINDOWS|ENC_LITTLE_ENDIAN);
 	offset += 8;
 
 	proto_tree_add_item(event_tree, hf_netmon_event_provider_id, tvb, offset, 16, ENC_LITTLE_ENDIAN);
@@ -605,7 +601,7 @@ dissect_netmon_filter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 {
 	proto_item *ti;
 	proto_tree *filter_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	unsigned length;
 	const uint8_t* filter;
 
@@ -774,10 +770,10 @@ dissect_netmon_system_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
 	proto_item *ti;
 	proto_tree *system_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	struct netmon_provider_id_data *provider_id_data = (struct netmon_provider_id_data*)data;
 	unsigned length;
-	nstime_t timestamp;
+	nstime_t timestamp = NSTIME_INIT_ZERO;
 	uint64_t raw_timestamp;
 
 	DISSECTOR_ASSERT(provider_id_data != NULL);
@@ -800,13 +796,11 @@ dissect_netmon_system_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		proto_tree_add_item(system_tree, hf_netmon_system_trace_num_processors, tvb, offset, 4, ENC_LITTLE_ENDIAN);
 		offset += 4;
 
+		// TODO: Replace with a time_value_string
 		raw_timestamp = tvb_get_letoh64(tvb, offset);
 		if (raw_timestamp != 0)
 		{
-			timestamp.secs = 0;
-			timestamp.nsecs = 0;
-			filetime_to_nstime(&timestamp, raw_timestamp);
-			proto_tree_add_time(system_tree, hf_netmon_system_trace_end_time, tvb, offset, 8, &timestamp);
+			proto_tree_add_item(system_tree, hf_netmon_system_trace_end_time, tvb, offset, 8, ENC_TIME_WINDOWS|ENC_LITTLE_ENDIAN);
 		}
 		else
 		{
@@ -835,19 +829,13 @@ dissect_netmon_system_trace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		proto_tree_add_item(system_tree, hf_netmon_system_trace_time_zone_info, tvb, offset, 176, ENC_NA);
 		offset += 176;
 
-		timestamp.secs = 0;
-		timestamp.nsecs = 0;
-		filetime_to_nstime(&timestamp, tvb_get_letoh64(tvb, offset));
-		proto_tree_add_time(system_tree, hf_netmon_system_trace_boot_time, tvb, offset, 8, &timestamp);
+		proto_tree_add_item(system_tree, hf_netmon_system_trace_boot_time, tvb, offset, 8, ENC_TIME_WINDOWS|ENC_LITTLE_ENDIAN);
 		offset += 8;
 
 		proto_tree_add_item(system_tree, hf_netmon_system_trace_perf_freq, tvb, offset, 8, ENC_LITTLE_ENDIAN);
 		offset += 8;
 
-		timestamp.secs = 0;
-		timestamp.nsecs = 0;
-		filetime_to_nstime(&timestamp, tvb_get_letoh64(tvb, offset));
-		proto_tree_add_time(system_tree, hf_netmon_system_trace_start_time, tvb, offset, 8, &timestamp);
+		proto_tree_add_item(system_tree, hf_netmon_system_trace_start_time, tvb, offset, 8, ENC_TIME_WINDOWS|ENC_LITTLE_ENDIAN);
 		offset += 8;
 
 		proto_tree_add_item(system_tree, hf_netmon_system_trace_reserved_flags, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -893,7 +881,7 @@ dissect_netmon_system_config(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 {
 	proto_item *ti;
 	proto_tree *system_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	struct netmon_provider_id_data *provider_id_data = (struct netmon_provider_id_data*)data;
 	unsigned length;
 	uint32_t field1, field2;
@@ -1655,7 +1643,7 @@ dissect_netmon_process(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 {
 	proto_item *ti;
 	proto_tree *process_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	struct netmon_provider_id_data *provider_id_data = (struct netmon_provider_id_data*)data;
 	unsigned length;
 	const uint8_t *filename;

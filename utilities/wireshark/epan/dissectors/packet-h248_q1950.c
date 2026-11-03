@@ -25,10 +25,6 @@
 void proto_reg_handoff_q1950(void);
 void proto_register_q1950(void);
 
-#define PNAME  "H.248 Q.1950 Annex A"
-#define PSNAME "H248Q1950"
-#define PFNAME "h248q1950"
-
 static int proto_q1950;
 static bool implicit;
 
@@ -50,7 +46,7 @@ static const value_string h248_pkg_BCP_props_vals[] = {
 };
 
 /* Properties */
-static h248_pkg_param_t h248_pkg_BCP_props[] = {
+static const h248_pkg_param_t h248_pkg_BCP_props[] = {
     { 0x0001, &hf_h248_pkg_BCP_BNCChar, h248_param_ber_integer, &implicit },
     { 0, NULL, NULL, NULL}
 };
@@ -137,7 +133,7 @@ static const value_string h248_pkg_RII_vals[]  = {
 };
 
 /* Properties */
-static h248_pkg_param_t h248_pkg_RI_props[] = {
+static const h248_pkg_param_t h248_pkg_RI_props[] = {
     { 0x0001, &hf_h248_pkg_RII, h248_param_ber_integer, &implicit },
     { 0, NULL, NULL, NULL}
 };
@@ -394,7 +390,7 @@ static const value_string h248_pkg_bcg_sig_bdt_par_btd_vals[] = {
     {0,     NULL},
 };
 
-static h248_pkg_param_t  h248_pkg_h248_pkg_bcg_sig_bdt_params[] = {
+static const h248_pkg_param_t h248_pkg_h248_pkg_bcg_sig_bdt_params[] = {
     { 0x0001, &hf_h248_pkg_bcg_sig_bdt_par_btd, h248_param_ber_integer, &implicit },
     { 0, NULL, NULL, NULL}
 };
@@ -413,7 +409,7 @@ static const value_string h248_pkg_bcg_signals_vals[] = {
     { 0, NULL }
 };
 
-static h248_pkg_sig_t h248_pkg_bcg_signals[] = {
+static const h248_pkg_sig_t h248_pkg_bcg_signals[] = {
     /* All the tones have the same parameters */
     { 0x0040, &hf_h248_pkg_bcg_sig_bdt, &ett_h248_pkg_bcg_sig_bdt, h248_pkg_h248_pkg_bcg_sig_bdt_params, NULL },
     { 0x0041, &hf_h248_pkg_bcg_sig_brt, &ett_h248_pkg_bcg_sig_bdt, h248_pkg_h248_pkg_bcg_sig_bdt_params, NULL },
@@ -610,7 +606,7 @@ void proto_register_q1950(void) {
         &ett_h248_pkg_GB_BNCChange
     };
 
-    proto_q1950 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+    proto_q1950 = proto_register_protocol("H.248 Q.1950 Annex A", "H248Q1950", "h248q1950");
 
     proto_register_field_array(proto_q1950, hf, array_length(hf));
 

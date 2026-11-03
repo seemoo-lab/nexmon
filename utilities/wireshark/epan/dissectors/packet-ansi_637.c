@@ -38,10 +38,6 @@
 void proto_register_ansi_637(void);
 void proto_reg_handoff_ansi_637(void);
 
-static const char *ansi_proto_name_tele = "ANSI IS-637-A (SMS) Teleservice Layer";
-static const char *ansi_proto_name_trans = "ANSI IS-637-A (SMS) Transport Layer";
-static const char *ansi_proto_name_short = "IS-637-A";
-
 /*
  * Masks the number of bits given by len starting at the given offset
  * MBoffset should be from 0 to 7 and MBlen 1 to 8
@@ -416,8 +412,8 @@ text_decoder(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offse
         offset = 0;
         bit = 0;
 
-        ustr = tvb_get_ascii_7bits_string(pinfo->pool, tvb_out, (offset << 3) + bit, num_fields);
-        IA5_7BIT_decode(ansi_637_bigbuf, ustr, num_fields);
+        ustr = (uint8_t*)tvb_get_ascii_7bits_string(pinfo->pool, tvb_out, (offset << 3) + bit, num_fields);
+        IA5_7BIT_decode((uint8_t*)ansi_637_bigbuf, ustr, num_fields);
 
         proto_tree_add_string(tree, hf_index, tvb_out, 0,
             required_octs, ansi_637_bigbuf);
@@ -1342,9 +1338,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
 
         offset += 1;
 
-        proto_tree_add_item(tree, hf_ansi_637_tele_cb_num_num_fields, tvb, offset, 1, ENC_BIG_ENDIAN);
-
-        num_fields = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(tree, hf_ansi_637_tele_cb_num_num_fields, tvb, offset, 1, ENC_BIG_ENDIAN, &num_fields);
 
         if (num_fields == 0) return;
 
@@ -1357,7 +1351,7 @@ tele_param_cb_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned 
         proto_tree_add_string_format(tree, hf_ansi_637_tele_cb_num_number, tvb, offset, num_fields,
             (char *) poctets,
             "Number: %s",
-            (char *) format_text(pinfo->pool, poctets, num_fields));
+            (char *) format_text(pinfo->pool, (char*)poctets, num_fields));
     }
     else
     {
@@ -1840,7 +1834,7 @@ tele_param_tp_failure_cause(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 #define NUM_TELE_PARAM array_length(ansi_tele_param_strings)
 static int ett_ansi_637_tele_param[NUM_TELE_PARAM];
-static void (*ansi_637_tele_param_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned len, uint32_t offset, bool *has_private_data_p) = {
+static void (* const ansi_637_tele_param_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned len, uint32_t offset, bool *has_private_data_p) = {
     tele_param_msg_id,                  /* Message Identifier */
     tele_param_user_data,               /* User Data */
     tele_param_rsp_code,                /* User Response Code */
@@ -2264,7 +2258,7 @@ trans_param_bearer_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_,
 
 #define NUM_TRANS_PARAM array_length(ansi_trans_param_strings)
 static int ett_ansi_637_trans_param[NUM_TRANS_PARAM];
-static void (*ansi_637_trans_param_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned len, uint32_t offset, char *add_string, int string_len) = {
+static void (* const ansi_637_trans_param_fcn[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned len, uint32_t offset, char *add_string, int string_len) = {
     trans_param_tele_id,                /* Teleservice Identifier */
     trans_param_srvc_cat,               /* Service Category */
     trans_param_address,                /* Originating Address */
@@ -2385,7 +2379,7 @@ dissect_ansi_637_tele(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
     uint32_t    value;
     bool        has_private_data = false;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, ansi_proto_name_short);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "IS-637-A");
 
     /* In the interest of speed, if "tree" is NULL, don't do any work not
      * necessary to generate protocol tree items.
@@ -2467,15 +2461,14 @@ dissect_ansi_637_tele(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
              */
             ansi_637_item =
                 proto_tree_add_protocol_format(tree, proto_ansi_637_tele, tvb, 0, -1,
-                    "%s",
-                    ansi_proto_name_tele);
+                    "ANSI IS-637-A (SMS) Teleservice Layer");
         }
         else
         {
             ansi_637_item =
                 proto_tree_add_protocol_format(tree, proto_ansi_637_tele, tvb, 0, -1,
-                    "%s - %s (%u)",
-                    ansi_proto_name_tele, str, pinfo->match_uint);
+                    "ANSI IS-637-A (SMS) Teleservice Layer - %s (%u)",
+                    str, pinfo->match_uint);
         }
 
         ansi_637_tree = proto_item_add_subtree(ansi_637_item, ett_ansi_637_tele);
@@ -2564,7 +2557,7 @@ dissect_ansi_637_trans(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     uint8_t     oct;
     uint8_t     len;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, ansi_proto_name_short);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "IS-637-A");
 
     /* In the interest of speed, if "tree" is NULL, don't do any work not
      * necessary to generate protocol tree items.
@@ -2589,8 +2582,7 @@ dissect_ansi_637_trans(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         {
             ansi_637_item =
                 proto_tree_add_protocol_format(tree, proto_ansi_637_trans, tvb, 0, -1,
-                    "%s - Unrecognized Transport Layer Message Type (%u)",
-                    ansi_proto_name_trans, oct);
+                    "ANSI IS-637-A (SMS) Transport Layer - Unrecognized Transport Layer Message Type (%u)", oct);
 
             ansi_637_tree = proto_item_add_subtree(ansi_637_item, ett_ansi_637_trans);
         }
@@ -2598,8 +2590,7 @@ dissect_ansi_637_trans(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         {
             ansi_637_item =
                 proto_tree_add_protocol_format(tree, proto_ansi_637_trans, tvb, 0, -1,
-                    "%s - %s",
-                    ansi_proto_name_trans, str);
+                    "ANSI IS-637-A (SMS) Transport Layer - %s", str);
 
             ansi_637_tree = proto_item_add_subtree(ansi_637_item, ett_ansi_637_trans_msg[idx]);
 
@@ -3305,10 +3296,10 @@ proto_register_ansi_637(void)
 
     /* Register the protocol name and description */
     proto_ansi_637_tele =
-        proto_register_protocol(ansi_proto_name_tele, "ANSI IS-637-A Teleservice", "ansi_637_tele");
+        proto_register_protocol("ANSI IS-637-A (SMS) Teleservice Layer", "ANSI IS-637-A Teleservice", "ansi_637_tele");
 
     proto_ansi_637_trans =
-        proto_register_protocol(ansi_proto_name_trans, "ANSI IS-637-A Transport", "ansi_637_trans");
+        proto_register_protocol("ANSI IS-637-A (SMS) Transport Layer", "ANSI IS-637-A Transport", "ansi_637_trans");
 
     ansi_637_tele_handle = register_dissector("ansi_637_tele", dissect_ansi_637_tele, proto_ansi_637_tele);
     ansi_637_trans_handle = register_dissector("ansi_637_trans", dissect_ansi_637_trans, proto_ansi_637_trans);

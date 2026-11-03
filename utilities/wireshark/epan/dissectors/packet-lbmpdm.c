@@ -54,7 +54,7 @@ typedef struct lbmpdm_msg_hdr_stct_t
 #define L_LBMPDM_MSG_HDR_T_DEF_ID SIZEOF(lbmpdm_msg_hdr_t, def_id)
 #define O_LBMPDM_MSG_HDR_T_LEN OFFSETOF(lbmpdm_msg_hdr_t, len)
 #define L_LBMPDM_MSG_HDR_T_LEN SIZEOF(lbmpdm_msg_hdr_t, len)
-#define L_LBMPDM_MSG_HDR_T (int) sizeof(lbmpdm_msg_hdr_t)
+#define L_LBMPDM_MSG_HDR_T sizeof(lbmpdm_msg_hdr_t)
 
 /*---------------------*/
 /* PDM segment header. */
@@ -892,15 +892,12 @@ static int dissect_segment_defn(tvbuff_t * tvb, int offset, packet_info * pinfo,
     proto_tree_add_item(subtree, hf_lbmpdm_segment_res, tvb, offset + O_LBMPDM_SEG_HDR_T_RES, L_LBMPDM_SEG_HDR_T_RES, encoding);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_len, tvb, offset + O_LBMPDM_SEG_HDR_T_LEN, L_LBMPDM_SEG_HDR_T_LEN, encoding);
     ofs = offset + L_LBMPDM_SEG_HDR_T;
-    proto_tree_add_item(subtree, hf_lbmpdm_segment_def_id, tvb, ofs + O_LBMPDM_DEFN_T_ID, L_LBMPDM_DEFN_T_ID, encoding);
-    def_id = tvb_get_uint32(tvb, ofs + O_LBMPDM_DEFN_T_ID, encoding);
+    proto_tree_add_item_ret_uint(subtree, hf_lbmpdm_segment_def_id, tvb, ofs + O_LBMPDM_DEFN_T_ID, L_LBMPDM_DEFN_T_ID, encoding, &def_id);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_def_num_fields, tvb, ofs + O_LBMPDM_DEFN_T_NUM_FIELDS, L_LBMPDM_DEFN_T_NUM_FIELDS, encoding);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_def_field_names_type, tvb, ofs + O_LBMPDM_DEFN_T_FIELD_NAMES_TYPE, L_LBMPDM_DEFN_T_FIELD_NAMES_TYPE, encoding);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_def_finalized, tvb, ofs + O_LBMPDM_DEFN_T_FINALIZED, L_LBMPDM_DEFN_T_FINALIZED, encoding);
-    proto_tree_add_item(subtree, hf_lbmpdm_segment_def_msg_vers_major, tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MAJOR, L_LBMPDM_DEFN_T_MSG_VERS_MAJOR, encoding);
-    vers_major = tvb_get_uint8(tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MAJOR);
-    proto_tree_add_item(subtree, hf_lbmpdm_segment_def_msg_vers_minor, tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MINOR, L_LBMPDM_DEFN_T_MSG_VERS_MINOR, encoding);
-    vers_minor = tvb_get_uint8(tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MINOR);
+    proto_tree_add_item_ret_uint8(subtree, hf_lbmpdm_segment_def_msg_vers_major, tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MAJOR, L_LBMPDM_DEFN_T_MSG_VERS_MAJOR, encoding, &vers_major);
+    proto_tree_add_item_ret_uint8(subtree, hf_lbmpdm_segment_def_msg_vers_minor, tvb, ofs + O_LBMPDM_DEFN_T_MSG_VERS_MINOR, L_LBMPDM_DEFN_T_MSG_VERS_MINOR, encoding, &vers_minor);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_def_fixed_req_section_len, tvb, ofs + O_LBMPDM_DEFN_T_FIXED_REQ_SECTION_LEN, L_LBMPDM_DEFN_T_FIXED_REQ_SECTION_LEN, encoding);
     proto_tree_add_item(subtree, hf_lbmpdm_segment_def_field_info_len, tvb, ofs + O_LBMPDM_DEFN_T_FIELD_INFO_LEN, L_LBMPDM_DEFN_T_FIELD_INFO_LEN, encoding);
     if (tvb_get_uint8(tvb, ofs + O_LBMPDM_DEFN_T_FIELD_NAMES_TYPE) == PDM_DEFN_STR_FIELD_NAMES)
@@ -985,7 +982,7 @@ static int dissect_segment_defn(tvbuff_t * tvb, int offset, packet_info * pinfo,
                     if (string_field_name && (string_name_len > 0))
                     {
                         field->field_string_name_len = string_name_len;
-                        field->field_string_name = tvb_get_string_enc(wmem_file_scope(), tvb, string_name_ofs, string_name_len, ENC_ASCII);
+                        field->field_string_name = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, string_name_ofs, string_name_len, ENC_ASCII);
                     }
                     else
                     {
@@ -1145,7 +1142,7 @@ static bool check_lbmpdm_encoding(tvbuff_t * tvb, int offset, int * encoding)
     return (result);
 }
 
-bool lbmpdm_verify_payload(tvbuff_t * tvb, int offset, int * encoding, int * length)
+bool lbmpdm_verify_payload(tvbuff_t * tvb, unsigned offset, int * encoding, uint32_t* length)
 {
     uint8_t next_header;
     uint32_t len = 0;
@@ -1174,11 +1171,11 @@ bool lbmpdm_verify_payload(tvbuff_t * tvb, int offset, int * encoding, int * len
     {
         return false;
     }
-    *length = (int)len;
+    *length = len;
     return true;
 }
 
-int lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, uint64_t channel)
+unsigned lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree, uint64_t channel)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
@@ -1186,13 +1183,13 @@ int lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, int offset, packet_info * pinf
     proto_tree * segments_tree = NULL;
     proto_item * pi = NULL;
     uint8_t next_hdr;
-    int dissected_len = 0;
+    unsigned dissected_len = 0;
     int encoding;
-    int msglen = 0;
-    int len_remaining = 0;
-    int ofs = 0;
-    int segment_len = 0;
-    int datalen = 0;
+    unsigned msglen = 0;
+    unsigned len_remaining = 0;
+    unsigned ofs = 0;
+    unsigned segment_len = 0;
+    unsigned datalen = 0;
     uint32_t raw_msglen = 0;
     lbmpdm_msg_definition_id_t msgid;
 
@@ -1200,7 +1197,7 @@ int lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, int offset, packet_info * pinf
     {
         return 0;
     }
-    msglen = (int)raw_msglen;
+    msglen = raw_msglen;
 
     msgid.channel = channel;
     msgid.offset_table = NULL;
@@ -1261,7 +1258,7 @@ int lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, int offset, packet_info * pinf
 
 int lbmpdm_get_minimum_length(void)
 {
-    return (L_LBMPDM_MSG_HDR_T);
+    return (int)(L_LBMPDM_MSG_HDR_T);
 }
 
 /* Register all the bits needed with the filtering engine */

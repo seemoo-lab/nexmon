@@ -19,19 +19,20 @@
  * Nothing in the standard explicitly prevents an IPv6 implementation...
  */
 
-#define WS_LOG_DOMAIN "packet-vjc-comp"
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-vjc-comp"
 #include <wireshark.h>
 
 #include <epan/conversation.h>
 #include <epan/in_cksum.h>
 #include <epan/expert.h>
 #include <epan/packet.h>
-#include <epan/ipproto.h>
-#include <epan/ppptypes.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/pint.h>
 #include <wsutil/str_util.h>
+#include "packet-ppp.h"
+
 
 /* Store the last connection number we've seen.
  * Only used on the first pass, in case the connection number itself
@@ -261,7 +262,7 @@ dissect_vjc_uncomp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 
     /* Start with some sanity checks */
     if (tvb_captured_length(tvb) < VJC_CONNID_OFFSET+1) {
-        proto_tree_add_expert_format(subtree, pinfo, &ei_vjc_bad_data, tvb, 0, -1,
+        proto_tree_add_expert_format_remaining(subtree, pinfo, &ei_vjc_bad_data, tvb, 0,
                 "Packet truncated before Connection ID field");
         return tvb_captured_length(tvb);
     }
@@ -306,7 +307,7 @@ dissect_vjc_uncomp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
         /* Not enough data. We can still pass this packet onward (though probably
          * to no benefit), but can't base future decompression off of it.
          */
-        proto_tree_add_expert_format(subtree, pinfo, &ei_vjc_bad_data, tvb, 0, -1,
+        proto_tree_add_expert_format_remaining(subtree, pinfo, &ei_vjc_bad_data, tvb, 0,
                 "Packet truncated before end of TCP/IP headers");
     }
     else if (!pinfo->fd->visited) {
@@ -456,7 +457,7 @@ done_header_len:
     subtree = proto_item_add_subtree(ti, ett_vjc);
     proto_item_set_text(subtree, "PPP Van Jacobson compressed TCP/IP");
     if (hdr_error) {
-        proto_tree_add_expert_format(subtree, pinfo, &ei_vjc_bad_data, tvb, 0, -1,
+        proto_tree_add_expert_format_remaining(subtree, pinfo, &ei_vjc_bad_data, tvb, 0,
                 "Packet truncated, compression header incomplete");
         return tvb_captured_length(tvb);
     }

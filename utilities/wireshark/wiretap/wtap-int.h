@@ -14,8 +14,18 @@
 
 /**
  * @brief Initialize file type subtypes for wiretap.
+ *
+ * @param app_env_var_prefix The prefix for the application to determine what pcapNG behavior to use
  */
-void wtap_init_file_type_subtypes(void);
+void wtap_init_file_type_subtypes(const char* app_env_var_prefix);
+
+/**
+ * @brief Initialize the extensions array
+ *
+ * @param file_extensions Array of file extension info structures
+ * @param num_extensions Number of extensions in the array
+ */
+void wtap_init_file_type_extensions(const struct file_extension_info* file_extensions, unsigned num_extensions);
 
 /**
  * @struct backwards_compatibiliity_lua_name
@@ -24,10 +34,17 @@ void wtap_init_file_type_subtypes(void);
  * Used to support backwards compatibility for Lua scripts referencing legacy file type names.
  */
 struct backwards_compatibiliity_lua_name {
-	const char *name;
-	int ft;
+    const char *name; /**< Legacy Lua name. */
+    int ft;           /**< File type identifier. */
 };
 
+/**
+ * @brief Retrieve the table of backwards compatibility Lua names.
+ *
+ * Returns a GArray of backwards_compatibiliity_lua_name entries.
+ *
+ * @return Pointer to GArray of compatibility mappings.
+ */
 WS_DLL_PUBLIC
 const GArray *get_backwards_compatibility_lua_table(void);
 
@@ -56,8 +73,8 @@ GArray* wtap_file_get_shb_for_new_file(wtap *wth);
  *      if either of them are.
  *
  * @param params The wtap dump parameters.
+ * @return A newly allocated IDB block.
  */
-
 wtap_block_t wtap_dump_params_generate_idb(const wtap_dump_params *params);
 
 /**

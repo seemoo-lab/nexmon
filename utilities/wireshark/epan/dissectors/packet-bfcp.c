@@ -287,7 +287,7 @@ dissect_bfcp_attributes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int
 	proto_item *ti, *item;
 	proto_tree  *bfcp_attr_tree = NULL;
 	int         attr_start_offset;
-	int         length;
+	uint8_t	    length;
 	uint8_t     attribute_type;
 	int         read_attr = 0;
 	uint8_t     first_byte, pad_len;
@@ -322,8 +322,7 @@ dissect_bfcp_attributes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int
 	 *   attributes.
 	 */
 
-		item = proto_tree_add_item(bfcp_attr_tree, hf_bfcp_attribute_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-		length = tvb_get_uint8(tvb, offset);
+		item = proto_tree_add_item_ret_uint8(bfcp_attr_tree, hf_bfcp_attribute_length, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
 		/* At least Type, M bit and Length fields */
 		if (length < 2){
 			expert_add_info_format(pinfo, item, &ei_bfcp_attribute_length_too_small,
@@ -722,7 +721,7 @@ void proto_register_bfcp(void)
 		{
 			&hf_bfcp_attribute_length,
 			{ "Attribute Length", "bfcp.attribute_length",
-			  FT_UINT16, BASE_DEC, NULL, 0x0,
+			  FT_UINT8, BASE_DEC, NULL, 0x0,
 			  NULL, HFILL }
 		},
 		{

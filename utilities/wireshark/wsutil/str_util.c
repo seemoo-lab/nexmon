@@ -19,10 +19,31 @@
 #include <ws_codepoints.h>
 
 #include <wsutil/to_str.h>
+#include <wsutil/strtoi.h>
+#include <wsutil/unicode-utils.h>
 
+struct prefix_parameters {
+    const char * const *prefix; /**< array of prefixes to represent unit multiplication factors. */
+    int prefix_count;           /**< number of elements in the prefix array. */
+    int power;                  /**< multiplication factor between prefixes. */
+    int prefix_offset;          /**< index of element within the prefix array for "no prefix". */
+};
 
 static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
                               '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+/* Given a "flags" value passed into a formatting function, determine which
+ * formatting parameters should apply.
+ */
+static const struct prefix_parameters *
+prefix_parameters_for_flags(uint16_t flags) {
+    static const char * const si_prefixes[] = {" a", " f", " p", " n", " μ", " m", " ", " k", " M", " G", " T", " P", " E"};
+    static const struct prefix_parameters si_parameters = {si_prefixes, G_N_ELEMENTS(si_prefixes), 1000, 6};
+    static const char * const iec_prefixes[] = {" ", " Ki", " Mi", " Gi", " Ti", " Pi", " Ei"};
+    static const struct prefix_parameters iec_parameters = {iec_prefixes, G_N_ELEMENTS(iec_prefixes), 1024, 0};
+
+    return (flags & FORMAT_SIZE_PREFIX_IEC) != 0 ? &iec_parameters : &si_parameters;
+}
 
 char *
 wmem_strconcat(wmem_allocator_t *allocator, const char *first, ...)
@@ -199,13 +220,13 @@ char*
 wmem_ascii_strdown(wmem_allocator_t *allocator, const char *str, ssize_t len)
 {
     char *result, *s;
+    size_t abs_len;
 
     g_return_val_if_fail (str != NULL, NULL);
 
-    if (len < 0)
-        len = strlen (str);
+    abs_len = (len < 0) ? strlen(str) : (size_t)len;
 
-    result = wmem_strndup(allocator, str, len);
+    result = wmem_strndup(allocator, str, abs_len);
     for (s = result; *s; s++)
         *s = g_ascii_tolower (*s);
 
@@ -307,7 +328,7 @@ isprint_utf8_string(const char *str, const unsigned length)
 
 /* Check if an entire string is digits. */
 bool
-isdigit_string(const unsigned char *str)
+isdigit_string(const char *str)
 {
     unsigned pos;
 
@@ -371,8 +392,37 @@ ws_memrchr(const void *_haystack, int ch, size_t n)
 #endif /* HAVE_MEMRCHR */
 }
 
-#define FORMAT_SIZE_UNIT_MASK 0x00ff
-#define FORMAT_SIZE_PFX_MASK 0xff00
+/* Return the first occurrence of ch in the null-terminated string str.
+ * If not found, return a pointer to the null-terminator. */
+char *
+ws_strchrnul(const char *str, int ch)
+{
+#ifdef HAVE_STRCHRNUL
+ #ifdef __APPLE__
+    /* strchrnul was introduced in macOS 15.4, runtime check if building
+     * with a newer SDK than that but an older deployment target. */
+    if (__builtin_available(macOS 15.4, *)) {
+        return (char*)strchrnul(str, ch);
+    } else {
+        /* Minimal generic implementation. */
+        while (*str != '\0' && *str != (char)ch) {
+            str++;
+        }
+        return (char *)str;
+    }
+ #else
+    /* Cast in case someone has an implementation that works like one of those
+     * fancy C23 qualifier-preserving versions. */
+    return (char*)strchrnul(str, ch);
+ #endif
+#else
+    /* Minimal generic implementation. */
+    while (*str != '\0' && *str != (char)ch) {
+        str++;
+    }
+    return (char *)str;
+#endif
+}
 
 static const char *thousands_grouping_fmt;
 static const char *thousands_grouping_fmt_flt;
@@ -424,7 +474,7 @@ static void truncate_numeric_strbuf(wmem_strbuf_t *strbuf, int n) {
         if (*p != decimal_point[0]) {
             p++;
         }
-        wmem_strbuf_truncate(strbuf, p - s);
+        wmem_strbuf_truncate(strbuf, (size_t)(p - s));
     }
 }
 
@@ -438,8 +488,6 @@ format_units(wmem_allocator_t *allocator, double size,
              int precision)
 {
     wmem_strbuf_t *human_str = wmem_strbuf_new(allocator, NULL);
-    double power = 1000.0;
-    int pfx_off = 6;
     bool is_small = false;
     /* is_small is when to use the longer, spelled out unit.
      * We use it for inf, NaN, 0, and unprefixed small values,
@@ -448,23 +496,12 @@ format_units(wmem_allocator_t *allocator, double size,
      */
     bool scientific = false;
     double abs_size = fabs(size);
-    int exponent = 0;
-    static const char * const si_prefix[] = {" a", " f", " p", " n", " μ", " m", " ", " k", " M", " G", " T", " P", " E"};
-    static const char * const iec_prefix[] = {" ", " Ki", " Mi", " Gi", " Ti", " Pi", " Ei"};
-    const char * const *prefix = si_prefix;
-    int max_exp = (int)G_N_ELEMENTS(si_prefix) - 1;
-
+    const struct prefix_parameters * const pp = prefix_parameters_for_flags(flags);
+    int prefix_index = pp->prefix_offset;
     char *ret_val;
 
     if (thousands_grouping_fmt == NULL)
         test_printf_thousands_grouping();
-
-    if (flags & FORMAT_SIZE_PREFIX_IEC) {
-        prefix = iec_prefix;
-        max_exp = (int)G_N_ELEMENTS(iec_prefix) - 1;
-        power = 1024.0;
-        pfx_off = 0;
-    }
 
     if (isfinite(size) && size != 0.0) {
 
@@ -481,30 +518,30 @@ format_units(wmem_allocator_t *allocator, double size,
          */
         if (abs_size < 1.0) {
             while (abs_size < comp) {
-                abs_size *= power;
-                exponent--;
-                if ((exponent + pfx_off) < 0) {
+                abs_size *= pp->power;
+                if (prefix_index == 0) {
                     scientific = true;
                     break;
                 }
+                prefix_index--;
             }
         } else {
-            while (abs_size >= comp*power) {
-                abs_size *= 1/power;
-                exponent++;
-                if ((exponent + pfx_off) > max_exp) {
+            while (abs_size >= comp * pp->power) {
+                abs_size /= pp->power;
+                if (prefix_index == pp->prefix_count - 1) {
                     scientific = true;
                     break;
                 }
+                prefix_index++;
             }
         }
     }
 
     if (scientific) {
         wmem_strbuf_append_printf(human_str, "%.*g", precision + 1, size);
-        exponent = 0;
+        prefix_index = pp->prefix_offset;
     } else {
-        if (exponent == 0) {
+        if (prefix_index == pp->prefix_offset) {
             is_small = true;
         }
         size = copysign(abs_size, size);
@@ -526,9 +563,7 @@ format_units(wmem_allocator_t *allocator, double size,
         // as is.)
     }
 
-    if ((size_t)(pfx_off + exponent) < G_N_ELEMENTS(si_prefix)) {
-        wmem_strbuf_append(human_str, prefix[pfx_off+exponent]);
-    }
+    wmem_strbuf_append(human_str, pp->prefix[prefix_index]);
 
     switch (unit) {
         case FORMAT_SIZE_UNIT_NONE:
@@ -594,72 +629,62 @@ format_units(wmem_allocator_t *allocator, double size,
  */
 char *
 format_size_wmem(wmem_allocator_t *allocator, int64_t size,
-                        format_size_units_e unit, uint16_t flags)
+                 format_size_units_e unit, uint16_t flags)
 {
     wmem_strbuf_t *human_str = wmem_strbuf_new(allocator, NULL);
-    int power = 1000;
-    int pfx_off = 0;
     bool is_small = false;
-    static const char * const prefix[] = {" T", " G", " M", " k", " Ti", " Gi", " Mi", " Ki"};
+    const struct prefix_parameters * const pp = prefix_parameters_for_flags(flags);
     char *ret_val;
 
     if (thousands_grouping_fmt == NULL)
         test_printf_thousands_grouping();
 
-    if (flags & FORMAT_SIZE_PREFIX_IEC) {
-        pfx_off = 4;
-        power = 1024;
+    int prefix_index = pp->prefix_offset;
+    int64_t scale = 1;
+    while (prefix_index + 1 < pp->prefix_count && scale < INT64_MAX / (10 * pp->power) && size >= scale * pp->power * 10) {
+        prefix_index++;
+        scale *= pp->power;
     }
 
-    if (size / power / power / power / power >= 10) {
-        wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size / power / power / power / power);
-        wmem_strbuf_append(human_str, prefix[pfx_off]);
-    } else if (size / power / power / power >= 10) {
-        wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size / power / power / power);
-        wmem_strbuf_append(human_str, prefix[pfx_off+1]);
-    } else if (size / power / power >= 10) {
-        wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size / power / power);
-        wmem_strbuf_append(human_str, prefix[pfx_off+2]);
-    } else if (size / power >= 10) {
-        wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size / power);
-        wmem_strbuf_append(human_str, prefix[pfx_off+3]);
-    } else {
-        wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size);
-        is_small = true;
-    }
+    wmem_strbuf_append_printf(human_str, thousands_grouping_fmt, size / scale);
+    wmem_strbuf_append(human_str, pp->prefix[prefix_index]);
+    is_small = prefix_index == pp->prefix_offset;
 
     switch (unit) {
         case FORMAT_SIZE_UNIT_NONE:
             break;
         case FORMAT_SIZE_UNIT_BYTES:
-            wmem_strbuf_append(human_str, is_small ? " bytes" : "B");
+            wmem_strbuf_append(human_str, is_small ? "bytes" : "B");
             break;
         case FORMAT_SIZE_UNIT_BITS:
-            wmem_strbuf_append(human_str, is_small ? " bits" : "b");
+            wmem_strbuf_append(human_str, is_small ? "bits" : "b");
             break;
         case FORMAT_SIZE_UNIT_BITS_S:
-            wmem_strbuf_append(human_str, is_small ? " bits/s" : "bps");
+            wmem_strbuf_append(human_str, is_small ? "bits/s" : "bps");
             break;
         case FORMAT_SIZE_UNIT_BYTES_S:
-            wmem_strbuf_append(human_str, is_small ? " bytes/s" : "Bps");
+            wmem_strbuf_append(human_str, is_small ? "bytes/s" : "Bps");
             break;
         case FORMAT_SIZE_UNIT_PACKETS:
-            wmem_strbuf_append(human_str, is_small ? " packets" : "packets");
+            wmem_strbuf_append(human_str, is_small ? "packets" : "pkts");
             break;
         case FORMAT_SIZE_UNIT_PACKETS_S:
-            wmem_strbuf_append(human_str, is_small ? " packets/s" : "packets/s");
+            wmem_strbuf_append(human_str, is_small ? "packets/s" : "pkts/s");
+            break;
+        case FORMAT_SIZE_UNIT_EVENTS:
+            wmem_strbuf_append(human_str, is_small ? "events" : "evts");
+            break;
+        case FORMAT_SIZE_UNIT_EVENTS_S:
+            wmem_strbuf_append(human_str, is_small ? "events/s" : "evts/s");
             break;
         case FORMAT_SIZE_UNIT_FIELDS:
-            wmem_strbuf_append(human_str, is_small ? " fields" : "fields");
+            wmem_strbuf_append(human_str, is_small ? "fields" : "flds");
             break;
-        /* These aren't that practical to use with integers, but
-         * perhaps better than asserting.
-         */
         case FORMAT_SIZE_UNIT_SECONDS:
-            wmem_strbuf_append(human_str, is_small ? " seconds" : "s");
+            wmem_strbuf_append(human_str, is_small ? "seconds" : "s");
             break;
         case FORMAT_SIZE_UNIT_ERLANGS:
-            wmem_strbuf_append(human_str, is_small ? " erlangs" : "E");
+            wmem_strbuf_append(human_str, is_small ? "erlangs" : "E");
             break;
         default:
             ws_assert_not_reached();
@@ -727,13 +752,11 @@ escape_string_len(wmem_allocator_t *alloc, const char *string, ssize_t len,
 {
     char c, r;
     wmem_strbuf_t *buf;
-    size_t alloc_size;
-    ssize_t i;
+    size_t abs_len, alloc_size, i;
 
-    if (len < 0)
-        len = strlen(string);
+    abs_len = (len < 0) ? strlen(string) : (size_t)len;
 
-    alloc_size = len;
+    alloc_size = abs_len;
     if (add_quotes)
         alloc_size += 2;
 
@@ -742,7 +765,7 @@ escape_string_len(wmem_allocator_t *alloc, const char *string, ssize_t len,
     if (add_quotes && quote_char != '\0')
         wmem_strbuf_append_c(buf, quote_char);
 
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < abs_len; i++) {
         c = string[i];
         if ((escape_func(c, &r))) {
             wmem_strbuf_append_c(buf, '\\');
@@ -802,6 +825,233 @@ char *ws_escape_csv(wmem_allocator_t *alloc, const char *string, bool add_quotes
         return escape_string_len(alloc, string, -1, escape_char, add_quotes, quote_char, double_quote);
     else
         return escape_string_len(alloc, string, -1, escape_null, add_quotes, quote_char, double_quote);
+}
+
+bool ws_csv_value_is_formula(const char *string)
+{
+    if (string == NULL)
+        return false;
+
+    /* Some spreadsheet applications strip leading spaces on import and then
+     * evaluate what follows, so look past them. */
+    while (*string == ' ')
+        string++;
+
+    switch (*string) {
+    case '=':  /* Formula */
+    case '+':  /* Formula */
+    case '-':  /* Formula */
+    case '@':  /* Lotus-style function, still honored for compatibility */
+    case '\t': /* Stripped on import, so it can precede any of the above */
+    case '\r':
+        return true;
+    default:
+        return false;
+    }
+}
+
+typedef enum {
+    UNESCAPE_NONE,
+    UNESCAPE_ESCAPE,
+} unescape_state_e;
+
+wmem_strbuf_t *ws_unescape_string_len(wmem_allocator_t *alloc, const uint8_t *string, ssize_t len, GError **err)
+{
+    wmem_strbuf_t *buf;
+    size_t abs_len, i;
+    unsigned char c;
+    unescape_state_e state = UNESCAPE_NONE;
+    bool possibly_invalid = false;
+    int value;
+    gunichar cp;
+
+    abs_len = (len < 0) ? strlen((const char*)string) : (size_t)len;
+
+    buf = wmem_strbuf_new_sized(alloc, abs_len);
+
+    /* With \u and \U escapes, we can only produce a result by knowing the
+     * intended final encoding. (We assume UTF-8 here.) \x escapes do not
+     * assume the final encoding, but neither do they ensure that the result
+     * will be valid in whatever encoding is used. The other escapes still
+     * assume an ASCII-like encoding for the C0 control characters.
+     *
+     * This attempts to be permissive and allow C, C++, Python, and JSON
+     * escapes, though C and C++ \x escapes longer than two characters are
+     * not allowed, since the target encoding is UTF-8. */
+    for (i = 0; i < abs_len; i++) {
+        c = string[i];
+        switch (state) {
+        case UNESCAPE_NONE:
+            switch (c) {
+            case '\\':
+                state = UNESCAPE_ESCAPE;
+                break;
+            default:
+                if (c & 0x80) {
+                    /* XXX - Use ws_utf8_char_len and validate now?
+                     * Trickier because there might, somehow, be a single
+                     * UTF-8 character which is a mix of escaped and
+                     * unescaped bytes. */
+                    possibly_invalid = true;
+                }
+                /* Pass through. */
+                wmem_strbuf_append_c(buf, c);
+            }
+            break;
+        case UNESCAPE_ESCAPE:
+            switch (c) {
+            case 'a':
+                wmem_strbuf_append_c(buf, '\a');
+                break;
+            case 'b':
+                wmem_strbuf_append_c(buf, '\b');
+                break;
+            case 'f':
+                wmem_strbuf_append_c(buf, '\f');
+                break;
+            case 'n':
+                wmem_strbuf_append_c(buf, '\n');
+                break;
+            case 'r':
+                wmem_strbuf_append_c(buf, '\r');
+                break;
+            case 't':
+                wmem_strbuf_append_c(buf, '\t');
+                break;
+            case 'v':
+                wmem_strbuf_append_c(buf, '\v');
+                break;
+            case '\\':
+                wmem_strbuf_append_c(buf, '\\');
+                break;
+            case '\"':
+                wmem_strbuf_append_c(buf, '\"');
+                break;
+            case '\'':
+                // C, C++, Python (not JSON)
+                wmem_strbuf_append_c(buf, '\'');
+                break;
+            case '?':
+                // C and C++ \? for supporting the late unlamented trigraphs
+                wmem_strbuf_append_c(buf, '?');
+                break;
+            case 'x':
+                // C and C++ allow an unlimited number of hex characters,
+                // but the end value must fit in a code unit of the string
+                // type, e.g. 8-bit for UTF-8. (Not a Unicode code point.)
+                // Python requires two characters exactly (which also means
+                // that if the third is valid hex digit that's fine.)
+                // JSON doesn't support.
+                ++i;
+                if (i <= abs_len) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT,
+                                "Hexadecimal character missing after \\x");
+                    goto out;
+                }
+                value = ws_xton(string[i]);
+                if (value == -1) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                "Non-hexadecimal character after \\x");
+                    goto out;
+                }
+                if (((abs_len - i) > 1) && ws_xton(string[i+1])) {
+                    ++i;
+                    value <<= 4;
+                    value |= ws_xton(string[i]);
+                }
+                c = (char)value;
+                if (c & 0x80) {
+                    possibly_invalid = true;
+                }
+                wmem_strbuf_append_c(buf, c);
+                break;
+            case 'u':
+                ++i;
+                if ((abs_len - i) < 4) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT,
+                                "\\u must be followed by four characters");
+                    goto out;
+                }
+                if (!ws_hexbuftou32(&string[i], 4, NULL, &cp)) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                "\\u must be followed by four hexadecimal characters");
+                    goto out;
+                }
+                i += 4;
+                /* JSON (but not C, C++, Python) can represent code points outside
+                 * the BMP with UTF-16 surrogate pairs. */
+                if (IS_LEAD_SURROGATE(cp)) {
+                    /* high surrogate */
+                    if ((abs_len - i) < 6) {
+                        g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT,
+                                    "\\u high surrogate must be followed by escaped low surrogate");
+                        goto out;
+                    }
+                    uint16_t second_code;
+                    if (string[i] != '\\' || string[i + 1] != 'u' ||
+                        !ws_hexbuftou16(&string[i+2], 4, NULL, &second_code)) {
+                        g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                    "\\u high surrogate must be followed by escaped low surrogate");
+                        goto out;
+                    }
+                    i += 6;
+                    if (!IS_TRAIL_SURROGATE(second_code)) {
+                        g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                    "\\u followed by unpaired UTF-16 surrogate");
+                        goto out;
+                    }
+                    cp = SURROGATE_VALUE(cp, second_code);
+                } else if (IS_TRAIL_SURROGATE(cp)) {
+                    /* isolated low surrogate, not allowed. */
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                "\\u followed by isolated low surrogate");
+                    goto out;
+                }
+                wmem_strbuf_append_unichar_validated(buf, cp);
+                break;
+            case 'U':
+                ++i;
+                if ((abs_len - i) < 8) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT,
+                                "\\U must be followed by eight characters");
+                    goto out;
+                }
+                if (!ws_hexbuftou32(&string[i], 8, NULL, &cp)) {
+                    g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                                "\\U must be followed by eight hexadecimal characters");
+                    goto out;
+                }
+                wmem_strbuf_append_unichar_validated(buf, cp);
+                break;
+            default:
+                g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE,
+                            "Unknown escape sequence");
+                goto out;
+            }
+            state = UNESCAPE_NONE;
+            break;
+        default:
+            /* Pass through. */
+            wmem_strbuf_append_c(buf, c);
+        }
+    }
+    switch (state) {
+    case UNESCAPE_ESCAPE:
+        g_set_error(err, G_CONVERT_ERROR, G_CONVERT_ERROR_PARTIAL_INPUT,
+                    "\\ at the end of input");
+        goto out;
+    default:
+        break;
+    }
+
+out:
+    /* Right now on error this passes through what was successfully decoded.
+     * We could also replace with replacement characters and continue if
+     * possible, or return a strbuf with an empty string. */
+    if (possibly_invalid) {
+        wmem_strbuf_utf8_make_valid(buf);
+    }
+    return buf;
 }
 
 const char *
@@ -865,9 +1115,16 @@ ws_strdup_underline(wmem_allocator_t *allocator, long offset, size_t len)
          * for one more character plus a terminating '\0'. \
          */ \
         if (ckd_mul(&fmtbuf_len, fmtbuf_len, 2)) { \
-            ws_debug("overflow!"); \
+            ws_debug("overflow."); \
             FMTBUF_ENDSTR; \
             return fmtbuf; \
+        } \
+        if (column+(nbytes+1) >= fmtbuf_len) { \
+            if (ckd_add(&fmtbuf_len, fmtbuf_len, (column + nbytes + 2) - fmtbuf_len)) { \
+                ws_debug("overflow."); \
+                FMTBUF_ENDSTR; \
+                return fmtbuf; \
+            } \
         } \
         fmtbuf = (char *)wmem_realloc(allocator, fmtbuf, fmtbuf_len); \
     }
@@ -898,6 +1155,11 @@ ws_strdup_underline(wmem_allocator_t *allocator, long offset, size_t len)
     FMTBUF_PUTCHAR(hex[((b) >> 4) & 0xF]); \
     FMTBUF_PUTCHAR(hex[((b) >> 0) & 0xF])
 
+#define FMTBUF_PUTBYTES(bytes, len) \
+    FMTBUF_EXPAND(len) \
+    memcpy(&fmtbuf[column], bytes, len); \
+    column += (unsigned)len; // FMTBUF_EXPAND checks for overflow
+
 /*
  * Put the trailing '\0' at the end of the buffer.
  */
@@ -910,220 +1172,47 @@ format_text_internal(wmem_allocator_t *allocator,
                         bool replace_space)
 {
     FMTBUF_VARS;
+    const unsigned char *prev = string;
     const unsigned char *stringend = string + len;
     unsigned char c;
+    size_t printable_bytes = 0;
 
     while (string < stringend) {
         /*
          * Get the first byte of this character.
          */
         c = *string++;
-        if (g_ascii_isprint(c)) {
+        if ((0x20 <= c) && (c < 0x7F)) {
             /*
              * Printable ASCII, so not part of a multi-byte UTF-8 sequence.
              * Make sure there's enough room for one more byte, and add
              * the character.
              */
-            FMTBUF_EXPAND(1);
-            FMTBUF_PUTCHAR(c);
-        } else if (replace_space && g_ascii_isspace(c)) {
-            /*
-             * ASCII, so not part of a multi-byte UTF-8 sequence, but
-             * not printable, but is a space character; show it as a
-             * blank.
-             *
-             * Make sure there's enough room for one more byte, and add
-             * the blank.
-             */
-            FMTBUF_EXPAND(1);
-            FMTBUF_PUTCHAR(' ');
-        } else if (c < 128) {
-            /*
-             * ASCII, so not part of a multi-byte UTF-8 sequence, but not
-             * printable.
-             *
-             * That requires a minimum of 2 bytes, one for the backslash
-             * and one for a letter, so make sure we have enough room
-             * for that, plus a trailing '\0'.
-             */
-            FMTBUF_EXPAND(2);
-            FMTBUF_PUTCHAR('\\');
-            switch (c) {
-
-                case '\a':
-                    FMTBUF_PUTCHAR('a');
-                    break;
-
-                case '\b':
-                    FMTBUF_PUTCHAR('b'); /* BS */
-                    break;
-
-                case '\f':
-                    FMTBUF_PUTCHAR('f'); /* FF */
-                    break;
-
-                case '\n':
-                    FMTBUF_PUTCHAR('n'); /* NL */
-                    break;
-
-                case '\r':
-                    FMTBUF_PUTCHAR('r'); /* CR */
-                    break;
-
-                case '\t':
-                    FMTBUF_PUTCHAR('t'); /* tab */
-                    break;
-
-                case '\v':
-                    FMTBUF_PUTCHAR('v');
-                    break;
-
-                default:
-                    /*
-                     * We've already put the backslash, but this
-                     * will put 3 more characters for the octal
-                     * number; make sure we have enough room for
-                     * that, plus the trailing '\0'.
-                     */
-                    FMTBUF_EXPAND(3);
-                    FMTBUF_PUTBYTE_OCTAL(c);
-                    break;
-            }
+            printable_bytes++;
         } else {
-            /*
-             * We've fetched the first byte of a multi-byte UTF-8
-             * sequence into c.
-             */
-            int utf8_len;
-            unsigned char mask;
-            gunichar uc;
-            unsigned char first;
-
-            if ((c & 0xe0) == 0xc0) {
-                /* Starts a 2-byte UTF-8 sequence; 1 byte left */
-                utf8_len = 1;
-                mask = 0x1f;
-            } else if ((c & 0xf0) == 0xe0) {
-                /* Starts a 3-byte UTF-8 sequence; 2 bytes left */
-                utf8_len = 2;
-                mask = 0x0f;
-            } else if ((c & 0xf8) == 0xf0) {
-                /* Starts a 4-byte UTF-8 sequence; 3 bytes left */
-                utf8_len = 3;
-                mask = 0x07;
-            } else if ((c & 0xfc) == 0xf8) {
-                /* Starts an old-style 5-byte UTF-8 sequence; 4 bytes left */
-                utf8_len = 4;
-                mask = 0x03;
-            } else if ((c & 0xfe) == 0xfc) {
-                /* Starts an old-style 6-byte UTF-8 sequence; 5 bytes left */
-                utf8_len = 5;
-                mask = 0x01;
-            } else {
-                /* 0xfe or 0xff or a continuation byte - not valid */
-                utf8_len = -1;
+            if (printable_bytes) {
+                FMTBUF_PUTBYTES(prev, printable_bytes);
+                printable_bytes = 0;
             }
-            if (utf8_len > 0) {
-                /* Try to construct the Unicode character */
-                uc = c & mask;
-                for (int i = 0; i < utf8_len; i++) {
-                    if (string >= stringend) {
-                        /*
-                         * Ran out of octets, so the character is
-                         * incomplete.  Put in a REPLACEMENT CHARACTER
-                         * instead, and then continue the loop, which
-                         * will terminate.
-                         */
-                        uc = UNICODE_REPLACEMENT_CHARACTER;
-                        break;
-                    }
-                    c = *string;
-                    if ((c & 0xc0) != 0x80) {
-                        /*
-                         * Not valid UTF-8 continuation character; put in
-                         * a replacement character, and then re-process
-                         * this octet as the beginning of a new character.
-                         */
-                        uc = UNICODE_REPLACEMENT_CHARACTER;
-                        break;
-                    }
-                    string++;
-                    uc = (uc << 6) | (c & 0x3f);
-                }
-
+            if (replace_space && g_ascii_isspace(c)) {
                 /*
-                 * If this isn't a valid Unicode character, put in
-                 * a REPLACEMENT CHARACTER.
-                 */
-                if (!g_unichar_validate(uc))
-                    uc = UNICODE_REPLACEMENT_CHARACTER;
-            } else {
-                /* 0xfe or 0xff; put it a REPLACEMENT CHARACTER */
-                uc = UNICODE_REPLACEMENT_CHARACTER;
-            }
-
-            /*
-             * OK, is it a printable Unicode character?
-             */
-            if (g_unichar_isprint(uc)) {
-                /*
-                 * Yes - put it into the string as UTF-8.
-                 * This means that if it was an overlong
-                 * encoding, this will put out the right
-                 * sized encoding.
-                 */
-                if (uc < 0x80) {
-                    first = 0;
-                    utf8_len = 1;
-                } else if (uc < 0x800) {
-                    first = 0xc0;
-                    utf8_len = 2;
-                } else if (uc < 0x10000) {
-                    first = 0xe0;
-                    utf8_len = 3;
-                } else if (uc < 0x200000) {
-                    first = 0xf0;
-                    utf8_len = 4;
-                } else if (uc < 0x4000000) {
-                    /*
-                     * This should never happen, as Unicode doesn't
-                     * go that high.
-                     */
-                    first = 0xf8;
-                    utf8_len = 5;
-                } else {
-                    /*
-                     * This should never happen, as Unicode doesn't
-                     * go that high.
-                     */
-                    first = 0xfc;
-                    utf8_len = 6;
-                }
-                FMTBUF_EXPAND(utf8_len);
-                for (int i = utf8_len - 1; i > 0; i--) {
-                    fmtbuf[column + i] = (uc & 0x3f) | 0x80;
-                    uc >>= 6;
-                }
-                fmtbuf[column] = uc | first;
-                column += utf8_len;
-            } else if (replace_space && g_unichar_isspace(uc)) {
-                /*
-                 * Not printable, but is a space character; show it
-                 * as a blank.
+                 * ASCII, so not part of a multi-byte UTF-8 sequence, but
+                 * not printable, but is a space character; show it as a
+                 * blank.
                  *
-                 * Make sure there's enough room for one more byte,
-                 * and add the blank.
+                 * Make sure there's enough room for one more byte, and add
+                 * the blank.
                  */
                 FMTBUF_EXPAND(1);
                 FMTBUF_PUTCHAR(' ');
             } else if (c < 128) {
                 /*
-                 * ASCII, but not printable.
-                 * Yes, this could happen with an overlong encoding.
+                 * ASCII, so not part of a multi-byte UTF-8 sequence, but not
+                 * printable.
                  *
-                 * That requires a minimum of 2 bytes, one for the
-                 * backslash and one for a letter, so make sure we
-                 * have enough room for that, plus a trailing '\0'.
+                 * That requires a minimum of 2 bytes, one for the backslash
+                 * and one for a letter, so make sure we have enough room
+                 * for that, plus a trailing '\0'.
                  */
                 FMTBUF_EXPAND(2);
                 FMTBUF_PUTCHAR('\\');
@@ -1170,32 +1259,217 @@ format_text_internal(wmem_allocator_t *allocator,
                 }
             } else {
                 /*
-                 * Unicode, but not printable, and not ASCII;
-                 * put it out as \uxxxx or \Uxxxxxxxx.
+                 * We've fetched the first byte of a multi-byte UTF-8
+                 * sequence into c.
                  */
-                if (uc <= 0xFFFF) {
-                    FMTBUF_EXPAND(6);
-                    FMTBUF_PUTCHAR('\\');
-                    FMTBUF_PUTCHAR('u');
-                    FMTBUF_PUTCHAR(hex[(uc >> 12) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 8) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 4) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 0) & 0xF]);
+                int utf8_len;
+                unsigned char mask;
+                gunichar uc;
+                unsigned char first;
+
+                if ((c & 0xe0) == 0xc0) {
+                    /* Starts a 2-byte UTF-8 sequence; 1 byte left */
+                    utf8_len = 1;
+                    mask = 0x1f;
+                } else if ((c & 0xf0) == 0xe0) {
+                    /* Starts a 3-byte UTF-8 sequence; 2 bytes left */
+                    utf8_len = 2;
+                    mask = 0x0f;
+                } else if ((c & 0xf8) == 0xf0) {
+                    /* Starts a 4-byte UTF-8 sequence; 3 bytes left */
+                    utf8_len = 3;
+                    mask = 0x07;
+                } else if ((c & 0xfc) == 0xf8) {
+                    /* Starts an old-style 5-byte UTF-8 sequence; 4 bytes left */
+                    utf8_len = 4;
+                    mask = 0x03;
+                } else if ((c & 0xfe) == 0xfc) {
+                    /* Starts an old-style 6-byte UTF-8 sequence; 5 bytes left */
+                    utf8_len = 5;
+                    mask = 0x01;
                 } else {
-                    FMTBUF_EXPAND(10);
+                    /* 0xfe or 0xff or a continuation byte - not valid */
+                    utf8_len = -1;
+                }
+                if (utf8_len > 0) {
+                    /* Try to construct the Unicode character */
+                    uc = c & mask;
+                    for (int i = 0; i < utf8_len; i++) {
+                        if (string >= stringend) {
+                            /*
+                             * Ran out of octets, so the character is
+                             * incomplete.  Put in a REPLACEMENT CHARACTER
+                             * instead, and then continue the loop, which
+                             * will terminate.
+                             */
+                            uc = UNICODE_REPLACEMENT_CHARACTER;
+                            break;
+                        }
+                        c = *string;
+                        if ((c & 0xc0) != 0x80) {
+                            /*
+                             * Not valid UTF-8 continuation character; put in
+                             * a replacement character, and then re-process
+                             * this octet as the beginning of a new character.
+                             */
+                            uc = UNICODE_REPLACEMENT_CHARACTER;
+                            break;
+                        }
+                        string++;
+                        uc = (uc << 6) | (c & 0x3f);
+                    }
+
+                    /*
+                     * If this isn't a valid Unicode character, put in
+                     * a REPLACEMENT CHARACTER.
+                     */
+                    if (!g_unichar_validate(uc))
+                        uc = UNICODE_REPLACEMENT_CHARACTER;
+                } else {
+                    /* 0xfe or 0xff; put it a REPLACEMENT CHARACTER */
+                    uc = UNICODE_REPLACEMENT_CHARACTER;
+                }
+
+                /*
+                 * OK, is it a printable Unicode character?
+                 */
+                if (g_unichar_isprint(uc)) {
+                    /*
+                     * Yes - put it into the string as UTF-8.
+                     * This means that if it was an overlong
+                     * encoding, this will put out the right
+                     * sized encoding.
+                     */
+                    if (uc < 0x80) {
+                        first = 0;
+                        utf8_len = 1;
+                    } else if (uc < 0x800) {
+                        first = 0xc0;
+                        utf8_len = 2;
+                    } else if (uc < 0x10000) {
+                        first = 0xe0;
+                        utf8_len = 3;
+                    } else if (uc < 0x200000) {
+                        first = 0xf0;
+                        utf8_len = 4;
+                    } else if (uc < 0x4000000) {
+                        /*
+                         * This should never happen, as Unicode doesn't
+                         * go that high.
+                         */
+                        first = 0xf8;
+                        utf8_len = 5;
+                    } else {
+                        /*
+                         * This should never happen, as Unicode doesn't
+                         * go that high.
+                         */
+                        first = 0xfc;
+                        utf8_len = 6;
+                    }
+                    FMTBUF_EXPAND(utf8_len);
+                    for (int i = utf8_len - 1; i > 0; i--) {
+                        fmtbuf[column + i] = (uc & 0x3f) | 0x80;
+                        uc >>= 6;
+                    }
+                    fmtbuf[column] = uc | first;
+                    column += utf8_len;
+                } else if (replace_space && g_unichar_isspace(uc)) {
+                    /*
+                     * Not printable, but is a space character; show it
+                     * as a blank.
+                     *
+                     * Make sure there's enough room for one more byte,
+                     * and add the blank.
+                     */
+                    FMTBUF_EXPAND(1);
+                    FMTBUF_PUTCHAR(' ');
+                } else if (c < 128) {
+                    /*
+                     * ASCII, but not printable.
+                     * Yes, this could happen with an overlong encoding.
+                     *
+                     * That requires a minimum of 2 bytes, one for the
+                     * backslash and one for a letter, so make sure we
+                     * have enough room for that, plus a trailing '\0'.
+                     */
+                    FMTBUF_EXPAND(2);
                     FMTBUF_PUTCHAR('\\');
-                    FMTBUF_PUTCHAR('U');
-                    FMTBUF_PUTCHAR(hex[(uc >> 28) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 24) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 20) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 16) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 12) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 8) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 4) & 0xF]);
-                    FMTBUF_PUTCHAR(hex[(uc >> 0) & 0xF]);
+                    switch (c) {
+
+                        case '\a':
+                            FMTBUF_PUTCHAR('a');
+                            break;
+
+                        case '\b':
+                            FMTBUF_PUTCHAR('b'); /* BS */
+                            break;
+
+                        case '\f':
+                            FMTBUF_PUTCHAR('f'); /* FF */
+                            break;
+
+                        case '\n':
+                            FMTBUF_PUTCHAR('n'); /* NL */
+                            break;
+
+                        case '\r':
+                            FMTBUF_PUTCHAR('r'); /* CR */
+                            break;
+
+                        case '\t':
+                            FMTBUF_PUTCHAR('t'); /* tab */
+                            break;
+
+                        case '\v':
+                            FMTBUF_PUTCHAR('v');
+                            break;
+
+                        default:
+                            /*
+                             * We've already put the backslash, but this
+                             * will put 3 more characters for the octal
+                             * number; make sure we have enough room for
+                             * that, plus the trailing '\0'.
+                             */
+                            FMTBUF_EXPAND(3);
+                            FMTBUF_PUTBYTE_OCTAL(c);
+                            break;
+                    }
+                } else {
+                    /*
+                     * Unicode, but not printable, and not ASCII;
+                     * put it out as \uxxxx or \Uxxxxxxxx.
+                     */
+                    if (uc <= 0xFFFF) {
+                        FMTBUF_EXPAND(6);
+                        FMTBUF_PUTCHAR('\\');
+                        FMTBUF_PUTCHAR('u');
+                        FMTBUF_PUTCHAR(hex[(uc >> 12) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 8) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 4) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 0) & 0xF]);
+                    } else {
+                        FMTBUF_EXPAND(10);
+                        FMTBUF_PUTCHAR('\\');
+                        FMTBUF_PUTCHAR('U');
+                        FMTBUF_PUTCHAR(hex[(uc >> 28) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 24) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 20) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 16) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 12) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 8) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 4) & 0xF]);
+                        FMTBUF_PUTCHAR(hex[(uc >> 0) & 0xF]);
+                    }
                 }
             }
+            prev = string;
         }
+    }
+    if (printable_bytes) {
+        FMTBUF_PUTBYTES(prev, printable_bytes);
+        printable_bytes = 0;
     }
 
     FMTBUF_ENDSTR;
@@ -1234,7 +1508,7 @@ char *
 format_text(wmem_allocator_t *allocator,
                         const char *string, size_t len)
 {
-    return format_text_internal(allocator, string, len, false);
+    return format_text_internal(allocator, (const uint8_t*)string, len, false);
 }
 
 /** Given a wmem scope and a null-terminated string, expected to be in
@@ -1258,7 +1532,7 @@ format_text(wmem_allocator_t *allocator,
 char *
 format_text_string(wmem_allocator_t* allocator, const char *string)
 {
-    return format_text_internal(allocator, string, strlen(string), false);
+    return format_text_internal(allocator, (const uint8_t*)string, strlen(string), false);
 }
 
 /*
@@ -1270,7 +1544,7 @@ format_text_string(wmem_allocator_t* allocator, const char *string)
 char *
 format_text_wsp(wmem_allocator_t* allocator, const char *string, size_t len)
 {
-    return format_text_internal(allocator, string, len, true);
+    return format_text_internal(allocator, (const uint8_t*)string, len, true);
 }
 
 /*

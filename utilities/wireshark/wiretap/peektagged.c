@@ -74,9 +74,9 @@ void register_peektagged(void);
  * by the raw packet data.
  */
 typedef struct peektagged_section_header {
-        int8_t  section_id[4];          /* string identifying the section */
-        uint32_t section_len;            /* little-endian section length */
-        uint32_t section_const;          /* little-endian 0x00000200 */
+        char     section_id[4];         /* string identifying the section */
+        uint32_t section_len;           /* little-endian section length */
+        uint32_t section_const;         /* little-endian 0x00000200 */
 } peektagged_section_header_t;
 
 /* Size of the "header" sections */
@@ -194,7 +194,7 @@ peektagged_get_file_version(xmlDocPtr doc)
             if (str_version == NULL)
                 return 0;
 
-            if (!ws_strtou32(str_version, NULL, &value)) {
+            if (!ws_strtou32((const char*)str_version, NULL, &value)) {
                 xmlFree(str_version);
                 return 0;
             }
@@ -225,7 +225,7 @@ peektagged_get_media_info(xmlDocPtr doc, uint32_t *mediaType, uint32_t* mediaSub
         if (cur->type == XML_ELEMENT_NODE && xmlStrcmp(cur->name, (const xmlChar*)"MediaType") == 0) {
             xmlChar* str_type = xmlNodeGetContent(cur);
             if (str_type != NULL) {
-                if (ws_strtou32(str_type, NULL, mediaType))
+                if (ws_strtou32((const char*)str_type, NULL, mediaType))
                     found_media_type = true;
 
                 xmlFree(str_type);
@@ -235,7 +235,7 @@ peektagged_get_media_info(xmlDocPtr doc, uint32_t *mediaType, uint32_t* mediaSub
             xmlChar* str_type = xmlNodeGetContent(cur);
 
             if (str_type != NULL) {
-                if (ws_strtou32(str_type, NULL, mediaSubType))
+                if (ws_strtou32((const char*)str_type, NULL, mediaSubType))
                     found_media_subtype = true;
 
                 xmlFree(str_type);
@@ -249,25 +249,24 @@ peektagged_get_media_info(xmlDocPtr doc, uint32_t *mediaType, uint32_t* mediaSub
 }
 
 static bool
-peektagged_skip_cpid(wtap* wth, peektagged_section_header_t* ap_hdr, int* err, char** err_info)
+peektagged_skip_section(wtap* wth, peektagged_section_header_t* ap_hdr, int* err, char** err_info)
 {
     uint32_t length;
 
     /*
-     * If we see an "cpid" section, which appears to be optional, skip over it.
+     * Skip over a section.
      */
-    if (memcmp(ap_hdr->section_id, "cpid", sizeof(ap_hdr->section_id)) == 0) {
-        length = GUINT32_TO_LE(ap_hdr->section_len);
-        if ((length >= MAX_SECTION_SIZE) || (GUINT32_TO_LE(ap_hdr->section_const) != SECTION_CONST_VALUE))
-            return false;
+    length = GUINT32_TO_LE(ap_hdr->section_len);
+    if ((length >= MAX_SECTION_SIZE) || (GUINT32_TO_LE(ap_hdr->section_const) != SECTION_CONST_VALUE))
+        return false;
 
-        if (!wtap_read_bytes(wth->fh, NULL, (int)length, err, err_info)) {
-            return false;
-        }
-
-        if (!wtap_read_bytes(wth->fh, ap_hdr, (int)sizeof(*ap_hdr), err, err_info))
-            return false;
+    /* This assumes that MAX_SECTION_SIZE < INT_MAX, which it currently is */
+    if (!wtap_read_bytes(wth->fh, NULL, (int)length, err, err_info)) {
+        return false;
     }
+
+    if (!wtap_read_bytes(wth->fh, ap_hdr, (int)sizeof(*ap_hdr), err, err_info))
+        return false;
 
     return true;
 }
@@ -721,7 +720,7 @@ peektagged_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
             if (rec->rec_header.packet_header.len < 4 || rec->rec_header.packet_header.caplen < 4) {
                 *err = WTAP_ERR_BAD_FILE;
                 *err_info = ws_strdup_printf("peektagged: 802.11 packet has length < 4");
-                return false;
+                return -1;
             }
             rec->rec_header.packet_header.pseudo_header.ieee_802_11.fcs_len = 0;
             rec->rec_header.packet_header.len -= 4;
@@ -740,7 +739,7 @@ peektagged_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
         if (rec->rec_header.packet_header.len < 4 || rec->rec_header.packet_header.caplen < 4) {
             *err = WTAP_ERR_BAD_FILE;
             *err_info = ws_strdup_printf("peektagged: Ethernet packet has length < 4");
-            return false;
+            return -1;
         }
         rec->rec_header.packet_header.pseudo_header.eth.fcs_len = 0;
         rec->rec_header.packet_header.len -= 4;
@@ -830,7 +829,7 @@ wtap_open_return_val peektagged_open(wtap* wth, int* err, char** err_info)
     sectionData[length] = 0;
 
     /* Now section data can be parsed into a proper structure */
-    doc = xmlParseMemory(sectionData, (int)length);
+    doc = xmlParseMemory((const char*)sectionData, (int)length);
     if (doc == NULL)
         return WTAP_OPEN_NOT_MINE;
 
@@ -868,7 +867,7 @@ wtap_open_return_val peektagged_open(wtap* wth, int* err, char** err_info)
      * If we see an "cpid" section, which appears to be optional, skip over it.
      */
     if (memcmp(ap_hdr.section_id, "cpid", sizeof(ap_hdr.section_id)) == 0) {
-        if (!peektagged_skip_cpid(wth, &ap_hdr, err, err_info)) {
+        if (!peektagged_skip_section(wth, &ap_hdr, err, err_info)) {
             if (*err && *err != WTAP_ERR_SHORT_READ)
                 return WTAP_OPEN_ERROR;
             return WTAP_OPEN_NOT_MINE;
@@ -895,7 +894,7 @@ wtap_open_return_val peektagged_open(wtap* wth, int* err, char** err_info)
     sectionData[length] = 0;
 
     /* Now section data can be parsed into a proper structure */
-    doc = xmlParseMemory(sectionData, (int)length);
+    doc = xmlParseMemory((const char*)sectionData, (int)length);
     if (doc == NULL) {
         *err = WTAP_ERR_BAD_FILE;
         *err_info = g_strdup("peektagged: session section XML couldn't be parsed");
@@ -929,7 +928,7 @@ wtap_open_return_val peektagged_open(wtap* wth, int* err, char** err_info)
      * If we see an "cpid" section, which appears to be optional, skip over it.
      */
     if (memcmp(ap_hdr.section_id, "cpid", sizeof(ap_hdr.section_id)) == 0) {
-        if (!peektagged_skip_cpid(wth, &ap_hdr, err, err_info)) {
+        if (!peektagged_skip_section(wth, &ap_hdr, err, err_info)) {
             if (*err && *err != WTAP_ERR_SHORT_READ)
                 return WTAP_OPEN_ERROR;
             return WTAP_OPEN_NOT_MINE;

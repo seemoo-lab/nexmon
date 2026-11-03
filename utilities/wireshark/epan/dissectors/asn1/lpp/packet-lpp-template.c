@@ -1,6 +1,6 @@
 /* packet-lpp.c
  * Routines for 3GPP LTE Positioning Protocol (LPP) packet dissection
- * Copyright 2011-2024 Pascal Quantin <pascal@wireshark.org>
+ * Copyright 2011-2026 Pascal Quantin <pascal@wireshark.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * Ref 3GPP TS 37.355 version 18.4.0 Release 18
+ * Ref 3GPP TS 37.355 version 19.3.0 Release 19
  * http://www.3gpp.org
  */
 
@@ -26,10 +26,6 @@
 #include "packet-per.h"
 #include "packet-lpp.h"
 #include "packet-media-type.h"
-
-#define PNAME  "LTE Positioning Protocol (LPP)"
-#define PSNAME "LPP"
-#define PFNAME "lpp"
 
 void proto_register_lpp(void);
 void proto_reg_handoff_lpp(void);
@@ -2148,7 +2144,7 @@ void proto_register_lpp(void) {
 
 
   /* Register protocol */
-  proto_lpp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_lpp = proto_register_protocol("LTE Positioning Protocol (LPP)", "LPP", "lpp");
   register_dissector("lpp", dissect_lpp, proto_lpp);
 
   /* Register fields and subtrees */

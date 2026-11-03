@@ -1,4 +1,4 @@
-/* packet-btaatt.h
+/* packet-btatt.h
  * Headers for ATT
  *
  * Copyright 2015, Michal Labedzki for Tieto Corporation
@@ -42,10 +42,13 @@
 #define ATT_OPCODE_WRITE_PREPARE_RESPONSE       0x17
 #define ATT_OPCODE_WRITE_EXECUTE_REQUEST        0x18
 #define ATT_OPCODE_WRITE_EXECUTE_RESPONSE       0x19
+#define ATT_OPCODE_READ_MULTIPLE_VARIABLE_REQUEST       0x20
+#define ATT_OPCODE_READ_MULTIPLE_VARIABLE_RESPONSE      0x21
 #define ATT_OPCODE_WRITE_COMMAND                0x52
 #define ATT_OPCODE_WRITE_SIGNED_COMMAND         0xD2
 
 #define ATT_OPCODE_HANDLE_VALUE_NOTIFICATION    0x1B
+#define ATT_OPCODE_MULTIPLE_HANDLE_VALUE_NOTIFICATION   0x23
 #define ATT_OPCODE_HANDLE_VALUE_INDICATION      0x1D
 #define ATT_OPCODE_HANDLE_VALUE_CONFIRMATION    0x1E
 
@@ -65,6 +68,9 @@ enum attribute_type {
 typedef struct _tap_handles_t {
     uint32_t  handle;
     bluetooth_uuid_t uuid;
+    const char* uuid_str;
+    const char* numeric_uuid_str;
+
     enum attribute_type attribute_type;
 
     /** Store the service and characteristic declaration.
@@ -89,7 +95,6 @@ bluetooth_uuid_t
 get_gatt_bluetooth_uuid_from_handle(packet_info *pinfo, uint32_t handle, uint8_t opcode,
     btl2cap_data_t *l2cap_data);
 
-WS_DLL_PUBLIC bool bluetooth_gatt_has_no_parameter(uint8_t opcode);
 WS_DLL_PUBLIC expert_field ei_btatt_invalid_usage;
 
 #endif

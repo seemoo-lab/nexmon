@@ -33,7 +33,7 @@ ColumnEditorFrame::ColumnEditorFrame(QWidget *parent) :
     ui->setupUi(this);
     ui->fieldsNameLineEdit->setType(CustomColumnToEnter);
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     foreach (QWidget *w, findChildren<QWidget *>()) {
         w->setAttribute(Qt::WA_MacSmallSize, true);
     }
@@ -66,13 +66,8 @@ ColumnEditorFrame::ColumnEditorFrame(QWidget *parent) :
             ui->fieldsNameLineEdit, &DisplayFilterEdit::checkCustomColumn);
     connect(ui->fieldsNameLineEdit, &DisplayFilterEdit::textChanged,
             this, &ColumnEditorFrame::checkCanResolve);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    connect(ui->typeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &ColumnEditorFrame::typeChanged);
-#else
     connect(ui->typeComboBox, &QComboBox::currentIndexChanged, this,
             &ColumnEditorFrame::typeChanged);
-#endif
 
 }
 
@@ -209,6 +204,7 @@ void ColumnEditorFrame::on_buttonBox_accepted()
                 set_column_display_format(cur_column_, ui->displayComboBox->itemData(ui->displayComboBox->currentIndex()).toInt());
             }
         }
+        recent_set_column_format(cur_column_, ui->typeComboBox->currentIndex());
         prefs_main_write();
         emit columnEdited();
     }

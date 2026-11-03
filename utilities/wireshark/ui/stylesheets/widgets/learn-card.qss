@@ -1,0 +1,86 @@
+/* ===================================================================
+ * Wireshark Welcome Page — Learn Card Widget
+ *
+ * Widget hierarchy:
+ *   LearnCardWidget (QFrame)        — rounded card container
+ *     #learnHeader                  — ClickableLabel, "Learn" title
+ *     #learnHeaderSeparator         — QFrame HLine, 1px divider
+ *     #learnLinkContainer           — QWidget, holds link labels
+ *       #learnLink (×N)             — QLabel, rich-text link
+ *     #learnButtonContainer         — QWidget, holds action buttons
+ *       #learnButton (×N)           — QPushButton, colored action button
+ *
+ * All colors are sourced from either the Qt palette() (so they
+ * adapt to the platform style) or from theme tokens resolved by
+ * ThemeManager::styleSheet("widgets/learn-card").  No literal color
+ * values are allowed in this file.
+ * =================================================================== */
+
+
+/* -----------------------------------------------------------------
+ * Card container — rounded border with background
+ * ----------------------------------------------------------------- */
+LearnCardWidget {
+    background-color: palette(alternateBase);
+    border: 1px solid wstheme(Separator);
+    border-radius: 6px;
+}
+
+
+/* -----------------------------------------------------------------
+ * Header label — "Learn"
+ *
+ * Colors come from the shared section header tokens so the Open,
+ * Capture and Learn headers always look identical.
+ * ----------------------------------------------------------------- */
+QLabel#learnHeader {
+    color: wstheme(SectionHeader);
+    padding: 10px 12px;
+}
+
+QLabel#learnHeader:hover {
+    color: wstheme(SectionHeaderHover);
+}
+
+
+/* -----------------------------------------------------------------
+ * Header separator — 1px horizontal line
+ * ----------------------------------------------------------------- */
+QFrame#learnHeaderSeparator {
+    color: palette(mid);
+}
+
+
+/* -----------------------------------------------------------------
+ * Link labels — clickable rich-text links
+ * ----------------------------------------------------------------- */
+QLabel#learnLink {
+    border-radius: 4px;
+}
+
+QLabel#learnLink:hover {
+    background-color: palette(midlight);
+}
+
+
+/* -----------------------------------------------------------------
+ * Action buttons — colored buttons driven by JSON config
+ *
+ * Only background-color and hover color are set per-button in code
+ * from the learn_card.json configuration.
+ * ----------------------------------------------------------------- */
+QPushButton#learnButton {
+    color: wstheme(TextOnDark);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-weight: 500;
+}
+
+
+/* -----------------------------------------------------------------
+ * Button container — separator line above action buttons
+ * ----------------------------------------------------------------- */
+QWidget#learnButtonContainer {
+    border-top: 1px solid wstheme(Separator);
+}

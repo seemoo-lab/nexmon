@@ -350,7 +350,6 @@ enum gf_fop_procnum {
 	GFS3_OP_SETATTR,
 	GFS3_OP_FSETATTR,
 	GFS3_OP_READDIRP,
-	GFS3_OP_FORGET,
 	GFS3_OP_RELEASE,
 	GFS3_OP_RELEASEDIR,
 	GFS3_OP_FREMOVEXATTR,
@@ -359,6 +358,14 @@ enum gf_fop_procnum {
 	GFS3_OP_ZEROFILL,
 	GFS3_OP_IPC,
 	GFS3_OP_SEEK,
+	GFS3_OP_COMPOUND,
+	GFS3_OP_LEASE,
+	GFS3_OP_GETACTIVELK,
+	GFS3_OP_SETACTIVELK,
+	GFS3_OP_ICREATE,
+	GFS3_OP_NAMELINK,
+	GFS3_OP_PUT,
+	GFS3_OP_COPY_FILE_RANGE,
 	GFS3_OP_MAXVALUE
 };
 
@@ -448,18 +455,18 @@ enum gf_upcall_event {
 	GF_UPCALL_CACHE_INVALIDATION,
 };
 
-extern int
+extern unsigned
 gluster_rpc_dissect_dict(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int hfindex,
-								int offset);
+    unsigned offset);
 
-extern int
-gluster_dissect_common_reply(tvbuff_t *tvb, int offset,
+extern unsigned
+gluster_dissect_common_reply(tvbuff_t *tvb, unsigned offset,
 				packet_info *pinfo, proto_tree *tree, void* data _U_);
 extern int
 glusterfs_gfs3_3_op_common_reply(tvbuff_t *tvb,
 				packet_info *pinfo, proto_tree *tree, void* data _U_);
 
-extern int
+extern unsigned
 glusterfs_rpc_dissect_gf_iatt(proto_tree *tree, tvbuff_t *tvb, int hfindex,
-								int offset);
+    unsigned offset);
 #endif /* __PACKET_GLUSTER_H__ */

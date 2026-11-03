@@ -116,10 +116,8 @@ QString PrefsItem::getModuleName() const
 
 QString PrefsItem::getModuleTitle() const
 {
-    if ((module_ == NULL) && (pref_ == NULL))
+    if (module_ == NULL)
         return name_;
-
-    Q_ASSERT(module_);
 
     return QString(module_->title);
 }
@@ -293,14 +291,14 @@ fill_prefs(module_t *module, void *root_ptr)
     }
 
     if (prefs_module_has_submodules(module))
-        return prefs_modules_foreach_submodules(module, fill_prefs, module_item);
+        return prefs_modules_foreach_submodules(module->submodules, fill_prefs, module_item);
 
     return 0;
 }
 
 void PrefsModel::populate()
 {
-    prefs_modules_foreach_submodules(NULL, fill_prefs, (void *)root_);
+    prefs_modules_for_all_modules(fill_prefs, (void *)root_);
 
     //Add the "specially handled" preferences
     PrefsItem *appearance_item, *appearance_subitem, *special_item;
@@ -327,6 +325,8 @@ void PrefsModel::populate()
     special_item = new PrefsItem(PrefsModel::RSAKeys, root_);
     root_->prependChild(special_item);
 #endif
+    special_item = new PrefsItem(PrefsModel::Aggregation, root_);
+    root_->prependChild(special_item);
     special_item = new PrefsItem(PrefsModel::Advanced, root_);
     root_->prependChild(special_item);
 }
@@ -341,12 +341,13 @@ QString PrefsModel::typeToString(PrefsModelType type)
         case Appearance: typeStr = tr("Appearance"); break;
         case Layout: typeStr = tr("Layout"); break;
         case Columns: typeStr = tr("Columns"); break;
-        case FontAndColors: typeStr = tr("Font and Colors"); break;
+        case FontAndColors: typeStr = tr("Theme and Font"); break;
         case WelcomePage: typeStr = tr("Welcome Page"); break;
         case Capture: typeStr = tr("Capture"); break;
         case Expert: typeStr = tr("Expert"); break;
         case FilterButtons: typeStr = tr("Filter Buttons"); break;
         case RSAKeys: typeStr = tr("RSA Keys"); break;
+        case Aggregation: typeStr = tr("Aggregation"); break;
     }
 
     return typeStr;
@@ -384,6 +385,9 @@ QString PrefsModel::typeToHelp(PrefsModelType type)
             break;
         case RSAKeys:
             helpStr = QStringLiteral("ChCustPreferencesSection.html#ChCustPrefsRSASection");
+            break;
+        case Aggregation:
+            helpStr = QStringLiteral("ChCustPreferencesSection.html#ChCustPrefsAggregationSection");
             break;
         case Advanced:
             helpStr = QStringLiteral("ChCustPreferencesSection.html#_advanced");
@@ -548,6 +552,24 @@ bool AdvancedPrefsModel::setData(const QModelIndex &dataindex, const QVariant &v
                 prefs_set_uint_value(item->getPref(), new_val, pref_stashed);
             }
             break;
+        case PREF_INT:
+        {
+            bool ok = true;
+            int new_val = value.toInt(&ok);
+
+            if (ok)
+                prefs_set_int_value(item->getPref(), new_val, pref_stashed);
+        }
+        break;
+        case PREF_FLOAT:
+        {
+            bool ok = true;
+            double new_val = value.toDouble(&ok);
+
+            if (ok)
+                prefs_set_float_value(item->getPref(), new_val, pref_stashed);
+        }
+        break;
         case PREF_BOOL:
             prefs_invert_bool_value(item->getPref(), pref_stashed);
             break;
@@ -824,27 +846,30 @@ bool ModulePrefsModel::lessThan(const QModelIndex &source_left, const QModelInde
 {
     PrefsItem* left_item = static_cast<PrefsItem*>(source_left.internalPointer());
     PrefsItem* right_item = static_cast<PrefsItem*>(source_right.internalPointer());
+    if (!left_item || !right_item) {
+        return false;
+    }
+    QString left_name = left_item->getModuleTitle(),
+            right_name = right_item->getModuleTitle();
+    const QString& aggregateName = PrefsModel::typeToString(PrefsModel::Aggregation);
 
-    if ((left_item != NULL) && (right_item != NULL)) {
-        QString left_name = left_item->getModuleTitle(),
-                right_name = right_item->getModuleTitle();
+    // Assign priorities: lower number = higher priority
+    auto priority = [&](const QString& name) -> int {
+        if (name == aggregateName)      return 1; // Aggregation before Advanced
+        if (name == advancedPrefName_)  return 2; // Force "Advanced" preferences to be at bottom of model
+        return 0; // Default: alphabetical
+    };
 
-        //Force "Advanced" preferences to be at bottom of model
-        if (source_left.isValid() && !source_left.parent().isValid() &&
-            source_right.isValid() && !source_right.parent().isValid()) {
-            if (left_name.compare(advancedPrefName_) == 0) {
-                return false;
-            }
-            if (right_name.compare(advancedPrefName_) == 0) {
-                return true;
-            }
-        }
+    const int left_priority = priority(left_name);
+    const int right_priority = priority(right_name);
 
-        if (left_name.compare(right_name, Qt::CaseInsensitive) < 0)
-            return true;
+    // Compare by priority first
+    if (left_priority != right_priority) {
+        return left_priority < right_priority;
     }
 
-    return false;
+    // Fallback: case-insensitive alphabetical order
+    return left_name.compare(right_name, Qt::CaseInsensitive) < 0;
 }
 
 bool ModulePrefsModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const

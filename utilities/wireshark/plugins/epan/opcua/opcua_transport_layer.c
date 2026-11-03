@@ -20,6 +20,7 @@
 #include <epan/conversation.h>
 #include "epan/column-utils.h"
 
+#include "opcua.h"
 #include "opcua_security_layer.h"
 #include "opcua_application_layer.h"
 #include "opcua_simpletypes.h"
@@ -44,11 +45,6 @@ static int hf_opcua_transport_scert;
 static int hf_opcua_transport_rcthumb;
 static int hf_opcua_transport_seq;
 static int hf_opcua_transport_rqid;
-
-/** subtree types */
-extern int ett_opcua_nodeid;
-extern int ett_opcua_extensionobject;
-extern int proto_opcua;
 
 /** Defined security policy URL from Part 7 OPC UA Specification. */
 #define UA_SECURITY_POLICY_NONE_STRING "http://opcfoundation.org/UA/SecurityPolicy#None"
@@ -94,8 +90,8 @@ void registerTransportLayerTypes(int proto)
 
 void parseMessageHeader(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int *pOffset, struct ua_metadata *data _U_)
 {
-    proto_tree_add_item(tree, hf_opcua_transport_type, tvb, *pOffset, 3, ENC_ASCII|ENC_NA); *pOffset+=3;
-    proto_tree_add_item(tree, hf_opcua_transport_chunk, tvb, *pOffset, 1, ENC_ASCII|ENC_NA); *pOffset+=1;
+    proto_tree_add_item(tree, hf_opcua_transport_type, tvb, *pOffset, 3, ENC_ASCII); *pOffset+=3;
+    proto_tree_add_item(tree, hf_opcua_transport_chunk, tvb, *pOffset, 1, ENC_ASCII); *pOffset+=1;
     proto_tree_add_item(tree, hf_opcua_transport_size, tvb, *pOffset, 4, ENC_LITTLE_ENDIAN); *pOffset+=4;
 }
 
@@ -221,7 +217,7 @@ void get_encryption_info(packet_info *pinfo, enum ua_message_mode *mode, uint8_t
  *
  * @return 0 if equal, -1 if not.
  */
-static int opcua_string_compare(const char *text, int text_len, const char *ref_text)
+static int opcua_string_compare(const uint8_t *text, int text_len, const char *ref_text)
 {
     int len = (int)strlen(ref_text);
     if (text_len == len && memcmp(text, ref_text, len) == 0) return 0;
@@ -237,8 +233,8 @@ int parseOpenSecureChannel(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, 
     bool encrypted = false;
 
     // Message Header
-    proto_tree_add_item(tree, hf_opcua_transport_type, tvb, *pOffset, 3, ENC_ASCII|ENC_NA); *pOffset+=3;
-    proto_tree_add_item(tree, hf_opcua_transport_chunk, tvb, *pOffset, 1, ENC_ASCII|ENC_NA); *pOffset+=1;
+    proto_tree_add_item(tree, hf_opcua_transport_type, tvb, *pOffset, 3, ENC_ASCII); *pOffset+=3;
+    proto_tree_add_item(tree, hf_opcua_transport_chunk, tvb, *pOffset, 1, ENC_ASCII); *pOffset+=1;
     proto_tree_add_item(tree, hf_opcua_transport_size, tvb, *pOffset, 4, ENC_LITTLE_ENDIAN); *pOffset+=4;
     proto_tree_add_item(tree, hf_opcua_transport_scid, tvb, *pOffset, 4, ENC_LITTLE_ENDIAN); *pOffset+=4;
     // Asym Security Header

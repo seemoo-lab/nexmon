@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_CAPTURE
 #include "wsutil/ws_pipe.h"
 
@@ -125,9 +125,9 @@ ws_pipe_create_overlapped_read(HANDLE *read_pipe_handle, HANDLE *write_pipe_hand
                                SECURITY_ATTRIBUTES *sa, DWORD suggested_buffer_size)
 {
     HANDLE read_pipe, write_pipe;
-    unsigned char *name = ws_strdup_printf("\\\\.\\Pipe\\WiresharkWsPipe.%08lx.%08lx",
+    char *name = ws_strdup_printf("\\\\.\\Pipe\\WiresharkWsPipe.%08lx.%08lx",
                                    GetCurrentProcessId(),
-                                   InterlockedIncrement(&pipe_serial_number));
+                                   InterlockedIncrement((LONG*)&pipe_serial_number));
     gunichar2 *wname = g_utf8_to_utf16(name, -1, NULL, NULL, NULL);
 
     g_free(name);
@@ -164,19 +164,19 @@ ws_pipe_create_overlapped_read(HANDLE *read_pipe_handle, HANDLE *write_pipe_hand
  * array, suitable for g_spawn_sync and friends. Free with g_strfreev.
  */
 static char **
-convert_to_argv(const char *command, int args_count, char *const *args)
+convert_to_argv(const char *command, unsigned args_count, char *const *args)
 {
-    char **argv = g_new(char *, args_count + 2);
+    char **argv = g_new(char *, (size_t)args_count + 2);
     // The caller does not seem to modify this, but g_spawn_sync uses 'char **'
     // as opposed to 'const char **', so just to be sure clone it.
     argv[0] = g_strdup(command);
-    for (int i = 0; i < args_count; i++) {
+    for (unsigned i = 0; i < args_count; i++) {
         // Empty arguments may indicate a bug in Wireshark. Extcap for example
         // omits arguments when their string value is empty. On Windows, empty
         // arguments would silently be ignored because protect_arg returns an
         // empty string, therefore we print a warning here.
         if (!*args[i]) {
-            ws_warning("Empty argument %d in arguments list", i);
+            ws_warning("Empty argument %u in arguments list", i);
         }
         argv[1 + i] = g_strdup(args[i]);
     }
@@ -194,18 +194,49 @@ convert_to_command_line(char **argv)
 {
     GString *command_line = g_string_sized_new(200);
 #ifdef _WIN32
-    // The first argument must always be quoted even if it does not contain
-    // special characters or else CreateProcess might consider arguments as part
-    // of the executable.
-    char *quoted_arg = protect_arg(argv[0]);
-    if (quoted_arg[0] != '"') {
-        g_string_append_c(command_line, '"');
-        g_string_append(command_line, quoted_arg);
-        g_string_append_c(command_line, '"');
-    } else {
-        g_string_append(command_line, quoted_arg);
+    const char *basename = get_basename(argv[0]);
+    const char *dot = strrchr(basename, '.');
+    char *quoted_arg;
+    if (dot && dot != basename) {
+        char *interpreter = win32_command_for_ext(dot);
+        if (interpreter) {
+            ws_debug("interpreter command for extension: %s", interpreter);
+            // Already quoted, we just need to substitute argv[0] for %1.
+            g_string_append(command_line, interpreter);
+            if (g_str_has_suffix(interpreter, "%*")) {
+                // I am not sure why this has to be removed in some situations
+                // but not others.
+                g_string_truncate(command_line, command_line->len - 2);
+            }
+            g_free(interpreter);
+        }
     }
-    g_free(quoted_arg);
+    // g_string_replace is available since GLib 2.68.
+    // We've been using newer than that on official Windows releases since
+    // at least 4.0. We might just want to bump the minimum GLib in general.
+    if (!g_string_replace(command_line, "%1", argv[0], 1)) {
+        // This is expected to fail if we didn't find an interpreter.
+        // What if we did and it still failed?
+        if (command_line->len) {
+            // We returned a interpreter command, but it didn't have "%1".
+            // That's unexpected. As a fallback, add a space and then append
+            // the original command at the end.
+            ws_info("Interpreter command didn't have \"%%1\", fallback to append.");
+            g_string_append_c(command_line, ' ');
+        }
+        // The first argument must always be quoted even if it does not contain
+        // special characters or else CreateProcess might consider arguments as part
+        // of the executable.
+        quoted_arg = protect_arg(argv[0]);
+        if (quoted_arg[0] != '"') {
+            g_string_append_c(command_line, '"');
+            g_string_append(command_line, quoted_arg);
+            g_string_append_c(command_line, '"');
+        } else {
+            g_string_append(command_line, quoted_arg);
+        }
+        g_free(quoted_arg);
+    }
 
     for (int i = 1; argv[i]; i++) {
         quoted_arg = protect_arg(argv[i]);
@@ -226,7 +257,7 @@ convert_to_command_line(char **argv)
     return g_string_free(command_line, FALSE);
 }
 
-bool ws_pipe_spawn_sync(const char *working_directory, const char *command, int argc, char **args, char **command_output)
+bool ws_pipe_spawn_sync(const char *working_directory, const char *command, unsigned argc, char **args, char **command_output)
 {
     bool status = false;
     bool result = false;
@@ -256,7 +287,7 @@ bool ws_pipe_spawn_sync(const char *working_directory, const char *command, int 
 
     ws_debug("command line: %s", command_line);
 
-    uint64_t start_time = g_get_monotonic_time();
+    int64_t start_time = g_get_monotonic_time();
 
 #ifdef _WIN32
     /* Setup overlapped structures. Create Manual Reset events, initially not signalled */
@@ -539,7 +570,17 @@ GPid ws_pipe_spawn_async(ws_pipe_t *ws_pipe, GPtrArray *args)
     // XXX harmonize handling of command arguments for the sync/async functions
     // and make them const? This array ends with a trailing NULL by the way.
     char **args_array = (char **)args->pdata;
-    char **argv = convert_to_argv(args_array[0], args->len - 2, args_array + 1);
+
+    // args must include command itself
+    ws_return_val_if(args->len < 1, WS_INVALID_PID);
+    ws_return_val_if(!args_array[0], WS_INVALID_PID);
+
+    unsigned args_count = args->len - 2;
+    if (args_array[args->len - 1] != NULL) {
+        ws_warning("args should be NULL-terminated");
+        args_count = args->len - 1;
+    }
+    char **argv = convert_to_argv(args_array[0], args_count, args_array + 1);
     char *command_line = convert_to_command_line(argv);
 
     ws_debug("command line: %s", command_line);

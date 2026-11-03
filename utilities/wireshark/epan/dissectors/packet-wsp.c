@@ -456,7 +456,7 @@ static const value_string wsp_vals_pdu_type[] = {
     { 0x00, NULL }
 
 };
-value_string_ext wsp_vals_pdu_type_ext = VALUE_STRING_EXT_INIT(wsp_vals_pdu_type);
+static value_string_ext wsp_vals_pdu_type_ext = VALUE_STRING_EXT_INIT(wsp_vals_pdu_type);
 
 /* The WSP status codes are inherited from the HTTP status codes */
 static const value_string wsp_vals_status[] = {
@@ -509,7 +509,7 @@ static const value_string wsp_vals_status[] = {
 
     { 0x00, NULL }
 };
-value_string_ext wsp_vals_status_ext = VALUE_STRING_EXT_INIT(wsp_vals_status);
+static value_string_ext wsp_vals_status_ext = VALUE_STRING_EXT_INIT(wsp_vals_status);
 
 static const value_string vals_wsp_reason_codes[] = {
     { 0xE0, "Protocol Error (Illegal PDU)" },
@@ -1317,7 +1317,7 @@ static void add_headers (proto_tree *tree, tvbuff_t *tvb, int hf, packet_info *p
  * get_text_string() macro now returns wmem_alloc'd memory. */
 #define get_text_string(str,tvb,start,len,ok) \
     if (is_text_string(tvb_get_uint8(tvb,start))) { \
-        str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb,start,(int *)&len,ENC_ASCII); \
+        str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb,start,&len,ENC_ASCII); \
         ok = true; \
     } else { len = 0; str = NULL; ok = false; }
 #define get_token_text(str,tvb,start,len,ok) \
@@ -1411,7 +1411,7 @@ parameter_value_q (proto_tree *tree, packet_info *pinfo, proto_item *ti, tvbuff_
 #define wkh_2_TextualValue                  /* Parse Textual Value */ \
         /* END */ \
     } else if ((val_id == 0) || (val_id >= 0x20)) { /* Textual value */ \
-        val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, val_start, (int *)&val_len, ENC_ASCII); \
+        val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, val_start, &val_len, ENC_ASCII); \
         offset = val_start + val_len; \
         /* Textual value processing starts HERE \
          * \
@@ -1420,7 +1420,7 @@ parameter_value_q (proto_tree *tree, packet_info *pinfo, proto_item *ti, tvbuff_
 #define wkh_2_TextualValueInv                   /* Parse Textual Value */ \
         /* END */ \
     } else if ((val_id == 0) || (val_id >= 0x20)) { /* Textual value */ \
-        /*val_str = (char *)*/tvb_get_stringz_enc(pinfo->pool, tvb, val_start, (int *)&val_len, ENC_ASCII); \
+        val_len = tvb_strsize(tvb, val_start); \
         offset = val_start + val_len; \
         /* Textual value processing starts HERE \
          * \
@@ -1522,7 +1522,7 @@ wkh_content_type_header(proto_tree *tree, tvbuff_t *tvb, uint32_t hdr_start, pac
         off = val_start + val_len_len;
         peek = tvb_get_uint8(tvb, off);
         if (is_text_string(peek)) {
-            val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, off, (int*)&len, ENC_ASCII);
+            val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, off, &len, ENC_ASCII);
             off += len; /* off now points to 1st byte after string */
             ti = proto_tree_add_string (header_tree, hf, tvb, hdr_start, offset - hdr_start, val_str);
         } else if (is_integer_value(peek)) {
@@ -3405,6 +3405,7 @@ static const value_string parameter_type_vals[] = {
     { 0x01,         "Well-known-charset" },
     { 0x02,         "Level: Version-value" },
     { 0x03,         "Integer-value" },
+    { 0x04,         "Untyped-value" },
     { 0x05,         "Name (Text-string)" },
     { 0x06,         "Filename (Text-string)" },
     { 0x07,         "Differences" },
@@ -4099,7 +4100,7 @@ add_addresses(proto_tree *tree, tvbuff_t *tvb, int hf)
             bearer_type = 0x00; /* XXX */
         }
         if (address_flags_len & PORT_NUMBER_INCLUDED) {
-                proto_tree_add_uint (addr_tree, hf_address_port_num,
+                proto_tree_add_item (addr_tree, hf_address_port_num,
                         tvb, offset, 2, ENC_BIG_ENDIAN);
             offset += 2;
         }
@@ -4362,8 +4363,9 @@ add_headers (proto_tree *tree, tvbuff_t *tvb, int hf, packet_info *pinfo)
     int32_t     tvb_len                  = tvb_reported_length(tvb);
     int32_t     offset                   = 0;
     int32_t     save_offset;
-    int32_t     hdr_len, hdr_start;
-    int32_t     val_len, val_start;
+    int32_t     hdr_start;
+    int32_t     val_start;
+    unsigned    hdr_len, val_len;
     char       *hdr_str, *val_str;
     proto_tree *wsp_headers;
     proto_item *ti, *hidden_item;
@@ -4394,7 +4396,7 @@ add_headers (proto_tree *tree, tvbuff_t *tvb, int hf, packet_info *pinfo)
                     break;
                 }
             } else { /* Openwave header code page */
-                /* Here I'm delibarately assuming that Openwave is the only
+                /* Here I'm deliberately assuming that Openwave is the only
                  * company that defines a WSP header code page. */
                 save_offset = offset;
                 offset = WellKnownOpenwaveHeader[hdr_id & 0x7F](wsp_headers,
@@ -4412,12 +4414,12 @@ add_headers (proto_tree *tree, tvbuff_t *tvb, int hf, packet_info *pinfo)
             offset += 2;
         } else if (hdr_id >= 0x20) { /* Textual header */
             /* Header name MUST be NUL-ended string ==> tvb_get_stringz_enc() */
-            hdr_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, hdr_start, (int *)&hdr_len, ENC_ASCII);
+            hdr_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, hdr_start, &hdr_len, ENC_ASCII);
             val_start = hdr_start + hdr_len;
             val_id = tvb_get_uint8(tvb, val_start);
             /* Call header value dissector for given header */
             if (val_id >= 0x20 && val_id <=0x7E) { /* OK! */
-                val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, val_start, (int *)&val_len, ENC_ASCII);
+                val_str = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, val_start, &val_len, ENC_ASCII);
                 offset = val_start + val_len;
                 proto_tree_add_string_format(wsp_headers, hf_wsp_header_text_value, tvb, hdr_start, offset-hdr_start,
                                     val_str, "%s: %s", hdr_str, val_str);
@@ -4607,7 +4609,7 @@ static void
 dissect_wsp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     dissector_handle_t dissector_handle, bool is_connectionless)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     uint8_t     pdut;
     unsigned    count            = 0;
@@ -5149,9 +5151,9 @@ add_capabilities (proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, uint8_t p
     char       *capaName, *str;
     uint32_t    offset       = 0;
     uint32_t    len          = 0;
-    uint32_t    capaStart    = 0; /* Start offset of the capability */
-    uint32_t    capaLen      = 0; /* Length of the entire capability */
-    uint32_t    capaValueLen = 0; /* Length of the capability value & type */
+    uint32_t    capaStart;        /* Start offset of the capability */
+    uint32_t    capaLen;          /* Length of the entire capability */
+    uint32_t    capaValueLen;     /* Length of the capability value & type */
     uint32_t    tvb_len      = tvb_reported_length(tvb);
     bool        ok           = false;
     uint8_t     peek;
@@ -5193,7 +5195,7 @@ add_capabilities (proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, uint8_t p
         peek = tvb_get_uint8(tvb, offset);
         if (is_token_text(peek)) { /* Literal capability name */
             /* 1. Get the string from the tvb */
-            capaName = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, capaStart, (int *)&len, ENC_ASCII);
+            capaName = (char *)tvb_get_stringz_enc(pinfo->pool, tvb, capaStart, &len, ENC_ASCII);
 
             /* 2. Look up the string capability name */
             if (g_ascii_strcasecmp(capaName, "client-sdu-size") == 0) {
@@ -5376,7 +5378,7 @@ add_post_data (proto_tree *tree, tvbuff_t *tvb, unsigned contentType,
     unsigned    variableStart = 0;
     unsigned    variableEnd   = 0;
     unsigned    valueStart    = 0;
-    uint8_t     peek          = 0;
+    uint8_t     peek;
     proto_item *ti;
     proto_tree *sub_tree;
 
@@ -5434,7 +5436,7 @@ add_post_variable (proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned
     char *variableBuffer;
     char *valueBuffer;
 
-    variableBuffer = tvb_get_string_enc(pinfo->pool, tvb, variableStart, variableLength, ENC_ASCII);
+    variableBuffer = (char*)tvb_get_string_enc(pinfo->pool, tvb, variableStart, variableLength, ENC_ASCII);
 
     if (valueEnd < valueStart)
     {
@@ -5445,7 +5447,7 @@ add_post_variable (proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned
     else
     {
         valueLength = valueEnd-valueStart;
-        valueBuffer = tvb_get_string_enc(pinfo->pool, tvb, valueStart, valueLength, ENC_ASCII);
+        valueBuffer = (char*)tvb_get_string_enc(pinfo->pool, tvb, valueStart, valueLength, ENC_ASCII);
     }
 
     /* Check for variables with no value */
@@ -5474,7 +5476,7 @@ add_multipart_data (proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo)
     tvbuff_t   *tmp_tvb;
     int         partnr      = 1;
     int         part_start;
-    int         found_match = 0;
+    int         found_match;
 
     proto_item *sub_tree   = NULL;
     proto_item *ti         = NULL;

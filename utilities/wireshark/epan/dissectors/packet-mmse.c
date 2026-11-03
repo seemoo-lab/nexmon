@@ -453,7 +453,7 @@ static const value_string vals_reply_charging[] = {
 static unsigned
 get_text_string(tvbuff_t *tvb, unsigned offset, wmem_allocator_t *pool, const char **strval)
 {
-    unsigned     len;
+    unsigned len;
 
     DebugLog(("get_text_string(tvb = %p, offset = %u, **strval) - start\n",
                 tvb, offset));
@@ -1225,7 +1225,7 @@ dissect_mmse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint8_t pdut,
                     proto_tree_add_string_format(mmse_tree,
                             hf_mmse_ffheader, tvb, offset,
                             length + length2,
-                            tvb_get_string_enc(pinfo->pool, tvb, offset,
+                            (char*)tvb_get_string_enc(pinfo->pool, tvb, offset,
                                 length + length2, ENC_ASCII),
                             "%s: %s",
                             format_text(pinfo->pool, strval, strlen(strval)),

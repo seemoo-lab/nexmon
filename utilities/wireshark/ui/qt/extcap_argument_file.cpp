@@ -24,8 +24,7 @@
 #include <QFileInfo>
 #include <QVariant>
 
-#include <epan/prefs.h>
-#include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 
 #include <ui/all_files_wildcard.h>
 
@@ -48,16 +47,21 @@ QWidget * ExtcapArgumentFileSelection::createEditor(QWidget * parent)
     QString buttonText(UTF8_HORIZONTAL_ELLIPSIS);
     QString buttonClearText(tr("Clear"));
 
+    bool isFolder = (_argument->arg_type == EXTCAP_ARG_FOLDERSELECT);
+
     QWidget * fileWidget = new QWidget(parent);
     QHBoxLayout * editLayout = new QHBoxLayout();
     QMargins margins = editLayout->contentsMargins();
     editLayout->setContentsMargins(0, 0, 0, margins.bottom());
     fileWidget->setContentsMargins(margins.left(), margins.right(), 0, margins.bottom());
+
     QPushButton * buttonSelect = new QPushButton(buttonText, fileWidget);
     QPushButton * buttonClear = new QPushButton(buttonClearText, fileWidget);
 
     textBox = new QLineEdit(text, parent);
-    textBox->setReadOnly(true);
+    /* When the entry isn't required to already exist, allow the user to type a path
+     * directly instead of only being able to pick one via the buttons below. */
+    textBox->setReadOnly(fileExists());
 
     /* Value is empty if no file is selected */
     const char *prefval = (_argument->pref_valptr && (*_argument->pref_valptr)) ? *_argument->pref_valptr : NULL;
@@ -76,8 +80,11 @@ QWidget * ExtcapArgumentFileSelection::createEditor(QWidget * parent)
         buttonSelect->setToolTip(QString().fromUtf8(_argument->tooltip));
     }
 
-    connect(buttonSelect, &QPushButton::clicked, this, &ExtcapArgumentFileSelection::openFileDialog);
+    connect(buttonSelect, &QPushButton::clicked, this,
+            isFolder ? &ExtcapArgumentFileSelection::openFolderDialog : &ExtcapArgumentFileSelection::openFileDialog);
     connect(buttonClear, &QPushButton::clicked, this, &ExtcapArgumentFileSelection::clearFilename);
+    if (! textBox->isReadOnly())
+        connect(textBox, &QLineEdit::textChanged, this, &ExtcapArgumentFileSelection::onStringChanged);
 
     editLayout->addWidget(textBox);
     editLayout->addWidget(buttonSelect);
@@ -136,6 +143,26 @@ void ExtcapArgumentFileSelection::openFileDialog()
     }
 }
 
+/* opens the folder dialog */
+void ExtcapArgumentFileSelection::openFolderDialog()
+{
+    QString filename = textBox->text();
+
+    QDir workingDir = QDir::currentPath();
+    if (QFileInfo(filename).exists())
+        workingDir = QFileInfo(filename).isDir() ? QDir(filename) : QFileInfo(filename).dir();
+
+    QString dirName = WiresharkFileDialog::getExistingDirectory((QWidget*)(textBox->parent()),
+        tr("%1 Select Folder").arg(QString::fromUtf8(_argument->display)),
+        workingDir.absolutePath());
+
+    if (! dirName.isEmpty())
+    {
+        textBox->setText(dirName);
+        emit valueChanged();
+    }
+}
+
 void ExtcapArgumentFileSelection::clearFilename()
 {
     textBox->clear();
@@ -148,15 +175,18 @@ bool ExtcapArgumentFileSelection::isValid()
 
     if (textBox->text().length() > 0)
     {
+        QFileInfo info(textBox->text());
+
         if (_argument->fileexists)
-            valid = QFileInfo(textBox->text()).exists();
+            valid = info.exists();
+
+        if (valid && info.exists())
+            valid = (_argument->arg_type == EXTCAP_ARG_FOLDERSELECT) ? info.isDir() : info.isFile();
     }
     else if (isRequired())
         valid = false;
 
-    QString lblInvalidColor = ColorUtils::fromColorT(prefs.gui_filter_invalid_bg).name();
-    QString txtStyle("QLineEdit { background-color: %1; } ");
-    textBox->setStyleSheet(txtStyle.arg(valid ? QString("") : lblInvalidColor));
+    ThemeManager::setValidationState(textBox, valid ? QString() : QStringLiteral("invalid"));
 
     return valid;
 }

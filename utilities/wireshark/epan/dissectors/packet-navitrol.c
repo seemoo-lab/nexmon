@@ -76,7 +76,7 @@ static int ett_navitrol;
 static expert_field ei_navitrol_message_id;
 
 /* Preference for endianness */
-static unsigned navitrol_endian = ENC_LITTLE_ENDIAN;
+static int navitrol_endian = ENC_LITTLE_ENDIAN;
 
 static const enum_val_t navitrol_endian_vals[] = {
 	{ "little_endian", "Little Endian",	ENC_LITTLE_ENDIAN},
@@ -407,6 +407,7 @@ dissect_navitrol_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 			tm_set_time.tm_mon = tvb_get_uint8(tvb, offset);
 			offset += 1;
 			tm_set_time.tm_year = tvb_get_uint32(tvb, offset, ENC_LITTLE_ENDIAN)-1900;
+			tm_set_time.tm_isdst = -1;
 			/* offset += 4; */
 
 			set_time_seconds = mktime(&tm_set_time);

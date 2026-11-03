@@ -1,5 +1,5 @@
 /* packet-ppi-antenna.c
- * Routines for PPI-GEOLOCATION-ANNTENNA  dissection
+ * Routines for PPI-GEOLOCATION-ANTENNA  dissection
  * Copyright 2010, Harris Corp, jellch@harris.com
  *
  * Wireshark - Network traffic analyzer
@@ -111,7 +111,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     uint32_t t_hbw, t_vbw, t_pgain, t_appspecific_num; /* temporary conversions */
     double horizbw, vertbw, pgain;
     char *curr_str;
-    int offset = 0;
+    unsigned offset = 0;
 
     static int * const ppi_antenna_present_flags[] = {
         &hf_ppi_antenna_present_flags,
@@ -170,7 +170,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     }
 
     length_remaining = length;
-    /* minimum length check, should atleast be a fixed-size geotagging-base header*/
+    /* minimum length check, should at least be a fixed-size geotagging-base header*/
     if (length_remaining < PPI_GEOBASE_MIN_HEADER_LEN) {
         /*
          * Base-geotag-header (Radiotap lookalike) is shorter than the fixed-length portion
@@ -252,7 +252,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         case  PPI_ANTENNA_BEAMID:
             if (length_remaining < 2)
                 break;
-            beamid= tvb_get_letohs(tvb, offset); /* convert endianess */
+            beamid= tvb_get_letohs(tvb, offset); /* convert endianness */
             proto_tree_add_uint(ppi_antenna_tree, hf_ppi_antenna_beamid, tvb, offset, 2, beamid);
             offset+=2;
             length_remaining-=2;

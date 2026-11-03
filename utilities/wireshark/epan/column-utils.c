@@ -105,7 +105,7 @@ col_custom_fields_ids_free(GSList** custom_fields_id)
 void
 col_cleanup(column_info *cinfo)
 {
-  int i;
+  unsigned i;
   col_item_t* col_item;
 
   if (!cinfo)
@@ -143,7 +143,7 @@ col_cleanup(column_info *cinfo)
 void
 col_init(column_info *cinfo, const struct epan_session *epan)
 {
-  int i;
+  unsigned i;
   col_item_t* col_item;
 
   if (!cinfo)
@@ -433,7 +433,7 @@ col_custom_prime_edt(epan_dissect_t *edt, column_info *cinfo)
 }
 
 char*
-col_custom_get_filter(epan_dissect_t *edt, column_info *cinfo, const int col)
+col_custom_get_filter(epan_dissect_t *edt, column_info *cinfo, const unsigned col)
 {
   col_item_t* col_item;
 
@@ -487,7 +487,7 @@ col_append_lstr(column_info *cinfo, const int el, const char *str1, ...)
           str = "(null)";
         }
         WS_UTF_8_CHECK(str, -1);
-        pos = ws_label_strcpy(col_item->col_buf, max_len, pos, str, 0);
+        pos = ws_label_strcpy(col_item->col_buf, max_len, pos, (const uint8_t*)str, 0);
 
       } while (pos < max_len && (str = va_arg(ap, const char *)) != COL_ADD_LSTR_TERMINATOR);
       va_end(ap);
@@ -571,7 +571,7 @@ col_do_append_fstr(column_info *cinfo, const int el, const char *separator, cons
        * If we have a separator, append it if the column isn't empty.
        */
       if (sep_len != 0 && len != 0) {
-        (void) ws_label_strcat(col_item->col_buf, max_len, separator, 0);
+        (void) ws_label_strcat(col_item->col_buf, max_len, (const uint8_t*)separator, 0);
         len += sep_len;
       }
 
@@ -585,7 +585,7 @@ col_do_append_fstr(column_info *cinfo, const int el, const char *separator, cons
           ws_utf8_truncate(tmp, max_len - 1);
         }
         WS_UTF_8_CHECK(tmp, -1);
-        ws_label_strcpy(col_item->col_buf, max_len, len, tmp, 0);
+        ws_label_strcpy(col_item->col_buf, max_len, len, (const uint8_t*)tmp, 0);
       }
     }
   }
@@ -662,7 +662,7 @@ col_prepend_fstr(column_info *cinfo, const int el, const char *format, ...)
         ws_utf8_truncate(tmp, max_len - 1);
       }
       WS_UTF_8_CHECK(tmp, -1);
-      pos = ws_label_strcpy(col_item->col_buf, max_len, 0, tmp, 0);
+      pos = ws_label_strcpy(col_item->col_buf, max_len, 0, (const uint8_t*)tmp, 0);
 
       /*
        * Move the fence, unless it's at the beginning of the string.
@@ -678,7 +678,7 @@ col_prepend_fstr(column_info *cinfo, const int el, const char *format, ...)
       /*
        * Append the original data.
        */
-      ws_label_strcpy(col_item->col_buf, max_len, pos, orig, 0);
+      ws_label_strcpy(col_item->col_buf, max_len, pos, (const uint8_t*)orig, 0);
       col_item->col_data = col_item->col_buf;
     }
   }
@@ -719,7 +719,7 @@ col_prepend_fence_fstr(column_info *cinfo, const int el, const char *format, ...
         ws_utf8_truncate(tmp, max_len - 1);
       }
       WS_UTF_8_CHECK(tmp, -1);
-      pos = ws_label_strcpy(col_item->col_buf, max_len, 0, tmp, 0);
+      pos = ws_label_strcpy(col_item->col_buf, max_len, 0, (const uint8_t*)tmp, 0);
 
       /*
        * Move the fence if it exists, else create a new fence at the
@@ -733,7 +733,7 @@ col_prepend_fence_fstr(column_info *cinfo, const int el, const char *format, ...
       /*
        * Append the original data.
        */
-      ws_label_strcpy(col_item->col_buf, max_len, pos, orig, 0);
+      ws_label_strcpy(col_item->col_buf, max_len, pos, (const uint8_t*)orig, 0);
       col_item->col_data = col_item->col_buf;
     }
   }
@@ -772,7 +772,7 @@ col_add_str(column_info *cinfo, const int el, const char* str)
         col_item->col_data = col_item->col_buf;
       }
       WS_UTF_8_CHECK(str, -1);
-      (void) ws_label_strcpy(col_item->col_buf, max_len, col_item->col_fence, str, 0);
+      (void) ws_label_strcpy(col_item->col_buf, max_len, col_item->col_fence, (const uint8_t*)str, 0);
     }
   }
 }
@@ -860,7 +860,7 @@ col_add_lstr(column_info *cinfo, const int el, const char *str1, ...)
           str = "(null)";
         }
         WS_UTF_8_CHECK(str, -1);
-        pos = ws_label_strcpy(col_item->col_buf, max_len, pos, str, 0);
+        pos = ws_label_strcpy(col_item->col_buf, max_len, pos, (const uint8_t*)str, 0);
 
       } while (pos < max_len && (str = va_arg(ap, const char *)) != COL_ADD_LSTR_TERMINATOR);
       va_end(ap);
@@ -908,7 +908,7 @@ col_add_fstr(column_info *cinfo, const int el, const char *format, ...)
         ws_utf8_truncate(tmp, max_len - 1);
       }
       WS_UTF_8_CHECK(tmp, -1);
-      ws_label_strcpy(col_item->col_buf, max_len, col_item->col_fence, tmp, 0);
+      ws_label_strcpy(col_item->col_buf, max_len, col_item->col_fence, (const uint8_t*)tmp, 0);
     }
   }
 }
@@ -941,11 +941,11 @@ col_do_append_str(column_info *cinfo, const int el, const char* separator,
        */
       if (separator != NULL) {
         if (len != 0) {
-          (void) ws_label_strcat(col_item->col_buf, max_len, separator, 0);
+          (void) ws_label_strcat(col_item->col_buf, max_len, (const uint8_t*)separator, 0);
         }
       }
       WS_UTF_8_CHECK(str, -1);
-      (void) ws_label_strcat(col_item->col_buf, max_len, str, 0);
+      (void) ws_label_strcat(col_item->col_buf, max_len, (const uint8_t*)str, 0);
     }
   }
 }
@@ -974,7 +974,7 @@ col_append_sep_str(column_info *cinfo, const int el, const char* separator,
 
 /* --------------------------------- */
 bool
-col_has_time_fmt(column_info *cinfo, const int col)
+col_has_time_fmt(column_info *cinfo, const unsigned col)
 {
   col_item_t* col_item = &cinfo->columns[col];
   return ((col_item->fmt_matx[COL_CLS_TIME]) ||
@@ -1175,7 +1175,8 @@ set_time_seconds(const frame_data *fd, const nstime_t *ts, char *buf)
 static void
 set_time_hour_min_sec(const frame_data *fd, const nstime_t *ts, char *buf, char *decimal_point)
 {
-  time_t secs = ts->secs;
+  time_t time_val = ts->secs;
+  int mins, secs;
   uint32_t nsecs;
   bool negative = false;
   char *ptr;
@@ -1185,10 +1186,19 @@ set_time_hour_min_sec(const frame_data *fd, const nstime_t *ts, char *buf, char 
 
   ws_assert(fd->has_ts);
 
-  if (secs < 0) {
-    secs = -secs;
+  if (time_val < 0) {
     negative = true;
+    /* C99 and C+11 require rounding towards zero. */
+    secs = -(time_val % 60);
+    /* Dividing first means we don't have to worry about overflow
+     * when negating time_val. */
+    time_val /= -60;
+  } else {
+    secs = time_val % 60;
+    time_val /= 60;
   }
+  mins = time_val % 60;
+  time_val /= 60;
   if (ts->nsecs >= 0) {
     nsecs = ts->nsecs;
   } else if (G_LIKELY(ts->nsecs != INT_MIN)) {
@@ -1218,21 +1228,19 @@ set_time_hour_min_sec(const frame_data *fd, const nstime_t *ts, char *buf, char 
   }
   ptr = buf;
   remaining = COL_MAX_LEN;
-  if (secs >= (60*60)) {
-    num_bytes = snprintf(ptr, remaining, "%s%dh %2dm %2d",
+  if (time_val != 0) {
+    num_bytes = snprintf(ptr, remaining, "%s%jdh %2dm %2d",
                negative ? "- " : "",
-               (int32_t) secs / (60 * 60),
-               (int32_t) (secs / 60) % 60,
-               (int32_t) secs % 60);
-  } else if (secs >= 60) {
+               (intmax_t) time_val,
+               mins, secs);
+  } else if (mins != 0) {
     num_bytes = snprintf(ptr, remaining, "%s%dm %2d",
                negative ? "- " : "",
-               (int32_t) secs / 60,
-               (int32_t) secs % 60);
+               mins, secs);
   } else {
     num_bytes = snprintf(ptr, remaining, "%s%d",
                negative ? "- " : "",
-               (int32_t) secs);
+               secs);
   }
   if (num_bytes < 0) {
     /*
@@ -1296,6 +1304,36 @@ col_set_rel_time(const frame_data *fd, column_info *cinfo, const int col)
     set_time_hour_min_sec(fd, &del_rel_ts, cinfo->columns[col].col_buf, col_decimal_point);
     cinfo->col_expr.col_expr[col] = "frame.time_relative";
     set_time_seconds(fd, &del_rel_ts, cinfo->col_expr.col_expr_val[col]);
+    break;
+  default:
+    ws_assert_not_reached();
+  }
+  cinfo->columns[col].col_data = cinfo->columns[col].col_buf;
+}
+
+static void
+col_set_rel_cap_time(const frame_data *fd, column_info *cinfo, const int col)
+{
+  nstime_t del_cap_ts;
+
+  /*
+   * If there's no capture start time, leave the column blank.
+   */
+  if (!frame_rel_start_time(cinfo->epan, fd, &del_cap_ts)) {
+    cinfo->columns[col].col_buf[0] = '\0';
+    return;
+  }
+
+  switch (timestamp_get_seconds_type()) {
+  case TS_SECONDS_DEFAULT:
+    set_time_seconds(fd, &del_cap_ts, cinfo->columns[col].col_buf);
+    cinfo->col_expr.col_expr[col] = "frame.time_relative_capture_start";
+    (void)g_strlcpy(cinfo->col_expr.col_expr_val[col], cinfo->columns[col].col_buf, COL_MAX_LEN);
+    break;
+  case TS_SECONDS_HOUR_MIN_SEC:
+    set_time_hour_min_sec(fd, &del_cap_ts, cinfo->columns[col].col_buf, col_decimal_point);
+    cinfo->col_expr.col_expr[col] = "frame.time_relative_capture_start";
+    set_time_seconds(fd, &del_cap_ts, cinfo->col_expr.col_expr_val[col]);
     break;
   default:
     ws_assert_not_reached();
@@ -1532,6 +1570,27 @@ set_fd_time(const epan_t *epan, frame_data *fd, char *buf)
     }
     break;
 
+  case TS_RELATIVE_CAP:
+    /*
+     * If there's no relative time for this frame, leave the
+     * column blank.
+     */
+    if (frame_rel_start_time(epan, fd, &del_ts)) {
+      switch (timestamp_get_seconds_type()) {
+      case TS_SECONDS_DEFAULT:
+        set_time_seconds(fd, &del_ts, buf);
+        break;
+      case TS_SECONDS_HOUR_MIN_SEC:
+        set_time_seconds(fd, &del_ts, buf);
+        break;
+      default:
+        ws_assert_not_reached();
+      }
+    } else {
+      buf[0] = '\0';
+    }
+    break;
+
   case TS_DELTA:
     /*
      * If there's no time since the previous captured frame, leave the
@@ -1617,6 +1676,10 @@ col_set_cls_time(const frame_data *fd, column_info *cinfo, const int col)
     col_set_rel_time(fd, cinfo, col);
     break;
 
+  case TS_RELATIVE_CAP:
+    col_set_rel_cap_time(fd, cinfo, col);
+    break;
+
   case TS_DELTA:
     col_set_delta_time(fd, cinfo, col);
     break;
@@ -1669,6 +1732,10 @@ col_set_fmt_time(const frame_data *fd, column_info *cinfo, const int fmt, const 
 
   case COL_ABS_YDOY_TIME:
     col_set_abs_ydoy_time(fd, cinfo, col);
+    break;
+
+  case COL_REL_CAP_TIME:
+    col_set_rel_cap_time(fd, cinfo, col);
     break;
 
   case COL_REL_TIME:
@@ -1861,7 +1928,7 @@ col_set_port(packet_info *pinfo, const int col, const bool is_res, const bool is
 }
 
 bool
-col_based_on_frame_data(column_info *cinfo, const int col)
+col_based_on_frame_data(column_info *cinfo, const unsigned col)
 {
   ws_assert(cinfo);
   ws_assert(col < cinfo->num_cols);
@@ -1869,6 +1936,7 @@ col_based_on_frame_data(column_info *cinfo, const int col)
   switch (cinfo->columns[col].col_fmt) {
   case COL_NUMBER:
   case COL_NUMBER_DIS:
+  case COL_TAG:
   case COL_CLS_TIME:
   case COL_ABS_TIME:
   case COL_ABS_YMD_TIME:
@@ -1971,7 +2039,7 @@ col_fill_in_frame_data(const frame_data *fd, column_info *cinfo, const int col, 
 void
 col_fill_in(packet_info *pinfo, const bool fill_col_exprs, const bool fill_fd_colums)
 {
-  int i;
+  unsigned i;
   col_item_t* col_item;
 
   if (!pinfo->cinfo)
@@ -2056,6 +2124,15 @@ col_fill_in(packet_info *pinfo, const bool fill_col_exprs, const bool fill_fd_co
         col_set_port(pinfo, i, false, false, fill_col_exprs);
         break;
 
+      case COL_USER_NAME:
+        if (pinfo->user_name) {
+          (void) g_strlcpy(col_item->col_buf, pinfo->user_name, COL_MAX_LEN);
+        } else {
+          col_item->col_buf[0] = '\0';
+        }
+        col_item->col_data = col_item->col_buf;
+        break;
+
       case COL_CUSTOM:
         /* Formatting handled by col_custom_set_edt() / col_custom_get_filter() */
         break;
@@ -2089,7 +2166,7 @@ col_fill_in(packet_info *pinfo, const bool fill_col_exprs, const bool fill_fd_co
 void
 col_fill_in_error(column_info *cinfo, frame_data *fdata, const bool fill_col_exprs, const bool fill_fd_colums)
 {
-  int i;
+  unsigned i;
   col_item_t* col_item;
 
   if (!cinfo)
@@ -2160,7 +2237,7 @@ col_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     ti = proto_tree_add_item(tree, proto_cols, tvb, 0, 0, ENC_NA);
     proto_item_set_hidden(ti);
     col_tree = proto_item_add_subtree(ti, ett_cols);
-    for (int i = 0; i < cinfo->num_cols; ++i) {
+    for (unsigned i = 0; i < cinfo->num_cols; ++i) {
       if (cinfo->columns[i].hf_id > 0) {
         if (cinfo->columns[i].col_fmt == COL_CUSTOM) {
           ti = proto_tree_add_string_format(col_tree, cinfo->columns[i].hf_id, tvb, 0, 0, get_column_text(cinfo, i), "%s: %s", get_column_title(i), get_column_text(cinfo, i));

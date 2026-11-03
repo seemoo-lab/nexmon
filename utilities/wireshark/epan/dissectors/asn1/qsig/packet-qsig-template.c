@@ -21,10 +21,6 @@
 #include "packet-ber.h"
 #include "packet-qsig.h"
 
-#define PNAME  "QSIG"
-#define PSNAME "QSIG"
-#define PFNAME "qsig"
-
 /* Shifted codeset values */
 #define CS0 0x000
 #define CS1 0x100
@@ -323,7 +319,7 @@ static dissector_table_t extension_dissector_table;
 #include "packet-qsig-fn.c"
 
 typedef struct _qsig_op_t {
-  int32_t opcode;
+  uint32_t opcode;
   dissector_t arg_pdu;
   dissector_t res_pdu;
 } qsig_op_t;
@@ -333,7 +329,7 @@ static const qsig_op_t qsig_op_tab[] = {
 };
 
 typedef struct _qsig_err_t {
-  int32_t errcode;
+  uint32_t errcode;
   dissector_t err_pdu;
 } qsig_err_t;
 
@@ -341,7 +337,7 @@ static const qsig_err_t qsig_err_tab[] = {
 #include "packet-qsig-table21.c"
 };
 
-static const qsig_op_t *get_op(int32_t opcode) {
+static const qsig_op_t *get_op(uint32_t opcode) {
   int i;
 
   /* search from the end to get the last occurrence if the operation is redefined in some newer specification */
@@ -351,13 +347,13 @@ static const qsig_op_t *get_op(int32_t opcode) {
   return NULL;
 }
 
-static int32_t get_service(int32_t opcode) {
-  if ((opcode < 0) || (opcode >= (int)array_length(op2srv_tab)))
+static int32_t get_service(uint32_t opcode) {
+  if (opcode >= (int)array_length(op2srv_tab))
     return NO_SRV;
   return op2srv_tab[opcode];
 }
 
-static const qsig_err_t *get_err(int32_t errcode) {
+static const qsig_err_t *get_err(uint32_t errcode) {
   int i;
 
   /* search from the end to get the last occurrence if the operation is redefined in some newer specification */
@@ -370,9 +366,9 @@ static const qsig_err_t *get_err(int32_t errcode) {
 /*--- dissect_qsig_arg ------------------------------------------------------*/
 static int
 dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
-  int offset = 0;
+  unsigned offset = 0;
   rose_ctx_t *rctx;
-  int32_t opcode = 0, service, oid_num;
+  uint32_t opcode = 0, service, oid_num;
   const qsig_op_t *op_ptr = NULL;
   const char *p, *oid;
   proto_item *ti, *ti_tmp;
@@ -424,7 +420,7 @@ dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     offset = op_ptr->arg_pdu(tvb, pinfo, qsig_tree, NULL);
   else
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
-      proto_tree_add_expert(tree, pinfo, &ei_qsig_unsupported_error_type, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, pinfo, &ei_qsig_unsupported_error_type, tvb, offset);
       offset += tvb_captured_length_remaining(tvb, offset);
     }
 
@@ -434,9 +430,9 @@ dissect_qsig_arg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 /*--- dissect_qsig_res -------------------------------------------------------*/
 static int
 dissect_qsig_res(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
-  int offset = 0;
+  unsigned offset = 0;
   rose_ctx_t *rctx;
-  int32_t opcode, service;
+  uint32_t opcode, service;
   const qsig_op_t *op_ptr;
   const char *p;
   proto_item *ti, *ti_tmp;
@@ -478,7 +474,7 @@ dissect_qsig_res(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     offset = op_ptr->res_pdu(tvb, pinfo, qsig_tree, NULL);
   else
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
-      proto_tree_add_expert(tree, pinfo, &ei_qsig_unsupported_result_type, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, pinfo, &ei_qsig_unsupported_result_type, tvb, offset);
       offset += tvb_captured_length_remaining(tvb, offset);
     }
 
@@ -488,9 +484,9 @@ dissect_qsig_res(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 /*--- dissect_qsig_err ------------------------------------------------------*/
 static int
 dissect_qsig_err(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
-  int offset = 0;
+  unsigned offset = 0;
   rose_ctx_t *rctx;
-  int32_t errcode;
+  uint32_t errcode;
   const qsig_err_t *err_ptr;
   const char *p;
   proto_item *ti;
@@ -527,7 +523,7 @@ dissect_qsig_err(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     offset = err_ptr->err_pdu(tvb, pinfo, qsig_tree, NULL);
   else
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
-      proto_tree_add_expert(tree, pinfo, &ei_qsig_unsupported_error_type, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, pinfo, &ei_qsig_unsupported_error_type, tvb, offset);
       offset += tvb_captured_length_remaining(tvb, offset);
     }
 
@@ -659,7 +655,7 @@ void proto_register_qsig(void) {
   expert_module_t* expert_qsig;
 
   /* Register protocol and dissector */
-  proto_qsig = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_qsig = proto_register_protocol("QSIG", "QSIG", "qsig");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_qsig, hf, array_length(hf));
@@ -668,11 +664,11 @@ void proto_register_qsig(void) {
   expert_register_field_array(expert_qsig, ei, array_length(ei));
 
   /* Register dissectors */
-  qsig_arg_handle = register_dissector(PFNAME "_arg", dissect_qsig_arg, proto_qsig);
-  qsig_res_handle = register_dissector(PFNAME "_res", dissect_qsig_res, proto_qsig);
-  qsig_err_handle = register_dissector(PFNAME "_err", dissect_qsig_err, proto_qsig);
-  qsig_ie4_handle = register_dissector(PFNAME "_ie_cs4", dissect_qsig_ie_cs4, proto_qsig);
-  qsig_ie5_handle = register_dissector(PFNAME "_ie_cs5", dissect_qsig_ie_cs5, proto_qsig);
+  qsig_arg_handle = register_dissector("qsig_arg", dissect_qsig_arg, proto_qsig);
+  qsig_res_handle = register_dissector("qsig_res", dissect_qsig_res, proto_qsig);
+  qsig_err_handle = register_dissector("qsig_err", dissect_qsig_err, proto_qsig);
+  qsig_ie4_handle = register_dissector("qsig_ie_cs4", dissect_qsig_ie_cs4, proto_qsig);
+  qsig_ie5_handle = register_dissector("qsig_ie_cs5", dissect_qsig_ie_cs5, proto_qsig);
 
   /* Register dissector tables */
   extension_dissector_table = register_dissector_table("qsig.ext", "QSIG Extension", proto_qsig, FT_STRING, STRING_CASE_SENSITIVE);

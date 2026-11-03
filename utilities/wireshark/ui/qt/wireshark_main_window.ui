@@ -26,6 +26,9 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="accessibleName">
+    <string>Main Window</string>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <property name="spacing">
      <number>0</number>
@@ -44,6 +47,12 @@
     </property>
     <item>
      <widget class="AccordionFrame" name="goToFrame">
+      <property name="accessibleName">
+       <string>Go to packet</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows jumping to a specific packet by its number.</string>
+      </property>
       <layout class="QHBoxLayout" name="goToHB">
        <property name="topMargin">
         <number>0</number>
@@ -54,7 +63,7 @@
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -107,19 +116,54 @@
      </widget>
     </item>
     <item>
-     <widget class="SearchFrame" name="searchFrame" native="true"/>
+     <widget class="SearchFrame" name="searchFrame" native="true">
+      <property name="accessibleName">
+       <string>Search packet</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows searching for packets based on different criteria like display filters or text.</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="AddressEditorFrame" name="addressEditorFrame"/>
+     <widget class="AddressEditorFrame" name="addressEditorFrame">
+      <property name="accessibleName">
+       <string>Edit Address</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows editing address resolution information for the current capture.</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="ColumnEditorFrame" name="columnEditorFrame"/>
+     <widget class="ColumnEditorFrame" name="columnEditorFrame">
+      <property name="accessibleName">
+       <string>Edit Column</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows adding, removing, or modifying columns in the packet list.</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="PreferenceEditorFrame" name="preferenceEditorFrame"/>
+     <widget class="PreferenceEditorFrame" name="preferenceEditorFrame">
+      <property name="accessibleName">
+       <string>Edit Preference</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows changing protocol or application preferences.</string>
+      </property>
+     </widget>
     </item>
     <item>
-     <widget class="FilterExpressionFrame" name="filterExpressionFrame"/>
+     <widget class="FilterExpressionFrame" name="filterExpressionFrame">
+      <property name="accessibleName">
+       <string>Edit Filter Expression</string>
+      </property>
+      <property name="accessibleDescription">
+       <string>Allows creating or editing display filter buttons.</string>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="WirelessTimeline" name="wirelessTimelineWidget" native="true"/>
@@ -128,6 +172,9 @@
      <widget class="QStackedWidget" name="mainStack">
       <property name="enabled">
        <bool>true</bool>
+      </property>
+      <property name="accessibleName">
+       <string>Main View</string>
       </property>
       <widget class="WelcomePage" name="welcomePage"/>
      </widget>
@@ -140,8 +187,11 @@
      <x>0</x>
      <y>0</y>
      <width>960</width>
-     <height>23</height>
+     <height>30</height>
     </rect>
+   </property>
+   <property name="accessibleName">
+    <string>Main Menu</string>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -252,6 +302,8 @@
     <addaction name="actionHelpReleaseNotes"/>
     <addaction name="separator"/>
     <addaction name="actionHelpAbout"/>
+    <addaction name="separator"/>
+    <addaction name="actionHelpCheckUpdates"/>
    </widget>
    <widget class="QMenu" name="menuGo">
     <property name="title">
@@ -298,6 +350,7 @@
      <addaction name="actionViewTimeDisplayFormatDateYDOYandTimeOfDay"/>
      <addaction name="actionViewTimeDisplayFormatTimeOfDay"/>
      <addaction name="actionViewTimeDisplayFormatSecondsSinceEpoch"/>
+     <addaction name="actionViewTimeDisplayFormatSecondsSinceCaptureStart"/>
      <addaction name="actionViewTimeDisplayFormatSecondsSinceFirstCapturedPacket"/>
      <addaction name="actionViewTimeDisplayFormatSecondsSincePreviousCapturedPacket"/>
      <addaction name="actionViewTimeDisplayFormatSecondsSincePreviousDisplayedPacket"/>
@@ -354,6 +407,8 @@
      <addaction name="actionViewInternalsConversationHashTables"/>
      <addaction name="actionViewInternalsDissectorTables"/>
      <addaction name="actionViewInternalsSupportedProtocols"/>
+     <addaction name="actionViewInternalsKeyboardShortcuts"/>
+     <addaction name="actionViewInternalsThemeDebug"/>
     </widget>
     <widget class="QMenu" name="menuAdditionalToolbars">
      <property name="title">
@@ -387,6 +442,10 @@
     <addaction name="actionViewColorizePacketList"/>
     <addaction name="actionViewColoringRules"/>
     <addaction name="menuColorizeConversation"/>
+    <addaction name="actionViewTaggingRules"/>
+    <addaction name="actionAggregationView"/>
+    <addaction name="actionViewPinSelectedRows"/>
+    <addaction name="actionViewUnpinAllRows"/>
     <addaction name="separator"/>
     <addaction name="actionViewResetLayout"/>
     <addaction name="actionViewResizeColumns"/>
@@ -465,6 +524,7 @@
      <addaction name="actionStatisticsTcpStreamThroughput"/>
      <addaction name="actionStatisticsTcpStreamRoundTripTime"/>
      <addaction name="actionStatisticsTcpStreamWindowScaling"/>
+     <addaction name="actionStatisticsTcpStreamDedupTable"/>
     </widget>
     <widget class="QMenu" name="menuBACnet">
      <property name="title">
@@ -550,6 +610,7 @@
       <string>&amp;DTN</string>
      </property>
      <addaction name="actionStatisticsLTP"/>
+     <addaction name="actionStatisticsBPv7"/>
     </widget>
     <addaction name="actionStatisticsCaptureFileProperties"/>
     <addaction name="actionStatisticsResolvedAddresses"/>
@@ -560,6 +621,7 @@
     <addaction name="actionStatisticsIOGraph"/>
     <addaction name="actionStatisticsPlot"/>
     <addaction name="menuServiceResponseTime"/>
+    <addaction name="actionStatisticsDistribution"/>
     <addaction name="separator"/>
     <addaction name="actionStatistics_REGISTER_STAT_GROUP_UNSORTED"/>
     <addaction name="menu29West"/>
@@ -704,7 +766,8 @@
     <addaction name="menuPacketComment"/>
     <addaction name="actionDeleteAllPacketComments"/>
     <addaction name="separator"/>
-    <addaction name="actionEditInjectSecrets"/>
+    <addaction name="actionEditInjectTLSSecrets"/>
+    <addaction name="actionEditInjectESPSecrets"/>
     <addaction name="actionEditDiscardAllSecrets"/>
     <addaction name="separator"/>
     <addaction name="actionEditConfigurationProfiles"/>
@@ -751,6 +814,12 @@
    <property name="windowTitle">
     <string>Main Toolbar</string>
    </property>
+   <property name="accessibleName">
+    <string>Main Toolbar</string>
+   </property>
+   <property name="accessibleDescription">
+    <string>Contains buttons for common actions like starting a capture or opening a file.</string>
+   </property>
    <property name="movable">
     <bool>false</bool>
    </property>
@@ -761,7 +830,7 @@
     </size>
    </property>
    <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonIconOnly</enum>
+    <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -778,9 +847,8 @@
    <addaction name="actionFileSave"/>
    <addaction name="actionFileClose"/>
    <addaction name="actionViewReload"/>
-   <!-- XXX - Need an icon <addaction name="actionViewRedissect"/> -->
    <addaction name="separator"/>
-   <addaction name="actionEditFindPacket"/>
+  <addaction name="actionEditFindPacket"/>
    <addaction name="actionGoPreviousPacket"/>
    <addaction name="actionGoNextPacket"/>
    <addaction name="actionGoGoToPacket"/>
@@ -789,6 +857,7 @@
    <addaction name="actionGoAutoScroll"/>
    <addaction name="separator"/>
    <addaction name="actionViewColorizePacketList"/>
+   <addaction name="actionAggregationView"/>
    <addaction name="separator"/>
    <addaction name="actionViewZoomIn"/>
    <addaction name="actionViewZoomOut"/>
@@ -796,10 +865,23 @@
    <addaction name="actionViewResizeColumns"/>
    <addaction name="actionViewResetLayout"/>
   </widget>
-  <widget class="MainStatusBar" name="statusBar"/>
+  <widget class="MainStatusBar" name="statusBar">
+   <property name="accessibleName">
+    <string>Status Bar</string>
+   </property>
+   <property name="accessibleDescription">
+    <string>Shows information about the current capture file and application state.</string>
+   </property>
+  </widget>
   <widget class="QToolBar" name="displayFilterToolBar">
    <property name="windowTitle">
     <string>Display Filter Toolbar</string>
+   </property>
+   <property name="accessibleName">
+    <string>Display Filter Toolbar</string>
+   </property>
+   <property name="accessibleDescription">
+    <string>Contains the display filter edit box and expression buttons.</string>
    </property>
    <property name="movable">
     <bool>false</bool>
@@ -857,7 +939,7 @@
     <string notr="true">Ctrl+Q</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::QuitRole</enum>
+    <enum>QAction::MenuRole::QuitRole</enum>
    </property>
   </action>
   <action name="actionCaptureStart">
@@ -911,7 +993,6 @@
    <property name="text">
     <string>&amp;User's Guide</string>
    </property>
-   <!-- This tooltip is replaced with the URL -->
    <property name="toolTip">
     <string>Wireshark User's Guide</string>
    </property>
@@ -1005,7 +1086,7 @@
     <string>&amp;About Wireshark</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::AboutRole</enum>
+    <enum>QAction::MenuRole::AboutRole</enum>
    </property>
   </action>
   <action name="actionHelpAsk">
@@ -1296,9 +1377,9 @@
    <property name="text">
     <string>Reload as File Format/Capture</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+Shift+F</string>
-   </property>
+    <property name="shortcut">
+     <string notr="true">Ctrl+Shift+F</string>
+    </property>
   </action>
   <action name="actionCaptureOptions">
    <property name="text">
@@ -1314,7 +1395,7 @@
     <string notr="true">Ctrl+K</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionCaptureCaptureFilters">
@@ -1659,12 +1740,20 @@
     <string>Remove all packet comments in the capture file</string>
    </property>
   </action>
-  <action name="actionEditInjectSecrets">
+  <action name="actionEditInjectTLSSecrets">
    <property name="text">
     <string>Inject TLS Secrets</string>
    </property>
    <property name="toolTip">
     <string>Embed used TLS secrets in the capture file</string>
+   </property>
+  </action>
+  <action name="actionEditInjectESPSecrets">
+   <property name="text">
+    <string>Inject ESP Secrets</string>
+   </property>
+   <property name="toolTip">
+    <string>Embed used ESP secrets in the capture file</string>
    </property>
   </action>
   <action name="actionEditDiscardAllSecrets">
@@ -1692,7 +1781,7 @@
     <string notr="true">Ctrl+Shift+A</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionEditPreferences">
@@ -1706,7 +1795,7 @@
     <string notr="true">Ctrl+Shift+P</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::PreferencesRole</enum>
+    <enum>QAction::MenuRole::PreferencesRole</enum>
    </property>
   </action>
   <action name="actionStatisticsCaptureFileProperties">
@@ -1784,6 +1873,14 @@
     <string>TCP time sequence graph (tcptrace)</string>
    </property>
   </action>
+  <action name="actionStatisticsTcpStreamDedupTable">
+   <property name="text">
+    <string>Duplication Table</string>
+   </property>
+   <property name="toolTip">
+    <string>TCP capture-level duplicate packet table</string>
+   </property>
+  </action>
   <action name="actionSCTPAnalyseThisAssociation">
    <property name="text">
     <string>Analyse this Association</string>
@@ -1853,6 +1950,14 @@
    </property>
    <property name="toolTip">
     <string>Collectd statistics</string>
+   </property>
+  </action>
+  <action name="actionStatisticsDistribution">
+   <property name="text">
+    <string>Distribution</string>
+   </property>
+   <property name="toolTip">
+    <string>Distribution statistics</string>
    </property>
   </action>
   <action name="actionStatisticsDNS">
@@ -1965,6 +2070,14 @@
    </property>
    <property name="toolTip">
     <string>LTP segment and block statistics</string>
+   </property>
+  </action>
+  <action name="actionStatisticsBPv7">
+   <property name="text">
+    <string>&amp;BPv7</string>
+   </property>
+   <property name="toolTip">
+    <string>BPv7 PDU and block statistics</string>
    </property>
   </action>
   <action name="actionTelephonyISUPMessages">
@@ -2245,6 +2358,22 @@
     <string notr="true">Ctrl+0</string>
    </property>
   </action>
+  <action name="actionViewPinSelectedRows">
+   <property name="text">
+    <string>Pin Selected Rows</string>
+   </property>
+   <property name="toolTip">
+    <string>Keep the selected packets at the top of the packet list, or unpin them if they are all pinned</string>
+   </property>
+  </action>
+  <action name="actionViewUnpinAllRows">
+   <property name="text">
+    <string>Unpin All Rows</string>
+   </property>
+   <property name="toolTip">
+    <string>Unpin all of the packets pinned to the top of the packet list</string>
+   </property>
+  </action>
   <action name="actionViewResetLayout">
    <property name="text">
     <string>Reset Layout</string>
@@ -2318,6 +2447,17 @@
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Alt+3</string>
+   </property>
+  </action>
+  <action name="actionViewTimeDisplayFormatSecondsSinceCaptureStart">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Seconds Since Capture Start</string>
+   </property>
+   <property name="toolTip">
+    <string>Show packet times as seconds since the start of the capture file.</string>
    </property>
   </action>
   <action name="actionViewTimeDisplayFormatSecondsSinceFirstCapturedPacket">
@@ -2641,6 +2781,22 @@
     <string>Show the currently supported protocols and display filter fields</string>
    </property>
   </action>
+  <action name="actionViewInternalsKeyboardShortcuts">
+   <property name="text">
+    <string>&amp;Keyboard Shortcuts</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the current keyboard shortcuts</string>
+   </property>
+  </action>
+  <action name="actionViewInternalsThemeDebug">
+   <property name="text">
+    <string>&amp;Theme Debug</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the active theme, main window geometry, and live widget info</string>
+   </property>
+  </action>
   <action name="actionTelephonyGsmMapSummary">
    <property name="text">
     <string>MAP Summary</string>
@@ -2710,6 +2866,14 @@
     <string>Edit the packet list coloring rules.</string>
    </property>
   </action>
+  <action name="actionViewTaggingRules">
+   <property name="text">
+    <string>&amp;Tagging Rules…</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the packet tagging rules.</string>
+   </property>
+  </action>
   <action name="actionBluetoothATT_Server_Attributes">
    <property name="text">
     <string>Bluetooth ATT Server Attributes</string>
@@ -2752,6 +2916,14 @@
     <string>Automatically scroll to the last packet during a live capture.</string>
    </property>
   </action>
+  <action name="actionAggregationView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Aggregate Packets</string>
+   </property>
+  </action>
   <action name="actionAnalyzeExpertInfo">
    <property name="text">
     <string>Expert Information</string>
@@ -2782,7 +2954,7 @@
     <bool>false</bool>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionStatistics_REGISTER_STAT_GROUP_RSERPOOL">
@@ -2796,7 +2968,7 @@
     <bool>false</bool>
    </property>
    <property name="menuRole">
-    <enum>QAction::NoRole</enum>
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
   <action name="actionTelephonyANSIPlaceholder">
@@ -3095,6 +3267,14 @@
   <action name="actionHelpReleaseNotes">
    <property name="text">
     <string>Release Notes</string>
+   </property>
+  </action>
+  <action name="actionHelpCheckUpdates">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Check for Updates…</string>
    </property>
   </action>
  </widget>

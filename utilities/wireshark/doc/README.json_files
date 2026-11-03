@@ -1,0 +1,170 @@
+JSON Data Files and Translation Infrastructure
+==============================================
+
+Wireshark uses JSON data files to configure UI elements such as welcome
+page banner slides and learn card links. These files are embedded as Qt
+resources at build time and loaded at runtime.
+
+This document explains how JSON data files are integrated into the build
+system and how translatable strings are extracted from them.
+
+
+Source Files
+------------
+
+  resources/json/                        JSON data files and schemas
+  tools/generate_json_translations.py    Extracts translatable strings
+  cmake/modules/UseJsonTranslations.cmake  CMake module wrapping the script
+  ui/qt/CMakeLists.txt                   Wireshark build integration
+  ui/stratoshark/CMakeLists.txt          Stratoshark build integration
+
+
+Overview
+--------
+
+JSON data files go through two build-time steps:
+
+  1. Qt Resource Embedding — the JSON file is added to a generated .qrc
+     so that Qt can load it at runtime via :/json/<filename>.
+
+  2. Translation String Extraction — a Python script scans the JSON and
+     produces a C++ file containing QT_TRANSLATE_NOOP() markers. This
+     file is compiled into the application so that lupdate can discover
+     the strings and add them to .ts translation files.
+
+
+Adding a New JSON Data File
+---------------------------
+
+1. Place the JSON file in resources/json/ and create a matching
+   JSON Schema file (e.g. myfile.schema.json).
+
+2. Reference the schema from the JSON file:
+
+     {
+         "schema_version": 1,
+         "$schema": "myfile.schema.json",
+         ...
+     }
+
+3. Register the file as a Qt resource in BOTH ui/qt/CMakeLists.txt
+   and ui/stratoshark/CMakeLists.txt. Look for the _json_qrc_files
+   variable and append a line:
+
+     set(_json_qrc_files
+         "        <file alias=\"slides.json\">${CMAKE_SOURCE_DIR}/resources/json/slides.json</file>\n")
+     string(APPEND _json_qrc_files
+         "        <file alias=\"learn_card.json\">${CMAKE_SOURCE_DIR}/resources/json/learn_card.json</file>\n")
+     string(APPEND _json_qrc_files
+         "        <file alias=\"myfile.json\">${CMAKE_SOURCE_DIR}/resources/json/myfile.json</file>\n")
+
+   The file will then be accessible at runtime as :/json/myfile.json.
+
+4. If the file contains user-visible strings that need translation,
+   add a GENERATE_JSON_TR_STRINGS() call (see below).
+
+
+Translation String Extraction
+-----------------------------
+
+Qt's lupdate tool extracts translatable strings from C++ source files.
+Since it cannot parse JSON directly, we generate a thin C++ file that
+contains QT_TRANSLATE_NOOP() markers for each translatable string.
+The generated code is wrapped in #if 0 so it compiles to nothing —
+lupdate still scans and extracts the strings regardless.
+
+The CMake module UseJsonTranslations.cmake provides the
+GENERATE_JSON_TR_STRINGS() function for this purpose.
+
+
+GENERATE_JSON_TR_STRINGS()
+--------------------------
+
+Synopsis:
+
+  GENERATE_JSON_TR_STRINGS(
+      INPUT    <path to input .json file>
+      OUTPUT   <path to output .cpp file>
+      CONTEXT  <Qt translation context class name>
+      EXTRACT  <array_key:field1,field2,...> [...]
+  )
+
+Parameters:
+
+  INPUT     Absolute path to the JSON data file.
+  OUTPUT    Absolute path to the generated C++ file (typically placed
+            in CMAKE_CURRENT_BINARY_DIR).
+  CONTEXT   The Qt class name used as the translation context. This
+            must match the class that calls tr() at runtime (e.g.
+            InfoBannerWidget, LearnCardWidget).
+  EXTRACT   One or more extraction specs. Each spec has the form
+            array_key:field1,field2,... where array_key is the name of
+            a top-level JSON array and the fields are object properties
+            whose values should be translated. Multiple EXTRACT specs
+            can be given to extract from several arrays.
+
+Example for slides.json (single array):
+
+  GENERATE_JSON_TR_STRINGS(
+      INPUT   ${CMAKE_SOURCE_DIR}/resources/json/slides.json
+      OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/slide_tr_strings.cpp
+      CONTEXT InfoBannerWidget
+      EXTRACT slides:tag,title,description,description_sub,body_text,button_label,url
+  )
+
+Example for learn_card.json (multiple arrays):
+
+  GENERATE_JSON_TR_STRINGS(
+      INPUT   ${CMAKE_SOURCE_DIR}/resources/json/learn_card.json
+      OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/learn_card_tr_strings.cpp
+      CONTEXT LearnCardWidget
+      EXTRACT links:label,short_label,tooltip
+              buttons:label,tooltip
+  )
+
+The generated .cpp file must also be added to the target's source list.
+In both ui/qt/CMakeLists.txt and ui/stratoshark/CMakeLists.txt, add it
+to the OBJECT library sources (qtui or stratoshark_ui respectively):
+
+  add_library(qtui OBJECT
+      ...
+      ${CMAKE_CURRENT_BINARY_DIR}/slide_tr_strings.cpp
+      ${CMAKE_CURRENT_BINARY_DIR}/learn_card_tr_strings.cpp
+      ...
+  )
+
+Remember to add the call and the source file in BOTH CMakeLists.txt
+files so that translations work for Wireshark and Stratoshark alike.
+
+
+The Python Script
+-----------------
+
+The underlying script is tools/generate_json_translations.py. It can
+be run standalone for testing:
+
+  python3 tools/generate_json_translations.py \
+      resources/json/learn_card.json \
+      /tmp/test_output.cpp \
+      LearnCardWidget \
+      --extract links:label,short_label,tooltip \
+      --extract buttons:label,tooltip
+
+The --extract flag can be repeated. Each flag takes one spec in the
+form array_key:field1,field2,... and extracts strings from the named
+array. Strings are deduplicated while preserving first-seen order.
+
+
+Choosing Which Fields to Extract
+--------------------------------
+
+Only extract fields whose values are shown to the user in the UI and
+would benefit from translation. Do not extract:
+
+  - URLs, color codes, or other technical values
+  - Internal identifiers (e.g. "scheme", "type", "name")
+  - Fields that change so frequently that translations would always
+    lag behind (see doc/README.slides for an example of this trade-off)
+
+When in doubt, check whether the corresponding widget code calls tr()
+for the field in question.

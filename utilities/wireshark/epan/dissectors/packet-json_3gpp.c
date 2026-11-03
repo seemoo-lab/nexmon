@@ -1293,7 +1293,7 @@ dissect_3gpp_supportfeatures(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo
 	for (int i = 0; i < len; i++) {
 		char c = hex_ascii[i];
 		if (!g_ascii_isxdigit(c)) {
-			proto_tree_add_expert_format(sub_tree, pinfo, &ei_json_3gpp_encoding_error, suppfeat_tvb, 0, -1, "Invalid char pos=%d value=%02x", i, c);
+			proto_tree_add_expert_format_remaining(sub_tree, pinfo, &ei_json_3gpp_encoding_error, suppfeat_tvb, 0, "Invalid char pos=%d value=%02x", i, c);
 			return;
 		}
 	}
@@ -1343,7 +1343,7 @@ dissect_3gpp_supportfeatures(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo
 		dissect_3gpp_supportfeatures_nudm_pp(suppfeat_tvb, sub_tree, pinfo, offset, len, hex_ascii);
 
 	} else {
-		proto_tree_add_expert(tree, pinfo, &ei_json_3gpp_data_not_decoded, tvb, offset, -1);
+		proto_tree_add_expert_remaining(tree, pinfo, &ei_json_3gpp_data_not_decoded, tvb, offset);
 	}
 
 	return;
@@ -1376,13 +1376,13 @@ dissect_3gpp_supi(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, int offse
 			G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
 	}
 
-	char *supi_str = tvb_get_string_enc(pinfo->pool, supi_tvb, 0, tvb_captured_length(supi_tvb), ENC_UTF_8);
+	char *supi_str = (char*)tvb_get_string_enc(pinfo->pool, supi_tvb, 0, tvb_captured_length(supi_tvb), ENC_UTF_8);
 	g_regex_match(regex, supi_str, 0, &match_info);
 
 	if (g_match_info_matches(match_info)) {
 		matched_imsi = g_match_info_fetch(match_info, 1); //will be empty string if imsi is not in supi
 		if (matched_imsi && (strcmp(matched_imsi, "") != 0)) {
-			add_assoc_imsi_item(supi_tvb, tree, matched_imsi);
+			add_assoc_imsi_item(supi_tvb, pinfo, tree, matched_imsi);
 			/* Add Associate IMSI to HTTP2 stream */
 			if (proto_is_frame_protocol(pinfo->layers, "http2")) {
 				http2_set_stream_imsi(pinfo, matched_imsi);
@@ -1401,7 +1401,7 @@ dissect_3gpp_notifyuri(tvbuff_t* tvb, proto_tree* tree _U_, packet_info* pinfo, 
 	tvbuff_t   *notifyuri_tvb;
 	GMatchInfo *match_info;
 	static GRegex *regex = NULL;
-	char *matched_referenceid = NULL;
+	char *matched_notifyuri = NULL;
 	const char *imsi = NULL;
 
 	if (len <= 0) {
@@ -1410,30 +1410,27 @@ dissect_3gpp_notifyuri(tvbuff_t* tvb, proto_tree* tree _U_, packet_info* pinfo, 
 
 	notifyuri_tvb = tvb_new_subset_length(tvb, offset, len);
 
-	/* NotifyUri sent from different SBI interface usually has the format:
-	 *   https://<address>:<port>/some_sbi_service/referenceid/<id>
-	 */
+	/* NotifyUri is generally just uri does not have any specific format */
 	if (regex == NULL) {
 		regex = g_regex_new (
-			"^.*\\/referenceid\\/([A-Za-z0-9\\-.]+).*",
+		        "^(?:https?:\\/\\/[^/]+)?(\\/.*)$", //Matches with uris except root
 			G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
 	}
 
-	char *notifyuri_str = tvb_get_string_enc(pinfo->pool, notifyuri_tvb, 0, tvb_captured_length(notifyuri_tvb), ENC_UTF_8);
+	char *notifyuri_str = (char*)tvb_get_string_enc(pinfo->pool, notifyuri_tvb, 0, tvb_captured_length(notifyuri_tvb), ENC_UTF_8);
 	g_regex_match(regex, notifyuri_str, 0, &match_info);
 
 	if (g_match_info_matches(match_info)) {
-		matched_referenceid = g_match_info_fetch(match_info, 1); //will be empty string if imsi is not in supi
-		if (matched_referenceid && (strcmp(matched_referenceid, "") != 0)) {
+		matched_notifyuri = g_match_info_fetch(match_info, 1); //will be empty string if notify uri does not contain http or https
+		if (matched_notifyuri && (strcmp(matched_notifyuri, "") != 0)) {
 			if (proto_is_frame_protocol(pinfo->layers, "http2")) {
 				imsi = http2_get_stream_imsi(pinfo);
 				if(imsi) {
-					/* Add mapping of referenceid to imsi */
-					http2_add_referenceid_imsi(matched_referenceid, imsi);
+					http2_add_notifyuri_imsi(matched_notifyuri, imsi);
 				}
 			}
 		}
-		g_free(matched_referenceid);
+		g_free(matched_notifyuri);
 	}
 	g_match_info_free(match_info);
 
@@ -1613,7 +1610,7 @@ register_static_headers(void) {
 	};
 
 	/* List of decoding functions the index matches the HF */
-	static void(*json_decode_fn[])(tvbuff_t * tvb, proto_tree * tree, packet_info * pinfo, int offset, int len, const char* key_str) = {
+	static void(* const json_decode_fn[])(tvbuff_t * tvb, proto_tree * tree, packet_info * pinfo, int offset, int len, const char* key_str) = {
 		dissect_base64decoded_eps_ie,   /* ueEpsPdnConnection */
 		dissect_base64decoded_eps_ie,   /* bearerLevelQoS */
 		dissect_base64decoded_eps_ie,   /* epsBearerSetup */

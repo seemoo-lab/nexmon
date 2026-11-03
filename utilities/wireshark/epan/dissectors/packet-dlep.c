@@ -22,7 +22,6 @@
 #include <epan/ftypes/ftypes.h> /* for fieldtype lengths */
 #include <epan/exceptions.h>
 #include <epan/expert.h>
-#include <epan/ipproto.h>       /* for IP_PROTO_TCP and IP_PROTO_UDP */
 #include <epan/packet.h>
 #include <epan/packet_info.h>   /* for struct packet_info */
 #include <epan/prefs.h>
@@ -30,6 +29,7 @@
 #include <epan/to_str.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
+#include <epan/iana-info.h>
 
 #include "packet-tcp.h"
 
@@ -547,8 +547,8 @@ static int
 decode_dataitem_macaddr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, void *data _U_)
 {
   proto_item *pi = proto_tree_get_parent(pt);
-  const int len = tvb_captured_length(tvb);
-  int offset = 0;
+  const unsigned len = tvb_captured_length(tvb);
+  unsigned offset = 0;
   switch(len) {
     case FT_ETHER_LEN:
       proto_tree_add_item(pt, hf_dlep_dataitem_macaddr_eui48, tvb, offset, len, ENC_NA);
@@ -556,7 +556,7 @@ decode_dataitem_macaddr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pt, void 
       break;
     case FT_EUI64_LEN:
       proto_tree_add_item(pt, hf_dlep_dataitem_macaddr_eui64, tvb, offset, len, ENC_BIG_ENDIAN);
-      proto_item_append_text(pi, ": %s", tvb_eui64_to_str(pinfo->pool, tvb, offset));
+      proto_item_append_text(pi, ": %s", tvb_address_to_str(pinfo->pool, tvb, AT_EUI64, offset));
       break;
     default:
       proto_tree_add_expert(pt, NULL, &ei_dlep_dataitem_macaddr_unexpected_length, tvb, offset, len);

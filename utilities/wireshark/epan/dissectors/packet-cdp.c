@@ -15,11 +15,11 @@
 #include <epan/expert.h>
 #include <epan/to_str.h>
 #include <epan/in_cksum.h>
-#include <epan/nlpid.h>
 #include <epan/etypes.h>
-#include <epan/cisco_pid.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include "packet-osi.h"
+#include "packet-cisco-pid.h"
 
 /*
  *
@@ -165,7 +165,7 @@ dissect_nrgyz_tlv(tvbuff_t *tvb, packet_info* pinfo, int offset, uint16_t length
 static void
 dissect_spare_poe_tlv(tvbuff_t *tvb, int offset, int length, proto_tree *tree);
 static void
-add_multi_line_string_to_tree(wmem_allocator_t *scope, proto_tree *tree, tvbuff_t *tvb, int start,
+add_multi_line_string_to_tree(wmem_allocator_t *scope, proto_tree *tree, tvbuff_t *tvb, unsigned start,
   int len, int hf);
 
 #define TYPE_DEVICE_ID          0x0001
@@ -283,10 +283,10 @@ dissect_cdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     proto_tree *cdp_tree;
     int         offset   = 0;
     uint16_t    type;
-    uint16_t    length, data_length;
+    uint32_t    length, data_length;
     proto_item *tlvi;
     proto_tree *tlv_tree;
-    int         real_length;
+    unsigned    real_length;
     uint32_t    naddresses;
     uint32_t    power_avail_len, power_avail;
     uint32_t    power_req_len, power_req;
@@ -423,8 +423,7 @@ dissect_cdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             }
             offset += 4;
             length -= 4;
-            naddresses = tvb_get_ntohl(tvb, offset);
-            proto_tree_add_item(tlv_tree, hf_cdp_number_of_addresses, tvb, offset, 4, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(tlv_tree, hf_cdp_number_of_addresses, tvb, offset, 4, ENC_BIG_ENDIAN, &naddresses);
             offset += 4;
             length -= 4;
             while (naddresses != 0) {
@@ -1067,15 +1066,13 @@ dissect_address_tlv(tvbuff_t *tvb, packet_info* pinfo, int offset, int length, p
     if (length < 1)
         return -1;
     address_tree = proto_tree_add_subtree(tree, tvb, offset, length, ett_cdp_address, &ti, "Truncated address");
-    protocol_type = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(address_tree, hf_cdp_protocol_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(address_tree, hf_cdp_protocol_type, tvb, offset, 1, ENC_BIG_ENDIAN, &protocol_type);
     offset += 1;
     length -= 1;
 
     if (length < 1)
         return -1;
-    protocol_length = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(address_tree, hf_cdp_protocol_length, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(address_tree, hf_cdp_protocol_length, tvb, offset, 1, ENC_BIG_ENDIAN, &protocol_length);
     offset += 1;
     length -= 1;
 
@@ -1104,8 +1101,7 @@ dissect_address_tlv(tvbuff_t *tvb, packet_info* pinfo, int offset, int length, p
 
     if (length < 2)
         return -1;
-    address_length = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(address_tree, hf_cdp_address_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(address_tree, hf_cdp_address_length, tvb, offset, 2, ENC_BIG_ENDIAN, &address_length);
     offset += 2;
     length -= 2;
 
@@ -1286,19 +1282,21 @@ dissect_spare_poe_tlv(tvbuff_t *tvb, int offset, int length,
 }
 
 static void
-add_multi_line_string_to_tree(wmem_allocator_t *scope, proto_tree *tree, tvbuff_t *tvb, int start,
+add_multi_line_string_to_tree(wmem_allocator_t *scope, proto_tree *tree, tvbuff_t *parent_tvb, unsigned start,
   int len, int hf)
 {
-    int next;
-    int  line_len;
-    int  data_len;
+    unsigned next;
+    unsigned  line_len;
+    unsigned  data_len;
+    tvbuff_t *tvb = tvb_new_subset_length(parent_tvb, start, len);
+    start = 0;
 
-    while (len > 0) {
-        line_len = tvb_find_line_end(tvb, start, len, &next, false);
+    /* find only searches captured bytes */
+    while (tvb_bytes_exist(tvb, start, 1)) {
+        tvb_find_line_end_remaining(tvb, start, &line_len, &next);
         data_len = next - start;
         proto_tree_add_string(tree, hf, tvb, start, data_len, tvb_format_stringzpad(scope, tvb, start, line_len));
         start += data_len;
-        len   -= data_len;
     }
 }
 

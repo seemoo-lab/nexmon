@@ -133,7 +133,6 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
   proto_item *ti, *hidden_item;
   volatile uint8_t type;
   volatile uint16_t length;
-  int captured_length;
   tvbuff_t *volatile payload_tvb = NULL;
   tvbuff_t *volatile next_tvb;
   tvbuff_t *volatile trailer_tvb = NULL;
@@ -180,29 +179,19 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
        treat it similarly, by constructing a tvbuff containing only
        the data specified by the length field. */
 
+    payload_tvb = tvb_new_subset_length(tvb, 14, length);
     TRY {
-      payload_tvb = tvb_new_subset_length(tvb, 14, length);
       trailer_tvb = tvb_new_subset_remaining(tvb, 14 + length);
     }
     CATCH_BOUNDS_ERRORS {
-      /* Either:
+      /* This can only happen if the packet has less than "length" bytes worth
+         of captured data left in it, so the offset 14 + length is out of
+         bounds. (If there are exactly "length" bytes left, it will return a
+         zero-length tvbuff, not an exception. XXX - Maybe a NULL trailer_tvb
+         is better in that case?)
 
-          the packet doesn't have "length" bytes worth of
-          captured data left in it - or it may not even have
-          "length" bytes worth of data in it, period -
-          so the "tvb_new_subset_length_caplen()" creating "payload_tvb"
-          threw an exception
-
-         or
-
-          the packet has exactly "length" bytes worth of
-          captured data left in it, so the "tvb_new_subset_remaining()"
-          creating "trailer_tvb" threw an exception.
-
-         In either case, this means that all the data in the frame
-         is within the length value, so we give all the data to the
-         next protocol and have no trailer. */
-      payload_tvb = tvb_new_subset_length_caplen(tvb, 14, -1, length);
+         This means that all the data in the frame is within the length value,
+         so we give all the data to the next protocol and have no trailer. */
       trailer_tvb = NULL;
     }
     ENDTRY;
@@ -244,14 +233,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)
          dissecting what's left as an Ethernet frame. */
       length -= 12;
 
-      /* Trim the captured length. */
-      captured_length = tvb_captured_length_remaining(payload_tvb, 12);
-
-      /* Make sure it's not bigger than the actual length. */
-      if (captured_length > length)
-        captured_length = length;
-
-      next_tvb = tvb_new_subset_length_caplen(payload_tvb, 12, captured_length, length);
+      next_tvb = tvb_new_subset_length(payload_tvb, 12, length);
 
       /* Dissect the payload as an Ethernet frame.
 

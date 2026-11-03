@@ -1,4 +1,4 @@
-/* packet-bthci_vendor.c
+/* packet-bthci_vendor_intel.c
  * Routines for the Bluetooth HCI Vendors Commands/Events
  *
  * Copyright 2014, Michal Labedzki for Tieto Corporation
@@ -15,6 +15,7 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/tap.h>
+#include <epan/exceptions.h>
 
 #include "packet-bluetooth.h"
 #include "packet-bthci_cmd.h"
@@ -346,6 +347,565 @@ static const value_string intel_mem_mode_vals[] = {
 void proto_register_bthci_vendor_intel(void);
 void proto_reg_handoff_bthci_vendor_intel(void);
 
+static unsigned
+dissect_bthci_vendor_intel_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *main_tree, void *data, uint16_t ocf)
+{
+    proto_item        *sub_item;
+    bluetooth_data_t  *bluetooth_data;
+    unsigned           offset = 0;
+    uint32_t           interface_id;
+    uint32_t           adapter_id;
+
+    bluetooth_data = (bluetooth_data_t *) data;
+    if (bluetooth_data) {
+        interface_id  = bluetooth_data->interface_id;
+        adapter_id    = bluetooth_data->adapter_id;
+    } else {
+        interface_id  = HCI_INTERFACE_DEFAULT;
+        adapter_id    = HCI_ADAPTER_DEFAULT;
+    }
+
+    switch(ocf) {
+    case 0x0001: /* Reset */
+        proto_tree_add_item(main_tree, hf_intel_reset_reset_type, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_patch_enable, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_ddc_reload, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_ddc_reload, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_boot_option, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_boot_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+        offset += 4;
+
+        break;
+    case 0x0002: /* No Operation */
+    case 0x0006: /* Set UART Baudrate */
+    case 0x0007: /* Enable LPM */
+    case 0x0008: /* PCM Write Configuration */
+    case 0x000E: /* Write Secure Boot Params */
+    case 0x000F: /* Unlock */
+    case 0x0010: /* Change UART Baudrate */
+    case 0x0012: /* Read Link RSSI */
+    case 0x0022: /* Get Exception Info */
+    case 0x0024: /* Clear Exception Info */
+    case 0x0032: /* Flow Specification */
+    case 0x0034: /* Read Secure ID */
+    case 0x0038: /* Set Synchronous USB Interface Type */
+    case 0x0039: /* Config Synchronous Interface */
+    case 0x0050: /* Read HW Version */
+    case 0x0053: /* Config_Link_Controller */
+    case 0x0089: /* DDC Write */
+    case 0x008A: /* DDC Read */
+    case 0x008C: /* DDC Config Read */
+    case 0x008D: /* Memory Read */
+        /* unknown */
+
+        break;
+    case 0x0005: /* Read Version */
+    case 0x000D: /* Read Secure Boot Params */
+    case 0x0030: /* Read BD Data */
+    case 0x003F: /* SW RF Kill */
+        /* nop */
+
+        break;
+    case 0x0009: /* Secure Send */
+        proto_tree_add_item(main_tree, hf_intel_secure_send_type, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        if (tvb_reported_length_remaining(tvb, offset)) {
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset = tvb_reported_length(tvb);
+        }
+
+        break;
+    case 0x0011: /* Manufacturer Mode */
+        proto_tree_add_item(main_tree, hf_intel_manufacturer_mode, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_manufacturer_reset, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x002F: /* Write BD Data */
+        offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 6, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset += 6;
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 8, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset += 8;
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset += 1;
+
+        if (tvb_reported_length_remaining(tvb, offset)) {
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset = tvb_reported_length(tvb);
+        }
+
+        break;
+    case 0x0031: /* Write BD Address */
+        offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
+
+        break;
+    case 0x0043: /* Activate/Deactivate Traces */
+        proto_tree_add_item(main_tree, hf_intel_transmit_traces, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_transmit_arq, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_receive_traces, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x004D: /* Stimulate Exception */
+        proto_tree_add_item(main_tree, hf_intel_stimulated_exception_type, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x0052: /* Set Event Mask */
+        proto_tree_add_bitmask(main_tree, tvb, offset, hf_intel_set_event_mask, ett_intel_set_event_mask, hfx_intel_set_event_mask, ENC_LITTLE_ENDIAN);
+        offset += 8;
+
+        break;
+    case 0x008B: /* DDC Config Write */
+        while (tvb_reported_length_remaining(tvb, offset)) {
+            uint8_t ddc_config_length;
+            tvbuff_t *ddc_config_tvb;
+
+            proto_tree_add_item_ret_uint8(main_tree, hf_intel_ddc_config_length, tvb, offset, 1, ENC_NA, &ddc_config_length);
+            offset += 1;
+
+            ddc_config_tvb = tvb_new_subset_length(tvb, offset, ddc_config_length);
+            proto_tree_add_item(main_tree, hf_intel_identifier, ddc_config_tvb, 0, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+
+            proto_tree_add_item(main_tree, hf_intel_data, ddc_config_tvb, 2, -1, ENC_NA);
+            offset += tvb_reported_length_remaining(ddc_config_tvb, 2);
+        }
+
+        break;
+    case 0x008E: /* Memory Write */
+        proto_tree_add_item(main_tree, hf_intel_mem_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+        offset += 4;
+
+        proto_tree_add_item(main_tree, hf_intel_mem_mode, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_mem_length, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, tvb_get_uint8(tvb, offset - 1), ENC_NA);
+        offset += tvb_get_uint8(tvb, offset - 1);
+
+        break;
+    default:
+        if (tvb_reported_length_remaining(tvb, offset)) {
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset = tvb_reported_length(tvb);
+        }
+    }
+
+    if (tvb_reported_length_remaining(tvb, offset)) {
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
+        offset = tvb_reported_length(tvb);
+    }
+    return offset;
+}
+
+static unsigned
+dissect_bthci_vendor_intel_evt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *main_tree, void *data, uint8_t event_code)
+{
+    proto_item        *opcode_item;
+    proto_tree        *opcode_tree;
+    proto_item        *sub_item;
+    bluetooth_data_t  *bluetooth_data;
+    unsigned           offset = 0;
+    unsigned           reported_len;
+    uint16_t           opcode;
+    uint16_t           ocf;
+    const char        *description;
+    uint8_t            status;
+    uint8_t            type;
+    uint32_t           interface_id;
+    uint32_t           adapter_id;
+
+    bluetooth_data = (bluetooth_data_t *) data;
+    if (bluetooth_data) {
+        interface_id  = bluetooth_data->interface_id;
+        adapter_id    = bluetooth_data->adapter_id;
+    } else {
+        interface_id  = HCI_INTERFACE_DEFAULT;
+        adapter_id    = HCI_ADAPTER_DEFAULT;
+    }
+
+    switch (event_code) {
+    case 0x0e: /* Command Complete */
+        proto_tree_add_item(main_tree, hf_intel_number_of_allowed_command_packets, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        opcode_item = proto_tree_add_item(main_tree, hf_intel_opcode, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        opcode_tree = proto_item_add_subtree(opcode_item, ett_intel_opcode);
+        opcode = tvb_get_letohs(tvb, offset);
+        proto_tree_add_item(opcode_tree, hf_intel_opcode_ogf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+
+        proto_tree_add_item(opcode_tree, hf_intel_opcode_ocf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        ocf = opcode & 0x03ff;
+        offset += 2;
+
+        description = val_to_str_const(ocf, intel_opcode_ocf_vals, "unknown");
+        if (g_strcmp0(description, "unknown") != 0)
+            col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)", description);
+        else
+            col_append_fstr(pinfo->cinfo, COL_INFO, " (Unknown Command 0x%04X [opcode 0x%04X])", ocf, opcode);
+
+        if (have_tap_listener(bluetooth_hci_summary_tap)) {
+            bluetooth_hci_summary_tap_t  *tap_hci_summary;
+
+            tap_hci_summary = wmem_new(pinfo->pool, bluetooth_hci_summary_tap_t);
+            tap_hci_summary->interface_id  = interface_id;
+            tap_hci_summary->adapter_id    = adapter_id;
+
+            tap_hci_summary->type = BLUETOOTH_HCI_SUMMARY_VENDOR_EVENT_OPCODE;
+            tap_hci_summary->ogf = opcode >> 10;
+            tap_hci_summary->ocf = ocf;
+            if (try_val_to_str(ocf, intel_opcode_ocf_vals))
+                tap_hci_summary->name = description;
+            else
+                tap_hci_summary->name = NULL;
+            tap_queue_packet(bluetooth_hci_summary_tap, pinfo, tap_hci_summary);
+        }
+
+        proto_tree_add_item_ret_uint8(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA, &status);
+        offset += 1;
+
+        switch (ocf) {
+        case 0x0001: /* Reset */
+        case 0x0009: /* Secure Send */
+        case 0x0011: /* Manufacturer Mode */
+        case 0x0031: /* Write BD Address */
+        case 0x003F: /* SW RF Kill */
+        case 0x004D: /* Stimulate Exception */
+        case 0x0052: /* Set Event Mask */
+        case 0x008E: /* Memory Write */
+            /* nop */
+
+            break;
+        case 0x0002: /* No Operation */
+        case 0x0006: /* Set UART Baudrate */
+        case 0x0007: /* Enable LPM */
+        case 0x0008: /* PCM Write Configuration */
+        case 0x000D: /* Read Secure Boot Params */
+        case 0x000E: /* Write Secure Boot Params */
+        case 0x000F: /* Unlock */
+        case 0x0010: /* Change UART Baudrate */
+        case 0x0012: /* Read Link RSSI */
+        case 0x0022: /* Get Exception Info */
+        case 0x0024: /* Clear Exception Info */
+        case 0x002F: /* Write BD Data */
+        case 0x0032: /* Flow Specification */
+        case 0x0034: /* Read Secure ID */
+        case 0x0038: /* Set Synchronous USB Interface Type */
+        case 0x0039: /* Config Synchronous Interface */
+        case 0x0043: /* Activate/Deactivate Traces */
+        case 0x0050: /* Read HW Version */
+        case 0x0053: /* Config_Link_Controller */
+        case 0x0089: /* DDC Write */
+        case 0x008A: /* DDC Read */
+        case 0x008C: /* DDC Config Read */
+        case 0x008D: /* Memory Read */
+            /* unknown */
+
+            if (tvb_reported_length_remaining(tvb, offset)) {
+                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+                if (status == STATUS_SUCCESS)
+                    expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+                else
+                    expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
+                offset = tvb_reported_length(tvb);
+            }
+            break;
+        case 0x0005: /* Read Version */
+            /* XXX - There appears to be a TLV based format in new devices,
+             * distinguishable via length:
+             * https://github.com/bluez/bluez/blob/00dfd32af38ac950db32af0acfa4193511f718d9/monitor/intel.c#L386-L389
+             */
+            proto_tree_add_item(main_tree, hf_intel_hardware_platform, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_hardware_variant, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_hardware_revision, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_variant, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_revision, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_build_version_nn, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_build_version_cw, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_build_version_yy, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(main_tree, hf_intel_firmware_patch, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            break;
+        case 0x0030: /* Read BD Data */
+            offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
+
+            break;
+        case 0x008B: /* DDC Config Write */
+            proto_tree_add_item(main_tree, hf_intel_identifier, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+
+            break;
+        default:
+            if (tvb_reported_length_remaining(tvb, offset)) {
+                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+                if (status == STATUS_SUCCESS)
+                    expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+                else
+                    expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
+                offset = tvb_reported_length(tvb);
+            }
+
+            break;
+        }
+
+        break;
+
+    case 0x01: /* Fatal Exception */
+    case 0x08: /* Debug Exception */
+        proto_tree_add_item(main_tree, hf_intel_line, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        proto_tree_add_item(main_tree, hf_intel_module, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reason, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x02: /* Bootup */
+        proto_tree_add_item(main_tree, hf_intel_zero, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_number_of_packets, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_source, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_type, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_reset_reason, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_ddc_status, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x05: /* Default BD Data */
+        proto_tree_add_item(main_tree, hf_intel_bd_data_status, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x06: /* Secure Send Commands Result */
+        proto_tree_add_item(main_tree, hf_intel_secure_send_commands_result, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        opcode_item = proto_tree_add_item(main_tree, hf_intel_opcode, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        opcode_tree = proto_item_add_subtree(opcode_item, ett_intel_opcode);
+        proto_tree_add_item(opcode_tree, hf_intel_opcode_ogf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+
+        proto_tree_add_item(opcode_tree, hf_intel_opcode_ocf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x0F: /* LE Link Established */
+        proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 8, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset += 8;
+
+        proto_tree_add_item(main_tree, hf_intel_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+        offset += 4;
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset = tvb_reported_length(tvb);
+
+        break;
+    case 0x11: /* Scan Status */
+        proto_tree_add_bitmask(main_tree, tvb, offset, hf_intel_scan_status, ett_intel_scan_status, hfx_intel_scan_status, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x16: /* Activate/Deactivate Traces Complete */
+        proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x17: /* Link PDU Trace */
+        proto_tree_add_item_ret_uint8(main_tree, hf_intel_link_pdu_trace_type, tvb, offset, 1, ENC_NA, &type);
+        offset += 1;
+
+        proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        switch (type) {
+        case 0x00: /* LMP Rx*/
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset += 1;
+
+            reported_len = tvb_reported_length_remaining(tvb, offset);
+            if (reported_len < 4) {
+                THROW(ReportedBoundsError);
+            }
+            call_dissector(btlmp_handle, tvb_new_subset_length(tvb, offset, reported_len - 4), pinfo, proto_tree_get_parent_tree(main_tree));
+            offset += reported_len - 4;
+
+            proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+            offset += 4;
+
+            break;
+        case 0x01: /* LMP Tx*/
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset += 1;
+
+            reported_len = tvb_reported_length_remaining(tvb, offset);
+            if (reported_len < 5) {
+                THROW(ReportedBoundsError);
+            }
+            call_dissector(btlmp_handle, tvb_new_subset_length(tvb, offset, reported_len - 5), pinfo, proto_tree_get_parent_tree(main_tree));
+            offset += reported_len - 5;
+
+            proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+            offset += 4;
+
+            proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            break;
+        case 0x02: /* LMP Ack */
+            proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+            offset += 4;
+
+            proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            break;
+        case 0x03: /* LL Rx */
+        case 0x04: /* LL Tx */
+            proto_tree_add_item(main_tree, hf_intel_link_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+
+            proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 2, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset += 2;
+
+            call_dissector(btle_handle, tvb_new_subset_remaining(tvb, offset), pinfo, proto_tree_get_parent_tree(main_tree));
+            offset = tvb_reported_length(tvb);
+
+            break;
+        case 0x05: /* LL Ack */
+            proto_tree_add_item(main_tree, hf_intel_link_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+
+            proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            break;
+        };
+
+        break;
+    case 0x19: /* Write BD Data Complete */
+        proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x25: /* SCO Rejected via LMP */
+        offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
+
+        proto_tree_add_item(main_tree, hf_intel_reason, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x26: /* PTT Switch Notification */
+        proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        proto_tree_add_item(main_tree, hf_intel_packet_table, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        break;
+    case 0x29: /* System Exception */
+        proto_tree_add_item(main_tree, hf_intel_exception_type, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset = tvb_reported_length(tvb);
+
+        break;
+    case 0x2C: /* FW Trace String */
+    case 0x2E: /* FW Trace Binary */
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+        offset = tvb_reported_length(tvb);
+
+        break;
+    default:
+        if (tvb_reported_length_remaining(tvb, offset)) {
+            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
+            offset = tvb_reported_length(tvb);
+        }
+    }
+
+    if (tvb_reported_length_remaining(tvb, offset)) {
+        sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
+        offset = tvb_reported_length(tvb);
+    }
+    return offset;
+}
+
 static int
 dissect_bthci_vendor_intel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
@@ -356,14 +916,12 @@ dissect_bthci_vendor_intel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     proto_item        *sub_item;
     bluetooth_data_t  *bluetooth_data;
     int                offset = 0;
-    int                offset_parameters;
+    tvbuff_t          *parameter_tvb;
     uint16_t           opcode;
     uint16_t           ocf;
     const char        *description;
     uint8_t            length;
     uint8_t            event_code;
-    uint8_t            status;
-    uint8_t            type;
     uint32_t           interface_id;
     uint32_t           adapter_id;
 
@@ -417,174 +975,11 @@ dissect_bthci_vendor_intel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             tap_queue_packet(bluetooth_hci_summary_tap, pinfo, tap_hci_summary);
         }
 
-        proto_tree_add_item(main_tree, hf_intel_parameter_length, tvb, offset, 1, ENC_NA);
-        length = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(main_tree, hf_intel_parameter_length, tvb, offset, 1, ENC_NA, &length);
         offset += 1;
 
-        offset_parameters = offset;
-
-        switch(ocf) {
-        case 0x0001: /* Reset */
-            proto_tree_add_item(main_tree, hf_intel_reset_reset_type, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_patch_enable, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_ddc_reload, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_ddc_reload, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_boot_option, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_boot_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-            offset += 4;
-
-            break;
-        case 0x0002: /* No Operation */
-        case 0x0006: /* Set UART Baudrate */
-        case 0x0007: /* Enable LPM */
-        case 0x0008: /* PCM Write Configuration */
-        case 0x000E: /* Write Secure Boot Params */
-        case 0x000F: /* Unlock */
-        case 0x0010: /* Change UART Baudrate */
-        case 0x0012: /* Read Link RSSI */
-        case 0x0022: /* Get Exception Info */
-        case 0x0024: /* Clear Exception Info */
-        case 0x0032: /* Flow Specification */
-        case 0x0034: /* Read Secure ID */
-        case 0x0038: /* Set Synchronous USB Interface Type */
-        case 0x0039: /* Config Synchronous Interface */
-        case 0x0050: /* Read HW Version */
-        case 0x0053: /* Config_Link_Controller */
-        case 0x0089: /* DDC Write */
-        case 0x008A: /* DDC Read */
-        case 0x008C: /* DDC Config Read */
-        case 0x008D: /* Memory Read */
-            /* unknown */
-
-            break;
-        case 0x0005: /* Read Version */
-        case 0x000D: /* Read Secure Boot Params */
-        case 0x0030: /* Read BD Data */
-        case 0x003F: /* SW RF Kill */
-            /* nop */
-
-            break;
-        case 0x0009: /* Secure Send */
-            proto_tree_add_item(main_tree, hf_intel_secure_send_type, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            if (length - 1 > 0) {
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += length - 1;
-            }
-
-            break;
-        case 0x0011: /* Manufacturer Mode */
-            proto_tree_add_item(main_tree, hf_intel_manufacturer_mode, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_manufacturer_reset, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x002F: /* Write BD Data */
-            offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 6, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += 6;
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 8, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += 8;
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += 1;
-
-            if (length - 6 - 8 - 1 > 0) {
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length - 6 - 8 - 1, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += length - 6 - 8 - 1;
-            }
-
-            break;
-        case 0x0031: /* Write BD Address */
-            offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
-
-            break;
-        case 0x0043: /* Activate/Deactivate Traces */
-            proto_tree_add_item(main_tree, hf_intel_transmit_traces, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_transmit_arq, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_receive_traces, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x004D: /* Stimulate Exception */
-            proto_tree_add_item(main_tree, hf_intel_stimulated_exception_type, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x0052: /* Set Event Mask */
-            proto_tree_add_bitmask(main_tree, tvb, offset, hf_intel_set_event_mask, ett_intel_set_event_mask, hfx_intel_set_event_mask, ENC_LITTLE_ENDIAN);
-            offset += 8;
-
-            break;
-        case 0x008B: /* DDC Config Write */
-            while (length > 0) {
-                uint8_t ddc_config_length;
-
-                proto_tree_add_item(main_tree, hf_intel_ddc_config_length, tvb, offset, 1, ENC_NA);
-                ddc_config_length = tvb_get_uint8(tvb, offset);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_identifier, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                offset += 2;
-
-                proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, ddc_config_length - 2, ENC_NA);
-                offset += ddc_config_length - 2;
-
-                length -= 1 + ddc_config_length;
-            }
-
-            break;
-        case 0x008E: /* Memory Write */
-            proto_tree_add_item(main_tree, hf_intel_mem_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-            offset += 4;
-
-            proto_tree_add_item(main_tree, hf_intel_mem_mode, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_mem_length, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, tvb_get_uint8(tvb, offset - 1), ENC_NA);
-            offset += tvb_get_uint8(tvb, offset - 1);
-
-            break;
-        default:
-            if (length > 0) {
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += length;
-            }
-        }
-
-        if (offset - offset_parameters < length) {
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length - (offset - offset_parameters), ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
-            offset += length - (offset - offset_parameters);
-        }
+        parameter_tvb = tvb_new_subset_length(tvb, offset, length);
+        offset += dissect_bthci_vendor_intel_cmd(parameter_tvb, pinfo, main_tree, data, ocf);
 
         break;
     case P2P_DIR_RECV:
@@ -617,354 +1012,18 @@ dissect_bthci_vendor_intel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             tap_queue_packet(bluetooth_hci_summary_tap, pinfo, tap_hci_summary);
         }
 
-        proto_tree_add_item(main_tree, hf_intel_parameter_length, tvb, offset, 1, ENC_NA);
-        length = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(main_tree, hf_intel_parameter_length, tvb, offset, 1, ENC_NA, &length);
         offset += 1;
 
-        offset_parameters = offset;
-
-        switch (event_code) {
-        case 0x0e: /* Command Complete */
-            proto_tree_add_item(main_tree, hf_intel_number_of_allowed_command_packets, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            opcode_item = proto_tree_add_item(main_tree, hf_intel_opcode, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            opcode_tree = proto_item_add_subtree(opcode_item, ett_intel_opcode);
-            opcode = tvb_get_letohs(tvb, offset);
-            proto_tree_add_item(opcode_tree, hf_intel_opcode_ogf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-
-            proto_tree_add_item(opcode_tree, hf_intel_opcode_ocf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            ocf = opcode & 0x03ff;
-            offset += 2;
-
-            description = val_to_str_const(ocf, intel_opcode_ocf_vals, "unknown");
-            if (g_strcmp0(description, "unknown") != 0)
-                col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)", description);
-            else
-                col_append_fstr(pinfo->cinfo, COL_INFO, " (Unknown Command 0x%04X [opcode 0x%04X])", ocf, opcode);
-
-            if (have_tap_listener(bluetooth_hci_summary_tap)) {
-                bluetooth_hci_summary_tap_t  *tap_hci_summary;
-
-                tap_hci_summary = wmem_new(pinfo->pool, bluetooth_hci_summary_tap_t);
-                tap_hci_summary->interface_id  = interface_id;
-                tap_hci_summary->adapter_id    = adapter_id;
-
-                tap_hci_summary->type = BLUETOOTH_HCI_SUMMARY_VENDOR_EVENT_OPCODE;
-                tap_hci_summary->ogf = opcode >> 10;
-                tap_hci_summary->ocf = ocf;
-                if (try_val_to_str(ocf, intel_opcode_ocf_vals))
-                    tap_hci_summary->name = description;
-                else
-                    tap_hci_summary->name = NULL;
-                tap_queue_packet(bluetooth_hci_summary_tap, pinfo, tap_hci_summary);
-            }
-
-            proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
-            status = tvb_get_uint8(tvb, offset);
-            offset += 1;
-
-            switch (ocf) {
-            case 0x0001: /* Reset */
-            case 0x0009: /* Secure Send */
-            case 0x0011: /* Manufacturer Mode */
-            case 0x0031: /* Write BD Address */
-            case 0x003F: /* SW RF Kill */
-            case 0x004D: /* Stimulate Exception */
-            case 0x0052: /* Set Event Mask */
-            case 0x008E: /* Memory Write */
-                /* nop */
-
-                break;
-            case 0x0002: /* No Operation */
-            case 0x0006: /* Set UART Baudrate */
-            case 0x0007: /* Enable LPM */
-            case 0x0008: /* PCM Write Configuration */
-            case 0x000D: /* Read Secure Boot Params */
-            case 0x000E: /* Write Secure Boot Params */
-            case 0x000F: /* Unlock */
-            case 0x0010: /* Change UART Baudrate */
-            case 0x0012: /* Read Link RSSI */
-            case 0x0022: /* Get Exception Info */
-            case 0x0024: /* Clear Exception Info */
-            case 0x002F: /* Write BD Data */
-            case 0x0032: /* Flow Specification */
-            case 0x0034: /* Read Secure ID */
-            case 0x0038: /* Set Synchronous USB Interface Type */
-            case 0x0039: /* Config Synchronous Interface */
-            case 0x0043: /* Activate/Deactivate Traces */
-            case 0x0050: /* Read HW Version */
-            case 0x0053: /* Config_Link_Controller */
-            case 0x0089: /* DDC Write */
-            case 0x008A: /* DDC Read */
-            case 0x008C: /* DDC Config Read */
-            case 0x008D: /* Memory Read */
-                /* unknown */
-
-                if (length > 0) {
-                    sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-                    if (status == STATUS_SUCCESS)
-                        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                    else
-                        expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
-                    offset += length;
-                }
-                break;
-            case 0x0005: /* Read Version */
-                /* XXX - There appears to be a TLV based format in new devices,
-                 * distinguishable via length:
-                 * https://github.com/bluez/bluez/blob/00dfd32af38ac950db32af0acfa4193511f718d9/monitor/intel.c#L386-L389
-                 */
-                proto_tree_add_item(main_tree, hf_intel_hardware_platform, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_hardware_variant, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_hardware_revision, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_variant, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_revision, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_build_version_nn, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_build_version_cw, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_build_version_yy, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                proto_tree_add_item(main_tree, hf_intel_firmware_patch, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                break;
-            case 0x0030: /* Read BD Data */
-                offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
-
-                break;
-            case 0x008B: /* DDC Config Write */
-                proto_tree_add_item(main_tree, hf_intel_identifier, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                offset += 2;
-
-                break;
-            default:
-                if (length > 0) {
-                    sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-                    if (status == STATUS_SUCCESS)
-                        expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                    else
-                        expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
-                    offset += length;
-                }
-
-                break;
-            }
-
-            break;
-
-        case 0x01: /* Fatal Exception */
-        case 0x08: /* Debug Exception */
-            proto_tree_add_item(main_tree, hf_intel_line, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            offset += 2;
-
-            proto_tree_add_item(main_tree, hf_intel_module, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reason, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x02: /* Bootup */
-            proto_tree_add_item(main_tree, hf_intel_zero, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_number_of_packets, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_source, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_type, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_reset_reason, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_ddc_status, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x05: /* Default BD Data */
-            proto_tree_add_item(main_tree, hf_intel_bd_data_status, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x06: /* Secure Send Commands Result */
-            proto_tree_add_item(main_tree, hf_intel_secure_send_commands_result, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            opcode_item = proto_tree_add_item(main_tree, hf_intel_opcode, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            opcode_tree = proto_item_add_subtree(opcode_item, ett_intel_opcode);
-            proto_tree_add_item(opcode_tree, hf_intel_opcode_ogf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-
-            proto_tree_add_item(opcode_tree, hf_intel_opcode_ocf, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            offset += 2;
-
-            proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x0F: /* LE Link Established */
-            proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            offset += 2;
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 8, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += 8;
-
-            proto_tree_add_item(main_tree, hf_intel_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-            offset += 4;
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length - 2 - 8 - 4, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += length - 2 - 8 - 4;
-
-            break;
-        case 0x11: /* Scan Status */
-            proto_tree_add_bitmask(main_tree, tvb, offset, hf_intel_scan_status, ett_intel_scan_status, hfx_intel_scan_status, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x16: /* Activate/Deactivate Traces Complete */
-            proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x17: /* Link PDU Trace */
-            proto_tree_add_item(main_tree, hf_intel_link_pdu_trace_type, tvb, offset, 1, ENC_NA);
-            type = tvb_get_uint8(tvb, offset);
-            offset += 1;
-
-            proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            offset += 2;
-
-            switch (type) {
-            case 0x00: /* LMP Rx*/
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += 1;
-
-                call_dissector(btlmp_handle, tvb_new_subset_length(tvb, offset, length - 3 - 4), pinfo, tree);
-                offset += length - 3 - 4;
-
-                proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                offset += 4;
-
-                break;
-            case 0x01: /* LMP Tx*/
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 1, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += 1;
-
-                call_dissector(btlmp_handle, tvb_new_subset_length(tvb, offset, length - 3 - 5), pinfo, tree);
-                offset += length - 3 - 5;
-
-                proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                offset += 4;
-
-                proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                break;
-            case 0x02: /* LMP Ack */
-                proto_tree_add_item(main_tree, hf_intel_link_clock, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                offset += 4;
-
-                proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                break;
-            case 0x03: /* LL Rx */
-            case 0x04: /* LL Tx */
-                proto_tree_add_item(main_tree, hf_intel_link_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                offset += 2;
-
-                proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, 2, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += 2;
-
-                call_dissector(btle_handle, tvb_new_subset_length(tvb, offset, length - 3 - 2 - 1 - 2), pinfo, tree);
-                offset += length - 3 - 2 - 1 - 2;
-
-                break;
-            case 0x05: /* LL Ack */
-                proto_tree_add_item(main_tree, hf_intel_link_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                offset += 2;
-
-                proto_tree_add_item(main_tree, hf_intel_link_id, tvb, offset, 1, ENC_NA);
-                offset += 1;
-
-                break;
-            };
-
-            break;
-        case 0x19: /* Write BD Data Complete */
-            proto_tree_add_item(main_tree, hf_intel_status, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x25: /* SCO Rejected via LMP */
-            offset = dissect_bd_addr(hf_intel_bd_addr, pinfo, main_tree, tvb, offset, false, interface_id, adapter_id, NULL);
-
-            proto_tree_add_item(main_tree, hf_intel_reason, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x26: /* PTT Switch Notification */
-            proto_tree_add_item(main_tree, hf_intel_handle, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            offset += 2;
-
-            proto_tree_add_item(main_tree, hf_intel_packet_table, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            break;
-        case 0x29: /* System Exception */
-            proto_tree_add_item(main_tree, hf_intel_exception_type, tvb, offset, 1, ENC_NA);
-            offset += 1;
-
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length - 1, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += length - 1;
-
-            break;
-        case 0x2C: /* FW Trace String */
-        case 0x2E: /* FW Trace Binary */
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-            offset += length;
-
-            break;
-        default:
-            if (length > 0) {
-                sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length, ENC_NA);
-                expert_add_info(pinfo, sub_item, &ei_intel_undecoded);
-                offset += length;
-            }
+        if (event_code == 0x0e /* Command Complete */) {
+            /* XXX - Is this correct? This was the previous behavior, but
+             * it's not what the Broadcom vendor variant (for which we
+             * have samples) does. */
+            parameter_tvb = tvb_new_subset_length(tvb, offset, length + 4);
+        } else {
+            parameter_tvb = tvb_new_subset_length(tvb, offset, length);
         }
-
-        if (offset - offset_parameters < length) {
-            sub_item = proto_tree_add_item(main_tree, hf_intel_data, tvb, offset, length - (offset - offset_parameters), ENC_NA);
-            expert_add_info(pinfo, sub_item, &ei_intel_unexpected_parameter);
-            offset += length - (offset - offset_parameters);
-        }
+        offset += dissect_bthci_vendor_intel_evt(parameter_tvb, pinfo, main_tree, data, event_code);
 
         break;
 

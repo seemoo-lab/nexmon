@@ -27,13 +27,11 @@
 #include "packet-pkcs12.h"
 #include "packet-x509af.h"
 
-#define PNAME  "Asymmetric Key Packages"
-#define PSNAME "AKP"
-#define PFNAME "akp"
-
-
 void proto_register_akp(void);
 void proto_reg_handoff_akp(void);
+
+static dissector_handle_t private_key_dissector_handle;
+static dissector_handle_t encrypted_private_key_dissector_handle;
 
 /* Initialize the protocol and registered fields */
 static int proto_akp;
@@ -67,18 +65,18 @@ static const value_string akp_Version_vals[] = {
 };
 
 
-static int
-dissect_akp_Version(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
-                                                NULL);
+static unsigned
+dissect_akp_Version(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_ber_constrained_integer(implicit_tag, actx, tree, tvb, offset,
+                                                            0U, 0U, hf_index, NULL);
 
   return offset;
 }
 
 
 
-static int
-dissect_akp_PrivateKeyAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_PrivateKeyAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_x509af_AlgorithmIdentifier(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -86,8 +84,8 @@ dissect_akp_PrivateKeyAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _
 
 
 
-static int
-dissect_akp_PrivateKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_PrivateKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index,
                                        NULL);
 
@@ -99,8 +97,8 @@ static const ber_sequence_t Attributes_set_of[1] = {
   { &hf_akp_Attributes_item , BER_CLASS_UNI, BER_UNI_TAG_SEQUENCE, BER_FLAGS_NOOWNTAG, dissect_cms_Attribute },
 };
 
-static int
-dissect_akp_Attributes(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_Attributes(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_set_of(implicit_tag, actx, tree, tvb, offset,
                                  Attributes_set_of, hf_index, ett_akp_Attributes);
 
@@ -109,8 +107,8 @@ dissect_akp_Attributes(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_,
 
 
 
-static int
-dissect_akp_PublicKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_PublicKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_bitstring(implicit_tag, actx, tree, tvb, offset,
                                     NULL, 0, hf_index, -1,
                                     NULL);
@@ -128,8 +126,8 @@ static const ber_sequence_t OneAsymmetricKey_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_akp_OneAsymmetricKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_OneAsymmetricKey(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    OneAsymmetricKey_sequence, hf_index, ett_akp_OneAsymmetricKey);
 
@@ -141,18 +139,18 @@ static const ber_sequence_t AsymmetricKeyPackage_sequence_of[1] = {
   { &hf_akp_AsymmetricKeyPackage_item, BER_CLASS_UNI, BER_UNI_TAG_SEQUENCE, BER_FLAGS_NOOWNTAG, dissect_akp_OneAsymmetricKey },
 };
 
-static int
-dissect_akp_AsymmetricKeyPackage(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
-                                      AsymmetricKeyPackage_sequence_of, hf_index, ett_akp_AsymmetricKeyPackage);
+static unsigned
+dissect_akp_AsymmetricKeyPackage(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_ber_constrained_sequence_of(implicit_tag, actx, tree, tvb, offset,
+                                                  1, NO_BOUND, AsymmetricKeyPackage_sequence_of, hf_index, ett_akp_AsymmetricKeyPackage);
 
   return offset;
 }
 
 
 
-int
-dissect_akp_PrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+unsigned
+dissect_akp_PrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_akp_OneAsymmetricKey(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -160,8 +158,8 @@ dissect_akp_PrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_akp_EncryptionAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_akp_EncryptionAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_x509af_AlgorithmIdentifier(implicit_tag, tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -169,15 +167,17 @@ dissect_akp_EncryptionAlgorithmIdentifier(bool implicit_tag _U_, tvbuff_t *tvb _
 
 
 
-static int
-dissect_akp_EncryptedData(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  tvbuff_t *encrypted_tvb;
+static unsigned
+dissect_akp_EncryptedData(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  tvbuff_t *encrypted_tvb = NULL;
 
   offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index,
                                        &encrypted_tvb);
 
-  PBE_decrypt_data(dissect_PrivateKeyInfo_PDU, "PrivateKeyInfo",
-    encrypted_tvb, actx->pinfo, actx, actx->created_item);
+  if (encrypted_tvb) {
+    PBE_decrypt_data(dissect_PrivateKeyInfo_PDU, "PrivateKeyInfo",
+      encrypted_tvb, actx->pinfo, actx, actx->created_item);
+  }
 
   return offset;
 }
@@ -189,8 +189,8 @@ static const ber_sequence_t EncryptedPrivateKeyInfo_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-int
-dissect_akp_EncryptedPrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+unsigned
+dissect_akp_EncryptedPrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    EncryptedPrivateKeyInfo_sequence, hf_index, ett_akp_EncryptedPrivateKeyInfo);
 
@@ -200,21 +200,21 @@ dissect_akp_EncryptedPrivateKeyInfo(bool implicit_tag _U_, tvbuff_t *tvb _U_, in
 /*--- PDUs ---*/
 
 static int dissect_AsymmetricKeyPackage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
   offset = dissect_akp_AsymmetricKeyPackage(false, tvb, offset, &asn1_ctx, tree, hf_akp_AsymmetricKeyPackage_PDU);
   return offset;
 }
 static int dissect_PrivateKeyInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
   offset = dissect_akp_PrivateKeyInfo(false, tvb, offset, &asn1_ctx, tree, hf_akp_PrivateKeyInfo_PDU);
   return offset;
 }
 static int dissect_EncryptedPrivateKeyInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
   offset = dissect_akp_EncryptedPrivateKeyInfo(false, tvb, offset, &asn1_ctx, tree, hf_akp_EncryptedPrivateKeyInfo_PDU);
@@ -286,11 +286,16 @@ void proto_register_akp(void) {
   };
 
   /* Register protocol */
-  proto_akp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_akp = proto_register_protocol("Asymmetric Key Packages", "AKP", "akp");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_akp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  private_key_dissector_handle = register_dissector_with_description(
+    "akp_private_key", "AKP Private Key", dissect_PrivateKeyInfo_PDU, proto_akp);
+  encrypted_private_key_dissector_handle = register_dissector_with_description(
+    "akp_encrypted_private_key", "AKP Encrypted Private Key", dissect_EncryptedPrivateKeyInfo_PDU, proto_akp);
 }
 
 
@@ -298,17 +303,18 @@ void proto_register_akp(void) {
 void proto_reg_handoff_akp(void) {
   register_ber_oid_dissector("2.16.840.1.101.2.1.2.78.5", dissect_AsymmetricKeyPackage_PDU, proto_akp, "id-ct-KP-aKeyPackage");
   register_ber_oid_dissector("1.2.840.113549.1.9.25.2", dissect_EncryptedPrivateKeyInfo_PDU, proto_akp, "pkcs-9-at-encryptedPrivateKeyInfo");
+  register_ber_oid_dissector("1.2.840.113549.1.9.16.1.52", dissect_PrivateKeyInfo_PDU, proto_akp, "id-ct-privateKeyInfo");
+  register_ber_oid_dissector("1.2.840.113549.1.9.16.1.53", dissect_EncryptedPrivateKeyInfo_PDU, proto_akp, "id-ct-encrPrivateKeyInfo");
 
 
   register_ber_syntax_dissector("PrivateKeyInfo", proto_akp, dissect_PrivateKeyInfo_PDU);
   register_ber_syntax_dissector("EncryptedPrivateKeyInfo", proto_akp, dissect_EncryptedPrivateKeyInfo_PDU);
 
   register_ber_oid_syntax(".p8", NULL, "PrivateKeyInfo");
-  dissector_add_string("media_type", "application/pkcs8",
-    create_dissector_handle(dissect_PrivateKeyInfo_PDU, proto_akp));
+  register_ber_oid_syntax(".p8e", NULL, "EncryptedPrivateKeyInfo");
+  dissector_add_string("media_type", "application/pkcs8", private_key_dissector_handle);
+  dissector_add_string("media_type", "application/pkcs8-encrypted", encrypted_private_key_dissector_handle);
 
-  dissector_add_string("rfc7468.preeb_label", "PRIVATE KEY",
-    create_dissector_handle(dissect_PrivateKeyInfo_PDU, proto_akp));
-  dissector_add_string("rfc7468.preeb_label", "ENCRYPTED PRIVATE KEY",
-    create_dissector_handle(dissect_EncryptedPrivateKeyInfo_PDU, proto_akp));
+  dissector_add_string("rfc7468.preeb_label", "PRIVATE KEY", private_key_dissector_handle);
+  dissector_add_string("rfc7468.preeb_label", "ENCRYPTED PRIVATE KEY", encrypted_private_key_dissector_handle);
 }

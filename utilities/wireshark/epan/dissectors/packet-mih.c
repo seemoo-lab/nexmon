@@ -1104,8 +1104,7 @@ static int16_t dissect_net_type(tvbuff_t *tvb, int16_t offset, proto_tree *tlv_t
         if(!tvb_get_uint8(tvb, offset))
         {
                 /*LINK_TYPE*/
-                type = tvb_get_uint8(tvb, offset+1);
-                proto_tree_add_item(tlv_tree, hf_link_type, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint8(tlv_tree, hf_link_type, tvb, offset+1, 1, ENC_BIG_ENDIAN, &type);
                 offset += 1;
         }
         offset += 1;
@@ -1991,7 +1990,7 @@ static void dissect_mih_tlv(tvbuff_t *tvb,int offset, proto_tree *tlv_tree, uint
 static int dissect_mih(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
         proto_item *ti = NULL;
-        int offset = 0;
+        unsigned offset = 0;
         proto_item *item = NULL;
         proto_tree *mih_tree = NULL;
         proto_tree *ver_flags_tree = NULL;
@@ -2167,8 +2166,7 @@ static int dissect_mih(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
                                                 "MIH TLV : %s", val_to_str_const(tvb_get_uint8(tvb, offset), typevaluenames, "UNKNOWN"));
                         if(tlv_tree)
                         {
-                                proto_tree_add_item(tlv_tree, hf_mih_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-                                type = tvb_get_uint8(tvb, offset);
+                                proto_tree_add_item_ret_uint8(tlv_tree, hf_mih_type, tvb, offset, 1, ENC_BIG_ENDIAN, &type);
 
                                 /*for length...*/
                                 if(len_of_len == 1)

@@ -30,10 +30,6 @@
 #include "packet-dsp.h"
 
 
-#define PNAME  "X.519 Directory System Protocol"
-#define PSNAME "DSP"
-#define PFNAME "dsp"
-
 void proto_register_dsp(void);
 void proto_reg_handoff_dsp(void);
 
@@ -61,12 +57,12 @@ static dissector_handle_t dsp_handle;
 static int
 dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
-	int offset = 0;
-	int old_offset;
+	unsigned offset = 0;
+	unsigned old_offset;
 	proto_item *item;
 	proto_tree *tree;
 	struct SESSION_DATA_STRUCTURE* session;
-	int (*dsp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
+	unsigned (*dsp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
 	const char *dsp_op_name;
 	asn1_ctx_t asn1_ctx;
 
@@ -137,7 +133,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dsp_op_name = "ChainedModify-DN-Argument";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_dsp_unsupported_opcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_dsp_unsupported_opcode, tvb, offset,
 	        "Unsupported DSP opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
@@ -181,7 +177,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dsp_op_name = "ChainedModify-DN-Result";
 	    break;
 	  default:
-	    proto_tree_add_expert(tree, pinfo, &ei_dsp_unsupported_opcode, tvb, offset, -1);
+	    proto_tree_add_expert_remaining(tree, pinfo, &ei_dsp_unsupported_opcode, tvb, offset);
 	    break;
 	  }
 	  break;
@@ -224,12 +220,12 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dsp_op_name = "DSA-Referral";
 	    break;
 	  default:
-	    proto_tree_add_expert(tree, pinfo, &ei_dsp_unsupported_errcode, tvb, offset, -1);
+	    proto_tree_add_expert_remaining(tree, pinfo, &ei_dsp_unsupported_errcode, tvb, offset);
 	    break;
 	  }
 	  break;
 	default:
-	  proto_tree_add_expert(tree, pinfo, &ei_dsp_unsupported_pdu, tvb, offset, -1);
+	  proto_tree_add_expert_remaining(tree, pinfo, &ei_dsp_unsupported_pdu, tvb, offset);
 	  return tvb_captured_length(tvb);
 	}
 
@@ -240,7 +236,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    old_offset=offset;
 	    offset=(*dsp_dissector)(false, tvb, offset, &asn1_ctx, tree, -1);
 	    if(offset == old_offset){
-	      proto_tree_add_expert(tree, pinfo, &ei_dsp_zero_pdu, tvb, offset, -1);
+	      proto_tree_add_expert_remaining(tree, pinfo, &ei_dsp_zero_pdu, tvb, offset);
 	      break;
 	    }
 	  }
@@ -275,7 +271,7 @@ void proto_register_dsp(void) {
   expert_module_t* expert_dsp;
 
   /* Register protocol */
-  proto_dsp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_dsp = proto_register_protocol("X.519 Directory System Protocol", "DSP", "dsp");
 
   dsp_handle = register_dissector("dsp", dissect_dsp, proto_dsp);
 

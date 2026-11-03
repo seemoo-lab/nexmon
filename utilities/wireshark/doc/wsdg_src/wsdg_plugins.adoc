@@ -7,7 +7,7 @@ its functionality to be extended without changing the source code itself.  Using
 available APIs gives you the means to do this.
 
 Currently plugin APIs are available for dissectors (epan), capture file types
-(wiretap) and media decoders (codecs). This chapter focuses primarily on
+(wiretap), media decoders (codecs) and UI (for Qt). This chapter focuses primarily on
 dissector plugins; most of the descriptions are applicable to the other plugin
 types as well.
 
@@ -44,9 +44,42 @@ Examples of these files can be found in plugins/epan/gryphon.
 
 ==== CMakeLists.txt
 
-For your _plugins/epan/foo/CMakeLists.txt_ file, see the corresponding file in
+Your _plugins/epan/foo/CMakeLists.txt_ file gives directions to
+<<ChToolsCMake,CMake>> for compiling and linking your plugin.
+For simple cases, you can copy the corresponding file in
 _plugins/epan/gryphon_.  Replace all occurrences of "gryphon" in those files
 with "foo" and add your source files to the DISSECTOR_SRC variable.
+
+The important elements of this file are, in order of appearance:
+
+include(WiresharkPlugin)::
+Defines some important macros.
+Must be the first non-comment line in the file.
+
+set_module_info(foo 0 0 1 0)::
+Defines the name of your library and its major, minor, micro, and extra version numbers.
+
+set(DISSECTOR_SRC ...)::
+Defines all source code files that are directly involved in your plugin.
+Typically these are the files which include the actual registration of your dissector.
+
+set(DISSECTOR_SUPPORT_SRC ...)::
+Defines source code files which provide support functions used by your plugin.
+This is only needed if you have support functions are separate files from those in _DISSECTOR_SRC_.
+
+set(DISSECTOR_HEADERS ...)::
+If your dissector exposes any of its functions in header files, you can list those here.
+However, add_wireshark_epan_plugin_library() automatically finds and include all header files
+in the plugin directory, so this is not strictly necessary.
+
+add_wireshark_epan_plugin_library(foo)::
+Informs CMake that your _foo_ plugin is a dissector plugin (ie, epan).  This covers the most common
+cases for dissector plugins.  If your plugin is a different type, use the appropriate macro,
+e.g. add_wireshark_wiretap_plugin_library() for a wiretap plugin.
+Also, if your plugin is a dissector plugin but it doesn't fit the common case, you can use
+add_wireshark_epan_plugin_library() as a starting point and then modify the resulting CMake
+code as needed.
+
 
 ==== plugin.rc.in
 
@@ -115,13 +148,13 @@ could be used from a shell prompt.
 
 ===== Changes to _CMakeLists.txt_
 
-Add your plugin (in alphabetical order) to the PLUGIN_SRC_DIRS:
+Add your plugin (in alphabetical order) to WIRESHARK_PLUGIN_SRC_DIRS or STRATOSHARK_PLUGIN_SRC_DIRS:
 
 [source,cmake]
 ----
 if(ENABLE_PLUGINS)
     ...
-    set(PLUGIN_SRC_DIRS
+    set(WIRESHARK_PLUGIN_SRC_DIRS
         ...
         plugins/epan/ethercat
         plugins/epan/foo

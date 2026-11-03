@@ -1,0 +1,42 @@
+/* ===================================================================
+ * Wireshark Welcome Page — Capture Card Widget
+ *
+ * Widget hierarchy:
+ *   CaptureCardWidget (QFrame)      — capture section container
+ *     #captureHeader                — ClickableLabel, "Capture" title
+ *     #captureFilterRow             — QWidget, filter row container
+ *       #captureFilterLabel         — QLabel, "…using this filter:"
+ *       #captureFilterCombo         — CaptureFilterEntry
+ *       #captureInterfaceTypeButton — QPushButton, interface type filter
+ *     #captureInterfaceFrame        — InterfaceFrame, interface list
+ *
+ * All colors are sourced from either the Qt palette() (so they
+ * adapt to the platform style) or from theme tokens resolved by
+ * ThemeManager::styleSheet("widgets/capture-card").  No literal
+ * color values are allowed in this file.
+ * =================================================================== */
+
+/* -----------------------------------------------------------------
+ * Treeview for the interface list
+ *
+ * Ensures the scrollbar being hidden
+ * ----------------------------------------------------------------- */
+QTreeView#captureInterfaceFrame  {
+    background-color: palette(base);
+    color: palette(text);
+    border: none;
+}
+
+/* -----------------------------------------------------------------
+ * Header label — "Capture"
+ *
+ * Colors come from the shared section header tokens so the Open,
+ * Capture and Learn headers always look identical.
+ * ----------------------------------------------------------------- */
+QLabel#captureHeader {
+    color: wstheme(SectionHeader);
+}
+
+QLabel#captureHeader:hover {
+    color: wstheme(SectionHeaderHover);
+}

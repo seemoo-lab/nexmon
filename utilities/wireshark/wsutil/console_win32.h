@@ -20,46 +20,54 @@ extern "C" {
 
 #ifdef _WIN32
 
+#include <tchar.h>
+
 /** @file
  * Win32 specific console.
  */
 
-/** Create Windows console.
- *
+/**
+ * @brief Create Windows console.
+ * @param console_title String title if/when console is launched
  */
 WS_DLL_PUBLIC
-void create_console(void);
+void create_console(const char* console_title);
 
-/** Connect to stdio if available.
- *
+/**
+ * @brief Connect to stdio if available.
  */
 WS_DLL_PUBLIC
 void restore_pipes(void);
 
-/** Destroy Windows console.
- *
+/**
+ * @brief Destroy Windows console.
  */
 WS_DLL_PUBLIC
 void destroy_console(void);
 
-/** Set console wait.
+/**
+ * @brief Set console wait.
  * @param console_wait set/no set console wait
  */
 WS_DLL_PUBLIC
 void set_console_wait(bool console_wait);
-/** get console wait
+
+/**
+ * @brief get console wait
  * @return set/no set console wait
  */
 WS_DLL_PUBLIC
 bool get_console_wait(void);
 
-/** Set stdin capture.
+/**
+ * @brief Set stdin capture.
  * @param set_stdin_capture whether to enable stdin capture
  */
 WS_DLL_PUBLIC
 void set_stdin_capture(bool set_stdin_capture);
 
-/** get stdin caputre
+/**
+ * @brief get stdin capture
  * @return set/no set stdin_capture
  */
 WS_DLL_PUBLIC

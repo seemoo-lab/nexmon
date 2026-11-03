@@ -34,23 +34,14 @@
 #include "packet-pres.h"
 #include "packet-x509if.h"
 
-#define PNAME  "ISO 8650-1 OSI Association Control Service"
-#define PSNAME "ACSE"
-#define PFNAME "acse"
-
-#define CLPNAME  "ISO 10035-1 OSI Connectionless Association Control Service"
-#define CLPSNAME "CLACSE"
-#define CLPFNAME "clacse"
-
 #define ACSE_APDU_OID "2.2.1.0.1"
 
 void proto_register_acse(void);
 void proto_reg_handoff_acse(void);
 
 /* Initialize the protocol and registered fields */
-int proto_acse;
-int proto_clacse;
-
+static int proto_acse;
+static int proto_clacse;
 
 
 #include "packet-acse-hf.c"
@@ -132,7 +123,7 @@ find_oid_by_ctx_id(packet_info *pinfo _U_, uint32_t idx)
 static int
 dissect_acse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_item *item;
 	proto_tree *tree;
 	char *oid;
@@ -181,15 +172,15 @@ dissect_acse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 		oid=find_oid_by_pres_ctx_id(pinfo, indir_ref);
 		if (oid) {
 			if (strcmp(oid, ACSE_APDU_OID) == 0) {
-				proto_tree_add_expert_format(parent_tree, pinfo, &ei_acse_invalid_oid, tvb, offset, -1,
+				proto_tree_add_expert_format_remaining(parent_tree, pinfo, &ei_acse_invalid_oid, tvb, offset,
 				    "Invalid OID: %s", ACSE_APDU_OID);
 			}
 		 else {
 			call_ber_oid_callback(oid, tvb, offset, pinfo, parent_tree, NULL);
 		 }
 		} else {
-			proto_tree_add_expert(parent_tree, pinfo, &ei_acse_dissector_not_available,
-									tvb, offset, -1);
+			proto_tree_add_expert_remaining(parent_tree, pinfo, &ei_acse_dissector_not_available,
+									tvb, offset);
 		}
 		return 0;
 	default:
@@ -215,10 +206,10 @@ dissect_acse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	/*  we can't make any additional checking here   */
 	/*  postpone it before dissector will have more information */
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
-		int old_offset=offset;
+		unsigned old_offset=offset;
 		offset = dissect_acse_ACSE_apdu(false, tvb, offset, &asn1_ctx, tree, -1);
 		if (offset == old_offset) {
-			proto_tree_add_expert(tree, pinfo, &ei_acse_malformed, tvb, offset, -1);
+			proto_tree_add_expert_remaining(tree, pinfo, &ei_acse_malformed, tvb, offset);
 			break;
 		}
 	}
@@ -253,11 +244,11 @@ void proto_register_acse(void) {
   expert_module_t* expert_acse;
 
   /* Register protocol */
-  proto_acse = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_acse = proto_register_protocol("ISO 8650-1 OSI Association Control Service", "ACSE", "acse");
   acse_handle = register_dissector("acse", dissect_acse, proto_acse);
 
   /* Register connectionless protocol */
-  proto_clacse = proto_register_protocol(CLPNAME, CLPSNAME, CLPFNAME);
+  proto_clacse = proto_register_protocol("ISO 10035-1 OSI Connectionless Association Control Service", "CLACSE", "clacse");
 
 
   /* Register fields and subtrees */

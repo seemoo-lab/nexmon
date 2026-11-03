@@ -246,8 +246,8 @@ static const range_string pn_rsi_security_sequence_counter[] = {
     { 0, 0, NULL }
 };
 
-static int
-dissect_FOpnumOffset(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_FOpnumOffset(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo _U_, proto_tree *tree, uint8_t *drep _U_, uint32_t *u32FOpnumOffset)
 {
     proto_item *sub_item;
@@ -310,11 +310,10 @@ static const fragment_items pn_rsi_frag_items = {
     "segments"
 };
 
-static int
-dissect_pn_rta_remaining_user_data_bytes(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
-    proto_tree *tree, uint8_t *drep, uint32_t length, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOpnum, int type)
+static unsigned
+dissect_pn_rta_remaining_user_data_bytes(tvbuff_t *tvb, unsigned offset, packet_info *pinfo _U_,
+    proto_tree *tree, uint8_t *drep, uint32_t length, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOpnum, uint32_t u32FOpnumOffsetOffset, int type)
 {
-    fragment_head  *fd_frag;
     fragment_head  *fd_reass;
     conversation_t *conv;
     tvbuff_t       *next_tvb;
@@ -332,9 +331,6 @@ dissect_pn_rta_remaining_user_data_bytes(tvbuff_t *tvb, int offset, packet_info 
                 pinfo->srcport, pinfo->destport, 0);
         }
 
-        /* XXX - don't know if this will work with multiple segmented Ack's in a single TCP stream */
-        fd_frag = fragment_get(&pn_rsi_reassembly_table, pinfo, conv->conv_index, NULL);
-        fd_reass = fragment_get_reassembled_id(&pn_rsi_reassembly_table, pinfo, conv->conv_index);
     }
     else {
         /* plain COTP transport (without RFC1006/TCP), try reassembling */
@@ -344,21 +340,19 @@ dissect_pn_rta_remaining_user_data_bytes(tvbuff_t *tvb, int offset, packet_info 
             conv = conversation_new(pinfo->fd->num, &pinfo->src, &pinfo->dst, CONVERSATION_NONE,
                 pinfo->clnp_srcref, pinfo->clnp_dstref, 0);
         }
-
-        /* XXX - don't know if this will work with multiple segmented Ack's in a single TCP stream */
-        fd_frag = fragment_get(&pn_rsi_reassembly_table, pinfo, conv->conv_index, NULL);
-        fd_reass = fragment_get_reassembled_id(&pn_rsi_reassembly_table, pinfo, conv->conv_index);
     }
+    fd_reass = fragment_get_reassembled_id(&pn_rsi_reassembly_table, pinfo, conv->conv_index);
 
     /* is this packet containing a "standalone" segment? */
-    if (!u8MoreFrag && !fd_frag && !fd_reass) {
+    if (!u8MoreFrag && !u32FOpnumOffsetOffset) {
+
         /* "standalone" segment, simply show payload and return */
         offset = dissect_blocks(tvb, offset, pinfo, tree, drep);
         return offset;
     }
 
     /* multiple segments */
-    if (!pinfo->fd->visited && conv != NULL) {
+    if (!pinfo->fd->visited) {
         /* we haven't seen it before, add to list of segments */
         fragment_add_seq_next(&pn_rsi_reassembly_table, tvb, offset, pinfo, conv->conv_index,
             NULL /*Data comes from tvb as in packet-icmp-template.c */,
@@ -405,8 +399,8 @@ dissect_pn_rta_remaining_user_data_bytes(tvbuff_t *tvb, int offset, packet_info 
 }
 
 /* dissect a PN-IO RSI SVCS block (on top of PN-RT protocol) */
-static int
-dissect_RSI_SVCS_block(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_RSI_SVCS_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOffset, uint32_t u32FOpnumOffsetOpnum)
 {
     proto_item* sub_item;
@@ -433,14 +427,14 @@ dissect_RSI_SVCS_block(tvbuff_t *tvb, int offset,
 
     if (length > 0) {
         offset = dissect_pn_rta_remaining_user_data_bytes(tvb, offset, pinfo, sub_tree, drep,
-            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, PDU_TYPE_REQ);
+            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, u32FOpnumOffsetOffset, PDU_TYPE_REQ);
     }
     return offset;
 }
 
 /* dissect a PN-IO RSI CONN block (on top of PN-RT protocol) */
-static int
-dissect_RSI_CONN_block(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_RSI_CONN_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOffset, uint32_t u32FOpnumOffsetOpnum)
 {
     proto_item *sub_item;
@@ -481,15 +475,15 @@ dissect_RSI_CONN_block(tvbuff_t *tvb, int offset,
 
     if (length > 0) {
         offset = dissect_pn_rta_remaining_user_data_bytes(tvb, offset, pinfo, sub_tree, drep,
-            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, PDU_TYPE_REQ);
+            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, u32FOpnumOffsetOffset, PDU_TYPE_REQ);
     }
 
     return offset;
 }
 
 /* dissect a SecurityAssociationControl block (on top of the PN-RT protocol) */
-static int
-dissect_SecurityAssociationContol_block(tvbuff_t* tvb, int offset,
+static unsigned
+dissect_SecurityAssociationContol_block(tvbuff_t* tvb, unsigned offset,
     packet_info* pinfo, proto_tree* tree, uint8_t* drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOffset, uint32_t u32FOpnumOffsetOpnum, uint16_t u16DestinationServiceAccessPoint)
 {
     proto_item* sub_item;
@@ -534,15 +528,15 @@ dissect_SecurityAssociationContol_block(tvbuff_t* tvb, int offset,
 
     if (length > 0) {
         offset = dissect_pn_rta_remaining_user_data_bytes(tvb, offset, pinfo, sub_tree, drep,
-            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, PDU_TYPE_REQ);
+            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, u32FOpnumOffsetOffset, PDU_TYPE_REQ);
     }
 
     return offset;
 }
 
 /* dissect a PN-IO RSI FREQ RTA PDU (on top of PN-RT protocol) */
-static int
-dissect_FREQ_RTA_block(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_FREQ_RTA_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag, uint16_t u16DestinationServiceAccessPoint)
 {
     uint32_t   u32FOpnumOffset;
@@ -608,8 +602,8 @@ dissect_FREQ_RTA_block(tvbuff_t *tvb, int offset,
 }
 
 /* dissect a PN-IO RSI RSP block (on top of PN-RT protocol) */
-static int
-dissect_RSI_RSP_block(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_RSI_RSP_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag, uint32_t u32FOpnumOffsetOffset, uint32_t u32FOpnumOffsetOpnum)
 {
     uint32_t u32RsiHeaderSize = 4;
@@ -629,15 +623,15 @@ dissect_RSI_RSP_block(tvbuff_t *tvb, int offset,
 
     if (length > 0) {
         offset = dissect_pn_rta_remaining_user_data_bytes(tvb, offset, pinfo, tree, drep,
-            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, PDU_TYPE_RSP);
+            tvb_captured_length_remaining(tvb, offset), u8MoreFrag, u32FOpnumOffsetOpnum, u32FOpnumOffsetOffset, PDU_TYPE_RSP);
     }
 
     return offset;
 }
 
 /* dissect a PN-IO RSI FRSP RTA PDU (on top of PN-RT protocol) */
-static int
-dissect_FRSP_RTA_block(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_FRSP_RTA_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep, uint16_t u16VarPartLen, uint8_t u8MoreFrag)
 {
     uint32_t   u32FOpnumOffset;
@@ -688,8 +682,8 @@ dissect_FRSP_RTA_block(tvbuff_t *tvb, int offset,
     return offset;
 }
 
-static int
-dissect_RSIAdditionalFlags(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_RSIAdditionalFlags(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo _U_, proto_tree *tree, uint8_t *drep _U_, uint8_t *u8AddFlags)
 {
     uint8_t     u8WindowSize;
@@ -728,8 +722,8 @@ dissect_RSIAdditionalFlags(tvbuff_t *tvb, int offset,
 }
 
 /* dissect a PN-IO RTA RSI PDU (on top of PN-RT protocol) */
-int
-dissect_PNIO_RSI(tvbuff_t *tvb, int offset,
+unsigned
+dissect_PNIO_RSI(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, uint8_t *drep)
 {
     uint16_t    u16DestinationServiceAccessPoint;
@@ -819,8 +813,8 @@ dissect_PNIO_RSI(tvbuff_t *tvb, int offset,
 }
 
 /* dissect a PN RTA RSI PDU with security (on top of PN-RT protocol) */
-int
-dissect_PNIO_RSI_with_security(tvbuff_t* tvb, int offset,
+unsigned
+dissect_PNIO_RSI_with_security(tvbuff_t* tvb, unsigned offset,
     packet_info* pinfo, proto_tree* tree, uint8_t* drep)
 {
     uint16_t     u16DestinationServiceAccessPoint;
@@ -928,6 +922,17 @@ dissect_PNIO_RSI_with_security(tvbuff_t* tvb, int offset,
         offset = dissect_dcerpc_uint16(tvb, offset, pinfo, rta_tree, drep,
             hf_pn_rsi_var_part_len, &u16VarPartLen);
 
+        /* The SecurityData spans u16SecurityLength octets following the 8-byte
+         * SecurityMetaData; the SecurityChecksum (and any padding) follow it.
+         * Bound the inner RTA/block dissection to the SecurityData so the
+         * trailing checksum/padding are not misinterpreted as PN-IO blocks. */
+        unsigned    security_data_end = (unsigned)start_offset + 8 + u16SecurityLength;
+        tvbuff_t   *sec_tvb = tvb;
+
+        if (security_data_end <= tvb_reported_length(tvb)) {
+            sec_tvb = tvb_new_subset_length(tvb, 0, security_data_end);
+        }
+
         switch (u8PDUType & 0x0F) {
         case(3):    /* ACK-RTA */
             col_append_str(pinfo->cinfo, COL_INFO, "ACK-RTA");
@@ -941,36 +946,48 @@ dissect_PNIO_RSI_with_security(tvbuff_t* tvb, int offset,
         case(4):    /* ERR-RTA */
             col_append_str(pinfo->cinfo, COL_INFO, "ERR-RTA");
             offset = dissect_PNIO_status(tvb, offset, pinfo, rta_tree, drep);
-            if (tvb_captured_length_remaining(tvb, offset) > 0)
+            if (tvb_captured_length(tvb) - offset - u8LengthSecurityChecksum - 4 > 0 ||
+                tvb_get_int32(tvb, offset + u8LengthSecurityChecksum, ENC_NA) != 0)
             {
                 /* VendorDeviceErrorInfo */
                 offset = dissect_dcerpc_uint16(tvb, offset, pinfo, rta_tree, drep,
                     hf_pn_rsi_vendor_id, &u16VendorId);
                 offset = dissect_dcerpc_uint16(tvb, offset, pinfo, rta_tree, drep,
                     hf_pn_rsi_device_id, &u16DeviceId);
-                offset = dissect_pn_user_data(tvb, offset, pinfo, rta_tree, tvb_captured_length(tvb) - offset - 16, "Data");
+                offset = dissect_pn_user_data(tvb, offset, pinfo, rta_tree, tvb_captured_length(tvb) - offset - u8LengthSecurityChecksum, "Data");
             }
             break;
         case(5):    /* FREQ-RTA */
-            offset = dissect_FREQ_RTA_block(tvb, offset, pinfo, rta_tree, drep, u16VarPartLen, u8MoreFrag, u16DestinationServiceAccessPoint);
+            offset = dissect_FREQ_RTA_block(sec_tvb, offset, pinfo, rta_tree, drep, u16VarPartLen, u8MoreFrag, u16DestinationServiceAccessPoint);
             break;
         case(6):    /* FRSP-RTA */
-            offset = dissect_FRSP_RTA_block(tvb, offset, pinfo, rta_tree, drep, u16VarPartLen, u8MoreFrag);
+            offset = dissect_FRSP_RTA_block(sec_tvb, offset, pinfo, rta_tree, drep, u16VarPartLen, u8MoreFrag);
             break;
         default:
-            offset = dissect_pn_undecoded(tvb, offset, pinfo, tree, tvb_captured_length(tvb));
+            offset = dissect_pn_undecoded(sec_tvb, offset, pinfo, tree, tvb_captured_length(sec_tvb));
             break;
+        }
+
+        /* The SecurityChecksum immediately follows the SecurityData, regardless
+         * of how far the inner dissection advanced (e.g. for fragments). */
+        if (security_data_end <= tvb_reported_length(tvb)) {
+            offset = security_data_end;
         }
 
         /* SecurityChecksum */
         proto_tree_add_item(rta_tree, hf_pn_rsi_security_checksum, tvb, offset, u8LengthSecurityChecksum, ENC_NA);
         offset += u8LengthSecurityChecksum;
+
+        if (tvb_captured_length_remaining(tvb, offset) > 0) {
+            dissect_pn_padding(tvb, offset, pinfo, rta_tree, 4);
+            offset += 4;
+        }
     }
 
     else if (u8ProtectionMode == 0x01) // Authenticated encryption
     {
         /* SecurityData */
-        gchar szFieldSummary[100];
+        char szFieldSummary[100];
         u16LengthSecurityData = tvb_captured_length_remaining(tvb, offset);
         proto_tree_add_item(rta_tree, hf_pn_rsi_security_data, tvb, offset, u16LengthSecurityData, ENC_NA);
         offset += u16LengthSecurityData;
@@ -985,8 +1002,8 @@ dissect_PNIO_RSI_with_security(tvbuff_t* tvb, int offset,
     return offset;
 }
 
-int
-dissect_SecurityMetaData_block(tvbuff_t* tvb, int offset,
+unsigned
+dissect_SecurityMetaData_block(tvbuff_t* tvb, unsigned offset,
     packet_info* pinfo, proto_item* item, proto_tree* tree, uint8_t* drep)
 {
     uint8_t      u8NextContextID;
@@ -1019,8 +1036,8 @@ dissect_SecurityMetaData_block(tvbuff_t* tvb, int offset,
     return offset;
 }
 
-int
-dissect_SecurityChecksum(tvbuff_t* tvb, int offset, proto_tree* tree)
+unsigned
+dissect_SecurityChecksum(tvbuff_t* tvb, unsigned offset, proto_tree* tree)
 {
     uint8_t      u8LengthSecurityChecksum = 16;
 
@@ -1030,8 +1047,8 @@ dissect_SecurityChecksum(tvbuff_t* tvb, int offset, proto_tree* tree)
     return offset;
 }
 
-int
-dissect_PDRsiInstances_block(tvbuff_t *tvb, int offset,
+unsigned
+dissect_PDRsiInstances_block(tvbuff_t *tvb, unsigned offset,
     packet_info *pinfo, proto_tree *tree, proto_item *item _U_, uint8_t *drep, uint8_t u8BlockVersionHigh, uint8_t u8BlockVersionLow)
 {
     proto_item *sub_item;

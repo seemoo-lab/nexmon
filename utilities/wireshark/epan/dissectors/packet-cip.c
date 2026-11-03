@@ -65,11 +65,11 @@
 
 void proto_register_cip(void);
 void proto_reg_handoff_cip(void);
-static int dissect_cip_stringi(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb, int offset);
+static int dissect_cip_stringi(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, int offset, const char* name);
 
 typedef struct mr_mult_req_info {
    uint8_t service;
-   int num_services;
+   unsigned num_services;
    cip_req_info_t *requests;
 } mr_mult_req_info_t;
 
@@ -425,6 +425,33 @@ static int hf_id_status_minor_fault_unrec;
 static int hf_id_status_major_fault_rec;
 static int hf_id_status_major_fault_unrec;
 static int hf_id_status_extended2;
+static int hf_id_active_language;
+static int hf_id_supported_language_list;
+static int hf_id_int_product_name;
+static int hf_id_semaphore_client_key;
+static int hf_id_semaphore_vendor;
+static int hf_id_semaphore_client_sn;
+static int hf_id_semaphore_timer;
+static int hf_id_assigned_name;
+static int hf_id_assigned_description;
+static int hf_id_geographic_location;
+static int hf_id_modbus_identity_vendor_name;
+static int hf_id_modbus_identity_product_code;
+static int hf_id_modbus_identity_revision;
+static int hf_id_modbus_identity_vendor_url;
+static int hf_id_modbus_identity_product_name;
+static int hf_id_modbus_identity_model_name;
+static int hf_id_modbus_identity_app_name;
+static int hf_id_protection_mode;
+static int hf_id_protection_mode_implicit;
+static int hf_id_protection_mode_explicit;
+static int hf_id_uptime;
+static int hf_id_vendor_name;
+static int hf_id_vendor_uri;
+static int hf_id_configuration_counter;
+static int hf_id_configuration_date;
+static int hf_id_manuf_serial_number;
+static int hf_id_num_device_type_revs;
 static int hf_msg_rout_num_classes;
 static int hf_msg_rout_classes;
 static int hf_msg_rout_num_available;
@@ -444,31 +471,43 @@ static int hf_conn_mgr_conn_open_bits;
 static int hf_conn_mgr_cpu_utilization;
 static int hf_conn_mgr_max_buff_size;
 static int hf_conn_mgr_buff_size_remaining;
-static int hf_stringi_number_char;
-static int hf_stringi_language_char;
-static int hf_stringi_char_string_struct;
-static int hf_stringi_char_set;
+
+static int hf_stringi;
+static int hf_stringi_data_type;
+static int hf_stringi_string;
 static int hf_stringi_international_string;
+static int hf_stringi_number_of_strings;
+static int hf_stringi_language_char;
+static int hf_stringi_char_set;
 
 static int hf_file_data;
 static int hf_file_encoding;
 static int hf_file_file_access_rule;
 static int hf_file_file_format_version;
-static int hf_file_file_save_parametersd;
+static int hf_file_file_save_parameters;
+static int hf_file_file_save_parameters_save_method;
+static int hf_file_file_save_parameters_save_status;
+static int hf_file_file_save_parameters_reserved;
 static int hf_file_file_size;
 static int hf_file_filename;
 static int hf_file_incremental_burn_time;
 static int hf_file_incremental_burn;
 static int hf_file_instance_name;
 static int hf_file_invocation_method;
+static int hf_file_revision;
 static int hf_file_major_rev;
 static int hf_file_maximum_transfer_size;
 static int hf_file_minor_rev;
 static int hf_file_state;
+static int hf_file_file_checksum;
+static int hf_file_transfer_timeout;
 static int hf_file_transfer_checksum;
 static int hf_file_transfer_number;
 static int hf_file_transfer_packet_type;
 static int hf_file_transfer_size;
+static int hf_file_read_size;
+static int hf_file_write_size;
+static int hf_file_file_offset;
 
 static int hf_energy_energy_resource_type;
 static int hf_energy_base_energy_object_capabilities;
@@ -573,6 +612,87 @@ static int hf_port_port_routing_capabilities;
 static int hf_port_num_comm_object_entries;
 static int hf_path_len_usint;
 static int hf_path_len_uint;
+/* Process Device Diagnostics object */
+/* Class attributes fields */
+static int hf_pdd_change_counter;
+static int hf_pdd_global_status;
+static int hf_pdd_global_status_failure;
+static int hf_pdd_global_status_check;
+static int hf_pdd_global_status_out_of_spec;
+static int hf_pdd_global_status_maint;
+static int hf_pdd_num_component_elements;
+static int hf_pdd_component_status_list;
+static int hf_pdd_component_status;
+static int hf_pdd_component_name_list;
+static int hf_pdd_component_name;
+static int hf_pdd_profile_diagnostics;
+static int hf_pdd_vendor_diagnostics;
+static int hf_pdd_size_of_vendor_diagnostics;
+static int hf_pdd_user_diagnostics_groups;
+static int hf_pdd_supported_profile_diagnostics;
+static int hf_pdd_simulation_enable;
+static int hf_pdd_size_of_profile_diagnostics;
+/* Instance attributes fields */
+static int hf_pdd_active;
+static int hf_pdd_disable;
+static int hf_pdd_diagnostic_code;
+static int hf_pdd_status_signal;
+static int hf_pdd_sequence_number;
+static int hf_pdd_ts_event_occurred;
+static int hf_pdd_ts_event_cleared;
+static int hf_pdd_diagnostic_message;
+static int hf_pdd_user_diag_mapping;
+static int hf_pdd_component_index;
+static int hf_pdd_recommended_action;
+/* Service fields */
+static int hf_pdd_user_diag_index;
+static int hf_pdd_start_instance;
+static int hf_pdd_next_instance;
+
+/* Process Measurement Value object */
+/* Class attributes fields */
+static int hf_pmv_simulation_enable;
+/* Instance attributes fields */
+static int hf_pmv_name;
+static int hf_pmv_value_eng_units;
+static int hf_pmv_value;
+static int hf_pmv_status;
+static int hf_pmv_status_sim;
+static int hf_pmv_status_bad;
+static int hf_pmv_status_uncertain;
+static int hf_pmv_status_good;
+static int hf_pmv_damping;
+static int hf_pmv_low_cutoff;
+static int hf_pmv_low_cutoff_hysteresis;
+static int hf_pmv_sensor_direction;
+static int hf_pmv_zero_point;
+static int hf_pmv_adjust_zero_point;
+static int hf_pmv_scaled_eng_units;
+static int hf_pmv_scaled_type;
+static int hf_pmv_scaled_low_x;
+static int hf_pmv_scaled_low_y;
+static int hf_pmv_scaled_high_x;
+static int hf_pmv_scaled_high_y;
+static int hf_pmv_upper_range_limit;
+static int hf_pmv_lower_range_limit;
+static int hf_pmv_sensor_type;
+static int hf_pmv_temp_rtd_sensor_cnx;
+static int hf_pmv_temp_rtd_2wire_comp;
+static int hf_pmv_temp_tc_sensor_ref;
+static int hf_pmv_temp_tc_sensor_ref_comp;
+static int hf_pmv_gain;
+
+/* Process Measurement Value object */
+/* Instance attributes fields */
+static int hf_ptv_name;
+static int hf_ptv_value_eng_units;
+static int hf_ptv_value;
+static int hf_ptv_status;
+static int hf_ptv_value_double;
+static int hf_ptv_totalizer_mode;
+static int hf_ptv_preset_value;
+static int hf_ptv_totalizer_control;
+static int hf_ptv_totalizer_reset;
 
 static int hf_32bitheader;
 static int hf_32bitheader_roo;
@@ -631,6 +751,9 @@ static int ett_pccc_rrsc;
 static int ett_pccc_req_id;
 static int ett_pccc_cmd_data;
 
+static int ett_file_revision;
+static int ett_file_save_params;
+
 static int ett_mb_rrsc;
 static int ett_mb_cmd_data;
 
@@ -655,12 +778,22 @@ static int ett_time_sync_port_profile_id_info;
 static int ett_time_sync_port_phys_addr_info;
 static int ett_time_sync_port_proto_addr_info;
 static int ett_id_status;
+static int ett_id_semaphore;
+static int ett_id_semaphore_client_key;
+static int ett_id_modbus_info;
+static int ett_id_protection_mode;
 static int ett_32bitheader_tree;
 
 static int ett_connection_info;
+static int ett_stringi;
+static int ett_stringi_entry;
 
 static expert_field ei_mal_identity_revision;
 static expert_field ei_mal_identity_status;
+static expert_field ei_mal_identity_active_language;
+static expert_field ei_mal_identity_supported_language_list;
+static expert_field ei_mal_identity_semaphore;
+static expert_field ei_mal_identity_protection_mode;
 static expert_field ei_mal_msg_rout_num_classes;
 static expert_field ei_mal_time_sync_gm_clock;
 static expert_field ei_mal_time_sync_parent_clock;
@@ -726,6 +859,8 @@ static expert_field ei_cip_safety_input;
 static expert_field ei_cip_safety_output;
 static expert_field ei_cip_listen_input_connection;
 
+static expert_field ei_cip_stringi_invalid_type;
+
 //// Concurrent Connections
 static int hf_cip_cm_cc_version;
 
@@ -783,6 +918,29 @@ static int* ett_cc[] =
 static dissector_table_t   subdissector_class_table;
 static dissector_table_t   subdissector_symbol_table;
 
+static const value_string cip_string_type_vals[] = {
+    { CIP_STRING_TYPE, "STRING" },
+    { CIP_STRING2_TYPE, "STRING2" },
+    { CIP_STRINGN_TYPE, "STRINGN" },
+    { CIP_SHORT_STRING_TYPE, "SHORT_STRING" },
+    { 0, NULL }
+};
+
+static const value_string cip_charset_vals[] = {
+    { 4, "ISO-8859-1:1987" },
+    { 5, "ISO-8859-2:1987" },
+    { 6, "ISO-8859-3:1988" },
+    { 7, "ISO-8859-4:1988 7" },
+    { 8, "ISO-8859-5:1988 8" },
+    { 9, "ISO-8859-6:1987 9" },
+    { 10, "ISO-8859-7:1987 10" },
+    { 11, "ISO-8859-8:1989 11" },
+    { 12, "ISO-8859-9:1989 12" },
+    { 1000, "ISO-10646-UCS-2" },
+    { 1001, "ISO-10646-UCS-4" },
+    { 0, NULL }
+};
+
 /* Translate function to string - CIP Service codes */
 static const value_string cip_sc_vals[] = {
    GENERIC_SC_LIST
@@ -796,12 +954,12 @@ static const value_string cip_sc_vals_cm[] = {
 
    /* Some class specific services */
    { SC_CM_FWD_CLOSE,            "Forward Close" },
-   { SC_CM_FWD_OPEN,             "Forward Open" },
    { SC_CM_UNCON_SEND,           "Unconnected Send" },
-   { SC_CM_LARGE_FWD_OPEN,       "Large Forward Open" },
+   { SC_CM_FWD_OPEN,             "Forward Open" },
    { SC_CM_GET_CONN_DATA,        "Get Connection Data" },
    { SC_CM_SEARCH_CONN_DATA,     "Search Connection Data" },
    { SC_CM_GET_CONN_OWNER,       "Get Connection Owner" },
+   { SC_CM_LARGE_FWD_OPEN,       "Large Forward Open" },
    { SC_CM_CONCURRENT_FWD_OPEN,  "Concurrent Forward Open" },
    { SC_CM_CONCURRENT_FWD_CLOSE, "Concurrent Forward Close" },
 
@@ -886,7 +1044,7 @@ const value_string cip_con_prio_vals[] = {
 };
 
 /* Translate function to string - Connection size fixed or variable */
-static const value_string cip_con_fw_vals[] = {
+const value_string cip_con_fw_vals[] = {
    { 0,        "Fixed"    },
    { 1,        "Variable" },
 
@@ -974,6 +1132,30 @@ static const value_string cip_con_rtf_vals[] = {
    { 0,        NULL             }
 };
 
+/* Identity Stats Extended Device Status Value */
+static const value_string cip_id_status_extended_vals[] =
+{
+   {0,        "Self-Testing or Unknown"},
+   {1,        "Firmware Update in Progress"},
+   {2,        "At least one faulted I/O connection"},
+   {3,        "No I/O connections established"},
+   {4,        "Non-Volatile Configuration bad"},
+   {5,        "Major Fault"},
+   {6,        "At least one I/O connection in run modes"},
+   {7,        "At least one I/O connection established, all in idle mode"},
+   {8,        "The Status attribute is not applicable to this instance."},
+   {9,        "Reserved"},
+   {10,       "Vendor specific"},
+   {11,       "Vendor specific"},
+   {12,       "Vendor specific"},
+   {13,       "Vendor specific"},
+   {14,       "Vendor specific"},
+   {15,       "Vendor specific"},
+
+   {0,        NULL}
+};
+static value_string_ext cip_id_status_extended_vals_ext = VALUE_STRING_EXT_INIT(cip_id_status_extended_vals);
+
 /* Translate function to string - CCO change type */
 static const value_string cip_cco_change_type_vals[] = {
    { 0,        "Full"           },
@@ -982,19 +1164,82 @@ static const value_string cip_cco_change_type_vals[] = {
    { 0,        NULL             }
 };
 
-static const value_string cip_file_encoding_vals[] = {
-   { 0, "Binary" },
-   { 1, "Compressed file" },
-   { 2, "PEM Encoded Certificate" },
-   { 3, "PKCS#7 Encoded Certificate" },
-   { 4, "PEM Encoded CRL" },
-   { 5, "PKCS#7 Encoded CRL" },
-   { 11, "ASCII text" },
-   { 12, "Word" },
-   { 13, "Excel" },
-   { 14, "PDF" },
+static const range_string cip_file_encoding_vals[] = {
+   { 0, 0, "Binary" },
+   { 1, 1, "Compressed file" },
+   { 2, 2, "PEM Encoded Certificate" },
+   { 3, 3, "PKCS#7 Encoded Certificate" },
+   { 4, 4, "PEM Encoded CRL" },
+   { 5, 5, "PKCS#7 Encoded CRL" },
+   { 6, 6, "IODD Zip file" },
+   { 7, 10, "Reserved by CIP" },
+   { 11, 11, "ASCII text" },
+   { 12, 12, "Word" },
+   { 13, 13, "Excel" },
+   { 14, 14, "PDF" },
+   { 15, 99, "Reserved by CIP" },
+   { 100, 199, "Vendor Specific" },
+   { 200, 254, "Reserved by CIP" },
+   { 255, 255, "Unknown" },
 
-   { 0, NULL }
+   { 0, 0, NULL }
+};
+
+static const range_string cip_file_access_rule_vals[] = {
+   { 0, 0, "Read/Write" },
+   { 1, 1, "Read Only" },
+   { 2, 255, "Reserved" },
+
+   { 0, 0, NULL }
+};
+
+static const range_string cip_file_state_vals[] = {
+   { 0, 0, "Nonexistent" },
+   { 1, 1, "File Empty" },
+   { 2, 2, "File Loaded" },
+   { 3, 3, "At least one Transfer Upload initiated" },
+   { 4, 4, "Transfer Download initiated" },
+   { 5, 5, "At least one Transfer Upload in Progress" },
+   { 6, 6, "Transfer Download in Progress" },
+   { 7, 7, "Storing" },
+   { 8, 255, "Reserved" },
+
+   { 0, 0, NULL }
+};
+
+static const range_string cip_file_invocation_method_vals[] = {
+   { 0, 0, "No action required" },
+   { 1, 1, "Reset to Identity Object" },
+   { 2, 2, "Power cycle on device" },
+   { 3, 3, "Start Service request required" },
+   { 4, 4, "Application object internal request required" },
+   { 5, 99, "Reserved by CIP" },
+   { 100, 199, "Vendor Specific" },
+   { 200, 254, "Reserved by CIP" },
+   { 255, 255, "Not applicable" },
+
+   { 0, 0, NULL }
+};
+
+static const range_string cip_file_save_method_vals[] = {
+    {0, 0, "Automatic / None"},
+    {1, 1, "Save Service"},
+    {2, 2, "Volatile"},
+    {3, 3, "Custom"},
+    {4, 4, "Custom and Save Service"},
+    {5, 15, "Reserved"},
+    {0, 0, NULL}
+};
+
+static const range_string cip_file_transfer_packet_type_vals[] = {
+   { 0, 0, "First transfer packet" },
+   { 1, 1, "Middle transfer packet" },
+   { 2, 2, "Last transfer packet" },
+   { 3, 3, "Abort transfer" },
+   { 4, 4, "First and last packet" },
+   { 5, 255, "Reserved" },
+
+   { 0, 0, NULL }
 };
 
 static const value_string cip_time_sync_clock_class_vals[] = {
@@ -3381,7 +3626,122 @@ static const value_string cip_vendor_vals[] = {
    { 1745,   "EKE-Electronics Ltd." },
    { 1746,   "Bizerba SE & Co. KG" },
    { 1747,   "Astrodyne TDI" },
+   { 1748,   "FOCUS-ON VoF" },
+   { 1749,   "EWM GmbH" },
+   { 1750,   "Takebishi Corporation" },
+   { 1751,   "Pneumax S.P.A" },
+   { 1752,   "Indu-Sol GmbH" },
+   { 1753,   "Reserved" },
+   { 1754,   "Reserved" },
+   { 1755,   "E.MC Corporation" },
+   { 1756,   "Optris GmbH & Co. KG" },
+   { 1757,   "PLIEM " },
+   { 1758,   "Overview AI" },
+   { 1759,   "DMN-WESTINGHOUSE" },
+   { 1760,   "Horizon Inc." },
+   { 1761,   "Vention" },
+   { 1762,   "NOVASEN" },
+   { 1763,   "AMETEK Land" },
+   { 1764,   "Tocho Marking Systems America, Inc" },
+   { 1765,   "Schaeffler Monitoring Services GmbH" },
+   { 1766,   "Veo Robotics, Inc." },
+   { 1767,   "LOGISTIQ, division of LEWCO Inc" },
+   { 1768,   "UGL Pty Limited" },
+   { 1769,   "ADT" },
+   { 1770,   "PSTEK " },
+   { 1771,   "Strokmatic Innovation Technology" },
+   { 1772,   "RT-Labs AB" },
+   { 1773,   "Plasmatreat GmbH" },
+   { 1775,   "Binarix Corporation" },
+   { 1776,   "EN2CORE Technology Inc. " },
+   { 1777,   "STOBER Antriebstechnik GmbH & Co. KG" },
+   { 1778,   "NIRECO CORPORATION" },
+   { 1779,   "BEIJING JIYUAN AUTOMATION TECHNOLOGY CO., LTD" },
+   { 1780,   "WERMA Signaltechnik" },
+   { 1781,   "ISH Ingenieursozietät GmbH" },
+   { 1782,   "Elementary" },
+   { 1783,   "Synapticon" },
+   { 1784,   "DELO Industrial Adhesives" },
+   { 1785,   "Eura Drives Electric Co., Ltd" },
+   { 1786,   "MYUNGBO CABLE" },
+   { 1787,   "Mech-Mind Robotics Technologies" },
+   { 1788,   "TMSS France" },
+   { 1789,   "R.T.A" },
+   { 1790,   "Baumer" },
+   { 1791,   "Controlway (Suzhou) Electric Co., Ltd. " },
+   { 1792,   "ODOT Automation" },
+   { 1793,   "Pizzato Elettrica S.r.l." },
+   { 1794,   "Tsubakimoto Chain Co." },
+   { 1795,   "Voegtlin Instruments GmbH (gas flow technology)" },
+   { 1796,   "ZUKEN ELMIC Inc." },
+   { 1797,   "McCrometer Inc." },
+   { 1798,   "Shandong Aotai Electric Co., Ltd" },
+   { 1799,   "Rotork Inc." },
+   { 1800,   "Alliant Technologies" },
+   { 1801,   "Janatics" },
+   { 1802,   "Brady Worldwide, Inc." },
+   { 1803,   "Pinesolution" },
+   { 1804,   "Sealevel Systems Inc" },
+   { 1805,   "Delta Line SA" },
+   { 1806,   "Eureka Robotics" },
+   { 1807,   "CITIZEN FINEDEVICE CO.,LTD." },
+   { 1808,   "Comsys AB" },
+   { 1809,   "JUMO GmbH & Co. KG" },
+   { 1810,   "Simco ION" },
+   { 1811,   "SONIC ITALIA" },
+   { 1812,   "Fortinet, Inc." },
+   { 1813,   "Shenzhen Blue Dynamics Precision Co., Ltd." },
+   { 1814,   "NITTOKU CO., LTD." },
+   { 1815,   "TATSUTA TACHII ELECTRIC CABLE CO.,LTD" },
+   { 1816,   "MicroVision, Inc." },
+   { 1817,   "Empress Software Japan Inc." },
+   { 1818,   "Jiangsu Gao Kai Precision Fluid Technology Co., Ltd." },
+   { 1819,   "SmartD Technologies Inc" },
+   { 1820,   "TDK-Lambda Ltd." },
+   { 1821,   "Shaanxi Yidu Intelligence Technology Co.,Ltd." },
+   { 1822,   "Chengdu RuiBao Electronic Technology Co., Ltd" },
+   { 1823,   "Beijing Peitian Technology Co., Ltd" },
+   { 1824,   "Innovire AG" },
+   { 1825,   "Nautitech Mining Systems PTY LTD" },
+   { 1826,   "GP Systems GmbH" },
+   { 1827,   "Moore Industries - International, Inc." },
+   { 1828,   "NDW Group BV" },
+   { 1829,   "SignalFire Telemetry, Inc." },
+   { 1830,   "VIDAR LLC" },
+   { 1831,   "Zhejiang HuaRay Technology Co., Ltd." },
+   { 1832,   "Laumas Elettronica s.r.l." },
+   { 1833,   "CATTRON NORTH AMERICA, INC." },
+   { 1834,   "Phase Technologies, LLC" },
+   { 1835,   "Gunda Automation GmbH" },
+   { 1836,   "Transcend Communication Beijing Co., Ltd." },
+   { 1837,   "GOOD WILL INSTRUMENT CO., LTD." },
+   { 1838,   "UnitX Inc" },
+   { 1839,   "HQ Scales Inc." },
+   { 1840,   "Contrinex AG" },
+   { 1841,   "ASSA ABLOY Entrance Systems Germany GmbH" },
+   { 1842,   "Therma-Tron-X, Inc." },
+   { 1843,   "Antaira Technologies Co. Ltd." },
+   { 1844,   "ProMinent GmbH" },
+   { 1845,   "Shanghai Quicktron Automation Technology Co., Ltd." },
+   { 1846,   "Six Sigma Concepts, LLC" },
+   { 1847,   "Hafner Pneumatika Termékgyártó, Kereskedő és Szolgáltató Korlátolt Felelősségű Társaság" },
+   { 1848,   "Keco Inc." },
+   { 1849,   "Iris Dynamics Ltd." },
+   { 1850,   "Moser Baer AG" },
+   { 1851,   "Kanadevia Corporation" },
+   { 1852,   "IWAKI CO., LTD." },
+   { 1853,   "MR Control Systems International Inc." },
+   { 1854,   "IRISS, Inc." },
+   { 1855,   "Rodix, Inc." },
+   { 1856,   "HAI ROBOTICS Co., Ltd." },
+   { 1857,   "WAGO Electronic (Tianjin) Co., Ltd." },
+   { 1858,   "NXP Semiconductors Netherlands B.V" },
    { 9876,   "ODVA" },
+   { 0xFFFB, "Profile Vendor ID" },
+   { 0xFFFC, "Unspecified IO-Link Vendor" },
+   { 0xFFFD, "Unspecified HART Vendor" },
+   { 0xFFFE, "Unspecified Modbus Vendor" },
+   { 0xFFFF, "Reserved" },
 
    { 0, NULL }
 };
@@ -3390,51 +3750,60 @@ value_string_ext cip_vendor_vals_ext = VALUE_STRING_EXT_INIT(cip_vendor_vals);
 
 /* Translate Device Profile's */
 static const value_string cip_devtype_vals[] = {
-   { 0x00,        "Generic Device (deprecated)"         },
-   { 0x02,        "AC Drive"                            },
-   { 0x03,        "Motor Overload"                      },
-   { 0x04,        "Limit Switch"                        },
-   { 0x05,        "Inductive Proximity Switch"          },
-   { 0x06,        "Photoelectric Sensor"                },
-   { 0x07,        "General Purpose Discrete I/O"        },
-   { 0x09,        "Resolver"                            },
-   { 0x0C,        "Communications Adapter"              },
-   { 0x0E,        "Programmable Logic Controller"       },
-   { 0x10,        "Position Controller",                },
-   { 0x13,        "DC Drive"                            },
-   { 0x15,        "Contactor",                          },
-   { 0x16,        "Motor Starter",                      },
-   { 0x17,        "Soft Start",                         },
-   { 0x18,        "Human-Machine Interface"             },
-   { 0x1A,        "Mass Flow Controller"                },
-   { 0x1B,        "Pneumatic Valve"                     },
-   { 0x1C,        "Vacuum Pressure Gauge"               },
-   { 0x1D,        "Process Control Value"               },
-   { 0x1E,        "Residual Gas Analyzer"               },
-   { 0x1F,        "DC Power Generator"                  },
-   { 0x20,        "RF Power Generator"                  },
-   { 0x21,        "Turbomolecular Vacuum Pump"          },
-   { 0x22,        "Encoder"                             },
-   { 0x23,        "Safety Discrete I/O Device"          },
-   { 0x24,        "Fluid Flow Controller"               },
-   { 0x25,        "CIP Motion Drive"                    },
-   { 0x26,        "CompoNet Repeater"                   },
-   { 0x27,        "Mass Flow Controller, Enhanced"      },
-   { 0x28,        "CIP Modbus Device"                   },
-   { 0x29,        "CIP Modbus Translator"               },
-   { 0x2A,        "Safety Analog I/O Device"            },
-   { 0x2B,        "Generic Device (keyable)"            },
-   { 0x2C,        "Managed Ethernet Switch"             },
-   { 0x2D,        "CIP Motion Safety Drive Device"      },
-   { 0x2E,        "Safety Drive Device"                 },
-   { 0x2F,        "CIP Motion Encoder"                  },
-   { 0x30,        "CIP Motion Converter"                },
-   { 0x31,        "CIP Motion I/O"                      },
-   { 0x32,        "ControlNet Physical Layer Component" },
-   { 0x33,        "Circuit Breaker"                     },
-   { 0x34,        "HART Device"                         },
-   { 0x35,        "CIP-HART Translator"                 },
-   { 0xC8,        "Embedded Component"                  },
+   { 0x00,        "Generic Device (deprecated)"               },
+   { 0x02,        "AC Drive"                                  },
+   { 0x03,        "Motor Overload"                            },
+   { 0x04,        "Limit Switch"                              },
+   { 0x05,        "Inductive Proximity Switch"                },
+   { 0x06,        "Photoelectric Sensor"                      },
+   { 0x07,        "General Purpose Discrete I/O"              },
+   { 0x09,        "Resolver"                                  },
+   { 0x0C,        "Communications Adapter"                    },
+   { 0x0E,        "Programmable Logic Controller"             },
+   { 0x10,        "Position Controller",                      },
+   { 0x13,        "DC Drive"                                  },
+   { 0x15,        "Contactor",                                },
+   { 0x16,        "Motor Starter",                            },
+   { 0x17,        "Soft Start",                               },
+   { 0x18,        "Human-Machine Interface"                   },
+   { 0x1A,        "Mass Flow Controller"                      },
+   { 0x1B,        "Pneumatic Valve"                           },
+   { 0x1C,        "Vacuum Pressure Gauge"                     },
+   { 0x1D,        "Process Control Value"                     },
+   { 0x1E,        "Residual Gas Analyzer"                     },
+   { 0x1F,        "DC Power Generator"                        },
+   { 0x20,        "RF Power Generator"                        },
+   { 0x21,        "Turbomolecular Vacuum Pump"                },
+   { 0x22,        "Encoder"                                   },
+   { 0x23,        "Safety Discrete I/O Device"                },
+   { 0x24,        "Fluid Flow Controller"                     },
+   { 0x25,        "CIP Motion Drive"                          },
+   { 0x26,        "CompoNet Repeater"                         },
+   { 0x27,        "Mass Flow Controller, Enhanced"            },
+   { 0x28,        "CIP Modbus Device"                         },
+   { 0x29,        "CIP Modbus Translator"                     },
+   { 0x2A,        "Safety Analog I/O Device"                  },
+   { 0x2B,        "Generic Device (keyable)"                  },
+   { 0x2C,        "Managed Ethernet Switch"                   },
+   { 0x2D,        "CIP Motion Safety Drive Device"            },
+   { 0x2E,        "Safety Drive Device"                       },
+   { 0x2F,        "CIP Motion Encoder"                        },
+   { 0x30,        "CIP Motion Converter"                      },
+   { 0x31,        "CIP Motion I/O"                            },
+   { 0x32,        "ControlNet Physical Layer Component"       },
+   { 0x33,        "Circuit Breaker"                           },
+   { 0x34,        "HART Device"                               },
+   { 0x35,        "CIP-HART Translator"                       },
+   { 0x36,        "IO-Link Master"                            },
+   { 0x37,        "Operator Interface Component"              },
+   { 0x38,        "Process Device – Standard Pressure Device" },
+   { 0x39,        "Process Device – Scaled Pressure Device"   },
+   { 0x3A,        "Process Device – Coriolis Flow Device"     },
+   { 0x3B,        "Process Device – Electromagnetic Flow"     },
+   { 0x3C,        "Process Device – Vortex Flow Device"       },
+   { 0x3D,        "Process Device – Temperature Device"       },
+   { 0x3E,        "Process Device – Level Device"             },
+   { 0xC8,        "Embedded Component"                        },
 
    { 0, NULL }
 };
@@ -3557,6 +3926,8 @@ const value_string cip_class_names_vals[] = {
    { 0x10F,    "Select Line Link"               },
    { 0x110,    "In-Cabinet Actual Topology"     },
    { 0x111,    "In-Cabinet Commissioning"       },
+   { 0x112,    "Process Measurement Value"      },
+   { 0x113,    "Process Totalized Value"        },
 
    { 0,        NULL                             }
 };
@@ -3607,6 +3978,106 @@ static const value_string cip_run_idle_vals[] = {
 
    { 0, NULL }
 };
+
+
+static const value_string cip_pdd_status_signal_vals[] = {
+   { 1, "Failure" },
+   { 2, "Function Check" },
+   { 4, "Out of Specification" },
+   { 8, "Maintenance Required" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_pmv_sensor_dir_vals[] = {
+   { 0, "Normal installation" },
+   { 1, "Reverse installation" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_pmv_scaled_type_vals[] = {
+   { 0, "Linear curve" },
+   { 1, "Square root curve" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_pmv_sensor_type_vals[] = {
+   { 0, "No Sensor" },
+   { 1, "Cu1000" },
+   { 2, "Cu25" },
+   { 3, "Ni100" },
+   { 4, "Ni1000" },
+   { 5, "Ni120" },
+   { 6, "Ni25" },
+   { 7, "Ni50" },
+   { 8, "Pt10" },
+   { 9, "Pt100" },
+   { 10, "Pt1000" },
+   { 11, "Pt200" },
+   { 12, "Pt25" },
+   { 13, "Pt50" },
+   { 14, "Pt500" },
+   { 15, "Other RTD" },
+
+   { 32, "Type B: Pt30Rh-Pt6Rh" },
+   { 33, "Type E: NiCr-CuNi" },
+   { 34, "Type J: Fe-CuNi" },
+   { 35, "Type K: NiCr-Ni" },
+   { 36, "Type N: NiCrSi-NiSi" },
+   { 37, "Type R: Pt13Rh-Pt" },
+   { 38, "Type S: Pt10Rh-Pt" },
+   { 39, "Type T: Cu-CuNi" },
+   { 40, "Type L: Fe-CuNi" },
+   { 41, "Type U: Cu-CuNi" },
+   { 42, "Type C: W5-Re" },
+   { 43, "Type D: W3-Re" },
+   { 44, "Other Thermocouple" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_pmv_temp_rtd_sensor_cnx_vals[] = {
+   { 0, "4-wire" },
+   { 1, "3-wire" },
+   { 2, "2-wire" },
+   { 3, "other" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_pmv_temp_tc_sensor_ref_vals[] = {
+   { 0, "external" },
+   { 1, "internal" },
+   { 2, "no reference" },
+   { 3, "other" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_ptv_totalizer_mode_vals[] = {
+   { 0, "Balanced" },
+   { 1, "Positive only" },
+   { 2, "Negative only" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_ptv_totalizer_control_vals[] = {
+   { 0, "Hold" },
+   { 1, "Totalize" },
+
+   { 0, NULL }
+};
+
+static const value_string cip_ptv_totalizer_reset_vals[] = {
+   { 0, "Do nothing" },
+   { 1, "Reset" },
+
+   { 0, NULL }
+};
+
 
 void cip_rpi_api_fmt(char *s, uint32_t value)
 {
@@ -3714,6 +4185,139 @@ int dissect_cip_id_status(packet_info *pinfo, proto_tree *tree, proto_item *item
 
    return 2;
 }
+
+static int dissect_cip_id_active_language(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len)
+{
+   if (total_len != 3)
+   {
+      expert_add_info(pinfo, item, &ei_mal_identity_active_language);
+      return total_len;
+   }
+
+   proto_tree_add_item(tree, hf_id_active_language, tvb, offset, 3, ENC_ASCII);
+
+   return 3;
+}
+
+static int dissect_cip_id_supported_language_list(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len)
+{
+   if (total_len % 3 != 0)
+   {
+      expert_add_info(pinfo, item, &ei_mal_identity_supported_language_list);
+      return total_len;
+   }
+
+   int num_languages = total_len / 3;
+
+   for (int i = 0; i < num_languages; i++)
+   {
+      int lang_offset = offset + (i * 3);
+      char* lang = (char*)tvb_get_string_enc(pinfo->pool, tvb, lang_offset, 3, ENC_ASCII);
+      proto_tree_add_string_format(tree, hf_id_supported_language_list, tvb, lang_offset, 3, lang, "Language %d: %s", i + 1, lang);
+   }
+
+   return total_len;
+}
+
+static int dissect_cip_id_semaphore(packet_info* pinfo, proto_tree* tree _U_, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len)
+{
+   if (total_len != 8)
+   {
+      expert_add_info(pinfo, item, &ei_mal_identity_semaphore);
+      return total_len;
+   }
+
+   int current_offset = offset;
+
+   /* Top-level subtree: Semaphore */
+   proto_tree* semaphore_tree = proto_item_add_subtree(item, ett_id_semaphore);
+
+   /* ---- Client Electronic Key subtree ---- */
+   proto_item* cek_item = proto_tree_add_none_format(semaphore_tree, hf_id_semaphore_client_key, tvb, current_offset, 6, "Client Electronic Key");
+   proto_tree* cek_tree = proto_item_add_subtree(cek_item,ett_id_semaphore_client_key);
+
+   proto_tree_add_item(cek_tree, hf_id_semaphore_vendor, tvb, current_offset, 2, ENC_LITTLE_ENDIAN);
+   current_offset += 2;
+
+   proto_tree_add_item(cek_tree, hf_id_semaphore_client_sn, tvb, current_offset, 4, ENC_LITTLE_ENDIAN);
+   current_offset += 4;
+
+   proto_tree_add_item(semaphore_tree, hf_id_semaphore_timer, tvb, current_offset, 2, ENC_LITTLE_ENDIAN);
+
+   return 8;
+}
+
+static int dissect_cip_id_modbus_identity_info(packet_info* pinfo, proto_tree* tree _U_, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len _U_)
+{
+   int current_offset = offset;
+
+   /* Top-level subtree: Modbus Identity Info */
+   proto_tree* modbus_identity = proto_item_add_subtree(
+      item,
+      ett_id_modbus_info
+   );
+
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_vendor_name, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_product_code, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_revision, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_vendor_url, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_product_name, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_model_name, CIP_SHORT_STRING_TYPE);
+   current_offset += dissect_cip_string_type(pinfo, modbus_identity, item, tvb, current_offset, hf_id_modbus_identity_app_name, CIP_SHORT_STRING_TYPE);
+
+   return current_offset - offset;
+}
+
+static int dissect_cip_id_protection_mode(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len)
+{
+   static int* const protection_mode[] = {
+      &hf_id_protection_mode_implicit,
+      &hf_id_protection_mode_explicit,
+      NULL
+   };
+
+   if (total_len < 2)
+   {
+      expert_add_info(pinfo, item, &ei_mal_identity_protection_mode);
+      return total_len;
+   }
+
+   proto_tree_add_bitmask(tree, tvb, offset, hf_id_protection_mode, ett_id_protection_mode, protection_mode, ENC_LITTLE_ENDIAN);
+
+   return 2;
+}
+
+static int dissect_id_supported_device_type_rev(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
+    int offset, int total_len)
+{
+   int parsed_len = 0;
+
+   // we expect a minimum of 1 supported revision
+   if (total_len < 3)
+   {
+      return total_len;
+   }
+
+   uint32_t num_revisions = 0u;
+   proto_tree_add_item_ret_uint( tree, hf_id_num_device_type_revs, tvb, offset, 1, ENC_NA, &num_revisions);
+   parsed_len += 1;
+   offset += 1;
+
+   for (uint32_t i = 0u ; i < num_revisions ; i++)
+   {
+      const int consumed = dissect_id_revision(pinfo, tree, item, tvb, offset, total_len - parsed_len);
+      parsed_len += consumed;
+      offset += consumed;
+   }
+
+   return parsed_len;
+}
+
 
 static int dissect_msg_rout_num_classes(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
                              int offset, int total_len)
@@ -4400,13 +5004,13 @@ static int dissect_file_directory(packet_info *pinfo, proto_tree *tree, proto_it
    while (tvb_reported_length_remaining(tvb, offset + parsed_len) > 0)
    {
       proto_item *instance_item;
-      proto_tree *instance_tree = proto_tree_add_subtree_format(tree, tvb, offset, 0, ett_cmd_data, &instance_item, "Instance #%d", instance_num);
+      proto_tree *instance_tree = proto_tree_add_subtree_format(tree, tvb, offset, 0, ett_cmd_data, &instance_item, "Instance entry: #%d", instance_num);
 
       proto_tree_add_item(instance_tree, hf_cip_instance16, tvb, offset + parsed_len, 2, ENC_LITTLE_ENDIAN);
       parsed_len += 2;
 
-      parsed_len += dissect_cip_stringi(pinfo, instance_tree, instance_item, tvb, offset + parsed_len);
-      parsed_len += dissect_cip_stringi(pinfo, instance_tree, instance_item, tvb, offset + parsed_len);
+      parsed_len += dissect_cip_stringi(pinfo, instance_tree, tvb, offset + parsed_len, "Instance Name");
+      parsed_len += dissect_cip_stringi(pinfo, instance_tree, tvb, offset + parsed_len, "File Name");
 
       instance_num++;
    }
@@ -4417,19 +5021,54 @@ static int dissect_file_directory(packet_info *pinfo, proto_tree *tree, proto_it
 static int dissect_file_revision(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb,
    int offset, int total_len _U_)
 {
-   proto_tree_add_item(tree, hf_file_major_rev, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-   proto_tree_add_item(tree, hf_file_minor_rev, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
+   guint8 major = tvb_get_uint8(tvb, offset);
+   guint8 minor = tvb_get_uint8(tvb, offset + 1);
+
+   proto_item* ti;
+   proto_tree* rev_tree;
+
+   ti = proto_tree_add_uint_format_value(
+      tree,
+      hf_file_revision,
+      tvb,
+      offset,
+      2,
+      (major << 8) | minor,
+      "%u.%u",
+      major,
+      minor
+   );
+   rev_tree = proto_item_add_subtree(ti, ett_file_revision);
+
+   proto_tree_add_item(rev_tree, hf_file_major_rev, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(rev_tree, hf_file_minor_rev, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
    return 2;
 }
 
+static int dissect_file_save_parameters(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb,
+   int offset, int total_len _U_)
+{
+   proto_item* ti;
+   proto_tree* subtree;
+
+   ti = proto_tree_add_item(tree, hf_file_file_save_parameters, tvb, offset, 1, ENC_BIG_ENDIAN);
+   subtree = proto_item_add_subtree(ti, ett_file_save_params);
+
+   proto_tree_add_item(subtree, hf_file_file_save_parameters_save_method, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(subtree, hf_file_file_save_parameters_save_status, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(subtree, hf_file_file_save_parameters_reserved, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+
+   return 1;
+}
+
 /// File - Services
-static int dissect_file_create(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset, bool request)
+static int dissect_file_create(packet_info *pinfo, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
 {
    int parsed_len = 0;
 
    if (request)
    {
-      parsed_len = dissect_cip_stringi(pinfo, tree, item, tvb, offset);
+      parsed_len = dissect_cip_stringi(pinfo, tree, tvb, offset, "Instance Name");
 
       // This parameter is optional.
       if (tvb_reported_length_remaining(tvb, offset + parsed_len) > 0)
@@ -4457,7 +5096,7 @@ static int dissect_file_initiate_download(packet_info *pinfo, proto_tree *tree, 
       proto_tree_add_item(tree, hf_file_file_size, tvb, offset, 4, ENC_LITTLE_ENDIAN);
       proto_tree_add_item(tree, hf_file_file_format_version, tvb, offset + 4, 2, ENC_LITTLE_ENDIAN);
       dissect_file_revision(pinfo, tree, item, tvb, offset + 6, tvb_reported_length_remaining(tvb, offset + 6));
-      int string_len = dissect_cip_stringi(pinfo, tree, item, tvb, offset + 8);
+      int string_len = dissect_cip_stringi(pinfo, tree, tvb, offset + 8, "File Name");
 
       parsed_len = 8 + string_len;
    }
@@ -4493,6 +5132,54 @@ static int dissect_file_initiate_upload(packet_info *pinfo _U_, proto_tree *tree
    return parsed_len;
 }
 
+static int dissect_file_initiate_partial_read(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_file_file_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_read_size, tvb, offset + 4, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_maximum_transfer_size, tvb, offset + 8, 1, ENC_LITTLE_ENDIAN);
+
+      parsed_len = 9;
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_file_file_size, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_transfer_size, tvb, offset + 4, 1, ENC_LITTLE_ENDIAN);
+
+      parsed_len = 5;
+   }
+
+   return parsed_len;
+}
+
+static int dissect_file_initiate_partial_write(packet_info * pinfo, proto_tree * tree, proto_item * item, tvbuff_t * tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_file_file_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_write_size, tvb, offset + 4, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_file_format_version, tvb, offset + 8, 2, ENC_LITTLE_ENDIAN);
+      dissect_file_revision(pinfo, tree, item, tvb, offset + 10, tvb_reported_length_remaining(tvb, offset + 10));
+
+      parsed_len = 12;
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_file_incremental_burn, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_incremental_burn_time, tvb, offset + 4, 2, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item(tree, hf_file_transfer_size, tvb, offset + 6, 1, ENC_LITTLE_ENDIAN);
+
+      parsed_len = 7;
+   }
+
+   return parsed_len;
+}
+
 static int dissect_file_download_transfer(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
 {
    int parsed_len = 0;
@@ -4500,10 +5187,13 @@ static int dissect_file_download_transfer(packet_info *pinfo _U_, proto_tree *tr
    if (request)
    {
       proto_tree_add_item(tree, hf_file_transfer_number, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(tree, hf_file_transfer_packet_type, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(tree, hf_file_data, tvb, offset + 2, tvb_reported_length_remaining(tvb, offset + 2), ENC_NA);
-
-      parsed_len = tvb_reported_length_remaining(tvb, offset);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_file_transfer_packet_type, tvb, offset + parsed_len, 1, ENC_LITTLE_ENDIAN);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_file_data, tvb, offset + parsed_len, tvb_reported_length_remaining(tvb, offset + parsed_len) - 2, ENC_NA);
+      parsed_len += tvb_reported_length_remaining(tvb, offset + parsed_len) - 2;
+      proto_tree_add_item(tree, hf_file_file_checksum, tvb, offset + parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
    }
    else
    {
@@ -4527,10 +5217,13 @@ static int dissect_file_upload_transfer(packet_info *pinfo _U_, proto_tree *tree
    else
    {
       proto_tree_add_item(tree, hf_file_transfer_number, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(tree, hf_file_transfer_packet_type, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(tree, hf_file_data, tvb, offset + 2, tvb_reported_length_remaining(tvb, offset + 2), ENC_NA);
-
-      parsed_len = tvb_reported_length_remaining(tvb, offset);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_file_transfer_packet_type, tvb, offset + parsed_len, 1, ENC_LITTLE_ENDIAN);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_file_data, tvb, offset + parsed_len, tvb_reported_length_remaining(tvb, offset + parsed_len) - 2, ENC_NA);
+      parsed_len += tvb_reported_length_remaining(tvb, offset + parsed_len) - 2;
+      proto_tree_add_item(tree, hf_file_file_checksum, tvb, offset + parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
    }
 
    return parsed_len;
@@ -4557,6 +5250,335 @@ static int dissect_identity_reset(packet_info *pinfo _U_, proto_tree *tree, prot
    return parsed_len;
 }
 
+/// Process Device Diagnostics - Attributes
+static int dissect_pdd_component_name_list(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset, int total_len)
+{
+   int parsed_len = 0;
+
+   int remaining_len = total_len;
+
+   while (remaining_len > 0)
+   {
+      const int consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset, hf_pdd_component_name, CIP_SHORT_STRING_TYPE);
+      parsed_len += consumed;
+      offset += consumed;
+      remaining_len -= consumed;
+   }
+
+   return parsed_len;
+}
+
+/// Process Device Diagnostics - Services
+static int dissect_pdd_get_attributes_all_class(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      // no parameters for that service request
+      parsed_len = tvb_reported_length_remaining(tvb, offset);
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_attr_class_revision, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+      proto_tree_add_item(tree, hf_attr_class_max_instance, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+      proto_tree_add_item(tree, hf_attr_class_num_instance, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+
+      uint16_t num_attributes = 0u;
+      proto_tree_add_item_ret_uint16(tree, hf_attr_class_opt_attr_num, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN, &num_attributes);
+      parsed_len += 2;
+
+      for (uint16_t i = 0u ; i < num_attributes ; i++)
+      {
+        proto_tree_add_item(tree, hf_attr_class_attr_num, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+
+      uint16_t num_services = 0u;
+      proto_tree_add_item_ret_uint16(tree, hf_attr_class_opt_service_num, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN, &num_services);
+      parsed_len += 2;
+
+      for (uint16_t i = 0u ; i < num_services ; i++)
+      {
+        proto_tree_add_item(tree, hf_attr_class_service_code, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+
+      proto_tree_add_item(tree, hf_attr_class_num_class_attr, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+      proto_tree_add_item(tree, hf_attr_class_num_inst_attr, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+      proto_tree_add_item(tree, hf_pdd_change_counter, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 2;
+      proto_tree_add_item(tree, hf_pdd_global_status, tvb, offset+parsed_len, 1, ENC_NA);
+      parsed_len += 1;
+
+      uint8_t num_components = 0u;
+      proto_tree_add_item_ret_uint8(tree, hf_pdd_num_component_elements, tvb, offset+parsed_len, 1, ENC_NA, &num_components);
+      parsed_len += 1;
+
+      for (uint8_t i = 0u ; i < num_components ; i++)
+      {
+        proto_tree_add_item(tree, hf_pdd_component_status, tvb, offset+parsed_len, 1, ENC_NA);
+        parsed_len += 1;
+      }
+      for (uint8_t i = 0u ; i < num_components ; i++)
+      {
+        const int consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset+parsed_len, hf_pdd_component_name, CIP_SHORT_STRING_TYPE);
+        parsed_len += consumed;
+      }
+
+      uint8_t size_of_profile_diagnostics = 0u;
+      proto_tree_add_item_ret_uint8(tree, hf_pdd_size_of_profile_diagnostics, tvb, offset+parsed_len, 1, ENC_NA, &size_of_profile_diagnostics);
+      parsed_len += 1;
+
+      proto_tree_add_item(tree, hf_pdd_profile_diagnostics, tvb, offset+parsed_len, size_of_profile_diagnostics, ENC_NA);
+      parsed_len += size_of_profile_diagnostics;
+      proto_tree_add_item(tree, hf_pdd_supported_profile_diagnostics, tvb, offset+parsed_len, size_of_profile_diagnostics, ENC_NA);
+      parsed_len += size_of_profile_diagnostics;
+
+      uint16_t size_of_vendor_diagnostics = 0u;
+      proto_tree_add_item_ret_uint16(tree, hf_pdd_size_of_vendor_diagnostics, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN, &size_of_vendor_diagnostics);
+      parsed_len += 2;
+
+      // remaining attributes may be omitted if not implemented, as per GetAttributesAll rules
+      int remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= (int)size_of_vendor_diagnostics)
+      {
+         proto_tree_add_item(tree, hf_pdd_vendor_diagnostics, tvb, offset+parsed_len, size_of_vendor_diagnostics, ENC_NA);
+         parsed_len += size_of_vendor_diagnostics;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 4)
+      {
+         proto_tree_add_item(tree, hf_pdd_user_diagnostics_groups, tvb, offset+parsed_len, 4, ENC_LITTLE_ENDIAN);
+         parsed_len += 4;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 1)
+      {
+         proto_tree_add_item(tree, hf_pdd_simulation_enable, tvb, offset+parsed_len, 1, ENC_NA);
+         parsed_len += 1;
+      }
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_attributes_all_instance(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      // no parameters for that service request
+      parsed_len = tvb_reported_length_remaining(tvb, offset);
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_pdd_active, tvb, offset, 1, ENC_NA);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_pdd_disable, tvb, offset+parsed_len, 1, ENC_NA);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_pdd_diagnostic_code, tvb, offset+parsed_len, 4, ENC_LITTLE_ENDIAN);
+      parsed_len += 4;
+      proto_tree_add_item(tree, hf_pdd_status_signal, tvb, offset+parsed_len, 1, ENC_NA);
+      parsed_len += 1;
+      proto_tree_add_item(tree, hf_pdd_sequence_number, tvb, offset+parsed_len, 2, ENC_LITTLE_ENDIAN);
+      parsed_len += 4;
+
+      // attributes after Sequence Number are optional and as per definition of Get_Attributes_All,
+      // these may be omitted from the response
+      int remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 8)
+      {
+         proto_tree_add_item(tree, hf_pdd_ts_event_occurred, tvb, offset+parsed_len, 8, ENC_LITTLE_ENDIAN);
+         parsed_len += 8;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 8)
+      {
+         proto_tree_add_item(tree, hf_pdd_ts_event_cleared, tvb, offset+parsed_len, 8, ENC_LITTLE_ENDIAN);
+         parsed_len += 8;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 1)
+      {
+         const int consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset+parsed_len, hf_pdd_diagnostic_message, CIP_SHORT_STRING_TYPE);
+         parsed_len += consumed;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 4)
+      {
+         proto_tree_add_item(tree, hf_pdd_user_diag_mapping, tvb, offset+parsed_len, 4, ENC_LITTLE_ENDIAN);
+         parsed_len += 4;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 1)
+      {
+         proto_tree_add_item(tree, hf_pdd_component_index, tvb, offset+parsed_len, 1, ENC_NA);
+         parsed_len += 1;
+      }
+      remaining = tvb_reported_length_remaining(tvb, offset+parsed_len);
+      if (remaining >= 1)
+      {
+         const int consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset+parsed_len, hf_pdd_recommended_action, CIP_SHORT_STRING_TYPE);
+         parsed_len += consumed;
+      }
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_attributes_all(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   cip_simple_request_info_t req_data;
+   load_cip_request_data(pinfo, &req_data);
+
+   if (req_data.iInstance == 0)
+   {
+      return dissect_pdd_get_attributes_all_class(pinfo, tree, item, tvb, offset, request);
+   }
+   else
+   {
+      return dissect_pdd_get_attributes_all_instance(pinfo, tree, item, tvb, offset, request);
+   }
+}
+
+static int dissect_pdd_get_next_active_instance(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_pdd_start_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      parsed_len = 2;
+   }
+   else
+   {
+      proto_tree_add_item(tree, hf_pdd_next_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      parsed_len = 2;
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_active_instances(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      // no parameters for that service request
+      parsed_len = 0;
+   }
+   else
+   {
+      uint32_t num_instances = 0u;
+      proto_tree_add_item_ret_uint(tree, hf_attr_class_num_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN, &num_instances);
+      parsed_len = 2;
+
+      for (uint32_t i = 0u ; i < num_instances ; i++)
+      {
+        proto_tree_add_item(tree, hf_cip_instance16, tvb, offset + 2 + (i*2), 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_instances_by_user_diag_group(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_pdd_user_diag_index, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+      parsed_len = 1;
+   }
+   else
+   {
+      uint32_t num_instances = 0u;
+      proto_tree_add_item_ret_uint(tree, hf_attr_class_num_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN, &num_instances);
+      parsed_len = 2;
+
+      for (uint32_t i = 0u ; i < num_instances ; i++)
+      {
+        proto_tree_add_item(tree, hf_cip_instance16, tvb, offset + 2 + (i*2), 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_active_instances_by_status_signal(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_pdd_status_signal, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+      parsed_len = 1;
+   }
+   else
+   {
+      uint32_t num_instances = 0u;
+      proto_tree_add_item_ret_uint(tree, hf_attr_class_num_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN, &num_instances);
+      parsed_len = 2;
+
+      for (uint32_t i = 0u ; i < num_instances ; i++)
+      {
+        proto_tree_add_item(tree, hf_cip_instance16, tvb, offset + 2 + (i*2), 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+   }
+
+   return parsed_len;
+}
+
+static int dissect_pdd_get_instances_by_component(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, bool request)
+{
+   int parsed_len = 0;
+
+   if (request)
+   {
+      proto_tree_add_item(tree, hf_pdd_component_index, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+      parsed_len = 1;
+   }
+   else
+   {
+      uint32_t num_instances = 0u;
+      proto_tree_add_item_ret_uint(tree, hf_attr_class_num_instance, tvb, offset, 2, ENC_LITTLE_ENDIAN, &num_instances);
+      parsed_len = 2;
+
+      for (uint32_t i = 0u ; i < num_instances ; i++)
+      {
+        proto_tree_add_item(tree, hf_cip_instance16, tvb, offset + 2 + (i*2), 2, ENC_LITTLE_ENDIAN);
+        parsed_len += 2;
+      }
+   }
+
+   return parsed_len;
+}
+
+/// Process Measurement Value - Attributes
+static int dissect_pmv_status(packet_info *pinfo _U_, proto_tree *tree, proto_item *item _U_, tvbuff_t *tvb, int offset, int total_len)
+{
+   proto_tree_add_item(tree, hf_pmv_status, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+
+   proto_tree_add_item(tree, hf_pmv_status_sim, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(tree, hf_pmv_status_bad, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(tree, hf_pmv_status_uncertain, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(tree, hf_pmv_status_good, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+
+   return total_len;
+}
+
 static const attribute_info_t cip_attribute_vals[] = {
     /* Identity Object (class attributes) */
    {0x01, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -4578,8 +5600,25 @@ static const attribute_info_t cip_attribute_vals[] = {
    {0x01, false, 8, 7, "State", cip_usint, &hf_id_state, NULL},
    {0x01, false, 9, 8, "Configuration Consistency Value", cip_uint, &hf_id_config_value, NULL},
    {0x01, false, 10, 9, "Heartbeat Interval", cip_usint, &hf_id_heartbeat, NULL},
+   {0x01, false, 11, -1, "Active Language", cip_dissector_func, NULL, dissect_cip_id_active_language},
+   {0x01, false, 12, -1, "Supported Language List", cip_dissector_func, NULL, dissect_cip_id_supported_language_list},
+   {0x01, false, 13, -1, "International Product Name", cip_stringi, &hf_id_int_product_name, NULL},
+   {0x01, false, 14, -1, "Semaphore", cip_dissector_func, NULL, dissect_cip_id_semaphore},
+   {0x01, false, 15, -1, "Assigned Name", cip_stringi, &hf_id_assigned_name, NULL},
+   {0x01, false, 16, -1, "Assigned Description", cip_stringi, &hf_id_assigned_description, NULL},
+   {0x01, false, 17, -1, "Assigned Geographic Location", cip_stringi, &hf_id_geographic_location, NULL},
+   {0x01, false, 18, -1, "Modbus Identity Info", cip_dissector_func, NULL, dissect_cip_id_modbus_identity_info},
+   {0x01, false, 19, -1, "Protection Mode", cip_dissector_func, NULL, dissect_cip_id_protection_mode},
+   {0x01, false, 20, -1, "Uptime", cip_udint, &hf_id_uptime, NULL},
    {0x01, false, 21, -1, "Catalog Number", cip_short_string, &hf_id_catalog_number, NULL},
    {0x01, false, 22, -1, "Manufacture Date", cip_date, &hf_id_manufacture_date, NULL},
+   {0x01, false, 31, -1, "Vendor Name", cip_string, &hf_id_vendor_name, NULL},
+   {0x01, false, 32, -1, "Vendor URI", cip_string, &hf_id_vendor_uri, NULL},
+   {0x01, false, 33, -1, "Configuration Counter", cip_dint, &hf_id_configuration_counter, NULL},
+   {0x01, false, 34, -1, "Configuration Date", cip_stime, &hf_id_configuration_date, NULL},
+   {0x01, false, 35, -1, "Manufacture Serial Number", cip_short_string, &hf_id_manuf_serial_number, NULL},
+   {0x01, false, 37, -1, "Hardware Revision", cip_dissector_func, NULL, dissect_id_revision},
+   {0x01, false, 38, -1, "Supported Device Type Revisions", cip_dissector_func, NULL, dissect_id_supported_device_type_rev},
 
     /* Message Router Object (class attributes) */
    {0x02, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -4622,12 +5661,16 @@ static const attribute_info_t cip_attribute_vals[] = {
     /* File Object (instance attributes) */
    {0x37, CIP_ATTR_INSTANCE, 1, -1, "State", cip_usint, &hf_file_state, NULL },
    {0x37, CIP_ATTR_INSTANCE, 2, -1, "Instance Name", cip_stringi, &hf_file_instance_name, NULL },
+   {0x37, CIP_ATTR_INSTANCE, 3, -1, "File Format Version", cip_uint, &hf_file_file_format_version, NULL },
    {0x37, CIP_ATTR_INSTANCE, 4, -1, "File Name", cip_stringi, &hf_file_filename, NULL },
    {0x37, CIP_ATTR_INSTANCE, 5, -1, "File Revision", cip_dissector_func, NULL, dissect_file_revision },
    {0x37, CIP_ATTR_INSTANCE, 6, -1, "File Size", cip_udint, &hf_file_file_size, NULL },
-   {0x37, CIP_ATTR_INSTANCE, 9, -1, "File Save Parameters", cip_byte, &hf_file_file_save_parametersd, NULL },
+   {0x37, CIP_ATTR_INSTANCE, 7, -1, "File Checksum", cip_uint, &hf_file_file_checksum, NULL },
+   {0x37, CIP_ATTR_INSTANCE, 8, -1, "Invocation Method", cip_usint, &hf_file_invocation_method, NULL },
+   {0x37, CIP_ATTR_INSTANCE, 9, -1, "File Save Parameters", cip_dissector_func, NULL, dissect_file_save_parameters },
    {0x37, CIP_ATTR_INSTANCE, 10, -1, "File Access Rule", cip_usint, &hf_file_file_access_rule, NULL },
    {0x37, CIP_ATTR_INSTANCE, 11, -1, "File Encoding Format", cip_usint, &hf_file_encoding, NULL },
+   {0x37, CIP_ATTR_INSTANCE, 12, -1, "Transfer Session Timeout", cip_usint, &hf_file_transfer_timeout, NULL },
    {0x37, CIP_ATTR_CLASS, 32, -1, "Directory", cip_dissector_func, NULL, dissect_file_directory },
 
     /* Time Sync Object (class attributes) */
@@ -4715,6 +5758,90 @@ static const attribute_info_t cip_attribute_vals[] = {
    { 0xF4, false, 9, -1, "Chassis Identity", cip_dissector_func, NULL, dissect_single_segment_packed_attr },
    { 0xF4, false, 10, -1, "Port Routing Capabilities", cip_dword, &hf_port_port_routing_capabilities, NULL },
    { 0xF4, false, 11, -1, "Associated Communication Objects", cip_dissector_func, NULL, dissect_port_associated_comm_objects },
+
+   /* Process Device Diagnostics Object (class attributes) */
+   { 0x108, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
+   { 0x108, true, 2, 1, CLASS_ATTRIBUTE_2_NAME, cip_uint, &hf_attr_class_max_instance, NULL },
+   { 0x108, true, 3, 2, CLASS_ATTRIBUTE_3_NAME, cip_uint, &hf_attr_class_num_instance, NULL },
+   { 0x108, true, 4, 3, CLASS_ATTRIBUTE_4_NAME, cip_dissector_func, NULL, dissect_optional_attr_list },
+   { 0x108, true, 5, 4, CLASS_ATTRIBUTE_5_NAME, cip_dissector_func, NULL, dissect_optional_service_list },
+   { 0x108, true, 6, 5, CLASS_ATTRIBUTE_6_NAME, cip_uint, &hf_attr_class_num_class_attr, NULL },
+   { 0x108, true, 7, 6, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
+   { 0x108, true, 8, 7, "Diagnostics Change Counter", cip_uint, &hf_pdd_change_counter, NULL },
+   { 0x108, true, 9, 8, "Global Status", cip_byte, &hf_pdd_global_status, NULL },
+   { 0x108, true, 10, 9, "Number of Component Elements", cip_usint, &hf_pdd_num_component_elements, NULL },
+   { 0x108, true, 11, 10, "Component Status List", cip_byte_array, &hf_pdd_component_status_list, NULL },
+   { 0x108, true, 12, 11, "Component Name List", cip_dissector_func, NULL, dissect_pdd_component_name_list },
+   { 0x108, true, 13, 13, "Profile Diagnostics", cip_byte_array, &hf_pdd_profile_diagnostics, NULL },
+   { 0x108, true, 14, 15, "Size of Vendor Diagnostics", cip_uint, &hf_pdd_size_of_vendor_diagnostics, NULL },
+   { 0x108, true, 15, 16, "Vendor Diagnostics", cip_byte_array, &hf_pdd_vendor_diagnostics, NULL },
+   { 0x108, true, 16, 17, "User Diagnostics Groups", cip_dword, &hf_pdd_user_diagnostics_groups, NULL },
+   { 0x108, true, 17, 14, "Supported Profile Diagnostics", cip_byte_array, &hf_pdd_supported_profile_diagnostics, NULL },
+   { 0x108, true, 18, 18, "Simulation Enable", cip_bool, &hf_pdd_simulation_enable, NULL },
+   { 0x108, true, 19, 12, "Size of Profile Diagnostics", cip_usint, &hf_pdd_size_of_profile_diagnostics, NULL },
+
+   /* Process Device Diagnostics Object (instance attributes) */
+   { 0x108, false, 1, 0, "Active", cip_bool, &hf_pdd_active, NULL },
+   { 0x108, false, 2, 1, "Disable", cip_bool, &hf_pdd_disable, NULL },
+   { 0x108, false, 3, 2, "Diagnostic Code", cip_udint, &hf_pdd_diagnostic_code, NULL },
+   { 0x108, false, 4, 3, "Status Signal", cip_usint, &hf_pdd_status_signal, NULL },
+   { 0x108, false, 5, 4, "Sequence Number", cip_uint, &hf_pdd_sequence_number, NULL },
+   { 0x108, false, 6, 5, "Timestamp Event Occurred", cip_stime, &hf_pdd_ts_event_occurred, NULL },
+   { 0x108, false, 7, 6, "Timestamp Event Cleared", cip_stime, &hf_pdd_ts_event_cleared, NULL },
+   { 0x108, false, 8, 7, "Diagnostic Message", cip_short_string, &hf_pdd_diagnostic_message, NULL },
+   { 0x108, false, 9, 8, "User Diagnostic Mapping", cip_dword, &hf_pdd_user_diag_mapping, NULL },
+   { 0x108, false, 10, 9, "Component Index", cip_usint, &hf_pdd_component_index, NULL },
+   { 0x108, false, 11, 10, "Recommended Action", cip_short_string, &hf_pdd_recommended_action, NULL },
+
+   /* Process Measurement Value Object (class attributes) */
+   { 0x112, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
+   { 0x112, true, 2, 1, CLASS_ATTRIBUTE_2_NAME, cip_uint, &hf_attr_class_max_instance, NULL },
+   { 0x112, true, 3, 2, CLASS_ATTRIBUTE_3_NAME, cip_uint, &hf_attr_class_num_instance, NULL },
+   { 0x112, true, 4, 3, CLASS_ATTRIBUTE_4_NAME, cip_dissector_func, NULL, dissect_optional_attr_list },
+   { 0x112, true, 5, 4, CLASS_ATTRIBUTE_5_NAME, cip_dissector_func, NULL, dissect_optional_service_list },
+   { 0x112, true, 6, 5, CLASS_ATTRIBUTE_6_NAME, cip_uint, &hf_attr_class_num_class_attr, NULL },
+   { 0x112, true, 7, 6, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
+   { 0x112, true, 8, 7, "Simulation Enable", cip_bool, &hf_pmv_simulation_enable, NULL },
+
+   /* Process Measurement Value Object (instance attributes) */
+   { 0x112, false, 1, 0, "Optional Attribute List", cip_dissector_func, NULL, dissect_optional_attr_list },
+   { 0x112, false, 2, 1, "Name", cip_short_string, &hf_pmv_name, NULL },
+   { 0x112, false, 3, 2, "Value Engineering Units", cip_engunit, &hf_pmv_value_eng_units, NULL },
+   { 0x112, false, 4, 3, "Value", cip_real, &hf_pmv_value, NULL },
+   { 0x112, false, 5, 4, "Status", cip_dissector_func, NULL, dissect_pmv_status },
+   { 0x112, false, 6, 5, "Damping", cip_real, &hf_pmv_damping, NULL },
+   { 0x112, false, 7, 6, "Low Cutoff", cip_real, &hf_pmv_low_cutoff, NULL },
+   { 0x112, false, 8, 7, "Low Cutoff Hyteresis", cip_real, &hf_pmv_low_cutoff_hysteresis, NULL },
+   { 0x112, false, 9, 8, "Sensor Direction", cip_udint, &hf_pmv_sensor_direction, NULL },
+   { 0x112, false, 10, 9, "Zero Point", cip_real, &hf_pmv_zero_point, NULL },
+   { 0x112, false, 11, 10, "Adjust Zero Point", cip_bool, &hf_pmv_adjust_zero_point, NULL },
+   { 0x112, false, 12, 11, "Scaled Engineering Units", cip_engunit, &hf_pmv_scaled_eng_units, NULL },
+   { 0x112, false, 13, 12, "Scaled Type", cip_usint, &hf_pmv_scaled_type, NULL },
+   { 0x112, false, 14, 13, "Scaled Low Point X", cip_real, &hf_pmv_scaled_low_x, NULL },
+   { 0x112, false, 15, 14, "Scaled Low Point Y", cip_real, &hf_pmv_scaled_low_y, NULL },
+   { 0x112, false, 16, 15, "Scaled High Point X", cip_real, &hf_pmv_scaled_high_x, NULL },
+   { 0x112, false, 17, 16, "Scaled High Point Y", cip_real, &hf_pmv_scaled_high_y, NULL },
+   { 0x112, false, 18, 17, "Upper Range Limit", cip_real, &hf_pmv_upper_range_limit, NULL },
+   { 0x112, false, 19, 18, "Upper Range Limit", cip_real, &hf_pmv_lower_range_limit, NULL },
+   { 0x112, false, 20, 19, "Sensor Type", cip_udint, &hf_pmv_sensor_type, NULL },
+   { 0x112, false, 21, 20, "Temp. RTD Sensor Cnx.", cip_udint, &hf_pmv_temp_rtd_sensor_cnx, NULL },
+   { 0x112, false, 22, 21, "Temp. RTD 2-wire comp.", cip_real, &hf_pmv_temp_rtd_2wire_comp, NULL },
+   { 0x112, false, 23, 22, "Temp. TC Sensor ref.", cip_udint, &hf_pmv_temp_tc_sensor_ref, NULL },
+   { 0x112, false, 24, 23, "Temp. TC Sensor ref. comp.", cip_real, &hf_pmv_temp_tc_sensor_ref_comp, NULL },
+   { 0x112, false, 25, 24, "Gain", cip_real, &hf_pmv_gain, NULL },
+
+   /* Process Totalized Value Object (instance attributes) */
+   { 0x113, false, 1, 0, "Process Meas. Val. Path", cip_dissector_func, NULL, dissect_padded_epath_len_uint },
+   { 0x113, false, 2, 1, "Name", cip_short_string, &hf_ptv_name, NULL },
+   { 0x113, false, 3, 2, "Value Engineering Units", cip_engunit, &hf_ptv_value_eng_units, NULL },
+   { 0x113, false, 4, 3, "Value", cip_real, &hf_ptv_value, NULL },
+   { 0x113, false, 5, 4, "Status", cip_byte, &hf_ptv_status, NULL },
+   { 0x113, false, 6, 5, "Value Double", cip_lreal, &hf_ptv_value_double, NULL },
+   { 0x113, false, 7, 6, "Totalizer Mode", cip_usint, &hf_ptv_totalizer_mode, NULL },
+   { 0x113, false, 8, 7, "Preset Value", cip_real, &hf_ptv_preset_value, NULL },
+   { 0x113, false, 9, 8, "Totalizer Control", cip_usint, &hf_ptv_totalizer_control, NULL },
+   { 0x113, false, 10, -1, "Totalizer Reset", cip_usint, &hf_ptv_totalizer_reset, NULL },
+
 };
 
 // Table of CIP services defined by this dissector.
@@ -4724,6 +5851,8 @@ static cip_service_info_t cip_obj_spec_service_table[] = {
     { 0x37, SC_CREATE, "Create", dissect_file_create },
     { 0x37, 0x4B, "Initiate_Upload", dissect_file_initiate_upload },
     { 0x37, 0x4C, "Initiate_Download", dissect_file_initiate_download },
+    { 0x37, 0x4D, "Initiate_Partial_Read", dissect_file_initiate_partial_read },
+    { 0x37, 0x4E, "Initiate_Partial_Write", dissect_file_initiate_partial_write },
     { 0x37, 0x4F, "Upload_Transfer", dissect_file_upload_transfer },
     { 0x37, 0x50, "Download_Transfer", dissect_file_download_transfer },
     { 0x37, 0x51, "Clear_File", NULL },
@@ -4750,6 +5879,17 @@ static cip_service_info_t cip_obj_spec_service_table[] = {
     { 0xF2, 0x50, "Break_Connections", NULL },
     { 0xF2, 0x51, "Change_Complete", NULL },
     { 0xF2, 0x52, "Restart_Connections", NULL },
+
+    // Process Device Diagnostics (PDD) object
+    // The PDD object uses several arrays in its GetAttributesAll response, which makes the
+    // default service parsing inoperable. We need to override the default dissector of that service.
+    { 0x108, SC_GET_ATT_ALL, "Get Attributes All", dissect_pdd_get_attributes_all },
+    { 0x108, SC_PDD_RESET_DIAGNOSTICS_COUNTER, "Reset Diagnostics Counter", NULL },
+    { 0x108, SC_PDD_GET_NEXT_ACTIVE_INSTANCE, "Get Next Active Instance", dissect_pdd_get_next_active_instance },
+    { 0x108, SC_PDD_GET_ACTIVE_INSTANCES, "Get Active Instances", dissect_pdd_get_active_instances },
+    { 0x108, SC_PDD_GET_INSTANCES_BY_USER_DIAG_GRP, "Get Instances By User Diagnostic Group", dissect_pdd_get_instances_by_user_diag_group },
+    { 0x108, SC_PDD_GET_ACTIVE_INSTANCES_BY_STATUS_SIGNAL, "Get Active Instances By Status Signal", dissect_pdd_get_active_instances_by_status_signal },
+    { 0x108, SC_PDD_GET_INSTANCES_BY_COMPONENT, "Get Instances By Component", dissect_pdd_get_instances_by_component }
 };
 
 // Look up a given CIP service from this dissector.
@@ -4773,7 +5913,7 @@ typedef struct attribute_val_array {
       to switch to a more efficient implementation (eg: hash table).
 */
 
-static attribute_val_array_t all_attribute_vals[] = {
+static const attribute_val_array_t all_attribute_vals[] = {
    {array_length(cip_attribute_vals), cip_attribute_vals},
    {array_length(enip_attribute_vals), enip_attribute_vals},
    {array_length(cip_safety_attribute_vals), cip_safety_attribute_vals},
@@ -4783,7 +5923,7 @@ static attribute_val_array_t all_attribute_vals[] = {
 const attribute_info_t* cip_get_attribute(unsigned class_id, unsigned instance, unsigned attribute)
 {
    size_t i, j;
-   attribute_val_array_t* att_array;
+   const attribute_val_array_t* att_array;
    const attribute_info_t* pattr;
 
    static const attribute_info_t class_attribute_vals[] = {
@@ -4885,12 +6025,12 @@ static int
 dissect_cia(tvbuff_t *tvb, int offset, unsigned char segment_type,
             bool generate, bool packed, packet_info *pinfo, proto_item *epath_item,
             proto_tree *path_tree, proto_item *path_item, proto_item ** ret_item,
-            const char* segment_name, const value_string* vals, int* value,
+            const char* segment_name, const value_string* vals, uint32_t* value,
             int hf8, int hf16, int hf32)
 {
    unsigned char logical_format;
    int segment_len;
-   int temp_data;
+   uint32_t temp_data;
    int value_offset;
    wmem_strbuf_t *strbuf;
    bool extended_logical = false;
@@ -5199,7 +6339,7 @@ static int dissect_segment_network_extended(packet_info *pinfo, proto_item *epat
       /* The first word of the data is the extended segment subtype, so
          don't include that in the displayed data block. */
       int net_seg_data_offset;
-      int net_seg_data_len;
+      unsigned net_seg_data_len;
       net_seg_data_offset = offset + 4;
       net_seg_data_len = (data_words - 1) * 2;
 
@@ -5211,7 +6351,7 @@ static int dissect_segment_network_extended(packet_info *pinfo, proto_item *epat
 
       uint16_t net_seg_subtype = tvb_get_letohs(tvb, offset + 2);
 
-      int data_len_parsed = 0;
+      unsigned data_len_parsed = 0;
       switch (net_seg_subtype)
       {
       case CI_CONCURRENT_EXTENDED_NETWORK_SEG:
@@ -5227,7 +6367,7 @@ static int dissect_segment_network_extended(packet_info *pinfo, proto_item *epat
       }
       }
 
-      if (net_seg_data_len - data_len_parsed > 0)
+      if (net_seg_data_len > data_len_parsed)
       {
          proto_tree_add_item(net_tree, hf_cip_data, tvb, net_seg_data_offset + data_len_parsed, net_seg_data_len - data_len_parsed, ENC_NA);
       }
@@ -5296,7 +6436,7 @@ static int dissect_segment_symbolic(tvbuff_t *tvb, packet_info* pinfo, proto_tre
       }
       else
       {
-         proto_tree_add_item(path_seg_tree, hf_cip_symbol_ascii, tvb, offset + 1, symbol_size, ENC_ASCII | ENC_NA);
+         proto_tree_add_item(path_seg_tree, hf_cip_symbol_ascii, tvb, offset + 1, symbol_size, ENC_ASCII);
       }
 
       proto_item_append_text(epath_item, "%s", symbol_name);
@@ -5508,7 +6648,7 @@ static int dissect_segment_port(tvbuff_t* tvb, packet_info* pinfo, int offset, b
       else
       {
          proto_tree_add_item(path_seg_tree, hf_cip_link_address_size, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
-         proto_tree_add_item(path_seg_tree, hf_cip_link_address_string, tvb, offset + offset_link_address, opt_link_size, ENC_ASCII | ENC_NA);
+         proto_tree_add_item(path_seg_tree, hf_cip_link_address_string, tvb, offset + offset_link_address, opt_link_size, ENC_ASCII);
       }
 
       proto_item_append_text(epath_item, ", Address: %s", tvb_format_text(pinfo->pool, tvb, offset + offset_link_address, opt_link_size));
@@ -5802,8 +6942,14 @@ static int dissect_segment_data_simple(packet_info* pinfo, tvbuff_t* tvb, int of
 static int dissect_segment_ansi_extended_symbol(packet_info* pinfo, tvbuff_t* tvb, int offset,
    bool generate, proto_tree* path_seg_tree, proto_item* path_seg_item,
    proto_item* epath_item, int display_type,
-   bool is_msp_item, proto_item* msp_item)
+   bool is_msp_item, proto_item* msp_item,
+   cip_simple_request_info_t* req_data)
 {
+   if (req_data)
+   {
+      req_data->hasSymbolData = true;
+   }
+
    /* Segment size */
    uint16_t seg_size = tvb_get_uint8(tvb, offset + 1);
    if (generate)
@@ -5825,7 +6971,7 @@ static int dissect_segment_ansi_extended_symbol(packet_info* pinfo, tvbuff_t* tv
          proto_item_set_generated(it);
       }
       else
-         proto_tree_add_item(path_seg_tree, hf_cip_symbol, tvb, offset + 2, seg_size, ENC_ASCII | ENC_NA);
+         proto_tree_add_item(path_seg_tree, hf_cip_symbol, tvb, offset + 2, seg_size, ENC_ASCII);
 
       proto_item_append_text(epath_item, "%s", symbol_name);
 
@@ -5888,7 +7034,7 @@ int dissect_electronic_key_format(tvbuff_t* tvb, int offset, proto_tree* tree, b
 
 static int dissect_segment_logical_special(packet_info* pinfo, tvbuff_t* tvb, int offset,
    bool generate, proto_tree* path_seg_tree,
-   proto_item* path_seg_item, proto_item* epath_item)
+   proto_item* path_seg_item, proto_item* epath_item, cip_simple_request_info_t* req_data)
 {
    int segment_len = 0;
 
@@ -5927,6 +7073,13 @@ static int dissect_segment_logical_special(packet_info* pinfo, tvbuff_t* tvb, in
 
          proto_item_append_text(path_seg_tree, ", %d.%d)", (major_rev & 0x7F), minor_rev);
          proto_item_append_text(epath_item, "[Key]");
+
+         if (req_data)
+         {
+            req_data->hasEkey = true;
+            req_data->deviceType = device_type;
+            req_data->productCode = tvb_get_letohs(tvb, offset + 6);
+         }
       }
       else
       {
@@ -6275,7 +7428,7 @@ int dissect_cip_segment_single(packet_info *pinfo, tvbuff_t *tvb, int offset, pr
 
                case CI_LOGICAL_SEG_SPECIAL:
                    segment_len = dissect_segment_logical_special(pinfo, tvb, offset, generate,
-                      path_seg_tree, path_seg_item, epath_item);
+                      path_seg_tree, path_seg_item, epath_item, req_data);
                    break;
 
                case CI_LOGICAL_SEG_SERV_ID:
@@ -6322,7 +7475,7 @@ int dissect_cip_segment_single(packet_info *pinfo, tvbuff_t *tvb, int offset, pr
 
                case CI_DATA_SEG_SYMBOL:
                   segment_len = dissect_segment_ansi_extended_symbol(pinfo, tvb, offset, generate,
-                     path_seg_tree, path_seg_item, epath_item, display_type, is_msp_item, msp_item);
+                     path_seg_tree, path_seg_item, epath_item, display_type, is_msp_item, msp_item, req_data);
                   break;
 
                default:
@@ -6383,6 +7536,10 @@ void reset_cip_request_info(cip_simple_request_info_t* req_data)
    req_data->iConnPointA = SEGMENT_VALUE_NOT_SET;
 
    req_data->hasSimpleData = false;
+   req_data->hasSymbolData = false;
+   req_data->hasEkey = false;
+   req_data->deviceType = 0;
+   req_data->productCode = 0;
 }
 
 void dissect_epath(tvbuff_t *tvb, packet_info *pinfo, proto_tree *path_tree, proto_item *epath_item, int offset, int path_length,
@@ -6505,6 +7662,7 @@ int dissect_cip_string_type(packet_info *pinfo, proto_tree *tree, proto_item *it
 {
     uint32_t string_size_field_len;
     uint32_t string_size;
+    uint32_t char_size;
     unsigned string_encoding;
     int parsed_len;
     int total_len;
@@ -6515,13 +7673,13 @@ int dissect_cip_string_type(packet_info *pinfo, proto_tree *tree, proto_item *it
     {
     case CIP_SHORT_STRING_TYPE:
         string_size = tvb_get_uint8(tvb, offset);
-        string_encoding = ENC_ASCII | ENC_NA;
+        string_encoding = ENC_ISO_8859_1;
         string_size_field_len = 1;
         break;
 
     case CIP_STRING_TYPE:
         string_size = tvb_get_letohs(tvb, offset);
-        string_encoding = ENC_ASCII | ENC_NA;
+        string_encoding = ENC_ISO_8859_1;
         string_size_field_len = 2;
         break;
 
@@ -6530,6 +7688,29 @@ int dissect_cip_string_type(packet_info *pinfo, proto_tree *tree, proto_item *it
         string_encoding = ENC_UCS_2 | ENC_LITTLE_ENDIAN;
         string_size_field_len = 2;
         break;
+
+    case CIP_STRINGN_TYPE:
+       char_size = tvb_get_letohs(tvb, offset);
+       string_size = tvb_get_letohs(tvb, offset+2) * char_size;
+
+       /* Determine the string encoding; only 1-, 2-, or 4-byte character widths are supported. */
+       switch (char_size) {
+       case 1:
+          string_encoding = ENC_ISO_8859_1;
+          break;
+       case 2:
+          string_encoding = ENC_UCS_2 | ENC_LITTLE_ENDIAN;
+          break;
+       case 4:
+          string_encoding = ENC_UCS_4 | ENC_LITTLE_ENDIAN;
+          break;
+       default:
+          // Unsupported character size
+          return total_len;
+       }
+
+       string_size_field_len = 4;
+       break;
 
     default:
         // Unsupported.
@@ -6550,33 +7731,86 @@ int dissect_cip_string_type(packet_info *pinfo, proto_tree *tree, proto_item *it
     return parsed_len;
 }
 
-static int dissect_cip_stringi(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb, int offset)
+static int dissect_cip_stringi(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, int offset, const char* name)
 {
-    int parsed_len = 1;
-    uint32_t num_char = 0;
-    proto_tree_add_item_ret_uint(tree, hf_stringi_number_char, tvb, offset, 1, ENC_LITTLE_ENDIAN, &num_char);
+   guint32 num_entries = 0;
+   gint start_offset = offset;
 
-    for (uint32_t i = 0; i < num_char; ++i)
-    {
-        proto_tree_add_item(tree, hf_stringi_language_char, tvb, offset + 1, 3, ENC_ASCII | ENC_NA);
+   proto_item* ti;
+   proto_tree* stringi_tree;
 
-        uint32_t char_string_type = 0;
-        proto_tree_add_item_ret_uint(tree, hf_stringi_char_string_struct, tvb, offset + 4, 1, ENC_LITTLE_ENDIAN, &char_string_type);
-        proto_tree_add_item(tree, hf_stringi_char_set, tvb, offset + 5, 2, ENC_LITTLE_ENDIAN);
-        parsed_len += 6;
+   /* Top-level subtree */
+   ti = proto_tree_add_item(tree, hf_stringi, tvb, offset, 0, ENC_NA);
 
-        if (char_string_type != CIP_STRING_TYPE
-            && char_string_type != CIP_SHORT_STRING_TYPE
-            && char_string_type != CIP_STRING2_TYPE)
-        {
-            // Unsupported type.
-            break;
-        }
+   if (name != NULL) {
+      proto_item_set_text(ti, "%s", name);
+   }
+   else {
+      proto_item_set_text(ti, "STRINGI");
+   }
 
-        parsed_len += dissect_cip_string_type(pinfo, tree, item, tvb, offset + parsed_len, hf_stringi_international_string, char_string_type);
-    }
+   stringi_tree = proto_item_add_subtree(ti, ett_stringi);
 
-    return parsed_len;
+   /* Number of entries */
+   proto_tree_add_item_ret_uint(stringi_tree, hf_stringi_number_of_strings, tvb, offset, 1, ENC_LITTLE_ENDIAN, &num_entries);
+   offset += 1;
+
+   /* Loop through entries */
+   for (guint32 i = 0; i < num_entries; ++i)
+   {
+      gint entry_start = offset;
+
+      proto_item* entry_ti;
+      proto_tree* entry_tree;
+
+      /* Create entry subtree */
+      entry_ti = proto_tree_add_item(stringi_tree, hf_stringi_string, tvb, offset, 0, ENC_NA);
+      proto_item_set_text(entry_ti, "String %u", i + 1);
+
+      entry_tree = proto_item_add_subtree(entry_ti, ett_stringi_entry);
+
+      /* Language (3 bytes ASCII) */
+      proto_tree_add_item(entry_tree, hf_stringi_language_char, tvb, offset, 3, ENC_ASCII);
+      offset += 3;
+
+      /* DataType (1 byte) */
+      guint8 string_type = tvb_get_uint8(tvb, offset);
+      proto_tree_add_item(entry_tree, hf_stringi_data_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+
+      /* Validate string_type */
+      switch (string_type) {
+      case CIP_STRING_TYPE:
+      case CIP_STRING2_TYPE:
+      case CIP_STRINGN_TYPE:
+      case CIP_SHORT_STRING_TYPE:
+         break;
+      default:
+         expert_add_info_format(pinfo, entry_ti,
+            &ei_cip_stringi_invalid_type,
+            "Unknown string type: 0x%02x",
+            string_type);
+         break;
+      }
+
+      offset += 1;
+
+      /* Charset (2 bytes) */
+      proto_tree_add_item(entry_tree, hf_stringi_char_set, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      offset += 2;
+
+      /* String */
+      int str_len = dissect_cip_string_type(pinfo, entry_tree, entry_ti, tvb, offset, hf_stringi_international_string, string_type);
+
+      offset += str_len;
+
+      /* Fix entry subtree length */
+      proto_item_set_len(entry_ti, offset - entry_start);
+   }
+
+   /* Update top-level subtree length */
+   proto_item_set_len(ti, offset - start_offset);
+
+   return offset - start_offset;
 }
 
 int dissect_cip_attribute(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
@@ -6606,12 +7840,14 @@ int dissect_cip_attribute(packet_info *pinfo, proto_tree *tree, proto_item *item
    case cip_int:
    case cip_word:
    case cip_itime:
+   case cip_engunit:
       proto_tree_add_item(tree, *(attr->phf), tvb, offset, 2, ENC_LITTLE_ENDIAN);
       consumed = 2;
       break;
    case cip_usint_array:
+   case cip_byte_array:
       for (i = 0; i < total_len; i++)
-         proto_tree_add_item(tree, *(attr->phf), tvb, offset, total_len, ENC_NA);
+         proto_tree_add_item(tree, *(attr->phf), tvb, offset+i, 1, ENC_NA);
       consumed = total_len;
       break;
    case cip_uint_array:
@@ -6679,10 +7915,12 @@ int dissect_cip_attribute(packet_info *pinfo, proto_tree *tree, proto_item *item
       consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset, *(attr->phf), CIP_STRING2_TYPE);
       break;
    case cip_stringi:
-      consumed = dissect_cip_stringi(pinfo, tree, item, tvb, offset);
+      consumed = dissect_cip_stringi(pinfo, tree, tvb, offset, "STRINGI");
       break;
    case cip_stringN:
-      /* CURRENTLY NOT SUPPORTED */
+      consumed = dissect_cip_string_type(pinfo, tree, item, tvb, offset, *(attr->phf), CIP_STRINGN_TYPE);
+      break;
+   default:
       expert_add_info(pinfo, item, &ei_proto_unsupported_datatype);
       consumed = total_len;
       break;
@@ -6954,8 +8192,8 @@ dissect_cip_set_attribute_list_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 int dissect_cip_multiple_service_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, proto_item * item, int offset, bool request)
 {
    proto_tree *mult_serv_tree, *offset_tree;
-   int i, num_services, serv_offset, prev_offset = 0;
-   int parsed_len;
+   unsigned i, num_services, serv_offset, prev_offset = 0;
+   unsigned parsed_len;
    cip_req_info_t *cip_req_info, *mr_single_req_info;
    mr_mult_req_info_t *mr_mult_req_info = NULL;
 
@@ -6965,8 +8203,7 @@ int dissect_cip_multiple_service_packet(tvbuff_t *tvb, packet_info *pinfo, proto
       return 0;
    }
 
-   num_services = tvb_get_letohs( tvb, offset);
-   proto_tree_add_item(tree, hf_cip_sc_mult_serv_pack_num_services, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item_ret_uint(tree, hf_cip_sc_mult_serv_pack_num_services, tvb, offset, 2, ENC_LITTLE_ENDIAN, &num_services);
 
    /* Ensure a rough sanity check */
    if (num_services*2 > tvb_reported_length_remaining(tvb, offset+2))
@@ -7060,13 +8297,6 @@ int dissect_cip_multiple_service_packet(tvbuff_t *tvb, packet_info *pinfo, proto
       else
       {
          dissect_cip_data(mult_serv_tree, next_tvb, 0, pinfo, NULL, mult_serv_item, true);
-      }
-
-      /* Add the embedded CIP service to the item. */
-      if (mult_serv_item != NULL)
-      {
-         uint8_t service = tvb_get_uint8(next_tvb, 0);
-         proto_item_append_text(mult_serv_item, "%s", val_to_str(pinfo->pool, service & CIP_SC_MASK, cip_sc_vals, "Service (0x%02x)"));
       }
 
       if (i != num_services - 1)
@@ -7176,7 +8406,7 @@ cip_gaa_equal(const void *v, const void *w)
 static void build_get_attr_all_table(void)
 {
    size_t i, j;
-   attribute_val_array_t* att_array;
+   const attribute_val_array_t* att_array;
    const attribute_info_t* pattr;
    cip_gaa_key_t key;
    cip_gaa_key_t* new_key;
@@ -7445,11 +8675,11 @@ bool should_dissect_cip_response(tvbuff_t *tvb, int offset, uint8_t gen_status)
 {
     // Only parse the response if there is data left or it has a response status that allows additional data
     //   to be returned.
-    if ((tvb_reported_length_remaining(tvb, offset) == 0)
-        && gen_status != CI_GRC_SUCCESS
-        && gen_status != CI_GRC_ATTR_LIST_ERROR
-        && gen_status != CI_GRC_SERVICE_ERROR
-        && gen_status != CI_GRC_INVALID_LIST_STATUS)
+    if ((tvb_reported_length_remaining(tvb, offset) == 0) ||
+        (  (gen_status != CI_GRC_SUCCESS)
+        && (gen_status != CI_GRC_ATTR_LIST_ERROR)
+        && (gen_status != CI_GRC_SERVICE_ERROR)
+        && (gen_status != CI_GRC_INVALID_LIST_STATUS)))
     {
         return false;
     }
@@ -8231,7 +9461,7 @@ static void display_previous_route_connection_path(cip_req_info_t *preq_info, pr
 {
    if (preq_info && preq_info->RouteConnectionPathLen && preq_info->pRouteConnectionPath)
    {
-      tvbuff_t* tvbIOI = tvb_new_real_data((const uint8_t *)preq_info->pRouteConnectionPath, preq_info->RouteConnectionPathLen * 2, preq_info->RouteConnectionPathLen * 2);
+      tvbuff_t* tvbIOI = tvb_new_child_real_data(tvb, (const uint8_t *)preq_info->pRouteConnectionPath, preq_info->RouteConnectionPathLen * 2, preq_info->RouteConnectionPathLen * 2);
       if (!tvbIOI)
       {
          return;
@@ -8245,7 +9475,6 @@ static void display_previous_route_connection_path(cip_req_info_t *preq_info, pr
 
       cip_simple_request_info_t route_conn_path;
       dissect_epath(tvbIOI, pinfo, epath_tree, pi, 0, preq_info->RouteConnectionPathLen * 2, true, false, &route_conn_path, NULL, display_type, NULL, false);
-      tvb_free(tvbIOI);
 
       if (preq_info->connInfo && preq_info->connInfo->IsNullFwdOpen)
       {
@@ -8415,7 +9644,8 @@ static void dissect_cip_cm_unconnected_send_req(proto_tree* cmd_data_tree, tvbuf
    proto_tree_add_item(cmd_data_tree, hf_cip_cm_msg_req_size, tvb, offset + 2, 2, ENC_LITTLE_ENDIAN);
 
    /* Message Request */
-   proto_tree* temp_tree = proto_tree_add_subtree(cmd_data_tree, tvb, offset + 4, msg_req_siz, ett_cm_mes_req, NULL, "CIP Embedded Message Request");
+   proto_item* temp_item;
+   proto_tree* temp_tree = proto_tree_add_subtree(cmd_data_tree, tvb, offset + 4, msg_req_siz, ett_cm_mes_req, &temp_item, "CIP Embedded Message Request: ");
 
    /*
    ** We call ourselves again to dissect embedded packet
@@ -8439,7 +9669,7 @@ static void dissect_cip_cm_unconnected_send_req(proto_tree* cmd_data_tree, tvbuf
       }
    }
 
-   dissect_cip_data(temp_tree, next_tvb, 0, pinfo, pembedded_req_info, NULL, false);
+   dissect_cip_data(temp_tree, next_tvb, 0, pinfo, pembedded_req_info, temp_item, false);
 
    if (msg_req_siz % 2)
    {
@@ -8530,7 +9760,7 @@ static void display_previous_request_path(cip_req_info_t *preq_info, proto_tree 
       proto_tree *epath_tree;
       tvbuff_t* tvbIOI;
 
-      tvbIOI = tvb_new_real_data((const uint8_t *)preq_info->pIOI, preq_info->IOILen * 2, preq_info->IOILen * 2);
+      tvbIOI = tvb_new_child_real_data(tvb, (const uint8_t *)preq_info->pIOI, preq_info->IOILen * 2, preq_info->IOILen * 2);
       if (tvbIOI)
       {
          pi = proto_tree_add_uint(item_tree, hf_cip_request_path_size, tvb, 0, 0, preq_info->IOILen);
@@ -8546,7 +9776,6 @@ static void display_previous_request_path(cip_req_info_t *preq_info, proto_tree 
          }
 
          dissect_epath(tvbIOI, pinfo, epath_tree, pi, 0, preq_info->IOILen * 2, true, false, preq_info->ciaData, NULL, DISPLAY_REQUEST_PATH, msp_item, is_msp_item);
-         tvb_free(tvbIOI);
       }
    }
 }
@@ -8603,7 +9832,7 @@ dissect_cip_cm_data( proto_tree *item_tree, tvbuff_t *tvb, int offset, int item_
             p_remove_proto_data(wmem_file_scope(), pinfo, proto_cip, 0);
             p_add_proto_data(wmem_file_scope(), pinfo, proto_cip, 0, pembedded_req_info );
 
-            proto_item_set_generated(proto_tree_add_uint_format( item_tree, hf_cip_cm_sc, tvb, 0, 0, SC_CM_UNCON_SEND|CIP_SC_RESPONSE_MASK, "Service: Unconnected Send (Response)" ));
+            proto_item_set_generated(proto_tree_add_uint_format_value( item_tree, hf_cip_cm_sc, tvb, 0, 0, SC_CM_UNCON_SEND|CIP_SC_RESPONSE_MASK, "Unconnected Send (Response)" ));
             next_tvb = tvb_new_subset_length(tvb, offset, item_length);
 
             display_previous_request_path(pembedded_req_info, item_tree, tvb, pinfo, NULL, false);
@@ -9823,6 +11052,7 @@ void dissect_cip_data( proto_tree *item_tree, tvbuff_t *tvb, int offset, packet_
          if(!dissector_try_heuristic(heur_subdissector_service, tvb, pinfo, item_tree, &hdtbl_entry, NULL))
          {
            dissect_cip_generic_service_rsp(tvb, pinfo, cip_tree);
+           proto_item_append_text(msp_item, "%s", val_to_str(pinfo->pool, service & CIP_SC_MASK, cip_sc_vals, "Service (0x%02x)"));
          }
       }
       else if (service_entry)
@@ -9832,6 +11062,7 @@ void dissect_cip_data( proto_tree *item_tree, tvbuff_t *tvb, int offset, packet_
       else
       {
          call_dissector( cip_class_generic_handle, tvb, pinfo, item_tree );
+         proto_item_append_text(msp_item, "%s", val_to_str(pinfo->pool, service & CIP_SC_MASK, cip_sc_vals, "Service (0x%02x)"));
       }
    } /* End of if reply */
    else
@@ -9906,6 +11137,7 @@ void dissect_cip_data( proto_tree *item_tree, tvbuff_t *tvb, int offset, packet_
              }
 
              dissect_cip_generic_service_req(tvb, pinfo, cip_tree, &path_info);
+             proto_item_append_text(msp_item, "%s", val_to_str(pinfo->pool, service& CIP_SC_MASK, cip_sc_vals, "Service (0x%02x)"));
           }
       }
       else if ( dissector )
@@ -9919,6 +11151,7 @@ void dissect_cip_data( proto_tree *item_tree, tvbuff_t *tvb, int offset, packet_
       else
       {
          call_dissector( cip_class_generic_handle, tvb, pinfo, item_tree );
+         proto_item_append_text(msp_item, "%s", val_to_str(pinfo->pool, service & CIP_SC_MASK, cip_sc_vals, "Service (0x%02x)"));
       }
    } /* End of if-else( request ) */
 
@@ -10150,19 +11383,46 @@ proto_register_cip(void)
       { &hf_id_status, { "Status", "cip.id.status", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL }},
       { &hf_id_serial_number, { "Serial Number", "cip.id.serial_number", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
       { &hf_id_product_name, { "Product Name", "cip.id.product_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
-      { &hf_id_state, { "State", "cip.id.state", FT_UINT8, BASE_HEX, VALS(cip_id_state_vals), 0, NULL, HFILL } },
+      { &hf_id_state, { "State", "cip.id.state", FT_UINT8, BASE_DEC, VALS(cip_id_state_vals), 0, NULL, HFILL } },
       { &hf_id_config_value, { "Configuration Consistency Value", "cip.id.config_value", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
-      { &hf_id_heartbeat, { "Heartbeat Interval", "cip.id.heartbeat", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_id_heartbeat, { "Heartbeat Interval", "cip.id.heartbeat", FT_UINT8, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
       { &hf_id_catalog_number, { "Catalog Number", "cip.id.catalog_number", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
       { &hf_id_manufacture_date, { "Manufacture Date", "cip.id.manufacture_date", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_id_status_owned, { "Owned", "cip.id.owned", FT_UINT16, BASE_DEC, NULL, 0x0001, NULL, HFILL } },
       { &hf_id_status_conf, { "Configured", "cip.id.conf", FT_UINT16, BASE_DEC, NULL, 0x0004, NULL, HFILL } },
-      { &hf_id_status_extended1, { "Extended Device Status", "cip.id.ext", FT_UINT16, BASE_HEX, NULL, 0x00F0, NULL, HFILL } },
+      { &hf_id_status_extended1, { "Extended Device Status", "cip.id.ext", FT_UINT16, BASE_DEC | BASE_EXT_STRING, &cip_id_status_extended_vals_ext, 0x00F0, NULL, HFILL } },
       { &hf_id_status_minor_fault_rec, { "Minor Recoverable Fault", "cip.id.minor_fault1", FT_UINT16, BASE_DEC, NULL, 0x0100, NULL, HFILL } },
       { &hf_id_status_minor_fault_unrec, { "Minor Unrecoverable Fault", "cip.id.minor_fault2", FT_UINT16, BASE_DEC, NULL, 0x0200, NULL, HFILL } },
       { &hf_id_status_major_fault_rec, { "Major Recoverable Fault", "cip.id.major_fault1", FT_UINT16, BASE_DEC, NULL, 0x0400, NULL, HFILL } },
       { &hf_id_status_major_fault_unrec, { "Major Unrecoverable Fault", "cip.id.major_fault2", FT_UINT16, BASE_DEC, NULL, 0x0800, NULL, HFILL } },
       { &hf_id_status_extended2, { "Extended Device Status 2", "cip.id.ext2", FT_UINT16, BASE_HEX, NULL, 0xF000, NULL, HFILL } },
+      { &hf_id_active_language, { "Active Language", "cip.id.active_language", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_supported_language_list, { "Supported Language List", "cip.id.supported_language_list", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_int_product_name, { "International Product Name", "cip.id.int_product_name", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_id_semaphore_client_key, { "Client Electronic Key", "cip.id.semaphore.client_key", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_semaphore_vendor, { "Vendor Number", "cip.id.semaphore.vendor", FT_UINT16, BASE_HEX | BASE_EXT_STRING, &cip_vendor_vals_ext, 0, NULL, HFILL } },
+      { &hf_id_semaphore_client_sn, { "Client Serial Number", "cip.id.v.client_serial_number", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_id_semaphore_timer, { "Semaphore Timer", "cip.id.semaphore.timer", FT_UINT16, BASE_DEC | BASE_UNIT_STRING, UNS(&units_millisecond_milliseconds), 0, NULL, HFILL } },
+      { &hf_id_assigned_name, { "Assigned Name", "cip.id.assigned_name", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_id_assigned_description, { "Assigned Description", "cip.id.assigned_description", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_id_geographic_location, { "Geographic Location", "cip.id.geographic_location", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_vendor_name, { "Modbus Identity Vendor Name", "cip.id.modbus_identity.vendor_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_product_code, { "Modbus Identity Product Code", "cip.id.modbus_identity.product_code", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_revision, { "Modbus Identity Major Minor Revision", "cip.id.modbus_identity.revision", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_vendor_url, { "Modbus Identity Vendor URL", "cip.id.modbus_identity.vendor_url", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_product_name, { "Modbus Identity Product Name", "cip.id.modbus_identity.product_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_model_name, { "Modbus Identity Model Name", "cip.id.modbus_identity.model_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_modbus_identity_app_name, { "Modbus Identity User App Name", "cip.id.modbus_identity.app_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_protection_mode, { "Protection Mode", "cip.id.protection_mode", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_id_protection_mode_implicit, { "Implicit Protection Setting", "cip.id.protection_mode.implicit", FT_UINT16, BASE_HEX, NULL, 0x0007, NULL, HFILL } },
+      { &hf_id_protection_mode_explicit, { "Explicit Protection Setting", "cip.id.protection_mode.explicit", FT_UINT16, BASE_DEC, NULL, 0x0008, NULL, HFILL } },
+      { &hf_id_uptime, { "Uptime", "cip.id.uptime", FT_UINT32, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
+      { &hf_id_vendor_name, { "Vendor Name", "cip.id.vendor_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_vendor_uri, { "Vendor URI", "cip.id.vendor_uri", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_configuration_counter, { "Configuration Counter", "cip.id.config_counter", FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_id_configuration_date, { "Configuration Date", "cip.id.config_date", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0, NULL, HFILL } },
+      { &hf_id_manuf_serial_number, { "Manufacture Serial Number", "cip.id.manuf_serial_num", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_id_num_device_type_revs, { "Number of device type revisions", "cip.id.num_device_type_revs", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
 
       { &hf_msg_rout_num_classes, { "Number of Classes", "cip.mr.num_classes", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
       { &hf_msg_rout_classes, { "Class", "cip.mr.class", FT_UINT16, BASE_HEX|BASE_EXT_STRING, &cip_class_names_vals_ext, 0, NULL, HFILL }},
@@ -10185,31 +11445,42 @@ proto_register_cip(void)
       { &hf_conn_mgr_max_buff_size, { "Max Buff Size", "cip.cm.max_buff_size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_conn_mgr_buff_size_remaining, { "Buff Size Remaining", "cip.cm.buff_remain", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
 
-      { &hf_stringi_number_char, { "Number of Characters", "cip.stringi.num", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_stringi, { "String", "cip.stringi", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_stringi_data_type, { "Data Type", "cip.stringi.data_type", FT_UINT8, BASE_HEX, VALS(cip_string_type_vals), 0, NULL, HFILL } },
+      { &hf_stringi_string, { "String", "cip.stringi.string", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_stringi_international_string, { "International String", "cip.stringi.istring", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_stringi_number_of_strings, { "Number of Strings", "cip.stringi.num", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_stringi_language_char, { "Language Chars", "cip.stringi.language_char", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
-      { &hf_stringi_char_string_struct, { "Char String Struct", "cip.stringi.char_string_struct", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
-      { &hf_stringi_char_set, { "Char Set", "cip.stringi.char_set", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
-      { &hf_stringi_international_string, { "International String", "cip.stringi.int_string", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_stringi_char_set, { "Character Set", "cip.stringi.char_set", FT_UINT16, BASE_DEC, VALS(cip_charset_vals), 0, NULL, HFILL } },
 
       { &hf_file_data, { "Data", "cip.file.data", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
-      { &hf_file_encoding, { "Encoding", "cip.file.encoding", FT_UINT8, BASE_DEC, VALS(cip_file_encoding_vals), 0, NULL, HFILL } },
-      { &hf_file_file_access_rule, { "File Access Rule", "cip.file.file_access_rule", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_file_encoding, { "Encoding", "cip.file.encoding", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_encoding_vals), 0, NULL, HFILL } },
+      { &hf_file_file_access_rule, { "File Access Rule", "cip.file.file_access_rule", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_access_rule_vals), 0, NULL, HFILL } },
       { &hf_file_file_format_version, { "File Format Version", "cip.file.file_format_version", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
-      { &hf_file_file_save_parametersd, { "File Save Parameters", "cip.file.file_save_parameters", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_file_file_save_parameters, { "File Save Parameters", "cip.file.file_save_parameters", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_file_file_save_parameters_save_method, { "Save Method", "cip.file.file_save_parameters.save_method", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_save_method_vals), FILE_SAVE_PARAM_SAVE_METHOD_MASK, NULL, HFILL } },
+      { &hf_file_file_save_parameters_save_status, { "Save Status", "cip.file.file_save_parameters.save_status", FT_BOOLEAN, 8, NULL, FILE_SAVE_PARAM_SAVE_STATUS_MASK, NULL, HFILL } },
+      { &hf_file_file_save_parameters_reserved, { "Reserved", "cip.file.file_save_parameters.reserved", FT_UINT8, BASE_HEX, NULL, FILE_SAVE_PARAM_RESERVED_MASK, NULL, HFILL } },
       { &hf_file_file_size, { "File Size", "cip.file.file_size", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
       { &hf_file_filename, { "File Name", "cip.file.file_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
-      { &hf_file_incremental_burn_time, { "Incremental Burn Time", "cip.file.incremental_burn_time", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_file_incremental_burn_time, { "Incremental Burn Time", "cip.file.incremental_burn_time", FT_UINT16, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
       { &hf_file_incremental_burn, { "Incremental Burn", "cip.file.incremental_burn", FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
       { &hf_file_instance_name, { "Instance Name", "cip.file.instance_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
-      { &hf_file_invocation_method, { "Invocation Method", "cip.file.invocation_method", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_file_invocation_method, { "Invocation Method", "cip.file.invocation_method", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_invocation_method_vals), 0, NULL, HFILL } },
+      { &hf_file_revision, { "File Revision", "cip.file.file_revision", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_file_major_rev, { "Major Revision", "cip.file.major_rev", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
       { &hf_file_maximum_transfer_size, { "Maximum Transfer Size", "cip.file.maximum_transfer_size", FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
       { &hf_file_minor_rev, { "Minor Revision", "cip.file.minor_rev", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
-      { &hf_file_state, { "State", "cip.file.state", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_file_state, { "State", "cip.file.state", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_state_vals), 0, NULL, HFILL}},
+      { &hf_file_file_checksum, { "File Checksum", "cip.file.file_Checksum", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_file_transfer_timeout, { "Transfer Session Timeout", "cip.file.transfer_session_timeout", FT_UINT8, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
       { &hf_file_transfer_checksum, { "Transfer Checksum", "cip.file.transfer_checksum", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
       { &hf_file_transfer_number, { "Transfer Number", "cip.file.transfer_number", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
-      { &hf_file_transfer_packet_type, { "Transfer Packet Type", "cip.file.transfer_packet_type", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_file_transfer_packet_type, { "Transfer Packet Type", "cip.file.transfer_packet_type", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(cip_file_transfer_packet_type_vals), 0, NULL, HFILL } },
       { &hf_file_transfer_size, { "Transfer Size", "cip.file.transfer_size", FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
+      { &hf_file_read_size, { "Read Size", "cip.file.read_size", FT_UINT32, BASE_DEC | BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
+      { &hf_file_write_size, { "Write Size", "cip.file.write_size", FT_UINT32, BASE_DEC | BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
+      { &hf_file_file_offset, { "File Offset", "cip.file.file_offset", FT_UINT32, BASE_DEC | BASE_UNIT_STRING, UNS(&units_byte_bytes), 0, NULL, HFILL } },
 
       { &hf_energy_energy_resource_type, { "Energy Resource Type", "cip.energy.energy_resource_type", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_energy_base_energy_object_capabilities, { "Base Energy Object Capabilities", "cip.energy.base_energy_object_capabilities", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
@@ -10323,6 +11594,89 @@ proto_register_cip(void)
       { &hf_cip_connection, { "CIP Connection Index", "cip.connection", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
       { &hf_cip_fwd_open_in, { "Forward Open Request In", "cip.fwd_open_in", FT_FRAMENUM, BASE_NONE, NULL, 0, NULL, HFILL } },
       { &hf_cip_fwd_close_in, { "Forward Close Request In", "cip.fwd_close_in", FT_FRAMENUM, BASE_NONE, NULL, 0, NULL, HFILL } },
+
+      /// Process Device Diagnostics object
+      // Class attributes fields
+      { &hf_pdd_change_counter, { "Diagnostics Change Counter", "cip.pdd.diag_change_counter", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_global_status, { "Global Status", "cip.pdd.global_status", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_global_status_failure, { "Failure", "cip.pdd.global_status.failure", FT_UINT8, BASE_HEX, NULL, 0x1, NULL, HFILL } },
+      { &hf_pdd_global_status_check, { "Function Check", "cip.pdd.global_status.check", FT_UINT8, BASE_HEX, NULL, 0x2, NULL, HFILL } },
+      { &hf_pdd_global_status_out_of_spec, { "Out of Specification", "cip.pdd.global_status.out_of_spec", FT_UINT8, BASE_HEX, NULL, 0x4, NULL, HFILL } },
+      { &hf_pdd_global_status_maint, { "Maintenance Required", "cip.pdd.global_status.maint", FT_UINT8, BASE_HEX, NULL, 0x8, NULL, HFILL } },
+      { &hf_pdd_num_component_elements, { "Number of Component Elements", "cip.pdd.num_components", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_component_status_list, { "Component Status List", "cip.pdd.comp_status_list", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_component_status, { "Component Status", "cip.pdd.comp_status", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_component_name_list, { "Component Name List", "cip.pdd.comp_name_list", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_component_name, { "Component Name", "cip.pdd.comp_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_profile_diagnostics, { "Profile Diagnostics", "cip.pdd.profile_diag", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_vendor_diagnostics, { "Vendor Diagnostics", "cip.pdd.vendor_diag", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_size_of_vendor_diagnostics, { "Size of Vendor Diagnostics", "cip.pdd.vendor_diag_size", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_user_diagnostics_groups, { "User Diagnostics Groups", "cip.pdd.user_diag_groups", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_supported_profile_diagnostics, { "Supported Profile Diagnostics", "cip.pdd.supported_profile_diag", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_simulation_enable, { "Simulation Enable", "cip.pdd.sim_enable", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_size_of_profile_diagnostics, { "Size of Profile Diagnostics", "cip.pdd.profile_diag_size", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      // Instance attributes fields
+      { &hf_pdd_active, { "Active", "cip.pdd.active", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_disable, { "Disable", "cip.pdd.disable", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_diagnostic_code, { "Diagnostic Code", "cip.pdd.diag_code", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_status_signal, { "Status Signal", "cip.pdd.status_signal", FT_UINT8, BASE_HEX, VALS(cip_pdd_status_signal_vals), 0x0, NULL, HFILL } },
+      { &hf_pdd_sequence_number, { "Sequence Number", "cip.pdd.seq_num", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_ts_event_occurred, { "Timestamp Event Occurred", "cip.pdd.ts_occurred", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_ts_event_cleared, { "Timestamp Event Cleared", "cip.pdd.ts_cleared", FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_diagnostic_message, { "Diagnostic Message", "cip.pdd.diag_msg", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_user_diag_mapping, { "User Diagnostic Mapping", "cip.pdd.user_diag_map", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_component_index, { "Component Index", "cip.pdd.comp_idx", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_recommended_action, { "Recommended Action", "cip.pdd.action", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      // Service fields
+      { &hf_pdd_user_diag_index, { "User Bit Index", "cip.pdd.user_bit_idx", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_start_instance, { "Start", "cip.pdd.start_instance", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_pdd_next_instance, { "Next", "cip.pdd.next_instance", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+
+      /// Process Measurement Value object
+      // Class attributes fields
+      { &hf_pmv_simulation_enable, { "Simulation Enable", "cip.pmv.sim_enable", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+
+      // Instance attributes fields
+      { &hf_pmv_name, { "Name", "cip.pmv.name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_value_eng_units, { "Value Engineering Units", "cip.pmv.eng_units", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_value, { "Value", "cip.pmv.value", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_status, { "Status", "cip.pmv.status", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_status_sim, { "Simulated", "cip.pmv.status.sim", FT_UINT8, BASE_HEX, NULL, 0x01, NULL, HFILL } },
+      { &hf_pmv_status_bad, { "Bad", "cip.pmv.status.bad", FT_UINT8, BASE_HEX, NULL, 0x20, NULL, HFILL } },
+      { &hf_pmv_status_uncertain, { "Uncertain", "cip.pmv.status.uncertain", FT_UINT8, BASE_HEX, NULL, 0x40, NULL, HFILL } },
+      { &hf_pmv_status_good, { "Good", "cip.pmv.status.good", FT_UINT8, BASE_HEX, NULL, 0x80, NULL, HFILL } },
+      { &hf_pmv_damping, { "Damping", "cip.pmv.damping", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_low_cutoff, { "Low Cutoff", "cip.pmv.low_cutoff", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_low_cutoff_hysteresis, { "Low Cutoff Hysteresis", "cip.pmv.low_cutoff_hyst", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_sensor_direction, { "Sensor Direction", "cip.pmv.sensor_dir", FT_UINT32, BASE_DEC, VALS(cip_pmv_sensor_dir_vals), 0x0, NULL, HFILL } },
+      { &hf_pmv_zero_point, { "Zero Point", "cip.pmv.zero_point", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_adjust_zero_point, { "Adjust Zero Point", "cip.pmv.adj_zero_point", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_eng_units, { "Scaled Eng. Units", "cip.pmv.scaled_eng_units", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_type, { "Scaled Type", "cip.pmv.scaled_type", FT_UINT8, BASE_DEC, VALS(cip_pmv_scaled_type_vals), 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_low_x, { "Scaled Low Point X", "cip.pmv.scaled_low_x", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_low_y, { "Scaled Low Point Y", "cip.pmv.scaled_low_y", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_high_x, { "Scaled High Point X", "cip.pmv.scaled_high_x", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_scaled_high_y, { "Scaled High Point Y", "cip.pmv.scaled_high_y", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_upper_range_limit, { "Upper Range Limit", "cip.pmv.upper_range_lim", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_lower_range_limit, { "Lower Range Limit", "cip.pmv.lower_range_lim", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_sensor_type, { "Sensor Type", "cip.pmv.sensor_type", FT_UINT32, BASE_DEC, VALS(cip_pmv_sensor_type_vals), 0x0, NULL, HFILL } },
+      { &hf_pmv_temp_rtd_sensor_cnx, { "Temp. RTD Sensor Cnx.", "cip.pmv.temp_rtd_sensor_cnx", FT_UINT32, BASE_DEC, VALS(cip_pmv_temp_rtd_sensor_cnx_vals), 0x0, NULL, HFILL } },
+      { &hf_pmv_temp_rtd_2wire_comp, { "Temp. RTD 2-wire comp.", "cip.pmv.temp_rtd_2wire_comp", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_temp_tc_sensor_ref, { "Temp. TC Sensor ref.", "cip.pmv.temp_tc_sensor_ref", FT_UINT32, BASE_DEC, VALS(cip_pmv_temp_tc_sensor_ref_vals), 0x0, NULL, HFILL } },
+      { &hf_pmv_temp_tc_sensor_ref_comp, { "Temp. TC Sensor ref. comp.", "cip.pmv.temp_tc_sensor_ref_comp", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_pmv_gain, { "Gain", "cip.pmv.gain", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+
+      /// Process Measurement Value object
+      // Instance attributes fields
+      { &hf_ptv_name, { "Name", "cip.ptv.name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_value_eng_units, { "Value Engineering Units", "cip.ptv.eng_units", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_value, { "Value", "cip.ptv.value", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_status, { "Status", "cip.ptv.status", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_value_double, { "Value Double", "cip.ptv.value_double", FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_totalizer_mode, { "Totalizer Mode", "cip.ptv.totalizer_mode", FT_UINT8, BASE_NONE, VALS(cip_ptv_totalizer_mode_vals), 0x0, NULL, HFILL } },
+      { &hf_ptv_preset_value, { "Preset Value", "cip.ptv.preset_value", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_ptv_totalizer_control, { "Totalizer Control", "cip.ptv.totalizer_control", FT_UINT8, BASE_NONE, VALS(cip_ptv_totalizer_control_vals), 0x0, NULL, HFILL } },
+      { &hf_ptv_totalizer_reset, { "Totalizer Reset", "cip.ptv.totalizer_reset", FT_UINT8, BASE_NONE, VALS(cip_ptv_totalizer_reset_vals), 0x0, NULL, HFILL } },
    };
 
    static hf_register_info hf_cm[] = {
@@ -10548,8 +11902,16 @@ proto_register_cip(void)
       &ett_time_sync_port_phys_addr_info,
       &ett_time_sync_port_proto_addr_info,
       &ett_id_status,
+      &ett_id_semaphore,
+      &ett_id_semaphore_client_key,
+      &ett_id_modbus_info,
+      &ett_id_protection_mode,
+      &ett_file_revision,
+      &ett_file_save_params,
       &ett_32bitheader_tree,
       &ett_connection_info,
+      &ett_stringi,
+      &ett_stringi_entry
    };
 
    static int *ett_cm[] = {
@@ -10593,6 +11955,10 @@ proto_register_cip(void)
    static ei_register_info ei[] = {
       { &ei_mal_identity_revision, { "cip.malformed.id.revision", PI_MALFORMED, PI_ERROR, "Malformed Identity revision", EXPFILL }},
       { &ei_mal_identity_status, { "cip.malformed.id.status", PI_MALFORMED, PI_ERROR, "Malformed Identity status", EXPFILL } },
+      { &ei_mal_identity_active_language, { "cip.malformed.id.active_language", PI_MALFORMED, PI_ERROR, "Malformed Identity Active Language", EXPFILL } },
+      { &ei_mal_identity_supported_language_list, { "cip.malformed.id.supported_language_list", PI_MALFORMED, PI_ERROR, "Malformed Identity Supported Language List", EXPFILL } },
+      { &ei_mal_identity_semaphore, { "cip.malformed.id.semaphore", PI_MALFORMED, PI_ERROR, "Malformed Identity Semaphore", EXPFILL } },
+      { &ei_mal_identity_protection_mode, { "cip.malformed.id.protection_mode", PI_MALFORMED, PI_ERROR, "Malformed Identity Protection Mode", EXPFILL } },
       { &ei_mal_msg_rout_num_classes, { "cip.malformed.msg_rout.num_classes", PI_MALFORMED, PI_ERROR, "Malformed Message Router Attribute 1", EXPFILL }},
       { &ei_mal_time_sync_gm_clock, { "cip.malformed.time_sync.gm_clock", PI_MALFORMED, PI_ERROR, "Malformed Grandmaster clock info", EXPFILL }},
       { &ei_mal_time_sync_parent_clock, { "cip.malformed.time_sync.parent_clock", PI_MALFORMED, PI_ERROR, "Malformed Parent clock info", EXPFILL }},
@@ -10648,6 +12014,7 @@ proto_register_cip(void)
       { &ei_mal_opt_service_list, { "cip.malformed.opt_service_list", PI_MALFORMED, PI_ERROR, "Optional service list missing data", EXPFILL }},
       { &ei_mal_padded_epath_size, { "cip.malformed.epath.size", PI_MALFORMED, PI_ERROR, "Malformed EPATH vs Size", EXPFILL } },
       { &ei_mal_missing_string_data, { "cip.malformed.missing_str_data", PI_MALFORMED, PI_ERROR, "Missing string data", EXPFILL } },
+      { &ei_cip_stringi_invalid_type, { "cip.stringi.invalid_type", PI_MALFORMED, PI_ERROR, "Unknown string type", EXPFILL } },
 
       { &ei_cip_null_fwd_open, { "cip.analysis.null_fwd_open", PI_PROTOCOL, PI_NOTE, "Null Forward Open", EXPFILL } },
       { &ei_cip_safety_open_type1, { "cip.analysis.safety_open_type1", PI_PROTOCOL, PI_NOTE, "Type 1 - Safety Open with Data", EXPFILL } },
@@ -10656,7 +12023,7 @@ proto_register_cip(void)
       { &ei_cip_safety_input, { "cip.analysis.safety_input", PI_PROTOCOL, PI_NOTE, "Safety Input Connection", EXPFILL } },
       { &ei_cip_safety_output, { "cip.analysis.safety_output", PI_PROTOCOL, PI_NOTE, "Safety Output Connection", EXPFILL } },
       { &ei_cip_listen_input_connection, { "cip.analysis.listen_input_connection", PI_PROTOCOL, PI_NOTE, "[Likely] Listen Only or Input Only Connection", EXPFILL } },
-      { &ei_cip_no_fwd_close, { "cip.analysis.no_fwd_close", PI_PROTOCOL, PI_NOTE, "No Forward Close seen for this CIP Connection", EXPFILL } },
+      { &ei_cip_no_fwd_close, { "cip.analysis.no_fwd_close", PI_PROTOCOL, PI_NOTE, "No Forward Close seen for this CIP Connection", EXPFILL } }
    };
 
    module_t *cip_module;

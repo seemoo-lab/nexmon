@@ -1,5 +1,5 @@
 /* packet-sstp.c
- * routines for sstp packet dissasembly
+ * routines for sstp packet disassembly
  * - MS-SSTP:
  *
  *    https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp
@@ -217,8 +217,7 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 
     col_append_fstr(pinfo->cinfo, COL_INFO, "Type: CONTROL, %s; ", val_to_str_const(sstp_messagetype, sstp_messagetypes, "Unknown Messagetype"));
     proto_tree_add_item(sstp_tree, hf_sstp_messagetype, tvb,  SSTP_OFFSET_MSGTYPE, SSTP_FSIZE_MSGTYPE, ENC_BIG_ENDIAN);
-    proto_tree_add_item(sstp_tree, hf_sstp_numattrib, tvb,    SSTP_OFFSET_NUMATTRIB, SSTP_FSIZE_NUMATTRIB, ENC_BIG_ENDIAN);
-    sstp_numattrib = tvb_get_ntohs(tvb, SSTP_OFFSET_NUMATTRIB);
+    proto_tree_add_item_ret_uint16(sstp_tree, hf_sstp_numattrib, tvb, SSTP_OFFSET_NUMATTRIB, SSTP_FSIZE_NUMATTRIB, ENC_BIG_ENDIAN, &sstp_numattrib);
 
     /* display attributes */
     if (sstp_numattrib > 0) {
@@ -237,10 +236,8 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
         proto_tree_add_item(sstp_tree_attribute, hf_sstp_attrib_id, tvb, offset, SSTP_FSIZE_ATTRIB_ID, ENC_BIG_ENDIAN);
         offset++;
         proto_tree_add_item(sstp_tree_attribute, hf_sstp_attrib_length_reserved, tvb, offset, SSTP_FSIZE_ATTRIB_LENGTH, ENC_BIG_ENDIAN);
-        proto_tree_add_item(sstp_tree_attribute, hf_sstp_attrib_length, tvb, offset, SSTP_FSIZE_ATTRIB_LENGTH, ENC_BIG_ENDIAN);
-
-        /* get length of attribute value */
-        attrib_length = (tvb_get_ntohs(tvb, offset) & SSTP_BITMASK_LENGTH_LENGTH);
+        /* length of attribute */
+        proto_tree_add_item_ret_uint16(sstp_tree_attribute, hf_sstp_attrib_length, tvb, offset, SSTP_FSIZE_ATTRIB_LENGTH, ENC_BIG_ENDIAN, &attrib_length);
 
         /* if this attribute follows the specification, length should at least be 4 */
         if (attrib_length >= 4) {
@@ -309,7 +306,7 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
       }
     }
 
-    /* While testing with different dumps, i noticed data in the buffer i couldnt find any documentation about */
+    /* While testing with different dumps, I noticed data in the buffer I couldn't find any documentation about */
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
       proto_tree_add_item(sstp_tree, hf_sstp_data_unknown, tvb, offset, -1, ENC_NA);
     }

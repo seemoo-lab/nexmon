@@ -82,11 +82,9 @@ tapall_tcpip_packet(void *pct, packet_info *pinfo, epan_dissect_t *edt _U_, cons
         struct segment *segment = g_new(struct segment, 1);
         segment->next      = NULL;
         segment->num       = pinfo->num;
-        segment->rel_secs  = (uint32_t)pinfo->rel_ts.secs;
-        segment->rel_usecs = pinfo->rel_ts.nsecs/1000;
+        nstime_copy(&segment->rel_ts, &pinfo->rel_ts);
         /* Currently unused
-        segment->abs_secs  = pinfo->abs_ts.secs;
-        segment->abs_usecs = pinfo->abs_ts.nsecs/1000;
+        nstime_copy(&segment->abs_ts, &pinfo->abs_ts.secs);
         */
         /* tcphdr->th_rawseq is always the absolute sequence number.
          * tcphdr->th_seq is either the relative or absolute sequence number
@@ -149,10 +147,10 @@ graph_segment_list_get(capture_file *cf, struct tcp_graph *tg)
      */
     error_string = register_tap_listener("tcp", tg, "tcp", 0, tapall_tcpip_reset, tapall_tcpip_packet, NULL, NULL);
     if (error_string) {
-        fprintf(stderr, "wireshark: Couldn't register tcp_graph tap: %s\n",
-                error_string->str);
+        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
+            "wireshark: Couldn't register tcp_graph tap: %s\n", error_string->str);
         g_string_free(error_string, TRUE);
-        exit(1);   /* XXX: fix this */
+        return;
     }
     cf_retap_packets(cf);
     remove_tap_listener(tg);

@@ -34,7 +34,7 @@ endif
 DH_BUILDSYSTEM = cmake
 
 ifneq ($(filter pkg.wireshark.stratoshark,$(DEB_BUILD_PROFILES)),)
-    CONFIGURE_SWITCHES += -DBUILD_stratoshark=ON -DBUILD_falcodump=ON
+    CONFIGURE_SWITCHES += -DBUILD_stratoshark=ON -DBUILD_falcodump=ON -DBUILD_dumpcalls=ON
 endif
 
 ifeq ($(wildcard .git),)
@@ -49,8 +49,6 @@ override_dh_auto_configure:
 		-DBUILD_xxx2deb=ON \
 		-DBUILD_corbaidl2wrs=ON \
 		$(CONFIGURE_SWITCHES)
-	sed 's/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g' \
-		debian/stratoshark.postinst.in > debian/stratoshark.postinst
 
 override_dh_auto_build:
 	# Ignore warnings from asn2wrs.py about duplicate field names.
@@ -74,16 +72,39 @@ override_dh_auto_install:
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp -C $(CURDIR)/obj-* install-headers
 	rm -rf $(CURDIR)/debian/tmp/usr/share/wireshark/COPYING
 
+
+# wsutil headers must not require anything from libwireshark or libwiretap headers
+HEADER_CHECK_FLAGS_WSUTIL = $(shell pkg-config --cflags glib-2.0) \
+	$(shell dpkg-buildflags --get CPPFLAGS) \
+	$(shell dpkg-buildflags --get CFLAGS) \
+	-Idebian/libwsutil-dev/usr/include/wireshark
+
+HEADER_CHECK_FLAGS = $(HEADER_CHECK_FLAGS_WSUTIL) \
+	-Idebian/libwireshark-dev/usr/include \
+	-Idebian/libwireshark-dev/usr/include/wireshark \
+	-Idebian/libwireshark-dev/usr/include/libwireshark-dev/epan/dissectors \
+	-Idebian/libwiretap-dev/usr/include/wireshark \
+	-Idebian/libuiqt-plugin-dev/usr/include/wireshark \
+
 override_dh_install:
 	dh_install
-	# check all necessary headers are included
-	$(CC) -c debian/headers-check.c $(shell pkg-config --cflags glib-2.0) $(shell dpkg-buildflags --get CPPFLAGS) $(shell dpkg-buildflags --get CFLAGS) -Idebian/libwireshark-dev/usr/include -Idebian/libwireshark-dev/usr/include/wireshark -Idebian/libwiretap-dev/usr/include/wireshark -Idebian/libwsutil-dev/usr/include/wireshark -o /dev/null
+	# check that wsutil headers can be compiled on their own
+	find debian/libwsutil-dev/usr/include -type f -not -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c -S - $(HEADER_CHECK_FLAGS_WSUTIL) -o /dev/null
+	find debian/libwsutil-dev/usr/include -type f -not -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c++ -S - $(HEADER_CHECK_FLAGS_WSUTIL) -o /dev/null
+	# plugin_exports.h is for building plugins, and requires setting WS_BUILD_DLL
+	find debian/libwsutil-dev/usr/include -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c -S - $(HEADER_CHECK_FLAGS) -DWS_BUILD_DLL -o /dev/null
+	find debian/libwsutil-dev/usr/include -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c++ -S - $(HEADER_CHECK_FLAGS) -DWS_BUILD_DLL -o /dev/null
+	# check that all headers can be compiled
+	find debian/*-dev/usr/include -type f -not -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c -S - $(HEADER_CHECK_FLAGS) -o /dev/null
+	find debian/*-dev/usr/include -type f -not -name "plugin_exports.h" | sed 's|.*/include/wireshark/|#include <|;s|$$|>|' | $(CC) -x c++ -S - $(HEADER_CHECK_FLAGS) -o /dev/null
+	# check than #include-ing the most widely used headers compiles
+	$(CC) -c debian/headers-check.c $(HEADER_CHECK_FLAGS) -o /dev/null
 
 override_dh_fixperms:
 	dh_fixperms
 	chmod 644 debian/wireshark-dev/usr/share/pyshared/make-plugin-reg.py \
-		debian/wireshark-dev/usr/share/pyshared/wireshark_be.py \
-		debian/wireshark-dev/usr/share/pyshared/wireshark_gen.py
+		debian/wireshark-dev/usr/share/pyshared/idl2wrs_be.py \
+		debian/wireshark-dev/usr/share/pyshared/idl2wrs_gen.py
 
 override_dh_auto_test:
 ifeq (,$(filter $(DEB_BUILD_OPTIONS),nocheck))
@@ -96,6 +117,7 @@ endif
 override_dh_makeshlibs:
 	for package in $$(grep 'Package: lib.*[0-9]$$' debian/control  | cut -d' ' -f2); do \
 		lib=$${package%%[0-9]*};\
+		lib=$$(echo "$$lib" | sed 's/-/_/');\
 		major=$${package##*[a-z]}; \
 		echo "$$lib $$major $$package (= $(DEB_VERSION))"  > debian/$$package.shlibs; \
 	done

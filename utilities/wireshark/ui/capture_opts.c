@@ -26,6 +26,7 @@
 #include <ws_exit_codes.h>
 
 #include "capture_opts.h"
+#include <wsutil/process_lookup.h>
 #include "ringbuffer.h"
 
 #include <wiretap/wtap.h> /* For WTAP_MAX_PACKET_SIZE_STANDARD */
@@ -35,6 +36,12 @@
 #include <wsutil/file_util.h>
 #include <wsutil/ws_pipe.h>
 #include <wsutil/ws_assert.h>
+#include <wsutil/file_compressed.h>
+#include <wsutil/filesystem.h>
+
+#include <epan/prefs.h>
+
+#include <app/application_flavor.h>
 
 #ifdef _WIN32
 #include <wsutil/win32-utils.h>
@@ -45,6 +52,14 @@
 
 static bool capture_opts_output_to_pipe(const char *save_file, bool *is_pipe);
 
+static void message_queue_free_cb(void *data)
+{
+    /* We could make the messages on the queue more structured, for example
+     * separate the indicator from the payload and calculate the length for
+     * the caller. */
+    GBytes *msg = (GBytes*)data;
+    g_bytes_unref(msg);
+}
 
 void
 capture_opts_init(capture_options *capture_opts, GList *(*get_iface_list)(int *, char **))
@@ -59,6 +74,7 @@ capture_opts_init(capture_options *capture_opts, GList *(*get_iface_list)(int *,
     capture_opts->default_options.hardware        = NULL;
     capture_opts->default_options.display_name    = NULL;
     capture_opts->default_options.cfilter         = NULL;
+    capture_opts->default_options.optimize        = 1;
     capture_opts->default_options.has_snaplen     = false;
     capture_opts->default_options.snaplen         = WTAP_MAX_PACKET_SIZE_STANDARD;
     capture_opts->default_options.linktype        = -1; /* use interface default */
@@ -79,6 +95,8 @@ capture_opts_init(capture_options *capture_opts, GList *(*get_iface_list)(int *,
 #endif
     capture_opts->default_options.extcap_control_in  = NULL;
     capture_opts->default_options.extcap_control_out = NULL;
+    capture_opts->default_options.extcap_control_in_watch = 0;
+    capture_opts->default_options.extcap_control_out_watch = 0;
     capture_opts->default_options.buffer_size     = DEFAULT_CAPTURE_BUFFER_SIZE;
     capture_opts->default_options.monitor_mode    = false;
 #ifdef HAVE_PCAP_REMOTE
@@ -101,6 +119,7 @@ capture_opts_init(capture_options *capture_opts, GList *(*get_iface_list)(int *,
     capture_opts->save_file                       = NULL;
     capture_opts->group_read_access               = false;
     capture_opts->use_pcapng                      = true;             /* Save as pcapng by default */
+    capture_opts->process_info                    = PROCESS_INFO_NONE;
     capture_opts->update_interval                 = DEFAULT_UPDATE_INTERVAL; /* 100 ms */
     capture_opts->real_time_mode                  = true;
     capture_opts->show_info                       = true;
@@ -136,6 +155,7 @@ capture_opts_init(capture_options *capture_opts, GList *(*get_iface_list)(int *,
     capture_opts->print_file_names                = false;
     capture_opts->print_name_to                   = NULL;
     capture_opts->temp_dir                        = NULL;
+    capture_opts->temp_dir_from_prefs             = false;
     capture_opts->compress_type                   = NULL;
     capture_opts->closed_msg                      = NULL;
     capture_opts->extcap_terminate_id             = 0;
@@ -197,7 +217,7 @@ capture_opts_log(const char *log_domain, enum ws_log_level log_level, capture_op
         ws_log(log_domain, log_level, "Interface description[%02d] : %s", i, interface_opts->descr ? interface_opts->descr : "(unspecified)");
         ws_log(log_domain, log_level, "Interface vendor description[%02d] : %s", i, interface_opts->hardware ? interface_opts->hardware : "(unspecified)");
         ws_log(log_domain, log_level, "Display name[%02d]: %s", i, interface_opts->display_name ? interface_opts->display_name : "(unspecified)");
-        ws_log(log_domain, log_level, "Capture filter[%02d]  : %s", i, interface_opts->cfilter ? interface_opts->cfilter : "(unspecified)");
+        ws_log(log_domain, log_level, "Capture filter[%02d]  : %s%s", i, interface_opts->cfilter ? interface_opts->cfilter : "(unspecified)", interface_opts->optimize ? "" : " (unoptimized)");
         ws_log(log_domain, log_level, "Snap length[%02d] (%u) : %d", i, interface_opts->has_snaplen, interface_opts->snaplen);
         ws_log(log_domain, log_level, "Link Type[%02d]       : %d", i, interface_opts->linktype);
         ws_log(log_domain, log_level, "Promiscuous Mode[%02d]: %s", i, interface_opts->promisc_mode?"TRUE":"FALSE");
@@ -233,11 +253,12 @@ capture_opts_log(const char *log_domain, enum ws_log_level log_level, capture_op
 #endif
         ws_log(log_domain, log_level, "Timestamp type [%02d] : %s", i, interface_opts->timestamp_type);
     }
+
     ws_log(log_domain, log_level, "Interface name[df]  : %s", capture_opts->default_options.name ? capture_opts->default_options.name : "(unspecified)");
     ws_log(log_domain, log_level, "Interface Descr[df] : %s", capture_opts->default_options.descr ? capture_opts->default_options.descr : "(unspecified)");
     ws_log(log_domain, log_level, "Interface Hardware Descr[df] : %s", capture_opts->default_options.hardware ? capture_opts->default_options.hardware : "(unspecified)");
     ws_log(log_domain, log_level, "Interface display name[df] : %s", capture_opts->default_options.display_name ? capture_opts->default_options.display_name : "(unspecified)");
-    ws_log(log_domain, log_level, "Capture filter[df]  : %s", capture_opts->default_options.cfilter ? capture_opts->default_options.cfilter : "(unspecified)");
+    ws_log(log_domain, log_level, "Capture filter[df]  : %s%s", capture_opts->default_options.cfilter ? capture_opts->default_options.cfilter : "(unspecified)", capture_opts->default_options.optimize ? "" : " (unoptimized)");
     ws_log(log_domain, log_level, "Snap length[df] (%u) : %d", capture_opts->default_options.has_snaplen, capture_opts->default_options.snaplen);
     ws_log(log_domain, log_level, "Link Type[df]       : %d", capture_opts->default_options.linktype);
     ws_log(log_domain, log_level, "Promiscuous Mode[df]: %s", capture_opts->default_options.promisc_mode?"TRUE":"FALSE");
@@ -275,6 +296,9 @@ capture_opts_log(const char *log_domain, enum ws_log_level log_level, capture_op
     ws_log(log_domain, log_level, "SaveFile            : %s", (capture_opts->save_file) ? capture_opts->save_file : "");
     ws_log(log_domain, log_level, "GroupReadAccess     : %u", capture_opts->group_read_access);
     ws_log(log_domain, log_level, "Fileformat          : %s", (capture_opts->use_pcapng) ? "PCAPNG" : "PCAP");
+    ws_log(log_domain, log_level, "ProcessInfo         : %s",
+           capture_opts->process_info == PROCESS_INFO_FULL ? "full" :
+           capture_opts->process_info == PROCESS_INFO_BASIC ? "basic" : "none");
     ws_log(log_domain, log_level, "UpdateInterval      : %u (ms)", capture_opts->update_interval);
     ws_log(log_domain, log_level, "RealTimeMode        : %u", capture_opts->real_time_mode);
     ws_log(log_domain, log_level, "ShowInfo            : %u", capture_opts->show_info);
@@ -292,7 +316,19 @@ capture_opts_log(const char *log_domain, enum ws_log_level log_level, capture_op
     ws_log(log_domain, log_level, "AutostopWrittenPackets (%u) : %u", capture_opts->has_autostop_written_packets, capture_opts->autostop_written_packets);
     ws_log(log_domain, log_level, "AutostopFilesize(%u) : %u (KB)", capture_opts->has_autostop_filesize, capture_opts->autostop_filesize);
     ws_log(log_domain, log_level, "AutostopDuration(%u) : %.3f", capture_opts->has_autostop_duration, capture_opts->autostop_duration);
-    ws_log(log_domain, log_level, "Temporary Directory  : %s", capture_opts->temp_dir && capture_opts->temp_dir[0] ? capture_opts->temp_dir : g_get_tmp_dir());
+    ws_log(log_domain, log_level, "Temporary Directory  : %s", capture_opts_get_temp_dir(capture_opts));
+}
+
+const char *
+capture_opts_get_temp_dir(const capture_options *capture_opts)
+{
+    if (capture_opts != NULL && capture_opts->temp_dir != NULL &&
+        capture_opts->temp_dir[0] != '\0') {
+        return capture_opts->temp_dir;
+    }
+
+    /* Nothing was asked for, so let the system decide. */
+    return g_get_tmp_dir();
 }
 
 /*
@@ -357,7 +393,7 @@ set_autostop_criterion(capture_options *capture_opts, const char *autostoparg)
     return true;
 }
 
-static bool get_filter_arguments(capture_options* capture_opts, const char* arg)
+static bool get_filter_arguments(const char* app_env_var_prefix, capture_options* capture_opts, const char* arg)
 {
     char* colonp = NULL;
     char* val;
@@ -375,7 +411,7 @@ static bool get_filter_arguments(capture_options* capture_opts, const char* arg)
                 GList* filterItem;
 
                 if (capture_opts->capture_filters_list == NULL)
-                    capture_opts->capture_filters_list = ws_filter_list_read(CFILTER_LIST);
+                    capture_opts->capture_filters_list = ws_filter_list_read(CFILTER_LIST, app_env_var_prefix);
                 filterItem = capture_opts->capture_filters_list->list;
                 while (filterItem != NULL) {
                     filter_def* filterDef;
@@ -633,15 +669,16 @@ capture_opts_generate_display_name(const char *friendly_name,
 #endif
 
 static void
-fill_in_interface_opts_defaults(interface_options *interface_opts, const capture_options *capture_opts)
+fill_in_interface_opts_defaults(interface_options *interface_opts, const interface_options* if_from_capture_opts)
 {
 
-    interface_opts->cfilter = g_strdup(capture_opts->default_options.cfilter);
-    interface_opts->snaplen = capture_opts->default_options.snaplen;
-    interface_opts->has_snaplen = capture_opts->default_options.has_snaplen;
-    interface_opts->linktype = capture_opts->default_options.linktype;
-    interface_opts->promisc_mode = capture_opts->default_options.promisc_mode;
-    interface_opts->extcap_fifo = g_strdup(capture_opts->default_options.extcap_fifo);
+    interface_opts->cfilter = g_strdup(if_from_capture_opts->cfilter);
+    interface_opts->optimize = if_from_capture_opts->optimize;
+    interface_opts->snaplen = if_from_capture_opts->snaplen;
+    interface_opts->has_snaplen = if_from_capture_opts->has_snaplen;
+    interface_opts->linktype = if_from_capture_opts->linktype;
+    interface_opts->promisc_mode = if_from_capture_opts->promisc_mode;
+    interface_opts->extcap_fifo = g_strdup(if_from_capture_opts->extcap_fifo);
     interface_opts->extcap_args = NULL;
     interface_opts->extcap_pid = WS_INVALID_PID;
     interface_opts->extcap_pipedata = NULL;
@@ -653,26 +690,29 @@ fill_in_interface_opts_defaults(interface_options *interface_opts, const capture
     interface_opts->extcap_control_in_h = INVALID_HANDLE_VALUE;
     interface_opts->extcap_control_out_h = INVALID_HANDLE_VALUE;
 #endif
-    interface_opts->extcap_control_in = g_strdup(capture_opts->default_options.extcap_control_in);
-    interface_opts->extcap_control_out = g_strdup(capture_opts->default_options.extcap_control_out);
-    interface_opts->buffer_size = capture_opts->default_options.buffer_size;
-    interface_opts->monitor_mode = capture_opts->default_options.monitor_mode;
+    interface_opts->extcap_control_in = g_strdup(if_from_capture_opts->extcap_control_in);
+    interface_opts->extcap_control_out = g_strdup(if_from_capture_opts->extcap_control_out);
+    interface_opts->extcap_control_in_watch = 0;
+    interface_opts->extcap_control_out_watch = 0;
+    interface_opts->extcap_control_out_q = g_async_queue_new_full(message_queue_free_cb);
+    interface_opts->buffer_size = if_from_capture_opts->buffer_size;
+    interface_opts->monitor_mode = if_from_capture_opts->monitor_mode;
 #ifdef HAVE_PCAP_REMOTE
-    interface_opts->src_type = capture_opts->default_options.src_type;
-    interface_opts->remote_host = g_strdup(capture_opts->default_options.remote_host);
-    interface_opts->remote_port = g_strdup(capture_opts->default_options.remote_port);
-    interface_opts->auth_type = capture_opts->default_options.auth_type;
-    interface_opts->auth_username = g_strdup(capture_opts->default_options.auth_username);
-    interface_opts->auth_password = g_strdup(capture_opts->default_options.auth_password);
-    interface_opts->datatx_udp = capture_opts->default_options.datatx_udp;
-    interface_opts->nocap_rpcap = capture_opts->default_options.nocap_rpcap;
-    interface_opts->nocap_local = capture_opts->default_options.nocap_local;
+    interface_opts->src_type = if_from_capture_opts->src_type;
+    interface_opts->remote_host = g_strdup(if_from_capture_opts->remote_host);
+    interface_opts->remote_port = g_strdup(if_from_capture_opts->remote_port);
+    interface_opts->auth_type = if_from_capture_opts->auth_type;
+    interface_opts->auth_username = g_strdup(if_from_capture_opts->auth_username);
+    interface_opts->auth_password = g_strdup(if_from_capture_opts->auth_password);
+    interface_opts->datatx_udp = if_from_capture_opts->datatx_udp;
+    interface_opts->nocap_rpcap = if_from_capture_opts->nocap_rpcap;
+    interface_opts->nocap_local = if_from_capture_opts->nocap_local;
 #endif
 #ifdef HAVE_PCAP_SETSAMPLING
-    interface_opts->sampling_method = capture_opts->default_options.sampling_method;
-    interface_opts->sampling_param  = capture_opts->default_options.sampling_param;
+    interface_opts->sampling_method = if_from_capture_opts->sampling_method;
+    interface_opts->sampling_param  = if_from_capture_opts->sampling_param;
 #endif
-    interface_opts->timestamp_type  = g_strdup(capture_opts->default_options.timestamp_type);
+    interface_opts->timestamp_type  = g_strdup(if_from_capture_opts->timestamp_type);
 }
 
 static void
@@ -961,7 +1001,7 @@ capture_opts_add_iface_opt(capture_options *capture_opts, const char *optarg_str
         free_interface_list(if_list);
     }
 
-    fill_in_interface_opts_defaults(&interface_opts, capture_opts);
+    fill_in_interface_opts_defaults(&interface_opts, &capture_opts->default_options);
 
     g_array_append_val(capture_opts->ifaces, interface_opts);
 
@@ -970,7 +1010,7 @@ capture_opts_add_iface_opt(capture_options *capture_opts, const char *optarg_str
 
 
 int
-capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_str_p)
+capture_opts_add_opt(const char* app_env_var_prefix, capture_options *capture_opts, int opt, const char *optarg_str_p)
 {
     int status, snaplen;
     ws_statb64 fstat;
@@ -1018,7 +1058,7 @@ capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_
             return 1;
         break;
     case 'f':        /* capture filter */
-        get_filter_arguments(capture_opts, optarg_str_p);
+        get_filter_arguments(app_env_var_prefix, capture_opts, optarg_str_p);
         break;
     case 'F':        /* capture file type */
         if (get_file_type_argument(capture_opts, optarg_str_p) == false) {
@@ -1042,6 +1082,16 @@ capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_
         } else {
             g_free(capture_opts->default_options.timestamp_type);
             capture_opts->default_options.timestamp_type = g_strdup(optarg_str_p);
+        }
+        break;
+    case LONGOPT_NO_OPTIMIZE:        /* Don't optimize capture filter */
+        if (capture_opts->ifaces->len > 0) {
+            interface_options *interface_opts;
+
+            interface_opts = &g_array_index(capture_opts->ifaces, interface_options, capture_opts->ifaces->len - 1);
+            interface_opts->optimize = 0;
+        } else {
+            capture_opts->default_options.optimize = 0;
         }
         break;
     case 'i':        /* Use interface x */
@@ -1175,11 +1225,11 @@ capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_
             cmdarg_err("--compress-type can be set only once");
             return 1;
         }
-        if (!wtap_can_write_compression_type(wtap_name_to_compression_type(optarg_str_p))) {
+        if (!ws_can_write_compression_type(ws_name_to_compression_type(optarg_str_p))) {
             cmdarg_err("\"%s\" isn't a valid output compression mode", optarg_str_p);
             cmdarg_err("The available output compression type(s) are:");
             GSList *output_compression_types;
-            output_compression_types = wtap_get_all_output_compression_type_names_list();
+            output_compression_types = ws_get_all_output_compression_type_names_list();
             for (GSList *compression_type = output_compression_types;
                 compression_type != NULL;
                 compression_type = g_slist_next(compression_type)) {
@@ -1192,7 +1242,10 @@ capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_
         capture_opts->compress_type = g_strdup(optarg_str_p);
         break;
     case LONGOPT_CAPTURE_TMPDIR:  /* capture temporary directory */
-        if (capture_opts->temp_dir) {
+        /* A directory that only came from the preferences is a default,
+           not a choice the user made on this command line, so it does not
+           count as the one permitted use of the option. */
+        if (capture_opts->temp_dir && !capture_opts->temp_dir_from_prefs) {
             cmdarg_err("--temp-dir can be set only once");
             return 1;
         }
@@ -1213,10 +1266,27 @@ capture_opts_add_opt(capture_options *capture_opts, int opt, const char *optarg_
             return 1;
         }
 #endif /* S_IRWXU */
+        g_free(capture_opts->temp_dir);
         capture_opts->temp_dir = g_strdup(optarg_str_p);
+        capture_opts->temp_dir_from_prefs = false;
+        break;
+    case LONGOPT_PROCESS_INFO:  /* record the processes that sent or received each packet */
+        if (!ws_process_lookup_supported()) {
+            cmdarg_err("Recording process information is not supported on this platform");
+            return 1;
+        }
+        /* The argument is optional: --process-info[=basic|full]. */
+        if (optarg_str_p == NULL || strcmp(optarg_str_p, "basic") == 0) {
+            capture_opts->process_info = PROCESS_INFO_BASIC;
+        } else if (strcmp(optarg_str_p, "full") == 0) {
+            capture_opts->process_info = PROCESS_INFO_FULL;
+        } else {
+            cmdarg_err("Invalid argument \"%s\" to --process-info; it must be \"basic\" or \"full\"", optarg_str_p);
+            return 1;
+        }
         break;
     case LONGOPT_UPDATE_INTERVAL:  /* capture update interval */
-        if (!get_natural_int(optarg_str_p, "update interval", &capture_opts->update_interval))
+        if (!get_uint32(optarg_str_p, "update interval", &capture_opts->update_interval))
             return false;
         break;
     default:
@@ -1387,33 +1457,9 @@ capture_opts_default_iface_if_necessary(capture_options *capture_opts,
     return capture_opts_add_iface_opt(capture_opts, "1");
 }
 
-#ifndef S_IFIFO
-#define S_IFIFO _S_IFIFO
-#endif
-#ifndef S_ISFIFO
-#define S_ISFIFO(mode)  (((mode) & S_IFMT) == S_IFIFO)
-#endif
-
-/* copied from filesystem.c */
-static int
-capture_opts_test_for_fifo(const char *path)
-{
-    ws_statb64 statb;
-
-    if (ws_stat64(path, &statb) < 0)
-        return errno;
-
-    if (S_ISFIFO(statb.st_mode))
-        return ESPIPE;
-    else
-        return 0;
-}
-
 static bool
 capture_opts_output_to_pipe(const char *save_file, bool *is_pipe)
 {
-    int err;
-
     *is_pipe = false;
 
     if (save_file != NULL) {
@@ -1426,8 +1472,19 @@ capture_opts_output_to_pipe(const char *save_file, bool *is_pipe)
                Least Astonishment. */
             *is_pipe = true;
         } else {
+#ifdef _WIN32
+            /* On Windows, check to see if the name is in the reserved namespace
+             * for Named Pipes. Actually calling _stat connects and disconnects
+             * from the named pipe, if it exists, forcing the pipe server to
+             * handle that with DisconnectNamedPipe. If it doesn't exist, we'll
+             * fail appropriately later. Creating an ordinary file is not an
+             * option if the name is in the reserved namespace, unlike UN*X.
+             *
+             * XXX - Should this logic just be in test_for_fifo()? */
+            *is_pipe = win32_is_pipe_name(save_file);
+#else
             /* not writing to stdout, test for a FIFO (aka named pipe) */
-            err = capture_opts_test_for_fifo(save_file);
+            int err = test_for_fifo(save_file);
             switch (err) {
 
             case ENOENT:      /* it doesn't exist, so we'll be creating it,
@@ -1443,6 +1500,7 @@ capture_opts_output_to_pipe(const char *save_file, bool *is_pipe)
                 break;          /* ignore: later attempt to open */
                 /*  will generate a nice msg     */
             }
+#endif /* _WIN32 */
         }
     }
 
@@ -1473,6 +1531,7 @@ interface_opts_free(interface_options *interface_opts)
         g_string_free(interface_opts->extcap_stderr, TRUE);
     g_free(interface_opts->extcap_control_in);
     g_free(interface_opts->extcap_control_out);
+    g_async_queue_unref(interface_opts->extcap_control_out_q);
 #ifdef HAVE_PCAP_REMOTE
     if (interface_opts->src_type == CAPTURE_IFREMOTE) {
         g_free(interface_opts->remote_host);
@@ -1501,7 +1560,7 @@ interface_opts_from_if_info(capture_options *capture_opts, const if_info_t *if_i
     interface_options *interface_opts = g_new(interface_options, 1);
 
     fill_in_interface_opts_from_ifinfo(interface_opts, if_info);
-    fill_in_interface_opts_defaults(interface_opts, capture_opts);
+    fill_in_interface_opts_defaults(interface_opts, &capture_opts->default_options);
 
     return interface_opts;
 }
@@ -1532,6 +1591,7 @@ collect_ifaces(capture_options *capture_opts)
             interface_opts.display_name = g_strdup(device->display_name);
             interface_opts.linktype = device->active_dlt;
             interface_opts.cfilter = g_strdup(device->cfilter);
+            interface_opts.optimize = device->optimize;
             interface_opts.timestamp_type = g_strdup(device->timestamp_type);
             interface_opts.snaplen = device->snaplen;
             interface_opts.has_snaplen = device->has_snaplen;
@@ -1553,6 +1613,9 @@ collect_ifaces(capture_options *capture_opts)
 #endif
             interface_opts.extcap_control_in = NULL;
             interface_opts.extcap_control_out = NULL;
+            interface_opts.extcap_control_in_watch = 0;
+            interface_opts.extcap_control_out_watch = 0;
+            interface_opts.extcap_control_out_q = g_async_queue_new_full(message_queue_free_cb);
             interface_opts.buffer_size =  device->buffer;
             interface_opts.monitor_mode = device->monitor_mode_enabled;
 #ifdef HAVE_PCAP_REMOTE

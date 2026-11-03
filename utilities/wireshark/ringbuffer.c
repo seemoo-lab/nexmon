@@ -54,6 +54,7 @@
 #include "ringbuffer.h"
 #include <wsutil/array.h>
 #include <wsutil/file_util.h>
+#include <wsutil/file_compressed.h>
 
 /* Ringbuffer file structure */
 typedef struct _rb_file {
@@ -73,7 +74,7 @@ typedef struct _ringbuf_data {
     bool          unlimited;           /**< true if unlimited number of files */
 
     int           fd;                  /**< Current ringbuffer file descriptor */
-    pcapio_writer* pdh;
+    ws_cwstream*  pdh;
     bool          group_read_access;   /**< true if files need to be opened with group read access */
     FILE         *name_h;              /**< write names of completed files to this handle */
     const char   *compress_type;       /**< compress type */
@@ -185,7 +186,7 @@ ringbuf_init(const char *capfile_name, unsigned num_files, bool group_read_acces
         /* Is the suffix a compression type extension? (XXX - Should
          * we only check this if compressing, and only for the compression
          * type used?) */
-        GSList *compression_type_extensions = wtap_get_all_compression_type_extensions_list();
+        GSList *compression_type_extensions = ws_get_all_compression_type_extensions_list();
         for (GSList *compression_type_extension = compression_type_extensions;
             compression_type_extension != NULL;
             compression_type_extension = g_slist_next(compression_type_extension)) {
@@ -288,10 +289,10 @@ ringbuf_current_filename(void)
 /*
  * Calls ws_fdopen() for the current ringbuffer file
  */
-pcapio_writer*
-ringbuf_init_libpcap_fdopen(int *err)
+ws_cwstream*
+ringbuf_init_fdopen(int *err)
 {
-    rb_data.pdh = writecap_fdopen(rb_data.fd, wtap_name_to_compression_type(rb_data.compress_type), err);
+    rb_data.pdh = ws_cwstream_fdopen(rb_data.fd, ws_name_to_compression_type(rb_data.compress_type), err);
 
     return rb_data.pdh;
 }
@@ -300,14 +301,14 @@ ringbuf_init_libpcap_fdopen(int *err)
  * Switches to the next ringbuffer file
  */
 bool
-ringbuf_switch_file(pcapio_writer* *pdh, char **save_file, int *save_file_fd, int *err)
+ringbuf_switch_file(ws_cwstream* *pdh, char **save_file, int *save_file_fd, int *err)
 {
     int     next_file_index;
     rb_file *next_rfile = NULL;
 
     /* close current file */
 
-    if (!writecap_close(rb_data.pdh, err)) {
+    if (!ws_cwstream_close(rb_data.pdh, err)) {
         ws_close(rb_data.fd);  /* XXX - the above should have closed this already */
         rb_data.pdh = NULL;    /* it's still closed, we just got an error while closing */
         rb_data.fd = -1;
@@ -332,7 +333,7 @@ ringbuf_switch_file(pcapio_writer* *pdh, char **save_file, int *save_file_fd, in
         return false;
     }
 
-    if (ringbuf_init_libpcap_fdopen(err) == NULL) {
+    if (ringbuf_init_fdopen(err) == NULL) {
         return false;
     }
 
@@ -348,13 +349,13 @@ ringbuf_switch_file(pcapio_writer* *pdh, char **save_file, int *save_file_fd, in
  * Calls fclose() for the current ringbuffer file
  */
 bool
-ringbuf_libpcap_dump_close(char **save_file, int *err)
+ringbuf_dump_close(char **save_file, int *err)
 {
     bool      ret_val = true;
 
     /* close current file, if it's open */
     if (rb_data.pdh != NULL) {
-        if (!writecap_close(rb_data.pdh, err)) {
+        if (!ws_cwstream_close(rb_data.pdh, err)) {
             ws_close(rb_data.fd);
             ret_val = false;
         }
@@ -412,20 +413,10 @@ ringbuf_error_cleanup(void)
 {
     unsigned int i;
 
-    /* try to close via wtap */
+    /* close output stream if it's still open */
     if (rb_data.pdh != NULL) {
-        /*
-         * XXX - if fclose() is guaranteed to close the underlying
-         * descriptor, which both POSIX and the Windows documentation
-         * on learn.microsoft.com say it is, there's no reason why
-         * the FD for rb_data.pdh will still be open, so checking
-         * the return value and only setting rb_data.fd to -1 if
-         * writecap_close()  succeeds shouldn't be necessary -
-         * just set it unconditionally.
-         */
-        if (writecap_close(rb_data.pdh, NULL)) {
-            rb_data.fd = -1;
-        }
+        ws_cwstream_close_after_error(rb_data.pdh);
+        rb_data.fd = -1;  /* the above closes the associated fd */
         rb_data.pdh = NULL;
     }
 

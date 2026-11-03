@@ -1492,8 +1492,7 @@ dissect_mpls_echo_tlv_ilso(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
     uint32_t    label;
     uint8_t     exp, bos, ttl;
 
-    ti      = proto_tree_add_item(tree, hf_mpls_echo_tlv_ilso_addr_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    type    = tvb_get_uint8(tvb, offset);
+    ti      = proto_tree_add_item_ret_uint8(tree, hf_mpls_echo_tlv_ilso_addr_type, tvb, offset, 1, ENC_BIG_ENDIAN, &type);
     offset += 1;
     rem    -= 1;
 

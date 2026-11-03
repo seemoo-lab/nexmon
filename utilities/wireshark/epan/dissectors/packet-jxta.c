@@ -18,7 +18,6 @@
  */
 
 #include "config.h"
-
 #define WS_LOG_DOMAIN "jxta"
 
 #include <epan/packet.h>
@@ -628,9 +627,9 @@ static int dissect_jxta_stream(tvbuff_t * tvb, packet_info * pinfo, proto_tree *
         processed = dissect_jxta_welcome(tvb, pinfo, jxta_tree, welcome_addr, initiator);
     } else {
         /* Somewhere in the middle of a JXTA stream connection */
-        int64_t content_length = INT64_C(-1);
+        uint64_t content_length = UINT64_MAX;
         char *content_type = NULL;
-        int headers_len = dissect_jxta_message_framing(tvb, pinfo, NULL, (uint64_t*) &content_length, &content_type);
+        int headers_len = dissect_jxta_message_framing(tvb, pinfo, NULL, &content_length, &content_type);
 
         if ((0 == headers_len) || (NULL == content_type) || (content_length <= 0) || (content_length > UINT_MAX)) {
             /** Buffer did not begin with valid framing headers */
@@ -792,11 +791,12 @@ static conversation_t *get_peer_conversation(packet_info * pinfo, jxta_stream_co
 *           the packet was not recognized as a JXTA packet and negative if the
 *           dissector needs more bytes in order to process a PDU.
 **/
-static int dissect_jxta_welcome(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, address * found_addr, bool initiator)
+static int
+dissect_jxta_welcome(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, address * found_addr, bool initiator)
 {
     unsigned offset = 0;
-    int afterwelcome;
-    int first_linelen;
+    unsigned afterwelcome;
+    unsigned first_linelen;
     unsigned available = tvb_reported_length_remaining(tvb, offset);
     char **tokens = NULL;
 
@@ -809,9 +809,7 @@ static int dissect_jxta_welcome(tvbuff_t * tvb, packet_info * pinfo, proto_tree 
         return 0;
     }
 
-    first_linelen = tvb_find_line_end(tvb, offset, -1, &afterwelcome, gDESEGMENT && pinfo->can_desegment);
-
-    if (-1 == first_linelen) {
+    if (!tvb_find_line_end_remaining(tvb, offset, &first_linelen, &afterwelcome)) {
         if (available > 4096) {
             /* it's too far too be reasonable */
             return 0;
@@ -828,7 +826,7 @@ static int dissect_jxta_welcome(tvbuff_t * tvb, packet_info * pinfo, proto_tree 
     col_set_str(pinfo->cinfo, COL_INFO, "Welcome");
 
     {
-        char *welcomeline = tvb_get_string_enc(pinfo->pool, tvb, offset, first_linelen, ENC_ASCII);
+        char *welcomeline = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, first_linelen, ENC_ASCII);
         char **current_token;
         unsigned token_offset = offset;
         proto_item *jxta_welcome_tree_item = NULL;
@@ -1053,7 +1051,7 @@ static int dissect_jxta_message_framing(tvbuff_t * tvb, packet_info * pinfo, pro
 
         if (content_type && (sizeof("content-type") - 1) == headername_len) {
             if (0 == tvb_strncaseeql(tvb, headername_offset, "content-type", sizeof("content-type") - 1)) {
-                *content_type = tvb_get_string_enc(pinfo->pool, tvb, headervalue_offset, headervalue_len, ENC_ASCII);
+                *content_type = (char*)tvb_get_string_enc(pinfo->pool, tvb, headervalue_offset, headervalue_len, ENC_ASCII);
             }
         }
 
@@ -1412,7 +1410,7 @@ static int dissect_jxta_message(tvbuff_t * tvb, packet_info * pinfo, proto_tree 
         for (each_name = 0; each_name < msg_names_count; each_name++) {
             uint16_t name_len = tvb_get_ntohs(tvb, tree_offset);
 
-            names_table[2 + each_name] = tvb_get_string_enc(pinfo->pool, tvb, tree_offset + 2, name_len, ENC_ASCII);
+            names_table[2 + each_name] = (char*)tvb_get_string_enc(pinfo->pool, tvb, tree_offset + 2, name_len, ENC_ASCII);
             proto_tree_add_item(jxta_msg_tree, hf_jxta_message_names_name, tvb, tree_offset, 2, ENC_ASCII|ENC_BIG_ENDIAN);
             tree_offset += 2 + name_len;
         }
@@ -1665,7 +1663,7 @@ static int dissect_jxta_message_element_1(tvbuff_t * tvb, packet_info * pinfo, p
         proto_tree_add_item(jxta_elem_tree, hf_jxta_element_type, tvb, tree_offset, 2, ENC_ASCII|ENC_BIG_ENDIAN);
         tree_offset += 2;
 
-        mediatype = tvb_get_string_enc(pinfo->pool, tvb, tree_offset, type_len, ENC_ASCII);
+        mediatype = (char*)tvb_get_string_enc(pinfo->pool, tvb, tree_offset, type_len, ENC_ASCII);
 
         tree_offset += type_len;
     }
@@ -1678,8 +1676,7 @@ static int dissect_jxta_message_element_1(tvbuff_t * tvb, packet_info * pinfo, p
     }
 
     /* content */
-    content_len = tvb_get_ntohl(tvb, tree_offset);
-    proto_tree_add_item(jxta_elem_tree, hf_jxta_element_content_len, tvb, tree_offset, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(jxta_elem_tree, hf_jxta_element_content_len, tvb, tree_offset, 4, ENC_BIG_ENDIAN, &content_len);
     tree_offset += 4;
 
     element_content_tvb = tvb_new_subset_length(tvb, tree_offset, content_len);
@@ -1975,8 +1972,7 @@ static int dissect_jxta_message_element_2(tvbuff_t * tvb, packet_info * pinfo, p
 
 
     if ((flags & JXTAMSG2_ELMFLAG_UINT64_LENS) != 0) {
-        content_len = tvb_get_ntoh64(tvb, tree_offset);
-        proto_tree_add_item(jxta_elem_tree, hf_jxta_element_content_len64, tvb, tree_offset, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint64(jxta_elem_tree, hf_jxta_element_content_len64, tvb, tree_offset, 8, ENC_BIG_ENDIAN, &content_len);
         tree_offset += 8;
     } else {
         content_len = tvb_get_ntohl(tvb, tree_offset);

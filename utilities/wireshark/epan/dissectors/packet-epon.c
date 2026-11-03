@@ -10,7 +10,7 @@
  */
 
 /* 2014-04      Philip Rosenberg-Watt <p.rosenberg-watt[at]cablelabs.com>
- *               + EPON preamble with CableLabs DPoE securty byte.
+ *               + EPON preamble with CableLabs DPoE security byte.
  *                 See IEEE 802.3-2012 Section 5, Clause 65 and
  *                 CableLabs DPoE SEC 1.0 specification.
  */
@@ -253,7 +253,7 @@ proto_register_epon(void)
         "Unable to locate SLD or invalid byte sequence: preamble must start with 0xD555", EXPFILL }
     },
     { &ei_epon_dpoe_reserved_bad,
-      { "epon.dpoe.encrypted.expert", PI_MALFORMED, PI_ERROR,
+      { "epon.dpoe.reserved.bad", PI_MALFORMED, PI_ERROR,
         "Bits 7-2 of DPoE security byte must be 010101 in 1G mode.", EXPFILL }
     },
     { &ei_epon_dpoe_bad,

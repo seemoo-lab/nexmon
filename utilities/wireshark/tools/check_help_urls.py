@@ -10,8 +10,8 @@ Go through all user guide help URLs listed in the program
 and confirm these are present in the User's Guide source files.
 '''
 
-from re import search
 from glob import glob
+from re import search
 from sys import exit
 
 found = {}
@@ -35,8 +35,8 @@ for adoc_file in adoc_files:
 
 missing = False
 
-for chapter in found:
-    if not found[chapter]:
+for chapter,val in found.items():
+    if not val:
         if not missing:
             print("The following chapters are missing in the User's Guide:")
             missing = True

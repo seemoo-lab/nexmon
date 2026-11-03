@@ -20,6 +20,7 @@
 /* WSLUA_MODULE Listener Post-Dissection Packet Analysis */
 
 #include "wslua.h"
+#include "wslua_debugger.h"
 
 WSLUA_CLASS_DEFINE(Listener,FAIL_ON_NULL("Listener"));
 /*
@@ -35,6 +36,11 @@ static int tap_packet_cb_error_handler(lua_State* L) {
     char* where =  (lua_pinfo) ?
         wmem_strdup_printf(NULL, "Lua: on packet %i Error during execution of Listener packet callback",lua_pinfo->num) :
         wmem_strdup_printf(NULL, "Lua: Error during execution of Listener packet callback") ;
+
+    if (wslua_debugger_capture_runtime_error(L, error)) {
+        ws_warning("%s:\n%s",where,error);
+        return 0;
+    }
 
     /* show the error the 1st, 3rd, 5th, 9th, 17th, 33th... time it appears to avoid window flooding */
     /* XXX the last series of identical errors won't be shown (the user however gets at least one message) */
@@ -72,6 +78,7 @@ static tap_packet_status lua_tap_packet(void *tapdata, packet_info *pinfo, epan_
     Listener tap = (Listener)tapdata;
     tap_packet_status retval = TAP_PACKET_DONT_REDRAW;
     TreeItem lua_tree_tap;
+    int status;
 
     if (tap->packet_ref == LUA_NOREF) return TAP_PACKET_DONT_REDRAW; /* XXX - report error and return TAP_PACKET_FAILED? */
 
@@ -93,11 +100,12 @@ static tap_packet_status lua_tap_packet(void *tapdata, packet_info *pinfo, epan_
     lua_tree_tap = create_TreeItem(edt->tree, NULL);
     lua_tree = lua_tree_tap;
 
-    switch ( lua_pcall(tap->L,3,1,1) ) {
-        case 0:
-            /* XXX - treat 2 as TAP_PACKET_FAILED? */
-            retval = luaL_optinteger(tap->L,-1,1) == 0 ? TAP_PACKET_DONT_REDRAW : TAP_PACKET_REDRAW;
-            break;
+    status = lua_pcall(tap->L, 3, 1, 1);
+    if (status == LUA_OK) {
+        /* XXX - treat 2 as TAP_PACKET_FAILED? */
+        retval = luaL_optinteger(tap->L,-1,1) == 0 ? TAP_PACKET_DONT_REDRAW : TAP_PACKET_REDRAW;
+    } else if (!wslua_debugger_after_pcall_failure(tap->L)) {
+        switch (status) {
         case LUA_ERRRUN:
             /* XXX - TAP_PACKET_FAILED? */
             break;
@@ -111,6 +119,7 @@ static tap_packet_status lua_tap_packet(void *tapdata, packet_info *pinfo, epan_
         default:
             ws_assert_not_reached();
             break;
+        }
     }
 
     clear_outstanding_Pinfo();
@@ -126,21 +135,26 @@ static tap_packet_status lua_tap_packet(void *tapdata, packet_info *pinfo, epan_
 
 static int tap_reset_cb_error_handler(lua_State* L) {
     const char* error = lua_tostring(L,1);
-    report_failure("Lua: Error during execution of Listener reset callback:\n %s",error);
+    if (wslua_debugger_capture_runtime_error(L, error)) {
+        ws_warning("Lua: Error during execution of Listener reset callback:\n %s",error);
+    } else {
+        report_failure("Lua: Error during execution of Listener reset callback:\n %s",error);
+    }
     return 0;
 }
 
 static void lua_tap_reset(void *tapdata) {
     Listener tap = (Listener)tapdata;
+    int status;
 
     if (tap->reset_ref == LUA_NOREF) return;
 
     lua_pushcfunction(tap->L,tap_reset_cb_error_handler);
     lua_rawgeti(tap->L, LUA_REGISTRYINDEX, tap->reset_ref);
 
-    switch ( lua_pcall(tap->L,0,0,lua_gettop(tap->L)-1) ) {
-        case 0:
-            break;
+    status = lua_pcall(tap->L, 0, 0, lua_gettop(tap->L)-1);
+    if (status != LUA_OK && !wslua_debugger_after_pcall_failure(tap->L)) {
+        switch (status) {
         case LUA_ERRRUN:
             ws_warning("Runtime error while calling a listener's init()");
             break;
@@ -153,28 +167,37 @@ static void lua_tap_reset(void *tapdata) {
         default:
             ws_assert_not_reached();
             break;
+        }
     }
 }
 
 static int tap_draw_cb_error_handler(lua_State* L) {
     const char* error = lua_tostring(L,1);
-    report_failure("Lua: Error during execution of Listener draw callback:\n %s",error);
+    if (wslua_debugger_capture_runtime_error(L, error)) {
+        ws_warning("Lua: Error during execution of Listener draw callback:\n %s",error);
+    } else {
+        report_failure("Lua: Error during execution of Listener draw callback:\n %s",error);
+    }
     return 0;
 }
 
 static void lua_tap_draw(void *tapdata) {
     Listener tap = (Listener)tapdata;
     const char* error;
+    int status;
 
     if (tap->draw_ref == LUA_NOREF) return;
+
+    /* The lua_tap_draw is called asynchronous and must not be called when debugger is paused. */
+    if (wslua_debugger_is_paused())
+        return;
 
     lua_pushcfunction(tap->L,tap_draw_cb_error_handler);
     lua_rawgeti(tap->L, LUA_REGISTRYINDEX, tap->draw_ref);
 
-    switch ( lua_pcall(tap->L,0,0,lua_gettop(tap->L)-1) ) {
-        case 0:
-            /* OK */
-            break;
+    status = lua_pcall(tap->L, 0, 0, lua_gettop(tap->L)-1);
+    if (status != LUA_OK && !wslua_debugger_after_pcall_failure(tap->L)) {
+        switch (status) {
         case LUA_ERRRUN:
             error = lua_tostring(tap->L,-1);
             ws_warning("Runtime error while calling a listener's draw(): %s",error);
@@ -188,6 +211,7 @@ static void lua_tap_draw(void *tapdata) {
         default:
             ws_assert_not_reached();
             break;
+        }
     }
 }
 
@@ -220,12 +244,26 @@ WSLUA_CONSTRUCTOR Listener_new(lua_State* L) {
     Whether to generate all fields.
     The default is `false`.
     Note: This impacts performance. */
+#define WSLUA_OPTARG_Listener_new_LIMIT_TO_DISPLAY_FILTER 4 /*
+    Whether to limit this listener to packets matching the main
+    Wireshark display filter.
+    The default is `false`.
+    When enabled, changing the main display filter causes the tap
+    to use the newly applied display filter and retap the capture.
+    */
 
     const char* tap_type = luaL_optstring(L,WSLUA_OPTARG_Listener_new_TAP,"frame");
     const char* filter = luaL_optstring(L,WSLUA_OPTARG_Listener_new_FILTER,NULL);
     const bool all_fields = wslua_optbool(L, WSLUA_OPTARG_Listener_new_ALLFIELDS, false);
+    const bool limit_to_display_filter = wslua_optbool(L,WSLUA_OPTARG_Listener_new_LIMIT_TO_DISPLAY_FILTER,false);
+
     Listener tap;
     GString* error;
+    tap_flags_t tap_flags = TL_REQUIRES_PROTO_TREE;
+
+    if (limit_to_display_filter) {
+        tap_flags |= TL_LIMIT_TO_DISPLAY_FILTER;
+    }
 
     tap = (Listener)g_malloc(sizeof(struct _wslua_tap));
 
@@ -245,7 +283,7 @@ WSLUA_CONSTRUCTOR Listener_new(lua_State* L) {
      * XXX - do any Lua taps require the columns?  If so, we either need
      * to request them for this tap, or do so if any Lua taps require them.
      */
-    error = register_tap_listener(tap_type, tap, tap->filter, TL_REQUIRES_PROTO_TREE, lua_tap_reset, lua_tap_packet, lua_tap_draw, NULL);
+    error = register_tap_listener(tap_type, tap, tap->filter, tap_flags, lua_tap_reset, lua_tap_packet, lua_tap_draw, NULL);
 
     if (error) {
         g_free(tap->filter);
@@ -319,10 +357,17 @@ WSLUA_METHOD Listener_remove(lua_State* L) {
 }
 
 WSLUA_METAMETHOD Listener__tostring(lua_State* L) {
-    /* Generates a string of debug info for the tap `Listener`. */
+    /* Returns a short label of the form
+       `Listener: <tap_name> filter=<filter> tapinfo=<yes|no>`.
+       Listeners without a display filter show `filter=none`, and
+       the `tapinfo` flag reflects whether a per-packet tapinfo
+       extractor is registered. */
     Listener tap = checkListener(L,1);
 
-    lua_pushfstring(L,"Listener(%s) filter: %s  tapinfo: %s",tap->name, tap->filter ? tap->filter : "NONE", tap->extractor ? "YES": "NO");
+    lua_pushfstring(L, "Listener: %s filter=%s tapinfo=%s",
+                    tap->name ? tap->name : "?",
+                    tap->filter ? tap->filter : "none",
+                    tap->extractor ? "yes" : "no");
 
     return 1;
 }

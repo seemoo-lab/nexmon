@@ -11,18 +11,18 @@
 
 
 /* This code is based on the DOCSIS 1.1 specification available at:
- * http://www.cablelabs.com/wp-content/uploads/specdocs/CM-SP-RFIv1.1-C01-050907.pdf
+ * https://www.cablelabs.com/specifications/radio-frequency-interface-specification
  *
  * This code was updated to include DOCSIS 3.1 specification details available at:
- * http://www.cablelabs.com/wp-content/uploads/specdocs/CM-SP-MULPIv3.1-I09-160602.pdf
+ * https://www.cablelabs.com/specifications/CM-SP-MULPIv3.1
  *
- * Updates are backward compatible with previous DOCSIS spcifications.
+ * Updates are backward compatible with previous DOCSIS specifications.
  *
  * DOCSIS Captures can be facilitated using the Cable Monitor Feature
  * available on Cisco Cable Modem Termination Systems:
  * https://www.cisco.com/c/en/us/td/docs/cable/cmts/config_guide/b_cmts_security_and_cable_monitoring_features/b_cmts_security_and_cable_monitoring_features_chapter_010.html
  *
- * This dissector depends on the presence of a DOCSIS enapsulation type.
+ * This dissector depends on the presence of a DOCSIS encapsulation type.
  * There is no simple way to distinguish DOCSIS Frames from Ethernet frames,
  * since the frames are copied from the RF interface on the CMTS to
  * a Fast Ethernet interface; thus a preference was needed to enable
@@ -44,6 +44,7 @@
 #include <epan/prefs.h>
 #include <epan/reassemble.h>
 #include <epan/addr_resolv.h>
+#include <epan/exceptions.h>
 #include <epan/tfs.h>
 #include <epan/crc16-tvb.h>
 #include <epan/crc32-tvb.h>
@@ -162,7 +163,7 @@ static int hf_docsis_ig;
 static int hf_docsis_encrypted_payload;
 
 static dissector_handle_t docsis_handle;
-static dissector_handle_t eth_withoutfcs_handle;
+static dissector_handle_t eth_maybefcs_handle;
 static dissector_handle_t docsis_mgmt_handle;
 #if 0
 static dissector_table_t docsis_dissector_table;
@@ -170,6 +171,7 @@ static dissector_table_t docsis_dissector_table;
 
 static expert_field ei_docsis_hcs_bad;
 static expert_field ei_docsis_len;
+static expert_field ei_docsis_len_small;
 static expert_field ei_docsis_frag_fcs_bad;
 static expert_field ei_docsis_eh_len;
 
@@ -227,16 +229,6 @@ static const value_string pkt_fcparm_vals[] = {
 static const true_false_string exthdr_tfs = {
   "Extended Header Present",
   "Extended Header Absent"
-};
-
-
-static const value_string local_proto_checksum_vals[] = {
-  { PROTO_CHECKSUM_E_BAD,        "Bad"  },
-  { PROTO_CHECKSUM_E_GOOD,       "Good" },
-  { PROTO_CHECKSUM_E_UNVERIFIED, "Unverified" },
-  { PROTO_CHECKSUM_E_NOT_PRESENT, "Not present" },
-
-  { 0,        NULL }
 };
 
 static const true_false_string qind_tfs = {
@@ -439,8 +431,7 @@ dissect_ehdr (tvbuff_t * tvb, proto_tree * tree, packet_info * pinfo, bool *is_e
         /* Extended EH Element, ignore eh_len */
         proto_tree_add_item(ehdr_tree, hf_docsis_ehx_type, tvb, pos, 1, ENC_NA);
         pos++;
-        proto_tree_add_item(ehdr_tree, hf_docsis_ehx_len, tvb, pos, 1, ENC_NA);
-        len = tvb_get_uint8(tvb, pos);
+        proto_tree_add_item_ret_uint8(ehdr_tree, hf_docsis_ehx_len, tvb, pos, 1, ENC_NA, &len);
         pos++;
         /* FALLTHROUGH */
       default:
@@ -477,7 +468,7 @@ dissect_hcs_field (tvbuff_t * tvb, packet_info * pinfo, proto_tree * docsis_tree
 
 /* Code to Dissect the extended header length / MAC Param field and Length field */
 /* The length field may contain a SID, but this logic is not handled here */
-static void
+static proto_item*
 dissect_exthdr_length_field (tvbuff_t * tvb, packet_info * pinfo, proto_tree * docsis_tree,
                              uint8_t exthdr, uint16_t mac_parm, uint16_t len_sid, uint16_t *payload_length, bool *is_encrypted)
 {
@@ -508,7 +499,7 @@ dissect_exthdr_length_field (tvbuff_t * tvb, packet_info * pinfo, proto_tree * d
       expert_add_info(pinfo, length_item, &ei_docsis_len);
     }
   }
-  return;
+  return length_item;
 }
 
 /* Code to Dissect Encrypted DOCSIS Frames */
@@ -698,7 +689,7 @@ dissect_docsis (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* da
         if(is_encrypted && !docsis_dissect_encrypted_frames)
           dissect_encrypted_frame (next_tvb, pinfo, docsis_tree, fctype, fcparm);
         else
-          call_dissector (eth_withoutfcs_handle, next_tvb, pinfo, docsis_tree);
+          call_dissector (eth_maybefcs_handle, next_tvb, pinfo, docsis_tree);
       }
       break;
     }
@@ -742,7 +733,7 @@ dissect_docsis (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* da
         if(is_encrypted && !docsis_dissect_encrypted_frames)
           dissect_encrypted_frame (next_tvb, pinfo, docsis_tree, fctype, fcparm);
         else
-          call_dissector (eth_withoutfcs_handle, next_tvb, pinfo, docsis_tree);
+          call_dissector (eth_maybefcs_handle, next_tvb, pinfo, docsis_tree);
       }
       break;
     }
@@ -787,22 +778,33 @@ dissect_docsis (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* da
         }
         case FCPARM_FRAG_HDR:
         {
+          proto_item *length_item;
           /* Check if this is a fragmentation header */
           save_fragmented = pinfo->fragmented;
           pinfo->fragmented = true;
 
           /* Dissect Length field for a PDU */
-          dissect_exthdr_length_field (tvb, pinfo, docsis_tree, exthdr, mac_parm, len_sid, &payload_length, &is_encrypted);
+          length_item = dissect_exthdr_length_field (tvb, pinfo, docsis_tree, exthdr, mac_parm, len_sid, &payload_length, &is_encrypted);
+          if (len_sid < 4) {
+            expert_add_info_format(pinfo, length_item, &ei_docsis_len_small, "Len field value is too small to fit fragment FCS");
+            THROW(ReportedBoundsError);
+          }
           /* Dissect Header Check Sequence field for a PDU */
           fcs_correct = dissect_hcs_field (tvb, pinfo, docsis_tree, hdrlen);
           if (fcs_correct)
           {
-            /* Grab the Fragment FCS */
-            uint32_t sent_fcs = tvb_get_ntohl(tvb, (hdrlen + len_sid - 4));
-            uint32_t fcs = crc32_802_tvb(tvb, tvb_captured_length(tvb) - 4);
+            uint32_t fcs = 0;
+            if (!tvb_bytes_exist(tvb, hdrlen, len_sid)) {
+              fcs_correct = false;
+            } else {
+              /* Grab the Fragment FCS */
+              uint32_t sent_fcs = tvb_get_ntohl(tvb, (hdrlen + len_sid - 4));
+              fcs = crc32_802_tvb(tvb, hdrlen + len_sid - 4);
+              fcs_correct = (sent_fcs == fcs);
+            }
 
             /* Only defragment valid frames with a good FCS */
-            if (sent_fcs == fcs)
+            if (fcs_correct)
             {
               fragment_head *frag_msg = NULL;
               frag_msg = fragment_add_seq_check(&docsis_reassembly_table,
@@ -831,18 +833,15 @@ dissect_docsis (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* da
               if(next_tvb)
               {
                 /* By default assume an Ethernet payload */
-              if(is_encrypted && !docsis_dissect_encrypted_frames)
-                dissect_encrypted_frame (next_tvb, pinfo, docsis_tree, fctype, fcparm);
-              else
-                call_dissector (eth_withoutfcs_handle, next_tvb, pinfo, docsis_tree);
+                if(is_encrypted && !docsis_dissect_encrypted_frames)
+                  dissect_encrypted_frame (next_tvb, pinfo, docsis_tree, fctype, fcparm);
+                else
+                  call_dissector (eth_maybefcs_handle, next_tvb, pinfo, docsis_tree);
               } else {
                 /* Otherwise treat as Data */
-                tvbuff_t *payload_tvb = tvb_new_subset_length_caplen(tvb, hdrlen, (len_sid - 4), -1);
+                tvbuff_t *payload_tvb = tvb_new_subset_length(tvb, hdrlen, len_sid - 4);
                 call_data_dissector(payload_tvb, pinfo, docsis_tree);
               }
-            } else {
-              /* Report frames with a bad FCS */
-              expert_add_info(pinfo, ti, &ei_docsis_frag_fcs_bad);
             }
             /* Add the Fragment FCS to the end of the parent tree */
             proto_tree_add_checksum(docsis_tree, tvb, (hdrlen + len_sid - 4), hf_docsis_frag_fcs, hf_docsis_frag_fcs_status, &ei_docsis_frag_fcs_bad, pinfo, fcs, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
@@ -1105,7 +1104,7 @@ proto_register_docsis (void)
     },
     { &hf_docsis_hcs_status,
      { "HCS Status", "docsis.hcs.status",
-       FT_UINT8, BASE_NONE, VALS(local_proto_checksum_vals), 0x0,
+       FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0,
        NULL, HFILL}
     },
     { &hf_docsis_bpi_en,
@@ -1180,7 +1179,7 @@ proto_register_docsis (void)
     },
     { &hf_docsis_frag_fcs_status,
      { "Fragment FCS Status", "docsis.frag.fcs.status",
-       FT_UINT8, BASE_NONE, VALS(local_proto_checksum_vals), 0x0,
+       FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0,
        NULL, HFILL}
     },
     { &hf_docsis_encrypted_payload,
@@ -1193,6 +1192,7 @@ proto_register_docsis (void)
   static ei_register_info ei[] = {
       { &ei_docsis_hcs_bad, { "docsis.hcs_bad", PI_CHECKSUM, PI_ERROR, "Bad header check sequence", EXPFILL }},
       { &ei_docsis_len, { "docsis.len.past_end", PI_MALFORMED, PI_ERROR, "Length field value goes past the end of the payload", EXPFILL }},
+      { &ei_docsis_len_small, { "docsis.len.too_small", PI_MALFORMED, PI_ERROR, "Length field value is too small", EXPFILL }},
       { &ei_docsis_frag_fcs_bad, { "docsis.frag.fcs_bad", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
       { &ei_docsis_eh_len, { "docsis.ehdr.len.past_end", PI_MALFORMED, PI_ERROR, "Extended Header Length Invalid!", EXPFILL }}
   };
@@ -1251,7 +1251,7 @@ proto_reg_handoff_docsis (void)
   hf_docsis_ig = proto_registrar_get_id_byname ("eth.ig");
 
   docsis_mgmt_handle = find_dissector ("docsis_mgmt");
-  eth_withoutfcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_docsis);
+  eth_maybefcs_handle = find_dissector_add_dependency("eth_maybefcs", proto_docsis);
 }
 
 /*

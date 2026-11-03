@@ -41,7 +41,7 @@ dissect_ttag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     proto_tree *ttag_tree;
     proto_item *ti;
-    int offset = 0;
+    unsigned offset = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "TTAG");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -103,9 +103,9 @@ proto_register_ttag(void)
 void
 proto_reg_handoff_ttag(void)
 {
-    ethertype_handle = find_dissector_add_dependency("ethertype", proto_ttag);
+    dissector_add_uint("ethertype", ETHERTYPE_TTAG, ttag_handle);
 
-    dissector_add_for_decode_as("ethertype", ttag_handle);
+    ethertype_handle = find_dissector_add_dependency("ethertype", proto_ttag);
 }
 
 /*

@@ -1518,6 +1518,8 @@ HNBName TYPE=FT_STRING DISPLAY=BASE_NONE
 
   /* Adding a "Current U-RNTI" or "New U-RNTI" as generated field */
   sub_tree = proto_item_get_subtree(actx->created_item);
+  /* XXX - proto_item_get_len is not accurate when the item was faked. Just
+     use BLEN(original_offset, offset) instead? */
   item_len = proto_item_get_len(actx->created_item);
   ti = proto_tree_add_uint(sub_tree, generated_field_hf, tvb, original_offset/8, item_len, u_rnti_value);
   proto_item_set_generated(ti);
@@ -1603,9 +1605,9 @@ uint32_t scrambling_code;
 private_data_set_scrambling_code(actx,scrambling_code);
 
 #.FN_BODY RRC-StateIndicator VAL_PTR = &state_dec
-int32_t state_dec = -1;
+uint32_t state_dec = -1;
 %(DEFAULT_BODY)s
-if(state_dec >= 0 && state_dec <= 3) {
+if(state_dec <= 3) {
   state_dec++; /* Encoded values are 0-based, Values in the enum are 1-based*/
   private_data_set_rrc_state_indicator(actx,(enum rrc_ue_state)state_dec);
 }
@@ -1645,7 +1647,7 @@ if(state_dec >= 0 && state_dec <= 3) {
             }
             else{
                 /*If it doesn't exists, insert it*/
-                if( (cur_val=(int *)g_tree_lookup(hsdsch_muxed_flows, GUINT_TO_POINTER((unsigned)rrcinf->hrnti[fpinf->cur_tb]))) == NULL ){
+                if( (cur_val=(unsigned *)g_tree_lookup(hsdsch_muxed_flows, GUINT_TO_POINTER((unsigned)rrcinf->hrnti[fpinf->cur_tb]))) == NULL ){
 
                     flowd_p = g_new0(unsigned, 1);
                     *flowd_p = (1U<<flowd);    /*Set the bit to mark it as true*/
@@ -1683,7 +1685,7 @@ if(state_dec >= 0 && state_dec <= 3) {
             }
             else{
                 /*If it doesn't exists, insert it*/
-                if( (cur_val=(int *)g_tree_lookup(hsdsch_muxed_flows, GUINT_TO_POINTER((unsigned)rrcinf->hrnti[fpinf->cur_tb]))) == NULL ){
+                if( (cur_val=(unsigned *)g_tree_lookup(hsdsch_muxed_flows, GUINT_TO_POINTER((unsigned)rrcinf->hrnti[fpinf->cur_tb]))) == NULL ){
 
                     flowd_p = g_new0(unsigned, 1);
                     *flowd_p = (1U<<flowd);    /* Set the bit to mark it as true*/
@@ -1812,7 +1814,7 @@ private_data_set_rlc_ciphering_sqn(actx, rlc_ciphering_sqn);
 
 #.FN_BODY CipheringAlgorithm VAL_PTR = &ciphering_algo
   rrc_ciphering_info *ciphering_info;
-  int32_t ciphering_algo;
+  uint32_t ciphering_algo;
 
 %(DEFAULT_BODY)s
 
@@ -1820,11 +1822,11 @@ private_data_set_rlc_ciphering_sqn(actx, rlc_ciphering_sqn);
   if (ciphering_info == NULL) {
     return offset;
   }
-  ciphering_info->ciphering_algorithm = ciphering_algo;
+  ciphering_info->ciphering_algorithm = (int32_t)ciphering_algo;
 
 #.FN_BODY CipheringAlgorithm-r7 VAL_PTR = &ciphering_algo
   rrc_ciphering_info *ciphering_info;
-  int32_t ciphering_algo;
+  uint32_t ciphering_algo;
 
 %(DEFAULT_BODY)s
 
@@ -1832,11 +1834,11 @@ private_data_set_rlc_ciphering_sqn(actx, rlc_ciphering_sqn);
   if (ciphering_info == NULL) {
     return offset;
   }
-  ciphering_info->ciphering_algorithm = ciphering_algo;
+  ciphering_info->ciphering_algorithm = (int32_t)ciphering_algo;
 
 #.FN_BODY IntegrityProtectionAlgorithm VAL_PTR = &integrity_algo
   rrc_ciphering_info *ciphering_info;
-  int32_t integrity_algo;
+  uint32_t integrity_algo;
 
 %(DEFAULT_BODY)s
 
@@ -1844,11 +1846,11 @@ private_data_set_rlc_ciphering_sqn(actx, rlc_ciphering_sqn);
   if (ciphering_info == NULL) {
     return offset;
   }
-  ciphering_info->integrity_algorithm = integrity_algo;
+  ciphering_info->integrity_algorithm = (int32_t)integrity_algo;
 
 #.FN_BODY IntegrityProtectionAlgorithm-r7 VAL_PTR = &integrity_algo
   rrc_ciphering_info *ciphering_info;
-  int32_t integrity_algo;
+  uint32_t integrity_algo;
 
 %(DEFAULT_BODY)s
 
@@ -1856,7 +1858,7 @@ private_data_set_rlc_ciphering_sqn(actx, rlc_ciphering_sqn);
   if (ciphering_info == NULL) {
     return offset;
   }
-  ciphering_info->integrity_algorithm = integrity_algo;
+  ciphering_info->integrity_algorithm = (int32_t)integrity_algo;
 
 #.FN_BODY DL-DCCH-MessageType VAL_PTR = &msg_type
 %(DEFAULT_BODY)s

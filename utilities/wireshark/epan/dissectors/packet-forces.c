@@ -294,9 +294,8 @@ dissect_path_data_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o
     {
         tlv_tree = proto_tree_add_subtree(tree, tvb, offset, TLV_TL_LENGTH, ett_forces_path_data_tlv, &ti, "TLV");
 
-        type = tvb_get_ntohs(tvb, offset);
-        proto_tree_add_item(tlv_tree, hf_forces_lfbselect_tlv_type_operation_path_type,
-                            tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(tlv_tree, hf_forces_lfbselect_tlv_type_operation_path_type,
+                                       tvb, offset, 2, ENC_BIG_ENDIAN, &type);
         length_TLV = tvb_get_ntohs(tvb, offset+2);
         proto_tree_add_item(tlv_tree, hf_forces_lfbselect_tlv_type_operation_path_length,
                             tvb, offset+2, 2, ENC_BIG_ENDIAN);
@@ -355,9 +354,8 @@ dissect_operation_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o
         oper_tree = proto_tree_add_subtree(tree, tvb, offset, length_count,
             ett_forces_lfbselect_tlv_type_operation, &ti, "Operation TLV");
 
-        type = tvb_get_ntohs(tvb,offset);
-        ti = proto_tree_add_item(oper_tree, hf_forces_lfbselect_tlv_type_operation_type,
-                                 tvb, offset, 2, ENC_BIG_ENDIAN);
+        ti = proto_tree_add_item_ret_uint(oper_tree, hf_forces_lfbselect_tlv_type_operation_type,
+                                          tvb, offset, 2, ENC_BIG_ENDIAN, &type);
         if (try_val_to_str(type, operation_type_vals) == NULL)
             expert_add_info_format(pinfo, ti, &ei_forces_lfbselect_tlv_type_operation_type,
                 "Bogus: ForCES Operation TLV (Type:0x%04x) is not supported", type);
@@ -392,11 +390,11 @@ dissect_lfbselecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of
 }
 
 static void
-dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
+dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
     proto_tree *meta_data_tree, *meta_data_ilv_tree, *redirect_data_tree;
-    int         start_offset;
-    int         length_meta, length_ilv, length_redirect;
+    unsigned    start_offset;
+    unsigned    length_meta, length_ilv, length_redirect;
     proto_item *ti;
     address     src_addr, src_net_addr;
     address     dst_addr, dst_net_addr;
@@ -480,7 +478,7 @@ dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t off
     proto_item *ti, *tlv_item;
     proto_tree *forces_tree, *forces_flags_tree;
     proto_tree *forces_main_header_tree, *forces_tlv_tree, *tlv_tree;
-    int         length_count;
+    unsigned    length_count;
 
     uint8_t     message_type;
     uint16_t    tlv_type;
@@ -534,8 +532,7 @@ dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t off
     {
         forces_tlv_tree = proto_tree_add_subtree(forces_tree, tvb, offset, TLV_TL_LENGTH, ett_forces_tlv, &ti, "TLV");
 
-        tlv_type = tvb_get_ntohs(tvb, offset);
-        tlv_item = proto_tree_add_item(forces_tlv_tree, hf_forces_tlv_type, tvb, offset, 2, ENC_BIG_ENDIAN);
+        tlv_item = proto_tree_add_item_ret_uint16(forces_tlv_tree, hf_forces_tlv_type, tvb, offset, 2, ENC_BIG_ENDIAN, &tlv_type);
         length_count = tvb_get_ntohs(tvb, offset+2) * 4;
         proto_item_set_len(ti, length_count);
         ti = proto_tree_add_uint(forces_tlv_tree, hf_forces_tlv_length,

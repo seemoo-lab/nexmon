@@ -17,18 +17,24 @@ AsymmetricKeyPackage B "2.16.840.1.101.2.1.2.78.5" "id-ct-KP-aKeyPackage"
 # PKCS#9 Attributes - see master list in x509sat.cnf
 EncryptedPrivateKeyInfo B "1.2.840.113549.1.9.25.2" "pkcs-9-at-encryptedPrivateKeyInfo"
 
+# RFC 9939
+PrivateKeyInfo B "1.2.840.113549.1.9.16.1.52" "id-ct-privateKeyInfo"
+EncryptedPrivateKeyInfo B "1.2.840.113549.1.9.16.1.53" "id-ct-encrPrivateKeyInfo"
+
 #.PDU
 PrivateKeyInfo
 
 #.FN_HDR EncryptedData
-  tvbuff_t *encrypted_tvb;
+  tvbuff_t *encrypted_tvb = NULL;
 
 #.END
 
 #.FN_PARS EncryptedData VAL_PTR = &encrypted_tvb
 
 #.FN_FTR EncryptedData
-  PBE_decrypt_data(dissect_PrivateKeyInfo_PDU, "PrivateKeyInfo",
-    encrypted_tvb, actx->pinfo, actx, actx->created_item);
+  if (encrypted_tvb) {
+    PBE_decrypt_data(dissect_PrivateKeyInfo_PDU, "PrivateKeyInfo",
+      encrypted_tvb, actx->pinfo, actx, actx->created_item);
+  }
 
 #.END

@@ -29,9 +29,8 @@
 
 #include "packet-p22.h"
 
-#define PNAME  "X.420 Information Object"
-#define PSNAME "P22"
-#define PFNAME "p22"
+void proto_reg_handoff_p22(void);
+void proto_register_p22(void);
 
 /* Initialize the protocol and registered fields */
 static int proto_p22;
@@ -81,7 +80,7 @@ static int ett_p22;
 static int
 dissect_p22(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_item *item=NULL;
 	proto_tree *tree=NULL;
 	asn1_ctx_t asn1_ctx;
@@ -116,7 +115,7 @@ void proto_register_p22(void) {
   };
 
   /* Register protocol */
-  proto_p22 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_p22 = proto_register_protocol("X.420 Information Object", "P22", "p22");
   register_dissector("p22", dissect_p22, proto_p22);
   /* Register fields and subtrees */
   proto_register_field_array(proto_p22, hf, array_length(hf));

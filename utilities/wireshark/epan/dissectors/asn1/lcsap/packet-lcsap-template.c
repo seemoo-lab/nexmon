@@ -20,7 +20,6 @@
 #include <epan/strutil.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
-#include <epan/sctpppids.h>
 #include <epan/expert.h>
 #include <wsutil/array.h>
 
@@ -29,15 +28,7 @@
 #include "packet-e212.h"
 #include "packet-sccp.h"
 #include "packet-lcsap.h"
-
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
-#define PNAME  "LCS Application Protocol"
-#define PSNAME "LCSAP"
-#define PFNAME "lcsap"
+#include "packet-sctp.h"
 
 void proto_register_lcsap(void);
 void proto_reg_handoff_lcsap(void);
@@ -294,7 +285,7 @@ void proto_register_lcsap(void) {
 
 
   /* Register protocol */
-  proto_lcsap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_lcsap = proto_register_protocol("LCS Application Protocol", "LCSAP", "lcsap");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_lcsap, hf, array_length(hf));

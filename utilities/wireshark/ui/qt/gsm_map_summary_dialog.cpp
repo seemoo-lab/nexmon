@@ -41,7 +41,7 @@ typedef struct _gsm_map_stat_t {
     int                 size_rr[GSM_MAP_MAX_NUM_OPR_CODES];
 } gsm_map_stat_t;
 
-gsm_map_stat_t gsm_map_stat;
+static gsm_map_stat_t gsm_map_stat;
 
 GsmMapSummaryDialog::GsmMapSummaryDialog(QWidget &parent, CaptureFile &capture_file) :
     WiresharkDialog(parent, capture_file),
@@ -105,7 +105,7 @@ QString GsmMapSummaryDialog::summaryToHtml()
         << table_row_end;
 
     QString format_str = wtap_file_type_subtype_description(summary.file_type);
-    const char *compression_type_description = wtap_compression_type_description(summary.compression_type);
+    const char *compression_type_description = ws_compression_type_description(summary.compression_type);
     if (compression_type_description != NULL) {
         format_str += QStringLiteral(" (%1)").arg(compression_type_description);
     }
@@ -375,8 +375,6 @@ register_tap_listener_qt_gsm_map_summary(void)
     {
         simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_p->str);
         g_string_free(err_p, TRUE);
-
-        exit(1);
     }
 }
 

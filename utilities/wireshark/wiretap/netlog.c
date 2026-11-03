@@ -15,6 +15,8 @@
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN "NetLog"
+
 #include "netlog.h"
 
 #include <string.h>
@@ -23,12 +25,10 @@
 #include "file_wrappers.h"
 
 /* Grab constants for generating supporting layers */
-#include <epan/ipproto.h>
 #include <epan/dissectors/packet-tcp.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/wsjson.h>
-
-#define WS_LOG_DOMAIN "NetLog"
 
 /* This is to avoid having large files overload the JSON parser. Adjust as appropriate. */
 #define MAX_FILE_SIZE (1024*1024*1024)
@@ -183,12 +183,12 @@ static bool parse_log_event_constants(char *filebuf, jsmntok_t *root_json_token,
 
     jsmntok_t* json_constants = json_get_object(filebuf, root_json_token, "constants");
     if (json_constants == NULL){
-        ws_warning("Failed to parse the JSON constants");
+        ws_debug("Failed to parse the JSON constants");
         return false;
     }
     jsmntok_t* json_logevent_constants = json_get_object(filebuf, json_constants, "logEventTypes");
     if (json_logevent_constants == NULL){
-        ws_warning("Failed to parse the JSON logEventTypes");
+        ws_debug("Failed to parse the JSON logEventTypes");
         return false;
     }
 
@@ -218,9 +218,9 @@ static bool parse_log_event_constants(char *filebuf, jsmntok_t *root_json_token,
 
 
     if (ok) {
-        ws_debug("Successfully parsed all values");
+        ws_debug("Successfully parsed all values.");
     } else {
-        ws_debug("Failed to parse all values!");
+        ws_debug("Failed to parse all values.");
     }
     return ok;
 }
@@ -395,7 +395,7 @@ static bool netlog_read_packet(const wtap* wth, wtap_rec* rec, GHashTable *json_
         return false;
     }
 
-    int num_tokens = json_parse_len(filebuf, json_packet->length, NULL, 0);
+    int num_tokens = json_parse_len((const char*)filebuf, json_packet->length, NULL, 0);
     if (num_tokens < 0) {
         g_free(filebuf);
         return false;
@@ -405,7 +405,7 @@ static bool netlog_read_packet(const wtap* wth, wtap_rec* rec, GHashTable *json_
         g_free(filebuf);
         return false;
     }
-    int json_parse_result = json_parse_len(filebuf, json_packet->length, json_tokens, num_tokens);
+    int json_parse_result = json_parse_len((const char*)filebuf, json_packet->length, json_tokens, num_tokens);
     if (json_parse_result < 0){
         g_free(json_tokens);
         g_free(filebuf);
@@ -413,7 +413,7 @@ static bool netlog_read_packet(const wtap* wth, wtap_rec* rec, GHashTable *json_
     }
 
     jsmntok_t* params_entry = json_tokens;
-    const char* base64_bytes = json_get_string(filebuf, params_entry, "bytes");
+    const char* base64_bytes = json_get_string((char*)filebuf, params_entry, "bytes");
     if (base64_bytes == NULL){
         g_free(json_tokens);
         g_free(filebuf);
@@ -737,21 +737,71 @@ static bool netlog_parse_entirety(wtap *wth, FILE_T fh, int *err, char **err_inf
         return false;
     }
 
-    int num_tokens = json_parse_len((const char*)filebuf, bytes_read, NULL, 0);
-    if (num_tokens <= 0) {
-        /* 0 tokens needed is a degenerate cases, e.g., nothing but whitespace
-         * until the first NUL. Reject that too. */
-        g_free(filebuf);
-        return false;
-    }
-
+    /* A NetLog file is a single JSON object, with members with names
+     * "constants", "events", and possibly "polledData". Chrome writes
+     * the file such that "constants" is always the first. Check the
+     * first two tokens are an object, and a name that is one of the
+     * possible names (it SHOULD be "constants", but something might
+     * read and write the JSON and reorder the members.) */
+    int num_tokens = 2;
     jsmntok_t* json_tokens = g_new0(jsmntok_t, num_tokens);
     if (!json_tokens) {
         g_free(filebuf);
         return false;
     }
 
-    if (json_parse_len(filebuf, bytes_read, json_tokens, num_tokens) < 0){
+    if (json_parse_len((const char*)filebuf, bytes_read, json_tokens, num_tokens) != JSMN_ERROR_NOMEM) {
+        /* We require at least ten known constants, so if we don't get the
+         * insufficient token error, this isn't our file. */
+        g_free(json_tokens);
+        g_free(filebuf);
+        return false;
+    }
+
+    if (json_tokens[0].type != JSMN_OBJECT || json_tokens[1].type != JSMN_STRING) {
+        g_free(json_tokens);
+        g_free(filebuf);
+        return false;
+    }
+    ptrdiff_t len = json_tokens[1].end - json_tokens[1].start;
+    uint8_t *tok_start = &filebuf[json_tokens[1].start];
+    g_free(json_tokens);
+    switch (len) {
+    case 6: // strlen("events")
+        if (memcmp(tok_start, "events", len) != 0) {
+            g_free(filebuf);
+            return false;
+        }
+        break;
+    case 9: // strlen("constants")
+        if (memcmp(tok_start, "constants", len) != 0) {
+            g_free(filebuf);
+            return false;
+        }
+        break;
+    case 12: // strlen("polledEvents")
+        if (memcmp(tok_start, "polledEvents", len) != 0) {
+            g_free(filebuf);
+            return false;
+        }
+        break;
+    default:
+        g_free(filebuf);
+        return false;
+    }
+
+    num_tokens = json_parse_len((const char*)filebuf, bytes_read, NULL, 0);
+    if (num_tokens <= 0) {
+        /* 0 tokens needed is a degenerate case, e.g., nothing but whitespace
+         * until the first NUL. Reject that too. (That shouldn't happen, since
+         * we read 2 tokens above.) */
+        g_free(filebuf);
+        return false;
+    }
+
+    json_tokens = g_new0(jsmntok_t, num_tokens);
+
+    if (json_parse_len((const char*)filebuf, bytes_read, json_tokens, num_tokens) < 0){
         g_free(json_tokens);
         g_free(filebuf);
         return false;
@@ -764,7 +814,7 @@ static bool netlog_parse_entirety(wtap *wth, FILE_T fh, int *err, char **err_inf
     jsmntok_t* root_json_token = json_tokens;
 
     NetLogEventConstants netlog_event_constants = {0};
-    if (!parse_log_event_constants(filebuf, root_json_token, &netlog_event_constants)) {
+    if (!parse_log_event_constants((char*)filebuf, root_json_token, &netlog_event_constants)) {
         ws_debug("Failed to parse one or more netlog event constants.");
         g_free(json_tokens);
         g_free(filebuf);
@@ -774,7 +824,7 @@ static bool netlog_parse_entirety(wtap *wth, FILE_T fh, int *err, char **err_inf
     /* At this point, we have all of the constants needed within 'json_logevent_constants'
        We can now begin parsing the events to extract the data!
     */
-    jsmntok_t* json_events = json_get_array(filebuf, root_json_token, "events");
+    jsmntok_t* json_events = json_get_array((const char*)filebuf, root_json_token, "events");
 
     if (json_events == NULL) {
         ws_debug("NetLog file lacks 'events' array");

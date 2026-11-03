@@ -171,22 +171,6 @@ static const value_string can_err_trx_canl_vals[] = {
     { 0, NULL }
 };
 
-static const value_string canxl_sdu_type_vals[] = {
-    { 0x00, "Reserved" },
-    { CANXL_SDU_TYPE_CONTENT_BASED_ADDRESSING, "Content-based Addressing" },
-    { 0x02, "Reserved for future use" },
-    { CANXL_SDU_TYPE_CAN_CC_CAN_FD, "CAN CC/CAN FD" },
-    { CANXL_SDU_TYPE_IEEE_802_3, "IEEE 802.3 (MAC frame)" },
-    { CANXL_SDU_TYPE_IEEE_802_3_EXTENDED, "IEEE 802.3 (MAC frame) extended" },
-    { CANXL_SDU_TYPE_CAN_CC, "CAN CC" },
-    { CANXL_SDU_TYPE_CAN_FD, "CAN FD" },
-    { CANXL_SDU_TYPE_CIA_611_2, "CiA 611-2 (Multi-PDU)" },
-    { CANXL_SDU_TYPE_AUTOSAR_MPDU, "AUTOSAR Multi-PDU" },
-    { CANXL_SDU_TYPE_CIA_613_2, "CiA 613-2 (CANsec key agreement protocol" },
-    { 0xFF, "Reserved" },
-    { 0, NULL }
-};
-
 /********* UATs *********/
 
 /* Interface Config UAT */
@@ -292,39 +276,49 @@ reset_can_interfaces_cb(void) {
  * - interface_name = ""    and interface_id matches
  */
 static unsigned
-get_bus_id(packet_info *pinfo) {
-    if (!(pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID)) {
-        return 0;
-    }
-
-    uint32_t            interface_id = pinfo->rec->rec_header.packet_header.interface_id;
-    unsigned            section_number = pinfo->rec->presence_flags & WTAP_HAS_SECTION_NUMBER ? pinfo->rec->section_number : 0;
-    const char         *interface_name = epan_get_interface_name(pinfo->epan, interface_id, section_number);
-
+get_bus_id_common(const char* interface_name, uint32_t interface_id) {
     if (interface_name != NULL && interface_name[0] != 0) {
-        interface_config_t *tmp = NULL;
+        interface_config_t* tmp = NULL;
 
         if (data_can_interfaces_by_name != NULL) {
             tmp = g_hash_table_lookup(data_can_interfaces_by_name, interface_name);
-        }
 
-        if (tmp != NULL && (tmp->interface_id == 0xffffffff || tmp->interface_id == interface_id)) {
-            /* name + id match or name match and id = any */
-            return tmp->bus_id;
+            if (tmp != NULL && (tmp->interface_id == 0xffffffff || tmp->interface_id == interface_id)) {
+                /* name + id match or name match and id = any */
+                return tmp->bus_id;
+            }
         }
 
         if (data_can_interfaces_by_id != NULL) {
             tmp = g_hash_table_lookup(data_can_interfaces_by_id, GUINT_TO_POINTER(interface_id));
-        }
 
-        if (tmp != NULL && (tmp->interface_name == NULL || tmp->interface_name[0] == 0)) {
-            /* id matches and name is any */
-            return tmp->bus_id;
+            if (tmp != NULL && (tmp->interface_name == NULL || tmp->interface_name[0] == 0)) {
+                /* id matches and name is any */
+                return tmp->bus_id;
+            }
         }
     }
 
     /* we found nothing */
     return 0;
+}
+
+static unsigned
+get_bus_id(packet_info *pinfo) {
+    if (!(pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID)) {
+        return 0;
+    }
+
+    uint32_t    interface_id = pinfo->rec->rec_header.packet_header.interface_id;
+    unsigned    section_number = pinfo->rec->presence_flags & WTAP_HAS_SECTION_NUMBER ? pinfo->rec->section_number : 0;
+    const char* interface_name = epan_get_interface_name(pinfo->epan, interface_id, section_number);
+
+    return get_bus_id_common(interface_name, interface_id);
+}
+
+unsigned
+can_get_bus_id_from_interface_name(const char* interface_name) {
+    return get_bus_id_common(interface_name, 0xffffffff);
 }
 
 /* Senders and Receivers UAT */

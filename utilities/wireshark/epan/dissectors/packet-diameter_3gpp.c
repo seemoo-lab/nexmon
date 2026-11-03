@@ -504,6 +504,20 @@ static int hf_diameter_3gpp_supported_monitoring_events_b5;
 static int hf_diameter_3gpp_supported_monitoring_events_b6;
 static int hf_diameter_3gpp_supported_monitoring_events_b7;
 static int hf_diameter_3gpp_supported_monitoring_events_b8;
+static int hf_diameter_3gpp_srr_spare_b31_b3;
+static int hf_diameter_3gpp_srr_gprsind;
+static int hf_diameter_3gpp_srr_smrppri;
+static int hf_diameter_3gpp_srr_sad;
+static int hf_diameter_3gpp_srr_flags;
+
+static int hf_diameter_3gpp_mwd_spare;
+static int hf_diameter_3gpp_mwd_mnr5gn3g;
+static int hf_diameter_3gpp_mwd_mnr5g;
+static int hf_diameter_3gpp_mwd_mnrg;
+static int hf_diameter_3gpp_mwd_mcef;
+static int hf_diameter_3gpp_mwd_mnrf;
+static int hf_diameter_3gpp_mwd_scaddressni;
+static int hf_diameter_3gpp_mwd_status;
 
 static int ett_diameter_3gpp_qos_subscribed;
 static int ett_diameter_3gpp_ulr_flags;
@@ -545,6 +559,8 @@ static int ett_diameter_3gpp_deferred_location_type;
 static int ett_diameter_3gpp_rir_flags;
 static int ett_diameter_3gpp_supported_monitoring_events;
 static int ett_diameter_3gpp_af_requested_data_flags;
+static int ett_diameter_3gpp_srr_flags;
+static int ett_diameter_3gpp_mwd_status;
 
 static int hf_diameter_3gpp_feature_list1_rx_flags_bit0;
 static int hf_diameter_3gpp_feature_list1_rx_flags_bit1;
@@ -599,6 +615,9 @@ static int hf_diameter_3gpp_feature_list_swx_flags_bit5;
 static int hf_diameter_3gpp_feature_list_swx_flags_bit6;
 static int hf_diameter_3gpp_feature_list_s6b_flags;
 static int hf_diameter_3gpp_feature_list_s6b_flags_bit0;
+
+static int hf_diameter_3gpp_feature_list_s6c_flags;
+static int hf_diameter_3gpp_feature_list_s6c_flags_bit0;
 
 static int hf_diameter_3gpp_ran_nas_protocol_type;
 static int hf_diameter_3gpp_ran_nas_cause_type;
@@ -717,7 +736,7 @@ static const value_string diameter_3gpp_rat_type_vals[] = {
 static int
 dissect_diameter_3gpp_rat_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     proto_tree_add_item(tree, hf_diameter_3gpp_rat_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -739,7 +758,7 @@ static const value_string daylight_saving_time_vals[] = {
 static int
 dissect_diameter_3gpp_ms_timezone(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t     oct, hours, minutes;
     char        sign;
     diam_sub_dis_t *diam_sub_dis = (diam_sub_dis_t*)data;
@@ -793,18 +812,17 @@ dissect_diameter_3gpp_twan_identifier(tvbuff_t *tvb, packet_info *pinfo, proto_t
 static int
 dissect_diameter_3gpp_codec_data(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, void* data _U_)
 {
-    int offset = 0, linelen, next_offset;
-    int length = tvb_reported_length(tvb);
+    unsigned offset = 0, linelen, next_offset;
+    unsigned length = tvb_reported_length(tvb);
     const char* str;
 
     /* The first line of the value of the Codec-Data AVP shall consist of either the word "uplink"
      * or the word "downlink" (in ASCII, without quotes) followed by a new-line character
      */
-    linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
-    if (linelen < 1) {
+    if (!tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset)) {
         return tvb_reported_length(tvb);
     }
-    str = tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII | ENC_NA);
+    str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII | ENC_NA);
     proto_tree_add_string_format(tree, hf_diameter_3gpp_codec_data_dir, tvb, offset, linelen, str, "%s", str);
     if (next_offset > length) {
         return tvb_reported_length(tvb);
@@ -814,11 +832,10 @@ dissect_diameter_3gpp_codec_data(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tr
      * or the word "answer", or the word "description" (in ASCII, without quotes)
      * followed by a new-line character
      */
-    linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
-    if (linelen < 1) {
+    if (!tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset)) {
         return tvb_reported_length(tvb);
     }
-    str = tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII | ENC_NA);
+    str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII | ENC_NA);
     proto_tree_add_string_format(tree, hf_diameter_3gpp_codec_sdp_type, tvb, offset, linelen, str, "%s", str);
     if (next_offset >= length) {
         return tvb_reported_length(tvb);
@@ -956,7 +973,7 @@ static int * const diameter_3gpp_sd_feature_list_fields[] = {
 static int
 dissect_diameter_3gpp_feature_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t application_id = 0, feature_list_id = 0;
     diam_sub_dis_t *diam_sub_dis_inf = (diam_sub_dis_t*)data;
 
@@ -1247,6 +1264,19 @@ dissect_diameter_3gpp_feature_list(tvbuff_t *tvb, packet_info *pinfo _U_, proto_
     }
         break;
 
+    case DIAM_APPID_3GPP_S6C:
+    {
+        /* 3GPP TS 29.338 Table 5.3.3.13/1: Features of Feature-List-ID 1 used in S6c */
+        static int * const flags[] = {
+            &hf_diameter_3gpp_feature_list_s6c_flags_bit0,
+            NULL
+        };
+
+        proto_tree_add_bitmask_with_flags(tree, tvb, 0, hf_diameter_3gpp_feature_list_s6c_flags,
+            ett_diameter_3gpp_feature_list, flags, ENC_BIG_ENDIAN, BMT_NO_APPEND);
+    }
+        break;
+
     default:
         /* In case we end up here */
         if (!save_hidden) {
@@ -1270,14 +1300,13 @@ static int
 dissect_diameter_3gpp_path(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
     proto_tree *sub_tree;
-    int offset = 0, comma_offset;
-    int end_offset = tvb_reported_length(tvb) - 1;
+    unsigned offset = 0, comma_offset;
+    unsigned end_offset = tvb_reported_length(tvb) - 1;
 
     sub_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_diameter_3gpp_path, NULL, "Paths");
 
     while (offset < end_offset) {
-        comma_offset = tvb_find_uint8(tvb, offset, -1, ',');
-        if(comma_offset == -1) {
+        if(!tvb_find_uint8_remaining(tvb, offset, ',', &comma_offset)) {
             proto_tree_add_item(sub_tree, hf_diameter_3gpp_path, tvb, offset, comma_offset, ENC_ASCII);
             return end_offset;
         }
@@ -1300,7 +1329,7 @@ static int
 dissect_diameter_3gpp_contact(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
     proto_item *item;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, hf_diameter_3gpp_contact, tvb, offset, -1, ENC_ASCII);
     proto_item_set_generated(item);
@@ -1312,7 +1341,7 @@ dissect_diameter_3gpp_contact(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree 
 static int
 dissect_diameter_3gpp_msisdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     dissect_e164_msisdn(tvb, pinfo, tree, offset, length, E164_ENC_BCD);
@@ -1407,7 +1436,7 @@ dissect_diameter_3gpp_tmgi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 {
     proto_item *item;
     proto_tree *sub_tree;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, hf_diameter_3gpp_tmgi, tvb, offset, 6, ENC_NA);
     sub_tree = proto_item_add_subtree(item,ett_diameter_3gpp_tmgi);
@@ -1431,7 +1460,7 @@ dissect_diameter_3gpp_tmgi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 static int
 dissect_diameter_3gpp_ipv6addr(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(tree, hf_diameter_3gpp_ipv6addr, tvb, offset, 16, ENC_NA);
 
@@ -1445,7 +1474,7 @@ dissect_diameter_3gpp_ipv6addr(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 static int
 dissect_diameter_3gpp_ipaddr(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(tree, hf_diameter_3gpp_ipaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -1503,7 +1532,7 @@ dissect_diameter_3gpp_rai(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tre
 static int
 dissect_diameter_3gpp_mbms_required_qos(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     unsigned length;
 
     /* Octet
@@ -1529,7 +1558,7 @@ dissect_diameter_3gpp_mbms_required_qos(tvbuff_t *tvb, packet_info *pinfo, proto
 static int
 dissect_diameter_3gpp_udp_port(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(tree, hf_diameter_3gpp_udp_port, tvb, offset, 1, ENC_BIG_ENDIAN);
 
@@ -1543,7 +1572,7 @@ dissect_diameter_3gpp_udp_port(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 static int
 dissect_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(tree, hf_diameter_3gpp_mbms_abs_time_ofmbms_data_tfer, tvb, offset, 8, ENC_TIME_NTP | ENC_BIG_ENDIAN);
     offset+=8;
@@ -1592,7 +1621,7 @@ dissect_diameter_3gpp_location_estimate(tvbuff_t *tvb, packet_info *pinfo, proto
 static int
 dissect_diameter_3gpp_access_network_information(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     dissect_sip_p_access_network_info_header(tvb, pinfo, tree, offset, length);
@@ -1611,7 +1640,7 @@ static const value_string diameter_3gpp_secondary_rat_type_vals[] = {
 static int
 dissect_diameter_3gpp_secondary_rat_type(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     proto_tree_add_item(tree, hf_diameter_3gpp_secondary_rat_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1862,7 +1891,7 @@ dissect_diameter_3ggp_qos_susbscribed(tvbuff_t *tvb, packet_info *pinfo _U_, pro
         offset += 1;
     }
 
-    /* Ext3-QoS-Susbcribed:: SIZE(1..2)
+    /* Ext3-QoS-Subscribed:: SIZE(1..2)
     * 1-2   Octets are coded according to 3GPP TS 24.008 Quality of Service Octets 17-18
     */
     if (length >= 16) {
@@ -2159,7 +2188,7 @@ dissect_diameter_3gpp_nor_flags(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 static int
 dissect_diameter_3gpp_isdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     dissect_e164_isdn(tvb, pinfo, tree, offset, length, E164_ENC_BCD);
@@ -2435,7 +2464,7 @@ dissect_diameter_3gpp_uva_flags(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 static int
 dissect_diameter_3gpp_mme_number_for_mt_sms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
 
     dissect_e164_isdn(tvb, pinfo, tree, offset, length, E164_ENC_BCD);
@@ -2624,6 +2653,18 @@ dissect_diameter_3gpp_core_network_restrictions(tvbuff_t *tvb, packet_info *pinf
     return 4;
 }
 
+/* AVP Code: 2403 MSC-Number */
+static int
+dissect_diameter_3gpp_msc_number(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    unsigned offset = 0;
+    int length = tvb_reported_length(tvb);
+
+    dissect_e164_isdn(tvb, pinfo, tree, offset, length, E164_ENC_BCD);
+
+    return length;
+}
+
 /* AVP Code: 2510 Supported-GAD-Shapes */
 static int
 dissect_diameter_3gpp_supported_gad_shapes(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, void* data)
@@ -2775,7 +2816,7 @@ static const value_string ran_nas_prot_type_vals[] = {
 static int
 dissect_diameter_3gpp_ran_nas_release_cause(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int length = tvb_reported_length(tvb);
     uint8_t octet = tvb_get_uint8(tvb, offset);
     uint8_t proto_type = (octet >> 4);
@@ -2885,6 +2926,18 @@ dissect_diameter_3gpp_rir_flags(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tre
     return 4;
 }
 
+/* AVP Code: 3300 SC-Address */
+static int
+dissect_diameter_3gpp_sc_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+    unsigned offset = 0;
+    int length = tvb_reported_length(tvb);
+
+    dissect_e164_isdn(tvb, pinfo, tree, offset, length, E164_ENC_BCD);
+
+    return length;
+}
+
 /* AVP Code: 3301 SM-RP-UI */
 
 static int
@@ -2941,6 +2994,48 @@ dissect_diameter_3gpp_sm_rp_ui(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
 }
 
+/* AVP Code: 3310 SRR-Flags */
+static int
+dissect_diameter_3gpp_srr_flags(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, void* data)
+{
+    static int* const flags[] = {
+        &hf_diameter_3gpp_srr_spare_b31_b3,
+        &hf_diameter_3gpp_srr_gprsind,
+        &hf_diameter_3gpp_srr_smrppri,
+        &hf_diameter_3gpp_srr_sad,
+        NULL
+    };
+
+    diam_sub_dis_t* diam_sub_dis_inf = (diam_sub_dis_t*)data;
+
+    /* Hide the item created in packet-diameter.c and only show the one created here */
+    proto_item_set_hidden(diam_sub_dis_inf->item);
+    proto_tree_add_bitmask_with_flags(tree, tvb, 0, hf_diameter_3gpp_srr_flags, ett_diameter_3gpp_srr_flags, flags, ENC_BIG_ENDIAN, BMT_NO_APPEND);
+    return 4;
+}
+
+/* AVP Code: 3312 MWD-Status */
+static int
+dissect_diameter_3gpp_mwd_status(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, void* data)
+{
+    static int* const flags[] = {
+        &hf_diameter_3gpp_mwd_spare,
+        &hf_diameter_3gpp_mwd_mnr5gn3g,
+        &hf_diameter_3gpp_mwd_mnr5g,
+        &hf_diameter_3gpp_mwd_mnrg,
+        &hf_diameter_3gpp_mwd_mcef,
+        &hf_diameter_3gpp_mwd_mnrf,
+        &hf_diameter_3gpp_mwd_scaddressni,
+        NULL
+    };
+
+    diam_sub_dis_t* diam_sub_dis_inf = (diam_sub_dis_t*)data;
+
+    /* Hide the item created in packet-diameter.c and only show the one created here */
+    proto_item_set_hidden(diam_sub_dis_inf->item);
+    proto_tree_add_bitmask_with_flags(tree, tvb, 0, hf_diameter_3gpp_mwd_status, ett_diameter_3gpp_mwd_status, flags, ENC_BIG_ENDIAN, BMT_NO_APPEND);
+    return 4;
+}
 
 /* AVP Code: 3502 MBMS-Bearer-Event */
 static int
@@ -3250,6 +3345,9 @@ proto_reg_handoff_diameter_3gpp(void)
     /* AVP Code: 1704 Core-Network-Restrictions */
     dissector_add_uint("diameter.3gpp", 1704, create_dissector_handle(dissect_diameter_3gpp_core_network_restrictions, proto_diameter_3gpp));
 
+    /* AVP Code: 2403 MSC-Number */
+    dissector_add_uint("diameter.3gpp", 2403, create_dissector_handle(dissect_diameter_3gpp_msc_number, proto_diameter_3gpp));
+
     /* AVP Code: 2510 Supported-GAD-Shapes */
     dissector_add_uint("diameter.3gpp", 2510, create_dissector_handle(dissect_diameter_3gpp_supported_gad_shapes, proto_diameter_3gpp));
 
@@ -3277,8 +3375,17 @@ proto_reg_handoff_diameter_3gpp(void)
     /* AVP Code: 3167 RIR-Flags */
     dissector_add_uint("diameter.3gpp", 3167, create_dissector_handle(dissect_diameter_3gpp_rir_flags, proto_diameter_3gpp));
 
+    /* AVP Code: 3300 SC-Address */
+    dissector_add_uint("diameter.3gpp", 3300, create_dissector_handle(dissect_diameter_3gpp_sc_address, proto_diameter_3gpp));
+
     /* AVP Code: 3301 SM-RP-UI */
     dissector_add_uint("diameter.3gpp", 3301, create_dissector_handle(dissect_diameter_3gpp_sm_rp_ui, proto_diameter_3gpp));
+
+    /* AVP Code: 3310 SRR-Flags */
+    dissector_add_uint("diameter.3gpp", 3310, create_dissector_handle(dissect_diameter_3gpp_srr_flags, proto_diameter_3gpp));
+
+    /* AVP Code: 3312 MWD-Status */
+    dissector_add_uint("diameter.3gpp", 3312, create_dissector_handle(dissect_diameter_3gpp_mwd_status, proto_diameter_3gpp));
 
     /* AVP Code: 3502 MBMS-Bearer-Event */
     dissector_add_uint("diameter.3gpp", 3502, create_dissector_handle(dissect_diameter_3gpp_mbms_bearer_event, proto_diameter_3gpp));
@@ -5988,6 +6095,16 @@ proto_register_diameter_3gpp(void)
           FT_BOOLEAN, 32, TFS(&tfs_supported_not_supported), 0x00000001,
           NULL, HFILL }
         },
+        { &hf_diameter_3gpp_feature_list_s6c_flags,
+        { "S6c Feature-List Flags", "diameter.3gpp.s6c.feature_list_flags",
+            FT_UINT32, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_feature_list_s6c_flags_bit0,
+        { "SMSF-Support", "diameter.3gpp.s6c.feature_list_flags.b0",
+          FT_BOOLEAN, 32, TFS(&tfs_supported_not_supported), 0x00000001,
+          NULL, HFILL }
+        },
          { &hf_diameter_3gpp_supported_monitoring_events,
          { "Supported-Monitoring-Events", "diameter.3gpp.supported_monitoring_events",
            FT_UINT64, BASE_HEX, NULL, 0x0,
@@ -6043,6 +6160,71 @@ proto_register_diameter_3gpp(void)
             FT_UINT8, BASE_DEC, VALS(gtp_sel_mode_vals), 0x00,
             NULL, HFILL }
         },
+        { &hf_diameter_3gpp_srr_flags,
+        { "SRR Flags", "diameter.3gpp.srr_flags",
+          FT_UINT32, BASE_HEX, NULL, 0x0,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_srr_gprsind,
+        { "GPRS-Indicator", "diameter.3gpp.srr_flags.gprsind",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000001,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_srr_smrppri,
+        { "SM-RP-PRI", "diameter.3gpp.srr_flags.smrppri",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000002,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_srr_sad,
+        { "Single-Attempt-Delivery", "diameter.3gpp.srr_flags.sad",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000004,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_srr_spare_b31_b3,
+        { "Spare", "diameter.3gpp.srr_flags.spare",
+          FT_UINT32, BASE_HEX, NULL, 0xfffffff8,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_status,
+        { "MWD Status", "diameter.3gpp.mwd_status",
+          FT_UINT32, BASE_HEX, NULL, 0x0,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_scaddressni,
+        { "SC-Address Not Included", "diameter.3gpp.mwd_status.scaddressni",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000001,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_mnrf,
+        { "MNRF-Set", "diameter.3gpp.mwd_status.mnrf",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000002,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_mcef,
+        { "MCEF-Set", "diameter.3gpp.mwd_status.mcef",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000004,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_mnrg,
+        { "MNRG-Set", "diameter.3gpp.mwd_status.mnrg",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000008,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_mnr5g,
+        { "MNR5G-Set", "diameter.3gpp.mwd_status.mnr5g",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000010,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_mnr5gn3g,
+        { "MNR5GN3G-Set", "diameter.3gpp.mwd_status.mnr5gn3g",
+          FT_BOOLEAN, 32, TFS(&tfs_set_notset), 0x00000020,
+          NULL, HFILL }
+        },
+        { &hf_diameter_3gpp_mwd_spare,
+        { "Spare", "diameter.3gpp.mwd_status.spare",
+          FT_UINT32, BASE_HEX, NULL, 0xffffffc0,
+          NULL, HFILL }
+        },
 };
 
 
@@ -6092,7 +6274,9 @@ proto_register_diameter_3gpp(void)
         &ett_diameter_3gpp_deferred_location_type,
         &ett_diameter_3gpp_rir_flags,
         &ett_diameter_3gpp_supported_monitoring_events,
-        &ett_diameter_3gpp_af_requested_data_flags
+        &ett_diameter_3gpp_af_requested_data_flags,
+        &ett_diameter_3gpp_srr_flags,
+        &ett_diameter_3gpp_mwd_status
     };
 
     expert_module_t *expert_diameter_3gpp;

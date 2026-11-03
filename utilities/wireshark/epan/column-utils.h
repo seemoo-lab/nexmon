@@ -8,10 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __COLUMN_UTILS_H__
-#define __COLUMN_UTILS_H__
-
+#pragma once
 #include "packet_info.h"
 #include "ws_symbol_export.h"
 
@@ -97,20 +94,26 @@ enum {
   COL_PACKET_LENGTH,  /**< 34) Packet length in bytes */
   COL_PROTOCOL,       /**< 35) Protocol */
   COL_REL_TIME,       /**< 36) Relative time */
-  COL_DEF_SRC,        /**< 37) Source address */
-  COL_DEF_SRC_PORT,   /**< 38) Source port */
-  COL_RES_SRC,        /**< 39) Resolved source */
-  COL_UNRES_SRC,      /**< 40) Unresolved source */
-  COL_RES_SRC_PORT,   /**< 41) Resolved source port */
-  COL_UNRES_SRC_PORT, /**< 42) Unresolved source port */
-  COL_UTC_YMD_TIME,   /**< 43) UTC date, as YYYY-MM-DD, and time */
-  COL_UTC_YDOY_TIME,  /**< 44) UTC date, as YYYY/DOY, and time */
-  COL_UTC_TIME,       /**< 45) UTC time */
-  COL_CLS_TIME,       /**< 46) Command line-specified time (default relative) */
-  NUM_COL_FMTS        /**< 47) Should always be last */
+  COL_REL_CAP_TIME,   /**< 37) Relative time to capture start */
+  COL_DEF_SRC,        /**< 38) Source address */
+  COL_DEF_SRC_PORT,   /**< 39) Source port */
+  COL_RES_SRC,        /**< 40) Resolved source */
+  COL_UNRES_SRC,      /**< 41) Unresolved source */
+  COL_RES_SRC_PORT,   /**< 42) Resolved source port */
+  COL_UNRES_SRC_PORT, /**< 43) Unresolved source port */
+  COL_TAG,            /**< 44) Tag (tagging rules) */
+  COL_UTC_YMD_TIME,   /**< 45) UTC date, as YYYY-MM-DD, and time */
+  COL_UTC_YDOY_TIME,  /**< 46) UTC date, as YYYY/DOY, and time */
+  COL_UTC_TIME,       /**< 47) UTC time */
+  COL_CLS_TIME,       /**< 48) Command line-specified time (default relative) */
+  COL_USER_NAME,      /**< 49) User name */
+  COL_PROCESS_ID,     /**< 50) Process ID */
+  COL_PROCESS_NAME,   /**< 51) Process name */
+  NUM_COL_FMTS        /**< 52) Should always be last */
 };
 
-/** Are the columns writable?
+/**
+ * @brief Check if a column is writable
  *
  * @param cinfo the current packet row
  * @param col the writable column, -1 for checking the state of all columns
@@ -118,15 +121,17 @@ enum {
  */
 WS_DLL_PUBLIC bool col_get_writable(column_info *cinfo, const int col);
 
-/** Set the columns writable.
+/**
+ * @brief Set writability for either all columns or a specific column.
  *
  * @param cinfo the current packet row
  * @param col the column to set, -1 for all
- * @param writable true if it's writable, false if not
+ * @param writable true to be writable, false to not be writable
  */
 WS_DLL_PUBLIC void col_set_writable(column_info *cinfo, const int col, const bool writable);
 
-/** Sets a fence for the current column content,
+/**
+ * @brief Sets a fence for the current column content,
  * so this content won't be affected by further col_... function calls.
  *
  * This can be useful if a protocol is more than once in a single packet,
@@ -137,7 +142,8 @@ WS_DLL_PUBLIC void col_set_writable(column_info *cinfo, const int col, const boo
  */
 WS_DLL_PUBLIC void col_set_fence(column_info *cinfo, const int col);
 
-/** Clears a fence for the current column content
+/**
+ * @brief Clears a fence for the current column content
  *
  * This can be useful if a protocol wants to remove whatever
  * a previous protocol has added to the column.
@@ -147,7 +153,8 @@ WS_DLL_PUBLIC void col_set_fence(column_info *cinfo, const int col);
  */
 WS_DLL_PUBLIC void col_clear_fence(column_info *cinfo, const int col);
 
-/** Gets the text of a column element.
+/**
+ * @brief Gets the text of a column element.
  *
  * @param cinfo the current packet row
  * @param col the column to use, e.g. COL_INFO
@@ -156,14 +163,16 @@ WS_DLL_PUBLIC void col_clear_fence(column_info *cinfo, const int col);
  */
 WS_DLL_PUBLIC const char *col_get_text(column_info *cinfo, const int col);
 
-/** Clears the text of a column element.
+/**
+ * @brief Clears the text of a column element.
  *
  * @param cinfo the current packet row
  * @param col the column to use, e.g. COL_INFO
  */
 WS_DLL_PUBLIC void col_clear(column_info *cinfo, const int col);
 
-/** Set (replace) the text of a column element, the text won't be formatted or copied.
+/**
+ * @brief Set (replace) the text of a column element, the text won't be formatted or copied.
  *
  * Use this for simple static strings like protocol names. Don't use for untrusted
  * strings, strings that may contain unprintable characters, or strings which are
@@ -177,7 +186,8 @@ WS_DLL_PUBLIC void col_clear(column_info *cinfo, const int col);
  */
 WS_DLL_PUBLIC void col_set_str(column_info *cinfo, const int col, const char * str);
 
-/** Add (replace) the text of a column element, the text will be formatted and copied.
+/**
+ * @brief Add (replace) the text of a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -190,9 +200,17 @@ WS_DLL_PUBLIC void col_add_str(column_info *cinfo, const int col, const char *st
 /* terminator argument for col_add_lstr() function */
 #define COL_ADD_LSTR_TERMINATOR (const char *) -1
 
+/**
+ * @brief Add (replace) the text of a column element using a printf-like format string.
+ *
+ * @param cinfo Pointer to the column information structure.
+ * @param el Column element index.
+ * @param str Format string followed by variable arguments.
+ */
 WS_DLL_PUBLIC void col_add_lstr(column_info *cinfo, const int el, const char *str, ...);
 
-/** Add (replace) the text of a column element, the text will be formatted and copied.
+/**
+ * @brief Add (replace) the text of a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -206,7 +224,8 @@ WS_DLL_PUBLIC void col_add_lstr(column_info *cinfo, const int el, const char *st
 WS_DLL_PUBLIC void col_add_fstr(column_info *cinfo, const int col, const char *format, ...)
     G_GNUC_PRINTF(3, 4);
 
-/** Append the given text to a column element, the text will be formatted and copied.
+/**
+ * @brief Append the given text to a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -216,7 +235,8 @@ WS_DLL_PUBLIC void col_add_fstr(column_info *cinfo, const int col, const char *f
  */
 WS_DLL_PUBLIC void col_append_str(column_info *cinfo, const int col, const char *str);
 
-/** Append <abbrev>=<val> to a column element, the text will be copied.
+/**
+ * @brief Append <abbrev>=<val> to a column element, the text will be copied.
  *
  * @param cinfo the current packet row
  * @param col the column to use, e.g. COL_INFO
@@ -226,7 +246,8 @@ WS_DLL_PUBLIC void col_append_str(column_info *cinfo, const int col, const char 
  */
 WS_DLL_PUBLIC void col_append_str_uint(column_info *cinfo, const int col, const char *abbrev, uint32_t val, const char *sep);
 
-/** Append a transport port pair to a column element, the text will be copied.
+/**
+ * @brief Append a transport port pair to a column element, the text will be copied.
  *
  * @param cinfo the current packet row
  * @param col the column to use, e.g. COL_INFO
@@ -236,7 +257,8 @@ WS_DLL_PUBLIC void col_append_str_uint(column_info *cinfo, const int col, const 
  */
 WS_DLL_PUBLIC void col_append_ports(column_info *cinfo, const int col, port_type typ, uint16_t src, uint16_t dst);
 
-/** Append a frame number and signal that we have updated
+/**
+ * @brief Append a frame number and signal that we have updated
  * column information.
  *
  * @param pinfo the current packet info
@@ -246,13 +268,15 @@ WS_DLL_PUBLIC void col_append_ports(column_info *cinfo, const int col, port_type
  */
 WS_DLL_PUBLIC void col_append_frame_number(packet_info *pinfo, const int col, const char *fmt_str, unsigned frame_num);
 
-/* Append the given strings (terminated by COL_ADD_LSTR_TERMINATOR) to a column element,
+/**
+ * @brief Append the given strings (terminated by COL_ADD_LSTR_TERMINATOR) to a column element,
  *
  * Same result as col_append_str() called for every string element.
  */
 WS_DLL_PUBLIC void col_append_lstr(column_info *cinfo, const int el, const char *str, ...);
 
-/** Append the given text to a column element, the text will be formatted and copied.
+/**
+ * @brief Append the given text to a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -266,7 +290,8 @@ WS_DLL_PUBLIC void col_append_lstr(column_info *cinfo, const int el, const char 
 WS_DLL_PUBLIC void col_append_fstr(column_info *cinfo, const int col, const char *format, ...)
     G_GNUC_PRINTF(3, 4);
 
-/** Prepend the given text to a column element, the text will be formatted and copied.
+/**
+ * @brief Prepend the given text to a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -278,7 +303,8 @@ WS_DLL_PUBLIC void col_append_fstr(column_info *cinfo, const int col, const char
 WS_DLL_PUBLIC void col_prepend_fstr(column_info *cinfo, const int col, const char *format, ...)
     G_GNUC_PRINTF(3, 4);
 
-/** Prepend the given text to a column element, the text will be formatted and copied.
+/**
+ * @brief Prepend the given text to a column element, the text will be formatted and copied.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -292,7 +318,8 @@ WS_DLL_PUBLIC void col_prepend_fstr(column_info *cinfo, const int col, const cha
 WS_DLL_PUBLIC void col_prepend_fence_fstr(column_info *cinfo, const int col, const char *format, ...)
     G_GNUC_PRINTF(3, 4);
 
-/** Append the given text (prepended by a separator) to a column element.
+/**
+ * @brief Append the given text (prepended by a separator) to a column element.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -306,7 +333,8 @@ WS_DLL_PUBLIC void col_prepend_fence_fstr(column_info *cinfo, const int col, con
 WS_DLL_PUBLIC void col_append_sep_str(column_info *cinfo, const int col, const char *sep,
 		const char *str);
 
-/** Append the given text (prepended by a separator) to a column element.
+/**
+ * @brief Append the given text (prepended by a separator) to a column element.
  *
  * Unprintable characters according to g_ascii_isprint() are escaped.
  *
@@ -322,7 +350,8 @@ WS_DLL_PUBLIC void col_append_sep_fstr(column_info *cinfo, const int col, const 
 		const char *format, ...)
     G_GNUC_PRINTF(4, 5);
 
-/** Set the given (relative) time to a column element.
+/**
+ * @brief Set the given (relative) time to a column element.
  *
  * Used by dissectors to set the time in a column
  *
@@ -335,10 +364,15 @@ WS_DLL_PUBLIC void col_append_sep_fstr(column_info *cinfo, const int col, const 
 WS_DLL_PUBLIC void col_set_time(column_info *cinfo, const int col,
 			const nstime_t *ts, const char *fieldname);
 
+/**
+ * @brief Set the time for a frame data structure.
+ *
+ * @param epan The current epan session.
+ * @param fd The frame data structure to set the time for.
+ * @param buf Buffer containing the time string.
+ */
 WS_DLL_PUBLIC void set_fd_time(const struct epan_session *epan, frame_data *fd, char *buf);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __COLUMN_UTILS_H__ */

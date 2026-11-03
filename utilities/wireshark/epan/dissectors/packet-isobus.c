@@ -16,8 +16,9 @@
 #include <epan/reassemble.h>
 #include "packet-socketcan.h"
 #include <epan/wmem_scopes.h>
+#include <epan/expert.h>
 #include "packet-isobus.h"
-#include "packet-isobus-parameters.h"
+#include "data-isobus.h"
 
 void proto_register_isobus(void);
 void proto_reg_handoff_isobus(void);
@@ -49,6 +50,14 @@ static int hf_isobus_datetime_month;
 static int hf_isobus_datetime_year;
 static int hf_isobus_datetime_utc_offset;
 
+static int hf_isobus_ack_response;
+static int hf_isobus_ack_control_byte;
+static int hf_isobus_ack_reserved;
+static int hf_isobus_ack_address;
+static int hf_isobus_ack_group_function_value;
+static int hf_isobus_ack_exended_identifier;
+static int hf_isobus_ack_pgn;
+
 static int hf_isobus_req_requested_pgn;
 static int hf_isobus_ac_name;
 static int hf_isobus_ac_name_id_number;
@@ -79,6 +88,25 @@ static int hf_isobus_transportprotocol_broadcastannouncemessage_totalsize;
 static int hf_isobus_transportprotocol_broadcastannouncemessage_numberofpackets;
 static int hf_isobus_transportprotocol_broadcastannouncemessage_pgn;
 static int hf_isobus_transportprotocol_reserved;
+static int hf_isobus_transportprotocol_sequence_number;
+static int hf_isobus_transportprotocol_data;
+
+static int hf_isobus_extendedtransportprotocol_controlbyte;
+static int hf_isobus_extendedtransportprotocol_requesttosend_totalsize;
+static int hf_isobus_extendedtransportprotocol_requesttosend_pgn;
+static int hf_isobus_extendedtransportprotocol_cleartosend_numberofpackets;
+static int hf_isobus_extendedtransportprotocol_cleartosend_nextpacketnumber;
+static int hf_isobus_extendedtransportprotocol_cleartosend_pgn;
+static int hf_isobus_extendedtransportprotocol_datapacketoffset_numberofpackets;
+static int hf_isobus_extendedtransportprotocol_datapacketoffset_packetoffset;
+static int hf_isobus_extendedtransportprotocol_datapacketoffset_pgn;
+static int hf_isobus_extendedtransportprotocol_endofmsgack_totalsize;
+static int hf_isobus_extendedtransportprotocol_endofmsgack_pgn;
+static int hf_isobus_extendedtransportprotocol_connabort_abortreason;
+static int hf_isobus_extendedtransportprotocol_connabort_pgn;
+static int hf_isobus_extendedtransportprotocol_reserved;
+static int hf_isobus_extendedtransportprotocol_sequence_number;
+static int hf_isobus_extendedtransportprotocol_data;
 
 static int hf_msg_fragments;
 static int hf_msg_fragment;
@@ -91,6 +119,8 @@ static int hf_msg_fragment_count;
 static int hf_msg_reassembled_in;
 static int hf_msg_reassembled_length;
 static int hf_msg_reassembled_data;
+
+static expert_field ei_isobus_ack_msg_reserved;
 
 /* Desegmentation of isobus transport protocol streams */
 static reassembly_table isobus_reassembly_table;
@@ -105,6 +135,7 @@ static unsigned int reassembly_current_size;
 #define ETP_DATA_MANAGEMENT 200
 #define TP_DATA_TRANSFER 235
 #define TP_DATA_MANAGEMENT 236
+
 
 static const value_string pdu_format_dp0[] = {
     { 7  , "General-purpose valve load sense pressure" },
@@ -204,6 +235,87 @@ static const value_string transport_protocol_control_byte[] = {
     { 0, NULL }
 };
 
+static const value_string extended_transport_protocol_control_byte[] = {
+    { 20, "Request To Send" },
+    { 21, "Clear To Send" },
+    { 22, "Data Packet Offset" },
+    { 23, "End of Message Acknowledgment" },
+    { 255, "Connection Abort" },
+    { 0, NULL }
+};
+
+static const range_string extended_connection_abort_reasons[] = {
+    { 0, 0, "Reserved" },
+    { 1, 1, "Already in one or more connection-managed sessions and cannot support another" },
+    { 2, 2, "System resources were needed for another task so this connection managed session was terminated" },
+    { 3, 3, "A timeout occurred and this is the connection abort to close the session" },
+    { 4, 4, "CTS messages received when data transfer is in progress" },
+    { 5, 5, "Maximum retransmit request limit reached" },
+    { 6, 6, "Unexpected data transfer packet" },
+    { 7, 7, "Bad sequence number" },
+    { 8, 8, "Duplicate sequence number" },
+    { 9, 9, "Unexpected EDP0 packet" },
+    { 10, 10, "Unexpected EDP0 PGN" },
+    { 11, 11, "EDP0 number of packets is greater than CTS" },
+    { 12, 12, "Bad EDP0 offset" },
+    { 13, 13, "Reserved" },
+    { 14, 14, "Unexpected clear to send PGN" },
+    { 15, 15, "Number of clear to send packets exceeds message size" },
+    { 16, 249, "Reserved" },
+    { 250, 250, "Any other error" },
+    { 251, 255, "According to ISO 11783-7 definitions" },
+    { 0, 0, NULL }
+};
+
+typedef enum {
+  ACK = 0,
+  NACK = 1,
+  AccessDenied = 2,
+  CannotRespond = 3,
+
+  ACK_OneByte = 128,
+  NACK_OneByte = 129,
+  AccessDenied_OneByte = 130,
+  CannotRespond_OneByte = 131,
+
+  ACK_TwoByte = 144,
+  NACK_TwoByte = 145,
+  AccessDenied_TwoByte = 146,
+  CannotRespond_TwoByte = 147,
+
+  ACK_ThreeByte = 160,
+  NACK_ThreeByte = 161,
+  AccessDenied_ThreeByte = 162,
+  CannotRespond_ThreeByte = 163,
+
+} AckMessageControlByte_t;
+
+static const value_string acknowledgement_control_byte[] = {
+  { ACK, "ACK" },
+  { NACK, "NACK" },
+  { AccessDenied, "Access denied" },
+  { CannotRespond, "Cannot respond" },
+
+  // One Byte extended identifier
+  { ACK_OneByte, "ACK" },
+  { NACK_OneByte, "NACK" },
+  { AccessDenied_OneByte, "Access denied" },
+  { CannotRespond_OneByte, "Cannot respond" },
+
+  // Two Byte extended identifier
+  { ACK_TwoByte, "ACK" },
+  { NACK_TwoByte, "NACK" },
+  { AccessDenied_TwoByte, "Access denied" },
+  { CannotRespond_TwoByte, "Cannot respond" },
+
+  // Three Byte extended identifier
+  { ACK_ThreeByte, "ACK" },
+  { NACK_ThreeByte, "NACK" },
+  { AccessDenied_ThreeByte, "Access denied" },
+  { CannotRespond_ThreeByte, "Cannot respond" },
+
+  { 0, NULL }
+};
 
 static int ett_isobus;
 static int ett_isobus_can_id;
@@ -211,6 +323,7 @@ static int ett_isobus_name;
 static int ett_isobus_fragment;
 static int ett_isobus_fragments;
 static int ett_isobus_datetime_response;
+static int ett_isobus_ack_response;
 
 static const fragment_items isobus_frag_items = {
     &ett_isobus_fragment,
@@ -351,6 +464,66 @@ call_isobus_subdissector(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, co
 
     /* try PDU Format */
     return dissector_try_uint_with_data(subdissector_table_pdu_format, pdu_format, tvb, pinfo, tree, add_proto_name, &isobus_info);
+}
+
+static void
+dissect_etp_connection_management(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+{
+    uint32_t control_byte;
+
+    proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_controlbyte, tvb, 0, 1, ENC_LITTLE_ENDIAN, &control_byte);
+
+    switch (control_byte) {
+    case 20: { /* ETP.CM_RTS */
+        uint32_t total_size;
+
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_requesttosend_totalsize, tvb, 1, 4, ENC_LITTLE_ENDIAN, &total_size);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_requesttosend_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Request to send message of %u bytes", total_size);
+        break;
+    }
+    case 21: { /* ETP.CM_CTS */
+        uint32_t number_of_packets;
+        uint32_t next_packet_number;
+
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_cleartosend_numberofpackets, tvb, 1, 1, ENC_LITTLE_ENDIAN, &number_of_packets);
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_cleartosend_nextpacketnumber, tvb, 2, 3, ENC_LITTLE_ENDIAN, &next_packet_number);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_cleartosend_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Clear to send, can receive %u packets, next packet is %u", number_of_packets, next_packet_number);
+        break;
+    }
+    case 22: { /* ETP.CM_DPO */
+        uint32_t number_of_packets;
+        uint32_t packet_offset;
+
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_datapacketoffset_numberofpackets, tvb, 1, 1, ENC_LITTLE_ENDIAN, &number_of_packets);
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_datapacketoffset_packetoffset, tvb, 2, 3, ENC_LITTLE_ENDIAN, &packet_offset);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_datapacketoffset_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Data packet offset, %u packets at offset %u", number_of_packets, packet_offset);
+        break;
+    }
+    case 23: { /* ETP.CM_EOMA */
+        uint32_t total_size;
+
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_endofmsgack_totalsize, tvb, 1, 4, ENC_LITTLE_ENDIAN, &total_size);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_endofmsgack_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "End of Message Acknowledgment, %u bytes sent", total_size);
+        break;
+    }
+    case 255: { /* ETP.CM_Abort */
+        uint32_t abort_reason;
+
+        proto_tree_add_item_ret_uint(tree, hf_isobus_extendedtransportprotocol_connabort_abortreason, tvb, 1, 1, ENC_LITTLE_ENDIAN, &abort_reason);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_reserved, tvb, 2, 3, ENC_NA);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_connabort_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Connection Abort, %s", rval_to_str_const(abort_reason, extended_connection_abort_reasons, "unknown reason"));
+        break;
+    }
+    default:
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Unknown control byte 0x%02x", control_byte);
+        proto_tree_add_item(tree, hf_isobus_extendedtransportprotocol_data, tvb, 1, -1, ENC_NA);
+        break;
+    }
 }
 
 /* Code to actually dissect the packets */
@@ -590,11 +763,33 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
 
             proto_tree_add_item(tree, hf_isobus_transportprotocol_broadcastannouncemessage_pgn, tvb, data_offset, 3, ENC_LITTLE_ENDIAN);
 
+            if (identifier) {
+                seqnr = identifier->identifier;
+            } else {
+                struct reassemble_identifier *reassembleIdentifierTableEntry = wmem_new(wmem_file_scope(), struct reassemble_identifier);
+                seqnr = ++address_reassemble_table_item->identifierCounter;
+                reassembleIdentifierTableEntry->identifier = seqnr;
+                reassembleIdentifierTableEntry->startFrameId = pinfo->num;
+                reassembleIdentifierTableEntry->endFrameId = pinfo->num;
+
+                wmem_list_append(address_reassemble_table_item->reassembleIdentifierTable, reassembleIdentifierTableEntry);
+            }
+
+            fragment_add_seq(&isobus_reassembly_table, tvb, 5, pinfo, seqnr, NULL, 0, 3, true, 0);
+            fragment_set_tot_len(&isobus_reassembly_table, pinfo, seqnr, NULL, number_of_packets);
+            reassembly_current_size = 3;
+            reassembly_total_size = total_size + 3;
+
             col_append_fstr(pinfo->cinfo, COL_INFO, "Broadcast Announcement Message, %u bytes sent in %u packets", total_size, number_of_packets);
+        } else {
+            col_append_fstr(pinfo->cinfo, COL_INFO, "Unknown control byte 0x%02x", control_byte);
+            proto_tree_add_item(isobus_tree, hf_isobus_payload, tvb, 1, -1, ENC_NA);
         }
+    } else if (pdu_format == ETP_DATA_MANAGEMENT) {
+        dissect_etp_connection_management(tvb, pinfo, isobus_tree);
     }
 
-    /* if reassemble has not started yet don't parse the message */
+    /* Decode every TP.DT packet even when no matching CM packet was captured. */
     else if (pdu_format == TP_DATA_TRANSFER && address_reassemble_table_item->reassembleIdentifierTable != NULL)
     {
         tvbuff_t *reassembled_data;
@@ -602,6 +797,9 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
         bool lastPacket;
         uint8_t sequenceId = tvb_get_uint8(tvb, 0);
         fragment_head *fg_head;
+
+        proto_tree_add_item(isobus_tree, hf_isobus_transportprotocol_sequence_number, tvb, 0, 1, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(isobus_tree, hf_isobus_transportprotocol_data, tvb, 1, -1, ENC_NA);
 
         if (identifier == NULL) {
             wmem_list_frame_t *lastItem = wmem_list_tail(address_reassemble_table_item->reassembleIdentifierTable);
@@ -650,6 +848,12 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
         } else {
             col_append_str(pinfo->cinfo, COL_INFO, "ERROR: Transport protocol was not initialized");
         }
+    } else if (pdu_format == ETP_DATA_TRANSFER) {
+        uint8_t sequence_number = tvb_get_uint8(tvb, 0);
+
+        proto_tree_add_item(isobus_tree, hf_isobus_extendedtransportprotocol_sequence_number, tvb, 0, 1, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(isobus_tree, hf_isobus_extendedtransportprotocol_data, tvb, 1, -1, ENC_NA);
+        col_append_fstr(pinfo->cinfo, COL_INFO, "Data transfer packet, sequence number %u", sequence_number);
     } else if (pdu_format == REQUEST) {
         uint32_t req_pgn;
         proto_tree_add_item_ret_uint(isobus_tree, hf_isobus_req_requested_pgn, tvb, 0, 3, ENC_LITTLE_ENDIAN, &req_pgn);
@@ -736,6 +940,38 @@ dissect_isobus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) 
             proto_tree_add_item(datetime_tree, hf_isobus_datetime_seconds, tvb, 0, 1, ENC_NA);
 
             proto_tree_add_item(datetime_tree, hf_isobus_datetime_utc_offset, tvb, 6, 2, ENC_LITTLE_ENDIAN);
+        } else if (pgn == 59392) {
+          // Acknowledgement message
+          uint32_t reserved = 0xFFFFFF;
+          col_append_str(pinfo->cinfo, COL_INFO, val_to_str_const(tvb_get_uint8(tvb, 0), acknowledgement_control_byte, "Unknown"));
+
+          proto_tree *ack_tree;
+          ti = proto_tree_add_item(isobus_tree, hf_isobus_ack_response, tvb, 0, 8, ENC_NA);
+          ack_tree = proto_item_add_subtree(ti, ett_isobus_ack_response);
+
+          proto_tree_add_item(ack_tree, hf_isobus_ack_control_byte, tvb, 0, 1, ENC_NA);
+          uint8_t controlByte = tvb_get_uint8(tvb, 0);
+
+          if ((controlByte <= CannotRespond) || (ACK_OneByte <= controlByte && controlByte <= CannotRespond_OneByte)) {
+            if (controlByte <= CannotRespond)
+              proto_tree_add_item(ack_tree, hf_isobus_ack_group_function_value, tvb, 1, 1, ENC_NA);
+            else
+              proto_tree_add_item(ack_tree, hf_isobus_ack_exended_identifier, tvb, 1, 1, ENC_NA);
+            proto_tree_add_item_ret_uint(ack_tree, hf_isobus_ack_reserved, tvb, 2, 2, ENC_LITTLE_ENDIAN, &reserved);
+            if (reserved != 0xFFFF) {
+              expert_add_info(pinfo, ti, &ei_isobus_ack_msg_reserved);
+            }
+          } else if (ACK_TwoByte <= controlByte && controlByte <= CannotRespond_TwoByte) {
+            proto_tree_add_item(ack_tree, hf_isobus_ack_exended_identifier, tvb, 1, 2, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item_ret_uint(ack_tree, hf_isobus_ack_reserved, tvb, 2, 1, ENC_LITTLE_ENDIAN, &reserved);
+            if (reserved != 0xFF) {
+              expert_add_info(pinfo, ti, &ei_isobus_ack_msg_reserved);
+            }
+          } else if (ACK_ThreeByte <= controlByte && controlByte <= CannotRespond_ThreeByte) {
+            proto_tree_add_item(ack_tree, hf_isobus_ack_exended_identifier, tvb, 1, 3, ENC_LITTLE_ENDIAN);
+          }
+          proto_tree_add_item_ret_uint(ack_tree, hf_isobus_ack_address, tvb, 4, 1, ENC_LITTLE_ENDIAN, &reserved);
+          proto_tree_add_item(ack_tree, hf_isobus_ack_pgn, tvb, 5, 3, ENC_LITTLE_ENDIAN);
         } else {
             col_append_str(pinfo->cinfo, COL_INFO, "Protocol not yet supported");
             proto_tree_add_item(isobus_tree, hf_isobus_payload, tvb, 0, tvb_captured_length(tvb), ENC_NA);
@@ -799,7 +1035,7 @@ proto_register_isobus(void) {
         { &hf_isobus_src_addr, {
             "Source Address", "isobus.src_addr", FT_UINT32, BASE_DEC | BASE_RANGE_STRING, RVALS(address_range), 0xff, NULL, HFILL } },
         { &hf_isobus_pgn, {
-            "PGN", "isobus.pgn", FT_UINT24, BASE_DEC_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.pgn", FT_UINT24, BASE_DEC_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_payload, {
             "Payload", "isobus.payload", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
 
@@ -820,8 +1056,19 @@ proto_register_isobus(void) {
         { &hf_isobus_datetime_utc_offset, {
             "Local time - UTC offset", "isobus.datetime.utc_offset", FT_UINT16, BASE_CUSTOM, CF_FUNC(isobus_print_datetime_utc_offset), 0x0, NULL, HFILL } },
 
+        { &hf_isobus_ack_response, {"ACK", "isobus.ack_response", FT_PROTOCOL, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_control_byte, {"Control byte", "isobus.ack_response.control_byte", FT_UINT8, BASE_DEC, VALS(acknowledgement_control_byte), 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_reserved, {"Reserved", "isobus.ack_response.reserved", FT_UINT24, BASE_DEC, VALS(acknowledgement_control_byte), 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_address, {"Address", "isobus.ack_response.address", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_group_function_value, {
+            "Group function value", "isobus.ack_response.group_function_value", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_exended_identifier, {
+            "Extended identifier", "isobus.ack_response.extended_identifier", FT_UINT24, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_ack_pgn, {
+            "PGN", "isobus.pgn", FT_UINT24, BASE_DEC_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+
         { &hf_isobus_req_requested_pgn, {
-            "Requested PGN", "isobus.req.requested_pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "Requested PGN", "isobus.req.requested_pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
 
         { &hf_isobus_ac_name, {
             "Name", "isobus.ac.name", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
@@ -855,31 +1102,68 @@ proto_register_isobus(void) {
         { &hf_isobus_transportprotocol_requesttosend_maximumpackets, {
             "Maximum Packets", "isobus.transport_protocol.request_to_send.maximum_packets", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_requesttosend_pgn, {
-            "PGN", "isobus.transport_protocol.request_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.transport_protocol.request_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_cleartosend_numberofpacketscanbesent, {
             "Number of packets that can be sent", "isobus.transport_protocol.request_to_send.number_of_packets_that_can_be_sent", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_cleartosend_nextpacketnumber, {
             "Next packet number", "isobus.transport_protocol.request_to_send.next_packet_number", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_cleartosend_pgn, {
-            "PGN", "isobus.transport_protocol.clear_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.transport_protocol.clear_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_endofmsgack_totalsize, {
             "Total Size", "isobus.transport_protocol.end_of_message_acknowledgement.total_size", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_endofmsgack_numberofpackets, {
             "Number of Packets", "isobus.transport_protocol.end_of_message_acknowledgement.number_of_packets", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_endofmsgack_pgn, {
-            "PGN", "isobus.transport_protocol.end_of_message_acknowledgement.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.transport_protocol.end_of_message_acknowledgement.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_connabort_abortreason, {
             "Connection Abort reason", "isobus.transport_protocol.connection_abort.abort_reason", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(connection_abort_reasons), 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_connabort_pgn, {
-            "PGN", "isobus.transport_protocol.connection_abort.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.transport_protocol.connection_abort.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_broadcastannouncemessage_totalsize, {
             "Total Message Size", "isobus.transport_protocol.broadcast_announce_message.total_message_size", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_broadcastannouncemessage_numberofpackets, {
             "Total Number of Packets", "isobus.transport_protocol.broadcast_announce_message.total_number_of_packets", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_broadcastannouncemessage_pgn, {
-            "PGN", "isobus.transport_protocol.broadcast_announce_message.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, VALS_EXT_PTR(&isobus_pgn_names_ext), 0x0, NULL, HFILL } },
+            "PGN", "isobus.transport_protocol.broadcast_announce_message.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
         { &hf_isobus_transportprotocol_reserved, {
             "Reserved", "isobus.transport_protocol.reserved", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_transportprotocol_sequence_number, {
+            "Sequence Number", "isobus.transport_protocol.data_transfer.sequence_number", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_transportprotocol_data, {
+            "Data", "isobus.transport_protocol.data_transfer.data", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+
+        { &hf_isobus_extendedtransportprotocol_controlbyte, {
+            "Control Byte", "isobus.extended_transport_protocol.control_byte", FT_UINT8, BASE_DEC, VALS(extended_transport_protocol_control_byte), 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_requesttosend_totalsize, {
+            "Total Message Size", "isobus.extended_transport_protocol.request_to_send.total_size", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_requesttosend_pgn, {
+            "PGN", "isobus.extended_transport_protocol.request_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_cleartosend_numberofpackets, {
+            "Number of packets that can be sent", "isobus.extended_transport_protocol.clear_to_send.number_of_packets_that_can_be_sent", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_cleartosend_nextpacketnumber, {
+            "Next Packet Number", "isobus.extended_transport_protocol.clear_to_send.next_packet_number", FT_UINT24, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_cleartosend_pgn, {
+            "PGN", "isobus.extended_transport_protocol.clear_to_send.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_datapacketoffset_numberofpackets, {
+            "Number of Packets", "isobus.extended_transport_protocol.data_packet_offset.number_of_packets", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_datapacketoffset_packetoffset, {
+            "Packet Offset", "isobus.extended_transport_protocol.data_packet_offset.packet_offset", FT_UINT24, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_datapacketoffset_pgn, {
+            "PGN", "isobus.extended_transport_protocol.data_packet_offset.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_endofmsgack_totalsize, {
+            "Total Message Size", "isobus.extended_transport_protocol.end_of_message_acknowledgement.total_size", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_endofmsgack_pgn, {
+            "PGN", "isobus.extended_transport_protocol.end_of_message_acknowledgement.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_connabort_abortreason, {
+            "Connection Abort Reason", "isobus.extended_transport_protocol.connection_abort.abort_reason", FT_UINT8, BASE_DEC | BASE_RANGE_STRING, RVALS(extended_connection_abort_reasons), 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_connabort_pgn, {
+            "PGN", "isobus.extended_transport_protocol.connection_abort.pgn", FT_UINT24, BASE_HEX | BASE_EXT_STRING, &isobus_pgn_names_ext, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_reserved, {
+            "Reserved", "isobus.extended_transport_protocol.reserved", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_sequence_number, {
+            "Sequence Number", "isobus.extended_transport_protocol.data_transfer.sequence_number", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+        { &hf_isobus_extendedtransportprotocol_data, {
+            "Data", "isobus.extended_transport_protocol.data_transfer.data", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } },
 
         { &hf_msg_fragments, {
             "Message fragments", "isobus.fragments", FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL } },
@@ -911,7 +1195,8 @@ proto_register_isobus(void) {
         &ett_isobus_name,
         &ett_isobus_fragment,
         &ett_isobus_fragments,
-        &ett_isobus_datetime_response
+        &ett_isobus_datetime_response,
+        &ett_isobus_ack_response
     };
 
     /* Register protocol init routine */
@@ -922,6 +1207,14 @@ proto_register_isobus(void) {
 
     proto_register_field_array(proto_isobus, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* Register expert info fields */
+    expert_module_t *expert_isobus = expert_register_protocol(proto_isobus);
+    static ei_register_info ei[] = {
+        { &ei_isobus_ack_msg_reserved, { "isobus.ack_msg_reserved", PI_UNDECODED, PI_WARN, "Reserved field not zero", EXPFILL }}
+    };
+    expert_register_field_array(expert_isobus, ei, array_length(ei));
+
 
     addressIdentifierTable = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), address_combination_hash, address_combination_equal);
 

@@ -20,7 +20,7 @@ endif::[]
 // WINDOWS_QT6_LTS_VERSION and MACOS_QT6_LTS_VERSION in .gitlab-ci.yml
 // in the stable release branch.
 :windows-qt6-lts-version: 6.10.3
-:macos-qt6-lts-version: 6.9.3
+:macos-qt6-lts-version: 6.10.3
 :source-highlighter: coderay
 
 include::wsdg_preface.adoc[]
@@ -70,6 +70,8 @@ include::wsdg_wiretap.adoc[]
 include::wsdg_plugins.adoc[]
 
 include::wsdg_lua_support.adoc[]
+
+include::wsdg_lua_debugger.adoc[]
 
 include::wsdg_userinterface.adoc[]
 

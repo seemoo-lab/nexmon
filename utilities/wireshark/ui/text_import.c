@@ -93,6 +93,7 @@
 #include <assert.h>
 
 #include <epan/tvbuff.h>
+#include <epan/iana-info.h>
 #include <wsutil/crc32.h>
 #include <epan/in_cksum.h>
 
@@ -121,8 +122,8 @@ static text_import_info_t *info_p;
 
 /* Dummy Ethernet header */
 static bool hdr_ethernet;
-static uint8_t hdr_eth_dest_addr[6] = {0x20, 0x52, 0x45, 0x43, 0x56, 0x00};
-static uint8_t hdr_eth_src_addr[6]  = {0x20, 0x53, 0x45, 0x4E, 0x44, 0x00};
+static const uint8_t hdr_eth_dest_addr[6] = {0x20, 0x52, 0x45, 0x43, 0x56, 0x00};
+static const uint8_t hdr_eth_src_addr[6]  = {0x20, 0x53, 0x45, 0x4E, 0x44, 0x00};
 static uint32_t hdr_ethernet_proto;
 
 /* Dummy IP header */
@@ -131,12 +132,12 @@ static bool hdr_ipv6;
 static unsigned hdr_ip_proto;
 
 /* Destination and source addresses for IP header */
-static ws_in6_addr NO_IPv6_ADDRESS    = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+static const ws_in6_addr NO_IPv6_ADDRESS = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 /* These IPv6 default addresses are unique local addresses generated using
  * the pseudo-random method from Section 3.2.2 of RFC 4193
  */
-static ws_in6_addr IPv6_SRC = {{0xfd, 0xce, 0xd8, 0x62, 0x14, 0x1b, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
-static ws_in6_addr IPv6_DST = {{0xfd, 0xce, 0xd8, 0x62, 0x14, 0x1b, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}};
+static const ws_in6_addr IPv6_SRC = {{0xfd, 0xce, 0xd8, 0x62, 0x14, 0x1b, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
+static const ws_in6_addr IPv6_DST = {{0xfd, 0xce, 0xd8, 0x62, 0x14, 0x1b, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02}};
 
 /* Dummy UDP header */
 static bool hdr_udp;
@@ -214,21 +215,23 @@ typedef enum {
 } parser_state_t;
 static parser_state_t state = INIT;
 
-static const char *state_str[] = {"Init",
-                           "Start-of-line",
-                           "Offset",
-                           "Byte",
-                           "Text"
+static const char * const state_str[] = {
+    "Init",
+    "Start-of-line",
+    "Offset",
+    "Byte",
+    "Text"
 };
 
-static const char *token_str[] = {"",
-                           "Byte",
-                           "Bytes",
-                           "Offset",
-                           "Directive",
-                           "Text",
-                           "End-of-line",
-                           "End-of-file"
+static const char * const token_str[] = {
+    "",
+    "Byte",
+    "Bytes",
+    "Offset",
+    "Directive",
+    "Text",
+    "End-of-line",
+    "End-of-file"
 };
 
 /* ----- Skeleton Packet Headers --------------------------------------------------*/
@@ -305,6 +308,15 @@ static struct {                 /* pseudo header ipv6 for checksum calculation *
     uint8_t next_header;
 } pseudoh6;
 
+#define ICMP6_ND_ROUTER_SOLICIT   133
+#define ICMP6_ND_ROUTER_ADVERT    134
+#define ICMP6_ND_NEIGHBOR_SOLICIT 135
+#define ICMP6_ND_NEIGHBOR_ADVERT  136
+#define ICMP6_ND_REDIRECT         137
+#define ICMP6_IND_SOLICIT         141
+#define ICMP6_IND_ADVERT          142
+#define ICMP6_CERT_PATH_SOL       148
+#define ICMP6_CERT_PATH_AD        149
 
 typedef struct {
     uint16_t source_port;
@@ -450,6 +462,35 @@ write_bytes(const char *str)
     return IMPORT_SUCCESS;
 }
 
+/* RFC 4861 Neighbor Discovery, RFC 3122 Inverse Neighbor Discovery,
+ * and RFC 3971 SEND Certification Path messages require IPv6 Hop
+ * Limit 255. Generate RFC-compliant dummy IPv6 headers for these
+ * ICMPv6 message types without changing the default Hop Limit for
+ * unrelated IPv6 traffic.
+ */
+static bool
+icmpv6_dummy_hlim_must_be_255(const uint8_t *payload, uint32_t payload_len)
+{
+    if (hdr_ip_proto != IP_PROTO_IPV6_ICMP || payload_len == 0) {
+        return false;
+    }
+
+    switch (payload[0]) {
+        case ICMP6_ND_ROUTER_SOLICIT:
+        case ICMP6_ND_ROUTER_ADVERT:
+        case ICMP6_ND_NEIGHBOR_SOLICIT:
+        case ICMP6_ND_NEIGHBOR_ADVERT:
+        case ICMP6_ND_REDIRECT:
+        case ICMP6_IND_SOLICIT:
+        case ICMP6_IND_ADVERT:
+        case ICMP6_CERT_PATH_SOL:
+        case ICMP6_CERT_PATH_AD:
+            return true;
+        default:
+            return false;
+    }
+}
+
 /*----------------------------------------------------------------------
  * Remove bytes from the current packet
  */
@@ -586,7 +627,8 @@ write_current_packet(bool cont)
             HDR_IPv6.ip6_ctlun.ip6_un2_vfc |= (6<< 4);
             HDR_IPv6.ip6_ctlun.ip6_un1.ip6_un1_plen = g_htons(ip_length);
             HDR_IPv6.ip6_ctlun.ip6_un1.ip6_un1_nxt  = (uint8_t) hdr_ip_proto;
-            HDR_IPv6.ip6_ctlun.ip6_un1.ip6_un1_hlim = 32;
+            HDR_IPv6.ip6_ctlun.ip6_un1.ip6_un1_hlim =
+                icmpv6_dummy_hlim_must_be_255(packet_buf, curr_offset) ? 255 : 32;
 
             ws_buffer_append(&prefix_buf, (uint8_t*)&HDR_IPv6, sizeof(HDR_IPv6));
 
@@ -813,12 +855,12 @@ append_to_preamble(char *str)
         if (packet_preamble_len + toklen > PACKET_PREAMBLE_MAX_LEN)
             return IMPORT_SUCCESS;    /* no room to add token to the preamble */
             /* XXX: Just keep going? This is probably not a problem, as above.*/
-        (void) g_strlcpy(&packet_preamble[packet_preamble_len], str, PACKET_PREAMBLE_MAX_LEN);
+        (void) g_strlcpy((char*)&packet_preamble[packet_preamble_len], str, PACKET_PREAMBLE_MAX_LEN);
         packet_preamble_len += (int) toklen;
         if (ws_log_get_level() >= LOG_LEVEL_NOISY) {
             char *c;
             char xs[PACKET_PREAMBLE_MAX_LEN];
-            (void) g_strlcpy(xs, packet_preamble, PACKET_PREAMBLE_MAX_LEN);
+            (void) g_strlcpy(xs, (const char*)packet_preamble, PACKET_PREAMBLE_MAX_LEN);
             while ((c = strchr(xs, '\r')) != NULL) *c=' ';
             ws_noisy("[[append_to_preamble: \"%s\"]]", xs);
         }
@@ -875,14 +917,14 @@ struct plain_decoding_data {
  * Some compilers warn about initializing the same subobject
  * more than once with designated initializers.
  *
- * We're doing that - INVALID_INIT iniitalizes everything to
+ * We're doing that - INVALID_INIT initializes everything to
  * INVALID_VALUE, but then we override selected elements -
  * but we know what we're doing, so just suppress that
  * warning.
  */
 DIAG_OFF_INIT_TWICE
 
-const struct plain_decoding_data hex_decode_info = {
+static const struct plain_decoding_data hex_decode_info = {
     .chars_per_unit = 2,
     .bytes_per_unit = 1,
     .bits_per_char = 4,
@@ -896,7 +938,7 @@ const struct plain_decoding_data hex_decode_info = {
     }
 };
 
-const struct plain_decoding_data bin_decode_info = {
+static const struct plain_decoding_data bin_decode_info = {
     .chars_per_unit = 8,
     .bytes_per_unit = 1,
     .bits_per_char = 1,
@@ -907,7 +949,7 @@ const struct plain_decoding_data bin_decode_info = {
     }
 };
 
-const struct plain_decoding_data oct_decode_info = {
+static const struct plain_decoding_data oct_decode_info = {
     .chars_per_unit = 8,
     .bytes_per_unit = 3,
     .bits_per_char = 3,
@@ -918,7 +960,7 @@ const struct plain_decoding_data oct_decode_info = {
     }
 };
 
-const struct plain_decoding_data base64_decode_info = {
+static const struct plain_decoding_data base64_decode_info = {
     .chars_per_unit = 4,
     .bytes_per_unit = 3,
     .bits_per_char = 6,
@@ -974,7 +1016,7 @@ static int parse_plain_data(unsigned char** src, const unsigned char* src_end,
     uint64_t val;
     int j;
     if (ws_log_get_level() >= LOG_LEVEL_NOISY) {
-        char* debug_str = wmem_strndup(NULL, *src, (src_end-*src));
+        char* debug_str = wmem_strndup(NULL, (const char*)*src, (src_end-*src));
         ws_noisy("parsing data: %s", debug_str);
         wmem_free(NULL, debug_str);
     }
@@ -1094,7 +1136,7 @@ void parse_dir(const unsigned char* start_field, const unsigned char* end_field,
  * leave sec and nsec unchanged and return false.
  */
 static bool
-_parse_time(const unsigned char* start_field, const unsigned char* end_field, const char* _format, time_t* sec, int* nsec) {
+_parse_time(const unsigned char* start_field, const unsigned char* end_field, const char* _format, time_t* sec, unsigned* nsec) {
     struct tm timecode;
     time_t sec_buf;
     int nsec_buf = 0;
@@ -1109,14 +1151,14 @@ _parse_time(const unsigned char* start_field, const unsigned char* end_field, co
     char *p;
     int  i;
 
-    (void) g_strlcpy(field, start_field, MIN(end_field - start_field + 1, PARSE_BUF));
+    (void) g_strlcpy(field, (const char*)start_field, MIN(end_field - start_field + 1, PARSE_BUF));
     if (ts_fmt_iso) {
         nstime_t ts_iso;
         if (!iso8601_to_nstime(&ts_iso, field, ISO8601_DATETIME_AUTO)) {
             return false;
         }
         *sec = ts_iso.secs;
-        *nsec = ts_iso.nsecs;
+        *nsec = (unsigned)ts_iso.nsecs;
     } else {
         (void) g_strlcpy(format, _format, PARSE_BUF);
 
@@ -1186,10 +1228,10 @@ _parse_time(const unsigned char* start_field, const unsigned char* end_field, co
         }
 
         *sec = sec_buf;
-        *nsec = nsec_buf;
+        *nsec = (unsigned)nsec_buf;
     }
 
-    ws_noisy("parsed time %s Format(%s), time(%u), subsecs(%u)\n", field, _format, (uint32_t)*sec, (uint32_t)*nsec);
+    ws_noisy("parsed time %s Format(%s), time(%ju), subsecs(%u)\n", field, _format, (uintmax_t)*sec, (uint32_t)*nsec);
 
     return true;
 }
@@ -1251,8 +1293,8 @@ parse_preamble (void)
     /* Ensure preamble has more than two chars before attempting to parse.
      * This should cover line breaks etc that get counted.
      */
-    if ( info_p->timestamp_format != NULL && strlen(packet_preamble) > 2 ) {
-        got_time = _parse_time(packet_preamble, packet_preamble + strlen(packet_preamble), info_p->timestamp_format, &ts_sec, &ts_nsec);
+    if ( info_p->timestamp_format != NULL && strlen((const char*)packet_preamble) > 2 ) {
+        got_time = _parse_time(packet_preamble, packet_preamble + strlen((const char*)packet_preamble), info_p->timestamp_format, &ts_sec, &ts_nsec);
         if (!got_time) {
             /* Let's only have a possible GUI popup once, other messages to log
              */
@@ -1265,9 +1307,9 @@ parse_preamble (void)
     }
     if (ws_log_get_level() >= LOG_LEVEL_NOISY) {
         char *c;
-        while ((c = strchr(packet_preamble, '\r')) != NULL) *c=' ';
+        while ((c = strchr((const char*)packet_preamble, '\r')) != NULL) *c=' ';
         ws_noisy("[[parse_preamble: \"%s\"]]", packet_preamble);
-        ws_noisy("Format(%s), time(%u), subsecs(%u)", info_p->timestamp_format, (uint32_t)ts_sec, ts_nsec);
+        ws_noisy("Format(%s), time(%ju), subsecs(%u)", info_p->timestamp_format, (uintmax_t)ts_sec, ts_nsec);
     }
 
     if (!got_time) {
@@ -1402,7 +1444,7 @@ process_rollback(bool by_eol)
        look like a matching ASCII dump.
         */
     if (rollback > 0) {
-        if (strncmp(pkt_lnstart+line_size-rollback, s2->str, rollback) == 0) {
+        if (strncmp((const char*)(pkt_lnstart+line_size-rollback), s2->str, rollback) == 0) {
             unwrite_bytes(rollback);
         } else {
             /* Not matched. This line contains invalid packet bytes, so

@@ -910,8 +910,7 @@ dissect_cmd77(proto_tree *body_tree, tvbuff_t *tvb, int offset, int bodylen, int
 
      offset += dissect_byte(body_tree, hf_hartip_pt_rsp_embedded_cmd,           tvb, offset);
 
-     byte_count = tvb_get_uint8(tvb, offset);
-     proto_tree_add_item(body_tree, hf_hartip_pt_rsp_command_byte_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+     proto_tree_add_item_ret_uint8(body_tree, hf_hartip_pt_rsp_command_byte_count, tvb, offset, 1, ENC_BIG_ENDIAN, &byte_count);
      offset += 1;
      length -= 6;
 
@@ -1363,8 +1362,7 @@ dissect_hartip_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
   proto_tree_add_item(hdr_tree, hf_hartip_hdr_status, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset += 1;
 
-  transaction_id = tvb_get_ntohs(tvb, offset);
-  proto_tree_add_item(hdr_tree, hf_hartip_hdr_transaction_id, tvb, offset, 2, ENC_BIG_ENDIAN);
+  proto_tree_add_item_ret_uint16(hdr_tree, hf_hartip_hdr_transaction_id, tvb, offset, 2, ENC_BIG_ENDIAN, &transaction_id);
   offset += 2;
 
   proto_item_append_text(hart_item, ", %s %s, Sequence Number %d", msg_id_str,

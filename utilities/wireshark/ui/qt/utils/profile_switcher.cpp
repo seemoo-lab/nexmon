@@ -15,11 +15,13 @@
 
 #include <ui/qt/capture_file.h>
 #include <ui/qt/models/packet_list_model.h>
+#include <ui/qt/utils/qt_ui_utils.h>
 
 #include "profile_switcher.h"
 
 #include "file.h"
 
+#include <app/application_flavor.h>
 #include <epan/epan.h>
 #include <epan/epan_dissect.h>
 #include <epan/prefs.h>
@@ -33,9 +35,6 @@ ProfileSwitcher::ProfileSwitcher(QObject *parent) :
     capture_file_changed_(true),
     profile_changed_(false)
 {
-    if (g_list_length(current_profile_list()) == 0) {
-        init_profile_list();
-    }
     connect(mainApp, &MainApplication::profileChanging, this, &ProfileSwitcher::disableSwitching);
 }
 
@@ -54,7 +53,7 @@ void ProfileSwitcher::captureEventHandler(CaptureEvent ev)
     // track that via the filename.
     switch (ev.eventType()) {
     case CaptureEvent::Opened:
-        if (previous_cap_file_ != capture_file->filePath()) {
+        if (!filePathsMatch(previous_cap_file_, capture_file->filePath())) {
             capture_file_changed_ = true;
             profile_changed_ = false;
         }
@@ -75,11 +74,12 @@ void ProfileSwitcher::checkPacket(capture_file *cap_file, frame_data *fdata, qsi
 
     if (row == 0) {
         clearProfileFilters();
-        for (GList *cur = current_profile_list() ; cur; cur = cur->next) {
+        for (GList *cur = profile_get_list() ; cur; cur = cur->next) {
             profile_def *profile = static_cast<profile_def *>(cur->data);
-            if (!profile->auto_switch_filter) {
+            if ((profile->auto_switch_filter == NULL) ||
+                (*profile->auto_switch_filter == '\0'))
                 continue;
-            }
+
             dfilter_t *dfcode;
             if (dfilter_compile(profile->auto_switch_filter, &dfcode, NULL) && dfcode) {
                 profile_filters_.append({profile->name, dfcode});
@@ -93,7 +93,7 @@ void ProfileSwitcher::checkPacket(capture_file *cap_file, frame_data *fdata, qsi
 
     QString new_profile;
     wtap_rec rec;
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     epan_dissect_t edt;
 
     for (auto &cur_filter : profile_filters_) {

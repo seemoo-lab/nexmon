@@ -13,80 +13,92 @@
 #include <QFrame>
 #include <QFont>
 #include <QComboBox>
+#include <QString>
 
 #include <epan/prefs.h>
+
+#include <ui/qt/widgets/theme_preview_widget.h>
 
 namespace Ui {
 class FontColorPreferencesFrame;
 }
 
+/**
+ * @brief A frame for configuring font and color preferences.
+ */
 class FontColorPreferencesFrame : public QFrame
 {
     Q_OBJECT
 
 public:
+    /**
+     * @brief Constructs a new FontColorPreferencesFrame.
+     * @param parent The parent widget, defaults to 0.
+     */
     explicit FontColorPreferencesFrame(QWidget *parent = 0);
+
+    /**
+     * @brief Destroys the FontColorPreferencesFrame.
+     */
     ~FontColorPreferencesFrame();
 
+    /**
+     * Called by the preferences dialog when the user accepts changes.
+     * Copies the stashed theme selection and appearance mode back to
+     * recent_common.  Both live in global recent storage so they survive
+     * profile switches.
+     */
+    void unstash();
+
 protected:
-    void showEvent(QShowEvent *evt);
+    /**
+     * @brief Handles the event when the frame is shown.
+     * @param evt The show event to handle.
+     */
+    void showEvent(QShowEvent *evt) override;
 
 private:
+    /** Pointer to the generated UI elements. */
     Ui::FontColorPreferencesFrame *ui;
-    QComboBox *colorSchemeComboBox_;
 
-    pref_t *pref_color_scheme_;
+    QString    stashed_theme_name_;
+
+    /**
+     * Stashed appearance mode (COLOR_SCHEME_DEFAULT / _LIGHT / _DARK).
+     * Committed to recent.gui_color_scheme in unstash() when the user
+     * accepts the dialog; not applied live.
+     */
+    int        stashed_color_scheme_;
+
+    /** Preference for the Qt GUI font name. */
     pref_t *pref_qt_gui_font_name_;
-    pref_t *pref_active_fg_;
-    pref_t *pref_active_bg_;
-    pref_t *pref_active_style_;
-    pref_t *pref_inactive_fg_;
-    pref_t *pref_inactive_bg_;
-    pref_t *pref_inactive_style_;
-    pref_t *pref_marked_fg_;
-    pref_t *pref_marked_bg_;
-    pref_t *pref_ignored_fg_;
-    pref_t *pref_ignored_bg_;
-    pref_t *pref_client_fg_;
-    pref_t *pref_client_bg_;
-    pref_t *pref_server_fg_;
-    pref_t *pref_server_bg_;
-    pref_t* pref_valid_fg_;
-    pref_t *pref_valid_bg_;
-    pref_t* pref_invalid_fg_;
-    pref_t *pref_invalid_bg_;
-    pref_t* pref_deprecated_fg_;
-    pref_t *pref_deprecated_bg_;
+
+    /** The currently selected font. */
     QFont cur_font_;
 
+    /**
+     * @brief Updates the UI widgets to reflect the current preferences.
+     */
     void updateWidgets();
-    void changeColor(pref_t *pref);
 
 private slots:
-    void colorChanged(pref_t *pref, const QColor &cc);
+    /**
+     * @brief Slot triggered when the color scheme combo box index changes.
+     * @param index The index of the newly selected color scheme.
+     */
     void colorSchemeIndexChanged(int index);
-    void on_fontPushButton_clicked();
 
-    void on_activeFGPushButton_clicked();
-    void on_activeBGPushButton_clicked();
-    void on_activeStyleComboBox_currentIndexChanged(int index);
-    void on_inactiveFGPushButton_clicked();
-    void on_inactiveBGPushButton_clicked();
-    void on_inactiveStyleComboBox_currentIndexChanged(int index);
-    void on_markedFGPushButton_clicked();
-    void on_markedBGPushButton_clicked();
-    void on_ignoredFGPushButton_clicked();
-    void on_ignoredBGPushButton_clicked();
-    void on_clientFGPushButton_clicked();
-    void on_clientBGPushButton_clicked();
-    void on_serverFGPushButton_clicked();
-    void on_serverBGPushButton_clicked();
-    void on_validFilterBGPushButton_clicked();
-    void on_validFilterFGPushButton_clicked();
-    void on_invalidFilterBGPushButton_clicked();
-    void on_invalidFilterFGPushButton_clicked();
-    void on_deprecatedFilterBGPushButton_clicked();
-    void on_deprecatedFilterFGPushButton_clicked();
+    void themeIndexChanged(int index);
+
+    /**
+     * @brief Refreshes the theme preview. Stub in Task 8; wired in Task 12.
+     */
+    void refreshPreview();
+
+    /**
+     * @brief Slot triggered when the font push button is clicked.
+     */
+    void on_fontPushButton_clicked();
 };
 
 #endif // FONT_COLOR_PREFERENCES_FRAME_H

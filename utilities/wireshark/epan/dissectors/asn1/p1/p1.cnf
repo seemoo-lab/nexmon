@@ -57,6 +57,10 @@ AdditionalActions
 NonBasicParameters
 #.END
 
+#.USE_VALS_EXT
+NonDeliveryDiagnosticCode
+#.END
+
 #.EXPORTS
 EXTENSION
 Content
@@ -172,7 +176,7 @@ ORName
 #.CLASS EXTENSION
 &id			TypeReference ExtensionType
 &Type
-&absent			_VariableTypeValueSetFieldSpec
+&absent			_VariableTypeValueFieldSpec
 &recommended		TypeReference Criticality
 #.END
 
@@ -594,7 +598,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	}
 
 #.FN_PARS ExtensionAttributeType
-	VAL_PTR = &actx->external.indirect_reference
+	VAL_PTR = (uint32_t*)&actx->external.indirect_reference
 
 #.FN_BODY ExtensionAttribute/extension-attribute-value
 
@@ -627,7 +631,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 
 	%(DEFAULT_BODY)s
 
-#.FN_PARS StandardExtension VAL_PTR = &actx->external.indirect_reference
+#.FN_PARS StandardExtension VAL_PTR = (uint32_t*)&actx->external.indirect_reference
 
 #.FN_BODY StandardExtension
 	actx->external.indirect_ref_present = true;
@@ -1157,7 +1161,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
 	VAL_PTR = &action
 
 #.FN_BODY RoutingAction
-	int action = 0;
+	uint32_t action = 0;
 
 	%(DEFAULT_BODY)s
 
@@ -1167,10 +1171,9 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
   VAL_PTR=&error
 
 #.FN_BODY MTABindError
-  int error = -1;
+  uint32_t error = 0;
   %(DEFAULT_BODY)s
-  if((error != -1))
-    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, error, p1_MTABindError_vals, "error(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, error, p1_MTABindError_vals, "error(%%d)"));
 
 #.FN_PARS TokenTypeIdentifier
 	FN_VARIANT = _str  VAL_PTR = &actx->external.direct_reference
@@ -1193,7 +1196,7 @@ MessageToken						B	"2.6.1.7.36"	"id-hat-forwarded-token"
   }
 
 #.FN_PARS TokenDataType
-	VAL_PTR = &actx->external.indirect_reference
+	VAL_PTR = (uint32_t*)&actx->external.indirect_reference
 
 #.FN_BODY TokenData/value
 

@@ -21,9 +21,8 @@
 #include <QHeaderView>
 #include <QInputDialog>
 
-#include <epan/prefs.h>
 #include <ui/qt/widgets/stock_icon_tool_button.h>
-#include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 
 #include <extcap.h>
 #include <extcap_parser.h>
@@ -35,10 +34,6 @@ ExtArgMultiSelect::ExtArgMultiSelect(extcap_arg * argument, QObject *parent) :
 
 ExtArgMultiSelect::~ExtArgMultiSelect()
 {
-    if (treeView != 0)
-        delete treeView;
-    if (viewModel != 0)
-        delete viewModel;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -116,6 +111,10 @@ void ExtArgMultiSelect::checkItemsWalker(QStandardItem * item, QStringList defau
 QWidget * ExtArgMultiSelect::createEditor(QWidget * parent)
 {
     QStringList checked;
+    QLineEdit* searchBox;
+    QVBoxLayout* layout;
+    TreeSortFilterProxyModel* tableProxyModel;
+    QWidget* pane = new QWidget(parent);
 
     QList<QStandardItem *> items = valueWalker(values, checked);
     if (items.length() == 0)
@@ -127,7 +126,8 @@ QWidget * ExtArgMultiSelect::createEditor(QWidget * parent)
         checked = QString(*_argument->pref_valptr).split(",", Qt::SkipEmptyParts);
     }
 
-    viewModel = new QStandardItemModel();
+    /* Source model : contains the data */
+    viewModel = new QStandardItemModel(this);
     QList<QStandardItem *>::const_iterator iter = items.constBegin();
     while (iter != items.constEnd())
     {
@@ -135,8 +135,16 @@ QWidget * ExtArgMultiSelect::createEditor(QWidget * parent)
         ++iter;
     }
 
-    treeView = new QTreeView(parent);
-    treeView->setModel(viewModel);
+    /* Proxy model : filters the data */
+    tableProxyModel = new TreeSortFilterProxyModel(this);
+    tableProxyModel->setSourceModel(viewModel);
+
+    searchBox = new QLineEdit();
+    searchBox->setClearButtonEnabled(true);
+    searchBox->setPlaceholderText("Search");
+
+    treeView = new QTreeView();
+    treeView->setModel(tableProxyModel);
 
     /* Shows at minimum 6 entries at most desktops */
     treeView->setMinimumHeight(100);
@@ -149,8 +157,26 @@ QWidget * ExtArgMultiSelect::createEditor(QWidget * parent)
         checkItemsWalker(((QStandardItemModel*)viewModel)->item(row), checked);
 
     connect(viewModel, &QStandardItemModel::itemChanged, this, &ExtArgMultiSelect::valueChanged);
+    connect(searchBox, &QLineEdit::textChanged, this, [tableProxyModel](const QString& text) {
+        tableProxyModel->setFilterRegularExpression(QRegularExpression(text, QRegularExpression::PatternOption::CaseInsensitiveOption));
+    });
 
-    return treeView;
+    layout = new QVBoxLayout(pane);
+    layout->addWidget(searchBox);
+    layout->addWidget(treeView);
+    pane->setLayout(layout);
+
+    return pane;
+}
+
+bool TreeSortFilterProxyModel::filterAcceptsRow(int sourceRow,
+    const QModelIndex& sourceParent) const
+{
+    /* Only apply filter on leaves. */
+    if (sourceModel()->hasChildren(sourceModel()->index(sourceRow, 0, sourceParent)))
+        return true;
+
+    return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
 QStringList ExtArgMultiSelect::checkedValues()
@@ -197,10 +223,8 @@ bool ExtArgMultiSelect::isValid()
         }
     }
 
-    QString lblInvalidColor = ColorUtils::fromColorT(prefs.gui_filter_invalid_bg).name();
-    QString txtStyle("QTreeView { background-color: %1; } ");
     if (viewModel != 0)
-        treeView->setStyleSheet(txtStyle.arg(valid ? QString("") : lblInvalidColor));
+        ThemeManager::setValidationState(treeView, valid ? QString() : QStringLiteral("invalid"));
 
     return valid;
 }
@@ -209,7 +233,8 @@ QString ExtArgMultiSelect::defaultValue()
 {
     QStringList checked;
 
-    valueWalker(values, checked);
+    QList<QStandardItem *> items = valueWalker(values, checked);
+    qDeleteAll(items);
 
     return checked.join(QString(','));
 }
@@ -322,7 +347,6 @@ QWidget* ExtArgTable::createEditor(QWidget* parent)
     connect(addAction, &QAction::triggered, this, &ExtArgTable::addKnown);
     connect(addActionCustom, &QAction::triggered, this, &ExtArgTable::addCustom);
     connect(removeAction, &QAction::triggered, this, &ExtArgTable::removeSelected);
-    pane->setLayout(paneLayout);
     return pane;
 }
 
@@ -372,7 +396,7 @@ void ExtArgTable::addChecked(QStringList checked, QStringList options)
             tableViewModel->appendRow({ item, btnItem });
 
             // Add button
-            StockIconToolButton* settingsButton = new StockIconToolButton(tableView, "x-capture-options");
+            StockIconToolButton* settingsButton = new StockIconToolButton(tableView, "capture-options");
             settingsButton->setFixedWidth(30);
             tableView->setIndexWidget(tableViewModel->indexFromItem(btnItem), settingsButton);
 
@@ -463,8 +487,8 @@ void ExtArgTable::showExtcapOptionsDialogForOptionValue(QStandardItem* item, QSt
     if (extcap_options_dialog) {
         extcap_options_dialog->setModal(true);
         extcap_options_dialog->setAttribute(Qt::WA_DeleteOnClose);
-        connect(extcap_options_dialog, &ExtcapOptionsDialog::finished, this, [=]() {
-            this->extcap_options_finished(item);
+        connect(extcap_options_dialog, &ExtcapOptionsDialog::accepted, this, [=]() {
+            this->extcap_suboptions_accepted(item);
         });
         extcap_options_dialog->show();
     }
@@ -476,7 +500,7 @@ extcap_format_external_arguments(GHashTable* extcap_args)
     QString command_line;
 
     GHashTableIter iter;
-    gpointer key, value;
+    void *key, *value;
     g_hash_table_iter_init(&iter, extcap_args);
     while (g_hash_table_iter_next(&iter, &key, &value)) {
         if (key != NULL)
@@ -494,23 +518,8 @@ extcap_format_external_arguments(GHashTable* extcap_args)
     return command_line;
 }
 
-void ExtArgTable::extcap_options_finished(QStandardItem* item)
+void ExtArgTable::extcap_suboptions_accepted(QStandardItem* item)
 {
-    interface_t* device;
-    bool dev_found = false;
-    for (unsigned if_idx = 0; if_idx < global_capture_opts.all_ifaces->len; if_idx++)
-    {
-        device = &g_array_index(global_capture_opts.all_ifaces, interface_t, if_idx);
-        if (g_strcmp0(_argument->device_name, device->name) == 0 && device->if_info.type == IF_EXTCAP)
-        {
-            dev_found = true;
-            break;
-        }
-    }
-
-    if (dev_found && device->external_cap_args_settings != NULL)
-    {
-        QString arguments = extcap_format_external_arguments(device->external_cap_args_settings);
-        item->setData(arguments, Qt::UserRole + 1);
-    }
+    QString arguments = extcap_format_external_arguments(extcap_options_dialog->getExtcapArgumentSettings());
+    item->setData(arguments, Qt::UserRole + 1);
 }

@@ -39,10 +39,10 @@
 #include <epan/expert.h>
 #include <epan/strutil.h>
 #include <epan/prefs.h>
-#include <epan/ipproto.h>
 #include <epan/asn1.h>
 #include <epan/proto_data.h>
 #include <wsutil/array.h>
+#include <epan/iana-info.h>
 
 #include "packet-t38.h"
 #include "packet-per.h"
@@ -595,7 +595,7 @@ dissect_t38_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 	if(t38_tpkt_usage == T38_TPKT_ALWAYS){
 		dissect_tpkt_encap(tvb,pinfo,tree,t38_tpkt_reassembly,t38_tcp_pdu_handle);
 	}
-	else if((t38_tpkt_usage == T38_TPKT_NEVER) || (is_tpkt(tvb,1) == -1)){
+	else if((t38_tpkt_usage == T38_TPKT_NEVER) || (is_tpkt(tvb,1, NULL))){
 		dissect_t38_tcp_pdu(tvb, pinfo, tree, data);
 	}
 	else {
@@ -769,6 +769,6 @@ proto_reg_handoff_t38(void)
 	data_handle = find_dissector("data");
 	dissector_add_for_decode_as("tcp.port", t38_tcp_handle);
 	dissector_add_for_decode_as("udp.port", t38_udp_handle);
-	heur_dissector_add("udp", dissect_t38_acdr_heur, "T38 over AC DR", "t38_acdr", proto_t38, HEURISTIC_ENABLE);
+	heur_dissector_add("udp", dissect_t38_acdr_heur, "T38 over AC DR", "t38_acdr", proto_t38, HEURISTIC_DISABLE);
 	dissector_add_uint("acdr.media_type", ACDR_T38, t38_udp_handle);
 }

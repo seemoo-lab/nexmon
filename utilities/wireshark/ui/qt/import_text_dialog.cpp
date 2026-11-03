@@ -16,7 +16,6 @@
 
 #include "ui/text_import_scanner.h"
 #include "ui/util.h"
-#include "ui/alert_box.h"
 #include "ui/help_url.h"
 #include "ui/capture_globals.h"
 
@@ -25,6 +24,8 @@
 #include "wsutil/inet_addr.h"
 #include "wsutil/time_util.h"
 #include "wsutil/filesystem.h"
+#include "app/application_flavor.h"
+#include "wsutil/report_message.h"
 #include <wsutil/array.h>
 
 #include <ui_import_text_dialog.h>
@@ -83,7 +84,7 @@ ImportTextDialog::ImportTextDialog(QWidget *parent) :
 
     ti_ui_->regexHintLabel->setSmallText(true);
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     // The grid layout squishes each line edit otherwise.
     int le_height = ti_ui_->textFileLineEdit->sizeHint().height();
     ti_ui_->ethertypeLineEdit->setMinimumHeight(le_height);
@@ -183,7 +184,7 @@ ImportTextDialog::~ImportTextDialog()
 
 void ImportTextDialog::loadSettingsFile()
 {
-    QFileInfo fileInfo(gchar_free_to_qstring(get_profile_dir(get_profile_name(), false)), QString(SETTINGS_FILE));
+    QFileInfo fileInfo(gchar_free_to_qstring(get_profile_dir(application_configuration_environment_prefix(), get_profile_name(), false)), QString(SETTINGS_FILE));
     QFile loadFile(fileInfo.filePath());
 
     if (!fileInfo.exists() || !fileInfo.isFile()) {
@@ -200,7 +201,7 @@ void ImportTextDialog::loadSettingsFile()
 
 void ImportTextDialog::saveSettingsFile()
 {
-    QFileInfo fileInfo(gchar_free_to_qstring(get_profile_dir(get_profile_name(), false)), QString(SETTINGS_FILE));
+    QFileInfo fileInfo(gchar_free_to_qstring(get_profile_dir(application_configuration_environment_prefix(), get_profile_name(), false)), QString(SETTINGS_FILE));
     QFile saveFile(fileInfo.filePath());
 
     if (fileInfo.exists() && !fileInfo.isFile()) {
@@ -440,7 +441,7 @@ int ImportTextDialog::exec() {
       case TEXT_IMPORT_HEXDUMP:
         import_info_.hexdump.import_text_FILE = ws_fopen(import_info_.import_text_filename, "rb");
         if (!import_info_.hexdump.import_text_FILE) {
-            open_failure_alert_box(import_info_.import_text_filename, errno, false);
+            report_open_failure(import_info_.import_text_filename, errno, false);
             setResult(QDialog::Rejected);
             goto cleanup_mode;
         }
@@ -454,7 +455,7 @@ int ImportTextDialog::exec() {
       case TEXT_IMPORT_REGEX:
         import_info_.regex.import_text_GMappedFile = g_mapped_file_new(import_info_.import_text_filename, true, &gerror);
         if (gerror) {
-            open_failure_alert_box(import_info_.import_text_filename, gerror->code, false);
+            report_open_failure(import_info_.import_text_filename, gerror->code, false);
             g_error_free(gerror);
             setResult(QDialog::Rejected);
             goto cleanup_mode;
@@ -513,12 +514,12 @@ int ImportTextDialog::exec() {
     }
     text_import_pre_open(&params, file_type_subtype, import_info_.import_text_filename, interface_name.toUtf8().constData());
     /* Use a random name for the temporary import buffer */
-    import_info_.wdh = wtap_dump_open_tempfile(global_capture_opts.temp_dir, &tmp, "import", file_type_subtype, WTAP_UNCOMPRESSED, &params, &err, &err_info);
+    import_info_.wdh = wtap_dump_open_tempfile(global_capture_opts.temp_dir, &tmp, "import", file_type_subtype, WS_FILE_UNCOMPRESSED, &params, &err, &err_info);
     capfile_name_.append(tmp ? tmp : "temporary file");
     import_info_.output_filename = tmp;
 
     if (import_info_.wdh == NULL) {
-        cfile_dump_open_failure_alert_box(capfile_name_.toUtf8().constData(), err, err_info, file_type_subtype);
+        report_cfile_dump_open_failure(capfile_name_.toUtf8().constData(), err, err_info, file_type_subtype);
         setResult(QDialog::Rejected);
         goto cleanup_wtap;
     }
@@ -526,7 +527,7 @@ int ImportTextDialog::exec() {
     err = text_import(&import_info_);
 
     if (err != 0) {
-        failure_alert_box("Import failed");
+        report_failure("Import failed");
         setResult(QDialog::Rejected);
         goto cleanup;
     }
@@ -534,7 +535,7 @@ int ImportTextDialog::exec() {
   cleanup: /* free in reverse order of allocation */
     if (!wtap_dump_close(import_info_.wdh, NULL, &err, &err_info))
     {
-        cfile_close_failure_alert_box(capfile_name_.toUtf8().constData(), err, err_info);
+        report_cfile_close_failure(capfile_name_.toUtf8().constData(), err, err_info);
     }
   cleanup_wtap:
     /* g_free checks for null */
@@ -770,11 +771,7 @@ void ImportTextDialog::enableFieldWidgets(bool enable_direction_input, bool enab
 void ImportTextDialog::on_dataEncodingComboBox_currentIndexChanged(int index)
 {
     QVariant val = ti_ui_->dataEncodingComboBox->itemData(index);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     if (val.canConvert<int>())
-#else
-    if (val != QVariant::Invalid)
-#endif
     {
         // data_encoding_ok = true;
         import_info_.regex.encoding = (enum data_encoding) val.toUInt();
@@ -930,11 +927,7 @@ void ImportTextDialog::enableHeaderWidgets(uint encapsulation) {
 void ImportTextDialog::on_encapComboBox_currentIndexChanged(int index)
 {
     QVariant val = ti_ui_->encapComboBox->itemData(index);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     if (val.canConvert<int>())
-#else
-    if (val != QVariant::Invalid)
-#endif
     {
         import_info_.encapsulation = val.toUInt();
     } else {

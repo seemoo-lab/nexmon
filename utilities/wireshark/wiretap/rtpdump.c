@@ -65,7 +65,7 @@
  *  - epan/dissectors/file-rtpdump.c
  */
 #define RTP_MAGIC "#!rtpplay1.0 "
-#define RTP_MAGIC_LEN 13
+#define RTP_MAGIC_LEN (sizeof RTP_MAGIC - 1)
 
 /* Reasonable maximum length for the RTP header (after the magic):
  * - WS_INET6_ADDRSTRLEN characters for a IPv6 address
@@ -134,7 +134,7 @@ rtpdump_open(wtap *wth, int *err, char **err_info)
             ? WTAP_OPEN_NOT_MINE
             : WTAP_OPEN_ERROR;
     }
-    if (strncmp(buf_magic, RTP_MAGIC, RTP_MAGIC_LEN) != 0) {
+    if (memcmp(buf_magic, RTP_MAGIC, RTP_MAGIC_LEN) != 0) {
         return WTAP_OPEN_NOT_MINE;
     }
 
@@ -182,6 +182,12 @@ rtpdump_open(wtap *wth, int *err, char **err_info)
             break;
         }
         else if (g_ascii_isprint(ch)) {
+            if (header_str->len >= RTP_HEADER_MAX_LEN) {
+                *err = WTAP_ERR_BAD_FILE;
+                *err_info = ws_strdup("rtpdump: header text too long");
+                g_string_free(header_str, TRUE);
+                return WTAP_OPEN_ERROR;
+            }
             g_string_append_c(header_str, ch);
         }
         else {

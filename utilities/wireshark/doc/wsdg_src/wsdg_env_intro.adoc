@@ -194,11 +194,11 @@ We currently offer the following types of precompiled packages as part of each o
   It is the most popular installation method on Windows.
 
 * Windows https://portableapps.com/[PortableApps] .paf.exe file.
-  This is a self-contained package that can be run from anywere, either standalone or under the PortableApps.com Platform.
+  This is a self-contained package that can be run from anywhere, either standalone or under the PortableApps.com Platform.
 
 * Windows .msi installer.
   This installs Wireshark using Microsoft’s https://docs.microsoft.com/en-us/windows/win32/msi/installer-database[Installer Database], created using the https://wixtoolset.org/[WiX toolset].
-  It does not yet include Npcap or USBPcap and is somewhat https://gitlab.com/wireshark/wireshark/-/issues/8814[experimental].
+  It does not yet include Npcap or USBPcap and is somewhat https://gitlab.com/wireshark/wireshark/-/work_items/8814[experimental].
 
 * macOS .dmg.
   This is a disk image which includes a drag-installable Wireshark application bundle along with utility packages for installing ChmodBPF and adding Wireshark to your PATH environment variable.
@@ -272,7 +272,7 @@ Release packages are built on the following platforms:
 
 * Windows 11 Arm64, Visual Studio 2022
 
-* Ubuntu 22.04 x64, gcc
+* Ubuntu 24.04 x64, gcc and clang
 
 * macOS x64, clang
 
@@ -340,17 +340,18 @@ typically more up to date and the HTML format is easier to use.
 If you don't find the information you need inside this book, there are
 various other sources of information:
 
-* The file _doc/README.developer_ and all the other README.xxx files in the
-  source code. These are various documentation files on different topics
+* The file wsrepofile:doc/README.developer[] and
+  wsrepodir:doc[all the other _README.xxx_ files in the source code]. These are
+  various documentation files on different topics.
 
 [NOTE]
 .Read the README
 ====
-_README.developer_ is packed full with all kinds of details relevant
-to the developer of Wireshark source code. Its companion file
-_README.dissector_ advises you around common
-pitfalls, shows you basic layout of dissector code, shows details of the
-APIs available to the dissector developer, etc.
+wsrepofile:doc/README.developer[README.developer] is packed full with all
+kinds of details relevant to the developer of Wireshark source code. Its
+companion file wsrepofile:doc/README.dissector[README.dissector] advises you
+around common pitfalls, shows you basic layout of dissector code, shows details
+of the APIs available to the dissector developer, etc.
 ====
 
 * The Wireshark source code

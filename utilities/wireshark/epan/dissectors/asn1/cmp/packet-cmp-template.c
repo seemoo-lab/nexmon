@@ -22,20 +22,17 @@
 #include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-cmp.h"
+#include "packet-cms.h"
 #include "packet-crmf.h"
 #include "packet-pkix1explicit.h"
 #include "packet-pkix1implicit.h"
-#include "packet-pkcs10.h"
+#include "packet-x509ce.h"
 #include "packet-tcp.h"
 #include "packet-http.h"
 #include <epan/prefs.h>
-
-#define PNAME  "Certificate Management Protocol"
-#define PSNAME "CMP"
-#define PFNAME "cmp"
-
 #define TCP_PORT_CMP 829
 
+void proto_reg_handoff_cmp(void);
 void proto_register_cmp(void);
 
 static dissector_handle_t cmp_http_handle;
@@ -137,7 +134,7 @@ static int dissect_cmp_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pa
 
 	switch(pdu_type){
 		case CMP_TYPE_PKIMSG:
-			next_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_reported_length_remaining(tvb, offset), pdu_len);
+			next_tvb = tvb_new_subset_length(tvb, offset, pdu_len);
 			dissect_cmp_pdu(next_tvb, pinfo, tree, NULL);
 			offset += tvb_reported_length_remaining(tvb, offset);
 			break;
@@ -161,12 +158,12 @@ static int dissect_cmp_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pa
 			proto_tree_add_item(tcptrans_tree, hf_cmp_tcptrans_ttcb, tvb, offset, 4, ENC_TIME_SECS|ENC_BIG_ENDIAN);
 			offset += 4;
 
-			next_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_reported_length_remaining(tvb, offset), pdu_len);
+			next_tvb = tvb_new_subset_length(tvb, offset, pdu_len);
 			dissect_cmp_pdu(next_tvb, pinfo, tree, NULL);
 			offset += tvb_reported_length_remaining(tvb, offset);
 			break;
 		case CMP_TYPE_FINALMSGREP:
-			next_tvb = tvb_new_subset_length_caplen(tvb, offset, tvb_reported_length_remaining(tvb, offset), pdu_len);
+			next_tvb = tvb_new_subset_length(tvb, offset, pdu_len);
 			dissect_cmp_pdu(next_tvb, pinfo, tree, NULL);
 			offset += tvb_reported_length_remaining(tvb, offset);
 			break;
@@ -316,7 +313,7 @@ void proto_register_cmp(void) {
 	module_t *cmp_module;
 
 	/* Register protocol */
-	proto_cmp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+	proto_cmp = proto_register_protocol("Certificate Management Protocol", "CMP", "cmp");
 
 	/* Register fields and subtrees */
 	proto_register_field_array(proto_cmp, hf, array_length(hf));
@@ -350,9 +347,9 @@ void proto_register_cmp(void) {
          * name, but leave it.
          * https://datatracker.ietf.org/doc/html/rfc6712#section-1
          */
-	cmp_http_handle = register_dissector_with_description("cmp.http", PSNAME, dissect_cmp_http, proto_cmp);
-	cmp_tcp_style_http_handle = register_dissector_with_description("cmp.tcp_pdu", PSNAME " TCP-Messaging PDU", dissect_cmp_tcp_pdu, proto_cmp);
-	cmp_tcp_handle = register_dissector_with_description("cmp", PSNAME " TCP-Messaging", dissect_cmp_tcp, proto_cmp);
+	cmp_http_handle = register_dissector_with_description("cmp.http", "CMP", dissect_cmp_http, proto_cmp);
+	cmp_tcp_style_http_handle = register_dissector_with_description("cmp.tcp_pdu", "CMP TCP-Messaging PDU", dissect_cmp_tcp_pdu, proto_cmp);
+	cmp_tcp_handle = register_dissector_with_description("cmp", "CMP TCP-Messaging", dissect_cmp_tcp, proto_cmp);
 	register_ber_syntax_dissector("PKIMessage", proto_cmp, dissect_cmp_pdu);
 }
 

@@ -44,7 +44,7 @@ get_stats_for_preview(wtap *wth, ws_file_preview_stats *stats,
     data_records = 0;
     timed_out = false;
     time(&time_preview);
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     while ((wtap_read(wth, &rec, err, err_info, &data_offset))) {
         if (rec.presence_flags & WTAP_HAS_TS) {
             cur_time = nstime_to_sec(&rec.ts);
@@ -81,7 +81,6 @@ get_stats_for_preview(wtap *wth, ws_file_preview_stats *stats,
                 break;
             }
         }
-        wtap_rec_reset(&rec);
     }
 
     stats->have_times = have_times;

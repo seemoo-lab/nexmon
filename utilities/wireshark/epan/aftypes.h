@@ -11,10 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __AFTYPES_H__
-#define __AFTYPES_H__
-
+#pragma once
 #include <wsutil/value_string.h>
 
 #ifdef __cplusplus
@@ -113,5 +110,3 @@ extern value_string_ext linux_af_vals_ext;
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* aftypes.h */

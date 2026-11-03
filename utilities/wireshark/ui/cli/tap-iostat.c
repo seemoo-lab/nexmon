@@ -138,7 +138,7 @@ iostat_io_free(io_stat_t *io)
         iostat_item_reset(&io->items[i]);
     }
     g_free(io->items);
-    g_free((gpointer)io->filters);
+    g_free((void *)io->filters);
     g_free(io->max_vals);
     g_free(io->max_frame);
     g_free(io->hf_indexes);
@@ -759,6 +759,7 @@ fill_start_time(const io_stat_t *iot, const nstime_t *rel_time, ws_tsprec_e invl
       break;
 
     case TS_RELATIVE:
+    case TS_RELATIVE_CAP:
     case TS_NOT_SET:
       display_signed_time(time_buf, NSTIME_ISO8601_BUFSIZE, rel_time, invl_prec);
       break;
@@ -831,6 +832,8 @@ iostat_get_item_value(const io_stat_t *iot, io_stat_item_t *item, const char *fm
             break;
 
         case CALC_TYPE_LOAD:
+            if (interval == 0)
+                break;
             ftype = proto_registrar_get_ftype(iot->hf_indexes[j]);
             switch (ftype) {
             case FT_RELATIVE_TIME:
@@ -1102,6 +1105,7 @@ iostat_draw_header_row(unsigned borderlen, const io_stat_t *iot, const column_wi
         timestamp_str = g_string_new("| Date and time");
         break;
     case TS_RELATIVE:
+    case TS_RELATIVE_CAP:
     case TS_NOT_SET:
         timestamp_str = g_string_new("| Interval");
         break;
@@ -1279,7 +1283,7 @@ iostat_draw(void *arg)
     t = 0;
 
     if (interval == 0 || duration == 0) {
-        num_rows = 0;
+        num_rows = 1;
     } else {
         num_rows = (unsigned int)(duration/interval) + ((unsigned int)(duration%interval) > 0 ? 1 : 0);
     }
@@ -1317,6 +1321,7 @@ iostat_draw(void *arg)
         switch (timestamp_get_type()) {
 
         case TS_RELATIVE:
+        case TS_RELATIVE_CAP:
         case TS_NOT_SET:
             /* For relative times, we show both ends of the interval. */
             printf("|%*s <", dur_w, time_buf);

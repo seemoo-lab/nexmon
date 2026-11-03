@@ -17,9 +17,14 @@
 #include <epan/print.h>
 #include <epan/epan.h>
 #include <epan/epan_dissect.h>
-#include <cfile.h>
+#include <epan/color_filters.h>
+#include <epan/dissectors/packet-frame.h>
+#include <epan/tag_rules.h>
+#include <epan/dfilter/dfilter.h>
+#include <epan/cfile.h>
 
 #include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/font_manager.h>
 #include <ui/qt/utils/variant_pointer.h>
 #include <ui/qt/utils/wireshark_mime_data.h>
 #include <ui/qt/widgets/drag_label.h>
@@ -31,8 +36,8 @@
 #include <ui/qt/io_graph_action.h>
 #include <ui/qt/plot_action.h>
 #include <ui/qt/protocol_preferences_menu.h>
+#include <ui/qt/models/pref_models.h>
 #include <ui/all_files_wildcard.h>
-#include <ui/alert_box.h>
 #include <ui/urls.h>
 #include "main_application.h"
 
@@ -60,23 +65,28 @@ ProtoTree::ProtoTree(QWidget *parent, epan_dissect_t *edt_fixed) :
     cap_file_(NULL),
     edt_(edt_fixed)
 {
-    setAccessibleName(tr("Packet details"));
     // Leave the uniformRowHeights property as-is (false) since items might have
     // have multiple lines (e.g. packet or event comments). If this slows things
     // down too much we should add a custom delegate which handles SizeHintRole.
     setHeaderHidden(true);
+    setFocusPolicy(Qt::StrongFocus);
 
-#if !defined(Q_OS_WIN)
+#ifdef Q_OS_MACOS
+    setAttribute(Qt::WA_MacShowFocusRect, true);
+#endif
+
     setStyleSheet(QStringLiteral(
         "QTreeView:item:hover {"
         "  background-color: %1;"
         "  color: palette(text);"
         "}").arg(ColorUtils::hoverBackground().name(QColor::HexArgb)));
-#endif
 
     // Shrink down to a small but nonzero size in the main splitter.
     int one_em = fontMetrics().height();
     setMinimumSize(one_em, one_em);
+
+    verticalScrollBar()->setFocusPolicy(Qt::NoFocus);
+    horizontalScrollBar()->setFocusPolicy(Qt::NoFocus);
 
     setModel(proto_tree_model_);
 
@@ -85,11 +95,20 @@ ProtoTree::ProtoTree(QWidget *parent, epan_dissect_t *edt_fixed) :
     connect(this, &ProtoTree::clicked, this, &ProtoTree::itemClicked);
     connect(this, &ProtoTree::doubleClicked, this, &ProtoTree::itemDoubleClicked);
 
+    // Own the font: seed it now and follow the FontManager for later changes.
+    connect(FontManager::instance(), &FontManager::monospaceFontChanged, this, &ProtoTree::setMonospaceFont);
+    setMonospaceFont(FontManager::zoomedMonospaceFont());
+
     // resizeColumnToContents checks 1000 items by default. The user might
     // have scrolled to an area with a different width at this point.
     connect(verticalScrollBar(), &QScrollBar::sliderReleased, this, &ProtoTree::updateContentWidth);
 
-    connect(mainApp, &MainApplication::appInitialized, this, &ProtoTree::connectToMainWindow);
+    // Only the main-window tree follows the main window's field/frame
+    // selection. A fixed-edt tree (the packet dialog) shows one frozen packet
+    // and wires its own selection signals, so it must not connect here.
+    if (!edt_) {
+        mainApp->whenInitialized(this, [this]() { connectToMainWindow(); });
+    }
 
     viewport()->installEventFilter(this);
 }
@@ -101,13 +120,13 @@ void ProtoTree::clear() {
 
 void ProtoTree::connectToMainWindow()
 {
-    if (mainApp->mainWindow())
-    {
-        connect(mainApp->mainWindow(), &MainWindow::fieldSelected,
-                this, &ProtoTree::selectedFieldChanged);
-        connect(mainApp->mainWindow(), &MainWindow::framesSelected,
-                this, &ProtoTree::selectedFrameChanged);
-    }
+    // Reached only for the main-window tree, and only once the app is
+    // initialized (the window is shown by then), so mainWindow() is non-null.
+    MainWindow *main_window = mainApp->mainWindow();
+    connect(main_window, &MainWindow::fieldSelected,
+            this, &ProtoTree::selectedFieldChanged);
+    connect(main_window, &MainWindow::framesSelected,
+            this, &ProtoTree::selectedFrameChanged);
 }
 
 void ProtoTree::ctxCopyVisibleItems()
@@ -334,6 +353,29 @@ void ProtoTree::contextMenuEvent(QContextMenuEvent *event)
 
     ctx_menu->addMenu(PlotAction::createMenu(finfo->headerInfo(), ctx_menu));
 
+    // Checks for the Distribution menu (enabled according to the AGG_FT value)
+    /* XXX - ensure we are consistent with the Distribution Dialog. Move to a function ? */
+    bool isDistributable = false;
+    switch(finfo->headerInfo().type) {
+        case FT_IPv4:
+        case FT_IPv6:
+            isDistributable = true;
+            break;
+
+        default:
+            if (FT_IS_STRING(finfo->headerInfo().type) ||
+                FT_IS_INTEGER(finfo->headerInfo().type)) {
+                isDistributable = true;
+            }
+            break;
+    }
+
+    /* add Distribution menu */
+    action = ctx_menu->addAction(tr("Distribution…"), [this, finfo]() {
+        emit showDistributionDialog(finfo->headerInfo().abbreviation);
+    });
+    action->setEnabled(isDistributable);
+
     submenu = ctx_menu->addMenu(tr("Copy"));
     submenu->setToolTipsVisible(true);
     submenu->addAction(tr("All Visible Items"), this, &ProtoTree::ctxCopyVisibleItems);
@@ -412,6 +454,118 @@ void ProtoTree::contextMenuEvent(QContextMenuEvent *event)
             this, SIGNAL(editProtocolPreference(pref_t*,module_t*)));
 
     ctx_menu->addMenu(proto_prefs_menu);
+
+    main_menu_item = window()->findChild<QMenu *>("menuTcpStreamGraphs");
+    if (main_menu_item) {
+        QList<QAction *> enabled_actions;
+        foreach (QAction *a, main_menu_item->actions()) {
+            if (!a->isSeparator() && a->isEnabled())
+                enabled_actions << a;
+        }
+        if (!enabled_actions.isEmpty()) {
+            submenu = new QMenu(main_menu_item->title(), ctx_menu);
+            foreach (QAction *a, enabled_actions)
+                submenu->addAction(a);
+            ctx_menu->addMenu(submenu);
+        }
+    }
+
+    // Add "Tagging Rules..." and "Tag Links" submenu when right-clicking a frame.tag field
+    bool is_tag_field = fi && fi->hfinfo &&
+        strcmp(fi->hfinfo->abbrev, "frame.tag") == 0;
+    if (is_tag_field && !buildForDialog) {
+        ctx_menu->addAction(tr("Tagging Rules..."), [this]() {
+            QAction *tagging_rules_action = window()->findChild<QAction *>("actionViewTaggingRules");
+            if (tagging_rules_action)
+                tagging_rules_action->trigger();
+        });
+
+        // Build "Tag Links" submenu from all matching rules that have a URL
+        if (edt) {
+            QMenu *linkSubmenu = nullptr;
+            const GSList *rule_list = tag_rules_get_list();
+            for (const GSList *r = rule_list; r; r = g_slist_next(r)) {
+                const tag_rule_t *rule = (const tag_rule_t *)r->data;
+                if (rule->disabled || !rule->c_tagfilter || !rule->tag_url || !rule->tag_url[0])
+                    continue;
+                if (!dfilter_apply_edt(rule->c_tagfilter, edt))
+                    continue;
+                if (!linkSubmenu)
+                    linkSubmenu = new QMenu(tr("Tag Links"), ctx_menu);
+                QString name = QString::fromUtf8(rule->rule_name);
+                QString url  = QString::fromUtf8(rule->tag_url);
+                QString displayUrl = url.length() > 50 ? url.left(50) + "..." : url;
+                QString label = name + ": " + displayUrl;
+                QAction *linkAction = linkSubmenu->addAction(label);
+                connect(linkAction, &QAction::triggered, this, [url]() {
+                    QDesktopServices::openUrl(QUrl(url));
+                });
+            }
+            if (linkSubmenu)
+                ctx_menu->addMenu(linkSubmenu);
+        }
+
+        ctx_menu->addSeparator();
+    }
+
+    // Add actions for coloring rule fields
+    bool is_color_rule_name = fi && fi->hfinfo &&
+        strcmp(fi->hfinfo->abbrev, "frame.coloring_rule.name") == 0;
+    bool is_color_rule_string = fi && fi->hfinfo &&
+        strcmp(fi->hfinfo->abbrev, "frame.coloring_rule.string") == 0;
+
+    if (is_color_rule_name || is_color_rule_string) {
+        // "Coloring Rule Preferences..." positioned right below Protocol Preferences
+        ctx_menu->addAction(tr("Coloring Rule Preferences..."), [this]() {
+            emit showProtocolPreferences(PrefsModel::typeToString(PrefsModel::Layout));
+        });
+
+        // "Coloring Rules..." opens the View -> Coloring Rules dialog
+        ctx_menu->addAction(tr("Coloring Rules..."), [this]() {
+            QAction *coloring_rules_action = window()->findChild<QAction *>("actionViewColoringRules");
+            if (coloring_rules_action)
+                coloring_rules_action->trigger();
+        });
+
+        // Pause/Resume and Resume All (only when multi-color details is enabled)
+        if (prefs.gui_packet_list_multi_color_details) {
+            QString filter_name;
+            if (is_color_rule_name) {
+                filter_name = finfo->toString();
+            } else {
+                // frame.coloring_rule.string: the name field is always the previous sibling
+                QModelIndex nameIdx = index.sibling(index.row() - 1, 0);
+                if (nameIdx.isValid()) {
+                    FieldInformation nameInfo(proto_tree_model_->protoNodeFromIndex(nameIdx), nullptr);
+                    filter_name = nameInfo.toString();
+                }
+            }
+            if (filter_name.startsWith("[PAUSED] ")) {
+                filter_name = filter_name.mid(9);
+            }
+
+            if (!filter_name.isEmpty()) {
+                bool is_paused = color_filter_is_session_disabled(filter_name.toUtf8().constData());
+                QString action_text = is_paused ? tr("Resume Coloring Rule") : tr("Pause Coloring Rule");
+
+                ctx_menu->addAction(action_text, [this, filter_name, is_paused]() {
+                    color_filter_set_session_disabled(filter_name.toUtf8().constData(), !is_paused);
+                    QTimer::singleShot(0, this, [this]() {
+                        emit redissectPacketsRequested();
+                    });
+                });
+
+                ctx_menu->addAction(tr("Resume All Coloring Rules"), [this]() {
+                    color_filter_resume_all(NULL);
+                    QTimer::singleShot(0, this, [this]() {
+                        emit redissectPacketsRequested();
+                    });
+                });
+            }
+        }
+
+    }
+
     ctx_menu->addSeparator();
 
     if (! buildForDialog)
@@ -457,6 +611,28 @@ void ProtoTree::keyReleaseEvent(QKeyEvent *event)
             break;
         default:
             break;
+    }
+}
+
+void ProtoTree::focusInEvent(QFocusEvent *event)
+{
+    QTreeView::focusInEvent(event);
+
+    if (event->reason() == Qt::TabFocusReason || event->reason() == Qt::BacktabFocusReason) {
+        if (model() && model()->rowCount() > 0 && selectionModel()) {
+            if (!selectionModel()->hasSelection()) {
+                QModelIndex first = model()->index(0, 0);
+                if (first.isValid()) {
+                    selectionModel()->setCurrentIndex(first, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+                    setCurrentIndex(first);
+                }
+            }
+
+            // ALWAYS scroll to the current index if we have one
+            if (currentIndex().isValid()) {
+                scrollTo(currentIndex());
+            }
+        }
     }
 }
 
@@ -714,6 +890,26 @@ void ProtoTree::itemDoubleClicked(const QModelIndex &index)
             mainApp->gotoFrame(fvalue_get_uinteger(finfo.fieldInfo()->value));
         }
     } else {
+        // For frame.tag fields, look up the URL from the matching tag rule.
+        const header_field_info *hfi = finfo.fieldInfo() ? finfo.fieldInfo()->hfinfo : nullptr;
+        if (hfi && strcmp(hfi->abbrev, "frame.tag") == 0) {
+            if (tag_rules_get_prefs().link_click == TAG_LINK_CLICK_NONE)
+                return;
+            QString tag_name = finfo.toString();
+            const GSList *rule_list = tag_rules_get_list();
+            for (const GSList *r = rule_list; r; r = g_slist_next(r)) {
+                const tag_rule_t *rule = (const tag_rule_t *)r->data;
+                if (tag_name == QString::fromUtf8(rule->rule_name)) {
+                    if (rule->tag_url && rule->tag_url[0]) {
+                        QDesktopServices::openUrl(QUrl(QString::fromUtf8(rule->tag_url)));
+                        return;
+                    }
+                    break;
+                }
+            }
+            return; // no URL configured for this rule
+        }
+
         QString url = finfo.url();
         if (!url.isEmpty()) {
             QApplication::clipboard()->setText(url);

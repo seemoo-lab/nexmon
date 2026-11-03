@@ -38,8 +38,8 @@ static bool generate_md5_hash;
 
 static int ett_discard;
 
-dissector_handle_t discard_handle;
-dissector_handle_t wol_handle;
+static dissector_handle_t discard_handle;
+static dissector_handle_t wol_handle;
 
 /* dissect_discard - dissects discard packet data
  * tvb - tvbuff for packet data (IN)
@@ -79,7 +79,7 @@ dissect_discard(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* disse
 
 	if (generate_md5_hash) {
 		const uint8_t *cp;
-		uint8_t       digest[HASH_MD5_LENGTH];
+		uint8_t       digest[HASH_MD5_LENGTH] = {0};
 		const char   *digest_string;
 
 		cp = tvb_get_ptr(tvb, 0, cap_len);

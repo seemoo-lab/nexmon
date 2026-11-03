@@ -20,10 +20,6 @@ set(WIRETAP_PUBLIC_HEADERS
 	wtap_opttypes.h
 )
 
-add_definitions(
-	${LIBXML2_DEFINITIONS}
-)
-
 #
 # Files that implement reading and possibly writing one or more
 # file types.  (For cases where more than one source file is
@@ -66,11 +62,13 @@ set(WIRETAP_C_MODULE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/iptrace.c
 	${CMAKE_CURRENT_SOURCE_DIR}/iseries.c
 	${CMAKE_CURRENT_SOURCE_DIR}/json.c
+	${CMAKE_CURRENT_SOURCE_DIR}/json_log.c
 	${CMAKE_CURRENT_SOURCE_DIR}/k12.c
 	${CMAKE_CURRENT_SOURCE_DIR}/lanalyzer.c
 	${CMAKE_CURRENT_SOURCE_DIR}/log3gpp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/logcat.c
 	${CMAKE_CURRENT_SOURCE_DIR}/logcat_text.c
+	${CMAKE_CURRENT_SOURCE_DIR}/mmodule.c
 	${CMAKE_CURRENT_SOURCE_DIR}/mp4.c
 	${CMAKE_CURRENT_SOURCE_DIR}/mpeg.c
 	${CMAKE_CURRENT_SOURCE_DIR}/mplog.c
@@ -90,10 +88,12 @@ set(WIRETAP_C_MODULE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/pcapng-darwin-custom.c
 	${CMAKE_CURRENT_SOURCE_DIR}/pcapng-netflix-custom.c
 	${CMAKE_CURRENT_SOURCE_DIR}/pcapng-sysdig.c
+	${CMAKE_CURRENT_SOURCE_DIR}/pcapng-wireshark-custom.c
 	${CMAKE_CURRENT_SOURCE_DIR}/peak-trc.c
 	${CMAKE_CURRENT_SOURCE_DIR}/peekclassic.c
 	${CMAKE_CURRENT_SOURCE_DIR}/peektagged.c
 	${CMAKE_CURRENT_SOURCE_DIR}/pppdump.c
+	${CMAKE_CURRENT_SOURCE_DIR}/procmon.c
 	${CMAKE_CURRENT_SOURCE_DIR}/radcom.c
 	${CMAKE_CURRENT_SOURCE_DIR}/rfc7468.c
 	${CMAKE_CURRENT_SOURCE_DIR}/rtpdump.c
@@ -104,6 +104,7 @@ set(WIRETAP_C_MODULE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/tnef.c
 	${CMAKE_CURRENT_SOURCE_DIR}/toshiba.c
 	${CMAKE_CURRENT_SOURCE_DIR}/ttl.c
+	${CMAKE_CURRENT_SOURCE_DIR}/vector-asc.c
 	${CMAKE_CURRENT_SOURCE_DIR}/visual.c
 	${CMAKE_CURRENT_SOURCE_DIR}/vms.c
 	${CMAKE_CURRENT_SOURCE_DIR}/vwr.c
@@ -188,7 +189,7 @@ set_target_properties(wiretap PROPERTIES
 	PREFIX "lib"
 	COMPILE_DEFINITIONS "WS_BUILD_DLL"
 	LINK_FLAGS "${WS_LINK_FLAGS}"
-	VERSION "16.0.8" SOVERSION 16
+	VERSION "0.0.${PROJECT_PATCH_VERSION}" SOVERSION 0
 	FOLDER "DLLs"
 	INSTALL_RPATH "${LIBRARY_INSTALL_RPATH}"
 )
@@ -201,20 +202,18 @@ target_link_libraries(wiretap
 		wsutil
 		${GLIB2_LIBRARIES}
 	PRIVATE
-		${LIBXML2_LIBRARIES}
+		LibXml2::LibXml2
 		${ZLIB_LIBRARIES}
 		${ZLIBNG_LIBRARIES}
 		${ZSTD_LIBRARIES}
-		${LZ4_LIBRARIES}
+		$<TARGET_NAME_IF_EXISTS:LZ4::LZ4>
 )
 
 target_include_directories(wiretap SYSTEM
 	PRIVATE
-		${LIBXML2_INCLUDE_DIRS}
 		${ZLIB_INCLUDE_DIRS}
 		${ZLIBNG_INCLUDE_DIRS}
 		${ZSTD_INCLUDE_DIRS}
-		${LZ4_INCLUDE_DIRS}
 )
 
 target_include_directories(wiretap PUBLIC
@@ -232,6 +231,14 @@ install(FILES ${WIRETAP_PUBLIC_HEADERS}
 	DESTINATION "${PROJECT_INSTALL_INCLUDEDIR}/wiretap"
 	COMPONENT "Development"
 	EXCLUDE_FROM_ALL
+)
+
+add_executable(test_wiretap EXCLUDE_FROM_ALL test_wiretap.c)
+target_link_libraries(test_wiretap wiretap $<TARGET_NAME_IF_EXISTS:LZ4::LZ4>)
+set_target_properties(test_wiretap PROPERTIES
+	FOLDER "Tests"
+	EXCLUDE_FROM_DEFAULT_BUILD True
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
 )
 
 CHECKAPI(

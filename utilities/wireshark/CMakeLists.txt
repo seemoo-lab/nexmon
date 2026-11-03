@@ -159,9 +159,9 @@ if(WIN32)
 endif()
 
 # Updated by tools/make-version.py
-set(PROJECT_MAJOR_VERSION 4)
-set(PROJECT_MINOR_VERSION 7)
-set(PROJECT_PATCH_VERSION 4)
+set(PROJECT_MAJOR_VERSION 5)
+set(PROJECT_MINOR_VERSION 1)
+set(PROJECT_PATCH_VERSION 0)
 set(PROJECT_BUILD_VERSION 0)
 set(PROJECT_VERSION_EXTENSION "rc0")
 
@@ -171,8 +171,8 @@ endif()
 
 set(PROJECT_VERSION "${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}${PROJECT_VERSION_EXTENSION}")
 
-set(STRATOSHARK_MAJOR_VERSION 0)
-set(STRATOSHARK_MINOR_VERSION 10)
+set(STRATOSHARK_MAJOR_VERSION 1)
+set(STRATOSHARK_MINOR_VERSION 1)
 
 set(STRATOSHARK_VERSION "${STRATOSHARK_MAJOR_VERSION}.${STRATOSHARK_MINOR_VERSION}.${PROJECT_PATCH_VERSION}${PROJECT_VERSION_EXTENSION}")
 
@@ -323,12 +323,12 @@ if(WIN32)
 			set(WIRESHARK_BASE_DIR $ENV{WIRESHARK_BASE_DIR})
 		endif()
 		if(WIRESHARK_BASE_DIR)
-			file( TO_CMAKE_PATH ${WIRESHARK_BASE_DIR} _ws_base_dir )
+			file( TO_CMAKE_PATH "${WIRESHARK_BASE_DIR}" _ws_base_dir )
 			set( _PROJECT_LIB_DIR "${_ws_base_dir}/wireshark-${WIRESHARK_TARGET_PLATFORM}-libs" )
 			unset(_ws_base_dir)
 		elseif( DEFINED ENV{WIRESHARK_LIB_DIR} )
 			message(DEPRECATION "Support for the WIRESHARK_LIB_DIR environment variable will be removed in the future. Use WIRESHARK_BASE_DIR instead.")
-			file( TO_CMAKE_PATH $ENV{WIRESHARK_LIB_DIR} _PROJECT_LIB_DIR )
+			file( TO_CMAKE_PATH "$ENV{WIRESHARK_LIB_DIR}" _PROJECT_LIB_DIR )
 		else()
 			# Don't know what to do
 			message(FATAL_ERROR "Neither WIRESHARK_BASE_DIR or WIRESHARK_LIB_DIR are defined")
@@ -346,7 +346,7 @@ if(WIN32)
 	include(FetchContent)
 
 	set(LIBS_URL "https://dev-libs.wireshark.org/windows/packages")
-	file(TO_CMAKE_PATH ${EXTRA_INSTALLER_DIR} _file_download_dir)
+	file(TO_CMAKE_PATH "${EXTRA_INSTALLER_DIR}" _file_download_dir)
 
 	# Download Npcap required by the Windows installer.
 	# We do this here and not in FetchArtifacts.cmake because this
@@ -1595,6 +1595,10 @@ if(BUILD_wireshark OR BUILD_stratoshark)
 	if(APPLE)
 		ws_find_package(Sparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE 2)
 	endif()
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		# 1.1.12 is the version shipped with RHEL 8
+		ws_find_package(PACKAGEKIT ENABLE_PACKAGEKIT HAVE_SOFTWARE_UPDATE "1.1.12")
+	endif()
 	if(NOT DEFINED MOC_OPTIONS)
 		# Squelch moc verbose "nothing to do" output
 		set(MOC_OPTIONS -nn)
@@ -1690,7 +1694,7 @@ endif()
 
 ws_find_package(CpuInfo ENABLE_CPUINFO HAVE_CPUINFO)
 
-find_package( Asciidoctor 1.5 )
+find_package( Asciidoctor 2.0 )
 find_package( XSLTPROC )
 
 find_package(DOXYGEN)
@@ -2178,6 +2182,11 @@ set_package_properties(NL PROPERTIES
 	DESCRIPTION "Libraries for using the Netlink protocol on Linux"
 	PURPOSE "Support for managing wireless 802.11 interfaces"
 )
+set_package_properties(PACKAGEKIT PROPERTIES
+	URL "https://www.freedesktop.org/software/PackageKit/"
+	DESCRIPTION "D-Bus abstraction layer for package management (packagekit-glib2)"
+	PURPOSE "Checking for distribution updates of Wireshark on Linux"
+)
 set_package_properties(MaxMindDB PROPERTIES
 	URL "https://github.com/maxmind/libmaxminddb"
 	DESCRIPTION "C library for the MaxMind DB file format"
@@ -2338,7 +2347,7 @@ endif()
 # at install time.
 set(INSTALL_FILES
 	resources/share/wireshark/cfilters
-	resources/share/wireshark/colorfilters
+	resources/share/wireshark/coloring_rules.jsonc
 	resources/share/wireshark/dmacros
 	resources/share/wireshark/dfilters
 	resources/share/wireshark/ipmap.html
@@ -2363,40 +2372,67 @@ if (BUILD_stratoshark)
 
 	set(STRATOSHARK_INSTALL_FILES
 		doc/ws.css
-		resources/share/stratoshark/colorfilters
+		resources/share/stratoshark/coloring_rules.jsonc
 		resources/share/stratoshark/dfilter_buttons
 	)
 endif()
 
 if (ASCIIDOCTOR_FOUND)
 	list(APPEND DOC_FILES
-		${CMAKE_BINARY_DIR}/doc/man_pages/androiddump.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/udpdump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/capinfos.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/captype.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/ciscodump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/dumpcap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/editcap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/extcap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/mergecap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/randpkt.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/randpktdump.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/etwdump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/rawshark.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/reordercap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/sharkd.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/sshdig.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/sshdump.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/strato.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/stratoshark.html
-		${CMAKE_BINARY_DIR}/doc/man_pages/wifidump.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/text2pcap.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/tshark.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/wireshark.html
 		${CMAKE_BINARY_DIR}/doc/man_pages/wireshark-filter.html
 		"${CMAKE_BINARY_DIR}/doc/Wireshark Release Notes.html"
-		"${CMAKE_BINARY_DIR}/doc/Stratoshark Release Notes.html"
 	)
+
+	#
+	# Install the HTML manual page for a program only when that program is
+	# built (matching doc/CMakeLists.txt); the pages are always generated.
+	#
+	if(BUILD_stratoshark)
+		list(APPEND DOC_FILES
+			${CMAKE_BINARY_DIR}/doc/man_pages/stratoshark.html
+			"${CMAKE_BINARY_DIR}/doc/Stratoshark Release Notes.html"
+		)
+	endif()
+	if(BUILD_strato)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/strato.html)
+	endif()
+	if(BUILD_androiddump)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/androiddump.html)
+	endif()
+	if(BUILD_ciscodump AND LIBSSH_FOUND)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/ciscodump.html)
+	endif()
+	if(BUILD_etwdump AND WIN32)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/etwdump.html)
+	endif()
+	if(BUILD_randpktdump)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/randpktdump.html)
+	endif()
+	if(BUILD_sshdig AND LIBSSH_FOUND)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/sshdig.html)
+	endif()
+	if(BUILD_sshdump AND LIBSSH_FOUND)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/sshdump.html)
+	endif()
+	if(BUILD_udpdump)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/udpdump.html)
+	endif()
+	if(BUILD_wifidump AND LIBSSH_FOUND)
+		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/wifidump.html)
+	endif()
 	if(MAXMINDDB_FOUND)
 		list(APPEND DOC_FILES ${CMAKE_BINARY_DIR}/doc/man_pages/mmdbresolve.html)
 	endif()
@@ -2410,12 +2446,12 @@ if (ASCIIDOCTOR_FOUND)
 			${CMAKE_BINARY_DIR}/doc/man_pages/idl2deb.html
 		)
 	endif()
-	if (BUILD_falcodump)
+	if (BUILD_falcodump AND SINSP_FOUND)
 		list(APPEND DOC_FILES
 			${CMAKE_BINARY_DIR}/doc/man_pages/falcodump.html
 		)
 	endif()
-	if (BUILD_dumpcalls)
+	if (BUILD_dumpcalls AND SINSP_FOUND)
 		list(APPEND DOC_FILES
 			${CMAKE_BINARY_DIR}/doc/man_pages/dumpcalls.html
 		)
@@ -2618,7 +2654,10 @@ if(USE_REPOSITORY)
 		list (APPEND THIRD_PARTY_PDBS "$<IF:$<CONFIG:Debug>,${XXHASH_DLL_DIR_DEBUG}/${XXHASH_PDB_DEBUG},${XXHASH_DLL_DIR}/${XXHASH_PDB}>")
 	endif(XXHASH_FOUND)
 	if (ZLIB_FOUND)
-		list (APPEND THIRD_PARTY_DLLS "${ZLIB_DLL_DIR}/${ZLIB_DLL}")
+		foreach(_dll ${ZLIB_DLLS_RELEASE})
+			# list(APPEND THIRD_PARTY_DLLS "$<$<NOT:$<CONFIG:Debug>>:${ZLIB_DLL_DIR_RELEASE}/${_dll}>")
+			list(APPEND THIRD_PARTY_DLLS "${ZLIB_DLL_DIR}/${_dll}")
+		endforeach()
 		list (APPEND THIRD_PARTY_PDBS "${ZLIB_DLL_DIR}/${ZLIB_PDB}")
 	endif(ZLIB_FOUND)
 	if (ZLIBNG_FOUND)
@@ -2739,7 +2778,7 @@ if (BUILD_stratoshark)
 			list(APPEND copy_data_files_depends "${_output_file}")
 		endforeach()
 	else()
-		# XXX The default profile (colorfilters, dfilters) is at the
+		# XXX The default profile (coloring_rules.jsonc, dfilters) is at the
 		# top-level resources directory for both Wireshark and Stratoshark.
 	endif()
 endif()
@@ -3292,6 +3331,7 @@ if(BUILD_wireshark AND QT_FOUND)
 		${SOCKET_LIBRARY}
 		${WIN_VERSION_LIBRARY}
 		${WINSPARKLE_LIBRARIES}
+		${PACKAGEKIT_LIBRARIES}
 		$<$<BOOL:${WIN32}>:uxtheme.lib>
 		${SPEEXDSP_LIBRARIES}
 		${ZLIB_LIBRARIES}
@@ -3412,6 +3452,7 @@ if(BUILD_stratoshark AND QT_FOUND)
 		${SOCKET_LIBRARY}
 		${WIN_VERSION_LIBRARY}
 		${WINSPARKLE_LIBRARIES}
+		${PACKAGEKIT_LIBRARIES}
 		$<$<BOOL:${WIN32}>:uxtheme.lib>
 		${SPEEXDSP_LIBRARIES}
 		${ZLIB_LIBRARIES}
@@ -3906,6 +3947,7 @@ if(BUILD_dumpcap AND PCAP_FOUND)
 	set(dumpcap_FILES
 		dumpcap.c
 		ringbuffer.c
+		capture/capture_process_info.c
 		capture/iface_monitor.c
 		capture/sync_pipe_write.c
 		capture/ws80211_utils.c
@@ -4820,6 +4862,7 @@ add_custom_target(test-programs
 		wscbor_enc_test
 		test_epan
 		test_wsutil
+		test_wiretap
 	COMMENT "Building unit test programs and wrapper"
 )
 set_target_properties(test-programs PROPERTIES
@@ -4866,7 +4909,7 @@ endif (GIT_EXECUTABLE)
 set_target_properties(gen-authors PROPERTIES FOLDER "Documentation")
 
 if(WIN32 AND NOT USE_MSYSTEM)
-	file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/tools/Get-HardenFlags.ps1 _win_harden_flags)
+	file (TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/tools/Get-HardenFlags.ps1" _win_harden_flags)
 	add_custom_target(hardening-check
 		COMMAND ${POWERSHELL_COMMAND} "${_win_harden_flags}" "${_dll_output_dir_win}"
 		DEPENDS ${PROGLIST}
@@ -4922,22 +4965,28 @@ if(SHELLCHECK_EXECUTABLE)
 			packaging/macosx/osx-app.sh.in
 			packaging/macosx/osx-dmg.sh.in
 			packaging/source/git-export-release.sh.in
-			tools/arch-setup.sh
-			tools/bsd-setup.sh
-			tools/debian-setup.sh
+			tools/os_setup/arch-setup.sh
+			tools/os_setup/bsd-setup.sh
+			tools/os_setup/debian-setup.sh
 			tools/fuzz-test.sh
 			tools/gen-bugnote
-			tools/haiku-setup.sh
-			tools/macos-setup-brew.sh
-			tools/mingw-rpm-setup.sh
-			tools/msys2-setup.sh
+			tools/os_setup/haiku-setup.sh
+			tools/os_setup/macos-setup-brew.sh
+			tools/os_setup/mingw-rpm-setup.sh
+			tools/os_setup/msys2-setup.sh
 			tools/pre-commit
 			tools/randpkt-test.sh
 			tools/release-update-debian-soversions.sh
-			tools/rpm-setup.sh
+			tools/os_setup/rpm-setup.sh
 			tools/test-captures.sh
 			tools/update-tx
 			tools/valgrind-wireshark.sh
+		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	)
+	# Check the setup scripts that require something other than bash.
+	add_custom_command(TARGET shellcheck POST_BUILD
+		COMMAND shellcheck --shell=dash --external-sources
+			tools/os_setup/alpine-setup.sh
 		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 	)
 endif()

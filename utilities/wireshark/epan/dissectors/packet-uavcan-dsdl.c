@@ -82,7 +82,7 @@ static int hf_uavcan_write_path;
 static int hf_uavcan_write_error;
 static int hf_uavcan_entry_index;
 
-static int hf_uavcan_time_syncronizedtimestamp;
+static int hf_uavcan_time_synchronizedtimestamp;
 static int hf_uavcan_diagnostic_severity;
 
 static int ett_dsdl;
@@ -205,13 +205,13 @@ dissect_access_service_data(tvbuff_t *tvb, int tvb_offset, proto_tree *tree, boo
     offset = tvb_offset;
 
     if (is_request == true) {
-        int len;
+        unsigned len;
         /* FT_UINT_STRING counted string, with count being the first byte */
         proto_tree_add_item_ret_length(tree, hf_register_name,
                                  tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN, &len);
         offset += len;
     } else {
-        proto_tree_add_item(tree, hf_uavcan_time_syncronizedtimestamp,
+        proto_tree_add_item(tree, hf_uavcan_time_synchronizedtimestamp,
                                  tvb, offset, 7, ENC_LITTLE_ENDIAN);
         offset += 7;
         proto_tree_add_item(tree, hf_register_access_mutable,
@@ -354,7 +354,7 @@ dissect_dsdl_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
         return tvb_captured_length(tvb);
     } else if (id == 8184) {
         /* Dissect Synchronization.1.0 frame */
-        proto_tree_add_item(tree, hf_uavcan_time_syncronizedtimestamp, tvb, 0, 7,
+        proto_tree_add_item(tree, hf_uavcan_time_synchronizedtimestamp, tvb, 0, 7,
                             ENC_LITTLE_ENDIAN);
         proto_tree_add_item(tree, hf_uavcan_diagnostic_severity, tvb, 7, 1, ENC_NA);
         proto_tree_add_item(tree, hf_uavcan_primitive_String, tvb, 8, 1,
@@ -366,11 +366,9 @@ dissect_dsdl_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 }
 
 static int
-dissect_dsdl_service_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+dissect_dsdl_service_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 {
     uint32_t id = GPOINTER_TO_INT(data);
-
-    (void) pinfo;
 
     proto_item_append_text(tree, " DSDL (%s)",
                            rval_to_str_const(id, uavcan_service_id_vals, "Reserved"));
@@ -396,7 +394,7 @@ dissect_dsdl_service_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
                             tvb, 0, 1, ENC_NA);
         proto_tree_add_item(tree, hf_uavcan_modify_overwrite_destination,
                             tvb, 0, 1, ENC_NA);
-        int len;
+        unsigned len;
         proto_tree_add_item_ret_length(tree, hf_uavcan_modify_source_path,
                             tvb, 4, 1, ENC_ASCII|ENC_BIG_ENDIAN, &len);
         proto_tree_add_item(tree, hf_uavcan_modify_destination_path,
@@ -411,7 +409,7 @@ dissect_dsdl_service_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     } else if (id == 409) { /* Dissect Write.1.X frame */
         proto_tree_add_item(tree, hf_uavcan_write_offset,
                             tvb, 0, 5, ENC_LITTLE_ENDIAN);
-        int len;
+        unsigned len;
         proto_tree_add_item_ret_length(tree, hf_uavcan_write_path,
                             tvb, 5, 1, ENC_ASCII|ENC_BIG_ENDIAN, &len);
         uint16_t data_len = tvb_get_uint16(tvb, 5 + len, ENC_LITTLE_ENDIAN);
@@ -511,7 +509,7 @@ proto_register_dsdl(void)
           {"Vendor specific status code",
           "uavcan_dsdl.Heartbeat.vendor_specific_status_code",
           FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
-        {&hf_uavcan_time_syncronizedtimestamp,
+        {&hf_uavcan_time_synchronizedtimestamp,
           {"Timestamp (usec)",                      "uavcan_dsdl.time.SynchronizedTimestamp",
           FT_UINT56, BASE_DEC, NULL, 0x0, NULL, HFILL}},
         {&hf_uavcan_diagnostic_severity,

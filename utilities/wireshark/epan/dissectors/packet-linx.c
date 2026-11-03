@@ -133,7 +133,7 @@ static int hf_linx_tcp_rlnh_msg_reserved;
 static int hf_linx_tcp_payload;
 
 
-static int rlnh_version;
+static unsigned rlnh_version;
 
 static int ett_linx;
 static int ett_linx_multicore;
@@ -278,6 +278,7 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	int	size;
 	int	pkgsize;
 	int	payloadsize;
+	unsigned str_size;
 	int	version;
 	int     conntype;
 	proto_tree *multicore_header_tree;
@@ -527,14 +528,14 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 							case RLNH_QUERY_NAME:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII);
-									offset += tvb_strnlen(tvb, offset, -1);
+									proto_tree_add_item_ret_length(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII, &str_size);
+									offset += str_size;
 								break;
 							case RLNH_PUBLISH:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII);
-									offset += tvb_strnlen(tvb, offset, -1);
+									proto_tree_add_item_ret_length(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII, &str_size);
+									offset += str_size;
 								break;
 							case RLNH_UNPUBLISH:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -545,24 +546,23 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 									offset += 4;
 								break;
 							case RLNH_INIT:
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_version, tvb, offset, 4, ENC_BIG_ENDIAN);
+									proto_tree_add_item_ret_uint(rlnh_header_tree, hf_linx_rlnh_version, tvb, offset, 4, ENC_BIG_ENDIAN, &rlnh_version);
 									/* This is not working if nodes are at different versions. Only the latest value will be saved in rlnh_version */
-									rlnh_version = tvb_get_ntohl(tvb, offset);
 									offset += 4;
 								break;
 							case RLNH_INIT_REPLY:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_status, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
 									if(rlnh_version > 1) {
-									        proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII);
-										offset += tvb_strnlen(tvb, offset, -1);
+									        proto_tree_add_item_ret_length(rlnh_header_tree, hf_linx_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII, &str_size);
+										offset += str_size;
 									}
 								break;
 							case RLNH_PUBLISH_PEER:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_peer_linkaddr, tvb, offset, -1, ENC_BIG_ENDIAN);
-									offset += tvb_strnlen(tvb, offset, -1);
+									proto_tree_add_item_ret_length(rlnh_header_tree, hf_linx_rlnh_peer_linkaddr, tvb, offset, -1, ENC_BIG_ENDIAN, &str_size);
+									offset += str_size;
 								break;
 							default:
 									/* no known Message type... */
@@ -804,11 +804,7 @@ proto_register_linx(void)
 
 	expert_module_t* expert_linx;
 
-	proto_linx = proto_register_protocol (
-		"ENEA LINX",	/* name */
-		"LINX",		/* short name */
-		"linx"		/* abbrev */
-		);
+	proto_linx = proto_register_protocol ("ENEA LINX", "LINX", "linx");
 
 	/* Protocol Registering data structures. */
 	proto_register_field_array(proto_linx, hf, array_length(hf));
@@ -834,7 +830,7 @@ static int
 dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	uint32_t dword;
-	int offset = 0;
+	unsigned offset = 0;
 	proto_item *ti, *ver_item, *msg_item;
 	proto_tree *linx_tcp_tree;
 	proto_tree *tcp_header_tree;
@@ -914,13 +910,13 @@ dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII);
-					/*offset += tvb_strnlen(tvb, offset, -1);*/
+					/* no ret_length and increment offset to avoid dead store */
 					break;
 				case RLNH_PUBLISH:
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII);
-					/*offset += tvb_strnlen(tvb, offset, -1);*/
+					/* no ret_length and increment offset to avoid dead store */
 					break;
 				case RLNH_UNPUBLISH:
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -931,8 +927,7 @@ dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 					/*offset += 4;*/
 					break;
 				case RLNH_INIT:
-					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_version, tvb, offset, 4, ENC_BIG_ENDIAN);
-					rlnh_version = tvb_get_ntohl(tvb, offset);
+					proto_tree_add_item_ret_uint(rlnh_header_tree, hf_linx_tcp_rlnh_version, tvb, offset, 4, ENC_BIG_ENDIAN, &rlnh_version);
 					/*offset += 4;*/
 					break;
 				case RLNH_INIT_REPLY:
@@ -940,14 +935,14 @@ dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 					offset += 4;
 					if(rlnh_version > 1) {
 						proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII);
-						/*offset += tvb_strnlen(tvb, offset, -1);*/
+						/* no ret_length and increment offset to avoid dead store */
 					}
 					break;
 				case RLNH_PUBLISH_PEER:
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_peer_linkaddr, tvb, offset, -1, ENC_BIG_ENDIAN);
-					/*offset += tvb_strnlen(tvb, offset, -1);*/
+					/* no ret_length and increment offset to avoid dead store */
 					break;
 				default:
 					/* No known Message type */

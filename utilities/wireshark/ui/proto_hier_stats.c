@@ -52,8 +52,14 @@ find_stat_node(GNode *parent_stat_node, const header_field_info *needle_hfinfo)
         needle_stat_node = g_node_first_child(up_parent_stat_node->parent);
         while (needle_stat_node) {
             hfinfo = STAT_NODE_HFINFO(needle_stat_node);
+
+            /* it's a good candidate when both id's are the same */
             if (hfinfo &&  hfinfo->id == needle_hfinfo->id) {
-                return needle_stat_node;
+
+                /* off-path subtrees aren't kept */
+                if( needle_stat_node == parent_stat_node)
+                    return needle_stat_node;
+
             }
             needle_stat_node = g_node_next_sibling(needle_stat_node);
         }
@@ -251,7 +257,7 @@ ph_stats_new(capture_file *cf)
     /* Progress so far. */
     progbar_val = 0.0f;
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
 
     for (framenum = 1; framenum <= cf->count; framenum++) {
         frame = frame_data_sequence_find(cf->provider.frames, framenum);
@@ -304,6 +310,7 @@ ph_stats_new(capture_file *cf)
            look only at those packets. */
         if (frame->passed_dfilter) {
 
+            // XXX - ordering these if's the other way around would be more performant
             if (frame->has_ts) {
                 if (ps->tot_packets == 0) {
                     double cur_time = nstime_to_sec(&frame->abs_ts);

@@ -13,17 +13,17 @@
 
 
 #include <epan/packet.h>
-#include <epan/ax25_pids.h>
-#include <epan/llcsaps.h>
 #include <epan/conversation.h>
 #include <epan/reassemble.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
-#include <epan/nlpid.h>
-#include <epan/lapd_sapi.h>
 #include <epan/tfs.h>
 #include <wiretap/wtap.h>
 #include "packet-sflow.h"
+#include "packet-osi.h"
+#include "packet-llc.h"
+#include "packet-ax25.h"
+#include "packet-lapd.h"
 
 void proto_register_x25(void);
 void proto_reg_handoff_x25(void);

@@ -16,11 +16,11 @@
 /* WSLUA_MODULE Utility Utility Functions */
 
 #include "wslua.h"
+#include "wslua_debugger.h"
 #include <math.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/prefs.h>
 #include <epan/prefs-int.h>
-#include <epan/dissectors/packet-tls-utils.h>
 
 WSLUA_FUNCTION wslua_get_version(lua_State* L) { /* Gets the Wireshark version as a string. */
     const char* str = VERSION;
@@ -28,32 +28,10 @@ WSLUA_FUNCTION wslua_get_version(lua_State* L) { /* Gets the Wireshark version a
     WSLUA_RETURN(1); /* The version string, e.g. "3.2.5". */
 }
 
-WSLUA_FUNCTION wslua_ssl_starttls_ack (lua_State* L) {
-    /* TLS protocol will be started after this fame */
-#define WSLUA_ARG_ssl_starttls_ack_TLS_HANDLE 1 /* the tls dissector */
-#define WSLUA_ARG_ssl_starttls_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
-#define WSLUA_ARG_ssl_starttls_ack_APP_HANDLE 3 /* The app dissector */
-    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_ack_TLS_HANDLE);
-    Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_ack_PINFO);
-    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_ack_APP_HANDLE);
-
-    ssl_starttls_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
-
-    WSLUA_RETURN(0);
-}
-
-WSLUA_FUNCTION wslua_ssl_starttls_post_ack (lua_State* L) {
-    /* TLS protocol is started with this frame */
-#define WSLUA_ARG_ssl_starttls_post_ack_TLS_HANDLE 1 /* the tls dissector */
-#define WSLUA_ARG_ssl_starttls_post_ack_PINFO 2 /* The packet's <<lua_class_Pinfo,`Pinfo`>>. */
-#define WSLUA_ARG_ssl_starttls_post_ack_APP_HANDLE 3 /* The app dissector */
-    Dissector volatile tls_dissector = checkDissector(L,WSLUA_ARG_ssl_starttls_post_ack_TLS_HANDLE);
-    Pinfo pinfo = checkPinfo(L,WSLUA_ARG_ssl_starttls_post_ack_PINFO);
-    Proto app_proto = checkProto(L, WSLUA_ARG_ssl_starttls_post_ack_APP_HANDLE);
-
-    ssl_starttls_post_ack(tls_dissector, pinfo->ws_pinfo, app_proto->handle);
-
-    WSLUA_RETURN(0);
+WSLUA_FUNCTION wslua_lua_release(lua_State* L) { /* Gets the Lua release as a string. */
+    const char* str = ABOUT_LUA_RELEASE;
+    lua_pushstring(L,str);
+    WSLUA_RETURN(1); /* The version string, e.g. "Lua 5.4.6 (UfW patched)". */
 }
 
 static char* current_plugin_version = NULL;
@@ -373,7 +351,7 @@ WSLUA_FUNCTION wslua_reset_preference(lua_State *L) {
 WSLUA_FUNCTION wslua_apply_preferences(lua_State *L) {
     /* Write preferences to file and apply changes. */
     char *pf_path = NULL;
-    int err = write_prefs(&pf_path);
+    int err = write_prefs(lua_app_env_var_prefix, &pf_path);
 
     if (err) {
         /* Make a copy of pf_path because luaL_error() will return */
@@ -421,7 +399,7 @@ char* wslua_get_actual_filename(const char* fname) {
         return g_strdup(fname_clean);
     }
 
-    filename = get_persconffile_path(fname_clean,false);
+    filename = get_persconffile_path(fname_clean,false,lua_app_env_var_prefix);
 
     if ( file_exists(filename) ) {
         return filename;
@@ -433,7 +411,7 @@ char* wslua_get_actual_filename(const char* fname) {
      * installations. For executions from the build dir, it will look for files
      * copied to DATAFILE_DIR.
      */
-    filename = get_datafile_path(fname_clean);
+    filename = get_datafile_path(fname_clean,lua_app_env_var_prefix);
     if ( file_exists(filename) ) {
         return filename;
     }
@@ -532,13 +510,15 @@ typedef struct _statcmd_t {
     int func_ref;
 } statcmd_t;
 
-static int statcmd_init_cb_error_handler(lua_State* L _U_) {
+static int statcmd_init_cb_error_handler(lua_State* L) {
+    wslua_debugger_capture_runtime_error(L, lua_tostring(L, 1));
     return 0;
 }
 
 static bool statcmd_init(const char *opt_arg, void* userdata) {
     statcmd_t* sc = (statcmd_t *)userdata;
     lua_State* L = sc->L;
+    int status;
 
     lua_settop(L,0);
     lua_pushcfunction(L,statcmd_init_cb_error_handler);
@@ -546,9 +526,9 @@ static bool statcmd_init(const char *opt_arg, void* userdata) {
 
     lua_pushstring(L,opt_arg);
 
-    switch ( lua_pcall(L,1,0,1) ) {
-        case 0:
-            break;
+    status = lua_pcall(L, 1, 0, 1);
+    if (status != LUA_OK && !wslua_debugger_after_pcall_failure(L)) {
+        switch (status) {
         case LUA_ERRRUN:
             ws_warning("Runtime error while calling statcmd callback");
             break;
@@ -561,6 +541,7 @@ static bool statcmd_init(const char *opt_arg, void* userdata) {
         default:
             ws_assert_not_reached();
             break;
+        }
     }
 
     return true;

@@ -22,6 +22,7 @@ typedef struct its_header {
     uint32_t msgId;
     uint32_t stationId;
     uint32_t CpmContainerId;
+    uint32_t CamExtensionContainerId;
 } its_header_t;
 
 

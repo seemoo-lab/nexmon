@@ -8,9 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-#ifndef __STATS_TREE_H
-#define __STATS_TREE_H
-
+#pragma once
 #include <epan/epan.h>
 #include <epan/packet_info.h>
 #include <epan/tap.h>
@@ -70,12 +68,19 @@ typedef void  (*stat_tree_init_cb)(stats_tree *);
 /* stats_tree cleanup callback */
 typedef void  (*stat_tree_cleanup_cb)(stats_tree *);
 
+/**
+ * @brief Numeric data type stored in a statistics tree node's accumulator.
+ */
 typedef enum _stat_node_datatype {
-    STAT_DT_INT,
-    STAT_DT_FLOAT
+    STAT_DT_INT,  /**< Node accumulates a signed integer value */
+    STAT_DT_FLOAT /**< Node accumulates a floating-point value */
 } stat_node_datatype;
 
 typedef struct _stats_tree_cfg stats_tree_cfg;
+
+/** Initialize the stats tree system.
+ */
+extern void stats_tree_init(void);
 
 /**
  * Registers a new stats tree with default group REGISTER_STAT_GROUP_UNSORTED.
@@ -127,14 +132,24 @@ WS_DLL_PUBLIC void stats_tree_set_group(stats_tree_cfg *st_config, register_stat
 WS_DLL_PUBLIC void stats_tree_set_first_column_name(stats_tree_cfg *st_config, const char *column_name);
 
 
+/**
+ * @brief Retrieves the parent ID of a node in the stats tree by its name.
+ *
+ * @param st The stats_tree to search within.
+ * @param parent_name The name of the parent node. NULL for the root node.
+ * @return int The ID of the parent node, or 0 if not found (root).
+ */
 WS_DLL_PUBLIC int stats_tree_parent_id_by_name(stats_tree *st, const char *parent_name);
 
-/* Creates a node in the tree (to be used in the in init_cb)
- * st: the stats_tree in which to create it
- * name: the name of the new node
- * parent_name: the name of the parent_node (NULL for root)
- * datatype: datatype used for the value of the node
- * with_children: true if this node will have "dynamically created" children
+/**
+ * @brief Creates a node in the tree (to be used in the in init_cb)
+ *
+ * @param st Pointer to the statistics tree structure.
+ * @param name Name of the new node.
+ * @param parent_id ID of the parent node. (NULL for root)
+ * @param datatype Data type of the node.
+ * @param with_children true if this node will have "dynamically created" children.
+ * @return ID of the created node, or 0 on failure.
  */
 WS_DLL_PUBLIC int stats_tree_create_node(stats_tree *st,
                                          const char *name,
@@ -142,35 +157,76 @@ WS_DLL_PUBLIC int stats_tree_create_node(stats_tree *st,
                                          stat_node_datatype datatype,
                                          bool with_children);
 
-/* creates a node using its parent's tree name */
+/**
+ * @brief Creates a node in the statistics tree using its parent's tree name.
+ *
+ * @param st Pointer to the statistics tree.
+ * @param name Name of the node.
+ * @return int ID of the created node, or 0 if creation failed.
+ */
 WS_DLL_PUBLIC int stats_tree_create_node_by_pname(stats_tree *st,
                                                   const char *name,
                                                   const char *parent_name,
                                                   stat_node_datatype datatype,
                                                   bool with_children);
 
-/* creates a node in the tree, that will contain a ranges list.
-   example:
-   stats_tree_create_range_node(st,name,parent,
-   "-99","100-199","200-299","300-399","400-", NULL);
-*/
+/**
+ * @brief Creates a node in the stats tree that will contain a ranges list.
+ *
+ * creates a node in the tree, that will contain a ranges list.
+ *  example:
+ *  stats_tree_create_range_node(st,name,parent,
+ *  "-99","100-199","200-299","300-399","400-", NULL);
+ *
+ * @param st Pointer to the stats tree.
+ * @param name Name of the new node.
+ * @param parent_id ID of the parent node.
+ * @return int ID of the created range node.
+ */
 WS_DLL_PUBLIC int stats_tree_create_range_node(stats_tree *st,
                                                const char *name,
                                                int parent_id,
                                                ...);
 
+ /**
+  * @brief Creates a range node in the statistics tree with string ranges.
+  *
+  * @param st Pointer to the statistics tree.
+  * @param name Name of the new range node.
+  * @param parent_id ID of the parent node.
+  * @param num_str_ranges Number of string ranges.
+  * @param str_ranges Array of string ranges.
+  * @return int ID of the created range node.
+  */
 WS_DLL_PUBLIC int stats_tree_create_range_node_string(stats_tree *st,
                                                       const char *name,
                                                       int parent_id,
                                                       int num_str_ranges,
                                                       char** str_ranges);
 
+/**
+ * @brief Increases by one the ranged node and the sub node to whose range the value belongs.
+ *
+ * @param st The statistics tree.
+ * @param name The name of the range node.
+ * @param parent_name The name of the parent node.
+ * @return int The ID of the range node.
+ */
 WS_DLL_PUBLIC int stats_tree_range_node_with_pname(stats_tree *st,
                                                    const char *name,
                                                    const char *parent_name,
                                                    ...);
 
 /* increases by one the ranged node and the sub node to whose range the value belongs */
+/**
+ * @brief Increment a statistic in a stats tree within a specified range.
+ *
+ * @param st Pointer to the stats tree.
+ * @param name Name of the statistic node.
+ * @param parent_id ID of the parent node.
+ * @param value_in_range Value indicating if the statistic is within its range.
+ * @return int The updated value of the statistic node.
+ */
 WS_DLL_PUBLIC int stats_tree_tick_range(stats_tree *st,
                                         const char *name,
                                         int parent_id,
@@ -179,36 +235,79 @@ WS_DLL_PUBLIC int stats_tree_tick_range(stats_tree *st,
 #define stats_tree_tick_range_by_pname(st,name,parent_name,value_in_range) \
     stats_tree_tick_range((st),(name),stats_tree_parent_id_by_name((st),(parent_name),(value_in_range)))
 
-/* */
+/**
+ * @brief Creates a new pivot node in the statistics tree.
+ *
+ * @param st Pointer to the statistics tree.
+ * @param name Name of the new pivot node.
+ * @param parent_id ID of the parent node.
+ * @return int ID of the newly created pivot node, or 0 if creation failed.
+ */
 WS_DLL_PUBLIC int stats_tree_create_pivot(stats_tree *st,
                                           const char *name,
                                           int parent_id);
 
+/**
+ * @brief Creates a pivot node in the statistics tree by name.
+ *
+ * @param st Pointer to the statistics tree.
+ * @param name Name of the pivot node to create.
+ * @param parent_name Name of the parent node for the pivot node.
+ * @return int ID of the created pivot node, or 0 if creation fails.
+ */
 WS_DLL_PUBLIC int stats_tree_create_pivot_by_pname(stats_tree *st,
                                                    const char *name,
                                                    const char *parent_name);
 
+/**
+ * @brief Ticks a pivot node in the statistics tree.
+ *
+ * Increments the counter of the specified pivot node and updates related statistics.
+ *
+ * @param st Pointer to the stats_tree structure.
+ * @param pivot_id ID of the pivot node to tick.
+ * @param pivot_value Value associated with the pivot node.
+ * @return The pivot_id on success, or an error code on failure.
+ */
 WS_DLL_PUBLIC int stats_tree_tick_pivot(stats_tree *st,
                                         int pivot_id,
                                         const char *pivot_value);
 
+/**
+ * @brief Cleans up the statistics tree registry.
+ *
+ * This function destroys the GHashTable that holds the registry of statistics tree nodes.
+ */
 extern void stats_tree_cleanup(void);
 
 
-/*
- * manipulates the value of the node whose name is given
- * if the node does not exist yet it's created (with counter=1)
- * using parent_name as parent node (NULL for root).
- * with_children=true to indicate that the created node will be a parent
+/**
+ * @brief Operation applied to a statistics tree node's value when it is manipulated.
+ *
+ * If the target node does not exist it is created with a counter of 1.
+ * Pass the parent node name (or NULL for root) and with_children=true
+ * to indicate that the created node will itself serve as a parent.
  */
 typedef enum _manip_node_mode {
-    MN_INCREASE,
-    MN_SET,
-    MN_AVERAGE,
-    MN_AVERAGE_NOTICK,
-    MN_SET_FLAGS,
-    MN_CLEAR_FLAGS
+    MN_INCREASE,        /**< Increment the node's counter by the given value */
+    MN_SET,             /**< Set the node's value to an explicit value */
+    MN_AVERAGE,         /**< Update the node's running average and tick the sample count */
+    MN_AVERAGE_NOTICK,  /**< Update the node's running average without incrementing the sample count */
+    MN_SET_FLAGS,       /**< Bitwise OR the given flags into the node's flags field */
+    MN_CLEAR_FLAGS      /**< Bitwise AND-NOT the given flags from the node's flags field */
 } manip_node_mode;
+
+/**
+ * @brief Manipulates a node in a statistics tree by increasing its integer value.
+ *
+ * @param mode The manipulation mode (e.g., increase or set).
+ * @param st The statistics tree to manipulate.
+ * @param name The name of the node to manipulate.
+ * @param parent_id The ID of the parent node.
+ * @param with_children Indicates if children should be included.
+ * @param value The integer value to add to the node's counter.
+ * @return The result of the manipulation (0 on success, non-zero on failure).
+ */
 WS_DLL_PUBLIC int stats_tree_manip_node_int(manip_node_mode mode,
                                         stats_tree *st,
                                         const char *name,
@@ -216,6 +315,17 @@ WS_DLL_PUBLIC int stats_tree_manip_node_int(manip_node_mode mode,
                                         bool with_children,
                                         int value);
 
+/**
+ * @brief Manipulates a node in the statistics tree with a float value.
+ *
+ * @param mode The operation mode (e.g., increase, average).
+ * @param st Pointer to the statistics tree.
+ * @param name Name of the node.
+ * @param parent_id ID of the parent node.
+ * @param with_children Flag indicating if children should be included.
+ * @param value Float value to manipulate the node with.
+ * @return int Result of the operation.
+*/
 WS_DLL_PUBLIC int stats_tree_manip_node_float(manip_node_mode mode,
                                         stats_tree *st,
                                         const char *name,
@@ -263,8 +373,6 @@ WS_DLL_PUBLIC int stats_tree_manip_node_float(manip_node_mode mode,
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __STATS_TREE_H */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -17,11 +17,11 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
-#include <epan/sctpppids.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
+#include "packet-sctp.h"
+#include <epan/iana-info.h>
 
 
 void proto_register_componentstatusprotocol(void);
@@ -155,7 +155,7 @@ dissect_componentstatusprotocol_cspreport_association(tvbuff_t *message_tvb, pro
   t.secs  = (time_t)(timestamp / 1000000);
   t.nsecs = (int)((timestamp - 1000000 * t.secs) * 1000);
   if(timestamp == 0xffffffffffffffffULL) {
-    proto_tree_add_time_format(message_tree, hf_cspreport_association_duration, message_tvb, 8, 8, &t, "Duration: unknown");
+    proto_tree_add_time_format_value(message_tree, hf_cspreport_association_duration, message_tvb, 8, 8, &t, "Unknown");
   }
   else {
     proto_tree_add_time(message_tree, hf_cspreport_association_duration, message_tvb, 8, 8, &t);
@@ -187,8 +187,8 @@ dissect_componentstatusprotocol_cspreport_message(tvbuff_t *message_tvb, proto_t
 
   workload = (float)(100.0 * CSR_GET_WORKLOAD(tvb_get_ntohs(message_tvb, 284)));
   if(workload < 0.0) {   /* Special value 0xffff -> -1.0 means "no load provided"! */
-     proto_tree_add_float_format(message_tree, hf_cspreport_workload, message_tvb, 284, 2,
-                                workload, "Workload: N/A");
+     proto_tree_add_float_format_value(message_tree, hf_cspreport_workload, message_tvb, 284, 2,
+                                workload, "N/A");
   }
   else {
      proto_tree_add_float_format_value(message_tree, hf_cspreport_workload, message_tvb, 284, 2,
@@ -201,9 +201,7 @@ dissect_componentstatusprotocol_cspreport_message(tvbuff_t *message_tvb, proto_t
   while(tvb_reported_length_remaining(message_tvb, offset) >= 24) {
      association_tree = proto_tree_add_subtree_format(message_tree, message_tvb, offset, 24,
          ett_association, NULL, "Association #%d", association++);
-     association_tvb  = tvb_new_subset_length_caplen(message_tvb, offset,
-                           MIN(24, tvb_reported_length_remaining(message_tvb, offset)),
-                           24);
+     association_tvb  = tvb_new_subset_length(message_tvb, offset, 24);
 
      dissect_componentstatusprotocol_cspreport_association(association_tvb, association_tree);
      offset += 24;

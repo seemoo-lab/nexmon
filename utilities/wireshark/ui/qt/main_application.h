@@ -14,8 +14,6 @@
 
 #include "wsutil/feature_list.h"
 
-#include "epan/register.h"
-
 #include "ui/help_url.h"
 
 #include <QApplication>
@@ -24,6 +22,9 @@
 #include <QIcon>
 #include <QTimer>
 #include <QTranslator>
+
+#include <functional>
+#include <utility>
 
 #include "capture_event.h"
 
@@ -34,241 +35,571 @@ class QSocketNotifier;
 
 class MainWindow;
 
-// Recent items:
-// - Read from prefs
-// - Add from open file
-// - Check current list
-// - Signal updated item
-// -
-typedef struct _recent_item_status {
-    QString filename;
-    qint64 size;
-    bool accessible;
-    bool in_thread;
-} recent_item_status;
-
+/**
+ * @brief Core application class handling global state, signals, and configurations.
+ */
 class MainApplication : public QApplication
 {
     Q_OBJECT
 public:
+    /**
+     * @brief Constructs the MainApplication.
+     * @param argc Reference to the argument count.
+     * @param argv Array of argument strings.
+     */
     explicit MainApplication(int &argc,  char **argv);
+
+    /**
+     * @brief Destroys the MainApplication.
+     */
     ~MainApplication();
 
+    /**
+     * @brief Enumeration of application-wide signals.
+     */
     enum AppSignal {
+        /** @brief Capture filter list changed. */
         CaptureFilterListChanged,
-        ColorsChanged,
+        /** @brief Packet list columns changed. */
         ColumnsChanged,
+        /** @brief Display filter list changed. */
         DisplayFilterListChanged,
+        /** @brief Protocol fields changed. */
         FieldsChanged,
+        /** @brief Filter expressions changed. */
         FilterExpressionsChanged,
-        LocalInterfacesChanged,
+        /** @brief Name resolution configuration changed. */
         NameResolutionChanged,
+        /** @brief Packet dissection preferences changed. */
         PacketDissectionChanged,
+        /** @brief General preferences changed. */
         PreferencesChanged,
-        ProfileChanging,
-        RecentCapturesChanged,
+        /** @brief Recent preferences have been read. */
         RecentPreferencesRead,
-        FreezePacketList
+        /** @brief Freeze the packet list updates. */
+        FreezePacketList,
+        /** @brief Aggregation logic or values changed. */
+        AggregationChanged
     };
 
+    /**
+     * @brief Enumeration for standard main menu items.
+     */
     enum MainMenuItem {
+        /** @brief The file open dialog action. */
         FileOpenDialog,
+        /** @brief The capture options dialog action. */
         CaptureOptionsDialog
     };
 
+    /**
+     * @brief Enumeration for status bar information types.
+     */
     enum StatusInfo {
+        /** @brief Filter syntax status. */
         FilterSyntax,
+        /** @brief Protocol field status. */
         FieldStatus,
+        /** @brief File operations status. */
         FileStatus,
+        /** @brief Application busy status. */
         BusyStatus,
+        /** @brief Byte loading/processing status. */
         ByteStatus,
+        /** @brief General temporary status message. */
         TemporaryStatus
     };
 
-    void registerUpdate(register_action_e action, const char *message);
+    /**
+     * @brief Emits a specific application signal.
+     * @param signal The AppSignal to emit.
+     */
     void emitAppSignal(AppSignal signal);
-    // Emitting app signals (PacketDissectionChanged in particular) from
-    // dialogs on macOS can be problematic. Dialogs should call queueAppSignal
-    // instead.
-    // On macOS, nested event loops (e.g., calling a dialog with exec())
-    // that call processEvents (e.g., from PacketDissectionChanged, or
-    // anything with a ProgressFrame) caused issues off and on from 5.3.0
-    // until 5.7.1/5.8.0. It appears to be solved after some false starts:
-    // https://bugreports.qt.io/browse/QTBUG-53947
-    // https://bugreports.qt.io/browse/QTBUG-56746
-    // We also try to avoid exec / additional event loops as much as possible:
-    // e.g., commit f67eccedd9836e6ced1f57ae9889f57a5400a3d7
-    // (note it can show up in unexpected places, e.g. static functions like
-    // WiresharkFileDialog::getOpenFileName())
+
+    /**
+     * @brief Queues an application signal to be emitted later.
+     *
+     * Emitting app signals (PacketDissectionChanged in particular) from
+     * dialogs on macOS can be problematic. Dialogs should call queueAppSignal
+     * instead.
+     * On macOS, nested event loops (e.g., calling a dialog with exec())
+     * that call processEvents (e.g., from PacketDissectionChanged, or
+     * anything with a ProgressFrame) caused issues off and on from 5.3.0
+     * until 5.7.1/5.8.0. It appears to be solved after some false starts:
+     * https://bugreports.qt.io/browse/QTBUG-53947
+     * https://bugreports.qt.io/browse/QTBUG-56746
+     * We also try to avoid exec / additional event loops as much as possible:
+     * e.g., commit f67eccedd9836e6ced1f57ae9889f57a5400a3d7
+     * (note it can show up in unexpected places, e.g. static functions like
+     * WiresharkFileDialog::getOpenFileName())
+     *
+     * @param signal The AppSignal to queue.
+     */
     void queueAppSignal(AppSignal signal) { app_signals_ << signal; }
+
+    /**
+     * @brief Emits a signal to execute a statistics command.
+     * @param menu_path The menu path associated with the command.
+     * @param arg The argument string for the command.
+     * @param userdata Pointer to additional user data.
+     */
     void emitStatCommandSignal(const QString &menu_path, const char *arg, void *userdata);
+
+    /**
+     * @brief Emits a signal indicating tap parameters changed.
+     * @param cfg_abbr Configuration abbreviation string.
+     * @param arg Tap argument string.
+     * @param userdata Pointer to additional user data.
+     */
     void emitTapParameterSignal(const QString cfg_abbr, const QString arg, void *userdata);
+
+    /**
+     * @brief Adds an action item to a dynamic menu group.
+     * @param group The menu group ID.
+     * @param sg_action The action to add.
+     */
     void addDynamicMenuGroupItem(int group, QAction *sg_action);
+
+    /**
+     * @brief Appends an action item to a dynamic menu group.
+     * @param group The menu group ID.
+     * @param sg_action The action to append.
+     */
     void appendDynamicMenuGroupItem(int group, QAction *sg_action);
+
+    /**
+     * @brief Removes an action item from a dynamic menu group.
+     * @param group The menu group ID.
+     * @param sg_action The action to remove.
+     */
     void removeDynamicMenuGroupItem(int group, QAction *sg_action);
+
+    /**
+     * @brief Retrieves all action items for a dynamic menu group.
+     * @param group The menu group ID.
+     * @return A list of QAction pointers.
+     */
     QList<QAction *> dynamicMenuGroupItems(int group);
+
+    /**
+     * @brief Retrieves items recently added to a dynamic menu group.
+     * @param group The menu group ID.
+     * @return A list of added QAction pointers.
+     */
     QList<QAction *> addedMenuGroupItems(int group);
+
+    /**
+     * @brief Retrieves items recently removed from a dynamic menu group.
+     * @param group The menu group ID.
+     * @return A list of removed QAction pointers.
+     */
     QList<QAction *> removedMenuGroupItems(int group);
+
+    /**
+     * @brief Clears the list of tracked added menu group items.
+     */
     void clearAddedMenuGroupItems();
+
+    /**
+     * @brief Clears the list of tracked removed menu group items.
+     */
     void clearRemovedMenuGroupItems();
 
+    /**
+     * @brief Indicates that initial setup is complete and all systems are operational.
+     */
     void allSystemsGo();
+
+    /**
+     * @brief Emits a signal regarding local interface status changes.
+     * @param ifname The name of the interface.
+     * @param added Indicator if the interface was added.
+     * @param up Indicator if the interface is up.
+     */
     void emitLocalInterfaceEvent(const char *ifname, int added, int up);
 
-    virtual void refreshLocalInterfaces();
-#ifdef HAVE_LIBPCAP
-    // This returns a deep copy of the cached interface list that must
-    // be freed with free_interface_list.
-    GList * getInterfaceList() const;
-    // This set the cached interface list to a deep copy of if_list.
-    void setInterfaceList(GList *if_list);
-#endif
-
+    /**
+     * @brief Reads application configuration files.
+     * @param reset Whether to reset preferences to defaults.
+     * @return Pointer to the read preferences structure.
+     */
     struct _e_prefs * readConfigurationFiles(bool reset);
-    QList<recent_item_status *> recentItems() const;
-    void addRecentItem(const QString filename, qint64 size, bool accessible);
-    void removeRecentItem(const QString &filename);
+
+    /**
+     * @brief Retrieves the initial directory for open dialogs.
+     * @return The QDir representing the initial directory.
+     */
     QDir openDialogInitialDir();
+
+    /**
+     * @brief Sets the last opened directory from a given filename.
+     * @param file_name The path to the file.
+     */
     void setLastOpenDirFromFilename(QString file_name);
+
+    /**
+     * @brief Executes a help topic action.
+     * @param action The specific topic action to execute.
+     */
     void helpTopicAction(topic_action_e action);
-    const QFont monospaceFont(bool zoomed = false) const;
-    void setMonospaceFont(const char *font_string);
-    int monospaceTextSize(const char *str);
+
+
+    /**
+     * @brief Sets the active configuration profile.
+     * @param profile_name The name of the profile.
+     * @param write_recent_file True to save the choice to recent files.
+     */
     void setConfigurationProfile(const char *profile_name, bool write_recent_file = true);
+
+    /**
+     * @brief Triggers a delayed reload of Lua plugins.
+     */
     void reloadLuaPluginsDelayed();
+
+    /**
+     * @brief Checks if the application is initialized.
+     * @return True if initialized, false otherwise.
+     */
     bool isInitialized() { return initialized_; }
+
+    /**
+     * @brief Runs @p fn once the application has finished initialization.
+     *
+     * If initialization has already completed, @p fn is dispatched per the
+     * policy implemented below (see whenInitializedDispatch()). Otherwise it is
+     * connected to appInitialized() with @p context as the connection's
+     * receiver, so the connection is torn down automatically when @p context is
+     * destroyed and the callback runs on @p context's thread.
+     *
+     * This replaces the open-coded
+     *   if (mainApp->isInitialized()) doThing();
+     *   else connect(mainApp, &MainApplication::appInitialized, this, &Cls::doThing);
+     * pattern: late subscribers no longer have to branch by hand, so a slot can
+     * never be silently dropped by connecting after the signal already fired.
+     *
+     * @param context Receiver object governing lifetime/thread of the callback.
+     * @param fn Zero-argument callable to run when initialization is complete.
+     */
+    template <typename Func>
+    void whenInitialized(const QObject *context, Func &&fn)
+    {
+        if (initialized_) {
+            whenInitializedDispatch(context, std::function<void()>(std::forward<Func>(fn)));
+        } else {
+            connect(this, &MainApplication::appInitialized, context, std::forward<Func>(fn));
+        }
+    }
+
+    /**
+     * @brief Sets the flag indicating if Lua is currently reloading.
+     * @param is_reloading True if reloading, false otherwise.
+     */
     void setReloadingLua(bool is_reloading) { is_reloading_lua_ = is_reloading; }
+
+    /**
+     * @brief Checks if Lua plugins are currently reloading.
+     * @return True if reloading, false otherwise.
+     */
     bool isReloadingLua() { return is_reloading_lua_; }
+
+    /**
+     * @brief Retrieves the normal application icon.
+     * @return The normal QIcon.
+     */
     const QIcon &normalIcon();
+
+    /**
+     * @brief Retrieves the capture application icon.
+     * @return The capture QIcon.
+     */
     const QIcon &captureIcon();
+
+    /**
+     * @brief Retrieves the window title separator string.
+     * @return The separator string.
+     */
     const QString &windowTitleSeparator() const { return window_title_separator_; }
+
+    /**
+     * @brief Generates a window title from parts.
+     * @param title_parts The parts to combine into the title.
+     * @return The combined window title string.
+     */
     const QString windowTitleString(QStringList title_parts);
+
+    /**
+     * @brief Generates a window title with a single part.
+     * @param title_part The part to prepend to the default title.
+     * @return The combined window title string.
+     */
     const QString windowTitleString(QString title_part) { return windowTitleString(QStringList() << title_part); }
+
+    /**
+     * @brief Applies custom colors stored in recent files.
+     */
     void applyCustomColorsFromRecent();
-#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
-    void rejectSoftwareUpdate() { software_update_ok_ = false; }
-    bool softwareUpdateCanShutdown();
-    void softwareUpdateShutdownRequest();
-#endif
+
+    /**
+     * @brief Retrieves the main window instance.
+     * @return Pointer to the MainWindow.
+     *
+     * @note This returns nullptr if the MainWindow is not visible, which is
+     * useful for (not) parenting SimpleDialogs that might appear very early,
+     * because a QDialog with a hidden parent can have odd geometry or taskbar
+     * behavior. OTOH, that's not very useful for connecting signals and slots
+     * of the (Wireshark|Stratoshark)MainWindow and its children, grandchildren,
+     * etc. with one another. (Particularly during the constructors, when the
+     * MainWindow is not visible yet, but is when it makes sense to connect
+     * signals.) We end up going through the MainApplication for some signals,
+     * but it could make sense to have an option to return the main window even
+     * if it's visible.
+     */
     MainWindow *mainWindow();
 
+    /** Main Qt application translator. */
     QTranslator translator;
+
+    /** Base Qt translator for standard strings. */
     QTranslator translatorQt;
+
+    /**
+     * @brief Loads a specific UI language.
+     * @param language The language code to load.
+     */
     void loadLanguage(const QString language);
 
+    /**
+     * @brief Gets a translation in the system (not necessarily current) locale
+     * @param context Typically the class name
+     * @param sourceText The text to translate
+     * @param disambiguation Identifying string, for when the same sourceText
+     * is used in different roles in the same context (nullptr by default)
+     * @param n Used for plural translations as QCoreApplication::translate
+     * @return A translated version of sourceText, optionally based on a
+     * disambiguation string and value of n for strings containing plurals;
+     * otherwise returns QString::fromUtf8(sourceText) if no appropriate
+     * translated string is available.
+     */
+    QString translateSystemLocale(const char *context, const char *sourceText, const char *disambiguation = nullptr, int n = -1) const;
+
+    /**
+     * @brief Triggers a specific main menu item.
+     * @param menuItem The MainMenuItem to trigger.
+     */
     void doTriggerMenuItem(MainMenuItem menuItem);
 
-    void zoomTextFont(int zoomLevel);
-
+    /**
+     * @brief Pushes a message to the specified status bar section.
+     * @param sinfo The StatusInfo type.
+     * @param message The text message to display.
+     * @param messagetip Optional tooltip for the status.
+     */
     void pushStatus(StatusInfo sinfo, const QString &message, const QString &messagetip = QString());
+
+    /**
+     * @brief Pops the most recent status message of a given type.
+     * @param sinfo The StatusInfo type to clear.
+     */
     void popStatus(StatusInfo sinfo);
 
+    /**
+     * @brief Triggers navigation to a specific frame number.
+     * @param frameNum The frame number to navigate to.
+     */
     void gotoFrame(int frameNum);
-    // Maximum nested menu depth.
+
+    /**
+     * @brief Defines the maximum nested depth allowed for menus.
+     * @return The maximum menu depth.
+     */
     int maxMenuDepth(void) { return 5; }
 
 private:
+    /**
+     * @brief Dispatches a whenInitialized() callback that arrived after
+     * initialization already completed. Implements the "already initialized"
+     * timing policy in one place. See main_application.cpp.
+     */
+    void whenInitializedDispatch(const QObject *context, std::function<void()> fn);
+
+    /* @brief Gets the list of paths that might contain translation .ts files */
+    QStringList getTranslationsPaths() const;
+
+    /** Indicates if the application initialization has completed. */
     bool initialized_;
+
+    /** Indicates if Lua plugins are currently in the process of reloading. */
     bool is_reloading_lua_;
-    QFont mono_font_;
-    QFont zoomed_font_;
-    QTimer recent_timer_;
+
+    /** Timer for throttling packet data updates. */
     QTimer packet_data_timer_;
+
+    /** Timer for throttling tap updates. */
     QTimer tap_update_timer_;
+
+    /** List of file paths pending to be opened. */
     QList<QString> pending_open_files_;
+
+    /** Notifier for interface socket events. */
     QSocketNotifier *if_notifier_;
+
+    /** Separator used when constructing window titles. */
     static QString window_title_separator_;
+
+    /** Queue of pending application signals to process. */
     QList<AppSignal> app_signals_;
+
+    /** Count of currently active captures. */
     int active_captures_;
-    bool refresh_interfaces_pending_;
 
-#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
-    bool software_update_ok_;
-#endif
-
+    /**
+     * @brief Stores the user's custom colors into the recent configuration.
+     */
     void storeCustomColorsInRecent();
+
+    /**
+     * @brief Clears all dynamically added menu group items.
+     */
     void clearDynamicMenuGroupItems();
 
 protected:
-    bool event(QEvent *event);
+    /**
+     * @brief Core Qt event handler override.
+     * @param event The event to process.
+     * @return True if handled, false otherwise.
+     */
+    bool event(QEvent *event) override;
+
+    /**
+     * @brief Pure virtual method for initializing application icons.
+     */
     virtual void initializeIcons() = 0;
 
+    /** Icon for standard application state. */
     QIcon normal_icon_;
+
+    /** Icon for active capture state. */
     QIcon capture_icon_;
-#ifdef HAVE_LIBPCAP
-    GList *cached_if_list_;
-#endif
 
 signals:
+    /** @brief Signal emitted when application is fully initialized. */
     void appInitialized();
+    /** @brief Signal emitted when interface list changes (forwarded from
+     * the MainWindow's InterfaceListManager, which is the one true source
+     * of interface list changes, but mainWindow() returns nullptr during
+     * the constructors where siblings and relatives want to connect to
+     * the InterfaceListManager. */
+    void interfaceListChanged();
+    /** @brief Signal emitted for local interface events (add/remove/up/down). */
     void localInterfaceEvent(const char *ifname, int added, int up);
-    void scanLocalInterfaces(GList *filter_list = nullptr);
-    void localInterfaceListChanged();
+    /** @brief Signal emitted to open a specific capture file. */
     void openCaptureFile(QString cf_path, QString display_filter, unsigned int type);
+    /** @brief Signal emitted to open the capture options dialog. */
     void openCaptureOptions();
+    /** @brief Signal emitted when recent preferences are read. */
     void recentPreferencesRead();
-    void updateRecentCaptureStatus(const QString &filename, qint64 size, bool accessible);
-    void splashUpdate(register_action_e action, const char *message);
+    /** @brief Signal emitted while the configuration profile is changing. */
     void profileChanging();
+    /** @brief Signal emitted when the configuration profile name has changed. */
     void profileNameChanged(const char *profile_name);
 
+    /** @brief Signal emitted to freeze or unfreeze packet list updates. */
     void freezePacketList(bool changing_profile);
-    void columnsChanged(); // XXX This recreates the packet list. We might want to rename it accordingly.
+    /**
+     * @brief Signal emitted when columns are changed (recreates packet list).
+     *        XXX This recreates the packet list. We might want to rename it accordingly.
+     */
+    void columnsChanged();
+    /** @brief Signal emitted when capture filters are changed. */
     void captureFilterListChanged();
+    /** @brief Signal emitted when display filters are changed. */
     void displayFilterListChanged();
+    /** @brief Signal emitted when filter expressions are changed. */
     void filterExpressionsChanged();
+    /** @brief Signal emitted when packet dissection settings are changed. */
     void packetDissectionChanged();
-    void colorsChanged();
+    /** @brief Signal emitted when preferences are changed. */
     void preferencesChanged();
+    /** @brief Signal emitted when address resolution settings change. */
     void addressResolutionChanged();
+    /** @brief Signal emitted when column data definitions change. */
     void columnDataChanged();
+    /** @brief Signal emitted to check display filter validity. */
     void checkDisplayFilter();
+    /** @brief Signal emitted when protocol fields change. */
     void fieldsChanged();
+    /** @brief Signal emitted to initiate a Lua plugin reload. */
     void reloadLuaPlugins();
-#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
-    // Each of these are called from a separate thread.
-    void softwareUpdateRequested();
-    void softwareUpdateQuit();
-#endif
+    /** @brief Signal emitted when aggregation values change. */
+    void aggregationChanged();
 
+    /** @brief Signal emitted to open a specific stat command dialog. */
     void openStatCommandDialog(const QString &menu_path, const char *arg, void *userdata);
+    /** @brief Signal emitted to open a tap parameter dialog. */
     void openTapParameterDialog(const QString cfg_str, const QString arg, void *userdata);
 
-    /* Signals activation and stop of a capture. The value provides the number of active captures */
+    /** @brief Signals activation and stop of a capture. The value provides the number of active captures. */
     void captureActive(int);
 
-    void zoomRegularFont(const QFont & font);
-    void zoomMonospaceFont(const QFont & font);
-
 public slots:
-    void clearRecentCaptures();
-    void refreshRecentCaptures();
+    /**
+     * @brief Slot for handling capture events.
+     * @param ev The capture event to process.
+     */
+    void captureEventHandler(CaptureEvent ev);
 
-    void captureEventHandler(CaptureEvent);
-
-    // Flush queued app signals. Should be called from the main window after
-    // each dialog that calls queueAppSignal closes.
+    /**
+     * @brief Flushes queued app signals.
+     *
+     * Should be called from the main window after each dialog that calls
+     * queueAppSignal closes.
+     */
     void flushAppSignals();
 
+    /**
+     * @brief Reloads display filter macros.
+     */
     void reloadDisplayFilterMacros();
 
-    void itemStatusFinished(const QString filename = "", qint64 size = 0, bool accessible = false);
-
 private slots:
+    /**
+     * @brief Triggers an update on active taps.
+     */
     void updateTaps();
 
+    /**
+     * @brief Cleans up application resources before closing.
+     */
     void cleanup();
+
+    /**
+     * @brief Slot called when interface change events are available.
+     */
     void ifChangeEventsAvailable();
+
+    /**
+     * @brief Refreshes data currently presented in the packet view.
+     */
     void refreshPacketData();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0) && defined(Q_OS_WIN)
-    void colorSchemeChanged();
-#endif
+
 };
 
 extern MainApplication *mainApp;
 
 /** Global compile time version info */
+
+/**
+ * @brief Gather compiled information for Wireshark Qt components.
+ *
+ * @param l Feature list to store the gathered information.
+ */
 extern void gather_wireshark_qt_compiled_info(feature_list l);
 /** Global runtime version info */
+
+/**
+ * @brief Gather runtime information for Wireshark.
+ *
+ * @param l Feature list to store the gathered information.
+ */
 extern void gather_wireshark_runtime_info(feature_list l);
 #endif // MAIN_APPLICATION_H

@@ -6,7 +6,7 @@
  * LoRaTap encapsulation, version 1
  * By Ales Povalac <alpov@alpov.net>
  * Copyright 2022 Ales Povalac
- * 
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
@@ -401,7 +401,7 @@ proto_register_loratap(void)
 	/* Register for decode as */
 	static build_valid_func loratap_da_build_value[1] = {loratap_value};
 	static decode_as_value_t loratap_da_values = {loratap_prompt, 1, loratap_da_build_value};
-	static decode_as_t loratap_da = {"loratap", "loratap.syncword", 1, 0, &loratap_da_values, NULL, NULL, decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+	static decode_as_t loratap_da = {"loratap", "loratap.syncword", 1, 0, &loratap_da_values, NULL, NULL, decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
 	/* Setup protocol subtree array */
 	static int *ett[] = {
@@ -411,11 +411,7 @@ proto_register_loratap(void)
 		&ett_loratap_rssi
 	};
 
-	proto_loratap = proto_register_protocol (
-		"LoRaTap header",	/* name */
-		"LoRaTap",		/* short name */
-		"loratap"		/* abbrev */
-	);
+	proto_loratap = proto_register_protocol ("LoRaTap header", "LoRaTap", "loratap");
 
 	loratap_handle = register_dissector("loratap", dissect_loratap, proto_loratap);
 	proto_register_field_array(proto_loratap, hf, array_length(hf));

@@ -396,16 +396,16 @@ dissect_osc_message(tvbuff_t *tvb, packet_info *pinfo, proto_item *ti, proto_tre
     int          rem;
     int          end = offset + len;
     const char *path;
-    int          path_len;
+    unsigned     path_len;
     int          path_offset;
     const char *format;
     int          format_offset;
-    int          format_len;
+    unsigned     format_len;
     const char *ptr;
 
     /* peek/read path */
     path_offset = offset;
-    path = tvb_get_stringz_enc(pinfo->pool, tvb, path_offset, &path_len, ENC_ASCII);
+    path = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, path_offset, &path_len, ENC_ASCII);
     if( (rem = path_len%4) ) path_len += 4-rem;
 
     if(!is_valid_path(path))
@@ -413,7 +413,7 @@ dissect_osc_message(tvbuff_t *tvb, packet_info *pinfo, proto_item *ti, proto_tre
 
     /* peek/read fmt */
     format_offset = path_offset + path_len;
-    format = tvb_get_stringz_enc(pinfo->pool, tvb, format_offset, &format_len, ENC_ASCII);
+    format = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, format_offset, &format_len, ENC_ASCII);
     if( (rem = format_len%4) ) format_len += 4-rem;
 
     if(!is_valid_format(format))
@@ -946,27 +946,33 @@ dissect_osc_tcp_1_1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 {
     unsigned offset = 0;
 
-    while(offset < tvb_reported_length(tvb))
+    while(tvb_reported_length_remaining(tvb, offset))
     {
-        const int available = tvb_reported_length_remaining(tvb, offset);
-        const uint8_t *encoded_buf = tvb_get_ptr(tvb, offset, -1);
-        const uint8_t *slip_end_found = (const uint8_t *)memchr(encoded_buf, SLIP_END, available);
+        const unsigned available = tvb_reported_length_remaining(tvb, offset);
+        unsigned slip_end_offset;
+        const uint8_t *encoded_buf;
         unsigned encoded_len;
         int decoded_len;
         uint8_t *decoded_buf;
         tvbuff_t *next_tvb;
 
-        if(!slip_end_found) /* no SLIP'd stream ending in this chunk */
-        {
-            /* we ran out of data: ask for more */
-            pinfo->desegment_offset = offset;
-            pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-            return (offset + available);
+        if(!tvb_find_uint8_remaining(tvb, offset, SLIP_END, &slip_end_offset)) {
+            /* no SLIP'd stream ending in this chunk */
+            if (pinfo->can_desegment) {
+                /* we ran out of data: ask for more */
+                pinfo->desegment_offset = offset;
+                pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
+                return offset + available;
+            } else {
+                /* XXX - Probably not correct error handling */
+                return 0; /* failed to decode SLIP'd stream */
+            }
         }
 
-        encoded_len = (unsigned)(slip_end_found + 1 - encoded_buf);
+        encoded_len = slip_end_offset - offset + 1;
         if(encoded_len > 1) /* we have a non-empty SLIP'd stream*/
         {
+            encoded_buf = tvb_get_ptr(tvb, offset, encoded_len);
             decoded_len = slip_decoded_len(encoded_buf, encoded_len);
             if(decoded_len != -1) /* is a valid SLIP'd stream */
             {
@@ -1056,7 +1062,7 @@ dissect_osc_heur_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
         /* XXX: this check is a bit expensive; Consider: use UDP port pref ? */
         TRY {
             slen = tvb_strsize(tvb, offset);
-            if(is_valid_path(tvb_get_ptr(tvb, offset, slen))) {
+            if(is_valid_path((const char*)tvb_get_ptr(tvb, offset, slen))) {
 
                 /* skip path */
                 if( (rem = slen%4) ) slen += 4-rem;
@@ -1066,7 +1072,7 @@ dissect_osc_heur_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
                 slen = tvb_strsize(tvb, offset);
 
                 /* check for valid format */
-                if(is_valid_format(tvb_get_ptr(tvb, offset, slen)))
+                if(is_valid_format((const char*)tvb_get_ptr(tvb, offset, slen)))
                     valid = true;
             }
         }

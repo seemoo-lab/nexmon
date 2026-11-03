@@ -73,7 +73,7 @@ struct _scs_collection {
 };
 
 /*
- * XXX: AFAIKT destroy_scs_collection() might be called only when reading a
+ * XXX: AFAICT destroy_scs_collection() might be called only when reading a
  *      mate config file. Since reading a new config file can apparently currently
  *      only be done once after starting Wireshark, in theory this fcn
  *      currently should never be called since there will never be an existing
@@ -122,7 +122,7 @@ static SCS_collection* scs_init(void) {
  * @param s a string
  *
  * Checks if the given string exists already and if so it increases the count of
- * subsscribers and returns a pointer to the stored string. If not it will copy
+ * subscribers and returns a pointer to the stored string. If not it will copy
  * the given string, store it in the hash, and return the pointer to the copy.
  * Remember, containment is handled internally, take care of your own strings.
  *
@@ -133,9 +133,7 @@ char* scs_subscribe(SCS_collection* c, const char* s) {
 	unsigned* ip = NULL;
 	size_t len = 0;
 
-	g_hash_table_lookup_extended(c->hash,(const void *)s,(void * *)&orig,(void * *)&ip);
-
-	if (ip) {
+	if (g_hash_table_lookup_extended(c->hash,(const void *)s,(void * *)&orig,(void * *)&ip)) {
 		(*ip)++;
 	} else {
 		ip = g_new0(unsigned, 1);
@@ -753,7 +751,7 @@ char* avpl_to_str(AVPL* avpl) {
 		g_free(avp_s);
 	}
 
-	r = g_string_free(s,FALSE);
+	r = g_string_free(s, FALSE);
 
 	/* g_strchug(r); ? */
 	return r;
@@ -771,7 +769,7 @@ extern char* avpl_to_dotstr(AVPL* avpl) {
 		g_free(avp_s);
 	}
 
-	r = g_string_free(s,FALSE);
+	r = g_string_free(s, FALSE);
 
 	/* g_strchug(r); ? */
 	return r;
@@ -1404,7 +1402,7 @@ extern AVPL* get_next_avpl(LoAL* loal,void** cookie) {
  * @param avpls_too whether avpls contained by the loal should be deleted as well
  * @param avps_too whether avps contained by the avpls should be also deleted
  *
- * Destroys a loal and eventually desstroys avpls and avps.
+ * Destroys a loal and eventually destroys avpls and avps.
  *
  **/
 extern void delete_loal(LoAL* loal, bool avpls_too, bool avps_too) {
@@ -1492,7 +1490,7 @@ extern LoAL* loal_from_file(char* filename) {
 	char c;
 	int i = 0;
 	uint32_t linenum = 1;
-	char *linenum_buf;
+	GString *linenum_buf;
 	char *name;
 	char *value;
 	char op = '?';
@@ -1508,7 +1506,7 @@ extern LoAL* loal_from_file(char* filename) {
 		MY_IGNORE
 	} state;
 
-	linenum_buf = (char*)g_malloc(MAX_ITEM_LEN);
+	linenum_buf = g_string_new(NULL);
 	name = (char*)g_malloc(MAX_ITEM_LEN);
 	value = (char*)g_malloc(MAX_ITEM_LEN);
 #ifndef _WIN32
@@ -1565,8 +1563,9 @@ extern LoAL* loal_from_file(char* filename) {
 							i = 0;
 							name[i++] = c;
 							name[i] = '\0';
-							snprintf(linenum_buf,MAX_ITEM_LEN,"%s:%u",filename,linenum);
-							curr = new_avpl(linenum_buf);
+							g_string_append_printf(linenum_buf, "%s:%u", filename, linenum);
+							curr = new_avpl(linenum_buf->str);
+							g_string_set_size(linenum_buf, 0);
 							continue;
 						case '#':
 							state = MY_IGNORE;
@@ -1669,7 +1668,7 @@ extern LoAL* loal_from_file(char* filename) {
 			delete_avpl(curr,true);
 		}
 
-		g_free(linenum_buf);
+		g_string_free(linenum_buf, TRUE);
 		g_free(name);
 		g_free(value);
 
@@ -1681,7 +1680,7 @@ extern LoAL* loal_from_file(char* filename) {
 	}
 
 error:
-	g_free(linenum_buf);
+	g_string_free(linenum_buf, TRUE);
 	g_free(name);
 	g_free(value);
 

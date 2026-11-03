@@ -10,8 +10,10 @@
 
 import json
 import subprocess
+
 import pytest
-from matchers import *
+
+from matchers import MatchAny, MatchList, MatchObject, MatchRegExp
 
 
 @pytest.fixture(scope='session')
@@ -37,7 +39,7 @@ def run_sharkd_session(cmd_sharkd, base_env):
             try:
                 jdata = json.loads(line)
             except json.JSONDecodeError:
-                pytest.fail('Invalid JSON: %r' % line)
+                pytest.fail(f'Invalid JSON: {line!r}')
             outputs.append(jdata)
         return tuple(outputs)
     return run_sharkd_session_real
@@ -140,7 +142,7 @@ class TestSharkd:
                                         "sip", "sdp", "rtp"], "first":1105725482.965944, "last": 1105725491.490081}},
         ))
 
-    def test_sharkd_req_load_with_byte_limit(self, check_sharkd_session, capture_file):
+    def test_sharkd_req_load_with_byte_limit2(self, check_sharkd_session, capture_file):
         check_sharkd_session((
             {"jsonrpc":"2.0", "id": 1, "method":"load",
              "params":{"file":capture_file('sip-rtp.pcapng'), "max_bytes":8000}
@@ -180,11 +182,13 @@ class TestSharkd:
         check_sharkd_session((
             {"jsonrpc":"2.0", "id":1, "method":"status"},
         ), (
-            {"jsonrpc":"2.0","id":1,"result":{"frames":0,"duration":0.000000000,"columns":["No.","Time","Source","Destination","Protocol","Length","Info"],
+            {"jsonrpc":"2.0","id":1,"result":{"frames":0,"duration":0.000000000,"columns":["No.","Time","Delta","Source","Destination","Protocol","Length","Info"],
                 "column_info":[{
                     "title":"No.","format": "%m","visible":True, "display": "R"
                 },{
                     "title": "Time", "format": "%t", "visible":True, "display": "R"
+                },{
+                    "title": "Delta", "format": "%Gt", "visible":True, "display": "R"
                 },{
                     "title": "Source", "format": "%s", "visible":True, "display": "R"
                 },{
@@ -209,11 +213,13 @@ class TestSharkd:
             {"jsonrpc":"2.0","id":1,"result":{"status":"OK"}},
             {"jsonrpc":"2.0","id":2,"result":{"frames": 4, "duration": 0.070345000,
                 "filename": "dhcp.pcap", "filesize": 1400,
-                "columns":["No.","Time","Source","Destination","Protocol","Length","Info"],
+                "columns":["No.","Time","Delta","Source","Destination","Protocol","Length","Info"],
                 "column_info":[{
                     "title":"No.","format": "%m","visible":True, "display": "R"
                 },{
                     "title": "Time", "format": "%t", "visible":True, "display": "R"
+                },{
+                    "title": "Delta", "format": "%Gt", "visible":True, "display": "R"
                 },{
                     "title": "Source", "format": "%s", "visible":True, "display": "R"
                 },{
@@ -352,9 +358,9 @@ class TestSharkd:
             {"jsonrpc":"2.0","id":1,"result":{"status":"OK"}},
             {"jsonrpc":"2.0","id":2,"result":
                 [
-                    {"c":["3","0.610021","::","ff02::1:ffdc:6277","ICMPv6","78","Neighbor Solicitation for fe80::c2c1:c0ff:fedc:6277"],"num":3,"ct":True,"comments":["hello hello"],"bg":"fce0ff","fg":"12272e"},
-                    {"c":["4","0.760023","::","ff02::1:ffdc:6277","ICMPv6","78","Neighbor Solicitation for fec0::c2c1:c0ff:fedc:6277"],"num":4,"ct":True,"comments":["goodbye goodbye"],"bg":"fce0ff","fg":"12272e"},
-                    {"c":["5","0.802338","10.0.0.1","224.0.0.251","MDNS","138","Standard query response 0x0000 A, cache flush 10.0.0.1 PTR, cache flush Cisco29401.local NSEC, cache flush Cisco29401.local"],"num":5,"bg":"daeeff","fg":"12272e"}
+                    {"c":["3","0.610021","","::","ff02::1:ffdc:6277","ICMPv6","78","Neighbor Solicitation for fe80::c2c1:c0ff:fedc:6277"],"num":3,"ct":True,"comments":["hello hello"],"bg":"fce0ff","fg":"12272e"},
+                    {"c":["4","0.760023","0.150002","::","ff02::1:ffdc:6277","ICMPv6","78","Neighbor Solicitation for fec0::c2c1:c0ff:fedc:6277"],"num":4,"ct":True,"comments":["goodbye goodbye"],"bg":"fce0ff","fg":"12272e"},
+                    {"c":["5","0.802338","0.042315","10.0.0.1","224.0.0.251","MDNS","138","Standard query response 0x0000 A, cache flush 10.0.0.1 PTR, cache flush Cisco29401.local NSEC, cache flush Cisco29401.local"],"num":5,"bg":"daeeff","fg":"12272e"}
                 ],
              },
         ))

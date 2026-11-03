@@ -12,9 +12,9 @@
 #include <epan/packet.h>
 #include <epan/aftypes.h>
 #include <epan/etypes.h>
-#include <epan/ipproto.h>
 #include <epan/strutil.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
 #include "packet-netlink.h"
 
@@ -367,10 +367,10 @@ dissect_netlink_unix_sock_diag_reply_attrs(tvbuff_t *tvb, void *data, struct pac
 			if (len > 0 && tvb_get_uint8(tvb, offset) == '\0') {
 				name = wmem_strconcat(info->pinfo->pool,
 					"@",
-					tvb_get_string_enc(info->pinfo->pool, tvb, offset+1, len-1, ENC_ASCII | ENC_NA),
+					tvb_get_string_enc(info->pinfo->pool, tvb, offset+1, len-1, ENC_ASCII),
 					NULL);
 			} else
-				name = tvb_get_string_enc(info->pinfo->pool, tvb, offset, len, ENC_ASCII | ENC_NA);
+				name = (char*)tvb_get_string_enc(info->pinfo->pool, tvb, offset, len, ENC_ASCII);
 
 			proto_item_append_text(tree, ": %s", name);
 			proto_tree_add_string(tree, hf_netlink_sock_diag_unix_name, tvb, offset, len, name);
@@ -963,7 +963,7 @@ dissect_netlink_sock_diag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 	netlink_sock_diag_info_t info;
 	proto_tree *nlmsg_tree;
 	proto_item *pi;
-	int offset = 0;
+	unsigned offset = 0;
 
 	DISSECTOR_ASSERT(nl_data && nl_data->magic == PACKET_NETLINK_MAGIC);
 

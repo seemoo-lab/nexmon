@@ -17,21 +17,32 @@
 
 #include "epan/dfilter/dfilter-translator.h"
 
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/version_info.h>
+#include "wsutil/file_util.h"
 
 #include <ui/commandline.h>
+#include <ui/qt/utils/software_update.h>
 
+#include <QAction>
 #include <QClipboard>
-#include <QTextCodec>
+#include <QFileInfo>
+#include <QMenu>
+#include <glib.h>
 
 #include "funnel_statistics.h"
 #include "main_application.h"
+#include "manager/interface_list_manager.h"
 #include "packet_list.h"
 #include "utils/profile_switcher.h"
 #include "utils/qt_ui_utils.h"
-#include "widgets/display_filter_combo.h"
+#include "utils/workspace_state.h"
+#include "widgets/display_filter_entry.h"
+
+#ifdef Q_OS_MACOS
+#include <ui/macosx/cocoa_bridge.h>
+#endif
 
 // Packet Menu actions
 static QList<QAction *> dynamic_packet_menu_actions;
@@ -42,15 +53,44 @@ MainWindow::MainWindow(QWidget *parent) :
     welcome_page_(nullptr),
     cur_layout_(QVector<unsigned>()),
     packet_list_(nullptr),
+    packet_list_pane_(nullptr),
     proto_tree_(nullptr),
     data_source_tab_(nullptr),
     packet_diagram_(nullptr),
     df_combo_box_(nullptr),
     main_status_bar_(nullptr),
     profile_switcher_(new ProfileSwitcher(this)),
-    use_capturing_title_(false)
+    interface_list_manager_(new InterfaceListManager(this)),
+    use_capturing_title_(false),
+    recent_captures_menu_(nullptr),
+    no_recent_files_action_(nullptr)
+#if defined(Q_OS_MACOS)
+    , dock_menu_(nullptr)
+#endif
 {
     findTextCodecs();
+
+    if (SoftwareUpdate::plattformSupported()) {
+        connect(SoftwareUpdate::instance(), &SoftwareUpdate::appShutdownRequested, this, [this](ShutdownEvent* shutdownEvent) {
+            // tryClosingCaptureFile doesn't use this string because we aren't
+            // going to launch another dialog, but maybe we'll change that.
+            QString before_what(tr(" before updating"));
+            if (tryClosingCaptureFile(before_what, Update)) {
+                #ifdef _WIN32
+                    close_app_running_mutex();
+                #endif
+                shutdownEvent->accept();
+            } else {
+                shutdownEvent->reject(tr("Please close the current file before updating."));
+            }
+        }, Qt::BlockingQueuedConnection);
+    }
+
+    // Tell the interface manager when a capture is active; it propagates that to
+    // the statistics it owns (pause sampling) and defers rescans accordingly.
+    connect(mainApp, &MainApplication::captureActive, this, [this](int active) {
+        interface_list_manager_->setCaptureActive(active > 0);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -58,53 +98,107 @@ MainWindow::~MainWindow()
     clearAddedPacketMenus();
 }
 
+InterfaceListManager *MainWindow::interfaceListManager() const
+{
+    return interface_list_manager_;
+}
+
 void MainWindow::findTextCodecs() {
-    const QList<int> mibs = QTextCodec::availableMibs();
-    QRegularExpression ibmRegExp("^IBM([0-9]+).*$");
-    QRegularExpression iso8859RegExp("^ISO-8859-([0-9]+).*$");
-    QRegularExpression windowsRegExp("^WINDOWS-([0-9]+).*$");
-    QRegularExpressionMatch match;
-    for (int mib : mibs) {
-        QTextCodec *codec = QTextCodec::codecForMib(mib);
-        // QTextCodec::availableMibs() returns a list of hard-coded MIB
-        // numbers, it doesn't check if they are really available. ICU data may
-        // not have been compiled with support for all encodings.
-        if (!codec) {
+    static const struct {
+        char category;      /* sort group: A=Unicode, B=ISO-8859, C=Windows,
+                               D=IBM/DOS, E=CJK, F=Cyrillic, G=Other */
+        const char *name;   /* iconv encoding name */
+    } encodings[] = {
+        /* Unicode */
+        { 'A', "UTF-7" },
+        { 'A', "UTF-16" },
+        { 'A', "UTF-16BE" },
+        { 'A', "UTF-16LE" },
+        { 'A', "UTF-32" },
+        { 'A', "UTF-32BE" },
+        { 'A', "UTF-32LE" },
+        /* ISO-8859 */
+        { 'B', "ISO-8859-1" },         /* Western European */
+        { 'B', "ISO-8859-2" },         /* Central European */
+        { 'B', "ISO-8859-3" },         /* South European (Turkish, Maltese, Esperanto) */
+        { 'B', "ISO-8859-4" },         /* North European (Baltic) */
+        { 'B', "ISO-8859-5" },         /* Cyrillic */
+        { 'B', "ISO-8859-6" },         /* Arabic */
+        { 'B', "ISO-8859-7" },         /* Greek */
+        { 'B', "ISO-8859-8" },         /* Hebrew */
+        { 'B', "ISO-8859-9" },         /* Turkish */
+        { 'B', "ISO-8859-10" },        /* Nordic */
+        { 'B', "ISO-8859-11" },        /* Thai */
+        { 'B', "ISO-8859-13" },        /* Baltic */
+        { 'B', "ISO-8859-14" },        /* Celtic */
+        { 'B', "ISO-8859-15" },        /* Western European (with Euro sign) */
+        { 'B', "ISO-8859-16" },        /* South-Eastern European (Romanian) */
+        /* Windows codepages */
+        { 'C', "WINDOWS-874" },        /* Thai */
+        { 'C', "WINDOWS-1250" },       /* Central European */
+        { 'C', "WINDOWS-1251" },       /* Cyrillic */
+        { 'C', "WINDOWS-1252" },       /* Western European */
+        { 'C', "WINDOWS-1253" },       /* Greek */
+        { 'C', "WINDOWS-1254" },       /* Turkish */
+        { 'C', "WINDOWS-1255" },       /* Hebrew */
+        { 'C', "WINDOWS-1256" },       /* Arabic */
+        { 'C', "WINDOWS-1257" },       /* Baltic */
+        { 'C', "WINDOWS-1258" },       /* Vietnamese */
+        /* IBM/DOS codepages */
+        { 'D', "IBM437" },             /* US English */
+        { 'D', "IBM775" },             /* Baltic */
+        { 'D', "IBM850" },             /* Western European */
+        { 'D', "IBM852" },             /* Central European */
+        { 'D', "IBM855" },             /* Cyrillic */
+        { 'D', "IBM857" },             /* Turkish */
+        { 'D', "IBM858" },             /* Western European (with Euro sign) */
+        { 'D', "IBM860" },             /* Portuguese */
+        { 'D', "IBM861" },             /* Icelandic */
+        { 'D', "IBM862" },             /* Hebrew */
+        { 'D', "IBM863" },             /* Canadian French */
+        { 'D', "IBM864" },             /* Arabic */
+        { 'D', "IBM865" },             /* Nordic */
+        { 'D', "IBM866" },             /* Russian */
+        { 'D', "IBM869" },             /* Greek */
+        /* CJK */
+        { 'E', "BIG5" },              /* Traditional Chinese (Taiwan) */
+        { 'E', "BIG5-HKSCS" },        /* Traditional Chinese (Hong Kong) */
+        { 'E', "EUC-JP" },            /* Japanese (Unix) */
+        { 'E', "EUC-JISX0213" },      /* Japanese (extended) */
+        { 'E', "EUC-KR" },            /* Korean */
+        { 'E', "EUC-TW" },            /* Traditional Chinese (Unix) */
+        { 'E', "GB2312" },            /* Simplified Chinese (legacy) */
+        { 'E', "GB18030" },           /* Chinese (modern standard) */
+        { 'E', "GBK" },               /* Simplified Chinese (Windows) */
+        { 'E', "ISO-2022-JP" },       /* Japanese (email) */
+        { 'E', "SHIFT_JIS" },         /* Japanese (Windows/DOS) */
+        { 'E', "SHIFT_JISX0213" },    /* Japanese (extended Shift-JIS) */
+        { 'E', "WINDOWS-31J" },       /* Japanese (Microsoft variant) */
+        /* Cyrillic */
+        { 'F', "KOI8-R" },            /* Russian */
+        { 'F', "KOI8-RU" },           /* Belarusian/Ukrainian */
+        { 'F', "KOI8-T" },            /* Tajik */
+        { 'F', "KOI8-U" },            /* Ukrainian */
+        /* Other */
+        { 'G', "ARMSCII-8" },         /* Armenian */
+        { 'G', "GEORGIAN-ACADEMY" },  /* Georgian */
+        { 'G', "GEORGIAN-PS" },       /* Georgian (Parliament) */
+        { 'G', "MACINTOSH" },         /* Western European (Mac) */
+        { 'G', "MAC-CENTRALEUROPE" }, /* Central European (Mac) */
+        { 'G', "MAC-CYRILLIC" },      /* Cyrillic (Mac) */
+        { 'G', "TCVN-5712" },         /* Vietnamese */
+        { 'G', "TIS-620" },           /* Thai */
+        { 'G', "VISCII" },            /* Vietnamese */
+    };
+
+    for (size_t i = 0; i < G_N_ELEMENTS(encodings); i++) {
+        GIConv cd = g_iconv_open("UTF-8", encodings[i].name);
+        if (cd == (GIConv)-1)
             continue;
-        }
-
-        QString key = codec->name().toUpper();
-        char rank;
-
-        if (key.localeAwareCompare("IBM") < 0) {
-            rank = 1;
-        } else if ((match = ibmRegExp.match(key)).hasMatch()) {
-            rank = match.captured(1).size(); // Up to 5
-        } else if (key.localeAwareCompare("ISO-8859-") < 0) {
-            rank = 6;
-        } else if ((match = iso8859RegExp.match(key)).hasMatch()) {
-            rank = 6 + match.captured(1).size(); // Up to 6 + 2
-        } else if (key.localeAwareCompare("WINDOWS-") < 0) {
-            rank = 9;
-        } else if ((match = windowsRegExp.match(key)).hasMatch()) {
-            rank = 9 + match.captured(1).size(); // Up to 9 + 4
-        } else {
-            rank = 14;
-        }
-        // This doesn't perfectly well order the IBM codecs because it's
-        // annoying to properly place IBM00858 and IBM00924 in the middle of
-        // code page numbers not zero padded to 5 digits.
-        // We could manipulate the key further to have more commonly used
-        // charsets earlier. IANA MIB ordering would be unexpected:
-        // https://www.iana.org/assignments/character-sets/character-sets.xml
-        // For data about use in HTTP (other protocols can be quite different):
-        // https://w3techs.com/technologies/overview/character_encoding
-
-        key.prepend(char('0' + rank));
-        // We use a map here because, due to backwards compatibility,
-        // the same QTextCodec may be returned for multiple MIBs, which
-        // happens for GBK/GB2312, EUC-KR/windows-949/UHC, and others.
-        text_codec_map_.insert(key, codec);
+        g_iconv_close(cd);
+        QString key = QString(QChar(encodings[i].category)) +
+                      QString::fromUtf8(encodings[i].name);
+        text_codec_map_.insert(key, encodings[i].name);
     }
 }
 
@@ -134,12 +228,11 @@ QList<int> MainWindow::selectedRows(bool useFrameNum)
     return QList<int>();
 }
 
-frame_data* MainWindow::frameDataForRow(int row) const
+QList<frame_data *> MainWindow::selectedFrames()
 {
     if (packet_list_)
-        return packet_list_->getFDataForRow(row);
-
-    return Q_NULLPTR;
+        return packet_list_->selectedFrames();
+    return QList<frame_data *>();
 }
 
 void MainWindow::insertColumn(QString name, QString abbrev, int pos)
@@ -163,7 +256,7 @@ void MainWindow::gotoFrame(int packet_num)
 
 QString MainWindow::getFilter()
 {
-    return df_combo_box_->currentText();
+    return df_combo_box_->text();
 }
 
 MainStatusBar *MainWindow::statusBar()
@@ -174,6 +267,14 @@ MainStatusBar *MainWindow::statusBar()
 void MainWindow::setDisplayFilter(QString filter, FilterAction::Action action, FilterAction::ActionType filterType)
 {
     emit filterAction(filter, action, filterType);
+}
+
+void MainWindow::filterPackets(QString filter, bool)
+{
+    // Ignore the force parameter. We could add a new action type, and make
+    // the main DisplayFilterEntry check. (Note a filter can have the same text
+    // but compile differently if field references, macros, etc. have changed.)
+    emit filterAction(filter, FilterAction::ActionApply, FilterAction::ActionTypePlain);
 }
 
 /*
@@ -337,7 +438,7 @@ void MainWindow::copyDisplayFilterTranslation()
 QString MainWindow::replaceWindowTitleVariables(QString title)
 {
     title.replace("%P", get_profile_name());
-    title.replace("%V", get_ws_vcs_version_info());
+    title.replace("%V", application_get_vcs_version_info());
 
 #ifdef HAVE_LIBPCAP
     char* capture_comment = commandline_get_first_capture_comment();
@@ -453,3 +554,106 @@ void MainWindow::updateTitlebar()
     }
 }
 
+void MainWindow::setIconForCaptureInProgress(bool capture_in_progress)
+{
+#ifdef Q_OS_MACOS
+    CocoaBridge::setCaptureIcon(capture_in_progress);
+#else
+    const QIcon &icon = capture_in_progress ? mainApp->captureIcon() : mainApp->normalIcon();
+    mainApp->setWindowIcon(icon);
+    QMainWindow::setWindowIcon(icon);
+#endif
+}
+
+/**
+ * Populate the recent captures menu with files from WorkspaceState.
+ * Calls openRecentCaptureFile() (pure virtual) when user selects a file.
+ */
+void MainWindow::populateRecentCapturesMenu()
+{
+    if (!recent_captures_menu_) {
+        return;
+    }
+    recent_captures_menu_->clear();
+
+#if defined(Q_OS_MACOS)
+    if (dock_menu_) {
+        dock_menu_->clear();
+    }
+#endif
+
+    const QList<RecentFileInfo>& recentFiles = WorkspaceState::instance()->recentCaptureFiles();
+
+#if defined(Q_OS_MACOS)
+    int shortcut = Qt::Key_0;
+#endif
+
+    int rFSize = static_cast<int>(recentFiles.size());
+    for (int i = rFSize - 1; i >= 0; i--) {
+        const RecentFileInfo& rfi = recentFiles.at(i);
+        QString filename = rfi.filename;
+
+        // Add the new item
+        QAction *ra = new QAction(recent_captures_menu_);
+        ra->setText(filename);
+        ra->setEnabled(rfi.accessible);
+        recent_captures_menu_->insertAction(NULL, ra);
+
+#if defined(Q_OS_MACOS)
+        if (shortcut <= Qt::Key_9) {
+            ra->setShortcut(Qt::META | (Qt::Key)shortcut);
+            shortcut++;
+        }
+#endif
+
+        if (rfi.accessible) {
+            connect(ra, &QAction::triggered, this, [this, filename]() {
+                openRecentCaptureFile(filename);
+            });
+        }
+
+#if defined(Q_OS_MACOS)
+        if (dock_menu_) {
+            QAction *rda = new QAction(dock_menu_);
+            QFileInfo fi(filename);
+            rda->setText(fi.fileName());
+            dock_menu_->insertAction(NULL, rda);
+
+            connect(rda, &QAction::triggered, this, [this, filename]() {
+                openRecentCaptureFile(filename);
+            });
+        }
+#endif
+
+        if (recent_captures_menu_->actions().count() == static_cast<qsizetype>(prefs.gui_recent_files_count_max)) {
+            break;
+        }
+    }
+
+    if (recent_captures_menu_->actions().count() > 0) {
+        // Separator + "Clear"
+        recent_captures_menu_->insertSeparator(NULL);
+        QAction *ra = new QAction(recent_captures_menu_);
+        ra->setObjectName("clearRecentCapturesAction");
+        ra->setText(tr("Clear Menu"));
+        recent_captures_menu_->insertAction(NULL, ra);
+        connect(ra, &QAction::triggered, this, []() {
+            WorkspaceState::instance()->clearRecentCaptureFiles();
+        });
+    } else {
+        if (no_recent_files_action_) {
+            recent_captures_menu_->addAction(no_recent_files_action_);
+        }
+    }
+}
+
+void MainWindow::retranslateUiElements()
+{
+    if (recent_captures_menu_) {
+        const QList<RecentFileInfo>& recentFiles = WorkspaceState::instance()->recentCaptureFiles();
+        QAction *action = recent_captures_menu_->findChild<QAction*>("clearRecentCapturesAction");
+        if (recentFiles.size() > 0 && action) {
+            action->setText(tr("Clear Menu"));
+        }
+    }
+}

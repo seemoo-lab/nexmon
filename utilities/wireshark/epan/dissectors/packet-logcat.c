@@ -19,6 +19,8 @@
 #include <epan/prefs.h>
 #include <wiretap/wtap.h>
 
+#include "packet-logcat.h"
+
 static int proto_logcat;
 
 static int hf_logcat_version;
@@ -48,7 +50,7 @@ static expert_field ei_invalid_payload_length;
 
 static bool  pref_one_line_info_column = true;
 
-const value_string priority_vals[] = {
+const value_string logcat_priority_vals[] = {
     { 0x00,  "Unknown" },
     { 0x01,  "Default" },
     { 0x02,  "Verbose" },
@@ -74,7 +76,7 @@ static int detect_version(tvbuff_t *tvb, int offset) {
     if (try_header_size != 24)
         return 1;
 
-    if (tvb_reported_length_remaining(tvb, offset + 24 + payload_length) >= 0)
+    if (tvb_reported_length_remaining(tvb, offset + 24) >= payload_length)
         return 2;
 
     return 1;
@@ -92,7 +94,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     uint16_t     check_length;
     uint32_t     string_length;
     int          logger_version;
-    uint8_t     *log;
+    const char  *log;
     char        *c;
     tvbuff_t    *next_tvb;
 
@@ -107,8 +109,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     subitem = proto_tree_add_uint(maintree, hf_logcat_version, tvb, offset, 0, logger_version);
     proto_item_set_generated(subitem);
 
-    proto_tree_add_item(maintree, hf_logcat_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    length = tvb_get_letohs(tvb, offset);
+    proto_tree_add_item_ret_uint16(maintree, hf_logcat_length, tvb, offset, 2, ENC_LITTLE_ENDIAN, &length);
     offset += 2;
 
     if (logger_version == 1) {
@@ -153,7 +154,7 @@ dissect_logcat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     check_length += string_length;
 
     string_length = length - string_length - 1;
-    log = tvb_get_string_enc(pinfo->pool, tvb, offset, string_length, ENC_UTF_8);
+    log = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, string_length, ENC_UTF_8);
 
     /* New line characters convert to spaces to ensure column Info display one line */
     if (pref_one_line_info_column) {
@@ -247,7 +248,7 @@ proto_register_logcat(void)
         },
         { &hf_logcat_priority,
             { "Priority",                        "logcat.priority",
-            FT_UINT8, BASE_DEC, VALS(priority_vals), 0x00,
+            FT_UINT8, BASE_DEC, VALS(logcat_priority_vals), 0x00,
             NULL, HFILL }
         },
         { &hf_logcat_tag,

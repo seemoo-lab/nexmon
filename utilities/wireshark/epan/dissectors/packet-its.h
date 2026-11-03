@@ -1,7 +1,7 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-its.h                                                               */
-/* asn2wrs.py -q -L -o its -c ./its.cnf -s ./packet-its-template -D . -O ../.. ETSI-ITS-CDD.asn ITS-ContainerV1.asn ISO_TS_14816.asn ISO_TS_14906_Application.asn DSRC.asn DSRC-region.asn DSRC-addgrp-C.asn GDD.asn ISO19321IVIv2.asn ETSI_TS_103301.asn CAMv1.asn CAM-PDU-Descriptions.asn DENMv1.asn DENM-PDU-Descriptions.asn TIS_TPG_Transactions_Descriptions.asn EVCSN-PDU-Descriptions.asn EV-RSR-PDU-Descriptions.asn CPM-OriginatingStationContainers.asn CPM-PDU-Descriptionsv1.asn CPM-PDU-Descriptions.asn CPM-PerceivedObjectContainer.asn CPM-PerceptionRegionContainer.asn CPM-SensorInformationContainer.asn VAM-PDU-Descriptions.asn IMZM-PDU-Descriptions.asn */
+/* asn2wrs.py -q -L -o its -c ./its.cnf -s ./packet-its-template -D . -O ../.. ETSI-ITS-CDD.asn ITS-ContainerV1.asn ISO_TS_14816.asn ISO_TS_14906_Application.asn DSRC.asn DSRC-region.asn DSRC-addgrp-C.asn GDD.asn ISO19321IVIv2.asn ETSI_TS_103301.asn CAMv1.asn CAM-PDU-Descriptions.asn DENMv1.asn DENM-PDU-Descriptions.asn TIS_TPG_Transactions_Descriptions.asn EVCSN-PDU-Descriptions.asn EV-RSR-PDU-Descriptions.asn CPM-OriginatingStationContainers.asn CPM-PDU-Descriptionsv1.asn CPM-PDU-Descriptions.asn CPM-PerceivedObjectContainer.asn CPM-PerceptionRegionContainer.asn CPM-SensorInformationContainer.asn VAM-PDU-Descriptions.asn IMZM-PDU-Descriptions.asn PIM-PDU-Descriptions.asn AVM-Commons.asn MIM-PDU-Descriptions.asn MVM-PDU-Descriptions.asn */
 
 /* packet-its-template.h
  *
@@ -17,6 +17,8 @@
 
 #ifndef __PACKET_ITS_H__
 #define __PACKET_ITS_H__
+
+#include <epan/asn1.h>
 
 
 /* --- Module ETSI-ITS-CDD --- --- ---                                        */
@@ -109,6 +111,18 @@
 /* --- Module IMZM-PDU-Descriptions --- --- ---                               */
 
 
+/* --- Module PIM-PDU-Descriptions --- --- ---                                */
+
+
+/* --- Module AVM-Commons --- --- ---                                         */
+
+
+/* --- Module MIM-PDU-Descriptions --- --- ---                                */
+
+
+/* --- Module MVM-PDU-Descriptions --- --- ---                                */
+
+
 
 /* --- Module ETSI-ITS-CDD --- --- ---                                        */
 
@@ -117,15 +131,16 @@ typedef enum _CauseCodeType_enum {
   trafficCondition =   1,
   accident     =   2,
   roadworks    =   3,
+  detectedRoadworks =   4,
   impassability =   5,
-  adverseWeatherCondition_Adhesion =   6,
+  adhesion     =   6,
   aquaplaning  =   7,
   hazardousLocation_SurfaceCondition =   9,
   hazardousLocation_ObstacleOnTheRoad =  10,
   hazardousLocation_AnimalOnTheRoad =  11,
   humanPresenceOnTheRoad =  12,
   wrongWayDriving =  14,
-  rescueAndRecoveryWorkInProgress =  15,
+  rescueRecoveryAndMaintenanceWorkInProgress =  15,
   adverseWeatherCondition_ExtremeWeatherCondition =  17,
   adverseWeatherCondition_Visibility =  18,
   adverseWeatherCondition_Precipitation =  19,
@@ -163,10 +178,10 @@ typedef enum _CauseCodeType_enum {
 #define ITS_IMZM      15
 #define ITS_VAM       16
 #define ITS_DSM       17
-#define ITS_PCIM      18
-#define ITS_PCVM      19
+#define ITS_MIM       18
+#define ITS_MVM       19
 #define ITS_MCM       20
-#define ITS_PAM       21
+#define ITS_PIM       21
 
 /* --- Module ITS-ContainerV1 --- --- ---                                     */
 
@@ -264,11 +279,24 @@ typedef enum _RegionId_enum {
 /* --- Module IMZM-PDU-Descriptions --- --- ---                               */
 
 
+/* --- Module PIM-PDU-Descriptions --- --- ---                                */
+
+
+/* --- Module AVM-Commons --- --- ---                                         */
+
+
+/* --- Module MIM-PDU-Descriptions --- --- ---                                */
+
+
+/* --- Module MVM-PDU-Descriptions --- --- ---                                */
+
+
 typedef struct its_header {
     uint32_t version;
     uint32_t msgId;
     uint32_t stationId;
     uint32_t CpmContainerId;
+    uint32_t CamExtensionContainerId;
 } its_header_t;
 
 

@@ -472,7 +472,7 @@ static int
 dissect_nbd_structured_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned type)
 {
 	proto_item *item;
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t len;
 
 	switch (type) {
@@ -812,11 +812,11 @@ dissect_nbd_opt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 {
 	proto_item *item;
 	proto_tree *tree;
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t opt, data_len, name_len, info_num;
 	nbd_conv_info_t *nbd_info;
 	nbd_option_t *nbd_opt;
-	const uint8_t *export_name;
+	const char *export_name;
 
 	item = proto_tree_add_item(parent_tree, proto_nbd, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_nbd);
@@ -852,7 +852,7 @@ dissect_nbd_opt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 	if (data_len) {
 		switch (opt) {
 		case NBD_OPT_EXPORT_NAME:
-			proto_tree_add_item_ret_string(tree, hf_nbd_export_name, tvb, offset, data_len, ENC_UTF_8, pinfo->pool, &export_name);
+			proto_tree_add_item_ret_string(tree, hf_nbd_export_name, tvb, offset, data_len, ENC_UTF_8, pinfo->pool, (const uint8_t**)&export_name);
 			col_append_sep_str(pinfo->cinfo, COL_INFO, ":", export_name);
 			break;
 		case NBD_OPT_INFO:
@@ -876,9 +876,10 @@ dissect_nbd_opt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 			offset += name_len;
 			proto_tree_add_item_ret_uint(tree, hf_nbd_query_num, tvb, offset, 4, ENC_BIG_ENDIAN, &info_num);
 			offset += 4;
+			unsigned query_len;
 			for (unsigned i = 0; i < info_num; ++i) {
-				proto_tree_add_item_ret_length(tree, hf_nbd_query, tvb, offset, 2, ENC_BIG_ENDIAN, &name_len);
-				offset += name_len;
+				proto_tree_add_item_ret_length(tree, hf_nbd_query, tvb, offset, 2, ENC_BIG_ENDIAN, &query_len);
+				offset += query_len;
 			}
 			break;
 		default:
@@ -901,7 +902,7 @@ static int
 dissect_nbd_opt_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned type)
 {
 	proto_item *item;
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t name_len, info_type;
 
 	switch (type) {
@@ -964,7 +965,7 @@ dissect_nbd_opt_reply_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_
 {
 	proto_item *item, *gen_item;
 	proto_tree *tree;
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t opt, reply, data_len;
 	nbd_conv_info_t *nbd_info;
 	nbd_option_t *nbd_opt;
@@ -1031,7 +1032,7 @@ dissect_nbd_export_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tre
 {
 	proto_item *item;
 	proto_tree *tree;
-	int offset = 0;
+	unsigned offset = 0;
 	nbd_conv_info_t *nbd_info;
 	nbd_option_t *nbd_opt;
 
@@ -1098,7 +1099,7 @@ dissect_nbd_old_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, 
 {
 	proto_item *item;
 	proto_tree *tree;
-	int offset = 0;
+	unsigned offset = 0;
 
 	col_set_str(pinfo->cinfo, COL_INFO, "Oldstyle Handshake");
 
@@ -1129,7 +1130,7 @@ dissect_nbd_hnd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
 {
 	proto_item *item;
 	proto_tree *tree;
-	int offset = 0;
+	unsigned offset = 0;
 	uint64_t magic;
 	//nbd_conv_info_t *nbd_info;
 

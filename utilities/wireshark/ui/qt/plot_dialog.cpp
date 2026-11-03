@@ -14,11 +14,14 @@
 #include "plot_dialog.h"
 #include <ui_plot_dialog.h>
 
-#include <wsutil/application_flavor.h>
+#include <epan/uat-int.h>
+
+#include <app/application_flavor.h>
 #include <wsutil/report_message.h>
 #include <ui/preference_utils.h>
 #include <ui/qt/utils/qt_ui_utils.h>
 #include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 #include <ui/qt/widgets/resize_header_view.h>
 
 #include <ui/qt/widgets/qcp_spacer_legend_item.h>
@@ -55,40 +58,6 @@ static const int stat_update_interval_ = 200;   // ms
 #define MAX_PLOT_NUM    20
 
 extern "C" {
-    UAT_BOOL_CB_DEF(plot, enabled, plot_settings_t)
-    UAT_DEC_CB_DEF(plot, group, plot_settings_t)
-    UAT_CSTRING_CB_DEF(plot, name, plot_settings_t)
-    UAT_DISPLAY_FILTER_CB_DEF(plot, dfilter, plot_settings_t)
-    UAT_COLOR_CB_DEF(plot, color, plot_settings_t)
-    UAT_VS_DEF(plot, style, plot_settings_t, uint32_t, 0, "Line")
-    UAT_PROTO_FIELD_CB_DEF(plot, yfield, plot_settings_t)
-    UAT_DBL_CB_DEF(plot, y_axis_factor, plot_settings_t)
-
-    static uat_field_t plot_packet_fields[] = {
-        UAT_FLD_BOOL(plot, enabled, "Enabled", "Graph visibility"),
-        UAT_FLD_DEC(plot, group, "Group #", "Which group the plot belongs to"),
-        UAT_FLD_CSTRING(plot, name, "Plot Name", "The name of the plot"),
-        UAT_FLD_DISPLAY_FILTER(plot, dfilter, "Display Filter", "Plot packets matching this display filter"),
-        UAT_FLD_COLOR(plot, color, "Color", "Plot color (#RRGGBB)"),
-        UAT_FLD_VS(plot, style, "Style", graph_style_vs, "Plot style"),
-        UAT_FLD_PROTO_FIELD(plot, yfield, "Y Field", "Field to plot"),
-        UAT_FLD_DBL(plot, y_axis_factor, "Y Axis Factor", "Y Axis Factor"),
-
-        UAT_END_FIELDS
-    };
-
-    static uat_field_t plot_event_fields[] = {
-        UAT_FLD_BOOL(plot, enabled, "Enabled", "Graph visibility"),
-        UAT_FLD_DEC(plot, group, "Group #", "Which group the plot belongs to"),
-        UAT_FLD_CSTRING(plot, name, "Plot Name", "The name of the plot"),
-        UAT_FLD_DISPLAY_FILTER(plot, dfilter, "Display Filter", "Plot events matching this display filter"),
-        UAT_FLD_COLOR(plot, color, "Color", "Plot color (#RRGGBB)"),
-        UAT_FLD_VS(plot, style, "Style", graph_style_vs, "Plot style"),
-        UAT_FLD_PROTO_FIELD(plot, yfield, "Y Field", "Field to plot"),
-        UAT_FLD_DBL(plot, y_axis_factor, "Y Axis Factor", "Y Axis Factor"),
-
-        UAT_END_FIELDS
-    };
 
     static void* plot_copy_cb(void* dst_ptr, const void* src_ptr, size_t) {
         plot_settings_t* dst = (plot_settings_t*)dst_ptr;
@@ -132,7 +101,7 @@ extern "C" {
     }
 } // extern "C"
 
-PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
+PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf) :
     WiresharkDialog(parent, cf),
     ui(new Ui::PlotDialog),
     uat_model_(nullptr),
@@ -154,14 +123,14 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     setWindowSubtitle(tr("Plots"));
     setAttribute(Qt::WA_DeleteOnClose, true);
 
-    ui->newToolButton->setStockIcon("list-add");
-    ui->deleteToolButton->setStockIcon("list-remove");
-    ui->copyToolButton->setStockIcon("list-copy");
-    ui->clearToolButton->setStockIcon("list-clear");
-    ui->moveUpwardsToolButton->setStockIcon("list-move-up");
-    ui->moveDownwardsToolButton->setStockIcon("list-move-down");
+    ui->newToolButton->setIconByName("list-add");
+    ui->deleteToolButton->setIconByName("list-remove");
+    ui->copyToolButton->setIconByName("list-copy");
+    ui->clearToolButton->setIconByName("list-clear");
+    ui->moveUpwardsToolButton->setIconByName("list-move-up");
+    ui->moveDownwardsToolButton->setIconByName("list-move-down");
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     ui->newToolButton->setAttribute(Qt::WA_MacSmallSize, true);
     ui->deleteToolButton->setAttribute(Qt::WA_MacSmallSize, true);
     ui->copyToolButton->setAttribute(Qt::WA_MacSmallSize, true);
@@ -179,6 +148,9 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     copy_profile_bt_ = new CopyFromProfileButton(this, "plots", tr("Copy plots from another profile."));
     ui->rightButtonBox->addButton(copy_profile_bt_, QDialogButtonBox::ActionRole);
     connect(copy_profile_bt_, &CopyFromProfileButton::copyProfile, this, &PlotDialog::copyFromProfile);
+
+    connect(ThemeManager::instance(), &ThemeManager::themeChanged,
+            this, &PlotDialog::onThemeChanged);
 
     QPushButton* close_bt = ui->rightButtonBox->button(QDialogButtonBox::Close);
     if (close_bt) close_bt->setDefault(true);
@@ -203,6 +175,10 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     ctx_menu_.addAction(ui->actionMoveLeft1);
     ctx_menu_.addAction(ui->actionMoveUp1);
     ctx_menu_.addAction(ui->actionMoveDown1);
+    ctx_menu_.addAction(ui->actionMoveRight100);
+    ctx_menu_.addAction(ui->actionMoveLeft100);
+    ctx_menu_.addAction(ui->actionMoveUp100);
+    ctx_menu_.addAction(ui->actionMoveDown100);
     ctx_menu_.addSeparator();
     ctx_menu_.addAction(ui->actionGoToPacket);
     ctx_menu_.addSeparator();
@@ -210,6 +186,7 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     ctx_menu_.addAction(ui->actionLogScale);
     ctx_menu_.addAction(ui->actionCrosshairs);
     ctx_menu_.addAction(ui->actionTopAxis);
+    ctx_menu_.addAction(ui->actionEnableMultiYAxes);
     ctx_menu_.addAction(ui->actionAutoScroll);
     ctx_menu_.addAction(ui->actionLegend);
     QMenu* markerMenu = new QMenu(tr("Markers"), &ctx_menu_);
@@ -221,7 +198,6 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     markerMenu->addAction(ui->actionDeleteMarker);
     markerMenu->addAction(ui->actionDeleteAllMarkers);
     ctx_menu_.addMenu(markerMenu);
-    set_action_shortcuts_visible_in_context_menu(ctx_menu_.actions());
 
     // Let's try to explain the layout of this QCustomPlot.
     // First of all, we have two degenerate plots that are always kept at the
@@ -271,11 +247,7 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     // We add the title for the entire plot as label to the top x axis, to use
     // the available space as best as we can (and to always have the number of
     // rows in the layout equal to the number of Axis Rects).
-    if (application_flavor_is_wireshark()) {
-        plot->xAxis2->setLabel(tr("Wireshark Plots: %1").arg(cap_file_.fileDisplayName()));
-    } else {
-        plot->xAxis2->setLabel(tr("Stratoshark Plots: %1").arg(cap_file_.fileDisplayName()));
-    }
+    plot->xAxis2->setLabel(tr("%1 Plots: %2").arg(application_flavor_name_proper()).arg(cap_file_.fileDisplayName()));
 
     // Step 2: Create the bottom "degenerate" plot, consisting only of the
     // bottom axis, and do the same as above.
@@ -304,8 +276,13 @@ PlotDialog::PlotDialog(QWidget& parent, CaptureFile& cf, bool show_default) :
     rubber_band_ = new QRubberBand(QRubberBand::Rectangle, plot);
     rubber_band_->setVisible(false);
     tracer_ = new QCPItemTracer(plot);
+}
 
-    loadProfileGraphs();
+void PlotDialog::initialize(QWidget& parent, uat_field_t* plot_fields, bool show_default)
+{
+    QCustomPlot* plot = ui->plot;
+
+    loadProfileGraphs(plot_fields);
     if (uat_model_->rowCount() > 0) {
         for (int i = 0; i < uat_model_->rowCount(); i++) {
             createPlot(i);
@@ -354,11 +331,9 @@ PlotDialog::~PlotDialog()
     ui = nullptr;
 }
 
-void PlotDialog::loadProfileGraphs()
+void PlotDialog::loadProfileGraphs(uat_field_t* plot_fields)
 {
     if (!plot_uat_) {
-        uat_field_t* plot_fields = application_flavor_is_wireshark() ? plot_packet_fields : plot_event_fields;
-
         plot_uat_ = uat_new("Plots",
             sizeof(plot_settings_t),
             "plots",
@@ -377,10 +352,18 @@ void PlotDialog::loadProfileGraphs()
         uat_set_default_values(plot_uat_, plot_uat_defaults_);
 
         char* err = NULL;
-        if (!uat_load(plot_uat_, NULL, &err)) {
-            report_failure("Error while loading %s: %s. Default plot values will be used.", plot_uat_->name, err);
-            g_free(err);
-            uat_clear(plot_uat_);
+        if (!uat_load(plot_uat_, NULL, application_configuration_environment_prefix(), &err)) {
+            // Some errors are non-fatal (records were added but failed
+            // validation.) Since field names sometimes change between
+            // versions, don't erase all the existing plots.
+            if (plot_uat_->raw_data->len) {
+                report_failure("Error while loading %s: %s.", plot_uat_->name, err);
+                g_free(err);
+            } else {
+                report_failure("Error while loading %s: %s. Default plot values will be used.", plot_uat_->name, err);
+                g_free(err);
+                uat_clear(plot_uat_);
+            }
         }
 
         static_uat_model_ = new UatModel(mainApp, plot_uat_);
@@ -413,7 +396,7 @@ void PlotDialog::copyFromProfile(const QString& filename)
     // We should let the UatModel handle it, and have the UatModel
     // call beginInsertRows() and endInsertRows(), so that we can
     // just add the new rows instead of resetting the information.
-    if (uat_load(plot_uat_, filename.toUtf8().constData(), &err)) {
+    if (uat_load(plot_uat_, filename.toUtf8().constData(), application_configuration_environment_prefix(), &err)) {
         plot_uat_->changed = true;
         // uat_load calls the post update cb, which reloads the Uat.
         //uat_model_->reloadUat();
@@ -421,6 +404,10 @@ void PlotDialog::copyFromProfile(const QString& filename)
     else {
         report_failure("Error while loading %s: %s", plot_uat_->name, err);
         g_free(err);
+        // On failure, uat_load does not call the post update cb.
+        // Some errors are non-fatal (a record was still added but failed
+        // validation.)
+        uat_model_->reloadUat();
     }
 }
 
@@ -534,9 +521,12 @@ void PlotDialog::syncPlotSettings(int row)
     plot->setName(uat_model_->data(uat_model_->index(row, plotColName)).toString());
     plot->setFilterField(uat_model_->data(uat_model_->index(row, plotColDFilter)).toString(),
         uat_model_->data(uat_model_->index(row, plotColYField)).toString());
-    plot->setColor(uat_model_->data(uat_model_->index(row, plotColColor), Qt::DecorationRole).value<QColor>().rgb());
+    QRgb color = uat_model_->data(uat_model_->index(row, plotColColor), Qt::DecorationRole).value<QColor>().rgb();
+    plot->setColor(color);
+    Plot::setAxisColor(plot->graph()->valueAxis(),
+        !ui->actionEnableMultiYAxes->isChecked() ? QPen(Qt::black) : QPen(color));
     QString data_str = uat_model_->data(uat_model_->index(row, plotColStyle)).toString();
-    plot->setPlotStyle((Graph::PlotStyles)str_to_val(qUtf8Printable(data_str), graph_style_vs, 0));
+    plot->setPlotStyle((Graph::PlotStyles)str_to_val(qUtf8Printable(data_str), plot_graph_style_vs, 0));
     plot->setYAxisFactor(uat_model_->data(uat_model_->index(row, plotColYAxisFactor)).toDouble());
     plot->setAbsoluteTime(abs_time_);
 
@@ -551,6 +541,38 @@ void PlotDialog::syncPlotSettings(int row)
     plot->setVisible(visible);
 
     scheduleReplot();
+}
+
+void PlotDialog::onThemeChanged()
+{
+    if (!uat_model_)
+        return;
+
+    ThemeManager *tm = ThemeManager::instance();
+    bool anyUpdated = false;
+    for (int row = 0; row < uat_model_->rowCount(); ++row) {
+        const QColor current = uat_model_->data(
+            uat_model_->index(row, plotColColor), Qt::DecorationRole
+        ).value<QColor>();
+
+        // Only refresh rows the user has not customized — i.e. rows whose
+        // current color still matches the theme default we last recorded.
+        if (!themeDefaultColors_.contains(row) ||
+            themeDefaultColors_.value(row) != current)
+            continue;
+
+        const QColor next = tm->graphColor(row);
+        if (next == current)
+            continue;
+
+        uat_model_->setData(uat_model_->index(row, plotColColor),
+                            next, Qt::DecorationRole);
+        themeDefaultColors_.insert(row, next);
+        syncPlotSettings(row);
+        anyUpdated = true;
+    }
+    if (anyUpdated)
+        scheduleReplot();
 }
 
 int PlotDialog::getLastPlotIdx()
@@ -568,7 +590,7 @@ int PlotDialog::getLastPlotIdx()
 }
 
 void PlotDialog::addPlot(bool checked, const QString& name, const QString& dfilter,
-    QRgb color_idx, Graph::PlotStyles style, const QString& yfield, double y_axis_factor)
+    QColor graphColor, Graph::PlotStyles style, const QString& yfield, double y_axis_factor)
 {
     if (!uat_model_) return;
 
@@ -577,13 +599,16 @@ void PlotDialog::addPlot(bool checked, const QString& name, const QString& dfilt
     newRowData.append(getLastPlotIdx() + 1);
     newRowData.append(name);
     newRowData.append(dfilter);
-    newRowData.append(QColor(color_idx));
-    newRowData.append(val_to_str_const(style, graph_style_vs, "None"));
+    newRowData.append(graphColor);
+    newRowData.append(val_to_str_const(style, plot_graph_style_vs, "None"));
     newRowData.append(yfield);
     newRowData.append(y_axis_factor);
 
     QModelIndex newIndex = uat_model_->appendEntry(newRowData);
     if (newIndex.isValid()) {
+        // Record the theme-derived default so onThemeChanged() can refresh
+        // it later without overwriting subsequent user customizations.
+        themeDefaultColors_.insert(newIndex.row(), graphColor);
         ui->plotUat->setCurrentIndex(newIndex);
     }
     else {
@@ -593,6 +618,17 @@ void PlotDialog::addPlot(bool checked, const QString& name, const QString& dfilt
     // will eventually be called.
 }
 
+
+QString PlotDialog::getFilteredName() const
+{
+    return tr("Filtered packets");
+}
+
+QString PlotDialog::getYAxisName() const
+{
+    return tr("All packets");
+}
+
 void PlotDialog::addPlot(bool checked, const QString& dfilter, const QString& yfield)
 {
     if (!uat_model_) return;
@@ -600,31 +636,26 @@ void PlotDialog::addPlot(bool checked, const QString& dfilter, const QString& yf
     QString graph_name;
     if (yfield.isEmpty()) {
         if (!dfilter.isEmpty()) {
-            graph_name = application_flavor_is_wireshark() ? tr("Filtered packets") : tr("Filtered events");
+            graph_name = getFilteredName();
         }
         else {
-            graph_name = application_flavor_is_wireshark() ? tr("All packets") : tr("All events");
+            graph_name = getYAxisName();
         }
     }
     else {
         graph_name = yfield;
     }
-    addPlot(checked, std::move(graph_name), dfilter, ColorUtils::graphColor(uat_model_->rowCount()), Graph::psLine, yfield);
+    QColor graphColor = ThemeManager::instance()->graphColor(uat_model_->rowCount());
+    addPlot(checked, std::move(graph_name), dfilter, graphColor, Graph::psLine, yfield);
 }
 
 void PlotDialog::addDefaultPlot(bool enabled, bool filtered)
 {
-    if (filtered) {
-        if (application_flavor_is_wireshark()) {
-            addPlot(enabled, tr("Seq. num."), "tcp.srcport == 80", ColorUtils::graphColor(0), Graph::psDotStepLine, "tcp.seq");
-        }
-        else {
-            addPlot(enabled, tr("Event latency"), "evt.type == \"read\"", ColorUtils::graphColor(0), Graph::psDotStepLine, "evt.latency");
-        }
-    }
-    else {
-        addPlot(enabled, tr("Frame num."), QString(), ColorUtils::graphColor(4), Graph::psLine, "frame.number");
-    }
+    QColor graphColor = filtered ? ThemeManager::instance()->graphColor(0) : ThemeManager::instance()->graphDefaultColor();
+    QString name = filtered ? tr("Seq. num.") : tr("Frame num.");
+    QString dfilter = filtered ? "tcp.srcport == 80" : QString();
+    QString yfield = filtered ? "tcp.seq" : "frame.number";
+    addPlot(enabled, name, dfilter, graphColor, filtered ? Graph::psDotStepLine : Graph::psLine, yfield);
 }
 
 void PlotDialog::captureFileClosing()
@@ -708,6 +739,7 @@ void PlotDialog::modelDataChanged(const QModelIndex& topLeft, const QModelIndex&
     }
 
     removeExcessPlots();
+    recreateMultiValueAxes();
     drawMarkers();
 }
 
@@ -724,6 +756,7 @@ void PlotDialog::modelRowsReset()
     }
 
     removeExcessPlots();
+    recreateMultiValueAxes();
 
     ui->deleteToolButton->setEnabled(false);
     ui->copyToolButton->setEnabled(false);
@@ -751,6 +784,7 @@ void PlotDialog::modelRowsRemoved(const QModelIndex&, int first, int last)
     }
 
     removeExcessPlots();
+    recreateMultiValueAxes();
     drawMarkers();
 }
 
@@ -912,6 +946,14 @@ void PlotDialog::getGraphInfo()
     updateLegend();
 }
 
+QString PlotDialog::getHintText(unsigned num_items) const
+{
+    return QStringLiteral("%1 %2")
+        .arg(!file_closed_ ? tr("Click to select packet") : tr("Packet"))
+        .arg(num_items);
+
+}
+
 void PlotDialog::updateHint()
 {
     QString hint;
@@ -950,18 +992,8 @@ void PlotDialog::updateHint()
             hint += tr("Select a plot for details.");
         }
         else {
-            QString msg;
+            QString msg = getHintText(packet_num_);
             QString val = QStringLiteral(" = %1").arg(tracer_->position->value(), 0, 'g', QLocale::FloatingPointShortest);
-            if (application_flavor_is_wireshark()) {
-                msg = QStringLiteral("%1 %2")
-                    .arg(!file_closed_ ? tr("Click to select packet") : tr("Packet"))
-                    .arg(packet_num_);
-            }
-            else {
-                msg = QStringLiteral("%1 %2")
-                    .arg(!file_closed_ ? tr("Click to select event") : tr("Event"))
-                    .arg(packet_num_);
-            }
             hint += tr("%1 (%2s%3).").arg(msg).arg(QString::number(tracer_->position->key(), 'f', 9)).arg(val);
         }
         ui->plot->replot(QCustomPlot::rpQueuedReplot);
@@ -984,21 +1016,12 @@ void PlotDialog::showContextMenu(const QPoint& pos)
         menu->setAttribute(Qt::WA_DeleteOnClose);
         menu->addAction(ui->actionLegend);
         menu->addSeparator();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
         menu->addAction(tr("Move to top left"), this, &PlotDialog::moveLegend)->setData((Qt::AlignTop | Qt::AlignLeft).toInt());
         menu->addAction(tr("Move to top center"), this, &PlotDialog::moveLegend)->setData((Qt::AlignTop | Qt::AlignHCenter).toInt());
         menu->addAction(tr("Move to top right"), this, &PlotDialog::moveLegend)->setData((Qt::AlignTop | Qt::AlignRight).toInt());
         menu->addAction(tr("Move to bottom left"), this, &PlotDialog::moveLegend)->setData((Qt::AlignBottom | Qt::AlignLeft).toInt());
         menu->addAction(tr("Move to bottom center"), this, &PlotDialog::moveLegend)->setData((Qt::AlignBottom | Qt::AlignHCenter).toInt());
         menu->addAction(tr("Move to bottom right"), this, &PlotDialog::moveLegend)->setData((Qt::AlignBottom | Qt::AlignRight).toInt());
-#else
-        menu->addAction(tr("Move to top left"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignTop | Qt::AlignLeft));
-        menu->addAction(tr("Move to top center"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignTop | Qt::AlignHCenter));
-        menu->addAction(tr("Move to top right"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignTop | Qt::AlignRight));
-        menu->addAction(tr("Move to bottom left"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignBottom | Qt::AlignLeft));
-        menu->addAction(tr("Move to bottom center"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignBottom | Qt::AlignHCenter));
-        menu->addAction(tr("Move to bottom right"), this, &PlotDialog::moveLegend)->setData(static_cast<Qt::Alignment::Int>(Qt::AlignBottom | Qt::AlignRight));
-#endif
         menu->popup(ui->plot->mapToGlobal(pos));
     }
     else if (ui->plot->xAxis2->selectTest(pos, false) >= 0) {
@@ -1020,13 +1043,14 @@ void PlotDialog::showContextMenu(const QPoint& pos)
         }
 
         foreach(const QCPAxisRect * axisRect, axisRects()) {
-            const QCPAxis* leftAxis = axisRect->axis(QCPAxis::AxisType::atLeft);
-            if (leftAxis && leftAxis->selectTest(pos, false) >= 0) {
-                QMenu* menu = new QMenu(this);
-                menu->setAttribute(Qt::WA_DeleteOnClose);
-                menu->addAction(ui->actionLogScale);
-                menu->popup(ui->plot->mapToGlobal(pos));
-                return;
+            foreach(const QCPAxis* yAxis, axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
+                if (yAxis->selectTest(pos, false) >= 0) {
+                    QMenu* menu = new QMenu(this);
+                    menu->setAttribute(Qt::WA_DeleteOnClose);
+                    menu->addAction(ui->actionLogScale);
+                    menu->popup(ui->plot->mapToGlobal(pos));
+                    return;
+                }
             }
         }
 
@@ -1038,11 +1062,7 @@ void PlotDialog::moveLegend()
 {
     if (QAction* contextAction = qobject_cast<QAction*>(sender())) {
         if (contextAction->data().canConvert<Qt::Alignment::Int>()) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
             Qt::Alignment alignment = Qt::Alignment::fromInt(contextAction->data().value<Qt::Alignment::Int>());
-#else
-            Qt::Alignment alignment = static_cast<Qt::Alignment>(contextAction->data().value<Qt::Alignment::Int>());
-#endif
             legend_alignment_ = alignment;
             updateLegendPos();
             ui->plot->replot();
@@ -1193,6 +1213,7 @@ void PlotDialog::mouseMoved(QMouseEvent* event)
 
 void PlotDialog::mouseReleased(QMouseEvent* event)
 {
+    bool old_auto_axes = auto_axes_;
     auto_axes_ = false;
 
     // QCustomPlot iRangeDrag controls dragging, and it stops dragging when a
@@ -1211,6 +1232,7 @@ void PlotDialog::mouseReleased(QMouseEvent* event)
         if (!rubber_band_->isVisible()) {
             // That was just a click
             showContextMenu(event->pos());
+            auto_axes_ = old_auto_axes;
         }
         else {
             rubber_band_->hide();
@@ -1229,6 +1251,7 @@ void PlotDialog::mouseReleased(QMouseEvent* event)
             else {
                 // Wrong range, interpret it as a simple right click
                 showContextMenu(event->pos());
+                auto_axes_ = old_auto_axes;
             }
         }
     }
@@ -1301,12 +1324,13 @@ void PlotDialog::resetAxes()
     }
 
     for (const QCPAxisRect* axisRect : axisRects()) {
-        QCPAxis* yAxis = axisRect->axis(QCPAxis::AxisType::atLeft);
-        yAxis->rescale(true);
-        QCPRange y_range = yAxis->scaleType() == QCPAxis::stLogarithmic ?
-            yAxis->range().sanitizedForLogScale() : yAxis->range();
-        double axis_pixels = yAxis->axisRect()->height();
-        yAxis->scaleRange((axis_pixels + (pixel_pad * 2)) / axis_pixels, y_range.center());
+        for (QCPAxis* yAxis : axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
+            yAxis->rescale(true);
+            QCPRange y_range = yAxis->scaleType() == QCPAxis::stLogarithmic ?
+                yAxis->range().sanitizedForLogScale() : yAxis->range();
+            double axis_pixels = yAxis->axisRect()->height();
+            yAxis->scaleRange((axis_pixels + (pixel_pad * 2)) / axis_pixels, y_range.center());
+        }
     }
 
     auto_axes_ = true;
@@ -1319,8 +1343,7 @@ void PlotDialog::doZoom(bool in, bool y)
 {
     if (y) {
         foreach(QCPAxisRect* axisRect, axisRects()) {
-            QCPAxis* yAxis = axisRect->axis(QCPAxis::AxisType::atLeft);
-            if (yAxis) {
+            foreach(QCPAxis * yAxis, axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
                 double v_factor = axisRect->rangeZoomFactor(Qt::Vertical);
                 if (!in) v_factor = pow(v_factor, -1);
                 yAxis->scaleRange(v_factor, yAxis->range().center());
@@ -1364,8 +1387,7 @@ void PlotDialog::panAxes(int x_pixels, int y_pixels)
     if (h_pan) ui->plot->xAxis2->moveRange(h_pan);
 
     foreach(const QCPAxisRect * axisRect, axisRects()) {
-        QCPAxis* yAxis = axisRect->axis(QCPAxis::AxisType::atLeft);
-        if (yAxis) {
+        foreach(QCPAxis * yAxis, axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
             double v_pan = yAxis->range().size() * y_pixels / yAxis->axisRect()->height();
             if (v_pan) yAxis->moveRange(v_pan);
         }
@@ -1417,6 +1439,13 @@ void PlotDialog::updateFirstAxisRectHeight() {
     }
     ui->plot->axisRect(0)->setMinimumSize(0, minHeight);
     ui->plot->replot();
+}
+
+void PlotDialog::recreateMultiValueAxes() {
+    if (ui->actionEnableMultiYAxes->isChecked()) {
+        on_actionEnableMultiYAxes_triggered(false);
+        on_actionEnableMultiYAxes_triggered(true);
+    }
 }
 
 QList<QCPAxisRect*> PlotDialog::axisRects() const {
@@ -1495,7 +1524,8 @@ void PlotDialog::setTracerColor()
 
 void PlotDialog::keyPressEvent(QKeyEvent* event)
 {
-    bool shift_pressed = event->modifiers() & Qt::ShiftModifier;
+    Qt::KeyboardModifiers modifiers = event->modifiers();
+    int pan_pixels = (modifiers & Qt::ShiftModifier) ? 1 : (modifiers & Qt::AltModifier) ? 100 : 10;
 
     switch (event->key()) {
     case Qt::Key_Minus:
@@ -1510,7 +1540,7 @@ void PlotDialog::keyPressEvent(QKeyEvent* event)
         zoomAxes(true);
         break;
     case Qt::Key_X:             // Zoom X axis only
-        if (event->modifiers() & Qt::ShiftModifier) {
+        if (modifiers & Qt::ShiftModifier) {
             zoomXAxis(false);   // upper case X -> Zoom out
         }
         else {
@@ -1518,7 +1548,7 @@ void PlotDialog::keyPressEvent(QKeyEvent* event)
         }
         break;
     case Qt::Key_Y:             // Zoom Y axis only
-        if (event->modifiers() & Qt::ShiftModifier) {
+        if (modifiers & Qt::ShiftModifier) {
             zoomYAxis(false);   // upper case Y -> Zoom out
         }
         else {
@@ -1527,19 +1557,19 @@ void PlotDialog::keyPressEvent(QKeyEvent* event)
         break;
     case Qt::Key_Right:
     case Qt::Key_L:
-        panAxes(shift_pressed ? 1 : 10, 0);
+        panAxes(pan_pixels, 0);
         break;
     case Qt::Key_Left:
     case Qt::Key_H:
-        panAxes(shift_pressed ? -1 : -10, 0);
+        panAxes(-pan_pixels, 0);
         break;
     case Qt::Key_Up:
     case Qt::Key_K:
-        panAxes(0, shift_pressed ? 1 : 10);
+        panAxes(0, pan_pixels);
         break;
     case Qt::Key_Down:
     case Qt::Key_J:
-        panAxes(0, shift_pressed ? -1 : -10);
+        panAxes(0, -pan_pixels);
         break;
     case Qt::Key_Space:
         ui->actionCrosshairs->trigger();
@@ -1623,7 +1653,7 @@ void PlotDialog::on_actionLegend_triggered(bool checked)
 void PlotDialog::on_actionLogScale_triggered(bool checked)
 {
     foreach(const QCPAxisRect * axisRect, axisRects()) {
-        if (QCPAxis* yAxis = axisRect->axis(QCPAxis::AxisType::atLeft)) {
+        foreach(QCPAxis* yAxis, axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
             if (checked) {
                 yAxis->setScaleType(QCPAxis::stLogarithmic);
                 yAxis->setTicker(QSharedPointer<QCPAxisTickerLog>(new QCPAxisTickerLog));
@@ -1682,6 +1712,7 @@ void PlotDialog::on_deleteToolButton_clicked()
         }
     }
 
+    recreateMultiValueAxes();
     ui->plotUat->setCurrentIndex(uat_model_->index(qMax(0, topRow - 1), plotColEnabled));
     getGraphInfo();
     // We should probably be smarter about this.
@@ -1861,7 +1892,7 @@ void PlotDialog::updateXAxisLabel()
 // XXX - We have similar code in IO/Graph, tcp_stream_dialog and packet_diagram. Should this be a common routine?
 void PlotDialog::on_rightButtonBox_accepted()
 {
-    QString file_name, extension;
+    QString file_name;
     QDir path(mainApp->openDialogInitialDir());
     QString pdf_filter = tr("Portable Document Format (*.pdf)");
     QString png_filter = tr("Portable Network Graphics (*.png)");
@@ -1869,14 +1900,15 @@ void PlotDialog::on_rightButtonBox_accepted()
     // Gaze upon my beautiful plot with lossy artifacts!
     QString jpeg_filter = tr("JPEG File Interchange Format (*.jpeg *.jpg)");
     //QString csv_filter = tr("Comma Separated Values (*.csv)");
-    //QString filter = QStringLiteral("%1;;%2;;%3;;%4;;%5")
-    QString filter = QStringLiteral("%1;;%2;;%3;;%4")
-        .arg(pdf_filter)
-        .arg(png_filter)
-        .arg(bmp_filter)
-        .arg(jpeg_filter)
-        //.arg(csv_filter);
-        ;
+    //QString filter = QStringLiteral("%1;;%2;;%3;;%4;;%5").arg(
+    QString filter = QStringLiteral("%1;;%2;;%3;;%4").arg(
+        pdf_filter,
+        png_filter,
+        bmp_filter,
+        jpeg_filter
+        // csv_filter
+    );
+    QString extension = png_filter;
 
     QString save_file = path.canonicalPath();
     if (!file_closed_) {
@@ -1915,6 +1947,52 @@ void PlotDialog::on_actionAutoScroll_triggered(bool checked) {
     if (checked) {
         autoScroll();
         ui->plot->replot();
+    }
+}
+
+void PlotDialog::on_actionEnableMultiYAxes_triggered(bool checked)
+{
+    ui->actionEnableMultiYAxes->setChecked(checked);
+    for (QCPAxisRect* axisRect : axisRects()) {
+        QCPAxis* defaultValueAxis = axisRect->axis(QCPAxis::atLeft, 0);
+        QList<QCPGraph*> graphs;
+        for (QCPGraph* graph : axisRect->graphs()) {
+            if (graph->visible()) graphs << graph;
+        }
+        QList<QCPAxis*> axes;
+        for (qsizetype i = 0; i < graphs.count(); i++) {
+            QCPGraph* graph = graphs.at(i);
+            if (checked && i != 0) {
+                QCPAxis::AxisType type = (i % 2 == 1) ? QCPAxis::atRight : QCPAxis::atLeft;
+                QCPAxis* y_axis = axisRect->addAxis(type);
+                y_axis->setLayer("axes");
+                y_axis->grid()->setLayer("grid");
+                graph->setValueAxis(y_axis);
+                axes << y_axis;
+            } else {
+                graph->setValueAxis(defaultValueAxis);
+            }
+            Plot::setAxisColor(graph->valueAxis(), !checked ? QPen(Qt::black) : graph->pen());
+        }
+        for (QCPAxis* axis : axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight)) {
+            if (!axes.contains(axis) && axis->visible() && axis != defaultValueAxis) { // keep the default y axis
+                axisRect->removeAxis(axis);
+            }
+        }
+        if (graphs.isEmpty()) {
+            Plot::setAxisColor(defaultValueAxis, QPen(Qt::black));
+        }
+        QList<QCPAxis*> bottomAxes = axisRect->axes(QCPAxis::atBottom);
+        QList<QCPAxis*> leftRightAxes = axisRect->axes(QCPAxis::atLeft | QCPAxis::atRight);
+        axisRect->setRangeDragAxes(bottomAxes, leftRightAxes);
+        axisRect->setRangeZoomAxes(bottomAxes, leftRightAxes);
+        getGraphInfo();
+    }
+    if (ui->actionLogScale->isChecked()) {
+        on_actionLogScale_triggered(true);
+    }
+    else {
+        auto_axes_ ? resetAxes() : ui->plot->replot();
     }
 }
 

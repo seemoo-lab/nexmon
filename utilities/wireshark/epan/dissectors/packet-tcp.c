@@ -14,7 +14,6 @@
 #include <epan/capture_dissectors.h>
 #include <epan/exceptions.h>
 #include <epan/addr_resolv.h>
-#include <epan/ipproto.h>
 #include <epan/expert.h>
 #include <epan/ip_opts.h>
 #include <epan/follow.h>
@@ -30,6 +29,7 @@
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/array.h>
 #include <wsutil/utf8_entities.h>
@@ -37,8 +37,12 @@
 #include <wsutil/wsgcrypt.h>
 #include <wsutil/pint.h>
 #include <wsutil/ws_assert.h>
+#include <wsutil/nstime.h>
 
+#include "packet-ip.h"
+#include "packet-ipv6.h"
 #include "packet-tcp.h"
+
 
 void proto_register_tcp(void);
 void proto_reg_handoff_tcp(void);
@@ -136,6 +140,38 @@ static const value_string mp_tcprst_reasons[] = {
         { 0, NULL },
 };
 
+/*
+ * RST Diagnostic Payload:
+ * https://datatracker.ietf.org/doc/html/draft-ietf-tcpm-rst-diagnostic-payload-03
+ */
+#define TCP_RST_DIAGNOSTIC_MAGIC 0x33AA
+#define TCP_RST_DIAGNOSTIC_LEN   8  /* magic(2) + reason_code(2) + pen(4) */
+
+/* IANA "TCP Failure Causes" registry */
+static const value_string tcp_failure_cause_vals[] = {
+        { 0, "Reserved" },
+        { 1, "Illegal option length" },
+        { 2, "Data available or received when application cannot read data anymore" },
+        { 3, "ABORT process" },
+        { 4, "Segment received in CLOSED state" },
+        { 5, "ACK segment received in LISTEN state" },
+        { 6, "ACK segment received in SYN-SENT state and SEG.ACK is not acceptable" },
+        { 7, "ACK segment received in SYN-RECEIVED state and SEG.ACK is not acceptable" },
+        { 8, "In window SYN segment received in synchronized state without RFC 5961 support" },
+        { 9, "Unexpected security compartment" },
+        { 10, "Malformed message" },
+        { 11, "Not authorized" },
+        { 12, "Resource exceeded" },
+        { 13, "Network failure" },
+        { 14, "Reset received from the peer" },
+        { 15, "Destination unreachable" },
+        { 16, "Connection timeout" },
+        { 17, "Too much outstanding data" },
+        { 18, "Unacceptable performance" },
+        { 19, "Middlebox interference" },
+        { 0, NULL },
+};
+
 static int tcp_default_window_scaling = (int)WindowScaling_NotKnown;
 
 static int tcp_default_override_analysis = (int)OverrideAnalysis_0;
@@ -224,6 +260,9 @@ static int hf_tcp_analysis_rto_frame;
 static int hf_tcp_analysis_duplicate_ack;
 static int hf_tcp_analysis_duplicate_ack_num;
 static int hf_tcp_analysis_duplicate_ack_frame;
+static int hf_tcp_analysis_packet_count;
+static int hf_tcp_analysis_dedup_frames;
+static int hf_tcp_analysis_dedup_frame;
 static int hf_tcp_stream_clt_contiguity_count;
 static int hf_tcp_stream_srv_contiguity_count;
 static int hf_tcp_continuation_to;
@@ -390,6 +429,10 @@ static int hf_tcp_proc_dst_cmd;
 static int hf_tcp_segment_data;
 static int hf_tcp_payload;
 static int hf_tcp_reset_cause;
+static int hf_tcp_rst_diagnostic_magic;
+static int hf_tcp_rst_diagnostic_reason_code;
+static int hf_tcp_rst_diagnostic_vendor_reason_code;
+static int hf_tcp_rst_diagnostic_pen;
 static int hf_tcp_fin_retransmission;
 static int hf_tcp_option_rvbd_probe_reserved;
 static int hf_tcp_option_scps_binding_data;
@@ -401,6 +444,9 @@ static int hf_tcp_syncookie_option_ecn;
 static int hf_tcp_syncookie_option_sack;
 static int hf_tcp_syncookie_option_wscale;
 static int hf_tcp_ns_reset_window_error_code;
+static int hf_tcp_tcpfp;
+static int hf_tcp_tcpfp_raw;
+static int hf_tcp_tcpfp_hint;
 
 static int ett_tcp;
 static int ett_tcp_completeness;
@@ -420,6 +466,7 @@ static int ett_tcp_option_acc_ecn;
 static int ett_tcp_option_sack_perm;
 static int ett_tcp_analysis;
 static int ett_tcp_analysis_faults;
+static int ett_tcp_analysis_dedup;
 static int ett_tcp_timestamps;
 static int ett_tcp_segments;
 static int ett_tcp_segment;
@@ -441,6 +488,7 @@ static int ett_tcp_unknown_opt;
 static int ett_tcp_option_other;
 static int ett_tcp_syncookie;
 static int ett_tcp_syncookie_option;
+static int ett_tcp_rst_diagnostic;
 static int ett_mptcp_analysis;
 static int ett_mptcp_analysis_subflows;
 
@@ -465,11 +513,13 @@ static expert_field ei_tcp_analysis_tfo_ack;
 static expert_field ei_tcp_analysis_tfo_ignored;
 static expert_field ei_tcp_analysis_partial_ack;
 static expert_field ei_tcp_analysis_ambiguous_ack;
+static expert_field ei_tcp_analysis_duplicate_packet;
 static expert_field ei_tcp_scps_capable;
 static expert_field ei_tcp_option_sack_dsack;
 static expert_field ei_tcp_option_snack_sequence;
 static expert_field ei_tcp_option_wscale_shift_invalid;
 static expert_field ei_tcp_option_mss_absent;
+static expert_field ei_tcp_tcpfp_scanner;
 static expert_field ei_tcp_option_mss_present;
 static expert_field ei_tcp_option_mss_exceeded;
 static expert_field ei_tcp_option_sack_perm_absent;
@@ -480,6 +530,8 @@ static expert_field ei_tcp_connection_synack;
 static expert_field ei_tcp_connection_syn;
 static expert_field ei_tcp_connection_fin;
 static expert_field ei_tcp_connection_rst;
+static expert_field ei_tcp_connection_rst_client;
+static expert_field ei_tcp_connection_rst_server;
 static expert_field ei_tcp_connection_fin_active;
 static expert_field ei_tcp_connection_fin_passive;
 static expert_field ei_tcp_checksum_ffff;
@@ -977,7 +1029,36 @@ static capture_dissector_handle_t tcp_cap_handle;
 static uint32_t tcp_stream_count;
 static uint32_t mptcp_stream_count;
 
+/* Capture-level duplicate / packet-count detection */
+static bool     tcp_detect_duplicate_packets       = false;
+static uint32_t tcp_dup_detect_window_usec         = 5000;
+static bool     tcp_duplicate_carry_tcp_analysis   = false;
+static wmem_map_t *tcp_dup_packet_map;        /* file-scoped; NULL when feature off */
 
+typedef struct {
+    uint32_t stream;    /* tcpd->stream — conversation identity */
+    uint32_t seglen;    /* th_seglen — payload byte count derived from IP layer */
+    uint32_t seg_hash;  /* wmem_strong_hash of TCP hdr+opts with MSS+checksum zeroed */
+} tcp_dup_key_t;        /* 12 bytes */
+
+typedef struct {
+    nstime_t      first_ts;
+    uint32_t      count;
+    uint32_t      first_frame;   /* frame number of the first occurrence */
+    wmem_array_t *frames;        /* all frame numbers in this dedup group */
+} tcp_dup_entry_t;
+
+static unsigned
+tcp_dup_key_hash(const void *p)
+{
+    return wmem_strong_hash((const uint8_t *)p, sizeof(tcp_dup_key_t));
+}
+
+static gboolean
+tcp_dup_key_equal(const void *a, const void *b)
+{
+    return memcmp(a, b, sizeof(tcp_dup_key_t)) == 0;
+}
 
 /*
  * Maps an MPTCP token to a mptcp_analysis structure
@@ -1090,7 +1171,7 @@ tcp_flags_to_str_first_letter(wmem_allocator_t *scope, const struct tcpheader *t
     wmem_strbuf_t *buf = wmem_strbuf_new(scope, "");
     unsigned i;
     const unsigned flags_count = 12;
-    static const char first_letters[] = "RRRACEUAPRSF";
+    static const char first_letters[] = "RRRAWEUAPRSF";
     static const char digits[] = "01234567";
 
     /* upper three bytes are marked as reserved ('R'). */
@@ -1394,28 +1475,13 @@ tcp_seq_analysis_packet( void *ptr, packet_info *pinfo, epan_dissect_t *edt _U_,
 
 char *tcp_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, unsigned *stream, unsigned *sub_stream _U_)
 {
-    conversation_t *conv;
-    struct tcp_analysis *tcpd;
+    uint8_t max_layer_num = proto_get_layer_num(pinfo, proto_tcp);
 
-    /* XXX: Since TCP doesn't use the endpoint API, we can only look
-     * up using the current pinfo addresses and ports. We don't want
-     * to create a new conversation or new TCP stream.
-     * Eventually the endpoint API should support storing multiple
-     * endpoints and TCP should be changed to use the endpoint API.
-     */
-    conv = find_conversation_strat(pinfo, CONVERSATION_TCP, 0, false);
-    if (((pinfo->net_src.type == AT_IPv4 && pinfo->net_dst.type == AT_IPv4) ||
-        (pinfo->net_src.type == AT_IPv6 && pinfo->net_dst.type == AT_IPv6))
-        && (pinfo->ptype == PT_TCP) &&
-        conv != NULL)
-    {
-        /* TCP over IPv4/6 */
-        tcpd=get_tcp_conversation_data(conv, pinfo);
-        if (tcpd == NULL)
-            return NULL;
-
-        *stream = tcpd->stream;
-        return ws_strdup_printf("tcp.stream eq %u", tcpd->stream);
+    for (uint8_t curr_layer_num = max_layer_num; curr_layer_num; --curr_layer_num) {
+        *stream = GPOINTER_TO_UINT(p_get_proto_data(pinfo->pool, pinfo, hf_tcp_stream, curr_layer_num));
+        if (*stream) {
+            return ws_strdup_printf("tcp.stream eq %u", --*stream);
+        }
     }
 
     return NULL;
@@ -1452,6 +1518,7 @@ typedef struct tcp_follow_tap_data
     tvbuff_t *tvb;
     struct tcpheader* tcph;
     struct tcp_analysis *tcpd;
+    unsigned stream_id;
 
 } tcp_follow_tap_data_t;
 
@@ -1579,6 +1646,10 @@ follow_tcp_tap_listener(void *tapdata, packet_info *pinfo,
     follow_record_t *follow_record;
     follow_info_t *follow_info = (follow_info_t *)tapdata;
     const tcp_follow_tap_data_t *follow_data = (const tcp_follow_tap_data_t *)data;
+
+    if (follow_info->stream_id != follow_data->stream_id)
+        return TAP_PACKET_DONT_REDRAW;
+
     bool is_server;
     uint32_t sequence = follow_data->tcph->th_seq;
     uint32_t length = follow_data->tcph->th_have_seglen
@@ -1592,13 +1663,13 @@ follow_tcp_tap_listener(void *tapdata, packet_info *pinfo,
     }
 
     if (follow_info->client_port == 0) {
-        follow_info->client_port = pinfo->srcport;
-        copy_address(&follow_info->client_ip, &pinfo->src);
-        follow_info->server_port = pinfo->destport;
-        copy_address(&follow_info->server_ip, &pinfo->dst);
+        follow_info->client_port = follow_data->tcph->th_sport;
+        copy_address(&follow_info->client_ip, &follow_data->tcph->ip_src);
+        follow_info->server_port = follow_data->tcph->th_dport;
+        copy_address(&follow_info->server_ip, &follow_data->tcph->ip_dst);
     }
 
-    is_server = !(addresses_equal(&follow_info->client_ip, &pinfo->src) && follow_info->client_port == pinfo->srcport);
+    is_server = !(addresses_equal(&follow_info->client_ip, &follow_data->tcph->ip_src) && follow_info->client_port == follow_data->tcph->th_sport);
 
    /* Check whether this frame ACKs fragments in flow from the other direction.
     * This happens when frames are not in the capture file, but were actually
@@ -1911,6 +1982,7 @@ static bool tcp_relative_seq          = true;
 static bool tcp_track_bytes_in_flight = true;
 static bool tcp_bif_seq_based;
 static bool tcp_calculate_ts          = true;
+static bool tcp_distal_algo           = false;
 
 static bool tcp_analyze_mptcp                   = true;
 static bool mptcp_relative_seq                  = true;
@@ -2004,6 +2076,53 @@ process_tcp_payload(tvbuff_t *tvb, volatile int offset, packet_info *pinfo,
     uint32_t seq, uint32_t nxtseq, bool is_tcp_segment,
     struct tcp_analysis *tcpd, struct tcpinfo *tcpinfo);
 
+typedef struct _ooo_segment_item {
+    uint32_t frame;
+    uint32_t seq;
+    uint32_t len;
+    uint8_t *data;
+} ooo_segment_item;
+
+static int
+compare_ooo_segment_item(const void *a, const void *b)
+{
+    const ooo_segment_item *fd_a = a;
+    const ooo_segment_item *fd_b = b;
+
+    /* We only insert segments into this list that satisfy
+     * LT_SEQ(tcpd->fwd->maxnextseq, seq), for the current value
+     * of maxnextseq (removing segments when maxnextseq is advanced)
+     * so these rollover-aware comparisons are transitive over the
+     * domain (never greater than 2^31).
+     */
+    if (LT_SEQ(fd_a->seq, fd_b->seq))
+        return -1;
+
+    if (GT_SEQ(fd_a->seq, fd_b->seq))
+        return 1;
+
+    if (fd_a->frame < fd_b->frame)
+        return -1;
+
+    if (fd_a->frame > fd_b->frame)
+        return 1;
+
+    return 0;
+}
+
+static unsigned
+ooo_segment_hash(const void *a)
+{
+    const ooo_segment_item *fd_a = a;
+
+    return g_int_hash(&fd_a->seq);
+}
+
+static gboolean
+ooo_segment_equal(const void *a, const void *b)
+{
+    return compare_ooo_segment_item(a, b) == 0;
+}
 
 static struct tcp_analysis *
 init_tcp_conversation_data(packet_info *pinfo, int direction)
@@ -2023,6 +2142,8 @@ init_tcp_conversation_data(packet_info *pinfo, int direction)
     if (tcp_reassemble_out_of_order) {
         tcpd->flow1.ooo_segments=wmem_list_new(wmem_file_scope());
         tcpd->flow2.ooo_segments=wmem_list_new(wmem_file_scope());
+        tcpd->flow1.ooo_segments_map=wmem_map_new(wmem_file_scope(), ooo_segment_hash, ooo_segment_equal);
+        tcpd->flow2.ooo_segments_map=wmem_map_new(wmem_file_scope(), ooo_segment_hash, ooo_segment_equal);
     }
 
     /* Only allocate the data if its actually going to be analyzed */
@@ -2030,8 +2151,6 @@ init_tcp_conversation_data(packet_info *pinfo, int direction)
     {
         tcpd->flow1.tcp_analyze_seq_info = wmem_new0(wmem_file_scope(), struct tcp_analyze_seq_flow_info_t);
         tcpd->flow2.tcp_analyze_seq_info = wmem_new0(wmem_file_scope(), struct tcp_analyze_seq_flow_info_t);
-        tcpd->flow1.tcp_analyze_seq_info->num_contiguous_ranges = 0;
-        tcpd->flow2.tcp_analyze_seq_info->num_contiguous_ranges = 0;
     }
     /* Only allocate the data if its actually going to be displayed */
     if (tcp_display_process_info)
@@ -2043,18 +2162,10 @@ init_tcp_conversation_data(packet_info *pinfo, int direction)
     tcpd->acked_table=wmem_tree_new(wmem_file_scope());
     tcpd->ts_first.secs=pinfo->abs_ts.secs;
     tcpd->ts_first.nsecs=pinfo->abs_ts.nsecs;
-    nstime_set_zero(&tcpd->ts_mru_syn);
-    nstime_set_zero(&tcpd->ts_first_rtt);
     tcpd->ts_prev.secs=pinfo->abs_ts.secs;
     tcpd->ts_prev.nsecs=pinfo->abs_ts.nsecs;
-    tcpd->flow1.closing_initiator = false;
-    tcpd->flow2.closing_initiator = false;
     tcpd->stream = tcp_stream_count++;
-    tcpd->server_port = 0;
     tcpd->tfo_syn_data = false;
-    tcpd->flow_direction = 0;
-    tcpd->flow1.flow_count = 0;
-    tcpd->flow2.flow_count = 0;
     tcpd->flow1.mss = -1;
     tcpd->flow2.mss = -1;
 
@@ -2563,6 +2674,171 @@ tcp_track_contiguity(uint32_t seq, uint32_t nextseq, struct tcp_analysis *tcpd) 
     tcpd->fwd->tcp_analyze_seq_info->num_contiguous_ranges += array_growth;
 }
 
+/*
+ * Compute the capture-level occurrence count for this TCP segment within the
+ * dedup time window. Stores result in tcpd->ta->dup_count:
+ *   1   = first (or fresh) occurrence
+ *   >1  = capture duplicate; retransmission flags are cleared since the
+ *         repeated appearance is a capture artifact, not a network event.
+ * Called only on the first pass when tcp_detect_duplicate_packets is true.
+ */
+static void
+tcp_detect_duplicate_packet(tvbuff_t *tvb,
+                             packet_info *pinfo,
+                             const struct tcpheader *tcph,
+                             struct tcp_analysis *tcpd)
+{
+    tcp_dup_key_t    key;
+    tcp_dup_entry_t *entry;
+    nstime_t         delta;
+    int64_t          delta_usec;
+
+    if (!tcpd || !tcp_dup_packet_map)
+        return;
+
+    /* Ensure tcp_acked exists for this frame so every packet gets the field */
+    if (!tcpd->ta)
+        tcp_analyze_get_acked_struct(pinfo->num, tcph->th_rawseq, tcph->th_rawack, true, tcpd);
+    if (!tcpd->ta)
+        return;
+
+    /* Hash the TCP header + options bytes (th_hlen*4) so every field is
+     * automatically covered. MSS (kind=2, SYN-only) is the sole exception:
+     * it can be clamped by intermediate devices so its value bytes are zeroed
+     * before hashing. The stream index scopes the hash to one conversation. */
+    {
+        unsigned hdr_len  = tcph->th_hlen; /* th_hlen is already in bytes */
+        /* TCP options max 40 bytes; fixed header 20 bytes; buf sized for both */
+        uint8_t hdrbuf[64];
+        unsigned tvb_len  = tvb_captured_length(tvb);
+        unsigned copy_len = hdr_len;
+        if (copy_len > sizeof(hdrbuf)) copy_len = sizeof(hdrbuf);
+        if (copy_len > tvb_len)             copy_len = tvb_len;
+
+        if (copy_len < 20)
+            return; /* truncated beyond the fixed TCP header — skip */
+
+        tvb_memcpy(tvb, hdrbuf, 0, copy_len);
+
+        /* Zero the TCP checksum (bytes 16-17): any device that modifies a field
+         * (e.g. MSS clamping) must update the checksum, so it would differ
+         * between the original and the modified copy even when all meaningful
+         * content is the same. copy_len >= 20 is guaranteed by the check above. */
+        hdrbuf[16] = 0;
+        hdrbuf[17] = 0;
+
+        if (tcph->th_flags & TH_SYN) {
+            /* Scan options for MSS (kind=2, len=4) and zero its 2-byte value */
+            unsigned opt = 20;
+            while (opt < copy_len) {
+                uint8_t kind = hdrbuf[opt];
+                if (kind == 0) break;               /* EOL */
+                if (kind == 1) { opt++; continue; } /* NOP */
+                if (opt + 1 >= copy_len) break;
+                uint8_t olen = hdrbuf[opt + 1];
+                if (olen < 2 || opt + olen > copy_len) {
+                    if (kind == 2) {    /* MSS truncated mid-value — zero whatever bytes are present */
+                        if (opt + 2 < copy_len) hdrbuf[opt + 2] = 0;
+                        if (opt + 3 < copy_len) hdrbuf[opt + 3] = 0;
+                    }
+                    break;
+                }
+                if (kind == 2 && olen == 4) {       /* MSS */
+                    hdrbuf[opt + 2] = 0;
+                    hdrbuf[opt + 3] = 0;
+                    break;
+                }
+                opt += olen;
+            }
+        }
+
+        memset(&key, 0, sizeof(key));
+        key.stream   = tcpd->stream;
+        key.seglen   = tcph->th_seglen;
+        key.seg_hash = wmem_strong_hash(hdrbuf, copy_len);
+    }
+
+    entry = (tcp_dup_entry_t *)wmem_map_lookup(tcp_dup_packet_map, &key);
+
+    if (entry == NULL) {
+        tcp_dup_key_t *stored_key = wmem_new(wmem_file_scope(), tcp_dup_key_t);
+        memcpy(stored_key, &key, sizeof(key));
+        entry = wmem_new(wmem_file_scope(), tcp_dup_entry_t);
+        entry->first_ts    = pinfo->abs_ts;
+        entry->count       = 1;
+        entry->first_frame = pinfo->num;
+        entry->frames      = wmem_array_new(wmem_file_scope(), sizeof(uint32_t));
+        wmem_array_append_one(entry->frames, pinfo->num);
+        wmem_map_insert(tcp_dup_packet_map, stored_key, entry);
+        tcpd->ta->dup_count      = 1;
+        tcpd->ta->dup_orig_frame = pinfo->num;
+        tcpd->ta->dup_frame_list = entry->frames;
+    } else {
+        nstime_delta(&delta, &pinfo->abs_ts, &entry->first_ts);
+        delta_usec = (int64_t)delta.secs * 1000000 + (int64_t)(delta.nsecs / 1000);
+        if (delta_usec < 0) delta_usec = -delta_usec;  /* handle mild reordering */
+
+        if ((uint64_t)delta_usec <= (uint64_t)tcp_dup_detect_window_usec) {
+            entry->count++;
+            wmem_array_append_one(entry->frames, pinfo->num);
+            tcpd->ta->dup_count      = entry->count;
+            tcpd->ta->dup_orig_frame = entry->first_frame;
+            tcpd->ta->dup_frame_list = entry->frames;
+            /* The duplicate's own tcp_acked->flags were set by
+             * tcp_analyze_sequence_number() earlier in this same first pass.
+             * Because the duplicate shares (seq, ack) with the original, that
+             * analysis spuriously flags the duplicate as a retransmission /
+             * dup-ACK / "ACKed unseen segment". Always clear those bits —
+             * they are capture artifacts, not network events. */
+            tcpd->ta->flags &= ~(TCP_A_RETRANSMISSION |
+                                 TCP_A_FAST_RETRANSMISSION |
+                                 TCP_A_SPURIOUS_RETRANSMISSION |
+                                 TCP_A_DUPLICATE_ACK |
+                                 TCP_A_ACK_LOST_PACKET);
+
+            /* When the "Duplication detection carry tcp analysis" preference
+             * is enabled, fetch the original frame's tcp_acked and OR its
+             * real analysis flags onto this duplicate so it renders the same
+             * SEQ/ACK annotations as the original. */
+            if (tcp_duplicate_carry_tcp_analysis) {
+                struct tcp_acked *cur_ta = tcpd->ta;
+                tcpd->ta = NULL;
+                tcp_analyze_get_acked_struct(entry->first_frame,
+                                             tcph->th_rawseq, tcph->th_rawack,
+                                             false, tcpd);
+                if (tcpd->ta) {
+                    /* Every bit in tcp_acked.flags is a TCP_A_* analysis flag
+                     * (grep for "#define TCP_A_" in this file). OR them all
+                     * so any annotation the original frame shows —
+                     * Retransmission, Out-Of-Order, Lost segment, Dup ACK,
+                     * Window Update, Keep-Alive, etc. — also appears on
+                     * this duplicate. */
+                    cur_ta->flags |= tcpd->ta->flags;
+                    if (tcpd->ta->flags & TCP_A_DUPLICATE_ACK) {
+                        /* [TCP Dup ACK X#Y] reads these fields */
+                        cur_ta->dupack_frame = tcpd->ta->dupack_frame;
+                        cur_ta->dupack_num   = tcpd->ta->dupack_num;
+                    }
+                }
+                tcpd->ta = cur_ta;
+            }
+        } else {
+            /* Outside the window — treat as a fresh occurrence.
+             * The old entry->frames array is intentionally replaced; the
+             * previous allocation is wmem_file_scope() and will be freed
+             * automatically when the capture file is closed. */
+            entry->first_ts    = pinfo->abs_ts;
+            entry->count       = 1;
+            entry->first_frame = pinfo->num;
+            entry->frames      = wmem_array_new(wmem_file_scope(), sizeof(uint32_t));
+            wmem_array_append_one(entry->frames, pinfo->num);
+            tcpd->ta->dup_count      = 1;
+            tcpd->ta->dup_orig_frame = pinfo->num;
+            tcpd->ta->dup_frame_list = entry->frames;
+        }
+    }
+}
+
 /* fwd contains a list of all segments processed but not yet ACKed in the
  *     same direction as the current segment.
  * rev contains a list of all segments received but not yet ACKed in the
@@ -2769,9 +3045,27 @@ tcp_analyze_sequence_number(packet_info *pinfo, uint32_t seq, uint32_t ack, uint
             tcpd->ta->flags|=TCP_A_DUPLICATE_ACK;
             tcpd->ta->dupack_num=tcpd->fwd->tcp_analyze_seq_info->dupacknum;
             tcpd->ta->dupack_frame=tcpd->fwd->tcp_analyze_seq_info->lastnondupack;
+
+            /* Track when we're entering a Fast Retransmit/Recovery session */
+            if(tcpd->fwd->tcp_analyze_seq_info->dupacknum >= 2) {
+                tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = true;
+            }
        }
+       goto finished_fwd;
     }
 
+    /* Broom Wagon for DUP ACKs not identified by the Sequence Analysis,
+     * which still need to have a ta structure prepared for when the
+     * SACK options will be processed, eventually.
+     */
+    if( seglen==0
+    &&  window
+    &&  ack>=tcpd->fwd->tcp_analyze_seq_info->lastack
+    &&  (flags&(TH_SYN|TH_FIN|TH_RST))==0 ) {
+        if(!tcpd->ta) {
+            tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+        }
+    }
 
 
 finished_fwd:
@@ -2779,8 +3073,12 @@ finished_fwd:
     if( ack != tcpd->fwd->tcp_analyze_seq_info->lastack ) {
         tcpd->fwd->tcp_analyze_seq_info->lastnondupack=pinfo->num;
         tcpd->fwd->tcp_analyze_seq_info->dupacknum=0;
-    }
 
+        /* If it's not a partial acknowledgement, reset/forget the distal mark */
+        if(GE_SEQ(ack, tcpd->rev->tcp_analyze_seq_info->nextseq)) {
+            tcpd->fwd->tcp_analyze_seq_info->dupack_thresh = false;
+        }
+    }
 
     /* ACKED LOST PACKET
      * If this segment acks beyond the 'max seq to be acked' in the other direction
@@ -2825,7 +3123,7 @@ finished_fwd:
                 }
 
                 /* Only look at what happens above the current ACK value,
-                 * as what happened before is definetely ACKed here and can be
+                 * as what happened before is definitely ACKed here and can be
                  * safely ignored. */
                 if(GE_SEQ(ual->seq,ack)) {
 
@@ -2926,6 +3224,253 @@ finished_fwd:
             t = 0;
         }
 
+        /* When the iRTT was not known (because the whole 3WHS is missing),
+         * set the threshold to 3ms.
+         * XXX - if both sides are sending data, we could try evaluating an iRTT like value
+         */
+        /* Historic and Distal Algo arent't totally reliable when relying on a "defined" RTT,
+         * so we disable the Distal one in this particular case where we don't have the iRTT.
+         */
+        bool is_distal_possible = true;
+        if(tcpd->ts_first_rtt.nsecs == 0 && tcpd->ts_first_rtt.secs == 0) {
+            // XXX - define a constant instead
+            ooo_thres = 3000000;
+            is_distal_possible = false;
+        } else {
+            // XXX - could be computed only once, then stored, when the iRTT is computed
+            ooo_thres = tcpd->ts_first_rtt.nsecs + tcpd->ts_first_rtt.secs*WS_NSECS_PER_SEC;
+        }
+
+        /* Choose between the 'Distal' and the historic disambiguation algorithms */
+        if(tcp_distal_algo && is_distal_possible) {
+            ual = tcpd->fwd->tcp_analyze_seq_info->segments;
+            bool pk_already_seen = false;
+
+            while(ual) {
+
+                /* If we see  this packet has retransmissions, we are marking it
+                 * as eligible to Karn's algo.
+                 */
+                if(GE_SEQ(seq,ual->seq) && LE_SEQ(seq+seglen,ual->nextseq)) {
+                    pk_already_seen = true;
+                    ual->karn_flag = true;
+                    if(!tcpd->ta) {
+                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                    }
+                }
+
+                if(LE_SEQ(nextseq,ual->seq)) {
+
+                    /* Distal Algo : we're taking into account the 'old' past rather
+                     * than just the recent, adjacent packets. Lost packets are sooner or later
+                     * necessarily followed by: an Out Of Order or a (Fast) Retransmission,
+                     * and this is also an indication that it is not a server side capture.
+                     * In the other case (server side capture), we just need to decide
+                     * which kind of Retransmission we are dealing with.
+                     *
+                     * Considering the RTO calculated values from RFC 6298 :
+                     *  - tends towards 2,5 * SRTT when there is no variance, iRTT comparison makes sense
+                     *  - tends towards 3,0 * SRTT when there is important variance, iRTT comparison not so meaningful
+                     * and the fact that Fast Retransmission is inherently aggressive,
+                     * we're defining two ratios that look realistic following our experience (0,8 and 2,4).
+                     * When not so clear between Fast Retrans and RTO Retrans (because delays are increasing during
+                     * a long, difficult recovery, RTO Retrans will match more often even when SACK is permitted.
+                     *
+                     * Wireshark uses a DupThresh = 2 while it's commonly defined to 3 in numerous RFCs and others,
+                     * including the ones related to SACK with their own definition of Duplicate ACK (RFC 6675).
+                     *
+                     * Note that Early Retransmit (RFC 5827) allows a Fast Retransmission with DupThresh = 1, which
+                     * is not covered here. This typically might be seen with protocols such as DNS, WHOIS, but not
+                     * only. At the end we could see more Out-of-Order packets then Retransmissions, or
+                     * Retransmissions than Fast  Retransmissions.
+                     * Similarly, RACK (RFC 8985) isn't specifically handled here and may give the same results.
+                     *
+                     * Future work could involve RTT averages based on Karn's ACK (which we already have).
+                     */
+                    nstime_t ns;
+                    uint64_t resp_time;
+                    nstime_delta(&ns, &pinfo->abs_ts, &ual->ts );
+                    resp_time = ns.nsecs + ns.secs*WS_NSECS_PER_SEC;
+                    double delay_ratio = (double)resp_time/ooo_thres;
+
+                    if(ual->a_lost_packet) {
+
+                        /*
+                         * That's a Fast Retransmission if the delay between the lost packet and this one is (arbitrarily):
+                         * 0,8*iRTT <= d < 2,4*iRTT
+                         */
+                        if (delay_ratio >= 0.8
+                        &&  delay_ratio < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+
+                            goto finished_checking_retransmission_type;
+                        }
+
+                        /* Look for this segment in reported SACK ranges,
+                         * if not present this might very well be a FAST Retrans,
+                         * when the conditions above (timing, number of retrans) are still true */
+                        if (delay_ratio >= 0.8
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
+
+                            if (tcpd->rev->tcp_analyze_seq_info->dupacknum>=2 && delay_ratio < 2.4) {
+
+                                bool is_sacked = false;
+                                int i=0;
+                                while( !is_sacked && i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges ) {
+                                    is_sacked = ((seq >= tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i])
+                                                && (nextseq <= tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i]));
+                                    i++;
+                                }
+
+                                /* fine, it's probably a Fast Retrans triggered by the SACK sender algo */
+                                if(!is_sacked) {
+                                    if(!tcpd->ta)
+                                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                                    tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                                    goto finished_checking_retransmission_type;
+                                }
+                            }
+                            /* clearly a SACK recovery but delay is too high.. jump to Retransmission handling */
+                            else {
+                                goto finished_checking_fastrt_vs_ooo;
+                            }
+                        }
+
+                        /*
+                         * Fast Recovery as per Reno (RFC 2001, W.R.Stevens)
+                         * Handling Partial Acknowledgements when SACK isn't permitted is based on the
+                         * knowledge that the threshold was reached (more than 2 Dup Acks as always).
+                         * In this case we're jumping to Retransmission handling
+                         */
+                        if (tcpd->rev->tcp_analyze_seq_info->dupack_thresh
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum<2
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges==0) {
+
+                            goto finished_checking_fastrt_vs_ooo;
+                        }
+
+                        /*
+                         * That's an Out-of-Order if the delay between Lost-Packet and this one is < 2,4 iRTT
+                         */
+                        if (delay_ratio < 2.4 && !pk_already_seen) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                            goto finished_checking_retransmission_type;
+                        }
+
+                    }
+                    /* Server side capture (fast-retrans vs retrans) or client side with RTO */
+                    else {
+
+                        /* Obvious Fast Retrans based when SEQ numbers match */
+                        if (delay_ratio < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                            goto finished_checking_retransmission_type;
+                        }
+
+                        /* Look for this segment in reported SACK ranges,
+                         * if not present this might very well be a FAST Retrans,
+                         * when the conditions above (timing, number of retrans) are still true */
+                        if (delay_ratio < 2.4
+                        &&  tcpd->rev->tcp_analyze_seq_info->dupacknum>=2
+                        &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0) {
+
+                            bool is_sacked = false;
+                            int i=0;
+                            while( !is_sacked && i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges ) {
+                                is_sacked = ((seq >= tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i])
+                                            && (nextseq <= tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i]));
+                                i++;
+                            }
+
+                            /* fine, it's probably a Fast Retrans triggered by the SACK sender algo */
+                            if(!is_sacked) {
+                                if(!tcpd->ta)
+                                    tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                                tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                                goto finished_checking_retransmission_type;
+                            }
+                        }
+
+                    }
+                }
+
+                ual=ual->next;
+            }
+
+            /*
+             * Legacy analysis for corner cases (pure ACK indicating previous lost packets for example).
+             */
+            if(t < ooo_thres && !pk_already_seen) {
+                /* ordinary OOO with SEQ numbers and lengths clearly stating the situation */
+                if( tcpd->fwd->tcp_analyze_seq_info->nextseq != (seq + seglen + (flags&(TH_SYN|TH_FIN) ? 1 : 0))) {
+                    if(!tcpd->ta) {
+                        tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                    }
+
+                    tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                    goto finished_checking_retransmission_type;
+                }
+                else {
+                    /* facing an OOO closing a series of disordered packets,
+                       all preceded by a pure ACK. See issue 17214 */
+                    if(tcpd->fwd->tcp_analyze_seq_info->lastacklen == 0) {
+                        if(!tcpd->ta) {
+                            tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                        }
+
+                        tcpd->ta->flags|=TCP_A_OUT_OF_ORDER;
+                        goto finished_checking_retransmission_type;
+                    }
+                }
+            }
+
+finished_checking_fastrt_vs_ooo:
+            if(!tcpd->ta) {
+                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+            }
+            tcpd->ta->flags|=TCP_A_RETRANSMISSION;
+            /*
+             * worst case scenario: if we don't have better than a recent packet,
+             * use it as the reference for RTO
+             */
+            nstime_delta(&tcpd->ta->rto_ts, &pinfo->abs_ts, &tcpd->fwd->tcp_analyze_seq_info->nextseqtime);
+            tcpd->ta->rto_frame=tcpd->fwd->tcp_analyze_seq_info->nextseqframe;
+
+            /*
+             * better case scenario: if we have a list of the previous unacked packets,
+             * go back to the eldest one, which in theory is likely to be the one retransmitted here.
+             * It's not always the perfect match, particularly when original captured packet used LSO
+             * We may parse this list and try to find an obvious matching packet present in the
+             * capture. If such packet is actually missing, we'll reach the list first entry.
+             * See : issue #12259
+             * See : issue #17714
+             */
+            ual = tcpd->fwd->tcp_analyze_seq_info->segments;
+            while(ual) {
+                if(GE_SEQ(ual->seq, seq)) {
+                    nstime_delta(&tcpd->ta->rto_ts, &pinfo->abs_ts, &ual->ts );
+                    tcpd->ta->rto_frame=ual->frame;
+                }
+                ual=ual->next;
+            }
+            goto finished_checking_retransmission_type;
+
+        }
+
+        /* historic disambiguation algorithm , not reached if 'Distal' was chosen */
         bool precedence_count = tcp_fastrt_precedence;
         do {
             if (precedence_count) {
@@ -2944,6 +3489,40 @@ finished_fwd:
                         }
                         tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
                         goto finished_checking_retransmission_type;
+                    }
+
+                    /* RFC 6675 suggests to also compare how many bytes were SACKed with 2*SMSS.
+                     * Multiple packets may be sent during the recovery phase as stated:
+                     * 'the sender SHOULD transmit one or more segments as follows'
+                     *
+                     * Note that during the recovery (ACK is increasing properly), if SACK data
+                     * isn't changing then we aren't classifying ACKs as Dup ACKs but we are still
+                     * classifying these retransmissions as Fast Retransmissions.
+                     *
+                     * XXX - lastack<=seq would tolerate unordered retransmissions to be
+                     * classified as Fast Retransmissions.
+                     */
+                    if( t<20000000
+                    &&  tcpd->rev->tcp_analyze_seq_info->num_sack_ranges > 0
+                    &&  tcpd->rev->tcp_analyze_seq_info->lastack==seq) {
+
+                        int count_sacked = 0;
+                        bool is_sacked = true;
+                        for(int i = 0; i<tcpd->rev->tcp_analyze_seq_info->num_sack_ranges; i++) {
+                            count_sacked += (tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i] -
+                                             tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i]);
+
+                            is_sacked = is_sacked && ((seq >= tcpd->rev->tcp_analyze_seq_info->sack_left_edge[i])
+                                        && (nextseq <= tcpd->rev->tcp_analyze_seq_info->sack_right_edge[i]));
+                        }
+
+                        if(!is_sacked && (count_sacked > 2*tcpd->rev->mss)) {
+                            if(!tcpd->ta) {
+                                tcp_analyze_get_acked_struct(pinfo->num, seq, ack, true, tcpd);
+                            }
+                            tcpd->ta->flags|=TCP_A_FAST_RETRANSMISSION;
+                            goto finished_checking_retransmission_type;
+                        }
                     }
 
                     /* Look for this segment in reported SACK ranges,
@@ -3126,6 +3705,7 @@ finished_checking_retransmission_type:
         ual->frame=pinfo->num;
         ual->seq=seq;
         ual->ts=pinfo->abs_ts;
+        ual->a_lost_packet = (tcpd->ta && tcpd->ta->flags & TCP_A_LOST_PACKET);
 
         /* next sequence number is seglen bytes away, plus SYN/FIN which counts as one byte */
         if( (flags&(TH_SYN|TH_FIN)) ) {
@@ -4051,6 +4631,66 @@ tcp_sequence_number_analysis_print_push_bytes_sent(packet_info * pinfo _U_,
 }
 
 static void
+tcp_sequence_number_analysis_print_packet_count(packet_info *pinfo,
+                                                tvbuff_t *tvb,
+                                                proto_tree *tree,
+                                                struct tcp_acked *ta)
+{
+    proto_item  *item;
+    proto_item  *dedup_item;
+    proto_tree  *dedup_tree;
+    unsigned     nframes;
+
+    if (!tcp_detect_duplicate_packets || ta->dup_count == 0)
+        return;
+
+    /* dup_frame_list is shared across all frames in the group and is fully
+     * populated by the end of the first pass, so by the display pass its
+     * count is the true final total — use it instead of the incremental
+     * dup_count that was stamped when each frame was first seen. */
+    if (ta->dup_frame_list == NULL)
+        return;
+    nframes = wmem_array_get_count(ta->dup_frame_list);
+
+    item = proto_tree_add_uint(tree, hf_tcp_analysis_packet_count,
+                               tvb, 0, 0, nframes);
+    proto_item_set_generated(item);
+
+    if (ta->dup_count > 1) {
+        col_prepend_fence_fstr(pinfo->cinfo, COL_INFO,
+                               "[dedup %u#%u] ", ta->dup_orig_frame, ta->dup_count);
+        expert_add_info_format(pinfo, item, &ei_tcp_analysis_duplicate_packet,
+                               "Capture-level duplicate (occurrence #%u)", ta->dup_count);
+    }
+
+    if (nframes < 2)
+        return;
+
+    dedup_item = proto_tree_add_item(tree, hf_tcp_analysis_dedup_frames,
+                                     tvb, 0, 0, ENC_NA);
+    proto_item_set_generated(dedup_item);
+    dedup_tree = proto_item_add_subtree(dedup_item, ett_tcp_analysis_dedup);
+
+    for (unsigned i = 0; i < nframes; i++) {
+        uint32_t fnum = *(uint32_t *)wmem_array_index(ta->dup_frame_list, i);
+        proto_item *fi = proto_tree_add_uint(dedup_tree, hf_tcp_analysis_dedup_frame,
+                                             tvb, 0, 0, fnum);
+        proto_item_set_generated(fi);
+        if (i == 0)
+            proto_item_append_text(fi, " (original)");
+    }
+
+    /* Append frame list to the parent node label for at-a-glance visibility */
+    for (unsigned i = 0; i < nframes; i++) {
+        uint32_t fnum = *(uint32_t *)wmem_array_index(ta->dup_frame_list, i);
+        if (i == 0)
+            proto_item_append_text(dedup_item, ": %u", fnum);
+        else
+            proto_item_append_text(dedup_item, ", %u", fnum);
+    }
+}
+
+static void
 tcp_print_sequence_number_analysis(packet_info *pinfo, tvbuff_t *tvb, proto_tree *parent_tree,
                           struct tcp_analysis *tcpd, uint32_t seq, uint32_t ack)
 {
@@ -4137,6 +4777,13 @@ tcp_print_sequence_number_analysis(packet_info *pinfo, tvbuff_t *tvb, proto_tree
         tcp_sequence_number_analysis_print_zero_window(pinfo, item, ta);
 
     }
+
+    /* Capture-level packet occurrence count — called LAST so that
+     * [dedup X#Y] is the final col_prepend_fence and therefore appears
+     * leftmost in the Info column, before any [TCP Retransmission] /
+     * [TCP Out-Of-Order] / etc. that the analysis flag prints may have
+     * prepended above. */
+    tcp_sequence_number_analysis_print_packet_count(pinfo, tvb, tree, ta);
 
 }
 
@@ -4398,14 +5045,14 @@ split_msp(packet_info *pinfo, struct tcp_multisegment_pdu *msp, struct tcp_analy
     /* The fragment list is sorted in offset order, but not nec. frame order
      * or end offset order due to out of order reassembly and possible overlap.
      * fd_i->offset < split_offset - some bytes are before the split
-     * fd_i->offset + fd_i->len >= split_offset - some bytes are after split
+     * fd_i->offset + fd_i->len > split_offset - some bytes are after split
      * Look through all the fragments that have some data before the split point.
      */
     for (fd_i = fd_head->next; fd_i && (fd_i->offset < split_offset); fd_i = fd_i->next) {
         if (last_frame < fd_i->frame) {
             last_frame = fd_i->frame;
         }
-        if (fd_i->offset + fd_i->len >= split_offset) {
+        if (fd_i->offset + fd_i->len > split_offset) {
             if (first_frag == NULL) {
                 first_frag = fd_i;
                 first_frame = fd_i->frame;
@@ -4420,25 +5067,31 @@ split_msp(packet_info *pinfo, struct tcp_multisegment_pdu *msp, struct tcp_analy
      */
     for (; fd_i; fd_i = fd_i->next) {
         uint32_t frag_end = fd_i->offset + fd_i->len;
-        if (split_offset <= frag_end && fd_i->frame < first_frame) {
-            first_frame = fd_i->frame;
+        if (split_offset <= frag_end) {
+            if (first_frag == NULL) {
+                first_frag = fd_i;
+                first_frame = fd_i->frame;
+            } else if (fd_i->frame < first_frame) {
+                first_frame = fd_i->frame;
+            }
         }
     }
 
     /* We only call this when the frame the fragments were reassembled in
      * (which is the current frame) includes some data before the split
      * point, so that it won't change and we can be consistent dissecting
-     * between passes. We also should have at least some data after the
-     * split point (because the subdissector claimed there was undissected
-     * data.)
+     * between passes. There's a few cases where there's no data after the
+     * split, e.g. HTTP with no Content-Length and REASSEMBLE_UNTIL_FIN.
      */
     DISSECTOR_ASSERT(fd_head->reassembled_in == last_frame);
-    DISSECTOR_ASSERT(first_frag != NULL);
 
     uint32_t new_seq = msp->seq + pinfo->desegment_offset;
     struct tcp_multisegment_pdu *newmsp;
     newmsp = pdu_store_sequencenumber_of_next_pdu(pinfo, new_seq,
         new_seq+1, tcpd->fwd->multisegment_pdus);
+    if (first_frame == 0) {
+        newmsp->flags |= MSP_FLAGS_MISSING_FIRST_SEGMENT;
+    }
     newmsp->first_frame = first_frame;
     newmsp->nxtpdu = msp->nxtpdu;
 
@@ -4463,40 +5116,6 @@ split_msp(packet_info *pinfo, struct tcp_multisegment_pdu *msp, struct tcp_analy
 
     /* The newmsp nxtpdu will be adjusted after leaving this function. */
     return newmsp;
-}
-
-typedef struct _ooo_segment_item {
-    uint32_t frame;
-    uint32_t seq;
-    uint32_t len;
-    uint8_t *data;
-} ooo_segment_item;
-
-static int
-compare_ooo_segment_item(const void *a, const void *b)
-{
-    const ooo_segment_item *fd_a = a;
-    const ooo_segment_item *fd_b = b;
-
-    /* We only insert segments into this list that satisfy
-     * LT_SEQ(tcpd->fwd->maxnextseq, seq), for the current value
-     * of maxnextseq (removing segments when maxnextseq is advanced)
-     * so these rollover-aware comparisons are transitive over the
-     * domain (never greater than 2^31).
-     */
-    if (LT_SEQ(fd_a->seq, fd_b->seq))
-        return -1;
-
-    if (GT_SEQ(fd_a->seq, fd_b->seq))
-        return 1;
-
-    if (fd_a->frame < fd_b->frame)
-        return -1;
-
-    if (fd_a->frame > fd_b->frame)
-        return 1;
-
-    return 0;
 }
 
 /* Search through our list of out of order segments and add the ones that are
@@ -4579,6 +5198,7 @@ msp_add_out_of_order(packet_info *pinfo, struct tcp_multisegment_pdu *msp, struc
         }
         updated_maxnextseq = false;
         tvb_free(tvb_data);
+        wmem_map_remove(tcpd->fwd->ooo_segments_map, fd);
         wmem_list_remove_frame(tcpd->fwd->ooo_segments, curr_entry);
         curr_entry = wmem_list_head(tcpd->fwd->ooo_segments);
 
@@ -4603,7 +5223,7 @@ desegment_tcp(tvbuff_t *tvb, packet_info *pinfo, int offset,
     bool must_desegment;
     bool called_dissector;
     bool has_gap;
-    int another_pdu_follows;
+    unsigned another_pdu_follows;
     int deseg_offset;
     uint32_t deseg_seq;
     int nbytes;
@@ -4674,7 +5294,7 @@ again:
      * is enabled.)
      *
      * "Reassemble out-of-order segments" uses its own method of detecting
-     * retranmission, but uses more memory and CPU, and when used, a TCP stream
+     * retransmission, but uses more memory and CPU, and when used, a TCP stream
      * that has missing segments that are never retransmitted stop processing
      * after the missing segment.
      *
@@ -4968,8 +5588,12 @@ again:
 
             if (!has_gap) {
                 /* Update the maximum expected seqno if no SYN packet was seen
-                 * before, or if the new segment succeeds previous segments. */
-                tcpd->fwd->maxnextseq = nxtseq;
+                 * before, or if the new segment succeeds previous segments.
+                 * Ignore if nxtseq is lower than the current maxnextseq,
+                 * which might happen if we are dealing with an OOO or retransmission.*/
+                if (LT_SEQ(tcpd->fwd->maxnextseq, nxtseq) || tcpd->fwd->maxnextseq == 0) {
+                    tcpd->fwd->maxnextseq = nxtseq;
+                }
 
                 /* If there is no gap, look for any OOO packets that are now
                  * contiguous. */
@@ -4977,7 +5601,7 @@ again:
             }
         } else {
             /* If we have visited this frame before, look for the frame in the
-             * list of unused out of order segments. Since we know the gap will
+             * map of unused out of order segments. Since we know the gap will
              * never be filled, we could pass it to the subdissector, but
              * we want to be consistent between passes.
              */
@@ -4986,9 +5610,14 @@ again:
             fd->frame = pinfo->num;
             fd->seq = seq;
             fd->len = nxtseq - seq;
-            if (wmem_list_find_custom(tcpd->fwd->ooo_segments, fd, compare_ooo_segment_item)) {
+            if (wmem_map_contains(tcpd->fwd->ooo_segments_map, fd)) {
                 has_gap = true;
             }
+#if 0
+            DISSECTOR_ASSERT_CMPINT(wmem_map_size(tcpd->fwd->ooo_segments_map), ==, wmem_list_count(tcpd->fwd->ooo_segments));
+            wmem_list_frame_t *head = wmem_list_head(tcpd->fwd->ooo_segments);
+            DISSECTOR_ASSERT(has_gap == (head && (compare_ooo_segment_item(fd, wmem_list_frame_data(head)) >= 0)));
+#endif
         }
     }
 
@@ -5104,6 +5733,7 @@ again:
              * which means that these bytes exist. */
             fd->data = tvb_memdup(wmem_file_scope(), tvb, offset, fd->len);
             wmem_list_append_sorted(tcpd->fwd->ooo_segments, fd, compare_ooo_segment_item);
+            wmem_map_insert(tcpd->fwd->ooo_segments_map, fd, fd);
         }
         ipfd_head = NULL;
     } else {
@@ -5282,7 +5912,7 @@ again:
                         /* nxtpdu adjustment for the new msp is the same. */
                         if (!PINFO_FD_VISITED(pinfo)) {
                             /* We don't need to clear MSP_FLAGS_GOT_ALL_SEGMENTS
-                             * since we are spliting the MSP.
+                             * since we are splitting the MSP.
                              */
                             msp = split_msp(pinfo, msp, tcpd);
                         }
@@ -5313,7 +5943,7 @@ again:
                         tcpd->fwd->flags |= TCP_FLOW_REASSEMBLE_UNTIL_FIN;
                         /* This is not the first segment, and we thought the
                          * reassembly would be done now, but now know we must
-                         * desgment until FIN. (E.g., HTTP Response with headers
+                         * desegment until FIN. (E.g., HTTP Response with headers
                          * split across segments, and no Content-Length or
                          * Transfer-Encoding (RFC 7230, Section 3.3.3, case 7.)
                          * For the same reasons as below when we encounter
@@ -5674,8 +6304,8 @@ tcp_dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 proto_item_set_generated(item);
 #if 0
         } else {
-                item = proto_tree_add_expert_format((proto_tree *)p_get_proto_data(pinfo->pool, pinfo, proto_tcp, curr_layer_num),
-                                        tvb, offset, -1,
+                item = proto_tree_add_expert_format_remaining((proto_tree *)p_get_proto_data(pinfo->pool, pinfo, proto_tcp, curr_layer_num),
+                                        tvb, offset,
                     "PDU Size: %u cut short at %u",plen,captured_length_remaining);
                 proto_item_set_generated(item);
         }
@@ -5791,7 +6421,7 @@ dissect_tcpopt_default_option(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     proto_item *item;
     proto_tree *exp_tree;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, proto, tvb, offset, -1, ENC_NA);
     exp_tree = proto_item_add_subtree(item, ett);
@@ -5853,7 +6483,7 @@ dissect_tcpopt_tfo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 {
     proto_item *item;
     proto_tree *exp_tree;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, proto_tcp_option_tfo, tvb, offset, -1, ENC_NA);
     exp_tree = proto_item_add_subtree(item, ett_tcp_option_exp);
@@ -5884,8 +6514,7 @@ dissect_tcpopt_tarr_data(tvbuff_t *tvb, int data_offset, unsigned data_len,
         col_append_str(pinfo->cinfo, COL_INFO, " TARR");
         break;
     case 1:
-        rate = (tvb_get_uint8(tvb, data_offset) & TCPOPT_TARR_RATE_MASK) >> TCPOPT_TARR_RATE_SHIFT;
-        proto_tree_add_item(tree, hf_tcp_option_tarr_rate, tvb, data_offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(tree, hf_tcp_option_tarr_rate, tvb, data_offset, 1, ENC_BIG_ENDIAN, &rate);
         proto_tree_add_item(tree, hf_tcp_option_tarr_reserved, tvb, data_offset, 1, ENC_BIG_ENDIAN);
         tcp_info_append_uint(pinfo, "TARR", rate);
         proto_item_append_text(item, " %u", rate);
@@ -5979,11 +6608,9 @@ dissect_tcpopt_acc_ecn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     offset = 0;
     item = proto_tree_add_item(tree, proto_tcp_option_acc_ecn, tvb, offset, -1, ENC_NA);
     acc_ecn_tree = proto_item_add_subtree(item, ett_tcp_option_acc_ecn);
-    kind = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(acc_ecn_tree, hf_tcp_option_kind, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(acc_ecn_tree, hf_tcp_option_kind, tvb, offset, 1, ENC_BIG_ENDIAN, &kind);
     offset += 1;
-    length = tvb_get_uint8(tvb, offset);
-    length_item = proto_tree_add_item(acc_ecn_tree, hf_tcp_option_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+    length_item = proto_tree_add_item_ret_uint8(acc_ecn_tree, hf_tcp_option_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
     offset += 1;
     if (length != 2 && length != 5 && length != 8 && length != 11) {
         expert_add_info_format(pinfo, length_item, &ei_tcp_opt_len_invalid,
@@ -6005,8 +6632,7 @@ dissect_tcpopt_exp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 
     item = proto_tree_add_item(tree, proto_tcp_option_exp, tvb, offset, -1, ENC_NA);
     exp_tree = proto_item_add_subtree(item, ett_tcp_option_exp);
-    proto_tree_add_item(exp_tree, hf_tcp_option_kind, tvb, offset, 1, ENC_BIG_ENDIAN);
-    kind = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint8(exp_tree, hf_tcp_option_kind, tvb, offset, 1, ENC_BIG_ENDIAN, &kind);
     length_item = proto_tree_add_item(exp_tree, hf_tcp_option_len, tvb, offset + 1, 1, ENC_BIG_ENDIAN);
     if (tcp_exp_options_rfc6994) {
         if (optlen >= TCPOLEN_EXP_MIN) {
@@ -6068,7 +6694,7 @@ dissect_tcpopt_sack_perm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     proto_item *item;
     proto_tree *exp_tree;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
     struct tcpheader *tcph = (struct tcpheader *)data;
 
     item = proto_tree_add_item(tree, proto_tcp_option_sack_perm, tvb, offset, -1, ENC_NA);
@@ -6095,7 +6721,7 @@ dissect_tcpopt_mss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
     proto_item *item;
     proto_tree *exp_tree;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
     struct tcpheader *tcph = (struct tcpheader *)data;
     uint32_t mss;
     struct tcp_analysis *tcpd;
@@ -6142,7 +6768,7 @@ dissect_tcpopt_wscale(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
     proto_item *wscale_pi, *shift_pi, *gen_pi;
     proto_tree *wscale_tree;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
     struct tcp_analysis *tcpd;
 
     /* find the conversation for this TCP session and its stored data */
@@ -6199,9 +6825,13 @@ dissect_tcpopt_sack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     struct tcpheader *tcph = (struct tcpheader *)data;
     uint32_t base_ack=0;
     unsigned  num_sack_ranges = 0;
-    int offset = 0;
+    unsigned offset = 0;
     int sackoffset;
     int optlen = tvb_reported_length(tvb);
+    uint8_t saved_sack_ranges = 0;
+    uint32_t saved_left_edge[MAX_TCP_SACK_RANGES];
+    uint32_t saved_right_edge[MAX_TCP_SACK_RANGES];
+    bool has_new_sack = false, is_new_sack = true;
 
     /*
      * SEQ analysis is the condition for both relative analysis obviously,
@@ -6222,8 +6852,16 @@ dissect_tcpopt_sack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
              * updated some lines later
              */
             if (tcp_track_bytes_in_flight && tcpd->fwd->tcp_analyze_seq_info) {
+                saved_sack_ranges = tcpd->fwd->tcp_analyze_seq_info->num_sack_ranges;
                 tcpd->fwd->tcp_analyze_seq_info->num_sack_ranges = 0;
             }
+
+            /* keep a copy of the previous blocks, if any */
+            for(uint8_t i = 0; i< saved_sack_ranges; i++) {
+                saved_left_edge[i] = tcpd->fwd->tcp_analyze_seq_info->sack_left_edge[i];
+                saved_right_edge[i] = tcpd->fwd->tcp_analyze_seq_info->sack_right_edge[i];
+            }
+
         }
     }
 
@@ -6292,11 +6930,11 @@ dissect_tcpopt_sack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         tcp_info_append_uint(pinfo, "SLE", leftedge);
         tcp_info_append_uint(pinfo, "SRE", rightedge);
 
-        /* Store blocks for BiF analysis */
-        if (tcp_analyze_seq && tcpd && tcpd->fwd->tcp_analyze_seq_info && tcp_track_bytes_in_flight && num_sack_ranges < MAX_TCP_SACK_RANGES) {
+        /* Store blocks for BiF analysis and DUP ACK late discovery */
+        if (tcp_analyze_seq && tcpd && tcpd->fwd->tcp_analyze_seq_info && num_sack_ranges < MAX_TCP_SACK_RANGES) {
             tcpd->fwd->tcp_analyze_seq_info->sack_left_edge[num_sack_ranges] = leftedge;
-            tcpd->fwd->tcp_analyze_seq_info->sack_right_edge[num_sack_ranges++] = rightedge;
-            tcpd->fwd->tcp_analyze_seq_info->num_sack_ranges = num_sack_ranges;
+            tcpd->fwd->tcp_analyze_seq_info->sack_right_edge[num_sack_ranges] = rightedge;
+            tcpd->fwd->tcp_analyze_seq_info->num_sack_ranges = ++num_sack_ranges;
         }
 
         /* Update tap info */
@@ -6340,6 +6978,65 @@ dissect_tcpopt_sack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             "D-SACK Right Edge = %u%s", rightedge, (tcp_analyze_seq && tcp_relative_seq) ? " (relative)" : "");
         proto_item_set_generated(tf);
         proto_tree_add_expert(field_tree, pinfo, &ei_tcp_option_sack_dsack, tvb, sackoffset, 8);
+
+        /* Exclude D-SACKs from the late DUP ACK discovery as they should already be marked,
+         * otherwise we could have false positives */
+        is_new_sack = false;
+    }
+
+    /* Loop over all new SACK ranges, and check if we've already seen them.
+     * If there is new data, keep track of it with has_new_sack boolean.
+     *
+     * XXX - What's the meaning of 2 exactly identical successive ACK packets
+     * containing SACK options ?
+     * It's either a network packet duplicate, * or a D-SACK (of ACK or SACK),
+     * in both cases already marked before.
+     *
+     * Note that :
+     *   - D-SACK aren't necessarily matching these conditions, and if not
+     *   already marked as DUP ACKs, they still should not be marked.
+     *   - very discontiguous traffic (including capture missing the
+     *   beginning of a conversation) with missing ACKs and isolated
+     *   SACKs will end with these SACKs matching and be marked by
+     *   default, except for isolated D-SACKs
+     */
+    if(is_new_sack && tcp_analyze_seq && tcpd
+        && tcpd->fwd->tcp_analyze_seq_info
+        && num_sack_ranges < MAX_TCP_SACK_RANGES) {
+
+        has_new_sack = false;
+
+        for(unsigned i=0; i<num_sack_ranges; i++) {
+            bool blok_seen = false;
+
+            for(unsigned j=0; j<saved_sack_ranges; j++) {
+                if( (tcpd->fwd->tcp_analyze_seq_info->sack_left_edge[i] == saved_left_edge[j])
+                    && (tcpd->fwd->tcp_analyze_seq_info->sack_right_edge[i] == saved_right_edge[j]) ) {
+
+                    blok_seen = true;
+                    break;
+                }
+            }
+            if(!blok_seen) {
+                has_new_sack = true;
+                break;
+            }
+        }
+    }
+
+    /* Classify accordingly by adding the DUP flag,
+     * only if it's not already flagged in any way (such as Keep-Alive ACK w/ SACK).
+     * It's marked as a DUP of itself and with occurrence = 1
+     */
+    if(has_new_sack && tcp_analyze_seq && tcpd
+       && tcpd->ta
+       && tcpd->ta->flags == 0) {
+
+        tcpd->ta->flags |= TCP_A_DUPLICATE_ACK;
+        tcpd->ta->dupack_num = 1;
+        tcpd->ta->dupack_frame=tcpd->fwd->tcp_analyze_seq_info->lastnondupack;
+        tcpd->fwd->tcp_analyze_seq_info->dupacknum = 1;
+
     }
 
     return tvb_captured_length(tvb);
@@ -6352,7 +7049,7 @@ dissect_tcpopt_echo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     proto_item *item;
     proto_item *length_item;
     uint32_t echo;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, proto_tcp_option_echo, tvb, offset, -1, ENC_NA);
     field_tree = proto_item_add_subtree(item, ett_tcp_opt_echo);
@@ -6383,7 +7080,7 @@ dissect_tcpopt_timestamp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     proto_item *ti, *tsval_ti;
     proto_tree *ts_tree;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t ts_val, ts_ecr;
     int len = tvb_reported_length(tvb);
 
@@ -6594,9 +7291,9 @@ dissect_tcpopt_mptcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     uint32_t version;
     uint8_t subtype;
     uint8_t ipver;
-    int offset = 0;
-    int optlen = tvb_reported_length(tvb);
-    int start_offset = offset;
+    unsigned offset = 0;
+    unsigned optlen = tvb_reported_length(tvb);
+    unsigned start_offset = offset;
     struct tcp_analysis *tcpd = NULL;
     struct mptcp_analysis* mptcpd = NULL;
     struct tcpheader *tcph = (struct tcpheader *)data;
@@ -6896,7 +7593,7 @@ dissect_tcpopt_mptcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
                 analyze_mapping(tcpd, pinfo, mph->mh_dss_length, mph->mh_dss_rawdsn, mph->mh_dss_flags & MPTCP_DSS_FLAG_DATA_ACK_8BYTES, mph->mh_dss_ssn);
 
-                if ((int)optlen >= offset-start_offset+4)
+                if (optlen >= offset-start_offset+4)
                 {
                     proto_tree_add_checksum(mptcp_tree, tvb, offset, hf_tcp_option_mptcp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
                 }
@@ -6948,7 +7645,7 @@ dissect_tcpopt_mptcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
                 1, optlen - 3);
             proto_item_set_generated(item);
             offset += 1;
-            while(offset < start_offset + (int)optlen) {
+            while(offset < start_offset + optlen) {
                 proto_tree_add_item(mptcp_tree, hf_tcp_option_mptcp_address_id, tvb, offset,
                                 1, ENC_BIG_ENDIAN);
                 offset += 1;
@@ -7032,7 +7729,7 @@ dissect_tcpopt_cc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     proto_tree *field_tree;
     proto_item *item;
     proto_item *length_item;
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t cc;
 
     item = proto_tree_add_item(tree, proto_tcp_option_cc, tvb, offset, -1, ENC_NA);
@@ -7122,7 +7819,7 @@ dissect_tcpopt_qs(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     proto_item *item;
     proto_item *length_item;
     uint8_t rate;
-    int offset = 0;
+    unsigned offset = 0;
 
     item = proto_tree_add_item(tree, proto_tcp_option_qs, tvb, offset, -1, ENC_NA);
     field_tree = proto_item_add_subtree(item, ett_tcp_opt_qs);
@@ -7315,7 +8012,7 @@ dissect_tcpopt_user_to(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     proto_tree *field_tree;
     proto_item *length_item;
     uint16_t to;
-    int offset = 0;
+    unsigned offset = 0;
 
     tf = proto_tree_add_item(tree, proto_tcp_option_user_to, tvb, offset, -1, ENC_NA);
     field_tree = proto_item_add_subtree(tf, ett_tcp_option_user_to);
@@ -7625,9 +8322,8 @@ dissect_tcpopt_rvbd_probe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
         proto_tree_add_item(field_tree, hf_tcp_option_rvbd_probe_type2, tvb,
                             offset + PROBE_VERSION_TYPE_OFFSET, 1, ENC_BIG_ENDIAN);
 
-        proto_tree_add_uint_format_value(
-            field_tree, hf_tcp_option_rvbd_probe_version2, tvb,
-            offset + PROBE_VERSION_TYPE_OFFSET, 1, ver, "%u", ver);
+        proto_tree_add_uint(field_tree, hf_tcp_option_rvbd_probe_version2, tvb,
+            offset + PROBE_VERSION_TYPE_OFFSET, 1, ver);
         /* Use version1 for filtering purposes because version2 packet
            value is 0, but filtering is usually done for value 2 */
         ver_pi = proto_tree_add_uint(field_tree, hf_tcp_option_rvbd_probe_version1, tvb,
@@ -8332,6 +9028,265 @@ static void tcp_tap_cleanup(void *data)
     tap_queue_packet(tcp_tap, cleanup->pinfo, cleanup->tcph);
 }
 
+/*
+ * RFC1122 says:
+ *
+ *  4.2.2.12  RST Segment: RFC-793 Section 3.4
+ *
+ *    A TCP SHOULD allow a received RST segment to include data.
+ *
+ *    DISCUSSION
+ *         It has been suggested that a RST segment could contain
+ *         ASCII text that encoded and explained the cause of the
+ *         RST.  No standard has yet been established for such
+ *         data.
+ *
+ * If the payload matches the structured diagnostic format, parse it;
+ * otherwise display the data as text.
+ */
+static void
+dissect_tcp_rst_payload(tvbuff_t *tvb, proto_tree *tree, int offset, int length)
+{
+    if (length < 2) {
+        proto_tree_add_item(tree, hf_tcp_reset_cause, tvb, offset, length, ENC_ASCII);
+        return;
+    }
+
+    uint16_t magic = tvb_get_ntohs(tvb, offset);
+
+    /* structured diagnostic payload (Section 4.1) */
+    if (magic == TCP_RST_DIAGNOSTIC_MAGIC &&
+        length == TCP_RST_DIAGNOSTIC_LEN) {
+        uint16_t reason_code;
+        uint32_t pen_value;
+        int diag_offset = offset;
+        proto_tree *rst_diag_tree;
+        proto_item *rst_diag_ti;
+
+        rst_diag_tree = proto_tree_add_subtree(tree, tvb, offset,
+            length, ett_tcp_rst_diagnostic, &rst_diag_ti,
+            "RST Diagnostic Payload");
+
+        proto_tree_add_item(rst_diag_tree, hf_tcp_rst_diagnostic_magic,
+            tvb, diag_offset, 2, ENC_BIG_ENDIAN);
+        diag_offset += 2;
+
+        reason_code = tvb_get_ntohs(tvb, diag_offset);
+        pen_value = tvb_get_ntohl(tvb, diag_offset + 2);
+
+        if (pen_value != 0) {
+            proto_tree_add_item(rst_diag_tree, hf_tcp_rst_diagnostic_vendor_reason_code,
+                tvb, diag_offset, 2, ENC_BIG_ENDIAN);
+            diag_offset += 2;
+
+            proto_tree_add_uint_format_value(rst_diag_tree, hf_tcp_rst_diagnostic_pen,
+                tvb, diag_offset, 4, pen_value,
+                "%s (%u)", enterprises_lookup(pen_value, "Unknown"), pen_value);
+
+            proto_item_append_text(rst_diag_ti,
+                ": Vendor-Specific reason %u (PEN: %s [%u])",
+                reason_code,
+                enterprises_lookup(pen_value, "Unknown"),
+                pen_value);
+        } else {
+            const char *cause_str;
+
+            proto_tree_add_item(rst_diag_tree, hf_tcp_rst_diagnostic_reason_code,
+                tvb, diag_offset, 2, ENC_BIG_ENDIAN);
+            diag_offset += 2;
+
+            proto_tree_add_uint_format_value(rst_diag_tree, hf_tcp_rst_diagnostic_pen,
+                tvb, diag_offset, 4, pen_value,
+                "IANA (%u)", pen_value);
+
+            cause_str = try_val_to_str(reason_code, tcp_failure_cause_vals);
+            proto_item_append_text(rst_diag_ti, ": %s (%u)",
+                cause_str ? cause_str : "Unknown", reason_code);
+        }
+    } else {
+        proto_tree_add_item(tree, hf_tcp_reset_cause, tvb, offset, length, ENC_ASCII);
+    }
+}
+
+/*
+ * nDPI TCP fingerprint (TCPFP) option value policy: number of value
+ * octets to emit for option "kind" at offset "i" of the option region,
+ * or -1 if the (ephemeral) option must be dropped completely.
+ * See https://github.com/ntop/nDPI/blob/dev/fingerprint/nDPI_TCP_fingerprint.md
+ */
+static int
+tcp_tcpfp_option_value_len(tvbuff_t *tvb, int opt_offset, unsigned n, uint8_t kind, unsigned i)
+{
+    switch (kind) {
+    case TCPOPT_MSS:
+    case TCPOPT_TIMESTAMP:
+    case TCPOPT_MD5:
+    case TCPOPT_AO:
+        /* Path-dependent, per-connection or per-segment values: kind only */
+        return 0;
+    case TCPOPT_MPTCP:
+        /* Keep subtype/version (+ flags for MP_CAPABLE) */
+        if (i + 2 >= n)
+            return 0;
+        return (tvb_get_uint8(tvb, opt_offset + i + 2) >> 4) == 0 ? 2 : 1;
+    case TCPOPT_TFO:
+        return -1;
+    case TCPOPT_EXP_FD:
+    case TCPOPT_EXP_FE:
+        /* RFC 6994: keep the ExID, drop the experimental TFO */
+        if (i + 3 >= n)
+            return 0;
+        return tvb_get_ntohs(tvb, opt_offset + i + 2) == 0xF989 ? -1 : 2;
+    default:
+        /* Assumed to be a stack constant */
+        return 255;
+    }
+}
+
+/*
+ * Known nDPI TCP fingerprints (test vectors of the specification) and a
+ * human readable hint of the stack that produced them. This is a hint,
+ * not an identification: every fingerprint input is sender-controlled.
+ */
+static const string_string tcp_tcpfp_hint_vals[] = {
+    { "2_64_64240_789c1d1f",   "Linux" },
+    { "2_64_64800_789c1d1f",   "Linux (IPv6)" },
+    { "2_64_64240_1d00dd35",   "Linux with MPTCP" },
+    { "2_64_65535_58b6a464",   "Android" },
+    { "2_64_65535_2b9b4c52",   "FreeBSD" },
+    { "194_64_65535_e76f0f14", "macOS/iPadOS" },
+    { "2_64_65535_e76f0f14",   "iOS/iPadOS" },
+    { "2_64_65535_2b6d3038",   "macOS/iOS (older release)" },
+    { "194_64_65535_2b6d3038", "macOS/iOS (older release)" },
+    { "2_128_64240_47466ece",  "Windows 10" },
+    { "2_128_65535_47466ece",  "Windows 11" },
+    { "2_255_16384_85adcf01",  "Network device (BGP with TCP-MD5)" },
+    { "2_255_1024_00000000",   "Stateless scanner (probably masscan)" },
+    { "2_255_65535_00000000",  "Stateless scanner (probably zmap)" },
+    { NULL, NULL }
+};
+
+/* MurmurHash3_x86_32, 4-octet blocks read little-endian */
+static uint32_t
+tcp_tcpfp_murmur3_32(const uint8_t *data, size_t len, uint32_t seed)
+{
+    const uint32_t c1 = 0xcc9e2d51, c2 = 0x1b873593;
+    size_t   nblocks = len / 4;
+    uint32_t h = seed, k;
+
+    for (size_t b = 0; b < nblocks; b++) {
+        k = pletohu32(data + b * 4);
+        k *= c1;
+        k = (k << 15) | (k >> 17);
+        k *= c2;
+        h ^= k;
+        h = (h << 13) | (h >> 19);
+        h = h * 5 + 0xe6546b64;
+    }
+
+    if (len & 3) {
+        /* Tail octets, little-endian */
+        k = 0;
+        for (size_t t = len & 3; t > 0; t--)
+            k = (k << 8) | data[nblocks * 4 + t - 1];
+        k *= c1;
+        k = (k << 15) | (k >> 17);
+        k *= c2;
+        h ^= k;
+    }
+
+    h ^= (uint32_t)len;
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
+
+/*
+ * Compute the nDPI native TCP fingerprint (v0.5)
+ * "<flags>_<ttl_bucket>_<window>_<options_hash>" of a SYN segment.
+ * The raw (pre-hash) options string, e.g. "2,4,8,1,3:7", is returned in "raw".
+ */
+static char *
+tcp_tcpfp_compute(wmem_allocator_t *scope, tvbuff_t *tvb, int offset,
+                const struct tcpheader *tcph, uint8_t ttl, const char **raw)
+{
+    wmem_strbuf_t *strbuf = wmem_strbuf_new(scope, "");
+    int      opt_offset = offset + TCPH_MIN_LEN;
+    unsigned n = tcph->th_hlen - TCPH_MIN_LEN;
+    unsigned i = 0;
+    size_t   nop_start = 0;
+    bool     in_nop_run = false, skip_nops = false;
+    unsigned ttl_bucket;
+
+    while (i < n) {
+        uint8_t kind = tvb_get_uint8(tvb, opt_offset + i);
+        int     vlen;
+        unsigned olen;
+
+        if (kind == TCPOPT_NOP) {
+            if (!skip_nops) {
+                /* NOP not adjacent to a dropped option */
+                if (!in_nop_run) {
+                    nop_start = wmem_strbuf_get_len(strbuf);
+                    in_nop_run = true;
+                }
+                wmem_strbuf_append(strbuf, wmem_strbuf_get_len(strbuf) ? ",1" : "1");
+            }
+            i++;
+            continue;
+        }
+
+        vlen = (kind != TCPOPT_EOL) ? tcp_tcpfp_option_value_len(tvb, opt_offset, n, kind, i) : 0;
+        if (vlen < 0) {
+            /* Dropped option: remove the NOP padding (and its separator) preceding it */
+            if (in_nop_run)
+                wmem_strbuf_truncate(strbuf, nop_start);
+            skip_nops = true;
+        } else {
+            skip_nops = false;
+        }
+        in_nop_run = false;
+
+        if (vlen >= 0)
+            wmem_strbuf_append_printf(strbuf, "%s%u",
+                                      wmem_strbuf_get_len(strbuf) ? "," : "", kind);
+        if (kind == TCPOPT_EOL)
+            break; /* The rest is padding */
+        if (i + 1 >= n)
+            break; /* truncated option */
+        olen = tvb_get_uint8(tvb, opt_offset + i + 1);
+        if (olen == 0)
+            break; /* malformed option */
+        if (olen > 2 && vlen > 0) {
+            unsigned end = MIN(MIN(i + olen, n), i + 2 + (unsigned)vlen);
+
+            for (unsigned j = i + 2; j < end; j++)
+                wmem_strbuf_append_printf(strbuf, ":%u", tvb_get_uint8(tvb, opt_offset + j));
+        }
+        i += olen;
+    }
+
+    if (ttl <= 32)
+        ttl_bucket = 32;
+    else if (ttl <= 64)
+        ttl_bucket = 64;
+    else if (ttl <= 128)
+        ttl_bucket = 128;
+    else if (ttl <= 192)
+        ttl_bucket = 192;
+    else
+        ttl_bucket = 255;
+
+    *raw = wmem_strbuf_get_str(strbuf);
+    return wmem_strdup_printf(scope, "%u_%u_%u_%08x",
+                              tcph->th_flags, ttl_bucket, tcph->th_win,
+                              tcp_tcpfp_murmur3_32((const uint8_t *)*raw,
+                                                   wmem_strbuf_get_len(strbuf), 0));
+}
+
 static int
 dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
@@ -8572,6 +9527,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     if (tcpd) {
         item = proto_tree_add_uint(tcp_tree, hf_tcp_stream, tvb, offset, 0, tcpd->stream);
         proto_item_set_generated(item);
+        p_add_proto_data(pinfo->pool, pinfo, hf_tcp_stream, pinfo->curr_proto_layer_num, GUINT_TO_POINTER(tcpd->stream + 1)); // Add 1 to distinguish stream 0 from NULL
         tcpinfo.stream = tcpd->stream;
 
         if (tcp_calculate_ts) {
@@ -8611,11 +9567,6 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
          * to callback functions (essentially conversation following events in GUI)
          */
         pinfo->stream_id = tcpd->stream;
-
-        /* initialize the SACK blocks seen to 0 */
-        if(tcp_analyze_seq && tcpd->fwd->tcp_analyze_seq_info) {
-            tcpd->fwd->tcp_analyze_seq_info->num_sack_ranges = 0;
-        }
 
         /* Follow-up of the conversation over ICMP errors.
          * When coming over an error packet (typically ICMP), we want to save the
@@ -8872,13 +9823,36 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
           conversation_completeness |= TCP_COMPLETENESS_SYNACK;
       }
 
-      /* ACKs */
-      if((tcph->th_flags&(TH_SYN|TH_ACK))==(TH_ACK)) {
+      /* ACKs
+       * if the segment length > 0, it's a DATA flag unless it matches SYN or RST (FIN allowed).
+       * Although RST may carry some data, but for diagnostic (or.. evasion), not for real transfer.
+       */
+      if((tcph->th_flags&(TH_SYN|TH_ACK|TH_RST))==(TH_ACK)) {
           if(tcph->th_seglen>0) { /* transporting some data */
               conversation_completeness |= TCP_COMPLETENESS_DATA;
           }
-          else { /* pure ACK */
-              conversation_completeness |= TCP_COMPLETENESS_ACK;
+
+          /* pure ACK belonging to the 3WHS, others are ignored */
+          else if( !(tcph->th_flags&TH_FIN) &&
+                   (
+                       ((conversation_completeness&(TCP_COMPLETENESS_SYNSENT |
+                                                    TCP_COMPLETENESS_SYNACK |
+                                                    TCP_COMPLETENESS_DATA )) == TCP_COMPLETENESS_SYNSENT
+                       && (tcph->th_rawseq==tcpd->fwd->base_seq+1))
+
+                       ||
+                       ((conversation_completeness&(TCP_COMPLETENESS_SYNSENT |
+                                                    TCP_COMPLETENESS_SYNACK |
+                                                    TCP_COMPLETENESS_DATA)) == TCP_COMPLETENESS_SYNACK
+                       && (tcph->th_rawack==tcpd->rev->base_seq+1))
+
+                       ||
+                       ((conversation_completeness&(TCP_COMPLETENESS_SYNSENT |
+                                                    TCP_COMPLETENESS_SYNACK |
+                                                    TCP_COMPLETENESS_DATA )) == (TCP_COMPLETENESS_SYNSENT|TCP_COMPLETENESS_SYNACK)
+                       && (tcph->th_rawseq==tcpd->fwd->base_seq+1)
+                       && (tcph->th_rawack==tcpd->rev->base_seq+1))) ) {
+               conversation_completeness |= TCP_COMPLETENESS_ACK;
           }
       }
 
@@ -8936,6 +9910,50 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         proto_item_set_generated(tf);
     }
 
+    /* nDPI TCP fingerprint, computed only for SYN segments without ACK
+     * whose header is fully captured, and only when the IP TTL/Hop Limit is
+     * known (https://github.com/ntop/nDPI/blob/dev/fingerprint/nDPI_TCP_fingerprint.md). */
+    if ((tcph->th_flags & (TH_SYN|TH_ACK)) == TH_SYN &&
+        tvb_bytes_exist(tvb, offset, tcph->th_hlen)) {
+        ws_ip4 *ip4 = WS_IP4_PTR(data);
+        ws_ip6 *ip6 = WS_IP6_PTR(data);
+
+        if (ip4 || ip6) {
+            proto_item *ntf_fp_item = NULL;
+
+            if (tcp_tree) {
+                const char *ntf_raw;
+                char *ntf = tcp_tcpfp_compute(pinfo->pool, tvb, offset, tcph,
+                                            ip4 ? ip4->ip_ttl : ip6->ip6_hop, &ntf_raw);
+                const char *ntf_hint = try_str_to_str(ntf, tcp_tcpfp_hint_vals);
+                proto_item *ntf_item;
+
+                ntf_fp_item = proto_tree_add_string(tcp_tree, hf_tcp_tcpfp, tvb, offset, tcph->th_hlen, ntf);
+                proto_item_set_generated(ntf_fp_item);
+                if (ntf_hint) {
+                    /* proto_item_append_text(ntf_fp_item, " (%s)", ntf_hint); */
+                    ntf_item = proto_tree_add_string(tcp_tree, hf_tcp_tcpfp_hint, tvb, offset, tcph->th_hlen, ntf_hint);
+                    proto_item_set_generated(ntf_item);
+                }
+                ntf_item = proto_tree_add_string(tcp_tree, hf_tcp_tcpfp_raw, tvb, offset + TCPH_MIN_LEN,
+                                                 tcph->th_hlen - TCPH_MIN_LEN, ntf_raw);
+                proto_item_set_generated(ntf_item);
+            }
+
+            /* Every mainstream stack sends at least MSS: a SYN without
+             * options is typical of stateless scanners. Reported also
+             * without a tree, so that it shows up in the expert info
+             * dialog and in the status bar. */
+            if (tcph->th_hlen == TCPH_MIN_LEN) {
+                const char *scanner = (tcph->th_win == 1024) ? " (probably masscan)" :
+                                      (tcph->th_win == 65535) ? " (probably zmap)" : "";
+
+                expert_add_info_format(pinfo, ntf_fp_item, &ei_tcp_tcpfp_scanner,
+                                       "(Probable) Massive scanner detected%s: SYN without TCP options", scanner);
+            }
+        }
+    }
+
     tf = proto_tree_add_uint(tcp_tree, hf_tcp_ack, tvb, offset + 8, 4, tcph->th_ack);
     hide_seqack_abs_item = proto_tree_add_uint(tcp_tree, hf_tcp_ack_abs, tvb, offset + 8, 4, tcph->th_rawack);
     if (tcph->th_flags & TH_ACK) {
@@ -8963,8 +9981,8 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         // This should be consistent with ip.hdr_len.
         proto_tree_add_uint_bits_format_value(tcp_tree, hf_tcp_hdr_len, tvb, (offset + 12) << 3, 4, tcph->th_hlen,
             ENC_BIG_ENDIAN, "%u bytes (%u)", tcph->th_hlen, tcph->th_hlen>>2);
-        tf = proto_tree_add_uint_format(tcp_tree, hf_tcp_flags, tvb, offset + 12, 2,
-                                        tcph->th_flags, "Flags: 0x%03x (%s)", tcph->th_flags, flags_str);
+        tf = proto_tree_add_uint_format_value(tcp_tree, hf_tcp_flags, tvb, offset + 12, 2,
+                                        tcph->th_flags, "0x%03x (%s)", tcph->th_flags, flags_str);
         field_tree = proto_item_add_subtree(tf, ett_tcp_flags);
         proto_tree_add_boolean(field_tree, hf_tcp_flags_res, tvb, offset + 12, 1, tcph->th_flags);
         if (tcph->th_use_ace) {
@@ -9031,6 +10049,17 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         /* XXX - find a way to know the server port and output only that one */
         expert_add_info(pinfo, tf_rst, &ei_tcp_connection_rst);
 
+        if (!PINFO_FD_VISITED(pinfo) && !tcpd->fwd->closing_initiator && !tcpd->rev->closing_initiator
+                && !tcpd->fwd->closing_initiator_rst && !tcpd->rev->closing_initiator_rst
+                && ((tcpd->fwd->static_flags & TCP_S_SAW_SYN) == TCP_S_SAW_SYN || (tcpd->rev->static_flags & TCP_S_SAW_SYN) == TCP_S_SAW_SYN)) {
+            tcpd->fwd->closing_initiator_rst = true;
+        }
+        if (!tcpd->rev->closing_initiator_rst && tcpd->fwd->closing_initiator_rst) {
+            if ((tcpd->fwd->static_flags & TCP_S_SAW_SYN) == TCP_S_SAW_SYN)
+                expert_add_info(pinfo, tf_rst, &ei_tcp_connection_rst_client);
+            else
+                expert_add_info(pinfo, tf_rst, &ei_tcp_connection_rst_server);
+        }
     }
     if(tcp_analyze_seq
             && (tcph->th_flags & (TH_SYN|TH_ACK)) == TH_ACK
@@ -9123,7 +10152,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
             default:
                 /* Scaling from signalled value */
-                scaled_pi = proto_tree_add_int_format_value(tcp_tree, hf_tcp_window_size_scalefactor, tvb, offset + 14, 2, 1<<tcpd->fwd->win_scale, "%d", 1<<tcpd->fwd->win_scale);
+                scaled_pi = proto_tree_add_int(tcp_tree, hf_tcp_window_size_scalefactor, tvb, offset + 14, 2, 1<<tcpd->fwd->win_scale);
                 proto_item_set_generated(scaled_pi);
             }
         }
@@ -9387,6 +10416,13 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     }
 
+    /* Capture-level duplicate detection — placed here so tcph->num_sack_ranges
+     * is fully populated by tcp_dissect_options() before we build the key. */
+    if (tcp_analyze_seq && tcph->th_have_seglen &&
+            tcp_detect_duplicate_packets && tcpd && !pinfo->fd->visited) {
+        tcp_detect_duplicate_packet(tvb, pinfo, tcph, tcpd);
+    }
+
     /* Handle default MSS values for IPv4 and IPv6
      * If MSS is still -1 after dissecting the options,
      * apply the default values (as per RFC 9293).
@@ -9430,6 +10466,12 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         }
         /* print results for sequence analysis */
         tcp_print_sequence_number_analysis(pinfo, tvb, tcp_tree, tcpd, use_seq, use_ack);
+
+        /* Expose dedup data to tap listeners */
+        if (tcp_detect_duplicate_packets && tcpd->ta) {
+            tcph->th_dup_count      = tcpd->ta->dup_count;
+            tcph->th_dup_orig_frame = tcpd->ta->dup_orig_frame;
+        }
 
         /* print results for contiguity analysis */
         tcp_sequence_number_analysis_print_contiguous_flow(pinfo, tvb, tcp_tree, tcpd);
@@ -9480,6 +10522,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             follow_data->tvb = tvb_new_subset_remaining(tvb, offset);
             follow_data->tcph = tcph;
             follow_data->tcpd = tcpd;
+            follow_data->stream_id = tcph->th_stream;
 
             tap_queue_packet(tcp_follow_tap, pinfo, follow_data);
         }
@@ -9583,22 +10626,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
      */
     if (captured_length_remaining != 0) {
         if (tcph->th_flags & TH_RST) {
-            /*
-             * RFC1122 says:
-             *
-             *  4.2.2.12  RST Segment: RFC-793 Section 3.4
-             *
-             *    A TCP SHOULD allow a received RST segment to include data.
-             *
-             *    DISCUSSION
-             *         It has been suggested that a RST segment could contain
-             *         ASCII text that encoded and explained the cause of the
-             *         RST.  No standard has yet been established for such
-             *         data.
-             *
-             * so for segments with RST we just display the data as text.
-             */
-            proto_tree_add_item(tcp_tree, hf_tcp_reset_cause, tvb, offset, captured_length_remaining, ENC_ASCII);
+            dissect_tcp_rst_payload(tvb, tcp_tree, offset, captured_length_remaining);
         } else {
         /* When we have a frame with TCP SYN bit set and segmented TCP payload we need
          * to increment seq and nxtseq to detect the overlapping byte(s). This is to fix Bug 9882.
@@ -9623,6 +10651,15 @@ tcp_init(void)
     /* MPTCP init */
     mptcp_stream_count = 0;
     mptcp_tokens = wmem_tree_new(wmem_file_scope());
+
+    /* Capture-level packet-count detection */
+    if (tcp_detect_duplicate_packets) {
+        tcp_dup_packet_map = wmem_map_new(wmem_file_scope(),
+                                          tcp_dup_key_hash,
+                                          tcp_dup_key_equal);
+    } else {
+        tcp_dup_packet_map = NULL;
+    }
 }
 
 void
@@ -9812,6 +10849,19 @@ proto_register_tcp(void)
         { &hf_tcp_analysis_duplicate_ack_frame,
         { "Duplicate to the ACK in frame",      "tcp.analysis.duplicate_ack_frame", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_DUP_ACK), 0x0,
             "This is a duplicate to the ACK in frame #", HFILL }},
+
+        { &hf_tcp_analysis_packet_count,
+          { "Duplication count",                "tcp.analysis.duplication_count", FT_UINT32, BASE_DEC, NULL, 0x0,
+            "Number of times this exact TCP segment has appeared in the capture within the duplicate detection window "
+            "(1 = first occurrence, >1 = capture-level duplicate)", HFILL }},
+
+        { &hf_tcp_analysis_dedup_frames,
+          { "Duplication frames",               "tcp.analysis.duplication_frames", FT_NONE, BASE_NONE, NULL, 0x0,
+            "All frame numbers in this capture-level duplicate group", HFILL }},
+
+        { &hf_tcp_analysis_dedup_frame,
+          { "Frame",                            "tcp.analysis.duplication_frame", FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "A frame that is part of this capture-level duplicate group", HFILL }},
 
         { &hf_tcp_continuation_to,
         { "This is a continuation to the PDU in frame",     "tcp.continuation_to", FT_FRAMENUM, BASE_NONE, NULL, 0x0,
@@ -10471,6 +11521,22 @@ proto_register_tcp(void)
           { "Reset cause", "tcp.reset_cause", FT_STRING, BASE_NONE, NULL, 0x0,
             NULL, HFILL }},
 
+        { &hf_tcp_rst_diagnostic_magic,
+          { "Magic Number", "tcp.rst_diagnostic.magic", FT_UINT16, BASE_HEX, NULL, 0x0,
+            "RST diagnostic payload magic number (0x33AA)", HFILL }},
+
+        { &hf_tcp_rst_diagnostic_reason_code,
+          { "Reason Code", "tcp.rst_diagnostic.reason_code", FT_UINT16, BASE_DEC, VALS(tcp_failure_cause_vals), 0x0,
+            "IANA TCP Failure Cause code", HFILL }},
+
+        { &hf_tcp_rst_diagnostic_vendor_reason_code,
+          { "Vendor-Specific Reason Code", "tcp.rst_diagnostic.vendor_reason_code", FT_UINT16, BASE_DEC, NULL, 0x0,
+            "Vendor-specific reason code (scoped to the PEN)", HFILL }},
+
+        { &hf_tcp_rst_diagnostic_pen,
+          { "Private Enterprise Number", "tcp.rst_diagnostic.pen", FT_UINT32, BASE_DEC, NULL, 0x0,
+            "IANA Private Enterprise Number identifying the vendor", HFILL }},
+
         { &hf_tcp_syncookie_time,
           { "SYN Cookie Time", "tcp.syncookie.time", FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
@@ -10507,6 +11573,19 @@ proto_register_tcp(void)
           { "Client Contiguous Streams", "tcp.stream.client.contiguity_count", FT_UINT32, BASE_DEC, NULL, 0x0,
             "Number of contiguous streams for the client flow once all TCP packets are parsed", HFILL}},
 
+        /* https://github.com/ntop/nDPI/blob/dev/fingerprint/nDPI_TCP_fingerprint.md */
+        { &hf_tcp_tcpfp,
+          { "TCP Fingerprint", "tcp.fingerprint", FT_STRING, BASE_NONE, NULL, 0x0,
+            "TCP fingerprint of the initial SYN", HFILL }},
+
+        { &hf_tcp_tcpfp_raw,
+          { "TCP Fingerprint Raw Options", "tcp.fingerprint.raw", FT_STRING, BASE_NONE, NULL, 0x0,
+            "Comma-separated decimal serialization of the TCP options hashed by the TCP fingerprint", HFILL }},
+
+        { &hf_tcp_tcpfp_hint,
+          { "TCP Fingerprint Hint", "tcp.fingerprint.hint", FT_STRING, BASE_NONE, NULL, 0x0,
+            "Stack (e.g. operating system) that typically produces this TCP fingerprint; a hint, not an identification", HFILL }},
+
         { &hf_tcp_stream_srv_contiguity_count,
           { "Server Contiguous Streams", "tcp.stream.server.contiguity_count", FT_UINT32, BASE_DEC, NULL, 0x0,
             "Number of contiguous streams for the server flow once all TCP packets are parsed", HFILL}},
@@ -10541,6 +11620,7 @@ proto_register_tcp(void)
         &ett_tcp_opt_qs,
         &ett_tcp_analysis_faults,
         &ett_tcp_analysis,
+        &ett_tcp_analysis_dedup,
         &ett_tcp_timestamps,
         &ett_tcp_segments,
         &ett_tcp_segment,
@@ -10551,7 +11631,8 @@ proto_register_tcp(void)
         &ett_tcp_opt_scpscor,
         &ett_tcp_option_other,
         &ett_tcp_syncookie,
-        &ett_tcp_syncookie_option
+        &ett_tcp_syncookie_option,
+        &ett_tcp_rst_diagnostic
     };
 
     static int *mptcp_ett[] = {
@@ -10610,6 +11691,7 @@ proto_register_tcp(void)
         { &ei_tcp_analysis_tfo_ignored, { "tcp.analysis.tfo_ignored", PI_SEQUENCE, PI_NOTE, "TCP SYN-ACK ignoring TFO data", EXPFILL }},
         { &ei_tcp_analysis_partial_ack, { "tcp.analysis.partial_ack", PI_SEQUENCE, PI_NOTE, "Partial Acknowledgement of a segment", EXPFILL }},
         { &ei_tcp_analysis_ambiguous_ack, { "tcp.analysis.ambiguous_ack", PI_SEQUENCE, PI_NOTE, "Ambiguous ACK following Karn's definition", EXPFILL }},
+        { &ei_tcp_analysis_duplicate_packet, { "tcp.analysis.duplicate_packet", PI_SEQUENCE, PI_NOTE, "Capture-level duplicate packet detected", EXPFILL }},
         { &ei_tcp_connection_fin_active, { "tcp.connection.fin_active", PI_SEQUENCE, PI_NOTE, "This frame initiates the connection closing", EXPFILL }},
         { &ei_tcp_connection_fin_passive, { "tcp.connection.fin_passive", PI_SEQUENCE, PI_NOTE, "This frame undergoes the connection closing", EXPFILL }},
         { &ei_tcp_scps_capable, { "tcp.analysis.scps_capable", PI_SEQUENCE, PI_NOTE, "Connection establish acknowledge (SYN+ACK): SCPS Capabilities Negotiated", EXPFILL }},
@@ -10617,6 +11699,7 @@ proto_register_tcp(void)
         { &ei_tcp_option_snack_sequence, { "tcp.options.snack.sequence", PI_SEQUENCE, PI_NOTE, "SNACK Sequence", EXPFILL }},
         { &ei_tcp_option_wscale_shift_invalid, { "tcp.options.wscale.shift.invalid", PI_PROTOCOL, PI_WARN, "Window scale shift exceeds 14", EXPFILL }},
         { &ei_tcp_option_mss_absent, { "tcp.options.mss.absent", PI_PROTOCOL, PI_NOTE, "The SYN packet does not contain a MSS option", EXPFILL }},
+        { &ei_tcp_tcpfp_scanner, { "tcp.fingerprint.scanner", PI_SECURITY, PI_WARN, "Massive scanner detected: SYN without TCP options", EXPFILL }},
         { &ei_tcp_option_mss_present, { "tcp.options.mss.present", PI_PROTOCOL, PI_WARN, "The non-SYN packet does contain a MSS option", EXPFILL }},
         { &ei_tcp_option_mss_exceeded, { "tcp.options.mss.exceeded", PI_PROTOCOL, PI_NOTE, "This packet's length exceeds MSS (common with TSO or incomplete conversations)", EXPFILL }},
         { &ei_tcp_option_sack_perm_absent, { "tcp.options.sack_perm.absent", PI_PROTOCOL, PI_NOTE, "The SYN packet does not contain a SACK PERM option", EXPFILL }},
@@ -10630,6 +11713,8 @@ proto_register_tcp(void)
          * to terminate a connection as well, which is a misbehavior (see e.g. rfc3360)
          */
         { &ei_tcp_connection_rst, { "tcp.connection.rst", PI_SEQUENCE, PI_WARN, "Connection reset (RST)", EXPFILL }},
+        { &ei_tcp_connection_rst_client, { "tcp.connection.rst_client", PI_SEQUENCE, PI_CHAT, "Connection reset (RST) initiated by the client", EXPFILL }},
+        { &ei_tcp_connection_rst_server, { "tcp.connection.rst_server", PI_SEQUENCE, PI_CHAT, "Connection reset (RST) initiated by the server", EXPFILL }},
         { &ei_tcp_checksum_ffff, { "tcp.checksum.ffff", PI_CHECKSUM, PI_WARN, "TCP Checksum 0xffff instead of 0x0000 (see RFC 1624)", EXPFILL }},
         { &ei_tcp_checksum_partial, { "tcp.checksum.partial", PI_CHECKSUM, PI_NOTE, "Partial (pseudo header) checksum (likely caused by \"TCP checksum offload\")", EXPFILL }},
         { &ei_tcp_checksum_bad, { "tcp.checksum_bad.expert", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
@@ -10719,7 +11804,7 @@ proto_register_tcp(void)
     static build_valid_func tcp_da_both_values[2] = {tcp_src_value, tcp_dst_value};
     static decode_as_value_t tcp_da_values[3] = {{tcp_src_prompt, 1, tcp_da_src_values}, {tcp_dst_prompt, 1, tcp_da_dst_values}, {tcp_both_prompt, 2, tcp_da_both_values}};
     static decode_as_t tcp_da = {"tcp", "tcp.port", 3, 2, tcp_da_values, "TCP", "port(s) as",
-                                 decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                 decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     module_t *tcp_module;
     module_t *mptcp_module;
@@ -10795,11 +11880,35 @@ proto_register_tcp(void)
         "Analyze TCP sequence numbers",
         "Make the TCP dissector analyze TCP sequence numbers to find and flag segment retransmissions, missing segments and RTT",
         &tcp_analyze_seq);
+    prefs_register_bool_preference(tcp_module, "detect_duplicate_packets",
+        "Detect duplication (capture-level) packets",
+        "Detect TCP segments captured at multiple monitoring points. Adds a [packet count] field "
+        "to every segment's SEQ/ACK analysis showing how many times the same packet has been seen "
+        "within the time window. Requires \"Analyze TCP sequence numbers\" to be enabled.",
+        &tcp_detect_duplicate_packets);
+    prefs_register_uint_preference(tcp_module, "duplicate_detect_window_usec",
+        "Duplication detection window (microseconds)",
+        "Time window in microseconds within which identical TCP segments are considered "
+        "capture-level duplicates. Default: 5000 us (5 ms).",
+        10,
+        &tcp_dup_detect_window_usec);
+    prefs_register_bool_preference(tcp_module, "duplicate_carry_tcp_analysis",
+        "Duplication detection carry over tcp analysis",
+        "When a packet is identified as a capture-level duplicate, also display "
+        "the original frame's SEQ/ACK analysis flags (Retransmission, Dup ACK, "
+        "Out-Of-Order, etc.) on the duplicate. When disabled, only the [dedup N#M] "
+        "annotation is shown on the duplicate.",
+        &tcp_duplicate_carry_tcp_analysis);
     prefs_register_bool_preference(tcp_module, "relative_sequence_numbers",
         "Relative sequence numbers (Requires \"Analyze TCP sequence numbers\")",
         "Make the TCP dissector use relative sequence numbers instead of absolute ones. "
         "To use this option you must also enable \"Analyze TCP sequence numbers\". ",
         &tcp_relative_seq);
+    prefs_register_bool_preference(tcp_module, "disambiguation_algo",
+        "Enable Distal Disambiguation Algorithm (Requires \"Analyze TCP sequence numbers\")",
+        "Disambiguate Retransmissions and Out of Order packets with the distal algorithm. "
+        "To use this option you must also enable \"Analyze TCP sequence numbers\". ",
+        &tcp_distal_algo);
 
     prefs_register_custom_preference_TCP_Analysis(tcp_module, "default_override_analysis",
         "Force interpretation to selected packet(s)",

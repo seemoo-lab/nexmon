@@ -122,7 +122,7 @@ typedef struct _rpc_call_info_value {
 } rpc_call_info_value;
 
 
-typedef int (dissect_function_t)(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree* tree, void* data);
+typedef int (dissect_function_t)(tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree* tree, void* data);
 
 /*
  * Information about a particular version of a program.
@@ -144,7 +144,6 @@ extern const value_string rpc_auth_flavor[];
 
 WS_DLL_PUBLIC void rpc_init_prog(int proto, uint32_t prog, int ett, size_t nvers,
     const rpc_prog_vers_info *versions);
-WS_DLL_PUBLIC const char *rpc_prog_name(uint32_t prog);
 WS_DLL_PUBLIC const char *rpc_proc_name(wmem_allocator_t *allocator, uint32_t prog, uint32_t vers, uint32_t proc);
 WS_DLL_PUBLIC int rpc_prog_hf(uint32_t prog, uint32_t vers);
 
@@ -153,58 +152,50 @@ WS_DLL_PUBLIC int dissect_rpc_void(tvbuff_t *tvb,
         packet_info *pinfo, proto_tree *tree, void *data);
 WS_DLL_PUBLIC int dissect_rpc_unknown(tvbuff_t *tvb,
         packet_info *pinfo, proto_tree *tree, void *data);
-WS_DLL_PUBLIC int dissect_rpc_bool(tvbuff_t *tvb,
-	proto_tree *tree, int hfindex, int offset);
-WS_DLL_PUBLIC int dissect_rpc_string(tvbuff_t *tvb, packet_info* pinfo,
-	proto_tree *tree, int hfindex, int offset, const char **string_buffer_ret);
+WS_DLL_PUBLIC unsigned dissect_rpc_bool(tvbuff_t *tvb,
+	proto_tree *tree, int hfindex, unsigned offset);
+WS_DLL_PUBLIC unsigned dissect_rpc_string(tvbuff_t *tvb, packet_info* pinfo,
+	proto_tree *tree, int hfindex, unsigned offset, const char **string_buffer_ret);
 WS_DLL_PUBLIC
-int dissect_rpc_opaque_data(tvbuff_t *tvb, int offset,
+unsigned dissect_rpc_opaque_data(tvbuff_t *tvb, unsigned offset,
     proto_tree *tree,
     packet_info *pinfo,
     int hfindex,
     bool fixed_length, uint32_t length,
     bool string_data, const char **string_buffer_ret,
     dissect_function_t *dissect_it);
-WS_DLL_PUBLIC int dissect_rpc_data(tvbuff_t *tvb, packet_info* pinfo,
-	proto_tree *tree, int hfindex, int offset);
-WS_DLL_PUBLIC int dissect_rpc_bytes(tvbuff_t *tvb, packet_info* pinfo,
-	proto_tree *tree, int hfindex, int offset, uint32_t length,
+WS_DLL_PUBLIC unsigned dissect_rpc_data(tvbuff_t *tvb, packet_info* pinfo,
+	proto_tree *tree, int hfindex, unsigned offset);
+WS_DLL_PUBLIC unsigned dissect_rpc_bytes(tvbuff_t *tvb, packet_info* pinfo,
+	proto_tree *tree, int hfindex, unsigned offset, uint32_t length,
 	bool string_data, const char **string_buffer_ret);
-WS_DLL_PUBLIC int dissect_rpc_list(tvbuff_t *tvb, packet_info *pinfo,
-	proto_tree *tree, int offset, dissect_function_t *rpc_list_dissector,
+WS_DLL_PUBLIC unsigned dissect_rpc_list(tvbuff_t *tvb, packet_info *pinfo,
+	proto_tree *tree, unsigned offset, dissect_function_t *rpc_list_dissector,
 	void *data);
-WS_DLL_PUBLIC int dissect_rpc_array(tvbuff_t *tvb, packet_info *pinfo,
-	proto_tree *tree, int offset, dissect_function_t *rpc_array_dissector,
+WS_DLL_PUBLIC unsigned dissect_rpc_array(tvbuff_t *tvb, packet_info *pinfo,
+	proto_tree *tree, unsigned offset, dissect_function_t *rpc_array_dissector,
 	int hfindex);
-WS_DLL_PUBLIC int dissect_rpc_uint32(tvbuff_t *tvb,
-	proto_tree *tree, int hfindex, int offset);
-WS_DLL_PUBLIC int dissect_rpc_uint64(tvbuff_t *tvb,
-	proto_tree *tree, int hfindex, int offset);
+WS_DLL_PUBLIC unsigned dissect_rpc_uint32(tvbuff_t *tvb,
+	proto_tree *tree, int hfindex, unsigned offset);
+WS_DLL_PUBLIC unsigned dissect_rpc_uint64(tvbuff_t *tvb,
+	proto_tree *tree, int hfindex, unsigned offset);
 
-WS_DLL_PUBLIC int dissect_rpc_indir_call(tvbuff_t *tvb, packet_info *pinfo,
-	proto_tree *tree, int offset, int args_id, uint32_t prog, uint32_t vers,
+WS_DLL_PUBLIC unsigned dissect_rpc_indir_call(tvbuff_t *tvb, packet_info *pinfo,
+	proto_tree *tree, unsigned offset, int args_id, uint32_t prog, uint32_t vers,
 	uint32_t proc);
-WS_DLL_PUBLIC int dissect_rpc_indir_reply(tvbuff_t *tvb, packet_info *pinfo,
-	proto_tree *tree, int offset, int result_id, int prog_id, int vers_id,
+WS_DLL_PUBLIC unsigned dissect_rpc_indir_reply(tvbuff_t *tvb, packet_info *pinfo,
+	proto_tree *tree, unsigned offset, int result_id, int prog_id, int vers_id,
 	int proc_id);
-WS_DLL_PUBLIC int dissect_rpc_opaque_auth(tvbuff_t* tvb, proto_tree* tree,
-	int offset, packet_info *pinfo);
+WS_DLL_PUBLIC unsigned dissect_rpc_opaque_auth(tvbuff_t* tvb, proto_tree* tree,
+	unsigned offset, packet_info *pinfo);
 
 typedef struct _rpc_prog_info_value {
 	protocol_t *proto;
 	int proto_id;
 	int ett;
 	const char* progname;
-	GArray *procedure_hfs; /* int */
+	wmem_array_t* procedure_hfs; /* int */
 } rpc_prog_info_value;
-
-/* rpc_progs is also used in tap. With MSVC and a
- * libwireshark.dll, we need a special declaration.
- */
-/* Key: Program number (uint32_t)
- * Value: rpc_prog_info_value *
- */
-WS_DLL_PUBLIC GHashTable *rpc_progs;
 
 typedef struct _rpc_proc_info_key {
 	uint32_t	prog;

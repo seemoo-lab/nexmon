@@ -5,7 +5,8 @@ It requires [libsinsp and libscap](https://github.com/falcosecurity/libs/).
 
 ## Building the Falco Events plugin
 
-1. Download and compile [libsinsp and libscap](https://github.com/falcosecurity/libs/).
+1. Download and compile [Falco libs (libsinsp and libscap)](https://github.com/falcosecurity/libs/).
+   Falco libs 0.26.0 and later is strongly recommended, since it includes the raw block engine.
    You will probably want to pass `-DMINIMAL_BUILD=ON -DCREATE_TEST_TARGETS=OFF` to cmake.
 
 1. Configure Wireshark with
@@ -14,9 +15,13 @@ It requires [libsinsp and libscap](https://github.com/falcosecurity/libs/).
 cmake \
     -DSINSP_INCLUDEDIR=/path/to/falcosecurity-libs \
     -DSINSP_LIBDIR=/path/to/falcosecurity-libs/ \
-    -DFALCO_PLUGINS="/path/to/plugin1;/path/to/plugin2;/path/to/plugin3" \
+    -DFALCO_PLUGIN_DIR="$WIRESHARK_BASE_DIR/wireshark-x64-libs/falcosecurity-plugins-2026-03-16-2-arm64-ws"
+    -DFALCO_PLUGINS="cloudtrail.dll;gcpaudit.dll;k8saudit.dll"
+    -DFALCO_PLUGIN_DLLS="libunwind.dll"
     [other cmake args]
 ```
+
+$WIRESHARK_BASE_DIR should be replaced with your third party library prefix as described in the Wireshark Developer's Guide.
 
 ## Quick Start
 

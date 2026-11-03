@@ -1,0 +1,456 @@
+#!/bin/bash
+# Setup development environment for RPM based systems such as Red Hat, Centos, Fedora, openSUSE
+#
+# Wireshark - Network traffic analyzer
+# By Gerald Combs <gerald@wireshark.org>
+# Copyright 1998 Gerald Combs
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# We drag in tools that might not be needed by all users; it's easier
+# that way.
+#
+
+set -e -u -o pipefail
+
+function print_usage() {
+	printf "\nUtility to setup a rpm-based system for Wireshark Development.\n"
+	printf "The basic usage installs the needed software\n\n"
+	printf "Usage: %s [--install-optional] [...other options...]\n" "$0"
+	printf "\t--install-optional: install optional software as well\n"
+	printf "\t--install-rpm-deps: install packages required to build the .rpm file\n"
+	printf "\\t--install-qt6-deps: force installation of packages required to use Qt6\\n"
+	printf "\\t--install-all: install everything\\n"
+	printf "\t[other]: other options are passed as-is to the package manager\n"
+}
+
+ADDITIONAL=0
+RPMDEPS=0
+ADD_QT6=0
+HAVE_ADD_QT=0
+OPTIONS=
+for arg; do
+	case $arg in
+		--help|-h)
+			print_usage
+			exit 0
+			;;
+		--install-optional)
+			ADDITIONAL=1
+			;;
+		--install-rpm-deps)
+			RPMDEPS=1
+			;;
+		--install-qt6-deps)
+			ADD_QT6=1
+			HAVE_ADD_QT=1
+			;;
+		--install-all)
+			ADDITIONAL=1
+			RPMDEPS=1
+			ADD_QT6=1
+			HAVE_ADD_QT=1
+			;;
+		*)
+			OPTIONS="$OPTIONS $arg"
+			;;
+	esac
+done
+
+# Check if the user is root
+if [ "$(id -u)" -ne 0 ]
+then
+	echo "You must be root."
+	exit 1
+fi
+
+BASIC_LIST="
+	cmake
+	desktop-file-utils
+	flex
+	gcc
+	gcc-c++
+	git
+	glib2-devel
+	libgcrypt-devel
+	libpcap-devel
+	libxml2-devel
+	pcre2-devel
+	python3
+	"
+
+ADDITIONAL_LIST="
+	krb5-devel
+	libcap-devel
+	libssh-devel
+	lz4
+	perl
+	perl-Parse-Yapp
+	python3-pytest
+	snappy-devel
+	systemd-devel
+	xxhash-devel
+	"
+
+# XXX
+RPMDEPS_LIST="rpm-build"
+
+# Guess which package manager we will use
+for PM in zypper dnf yum ''; do
+	if type "$PM" >/dev/null 2>&1; then
+		break
+	fi
+done
+
+if [ -z "$PM" ]
+then
+	echo "No package managers found, exiting"
+	exit 1
+fi
+
+PM_OPT=
+case $PM in
+	zypper)
+		PM_OPT="--non-interactive"
+		PM_SEARCH="search -x --provides"
+		;;
+	dnf)
+		PM_SEARCH="info"
+		;;
+	yum)
+		PM_SEARCH="info"
+		;;
+esac
+
+echo "Using $PM ($PM_SEARCH)"
+
+# On RHEL and derivatives (Rocky, AlmaLinux, CentOS Stream) many of the
+# packages below live in the CRB (CodeReady Builder; "PowerTools" on EL8)
+# and EPEL repositories, which are not enabled by default. Enable them so
+# that the package searches further down can actually find the packages
+# (e.g. asciidoctor, *-devel packages, and the PNG/codec optional tools).
+enable_el_extra_repos() {
+	# Only relevant for dnf/yum based systems.
+	case $PM in
+		dnf|yum) ;;
+		*) return 0 ;;
+	esac
+
+	# Only act on RHEL-family distributions.
+	if [ ! -e /etc/os-release ]; then
+		return 0
+	fi
+	# shellcheck disable=SC1091
+	. /etc/os-release
+	case " ${ID:-} ${ID_LIKE:-} " in
+		*" rhel "*|*" fedora "*|*" centos "*|*" rocky "*|*" almalinux "*) ;;
+		*) return 0 ;;
+	esac
+
+	# Fedora ships EPEL content natively and has no CRB; skip there.
+	if [ "${ID:-}" = "fedora" ]; then
+		return 0
+	fi
+
+	echo "Detected RHEL-family distribution (${ID:-unknown} ${VERSION_ID:-}); enabling EPEL and CRB."
+
+	# EPEL provides asciidoctor and many optional packages.
+	if ! $PM -y install epel-release 2>/dev/null; then
+		echo "Could not install epel-release automatically." >&2
+		echo "If packages are missing, install it manually, e.g.:" >&2
+		echo "    $PM -y install epel-release" >&2
+	fi
+
+	# CRB (RHEL 9/10, Rocky 9/10, Alma 9/10) is called PowerTools on EL8.
+	# dnf config-manager is the preferred way to toggle it.
+	if type dnf >/dev/null 2>&1; then
+		if ! dnf config-manager --set-enabled crb 2>/dev/null; then
+			dnf config-manager --set-enabled powertools 2>/dev/null ||
+			dnf config-manager --set-enabled PowerTools 2>/dev/null ||
+			echo "Could not enable CRB/PowerTools automatically; some -devel packages may be missing." >&2
+		fi
+	else
+		# yum (EL7-style) uses yum-config-manager.
+		yum-config-manager --enable crb 2>/dev/null ||
+		yum-config-manager --enable powertools 2>/dev/null ||
+		yum-config-manager --enable PowerTools 2>/dev/null ||
+		echo "Could not enable CRB/PowerTools automatically; some -devel packages may be missing." >&2
+	fi
+
+	# The 'devel' repo (Rocky and CentOS Stream only; absent on RHEL and
+	# AlmaLinux) carries a few extra -devel packages not yet shipped in
+	# the standard repos. Best-effort only: it does not exist everywhere
+	# and is not signed/stable, so never treat a failure as an error.
+	if [ "${ID:-}" = "rocky" ] || [ "${ID:-}" = "centos" ]; then
+		if type dnf >/dev/null 2>&1; then
+			dnf config-manager --set-enabled devel 2>/dev/null ||
+			echo "Note: optional 'devel' repo not enabled (not available here)." >&2
+		else
+			yum-config-manager --enable devel 2>/dev/null ||
+			echo "Note: optional 'devel' repo not enabled (not available here)." >&2
+		fi
+	fi
+
+	# Refresh metadata so the searches below see the newly enabled repos.
+	# This MUST succeed: every add_package probe below relies on repo
+	# metadata being present. If it fails (no network, proxy, broken
+	# mirror) the probes would all report "unavailable" even for packages
+	# that are in the always-on default repos (e.g. Qt6 in AppStream), so
+	# make the failure loud instead of silently swallowing it.
+	if ! $PM makecache; then
+		echo "" >&2
+		echo "ERROR: '$PM makecache' failed." >&2
+		echo "Repository metadata could not be downloaded. Every package will" >&2
+		echo "appear 'unavailable' below until this is fixed. Common causes:" >&2
+		echo "  * no network / HTTP(S) proxy not configured for $PM" >&2
+		echo "    (set proxy= in /etc/dnf/dnf.conf or http_proxy/https_proxy)" >&2
+		echo "  * EPEL/CRB just enabled but mirror unreachable" >&2
+		echo "Fix connectivity, then re-run this script." >&2
+		echo "" >&2
+	fi
+}
+
+enable_el_extra_repos
+
+# Adds package $2 to list variable $1 if the package is found
+add_package() {
+	local list="$1" pkgname="$2"
+
+	# fail if the package is not known
+	# shellcheck disable=SC2086
+	$PM $PM_SEARCH "$pkgname" &> /dev/null || return 1
+
+	# package is found, append it to list
+	eval "${list}=\"\${${list}} \${pkgname}\""
+}
+
+# Adds packages $2-$n to list variable $1 if all the packages are found
+add_packages() {
+	local list="$1" pkgnames="${*:2}"
+
+	# fail if any package is not known
+	for pkgname in $pkgnames; do
+		# shellcheck disable=SC2086
+		$PM $PM_SEARCH "$pkgname" &> /dev/null || return 1
+	done
+
+	# all packages are found, append it to list
+	eval "${list}=\"\${${list}} \${pkgnames}\""
+}
+
+add_package BASIC_LIST glib2 || add_package BASIC_LIST libglib-2_0-0 ||
+echo "Required package glib2|libglib-2_0-0 is unavailable" >&2
+
+add_package BASIC_LIST lua-devel || add_package BASIC_LIST lua54-devel || add_package BASIC_LIST lua53-devel ||
+echo "Required package lua-devel|lua54-devel|lua53-devel is unavailable" >&2
+
+add_package BASIC_LIST libpcap || add_package BASIC_LIST libpcap1 ||
+echo "Required package libpcap|libpcap1 is unavailable" >&2
+
+add_package BASIC_LIST zlib-ng-compat-devel || add_package BASIC_LIST zlib-devel ||
+echo "Optional package zlib-ng-compat-devel|zlib-devel is unavailable" >&2
+
+add_package BASIC_LIST c-ares-devel || add_package BASIC_LIST libcares-devel ||
+echo "Required package c-ares-devel|libcares-devel is unavailable" >&2
+
+add_package BASIC_LIST speexdsp-devel || add_package BASIC_LIST speex-devel ||
+echo "Required package speexdsp-devel|speex-devel is unavailable" >&2
+
+if [ $HAVE_ADD_QT -eq 0 ]
+then
+	# The user didn't select a Qt version. Select Qt 6 if it's available.
+	# shellcheck disable=SC2086
+	if $PM $PM_SEARCH qt6-qtbase-devel 2&> /dev/null || $PM $PM_SEARCH qt6-base-devel 2&> /dev/null ; then
+		echo "Installing Qt6."
+		ADD_QT6=1
+	fi
+fi
+
+if [ $ADD_QT6 -ne 0 ]
+then
+	# See CMakeLists.txt in the root directory for a list of
+	# Qt6 modules required for a minimal installation
+	# Base and Multimedia pull in most of the other required modules
+	# RH/Fedora and SUSE use slightly different pkg names for modules
+	QT6_LIST=(base
+			svg
+			tools
+			multimedia)
+
+	for module in "${QT6_LIST[@]}"
+	do
+		add_package BASIC_LIST "qt6-qt${module}-devel" ||
+		add_package BASIC_LIST "qt6-${module}-devel" ||
+		echo "Required Qt6 Module $module is unavailable" >&2
+	done
+
+	# qt6-linguist: RHEL, Fedora
+	# qt6-linguist-devel: OpenSUSE
+	add_package BASIC_LIST qt6-linguist ||
+	add_package BASIC_LIST qt6-linguist-devel ||
+	echo "Required Qt6 module LinguistTools is unavailable" >&2
+
+	add_package BASIC_LIST libxkbcommon-devel ||
+	echo "Required Qt6 dependency libxkbcommon-devel is unavailable"
+
+	add_package ADDITIONAL_LIST qt6-qtimageformats ||
+	add_package ADDITIONAL_LIST qt6-imageformats ||
+	echo "Optional Qt6 module Image Formats is unavailable" >&2
+fi
+
+# This in only required on OpenSUSE
+add_packages BASIC_LIST hicolor-icon-theme xdg-utils ||
+echo "Required OpenSUSE packages hicolor-icon-theme and xdg-utils are unavailable. Not required for other distributions." >&2
+
+# This in only required (and available) on OpenSUSE
+add_package BASIC_LIST update-desktop-files ||
+echo "Required OpenSUSE package update-desktop-files is unavailable. Not required for other distributions." >&2
+
+# rubygem-asciidoctor.noarch: Centos, Fedora
+# (Added to RHEL/Centos 8: https://bugzilla.redhat.com/show_bug.cgi?id=1820896 )
+# ruby2.5-rubygem-asciidoctor: openSUSE 15.2+ (Ruby version is too old)
+# ruby3.4-rubygem-asciidoctor: openSUSE 16.0
+add_package RPMDEPS_LIST rubygem-asciidoctor.noarch || add_package RPMDEPS_LIST ruby3.4-rubygem-asciidoctor ||
+echo "RPM dependency asciidoctor is unavailable" >&2
+
+# We don't install the PDF versions of the guide in the RPM but this
+# package depends on Asciidoctor, which is installed for RPM building
+# rubygem-asciidoctor-pdf: Fedora (not RHEL and derivatives)
+# ruby2.5-rubygem-asciidoctor-pdf: openSUSE 15.2+ (Ruby version is too old)
+# ruby3.4-rubygem-asciidoctor-pdf: openSUSE 16.0
+add_package RPMDEPS_LIST rubygem-asciidoctor-pdf.noarch || add_package RPMDEPS_LIST ruby3.4-rubygem-asciidoctor-pdf ||
+echo "Optional documentation package asciidoctor-pdf is unavailable" >&2
+
+# libcap: CentOS 7, Fedora 28, Fedora 29
+# libcap2: OpenSUSE Leap 42.3, OpenSUSE Leap 15.0
+add_package ADDITIONAL_LIST libcap || add_package ADDITIONAL_LIST libcap2 ||
+echo "Optional package libcap|libcap2 is unavailable" >&2
+
+add_package ADDITIONAL_LIST nghttp2-devel || add_package ADDITIONAL_LIST libnghttp2-devel ||
+echo "Optional package nghttp2-devel|libnghttp2-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST nghttp3-devel || add_package ADDITIONAL_LIST libnghttp3-devel ||
+echo "Optional package nghttp3-devel|libnghttp3-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST snappy || add_package ADDITIONAL_LIST libsnappy1 ||
+echo "Optional package snappy|libsnappy1 is unavailable" >&2
+
+add_package ADDITIONAL_LIST libzstd-devel || echo "Optional package lbzstd-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST lz4-devel || add_package ADDITIONAL_LIST liblz4-devel ||
+echo "Optional package lz4-devel|liblz4-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST libcap-progs || echo "Optional package libcap-progs is unavailable" >&2
+
+add_package ADDITIONAL_LIST libmaxminddb-devel ||
+echo "Optional package libmaxminddb-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST gnutls-devel || add_package ADDITIONAL_LIST libgnutls-devel ||
+echo "Optional package gnutls-devel|libgnutls-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST gettext-devel || add_package ADDITIONAL_LIST gettext-tools ||
+echo "Optional package gettext-devel|gettext-tools is unavailable" >&2
+
+add_package ADDITIONAL_LIST ninja || add_package ADDITIONAL_LIST ninja-build ||
+echo "Optional package ninja|ninja-build is unavailable" >&2
+
+add_package ADDITIONAL_LIST libxslt || add_package ADDITIONAL_LIST libxslt1 ||
+echo "Optional package libxslt|libxslt1 is unavailable" >&2
+
+add_package ADDITIONAL_LIST docbook-style-xsl || add_package ADDITIONAL_LIST docbook-xsl-stylesheets ||
+echo "Optional package docbook-style-xsl|docbook-xsl-stylesheets is unavailable" >&2
+
+add_package ADDITIONAL_LIST brotli-devel || add_packages ADDITIONAL_LIST libbrotli-devel libbrotlidec1 ||
+echo "Optional packages brotli-devel|libbrotli-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST libnl3-devel ||
+echo "Optional package libnl3-devel|libnl-devel are unavailable" >&2
+
+add_package ADDITIONAL_LIST ilbc-devel ||
+echo "Optional package ilbc-devel is unavailable" >&2
+
+# opus-devel: RHEL/CentOS, Fedora
+# libopus-devel: OpenSUSE
+add_package ADDITIONAL_LIST opus-devel || add_package ADDITIONAL_LIST libopus-devel ||
+echo "Optional package opus-devel|libopus-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST bcg729-devel ||
+echo "Optional package bcg729-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST minizip-ng-compat-devel || add_package ADDITIONAL_LIST minizip-devel ||
+echo "Optional package minizip-ng-compat-devel|minizip-devel is unavailable" >&2
+
+# RHEL 8 / CentOS 8 are missing the -devel packages for sbc and libsmi due to
+# RH deciding not to ship all -devel packages.
+# https://wiki.centos.org/FAQ/CentOS8/UnshippedPackages
+# There are CentOS bugs filed to add them to the Devel repository and eventually
+# RHEL 8 CRB / CentOS PowerTools, but make them optional for now.
+# https://bugs.centos.org/view.php?id=16504
+# https://bugs.centos.org/view.php?id=17824
+add_package ADDITIONAL_LIST sbc-devel ||
+echo "Optional package sbc-devel is unavailable"
+
+add_package ADDITIONAL_LIST libsmi-devel ||
+echo "Optional package libsmi-devel is unavailable"
+
+add_package ADDITIONAL_LIST cpuinfo-devel ||
+echo "Optional package cpuinfo-devel is unavailable"
+
+# opencore-amr-devel: RHEL/CentOS, Fedora
+# libopencore-amr-devel: OpenSUSE
+add_package ADDITIONAL_LIST opencore-amr-devel || add_package ADDITIONAL_LIST libopencore-amr-devel ||
+echo "Optional package opencore-amr-devel|libopencore-amr-devel is unavailable" >&2
+
+add_package ADDITIONAL_LIST softhsm ||
+echo "Optional package softhsm is unavailable" >&2
+
+# spandsp-devel and python3-pytest-xdist live in EPEL on RHEL/Rocky/Alma.
+# They were previously hardcoded in ADDITIONAL_LIST, which made the whole
+# install abort ("Unable to find a match") when EPEL was not reachable.
+# Probe for them instead so a missing EPEL degrades to a warning: spandsp
+# only affects some codec support and pytest-xdist only parallelises the
+# test suite, neither is required for a basic build.
+add_package ADDITIONAL_LIST spandsp-devel ||
+echo "Optional package spandsp-devel is unavailable (needs EPEL)" >&2
+
+add_package ADDITIONAL_LIST python3-pytest-xdist ||
+echo "Optional package python3-pytest-xdist is unavailable (needs EPEL)" >&2
+
+# PNG compression utilities used by compress-pngs:
+add_package ADDITIONAL_LIST advancecomp ||
+echo "Optional package advancecomp is unavailable" >&2
+
+add_package ADDITIONAL_LIST optipng ||
+echo "Optional package optipng is unavailable" >&2
+
+add_package ADDITIONAL_LIST oxipng ||
+echo "Optional package oxipng is unavailable" >&2
+
+add_package ADDITIONAL_LIST pngcrush ||
+echo "Optional package pngcrush is unavailable" >&2
+
+ACTUAL_LIST=$BASIC_LIST
+
+# Now arrange for optional support libraries
+if [ $ADDITIONAL -ne 0 ]
+then
+	ACTUAL_LIST="$ACTUAL_LIST $ADDITIONAL_LIST"
+fi
+
+if [ $RPMDEPS -ne 0 ]
+then
+	ACTUAL_LIST="$ACTUAL_LIST $RPMDEPS_LIST"
+fi
+
+# shellcheck disable=SC2086
+$PM $PM_OPT install $OPTIONS $ACTUAL_LIST
+
+if [ $ADDITIONAL -eq 0 ]
+then
+	echo -e "\n*** Optional packages not installed. Rerun with --install-optional to have them.\n"
+fi
+
+if [ $RPMDEPS -eq 0 ]
+then
+	printf "\n*** RPM packages build deps not installed. Rerun with --install-rpm-deps to have them.\n"
+fi

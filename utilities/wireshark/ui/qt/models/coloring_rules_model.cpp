@@ -14,6 +14,7 @@
 #include <errno.h>
 
 #include "ui/ws_ui_util.h" //for color_filter_add_cb
+#include <app/application_flavor.h>
 
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/utils/qt_ui_utils.h>
@@ -25,9 +26,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
-ColoringRuleItem::ColoringRuleItem(bool disabled, QString name, QString filter, QColor foreground, QColor background, ColoringRuleItem* parent)
+ColoringRuleItem::ColoringRuleItem(bool enabled, QString name, QString filter, QColor foreground, QColor background, ColoringRuleItem* parent)
     : ModelHelperTreeItem<ColoringRuleItem>(parent),
-    disabled_(disabled),
+    enabled_(enabled),
     name_(name),
     filter_(filter),
     foreground_(foreground),
@@ -42,7 +43,7 @@ ColoringRuleItem::~ColoringRuleItem()
 
 ColoringRuleItem::ColoringRuleItem(color_filter_t *colorf, ColoringRuleItem* parent)
     : ModelHelperTreeItem<ColoringRuleItem>(parent),
-    disabled_(colorf->disabled),
+    enabled_(colorf->enabled),
     name_(colorf->filter_name),
     filter_(colorf->filter_text),
     foreground_(ColorUtils::fromColorT(colorf->fg_color)),
@@ -52,7 +53,7 @@ ColoringRuleItem::ColoringRuleItem(color_filter_t *colorf, ColoringRuleItem* par
 
 ColoringRuleItem::ColoringRuleItem(const ColoringRuleItem& item)
     : ModelHelperTreeItem<ColoringRuleItem>(item.parent_),
-    disabled_(item.disabled_),
+    enabled_(item.enabled_),
     name_(item.name_),
     filter_(item.filter_),
     foreground_(item.foreground_),
@@ -62,7 +63,7 @@ ColoringRuleItem::ColoringRuleItem(const ColoringRuleItem& item)
 
 ColoringRuleItem& ColoringRuleItem::operator=(ColoringRuleItem& rhs)
 {
-    disabled_ = rhs.disabled_;
+    enabled_ = rhs.enabled_;
     name_ = rhs.name_;
     filter_ = rhs.filter_;
     foreground_ = rhs.foreground_;
@@ -84,7 +85,7 @@ color_filter_add_cb(color_filter_t *colorf, void *user_data)
 
 ColoringRulesModel::ColoringRulesModel(QColor defaultForeground, QColor defaultBackground, QObject *parent) :
     QAbstractItemModel(parent),
-    root_(new ColoringRuleItem(false, "", "", QColor(), QColor(), NULL)),
+    root_(new ColoringRuleItem(true, "", "", QColor(), QColor(), NULL)),
     conversation_colors_(NULL),
     defaultForeground_(defaultForeground),
     defaultBackground_(defaultBackground)
@@ -112,7 +113,7 @@ GSList *ColoringRulesModel::createColorFilterList()
         color_t bg = ColorUtils::toColorT(rule->background_);
         color_filter_t *colorf = color_filter_new(rule->name_.toUtf8().constData(),
                                                   rule->filter_.toUtf8().constData(),
-                                                  &bg, &fg, rule->disabled_);
+                                                  &bg, &fg, rule->enabled_);
         cfl = g_slist_append(cfl, colorf);
     }
 
@@ -136,11 +137,11 @@ void ColoringRulesModel::addColor(color_filter_t* colorf)
     }
 }
 
-void ColoringRulesModel::addColor(bool disabled, QString filter, QColor foreground, QColor background)
+void ColoringRulesModel::addColor(bool enabled, QString filter, QColor foreground, QColor background)
 {
     //add rule to top of the list
     beginInsertRows(QModelIndex(), 0, 0);
-    ColoringRuleItem* item = new ColoringRuleItem(disabled, tr("New coloring rule"), filter, foreground, background, root_);
+    ColoringRuleItem* item = new ColoringRuleItem(enabled, tr("New coloring rule"), filter, foreground, background, root_);
     root_->prependChild(item);
     endInsertRows();
 }
@@ -163,7 +164,7 @@ bool ColoringRulesModel::exportColors(QString filename, QString& err)
     GSList *cfl = createColorFilterList();
     bool success = true;
     char* err_msg = NULL;
-    if (!color_filters_export(filename.toUtf8().constData(), cfl, false, &err_msg)) {
+    if (!color_filters_export(filename.toUtf8().constData(), cfl, false, application_flavor_name_proper(), &err_msg)) {
         err = gchar_free_to_qstring(err_msg);
         success = false;
     }
@@ -181,7 +182,7 @@ bool ColoringRulesModel::writeColors(QString& err)
         err = gchar_free_to_qstring(err_msg);
         success = false;
     }
-    if (!color_filters_write(cfl, &err_msg)) {
+    if (!color_filters_write(cfl, application_flavor_name_proper(), application_configuration_environment_prefix(), &err_msg)) {
         err = tr("Unable to save coloring rules: %1").arg(g_strerror(errno));
         success = false;
         g_free(err_msg);
@@ -294,7 +295,7 @@ QVariant ColoringRulesModel::data(const QModelIndex &index, int role) const
         switch(index.column())
         {
         case colName:
-            return rule->disabled_ ? Qt::Unchecked : Qt::Checked;
+            return rule->enabled_ ? Qt::Checked : Qt::Unchecked;
         }
         break;
     case Qt::BackgroundRole:
@@ -341,28 +342,20 @@ bool ColoringRulesModel::setData(const QModelIndex &dataIndex, const QVariant &v
         switch (dataIndex.column())
         {
         case colName:
-            rule->disabled_ = (value.toInt() == Qt::Checked) ? false : true;
+            rule->enabled_ = (value.toInt() == Qt::Checked) ? true : false;
             break;
         default:
             return false;
         }
         break;
     case Qt::BackgroundRole:
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         if (!value.canConvert<QColor>())
-#else
-        if (!value.canConvert(QVariant::Color))
-#endif
             return false;
 
         rule->background_ = QColor(value.toString());
         break;
     case Qt::ForegroundRole:
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         if (!value.canConvert<QColor>())
-#else
-        if (!value.canConvert(QVariant::Color))
-#endif
             return false;
 
         rule->foreground_ = QColor(value.toString());
@@ -429,13 +422,15 @@ QMimeData* ColoringRulesModel::mimeData(const QModelIndexList &indexes) const
         if (index.column() == 0)
         {
             ColoringRuleItem * item = root_->child(index.row());
-            QJsonObject entry;
-            entry["disabled"] = item->disabled_;
-            entry["name"] = item->name_;
-            entry["filter"] = item->filter_;
-            entry["foreground"] = QVariant::fromValue(item->foreground_).toString();
-            entry["background"] = QVariant::fromValue(item->background_).toString();
-            data.append(entry);
+            if (item != nullptr) {
+                QJsonObject entry;
+                entry["enabled"] = item->enabled_;
+                entry["name"] = item->name_;
+                entry["filter"] = item->filter_;
+                entry["foreground"] = QVariant::fromValue(item->foreground_).toString();
+                entry["background"] = QVariant::fromValue(item->background_).toString();
+                data.append(entry);
+            }
         }
     }
 
@@ -486,7 +481,7 @@ bool ColoringRulesModel::dropMimeData(const QMimeData *data, Qt::DropAction acti
         QColor bgColor = entry["background"].toVariant().value<QColor>();
 
         ColoringRuleItem * item = new ColoringRuleItem(
-                entry["disabled"].toVariant().toBool(),
+                entry["enabled"].toVariant().toBool(),
                 entry["name"].toString(),
                 entry["filter"].toString(),
                 fgColor,

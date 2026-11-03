@@ -9,15 +9,7 @@
 %bcond_with	ninja
 %bcond_with	ccache
 %bcond_with	stratoshark
-# In rpm 4.17.1 it's possible to define these so that
-# the one is set, the default is the inverse of the other
-%if 0%{?fedora} || 0%{?rhel} >= 9
-%bcond_with	qt5
 %bcond_without	qt6
-%else
-%bcond_without	qt5
-%bcond_with	qt6
-%endif
 %bcond_with	lua
 %bcond_with	mmdbresolve
 %bcond_with	lz4_and_snappy
@@ -33,6 +25,7 @@
 %bcond_with	ilbc
 %bcond_with	opus
 %bcond_with	libssh
+%bcond_with	cpuinfo
 
 # Fedora options to use clang as the compiler
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/#compiler
@@ -55,16 +48,16 @@
 %global use_wireshark_group 1
 
 %if %{with stratoshark}
-# Stratoshark captures system calls locally using falcodump, which is linked
+# Stratoshark captures system calls locally using dumpcalls, which is linked
 # to libscap. libscap can capture system calls from a device (/dev/scap0) or
 # via an eBPF probe.
-%global setuid_falcodump 0
+%global setuid_dumpcalls 0
 # Requires the capabilities described at
 # https://falco.org/docs/setup/container/#docker-least-privileged-modern-ebpf
-%global setcap_falcodump 1
+%global setcap_dumpcalls 1
 
 # Set to 1 if you want a group called 'stratoshark' which users must be a member
-# of in order to run falcodump.  Only used if setuid_falcodump or setcap_falcodump
+# of in order to run dumpcalls.  Only used if setuid_dumpcalls or setcap_dumpcalls
 # are set.
 %global use_stratoshark_group 1
 %endif
@@ -194,6 +187,10 @@ BuildRequires:	(opus-devel or libopus-devel)
 BuildRequires:	libssh-devel
 %endif
 
+%if %{with cpuinfo}
+BuildRequires:	cpuinfo-devel
+%endif
+
 # Uncomment these if you want to be sure you get them...
 #BuildRequires:	krb5-devel
 #BuildRequires:	libsmi-devel
@@ -205,7 +202,23 @@ BuildRequires:	libssh-devel
 BuildRequires:	libmaxminddb-devel
 %endif
 
+# RPM 4.16 introduced version comparison in macro expressions, and then
+# RPM 4.19 introduced a built in %%{rpmversion} macro. We could define
+# the macro if undefined on earlier versions with:
+# %%global rpmversion %%(rpm --version | awk '{print $3}')
+# but still couldn't easily do a version comparison with it before 4.16.
+# OpenSUSE 15.6 uses 4.14, so that's out for right now.
+#
+# Right now, the only thing we need to test the version for is that
+# that we ought to provide the group if we have any files owned by
+# the group with RPM 4.19 and later, since it becomes Required by
+# default in that case. Since those are the same version, that means
+# it's enough to just check if the macro exists.
+
 %if %{use_wireshark_group} || "%{use_stratoshark_group}" == "1"
+%if %{defined rpmversion}
+Provides:	group(wireshark)
+%endif
 %if 0%{?suse_version}
 # SUSE's groupadd is in this package:
 Requires(pre):	pwdutils
@@ -231,45 +244,29 @@ transferred over HTTP or CIFS, or play back an RTP audio stream.
 This package contains command-line utilities, plugins, and documentation for
 Wireshark. A Qt graphical user interface is packaged separately.
 
-%if %{with qt5} || %{with qt6}
+%if %{with qt6}
 %package	qt
 Summary:	Wireshark's Qt-based GUI
 Group:		Applications/Internet
 Obsoletes:	wireshark-gnome < %{version} wireshark-gtk < %{version}
 Requires:	%{name} = %{version}-%{release}
-%if %{with qt5}
-%if 0%{?suse_version}
-BuildRequires:	libQt5Core-devel
-BuildRequires:	libQt5Gui-devel
-BuildRequires:	libQt5Widgets-devel
-BuildRequires:	libQt5PrintSupport-devel
-BuildRequires:	libQt5Concurrent-devel
-BuildRequires:	libqt5-qtmultimedia-devel
-BuildRequires:	libqt5-linguist-devel
-Requires:	libQt5Svg5
-# Need this for SUSE's suse_update_desktop_file macro
-BuildRequires:	update-desktop-files
-%else
-BuildRequires:	qt5-qtbase-devel
-BuildRequires:	qt5-qtmultimedia-devel
-BuildRequires:	qt5-linguist
-Requires:	qt5-qtsvg
-%endif
-%endif
-%if %{with qt6}
 %if 0%{?suse_version}
 BuildRequires:	qt6-base-devel
 BuildRequires:	qt6-multimedia-devel
 BuildRequires:	qt6-tools-devel
 BuildRequires:	qt6-linguist-devel
+BuildRequires:	qt6-svg-devel
+# Require SVG runtime since we don't actually link with the library
+Requires:	libQt6Svg6
 %else
 BuildRequires:	qt6-qtbase-devel
 BuildRequires:	qt6-qtmultimedia-devel
 BuildRequires:	qt6-qttools-devel
+BuildRequires:	qt6-qtsvg-devel
+# Require SVG runtime since we don't actually link with the library
+Requires:	qt6-qtsvg
 %endif
-BuildRequires:	qt6-qt5compat-devel
 BuildRequires:	libxkbcommon-devel
-%endif
 Requires:	xdg-utils
 Requires:	hicolor-icon-theme
 BuildRequires:	desktop-file-utils
@@ -298,26 +295,6 @@ Group:		Applications/System
 Requires:	%{name} = @RPM_VERSION@-%{release}
 BuildRequires:	falcosecurity-libs-devel
 Requires:	falcosecurity-libs
-%if %{with qt5}
-%if 0%{?suse_version}
-BuildRequires:	libQt5Core-devel
-BuildRequires:	libQt5Gui-devel
-BuildRequires:	libQt5Widgets-devel
-BuildRequires:	libQt5PrintSupport-devel
-BuildRequires:	libQt5Concurrent-devel
-BuildRequires:	libqt5-qtmultimedia-devel
-BuildRequires:	libqt5-linguist-devel
-Requires:	libQt5Svg5
-# Need this for SUSE's suse_update_desktop_file macro
-BuildRequires:	update-desktop-files
-%else
-BuildRequires:	qt5-qtbase-devel
-BuildRequires:	qt5-qtmultimedia-devel
-BuildRequires:	qt5-linguist
-Requires:	qt5-qtsvg
-%endif
-%endif
-%if %{with qt6}
 %if 0%{?suse_version}
 BuildRequires:	qt6-base-devel
 BuildRequires:	qt6-multimedia-devel
@@ -328,9 +305,7 @@ BuildRequires:	qt6-qtbase-devel
 BuildRequires:	qt6-qtmultimedia-devel
 BuildRequires:	qt6-qttools-devel
 %endif
-BuildRequires:	qt6-qt5compat-devel
 BuildRequires:	libxkbcommon-devel
-%endif
 Requires:	xdg-utils
 Requires:	hicolor-icon-theme
 BuildRequires:	desktop-file-utils
@@ -339,7 +314,8 @@ Requires(post):	desktop-file-utils
 #Requires:	dejavu-sans-mono-fonts
 
 %description -n stratoshark
-This package contains the Stratoshark GUI and desktop integration files.
+This package contains the Stratoshark GUI and desktop integration files,
+the strato text-mode variant, and necessary Stratoshark-related extcaps.
 %endif
 
 %prep
@@ -379,18 +355,15 @@ This package contains the Stratoshark GUI and desktop integration files.
 %if %{with ccache}
   -DENABLE_CCACHE=ON \
 %endif
-%if %{with qt5} || %{with qt6}
+%if %{with qt6}
   -DBUILD_wireshark=ON \
-%if %{with qt5}
-  -DUSE_qt6=OFF \
-%endif
 %else
   -DBUILD_wireshark=OFF \
 %endif
 %if %{with stratoshark}
-  -DBUILD_stratoshark=ON -DBUILD_falcodump=ON \
+  -DBUILD_stratoshark=ON -DBUILD_falcodump=ON -DBUILD_dumpcalls=ON \
 %else
-  -DBUILD_stratoshark=OFF -DBUILD_falcodump=OFF \
+  -DBUILD_stratoshark=OFF -DBUILD_falcodump=OFF -DBUILD_dumpcalls=OFF \
 %endif
 %if %{with lua}
   -DENABLE_LUA=ON \
@@ -465,6 +438,11 @@ This package contains the Stratoshark GUI and desktop integration files.
 %else
   -DENABLE_LIBSSH=OFF \
 %endif
+%if %{with cpuinfo}
+  -DENABLE_CPUINFO=ON \
+%else
+  -DENABLE_CPUINFO=OFF \
+%endif
 
 # Fedora and SUSE 15 do out of source builds by default, but they store
 # the build directory in different macros. Older distributions don't define
@@ -504,7 +482,7 @@ This package contains the Stratoshark GUI and desktop integration files.
 	echo %{_libdir} > $RPM_BUILD_ROOT/etc/ld.so.conf.d/wireshark.conf
 %endif
 
-%if %{with qt5} || %{with qt6}
+%if %{with qt6}
 %if 0%{?suse_version}
 # SUSE's packaging conventions
 # (https://en.opensuse.org/openSUSE:Packaging_Conventions_RPM_Macros#.25suse_update_desktop_file)
@@ -552,7 +530,7 @@ getent group stratoshark >/dev/null || groupadd -r stratoshark
 
 %postun -p /sbin/ldconfig
 
-%if %{with qt5} || %{with qt6}
+%if %{with qt6}
 %post qt
 update-desktop-database %{_datadir}/applications &> /dev/null || :
 update-mime-database %{_datadir}/mime &> /dev/null || :
@@ -589,6 +567,10 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 %exclude %{_bindir}/wireshark*
 %exclude %{_bindir}/dftest
 %exclude %{_bindir}/idl2wrs
+# Don't pick up the stratoshark or strato binaries here
+%if %{with stratoshark}
+%exclude %{_bindir}/strato*
+%endif
 %{_bindir}/*
 
 # This generates a warning because dumpcap is listed twice. That's
@@ -620,8 +602,18 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 %{_libdir}/lib*.so.*
 %{_libdir}/wireshark
 %{_libexecdir}/wireshark
+%if %{with qt6}
 # Don't pick up the wireshark (GUI) man page here
 %exclude %{_mandir}/man1/wireshark.*
+%endif
+%if %{with stratoshark}
+# Don't pick up the stratoshark related man pages here
+%exclude %{_mandir}/man1/strato.*
+%exclude %{_mandir}/man1/stratoshark.*
+%exclude %{_mandir}/man1/falcodump.*
+%exclude %{_mandir}/man1/dumpcalls.*
+%exclude %{_mandir}/man1/sshdig.*
+%endif
 %{_mandir}/man1/*
 %{_mandir}/man4/*
 
@@ -632,7 +624,7 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 /etc/ld.so.conf.d/wireshark.conf
 %endif
 
-%if %{with qt5} || %{with qt6}
+%if %{with qt6}
 %files qt
 %defattr(-,root,root)
 %{_datadir}/applications/org.wireshark.Wireshark.desktop
@@ -664,10 +656,11 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 %{_datadir}/icons/hicolor/*/apps/*
 %{_datadir}/icons/hicolor/*/mimetypes/*
 %{_datadir}/mime/packages/org.wireshark.Stratoshark.xml
-%{_bindir}/stratoshark
+%{_bindir}/strato*
 %{_libexecdir}/stratoshark
 %{_mandir}/man1/stratoshark.*
 %{_mandir}/man1/falcodump.*
+%{_mandir}/man1/dumpcalls.*
 %{_mandir}/man1/sshdig.*
 
 # The note above about generating a warning because dumpcap is listed twice
@@ -677,24 +670,24 @@ update-mime-database %{_datadir}/mime &> /dev/null || :
 # However, Docker doesn't support CAP_BPF and CAP_PERFMON so we use
 # CAP_SYS_ADMIN instead.
 # https://falco.org/docs/setup/container/#docker-least-privileged-modern-ebpf
-%if %{use_stratoshark_group} && %{setuid_falcodump}
+%if %{use_stratoshark_group} && %{setuid_dumpcalls}
 # Setuid but only executable by members of the 'stratoshark' group
-%attr(4750, root, stratoshark) %{_libexecdir}/stratoshark/extcap/falcodump
+%attr(4750, root, stratoshark) %{_libexecdir}/stratoshark/extcap/dumpcalls
 %else
-%if %{use_stratoshark_group} && %{setcap_falcodump}
+%if %{use_stratoshark_group} && %{setcap_dumpcalls}
 # Setcap but only executable by members of the 'stratoshark' group
-%attr(0750, root, stratoshark) %caps(cap_sys_admin,cap_sys_resource,cap_sys_ptrace=ep) %{_libexecdir}/stratoshark/extcap/falcodump
+%attr(0750, root, stratoshark) %caps(cap_sys_admin,cap_sys_resource,cap_sys_ptrace=ep) %{_libexecdir}/stratoshark/extcap/dumpcalls
 %else
-%if %{setuid_falcodump}
+%if %{setuid_dumpcalls}
 # Setuid and executable by all
-%attr(4755, root, root) %{_libexecdir}/stratoshark/extcap/falcodump
+%attr(4755, root, root) %{_libexecdir}/stratoshark/extcap/dumpcalls
 %else
-%if %{setcap_falcodump}
+%if %{setcap_dumpcalls}
 # Setcap and executable by all
-%attr(0755, root, root) %caps(cap_sys_admin,cap_sys_resource,cap_sys_ptrace=ep) %{_libexecdir}/stratoshark/extcap/falcodump
+%attr(0755, root, root) %caps(cap_sys_admin,cap_sys_resource,cap_sys_ptrace=ep) %{_libexecdir}/stratoshark/extcap/dumpcalls
 %else
 # Executable by all but with no special permissions
-%attr(0755, root, root) %{_libexecdir}/stratoshark/extcap/falcodump
+%attr(0755, root, root) %{_libexecdir}/stratoshark/extcap/dumpcalls
 %endif
 %endif
 %endif

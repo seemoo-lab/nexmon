@@ -226,7 +226,7 @@ my $default_check_regex =
 			 |inc
 			 |dtd|xsl
 			 |mod
-			 |m
+			 |m(m)?
 			 |tex
 			 |mli?
 			 |(c|l)?hs

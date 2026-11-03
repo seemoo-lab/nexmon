@@ -636,7 +636,8 @@ static const value_string rr_pos_display_flag_vals[] = {
 GMR1_IE_FUNC(gmr1_ie_rr_pos_display)
 {
 	const unsigned char *txt_raw;
-	char *txt_packed, *txt_unpacked;
+	uint8_t *txt_packed;
+	char *txt_unpacked;
 	tvbuff_t *txt_packed_tvb;
 	int i;
 
@@ -648,7 +649,7 @@ GMR1_IE_FUNC(gmr1_ie_rr_pos_display)
 	/* Do not use tvb_new_octet_aligned(), GSM 7bit packing bit parsing
 	   goes from LSB to MSB so a trick is applied here for the last byte */
 	txt_raw = tvb_get_ptr(tvb, offset, 11);
-	txt_packed = (char*)wmem_alloc(pinfo->pool, 11);
+	txt_packed = (uint8_t*)wmem_alloc(pinfo->pool, 11);
 	for (i=0; i<10; i++)
 		txt_packed[i] = (txt_raw[i] << 4) | (txt_raw[i+1] >> 4);
 	txt_packed[10] = txt_raw[10];
@@ -1169,7 +1170,7 @@ GMR1_IE_FUNC(gmr1_ie_rr_persistence_lvl)
 }
 
 
-elem_fcn gmr1_ie_rr_func[NUM_GMR1_IE_RR] = {
+const elem_fcn gmr1_ie_rr_func[NUM_GMR1_IE_RR] = {
 	gmr1_ie_rr_chan_desc,		/* Channel Description */
 	gmr1_ie_rr_chan_mode,		/* Channel Mode */
 	gmr1_ie_rr_ciph_mode_setting,	/* Cipher Mode Setting */
@@ -1626,7 +1627,7 @@ static const value_string gmr1_msg_rr_strings[] = {
 	 * XXX - [3] 11.4.1 - Table 11.1 ([3] is ETSI TS 101 376-4-8
 	 * V3.1.1, which is GMR-1 3G 44.008) has 0x3e meaning both
 	 * "Extended Immediate Assignment" and "Immediate Assignment Type 2"
-	 * and has 0x3b meaning both "Immediate Asignment Reject Type 2"
+	 * and has 0x3b meaning both "Immediate Assignment Reject Type 2"
 	 * and "Extended Imm. Assignment Reject".
 	 *
 	 * [3] makes some references to [1] ([1] is ETSI TS 101 376-4-8

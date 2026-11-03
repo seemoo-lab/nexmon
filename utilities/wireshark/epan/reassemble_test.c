@@ -274,21 +274,21 @@ test_simple_fragment_add_seq(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next);
 
@@ -373,7 +373,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next);
 
@@ -410,8 +410,8 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* seqno */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(FD_SUBSET_TVB,fd->flags);
-    ASSERT_EQ_POINTER(tvb_get_ptr(fd_head->tvb_data,0,0),tvb_get_ptr(fd->tvb_data,0,0));
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
+    ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
     fd=fd->next;
@@ -444,8 +444,8 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* seqno */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(FD_SUBSET_TVB,fd->flags);
-    ASSERT_EQ_POINTER(tvb_get_ptr(fd_head->tvb_data,0,0),tvb_get_ptr(fd->tvb_data,0,0));
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
+    ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
     fd=fd->next;
@@ -487,7 +487,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* seqno */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -495,7 +495,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(1,fd->offset);  /* seqno */
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -503,7 +503,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(1,fd->offset);  /* seqno */
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -511,7 +511,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(2,fd->offset);  /* seqno */
     ASSERT_EQ(100,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -544,7 +544,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* seqno */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -552,7 +552,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(1,fd->offset);  /* seqno */
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -560,7 +560,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(1,fd->offset);  /* seqno */
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -568,7 +568,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(2,fd->offset);  /* seqno */
     ASSERT_EQ(100,fd->len);   /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -576,7 +576,7 @@ test_fragment_add_seq_partial_reassembly(void)
     ASSERT_EQ(5,fd->frame);
     ASSERT_EQ(3,fd->offset);  /* seqno */
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -649,28 +649,28 @@ test_fragment_add_seq_duplicate_first(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->frame);
     ASSERT_EQ(0,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(2,fd_head->next->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->next->offset);  /* seqno */
     ASSERT_EQ(40,fd_head->next->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->next);
 
@@ -747,28 +747,28 @@ test_fragment_add_seq_duplicate_middle(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(2,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->next->offset);  /* seqno */
     ASSERT_EQ(40,fd_head->next->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->next);
 
@@ -844,28 +844,28 @@ test_fragment_add_seq_duplicate_last(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(2,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(40,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->next->offset);  /* seqno */
     ASSERT_EQ(40,fd_head->next->next->next->next->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd_head->next->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd_head->next->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->next);
 
@@ -945,28 +945,28 @@ test_fragment_add_seq_duplicate_conflict(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(2,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP|FD_OVERLAPCONFLICT,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP|FD_OVERLAPCONFLICT,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->next->offset);  /* seqno */
     ASSERT_EQ(40,fd_head->next->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next->next);
 
@@ -1056,21 +1056,21 @@ test_fragment_add_seq_check_work(fragment_head *(*fn)(reassembly_table *,
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(4,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->next->frame);
     ASSERT_EQ(2,fd_head->next->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next->next);
 
@@ -1134,14 +1134,14 @@ test_fragment_add_seq_check_1(void)
     ASSERT_EQ(2,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(1,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next);
 
@@ -1325,14 +1325,14 @@ test_simple_fragment_add_seq_next(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* seqno */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_NE_POINTER(NULL,fd_head->next->next);
 
     ASSERT_EQ(3,fd_head->next->next->frame);
     ASSERT_EQ(1,fd_head->next->next->offset);  /* seqno */
     ASSERT_EQ(60,fd_head->next->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next->next);
 
@@ -1594,7 +1594,7 @@ test_simple_fragment_add(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* offset */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1602,7 +1602,7 @@ test_simple_fragment_add(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(50,fd->offset); /* offset */
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1610,7 +1610,7 @@ test_simple_fragment_add(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(110,fd->offset); /* offset */
     ASSERT_EQ(60,fd->len);     /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -1693,7 +1693,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(1,fd_head->next->frame);
     ASSERT_EQ(0,fd_head->next->offset);  /* offset */
     ASSERT_EQ(50,fd_head->next->len);    /* segment length */
-    ASSERT_EQ(0,fd_head->next->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd_head->next->flags);
     ASSERT_EQ_POINTER(NULL,fd_head->next->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd_head->next->next);
 
@@ -1722,7 +1722,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(0,fd_head->len);     /* unused */
     /* ASSERT_EQ(0,fd_head->datalen);
      * reassembly not finished; datalen not well defined.
-     * Current implemenation has it as 0, could change to 90 without issues */
+     * Current implementation has it as 0, could change to 90 without issues */
     ASSERT_EQ(0,fd_head->reassembled_in);
     ASSERT_EQ(0,fd_head->flags);
     ASSERT_NE_POINTER(NULL,fd_head->tvb_data);
@@ -1732,8 +1732,8 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);  /* offset */
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(FD_SUBSET_TVB,fd->flags);
-    ASSERT_EQ_POINTER(tvb_get_ptr(fd_head->tvb_data,0,0),tvb_get_ptr(fd->tvb_data,0,0));
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
+    ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
     fd=fd->next;
@@ -1758,7 +1758,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(0,fd_head->len);     /* unused */
     /* ASSERT_EQ(0,fd_head->datalen);
      * reassembly not finished; datalen not well defined.
-     * Current implemenation has it as 0, could change to 90 without issues */
+     * Current implementation has it as 0, could change to 90 without issues */
     ASSERT_EQ(0,fd_head->reassembled_in);
     ASSERT_EQ(0,fd_head->flags);
     ASSERT_NE_POINTER(NULL,fd_head->tvb_data);
@@ -1768,8 +1768,8 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(FD_SUBSET_TVB,fd->flags);
-    ASSERT_EQ_POINTER(tvb_get_ptr(fd_head->tvb_data,0,0),tvb_get_ptr(fd->tvb_data,0,0));
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
+    ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
     fd=fd->next;
@@ -1811,7 +1811,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1819,7 +1819,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1827,7 +1827,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1835,7 +1835,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(90,fd->offset);
     ASSERT_EQ(100,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -1868,7 +1868,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1876,7 +1876,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1884,7 +1884,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1892,7 +1892,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(90,fd->offset);
     ASSERT_EQ(100,fd->len);   /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1900,7 +1900,7 @@ test_fragment_add_partial_reassembly(void)
     ASSERT_EQ(5,fd->frame);
     ASSERT_EQ(190,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -1979,7 +1979,7 @@ test_fragment_add_duplicate_first(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1987,7 +1987,7 @@ test_fragment_add_duplicate_first(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -1995,7 +1995,7 @@ test_fragment_add_duplicate_first(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2003,7 +2003,7 @@ test_fragment_add_duplicate_first(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -2082,7 +2082,7 @@ test_fragment_add_duplicate_middle(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2090,7 +2090,7 @@ test_fragment_add_duplicate_middle(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2098,7 +2098,7 @@ test_fragment_add_duplicate_middle(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2106,7 +2106,7 @@ test_fragment_add_duplicate_middle(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -2187,7 +2187,7 @@ test_fragment_add_duplicate_last(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2195,7 +2195,7 @@ test_fragment_add_duplicate_last(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2203,7 +2203,7 @@ test_fragment_add_duplicate_last(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
 
     ASSERT_NE_POINTER(NULL,fd->next);
@@ -2212,7 +2212,7 @@ test_fragment_add_duplicate_last(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -2294,7 +2294,7 @@ test_fragment_add_duplicate_conflict(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2302,7 +2302,7 @@ test_fragment_add_duplicate_conflict(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2310,7 +2310,7 @@ test_fragment_add_duplicate_conflict(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP|FD_OVERLAPCONFLICT,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP|FD_OVERLAPCONFLICT,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2318,7 +2318,7 @@ test_fragment_add_duplicate_conflict(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -2415,7 +2415,7 @@ test_simple_fragment_add_check(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2423,7 +2423,7 @@ test_simple_fragment_add_check(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2431,7 +2431,7 @@ test_simple_fragment_add_check(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(60,fd->len);     /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -2550,7 +2550,7 @@ test_fragment_add_check_partial_reassembly(void)
     ASSERT_EQ(0,fd_head->len);     /* unused */
     /* ASSERT_EQ(0,fd_head->datalen);
      * reassembly not finished; datalen not well defined.
-     * Current implemenation has it as 0, could change to 90 without issues */
+     * Current implementation has it as 0, could change to 90 without issues */
     ASSERT_EQ(0,fd_head->reassembled_in);
     ASSERT_EQ(0,fd_head->flags);
     ASSERT_NE_POINTER(NULL,fd_head->tvb_data);
@@ -2586,7 +2586,7 @@ test_fragment_add_check_partial_reassembly(void)
     ASSERT_EQ(0,fd_head->len);     /* unused */
     /* ASSERT_EQ(0,fd_head->datalen);
      * reassembly not finished; datalen not well defined.
-     * Current implemenation has it as 0, could change to 90 without issues */
+     * Current implementation has it as 0, could change to 90 without issues */
     ASSERT_EQ(0,fd_head->reassembled_in);
     ASSERT_EQ(0,fd_head->flags);
     ASSERT_NE_POINTER(NULL,fd_head->tvb_data);
@@ -2940,7 +2940,7 @@ test_fragment_add_check_duplicate_middle(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2948,7 +2948,7 @@ test_fragment_add_check_duplicate_middle(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2956,7 +2956,7 @@ test_fragment_add_check_duplicate_middle(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -2964,7 +2964,7 @@ test_fragment_add_check_duplicate_middle(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 
@@ -3166,7 +3166,7 @@ test_fragment_add_check_duplicate_conflict(void)
     ASSERT_EQ(1,fd->frame);
     ASSERT_EQ(0,fd->offset);
     ASSERT_EQ(50,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -3174,7 +3174,7 @@ test_fragment_add_check_duplicate_conflict(void)
     ASSERT_EQ(2,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -3182,7 +3182,7 @@ test_fragment_add_check_duplicate_conflict(void)
     ASSERT_EQ(3,fd->frame);
     ASSERT_EQ(50,fd->offset);
     ASSERT_EQ(60,fd->len);    /* segment length */
-    ASSERT_EQ(FD_OVERLAP|FD_OVERLAPCONFLICT,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED|FD_OVERLAP|FD_OVERLAPCONFLICT,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_NE_POINTER(NULL,fd->next);
 
@@ -3190,7 +3190,7 @@ test_fragment_add_check_duplicate_conflict(void)
     ASSERT_EQ(4,fd->frame);
     ASSERT_EQ(110,fd->offset);
     ASSERT_EQ(40,fd->len);    /* segment length */
-    ASSERT_EQ(0,fd->flags);
+    ASSERT_EQ(FD_DEFRAGMENTED,fd->flags);
     ASSERT_EQ_POINTER(NULL,fd->tvb_data);
     ASSERT_EQ_POINTER(NULL,fd->next);
 

@@ -721,7 +721,7 @@ dissect_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, btle_context
 {
     proto_item *ti;
     proto_tree *nordic_ble_tree;
-    int offset = 0;
+    unsigned offset = 0;
     nordic_ble_context_t nordic_ble_context;
 
     memset(&nordic_ble_context, 0, sizeof(nordic_ble_context));
@@ -762,7 +762,7 @@ dissect_nordic_ble(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     context = wmem_new0(pinfo->pool, btle_context_t);
 
     offset = dissect_header(tvb, pinfo, tree, context, &bad_length);
-    payload_tvb = tvb_new_subset_length_caplen(tvb, offset, -1, tvb_captured_length(tvb) - offset);
+    payload_tvb = tvb_new_subset_remaining(tvb, offset);
 
     if (!bad_length) {
         call_dissector_with_data(btle_dissector_handle, payload_tvb, pinfo, tree, context);

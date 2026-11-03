@@ -44,7 +44,7 @@ TARBALL="${DESTDIR}/wireshark-${PROJECT_VERSION}.tar.xz"
 # A tarball produced by 'git archive' will have the $Format string
 # substituted due to the use of 'export-subst' in .gitattributes.
 # shellcheck disable=SC2016
-COMMIT='e677bf052328efc1ed897a547fa161836a0e4ff7'
+COMMIT='4a2f07a49ccfd11cb6339c8bf5fb7432679aa7d2'
 
 if [[ $COMMIT != \$F* ]] ; then
     # This file was extracted from a tarball produced by git archive

@@ -23,7 +23,7 @@ dumpcap - Dump network traffic
 [ *-f* <capture filter> ]
 [ *-F* <file format> ]
 [ *-g* ]
-[ *-i*|*--interface* <capture interface>|rpcap://<host>:<port>/<capture interface>|TCP@<host>:<port>|- ]
+[ *-i*|*--interface* <capture interface>|rpcap://<host>:<port>/<capture interface>|- ]
 [ *-I*|*--monitor-mode* ]
 [ *-k* <freq>,[<type>],[<center_freq1>],[<center_freq2>] ]
 [ *-L*|*--list-data-link-types* ]
@@ -45,6 +45,8 @@ dumpcap - Dump network traffic
 [ *--application-flavor* [wireshark|stratoshark] ]
 [ *--capture-comment* <comment> ]
 [ *--list-time-stamp-types* ]
+[ *--no-optimize* ]
+[ *--process-info*[=basic|full] ]
 [ *--time-stamp-type* <type> ]
 [ *--update-interval* <interval> ]
 
@@ -188,8 +190,10 @@ If used in combination with the *-N* option, both limits will apply.
 Setting this limit will enable the usage of the separate thread per interface.
 
 -d::
-Dump the code generated for the capture filter in a human-readable form,
-and exit.
+Dump the code generated for the capture filter(s) in a human-readable form,
+and exit. If capturing on multiple interfaces, the capture filter for each
+interface will be printed in the order that the interfaces were specified.
+(Note that a capture filter may compile differently on different interfaces.)
 
 -D|--list-interfaces::
 Print a list of the interfaces on which *Dumpcap* can capture, and
@@ -235,7 +239,7 @@ user's group).
 -h|--help::
 Print the version number and options and exit.
 
--i|--interface  <capture interface>|rpcap://<host>:<port>/<capture interface>|TCP@<host>:<port>|-::
+-i|--interface  <capture interface>|rpcap://<host>:<port>/<capture interface>|-::
 +
 --
 Set the name of the network interface or pipe to use for live packet
@@ -256,9 +260,6 @@ read data from the standard input.  On Windows systems, pipe names must be
 of the form +"\\.\pipe\+*pipename*".  Data read from pipes must be in
 standard pcapng or pcap format. Pcapng data must have the same
 endianness as the capturing host.
-
-"TCP@<host>:<port>" causes *Dumpcap* to attempt to connect to the
-specified port on the specified host and read pcapng or pcap data.
 
 This option can occur multiple times. When capturing from multiple
 interfaces, the capture file will be saved in pcapng format, even if
@@ -484,6 +485,46 @@ used in other tools?
 --list-time-stamp-types::
 List time stamp types supported for the interface. If no time stamp type can be
 set, no time stamp types are listed.
+
+--no-optimize::
+Do not run the libpcap optimizer when generating code for a capture filter.
+This is useful if you suspect a bug in the optimizer, or for instructive
+purposes.
+
+This option can occur multiple times. If used before the first
+occurrence of the *-i* option, capture filters are not optimized for all
+interfaces. If used after an *-i* option, the capture filter for the interface
+specified by the last *-i* option occurring before this option is not optimized.
+
+--process-info[=basic|full]::
++
+--
+Record, for each packet, the processes on this host that sent or received
+it, when the packet belongs to a TCP or UDP socket: the process ID goes in
+an __epb_processid_threadid__ option of the packet's block, and a Process
+Information Block describing the process is written once per output file.
+Wireshark shows them as the __frame.process__ fields.
+
+With *basic*, which is the default, a process is described by what
+identifies it: its ID, name and start time, which is what tools such as
+*netstat* show.  With *full* its executable path, command line, parent
+process ID and user are recorded as well.  Those can be sensitive: a command
+line can contain a password or a token, and a path the name of a user.  They
+are stored in the capture file as they are, for everybody the file is given
+to, so use *full* only for files that will be handled accordingly.  With
+*basic* they are not even read.  The argument has to be attached with an
+equals sign, as in *--process-info=full*.
+
+The processes are
+found in the operating system's socket tables, so a socket must still exist
+when its packet is captured; very short-lived sockets can be missed.  Which
+processes can be identified depends on privileges: on Windows all of them;
+on Linux the user's own, or all of them if *dumpcap* runs as root or has
+the CAP_SYS_PTRACE capability, which it then keeps, and nothing else,
+after opening the interfaces; on macOS the user's own, or all of them if
+*dumpcap* runs as root.  Not supported on other platforms.
+Requires the pcapng file format.
+--
 
 --time-stamp-type  <type>::
 Change the interface's timestamp method.

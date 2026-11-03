@@ -546,7 +546,7 @@ static bool findSafetyFrame ( packet_info *pinfo, tvbuff_t *message_tvb, unsigne
     rem_length = tvb_reported_length_remaining (message_tvb, ctr);
 
     /* Search will allways start at the second byte of the frame ( cause it determines )
-     * the type of package and therefore everything else. Therefore the mininmum length - 1
+     * the type of package and therefore everything else. Therefore the minimum length - 1
      * is the correct minimum length */
     while ( rem_length >= ( OSS_MINIMUM_LENGTH - 1 ) )
     {
@@ -767,7 +767,7 @@ dissect_data_payload ( proto_tree *epl_tree, tvbuff_t *tvb, packet_info *pinfo, 
 
         if (len > 0)
         {
-                payload_tvb = tvb_new_subset_length_caplen(tvb, off, len, tvb_reported_length_remaining(tvb, offset) );
+                payload_tvb = tvb_new_subset_length(tvb, off, len);
                 if ( ! dissector_try_heuristic(heur_opensafety_spdo_subdissector_list, payload_tvb, pinfo, epl_tree, &hdtbl_entry, &msgType))
                         call_dissector(data_dissector, payload_tvb, pinfo, epl_tree);
 
@@ -928,8 +928,8 @@ dissect_opensafety_spdo_message(tvbuff_t *message_tvb, packet_info *pinfo, proto
 static void dissect_opensafety_ssdo_payload ( packet_info *pinfo, tvbuff_t *new_tvb, proto_tree *ssdo_payload, uint8_t sacmd )
 {
     unsigned    dataLength   = 0, ctr = 0, n = 0, nCRCs = 0;
-    uint8_t     ssdoSubIndex = 0;
-    uint16_t    ssdoIndex    = 0, dispSSDOIndex = 0;
+    uint32_t    ssdoSubIndex = 0;
+    uint32_t    ssdoIndex    = 0, dispSSDOIndex = 0;
     uint32_t    sodLength    = 0, entry = 0;
     proto_item *item;
     proto_tree *sod_tree, *ext_tree;
@@ -1020,7 +1020,7 @@ static void dissect_opensafety_ssdo_payload ( packet_info *pinfo, tvbuff_t *new_
 
                 item = proto_tree_add_uint_format_value(ssdo_payload, hf_oss_ssdo_sod_index, new_tvb,
                                                         ctr, 2,  ssdoIndex, "0x%04X (%s)", ssdoIndex,
-                                                        val_to_str_ext_const( ((uint32_t) (dispSSDOIndex << 16) ),
+                                                        val_to_str_ext_const( dispSSDOIndex << 16,
                                                                               &opensafety_sod_idx_names_ext, "Unknown") );
                 if ( ssdoIndex != dispSSDOIndex )
                     proto_item_set_generated ( item );
@@ -1034,7 +1034,7 @@ static void dissect_opensafety_ssdo_payload ( packet_info *pinfo, tvbuff_t *new_
                 {
                     proto_tree_add_uint_format_value(sod_tree, hf_oss_ssdo_sod_subindex, new_tvb, ctr + 2, 1,
                                                      ssdoSubIndex, "0x%02X (%s)", ssdoSubIndex,
-                                                     val_to_str_ext_const(((uint32_t) (ssdoIndex << 16) + ssdoSubIndex),
+                                                     val_to_str_ext_const((ssdoIndex << 16) + ssdoSubIndex,
                                                                           &opensafety_sod_idx_names_ext, "Unknown") );
                 }
                 else
@@ -1214,8 +1214,8 @@ dissect_opensafety_ssdo_message(tvbuff_t *message_tvb, packet_info *pinfo, proto
         if ( packet->payload.ssdo->sacmd.initiate )
         {
             /* Use the lower 4 bits from the preload as size */
-            proto_tree_add_uint_format_value(ssdo_tree, hf_oss_ssdo_preload_queue, message_tvb, packet->frame.subframe2 + 4, 1,
-                    preload & 0x0F, "%d", preload & 0x0F );
+            proto_tree_add_uint(ssdo_tree, hf_oss_ssdo_preload_queue, message_tvb, packet->frame.subframe2 + 4, 1,
+                    preload & 0x0F);
         }
         else
         {
@@ -1796,8 +1796,8 @@ dissect_opensafety_checksum(tvbuff_t *message_tvb, packet_info *pinfo, proto_tre
     /* For a correct calculation of the second crc we need to know the scm udid.
      * If the dissection of the second frame has been triggered, we integrate the
      * crc for frame2 into the result */
-    return (bool) (frame1_crc == calc1_crc) &&
-            ( ( isSNMT || packet->scm_udid_valid ) == true ? (frame2_crc == calc2_crc) : true);
+    return (frame1_crc == calc1_crc) &&
+            ( ( isSNMT || packet->scm_udid_valid ) ? (frame2_crc == calc2_crc) : true);
 }
 
 static int
@@ -2036,7 +2036,7 @@ opensafety_endpoint_packet(void *pit, packet_info *pinfo,
     return TAP_PACKET_REDRAW;
 }
 
-static gboolean
+static bool
 opensafety_package_dissector(const char *protocolName, const char *sub_diss_handle,
                              bool b_frame2First, bool do_byte_swap, uint8_t force_nr_in_package,
                              tvbuff_t *given_tvb, packet_info *pinfo, proto_tree *tree, uint8_t transporttype )
@@ -2047,7 +2047,6 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
     bool                handled, dissectorCalled, call_sub_dissector, markAsMalformed;
     uint8_t             type, found, tempByte, previous_msg_id;
     uint16_t            frameStart1, frameStart2, byte_offset;
-    int                 reported_len;
     dissector_handle_t  protocol_dissector = NULL;
     proto_item         *opensafety_item;
     proto_tree         *opensafety_tree;
@@ -2067,7 +2066,7 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
     length = tvb_reported_length(given_tvb);
     /* Minimum package length is 11 */
     if ( length < OSS_MINIMUM_LENGTH )
-        return FALSE;
+        return false;
 
     /* Determine dissector handle for sub-dissection */
     if ( strlen( sub_diss_handle ) > 0 )
@@ -2078,8 +2077,6 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
             protocol_dissector = data_dissector;
     }
 
-    reported_len = tvb_reported_length_remaining(given_tvb, 0);
-
     /* This will swap the bytes according to MBTCP encoding */
     if ( do_byte_swap == true && global_mbtcp_big_endian == true )
     {
@@ -2087,7 +2084,7 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
          * to a "openSAFETY truncated" message. By ensuring, that we have enough
          * bytes to copy, this will be prevented. */
         if ( ! tvb_bytes_exist ( given_tvb, 0, length ) )
-            return FALSE;
+            return false;
 
         swbytes = (uint8_t *) tvb_memdup( pinfo->pool, given_tvb, 0, length);
 
@@ -2099,7 +2096,7 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
             tempByte = swbytes [ 2 * i ]; swbytes [ 2 * i ] = swbytes [ 2 * i + 1 ]; swbytes [ 2 * i + 1 ] = tempByte;
         }
 
-        message_tvb = tvb_new_real_data(swbytes, length, reported_len);
+        message_tvb = tvb_new_real_data(swbytes, length, length);
     } else {
         message_tvb = given_tvb;
     }
@@ -2133,7 +2130,7 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
              * check in findSafetyFrame for the msg id (this happens later in this routine)
              * frameLength is calculated/read directly from the dissected data. If frameLength and frameOffset together
              * are bigger than the reported length, the package is not really an openSAFETY package */
-            if ( packet->msg_id == 0 || ( frameOffset + frameLength ) > (unsigned)reported_len )
+            if ( packet->msg_id == 0 || ( frameOffset + frameLength ) > length )
                 break;
 
             found++;
@@ -2255,7 +2252,7 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
              * is fault, and therefore we return false. Increasing the frameOffset will lead to out-of-bounds
              * for tvb_* functions. And frameLength errors are misidentified packages most of the times anyway */
             if ( ( (int)frameLength - (int)( frameStart2 > frameStart1 ? frameStart2 : frameLength - frameStart1 ) ) < 0 )
-                return FALSE;
+                return false;
 
             /* Some SPDO based sanity checks, still a lot of faulty SPDOs remain, because they
              * cannot be filtered, without throwing out too many positives. */
@@ -2301,14 +2298,14 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
             if ( global_display_intergap_data == true && gapStart != frameOffset )
             {
                 /* Storing the gap data in subset, and calling the data dissector to display it */
-                gap_tvb = tvb_new_subset_length_caplen(message_tvb, gapStart, (frameOffset - gapStart), reported_len);
+                gap_tvb = tvb_new_subset_length(message_tvb, gapStart, frameOffset - gapStart);
                 call_dissector(data_dissector, gap_tvb, pinfo, tree);
             }
             /* Setting the gap to the next offset */
             gapStart = frameOffset + frameLength;
 
             /* Adding second data source */
-            next_tvb = tvb_new_subset_length_caplen ( message_tvb, frameOffset, frameLength, reported_len );
+            next_tvb = tvb_new_subset_length(message_tvb, frameOffset, frameLength);
 
             /* Adding a visual aid to the dissector tree */
             add_new_data_source(pinfo, next_tvb, "openSAFETY Frame");
@@ -2394,12 +2391,12 @@ opensafety_package_dissector(const char *protocolName, const char *sub_diss_hand
         if ( frameOffset < length && global_display_intergap_data == true && gapStart != frameOffset )
         {
             /* Storing the gap data in subset, and calling the data dissector to display it */
-            gap_tvb = tvb_new_subset_length_caplen(message_tvb, gapStart, (length - gapStart), reported_len);
+            gap_tvb = tvb_new_subset_length(message_tvb, gapStart, length - gapStart);
             call_dissector(data_dissector, gap_tvb, pinfo, tree);
         }
     }
 
-    return ( handled ? TRUE : FALSE );
+    return ( handled ? true : false );
 }
 
 static bool
@@ -2430,7 +2427,7 @@ dissect_opensafety_epl(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tr
         /* We check if we have a asynchronous message, or a synchronous message. In case of
          * asynchronous messages, SPDO packages are not valid. */
 
-        result = (bool)opensafety_package_dissector("openSAFETY/Powerlink", "",
+        result = opensafety_package_dissector("openSAFETY/Powerlink", "",
                 false, false, 0, message_tvb, pinfo, epl_tree, epl_msgtype );
 
         bDissector_Called_Once_Before = false;
@@ -2478,13 +2475,13 @@ dissect_opensafety_siii(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *t
 static bool
 dissect_opensafety_siii_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    return (bool)dissect_opensafety_siii(tvb, pinfo, tree, data);
+    return dissect_opensafety_siii(tvb, pinfo, tree, data);
 }
 
-static gboolean
+static int
 dissect_opensafety_pn_io(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *data _U_ )
 {
-    gboolean        result     = FALSE;
+    bool            result     = false;
 
     /* We will call the pn_io dissector by using call_dissector(). The epl dissector will then call
      * the heuristic openSAFETY dissector again. By setting this information, we prevent a dissector
@@ -2503,15 +2500,15 @@ dissect_opensafety_pn_io(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *
 static bool
 dissect_opensafety_pn_io_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    return (bool)dissect_opensafety_pn_io(tvb, pinfo, tree, data);
+    return dissect_opensafety_pn_io(tvb, pinfo, tree, data);
 }
 
 
-static gboolean
+static int
 dissect_opensafety_mbtcp(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *data _U_ )
 {
     if ( ! global_enable_mbtcp )
-        return FALSE;
+        return false;
 
     /* When Modbus/TCP gets dissected, openSAFETY would be sorted as a child protocol. Although,
      * this behaviour is technically correct, it differs from other implemented IEM protocol handlers.
@@ -2521,7 +2518,7 @@ dissect_opensafety_mbtcp(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *
                                         OPENSAFETY_ANY_TRANSPORT);
 }
 
-static gboolean
+static bool
 opensafety_udp_transport_dissector(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree)
 {
     proto_item      *ti = NULL;
@@ -2550,13 +2547,13 @@ opensafety_udp_transport_dissector(tvbuff_t *message_tvb, packet_info *pinfo, pr
             false, 0, os_tvb, pinfo, tree, OPENSAFETY_ANY_TRANSPORT ) )
         call_dissector(find_dissector("data"), os_tvb, pinfo, transport_tree);
 
-    return TRUE;
+    return true;
 }
 
-static gboolean
+static int
 dissect_opensafety_udpdata(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *tree, void *data _U_ )
 {
-    gboolean        result   = FALSE;
+    bool            result   = false;
     static uint32_t frameNum = 0;
     static uint32_t frameIdx = 0;
 

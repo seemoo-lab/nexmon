@@ -13,13 +13,15 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_WIRETAP
 
 #include "ttl.h"
 
 #include <string.h>
 #include <epan/dissectors/packet-socketcan.h>
+#include <epan/dissectors/packet-lin.h>
+#include <epan/dissectors/packet-flexray.h>
 #include <wsutil/wslog.h>
 #include <wsutil/report_message.h>
 #include <wsutil/filesystem.h>
@@ -37,6 +39,7 @@ static int ttl_file_type_subtype = -1;
 
 #define TTL_ADDRESS_NAME_PREFS      "file_format_ttl_names"
 #define TTL_ADDRESS_MASTER_PREFS    "file_format_ttl_masters"
+#define TTL_MAX_CORRUPTED_BLOCKS    1024
 
 void register_ttl(void);
 static bool ttl_read(wtap* wth, wtap_rec* rec, int* err, char** err_info, int64_t* data_offset);
@@ -79,7 +82,7 @@ typedef struct ttl_read {
 /*
  * Values smaller than 0 indicate errors, 0 means OK, 1 means everything is
  * good, but the entry is unsupported. 2 means that the file looks corrupted
- * or unaliged and our caller should try to fix the situation.
+ * or unaligned and our caller should try to fix the situation.
  */
 typedef enum {
     TTL_ERROR = -1,
@@ -143,18 +146,6 @@ ttl_free_reassembled_entry(void* data) {
         g_free(data);
     }
 }
-
-#ifndef OPT_EPB_FLAGS
-    #define OPT_EPB_FLAGS   0x0002  /* Copied from pcapng.c */
-#endif
-
-#ifndef FLEXRAY_FRAME
-    #define FLEXRAY_FRAME   0x01    /* Copied from packet-flexray.c */
-#endif
-
-#ifndef FLEXRAY_SYMBOL
-    #define FLEXRAY_SYMBOL  0x02    /* Copied from packet-flexray.c */
-#endif
 
 static void
 fix_endianness_ttl_fileheader(ttl_fileheader_t* header) {
@@ -1564,8 +1555,8 @@ static const ttl_addr_to_iface_entry_t* ttl_lookup_interface_int(wtap* wth, uint
 
     /* Recursion limit to avoid coding errors. */
     if (iteration > TTL_LOOKUP_INTERFACE_MAX_ITERATIONS) {
-        *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup_printf("ttl_lookup_interface(): more iterations than allowed: %d (max. %d)", iteration, TTL_LOOKUP_INTERFACE_MAX_ITERATIONS);
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = ws_strdup_printf("ttl: more iterations than allowed: %d (max. %d)", iteration, TTL_LOOKUP_INTERFACE_MAX_ITERATIONS);
         return NULL;
     }
 
@@ -1624,8 +1615,6 @@ ttl_init_rec(wtap_rec* rec, uint64_t timestamp, uint16_t addr, int pkt_encap, ui
     rec->rec_header.packet_header.caplen = caplen;
     rec->rec_header.packet_header.len = len;
 
-    rec->ts_rel_cap_valid = false;
-
     rec->rec_header.packet_header.interface_id = iface_id;
 
     wtap_block_add_uint32_option(rec->block, OPT_PKT_QUEUE, addr);
@@ -1644,7 +1633,7 @@ ttl_read_bytes(ttl_read_t* in, void* out, uint16_t size, int* err, char** err_in
         if (size != 0) {
             if ((in->cur_pos + size) > in->size) {
                 *err = WTAP_ERR_SHORT_READ;
-                *err_info = ws_strdup("ttl_read_bytes(): Attempt to read beyond buffer end");
+                *err_info = ws_strdup("ttl: Attempt to read beyond buffer end");
                 return false;
             }
             if (out != NULL) {
@@ -1655,7 +1644,7 @@ ttl_read_bytes(ttl_read_t* in, void* out, uint16_t size, int* err, char** err_in
         break;
     default:
         *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup_printf("ttl_read_bytes(): ttl_read_t unknown validity flags: %d", in->validity);
+        *err_info = ws_strdup_printf("ttl: ttl_read_t unknown validity flags: %d", in->validity);
         return false;
     }
 
@@ -1697,7 +1686,7 @@ ttl_add_eth_dir_option(wtap_rec* rec, uint16_t status) {
         break;
     }
 
-    wtap_block_add_uint32_option(rec->block, OPT_EPB_FLAGS, opt);
+    wtap_block_add_uint32_option(rec->block, OPT_PKT_FLAGS, opt);
 }
 
 static ttl_result_t
@@ -1738,7 +1727,7 @@ static void
 ttl_add_can_dir_option(wtap_rec* rec) {
     uint32_t opt = PACK_FLAGS_DIRECTION_INBOUND;    /* For the moment, we only support this */
 
-    wtap_block_add_uint32_option(rec->block, OPT_EPB_FLAGS, opt);
+    wtap_block_add_uint32_option(rec->block, OPT_PKT_FLAGS, opt);
 }
 
 static const uint8_t canfd_dlc_to_length[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64 };
@@ -1852,7 +1841,7 @@ static void
 ttl_add_lin_dir_option(wtap_rec* rec) {
     uint32_t opt = PACK_FLAGS_DIRECTION_INBOUND;    /* For the moment, we only support this */
 
-    wtap_block_add_uint32_option(rec->block, OPT_EPB_FLAGS, opt);
+    wtap_block_add_uint32_option(rec->block, OPT_PKT_FLAGS, opt);
 }
 
 static ttl_result_t
@@ -1873,7 +1862,7 @@ ttl_read_lin_data_entry(wtap_rec* rec, int* err, char** err_info, ttl_read_t* in
     lin_header[1] = 0; /* reserved */
     lin_header[2] = 0; /* reserved */
     lin_header[3] = 0; /* reserved */
-    lin_header[4] = dlc << 4;   /* dlc (4bit) | type (2bit) | checksum type (2bit) */
+    lin_header[4] = (dlc << 4) | (LIN_MSG_TYPE_FRAME << 2); /* dlc (4bit) | type (2bit) | checksum type (2bit) */
     lin_header[5] = status & TTL_LIN_STATUS_PID_MASK;  /* parity (2bit) | id (6bit) */
     lin_header[6] = 0; /* checksum */
     lin_header[7] = 0; /* errors */
@@ -1921,7 +1910,7 @@ static void
 ttl_add_flexray_dir_option(wtap_rec* rec) {
     uint32_t opt = PACK_FLAGS_DIRECTION_INBOUND;    /* For the moment, we only support this */
 
-    wtap_block_add_uint32_option(rec->block, OPT_EPB_FLAGS, opt);
+    wtap_block_add_uint32_option(rec->block, OPT_PKT_FLAGS, opt);
 }
 
 static ttl_result_t
@@ -2021,13 +2010,13 @@ ttl_check_segmented_message_recursion(const ttl_read_t* in, int* err, char** err
 
     if (in->validity != VALIDITY_BUF) {
         *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup("ttl_check_segmented_message_recursion: input buffer is not valid");
+        *err_info = ws_strdup("ttl: input buffer is not valid");
         return false;
     }
 
     if (sizeof(ttl_entryheader_t) > in->size - in->cur_pos) {
-        *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup("ttl_check_segmented_message_recursion: input buffer too short");
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = ws_strdup("ttl: input buffer too short");
         return false;
     }
     memcpy(&header, in->buf + in->cur_pos, sizeof(ttl_entryheader_t));
@@ -2050,7 +2039,7 @@ ttl_fix_segmented_message_entry_timestamp(const ttl_read_t* in, uint64_t timesta
 
     if (in->validity != VALIDITY_BUF) {
         *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup("ttl_fix_segmented_message_entry_timestamp: input buffer is not valid");
+        *err_info = ws_strdup("ttl: input buffer is not valid");
         return false;
     }
 
@@ -2063,8 +2052,8 @@ ttl_fix_segmented_message_entry_timestamp(const ttl_read_t* in, uint64_t timesta
     if ((header.size_type >> 12) == TTL_BUS_DATA_ENTRY) {
         if (sizeof(uint64_t) > in->size - (in->cur_pos + sizeof(ttl_entryheader_t))) {
         buf_too_small:
-            *err = WTAP_ERR_INTERNAL;
-            *err_info = ws_strdup("ttl_fix_segmented_message_entry_timestamp: input buffer too short");
+            *err = WTAP_ERR_BAD_FILE;
+            *err_info = ws_strdup("ttl: input buffer too short");
             return false;
         }
         timestamp = GUINT64_TO_LE(timestamp);
@@ -2239,7 +2228,7 @@ static ttl_result_t ttl_read_segmented_message_entry(wtap* wth, wtap_rec* rec, i
     }
 
     /* Read it as if it was a normal entry, but passing the buffer
-     * as input insted of the file handler.
+     * as input instead of the file handler.
      */
     return ttl_read_entry(wth, rec, err, err_info, &new_in, 0, new_in.size);
 }
@@ -2263,6 +2252,9 @@ static ttl_result_t ttl_read_entry(wtap* wth, wtap_rec* rec, int* err, char** er
         /*
          * We probably have a corrupted file, try to recover our alignment
          * by skipping to the next block.
+         *
+         * Note this doesn't read bytes, so wth->fh->eof might not get set
+         * even offset is past the end of the file.
          */
         return TTL_CORRUPTED;
     }
@@ -2324,7 +2316,7 @@ ttl_xml_node_get_number(xmlNodePtr node, xmlXPathContextPtr ctx, double *ret) {
         return false;
     }
 
-    result = xmlXPathNodeEval(node, "./Number[1]/text()", ctx);
+    result = xmlXPathNodeEval(node, (const xmlChar*)"./Number[1]/text()", ctx);
     if (result && result->type == XPATH_NODESET && !xmlXPathNodeSetIsEmpty(result->nodesetval)) {
         val = xmlXPathCastToNumber(result);
         if (!xmlXPathIsNaN(val)) {
@@ -2334,6 +2326,7 @@ ttl_xml_node_get_number(xmlNodePtr node, xmlXPathContextPtr ctx, double *ret) {
         }
     }
 
+    xmlXPathFreeObject(result);
     return false;
 }
 
@@ -2348,15 +2341,17 @@ ttl_xml_node_get_string(xmlNodePtr node, xmlXPathContextPtr ctx, const char* nam
 
     str = ws_strdup_printf("./%s[1]/text()", name);
 
-    result = xmlXPathNodeEval(node, str, ctx);
+    result = xmlXPathNodeEval(node, (const xmlChar*)str, ctx);
     g_free(str);
     if (result && result->type == XPATH_NODESET && !xmlXPathNodeSetIsEmpty(result->nodesetval)) {
-        str = xmlXPathCastToString(result);
+        str = (char*)xmlXPathCastToString(result);
+        xmlXPathFreeObject(result);
         *ret = ws_strdup(str);
         xmlFree(str);
         return true;
     }
 
+    xmlXPathFreeObject(result);
     return false;
 }
 
@@ -2381,20 +2376,20 @@ ttl_process_xml_config(ttl_t* ttl, const char* text, int size) {
     }
 
     ctx = xmlXPathNewContext(doc);
-    cascades = xmlXPathEvalExpression("/LoggerConfiguration/HWList/Cascades/Cascade", ctx);
+    cascades = xmlXPathEvalExpression((const xmlChar*)"/LoggerConfiguration/HWList/Cascades/Cascade", ctx);
     if (cascades && cascades->type == XPATH_NODESET && !xmlXPathNodeSetIsEmpty(cascades->nodesetval)) {
         for (i = 0; i < cascades->nodesetval->nodeNr; i++) {
             if (ttl_xml_node_get_number(cascades->nodesetval->nodeTab[i], ctx, &val) && val >= 0 && val <= 7) {
                 cascade = (uint16_t)val;
                 if (val == 0) { /* Only the configuration of the logger is inside the TTL file. The TAPs have their own configuration */
 
-                    devices = xmlXPathNodeEval(cascades->nodesetval->nodeTab[i], "./Devices/Device", ctx);
+                    devices = xmlXPathNodeEval(cascades->nodesetval->nodeTab[i], (const xmlChar*)"./Devices/Device", ctx);
                     if (devices && devices->type == XPATH_NODESET && !xmlXPathNodeSetIsEmpty(devices->nodesetval)) {
                         for (j = 0; j < devices->nodesetval->nodeNr; j++) {
                             if (ttl_xml_node_get_number(devices->nodesetval->nodeTab[j], ctx, &val) && val >= 0 && val <= 15) {
                                 device = (uint16_t)val;
 
-                                functions = xmlXPathNodeEval(devices->nodesetval->nodeTab[j], "./Functions/Function", ctx);
+                                functions = xmlXPathNodeEval(devices->nodesetval->nodeTab[j], (const xmlChar*)"./Functions/Function", ctx);
                                 if (functions && functions->type == XPATH_NODESET && !xmlXPathNodeSetIsEmpty(functions->nodesetval)) {
                                     for (k = 0; k < functions->nodesetval->nodeNr; k++) {
                                         if (ttl_xml_node_get_number(functions->nodesetval->nodeTab[k], ctx, &val) && val >= 0 && val <= 63) {
@@ -2521,13 +2516,13 @@ ttl_is_master_slave_relation_correct(uint16_t master, uint16_t slave) {
 }
 
 static bool
-ttl_parse_masters_pref_file(ttl_t* ttl, const char* path) {
+ttl_parse_masters_pref_file(GHashTable* ht, const char* path) {
     FILE*       fp;
     char        line[MAX_LINELEN];
     char*       cp;
     uint16_t    addr, tmp;
 
-    if (path == NULL) {
+    if (ht == NULL || path == NULL) {
         return false;
     }
 
@@ -2565,11 +2560,11 @@ ttl_parse_masters_pref_file(ttl_t* ttl, const char* path) {
 
         if (tmp) {  /* The address is coupled to the master */
             if (addr != 0 && ttl_is_master_slave_relation_correct(addr - 1, addr)) {
-                g_hash_table_insert(ttl->address_to_master_ht, GUINT_TO_POINTER(addr), GUINT_TO_POINTER(addr - 1));
+                g_hash_table_insert(ht, GUINT_TO_POINTER(addr), GUINT_TO_POINTER(addr - 1));
             }
         }
         else {  /* The address is independent from the master */
-            g_hash_table_insert(ttl->address_to_master_ht, GUINT_TO_POINTER(addr), GUINT_TO_POINTER(addr));
+            g_hash_table_insert(ht, GUINT_TO_POINTER(addr), GUINT_TO_POINTER(addr));
         }
     }
 
@@ -2587,17 +2582,16 @@ ttl_parse_masters_pref_file(ttl_t* ttl, const char* path) {
  * by ttl_lookup_interface() according to the default behaviour (currently,
  * independent interface for the logger and coupled interface for the taps).
  */
-static bool
-ttl_init_masters_from_pref_file(ttl_t* ttl) {
+bool ttl_init_masters_from_pref_file(GHashTable* ht, const char* app_env_var_prefix) {
     char*   pref_file;
     bool    ret;
 
-    pref_file = get_persconffile_path(TTL_ADDRESS_MASTER_PREFS, true);
-    ret = ttl_parse_masters_pref_file(ttl, pref_file);
+    pref_file = get_persconffile_path(TTL_ADDRESS_MASTER_PREFS, true, app_env_var_prefix);
+    ret = ttl_parse_masters_pref_file(ht, pref_file);
     g_free(pref_file);
     if (!ret) {
-        pref_file = get_persconffile_path(TTL_ADDRESS_MASTER_PREFS, false);
-        ret = ttl_parse_masters_pref_file(ttl, pref_file);
+        pref_file = get_persconffile_path(TTL_ADDRESS_MASTER_PREFS, false, app_env_var_prefix);
+        ret = ttl_parse_masters_pref_file(ht, pref_file);
         g_free(pref_file);
     }
 
@@ -2605,14 +2599,14 @@ ttl_init_masters_from_pref_file(ttl_t* ttl) {
 }
 
 static bool
-ttl_parse_names_pref_file(ttl_t* ttl, const char* path) {
+ttl_parse_names_pref_file(GHashTable* ht, const char* path) {
     FILE*       fp;
     char        line[MAX_LINELEN];
     char*       cp;
     uint16_t    addr, tmp;
     char*       name;
 
-    if (path == NULL) {
+    if (ht == NULL || path == NULL) {
         return false;
     }
 
@@ -2646,7 +2640,7 @@ ttl_parse_names_pref_file(ttl_t* ttl, const char* path) {
         cp = strtok(NULL, " \t");
         if (cp != NULL && strlen(cp) != 0) {
             name = ws_strdup(cp);
-            g_hash_table_insert(ttl->address_to_name_ht, GUINT_TO_POINTER(addr), name);
+            g_hash_table_insert(ht, GUINT_TO_POINTER(addr), name);
         }
     }
 
@@ -2661,17 +2655,16 @@ ttl_parse_names_pref_file(ttl_t* ttl, const char* path) {
  * is used. If also that is not present, a meaningful name is generated in
  * ttl_add_interface_name() starting from the interface address.
  */
-static bool
-ttl_init_names_from_pref_file(ttl_t* ttl) {
+bool ttl_init_names_from_pref_file(GHashTable* ht, const char* app_env_var_prefix) {
     char*   pref_file;
     bool    ret;
 
-    pref_file = get_persconffile_path(TTL_ADDRESS_NAME_PREFS, true);
-    ret = ttl_parse_names_pref_file(ttl, pref_file);
+    pref_file = get_persconffile_path(TTL_ADDRESS_NAME_PREFS, true, app_env_var_prefix);
+    ret = ttl_parse_names_pref_file(ht, pref_file);
     g_free(pref_file);
     if (!ret) {
-        pref_file = get_persconffile_path(TTL_ADDRESS_NAME_PREFS, false);
-        ret = ttl_parse_names_pref_file(ttl, pref_file);
+        pref_file = get_persconffile_path(TTL_ADDRESS_NAME_PREFS, false, app_env_var_prefix);
+        ret = ttl_parse_names_pref_file(ht, pref_file);
         g_free(pref_file);
     }
 
@@ -2734,9 +2727,9 @@ ttl_open(wtap* wth, int* err, char** err_info) {
     /* This seems to be a TLL! */
 
     /* Check for valid block size */
-    if (header.block_size == 0) {
+    if (header.block_size < sizeof(ttl_entryheader_t)) {
         *err = WTAP_ERR_BAD_FILE;
-        *err_info = ws_strdup("ttl: block size cannot be 0");
+        *err_info = ws_strdup("ttl: entry block size cannot be smaller than an entry header");
         return WTAP_OPEN_ERROR;
     }
     /* Check for a valid header length */
@@ -2772,7 +2765,7 @@ ttl_open(wtap* wth, int* err, char** err_info) {
             offset += TTL_LOGFILE_INFO_SIZE;
             unsigned int xml_len = header.header_size - offset;
             if (xml_len != 0) {
-                unsigned char* xml = g_try_malloc(xml_len);
+                char* xml = g_try_malloc(xml_len);
                 if (xml == NULL) {
                     *err = WTAP_ERR_INTERNAL;
                     *err_info = ws_strdup("ttl: cannot allocate memory");
@@ -2800,8 +2793,8 @@ ttl_open(wtap* wth, int* err, char** err_info) {
         }
     }
 
-    ttl_init_masters_from_pref_file(ttl);
-    ttl_init_names_from_pref_file(ttl);
+    ttl_init_masters_from_pref_file(ttl->address_to_master_ht, wth->app_env_var_prefix);
+    ttl_init_names_from_pref_file(ttl->address_to_name_ht, wth->app_env_var_prefix);
 
     wth->priv = (void*)ttl;
     wth->file_encap = WTAP_ENCAP_NONE;
@@ -2821,6 +2814,8 @@ ttl_next_block(const ttl_t* ttl, int64_t pos) {
         return pos;
     }
 
+    // ttl_open should assure this
+    ws_assert(ttl->block_size >= sizeof(ttl_entryheader_t));
     return pos + ttl->block_size - ((pos - ttl->header_size) % ttl->block_size);
 }
 
@@ -2828,6 +2823,7 @@ static bool ttl_read(wtap* wth, wtap_rec* rec, int* err, char** err_info, int64_
     ttl_read_t      input;
     int64_t         pos, end;
     ttl_result_t    res;
+    unsigned        corrupted_blocks = 0;
 
     input.fh = wth->fh;
     input.validity = VALIDITY_FH;
@@ -2838,6 +2834,11 @@ static bool ttl_read(wtap* wth, wtap_rec* rec, int* err, char** err_info, int64_
 
         res = ttl_read_entry(wth, rec, err, err_info, &input, pos, end);
         if (G_UNLIKELY(res == TTL_CORRUPTED)) {
+            if (++corrupted_blocks > TTL_MAX_CORRUPTED_BLOCKS) {
+                *err = WTAP_ERR_BAD_FILE;
+                *err_info = ws_strdup("ttl: too many consecutive corrupted blocks");
+                return false;
+            }
             ws_warning("ttl_read(): Unaligned block found, skipping to next block offset: 0x%" PRIx64, end);
             report_warning("Found unaligned TTL block. Skipping to the next one.");
             if (file_seek(wth->fh, end, SEEK_SET, err) < 0) {

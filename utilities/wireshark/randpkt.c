@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <glib.h>
@@ -23,8 +23,8 @@
 #include <wsutil/cmdarg_err.h>
 #include <wsutil/file_util.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 #include <wsutil/privileges.h>
-#include <cli_main.h>
 
 #ifdef HAVE_PLUGINS
 #include <wsutil/plugins.h>
@@ -109,7 +109,7 @@ main(int argc, char *argv[])
     int produce_count = 1000;
     int file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_UNKNOWN;
     randpkt_example *example;
-    uint8_t* type = NULL;
+    char* type = NULL;
     bool allrandom = false;
     wtap_dumper *savedump;
     int ret = EXIT_SUCCESS;
@@ -121,6 +121,8 @@ main(int argc, char *argv[])
     };
 #define OPTSTRING "b:c:F:ht:rv"
     static const char optstring[] = OPTSTRING;
+    const struct file_extension_info* file_extensions;
+    unsigned num_extensions;
 
     /* Set the program name. */
     g_set_prgname("randpkt");
@@ -128,7 +130,7 @@ main(int argc, char *argv[])
     cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init(vcmdarg_err);
+    ws_log_init(vcmdarg_err, "Randpkt Debug Console");
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -144,7 +146,7 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0]);
+    configuration_init_error = configuration_init(argv[0], "wireshark");
     if (configuration_init_error != NULL) {
         fprintf(stderr,
             "capinfos: Can't get pathname of directory containing the capinfos program: %s.\n",
@@ -154,13 +156,14 @@ main(int argc, char *argv[])
 
     init_report_failure_message("randpkt");
 
-    wtap_init(true);
+    application_file_extensions(&file_extensions, &num_extensions);
+    wtap_init(true, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
 #ifdef _WIN32
     create_app_running_mutex();
 #endif /* _WIN32 */
 
-    ws_init_version_info("Randpkt", NULL, NULL);
+    ws_init_version_info("Randpkt", NULL, application_get_vcs_version_info, NULL, NULL);
 
     while ((opt = ws_getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {

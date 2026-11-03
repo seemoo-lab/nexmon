@@ -121,6 +121,7 @@ enum {
 	/* LTE*/
 	GSMTAP_SUB_LTE_RRC,
 	GSMTAP_SUB_LTE_NAS,
+	GSMTAP_SUB_LTE_MAC,
 	GSMTAP_SUB_LAPD,
 	GSMTAP_SUB_FR,
 	GSMTAP_SUB_V5EF,
@@ -140,74 +141,7 @@ enum {
 	GSMTAP_SIM_SUB_MAX
 };
 
-enum {
-	GSMTAP_RRC_SUB_DL_DCCH_Message = 0,
-	GSMTAP_RRC_SUB_UL_DCCH_Message,
-	GSMTAP_RRC_SUB_DL_CCCH_Message,
-	GSMTAP_RRC_SUB_UL_CCCH_Message,
-	GSMTAP_RRC_SUB_PCCH_Message,
-	GSMTAP_RRC_SUB_DL_SHCCH_Message,
-	GSMTAP_RRC_SUB_UL_SHCCH_Message,
-	GSMTAP_RRC_SUB_BCCH_FACH_Message,
-	GSMTAP_RRC_SUB_BCCH_BCH_Message,
-	GSMTAP_RRC_SUB_MCCH_Message,
-	GSMTAP_RRC_SUB_MSCH_Message,
-	GSMTAP_RRC_SUB_HandoverToUTRANCommand,
-	GSMTAP_RRC_SUB_InterRATHandoverInfo,
-	GSMTAP_RRC_SUB_SystemInformation_BCH,
-	GSMTAP_RRC_SUB_System_Information_Container,
-	GSMTAP_RRC_SUB_UE_RadioAccessCapabilityInfo,
-	GSMTAP_RRC_SUB_MasterInformationBlock,
-	GSMTAP_RRC_SUB_SysInfoType1,
-	GSMTAP_RRC_SUB_SysInfoType2,
-	GSMTAP_RRC_SUB_SysInfoType3,
-	GSMTAP_RRC_SUB_SysInfoType4,
-	GSMTAP_RRC_SUB_SysInfoType5,
-	GSMTAP_RRC_SUB_SysInfoType5bis,
-	GSMTAP_RRC_SUB_SysInfoType6,
-	GSMTAP_RRC_SUB_SysInfoType7,
-	GSMTAP_RRC_SUB_SysInfoType8,
-	GSMTAP_RRC_SUB_SysInfoType9,
-	GSMTAP_RRC_SUB_SysInfoType10,
-	GSMTAP_RRC_SUB_SysInfoType11,
-	GSMTAP_RRC_SUB_SysInfoType11bis,
-	GSMTAP_RRC_SUB_SysInfoType12,
-	GSMTAP_RRC_SUB_SysInfoType13,
-	GSMTAP_RRC_SUB_SysInfoType13_1,
-	GSMTAP_RRC_SUB_SysInfoType13_2,
-	GSMTAP_RRC_SUB_SysInfoType13_3,
-	GSMTAP_RRC_SUB_SysInfoType13_4,
-	GSMTAP_RRC_SUB_SysInfoType14,
-	GSMTAP_RRC_SUB_SysInfoType15,
-	GSMTAP_RRC_SUB_SysInfoType15bis,
-	GSMTAP_RRC_SUB_SysInfoType15_1,
-	GSMTAP_RRC_SUB_SysInfoType15_1bis,
-	GSMTAP_RRC_SUB_SysInfoType15_2,
-	GSMTAP_RRC_SUB_SysInfoType15_2bis,
-	GSMTAP_RRC_SUB_SysInfoType15_2ter,
-	GSMTAP_RRC_SUB_SysInfoType15_3,
-	GSMTAP_RRC_SUB_SysInfoType15_3bis,
-	GSMTAP_RRC_SUB_SysInfoType15_4,
-	GSMTAP_RRC_SUB_SysInfoType15_5,
-	GSMTAP_RRC_SUB_SysInfoType15_6,
-	GSMTAP_RRC_SUB_SysInfoType15_7,
-	GSMTAP_RRC_SUB_SysInfoType15_8,
-	GSMTAP_RRC_SUB_SysInfoType16,
-	GSMTAP_RRC_SUB_SysInfoType17,
-	GSMTAP_RRC_SUB_SysInfoType18,
-	GSMTAP_RRC_SUB_SysInfoType19,
-	GSMTAP_RRC_SUB_SysInfoType20,
-	GSMTAP_RRC_SUB_SysInfoType21,
-	GSMTAP_RRC_SUB_SysInfoType22,
-	GSMTAP_RRC_SUB_SysInfoTypeSB1,
-	GSMTAP_RRC_SUB_SysInfoTypeSB2,
-	GSMTAP_RRC_SUB_ToTargetRNC_Container,
-	GSMTAP_RRC_SUB_TargetRNC_ToSourceRNC_Container,
-
-	GSMTAP_RRC_SUB_MAX
-};
-
-static const value_string rrc_sub_types[] = {
+const value_string rrc_sub_types[] = {
 	{ GSMTAP_RRC_SUB_DL_DCCH_Message,			"RRC DL-DCCH" },
 	{ GSMTAP_RRC_SUB_UL_DCCH_Message,			"RRC UL-DCCH" },
 	{ GSMTAP_RRC_SUB_DL_CCCH_Message,			"RRC DL-CCCH" },
@@ -476,7 +410,7 @@ static const int gsmtap_to_tetra[9] = {
 	0
 };
 
-static const value_string gsmtap_types[] = {
+const value_string gsmtap_types[] = {
 	{ GSMTAP_TYPE_UM,		"GSM Um (MS<->BTS)" },
 	{ GSMTAP_TYPE_ABIS,		"GSM Abis (BTS<->BSC)" },
 	{ GSMTAP_TYPE_UM_BURST,		"GSM Um burst (MS<->BTS)" },
@@ -633,7 +567,7 @@ dissect_um_voice(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 	proto_tree_add_item(tree, hf_um_voice_type, tvb, 0, 1, ENC_NA);
 
-	payload_tvb = tvb_new_subset_length(tvb, 1, tvb_reported_length(tvb)-1);
+	payload_tvb = tvb_new_subset_remaining(tvb, 1);
 	call_dissector(sub_handles[GSMTAP_SUB_DATA], payload_tvb, pinfo, tree);
 }
 
@@ -1055,6 +989,9 @@ dissect_gsmtap_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 			sub_handle = GSMTAP_SUB_DATA;
 		}
 		break;
+	case GSMTAP_TYPE_LTE_MAC_FRAMED:
+		sub_handle = GSMTAP_SUB_LTE_MAC;
+		break;
 
 	case GSMTAP_TYPE_UM:
 		if (l1h_tvb)
@@ -1406,6 +1343,7 @@ proto_reg_handoff_gsmtap(void)
 	sub_handles[GSMTAP_SUB_GMR1_LAPSAT] = find_dissector_add_dependency("lapsat", proto_gsmtap);
 	sub_handles[GSMTAP_SUB_GMR1_RACH] = find_dissector_add_dependency("gmr1_rach", proto_gsmtap);
 	sub_handles[GSMTAP_SUB_UMTS_RRC] = find_dissector_add_dependency("rrc", proto_gsmtap);
+	sub_handles[GSMTAP_SUB_LTE_MAC] = find_dissector_add_dependency("mac-lte-framed", proto_gsmtap);
 	sub_handles[GSMTAP_SUB_LAPD] = find_dissector_add_dependency("lapd-phdr", proto_gsmtap);
 	sub_handles[GSMTAP_SUB_FR] = find_dissector_add_dependency("fr", proto_gsmtap);
 	sub_handles[GSMTAP_SUB_V5EF] = find_dissector_add_dependency("v5ef", proto_gsmtap);
@@ -1508,6 +1446,7 @@ proto_reg_handoff_gsmtap(void)
 	lte_nas_sub_handles[GSMTAP_LTE_NAS_SEC_HEADER] = find_dissector_add_dependency("nas-eps", proto_gsmtap);
 
 	dissector_add_uint_with_preference("udp.port", GSMTAP_UDP_PORT, gsmtap_handle);
+	dissector_add_uint("wtap_encap", WTAP_ENCAP_GSMTAP_UM, gsmtap_handle);
 }
 
 /*

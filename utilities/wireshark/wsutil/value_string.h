@@ -23,10 +23,18 @@ extern "C" {
 
 /* VALUE TO STRING MATCHING */
 
+/**
+ * @brief Mapping between a 32-bit integer value and its string representation.
+ *
+ * Used to associate a `uint32_t` value with a human-readable string. This is
+ * commonly employed in protocol dissectors and diagnostic tools to convert
+ * numeric constants into descriptive labels.
+ */
 typedef struct _value_string {
-    uint32_t     value;
-    const char *strptr;
+    uint32_t     value;   /**< Numeric value to match. */
+    const char *strptr;   /**< Corresponding string representation. */
 } value_string;
+
 
 #if 0
   /* -----  VALUE_STRING "Helper" macros ----- */
@@ -102,53 +110,202 @@ enum { \
 #define _VS_ARRAY_ENTRY2(name, value) { value, #name },
 /* ----- ----- */
 
+/**
+ * @brief Convert a numeric value to a string using a value-string mapping.
+ *
+ * Searches the provided `value_string` array `vs` for a matching entry with
+ * value `val`. If found, returns the corresponding string. If not found,
+ * formats the value using the provided `fmt` string and returns the result.
+ * Memory is allocated using the specified `wmem_allocator_t` scope.
+ *
+ * @param scope  Memory allocator scope for the returned string.
+ * @param val    Numeric value to convert.
+ * @param vs     Array of value-string mappings.
+ * @param fmt    Format string used if `val` is not found in `vs`.
+ * @return       A newly allocated string representing the value.
+ */
 WS_DLL_PUBLIC
 char *
 val_to_str(wmem_allocator_t *scope, const uint32_t val, const value_string *vs, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Convert a numeric value to a constant string using a value-string mapping.
+ *
+ * Searches the provided `value_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding constant string. If not found, returns
+ * the provided `unknown_str`.
+ *
+ * This function does not allocate memory and is suitable for use in contexts
+ * where a constant string is sufficient and memory management must be avoided.
+ *
+ * @param val          Numeric value to convert.
+ * @param vs           Array of value-string mappings.
+ * @param unknown_str  Fallback string if `val` is not found in `vs`.
+ * @return             A constant string representing the value or `unknown_str`.
+ */
 WS_DLL_PUBLIC
 const char *
 val_to_str_const(const uint32_t val, const value_string *vs, const char *unknown_str);
 
+/**
+ * @brief Attempt to convert a numeric value to a string using a value-string mapping.
+ *
+ * Searches the provided `value_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding string. If not found, returns `NULL`.
+ *
+ * This function is useful when the caller wants to distinguish between known
+ * and unknown values without falling back to a default string.
+ *
+ * @param val  Numeric value to convert.
+ * @param vs   Array of value-string mappings.
+ * @return     A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val_to_str(const uint32_t val, const value_string *vs);
 
+/**
+ * @brief Attempt to convert a numeric value to a string and retrieve its index.
+ *
+ * Searches the provided `value_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding string and sets `*idx` to the index of
+ * the matching entry. If not found, returns `NULL` and leaves `*idx` unchanged.
+ *
+ * This function is useful when both the string representation and its position
+ * in the mapping array are needed.
+ *
+ * @param val   Numeric value to convert.
+ * @param vs    Array of value-string mappings.
+ * @param idx   Pointer to an integer to receive the index of the match.
+ * @return      A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val_to_str_idx(const uint32_t val, const value_string *vs, int *idx);
 
 /* 64-BIT VALUE TO STRING MATCHING */
 
+/**
+ * @brief Mapping between a 64-bit integer value and its string representation.
+ *
+ * Used to associate a `uint64_t` value with a human-readable string. This is
+ * useful for converting large numeric constants to descriptive labels in
+ * protocol dissectors, debug output, or UI elements.
+ */
 typedef struct _val64_string {
-    uint64_t     value;
-    const char *strptr;
+    uint64_t     value;   /**< Numeric value to match. */
+    const char *strptr;   /**< Corresponding string representation. */
 } val64_string;
 
+/**
+ * @brief Convert a 64-bit value to a string using a value-string mapping.
+ *
+ * Searches the provided `val64_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding string. If not found, formats the value
+ * using the provided `fmt` string and returns the result. The returned string
+ * is allocated using the specified `wmem_allocator_t` scope.
+ *
+ * @param scope  Memory allocator scope for the returned string.
+ * @param val    64-bit value to convert.
+ * @param vs     Array of 64-bit value-string mappings.
+ * @param fmt    Format string used if `val` is not found in `vs`.
+ * @return       A newly allocated string representing the value.
+ */
 WS_DLL_PUBLIC
 const char *
 val64_to_str_wmem(wmem_allocator_t* scope, const uint64_t val, const val64_string *vs, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Convert a 64-bit value to a constant string using a value-string mapping.
+ *
+ * Searches the provided `val64_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding constant string. If not found, returns
+ * the specified `unknown_str`.
+ *
+ * This function does not allocate memory and is suitable for use in contexts
+ * where a constant string is sufficient and memory management must be avoided.
+ *
+ * @param val          64-bit value to convert.
+ * @param vs           Array of 64-bit value-string mappings.
+ * @param unknown_str  Fallback string if `val` is not found in `vs`.
+ * @return             A constant string representing the value or `unknown_str`.
+ */
 WS_DLL_PUBLIC
 const char *
 val64_to_str_const(const uint64_t val, const val64_string *vs, const char *unknown_str);
 
+/**
+ * @brief Attempt to convert a 64-bit value to a string using a value-string mapping.
+ *
+ * Searches the provided `val64_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding string. If not found, returns `NULL`.
+ *
+ * This function is useful when the caller wants to detect unknown values
+ * without falling back to a default string or allocating memory.
+ *
+ * @param val  64-bit value to convert.
+ * @param vs   Array of 64-bit value-string mappings.
+ * @return     A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val64_to_str(const uint64_t val, const val64_string *vs);
 
+/**
+ * @brief Attempt to convert a 64-bit value to a string and retrieve its index.
+ *
+ * Searches the provided `val64_string` array `vs` for an entry matching `val`.
+ * If found, returns the corresponding string and sets `*idx` to the index of
+ * the matching entry. If not found, returns `NULL` and leaves `*idx` unchanged.
+ *
+ * This function is useful when both the string representation and its position
+ * in the mapping array are needed for further processing or diagnostics.
+ *
+ * @param val   64-bit value to convert.
+ * @param vs    Array of 64-bit value-string mappings.
+ * @param idx   Pointer to an integer to receive the index of the match.
+ * @return      A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val64_to_str_idx(const uint64_t val, const val64_string *vs, int *idx);
 
 /* STRING TO VALUE MATCHING */
 
+/**
+ * @brief Convert a string to its corresponding numeric value using a value-string mapping.
+ *
+ * Searches the provided `value_string` array `vs` for an entry whose string matches `val`.
+ * If found, returns the associated numeric value. If not found, returns `err_val`.
+ *
+ * This function is useful for parsing user input or protocol fields that use
+ * string representations of enumerated values.
+ *
+ * @param val      String to convert.
+ * @param vs       Array of value-string mappings.
+ * @param err_val  Value to return if `val` is not found in `vs`.
+ * @return         The numeric value corresponding to `val`, or `err_val` if not found.
+ */
 WS_DLL_PUBLIC
 uint32_t
 str_to_val(const char *val, const value_string *vs, const uint32_t err_val);
 
+/**
+ * @brief Retrieve the index of a string in a value-string mapping array.
+ *
+ * Searches the provided `value_string` array `vs` for an entry whose string
+ * matches `val`. If found, returns the index of the matching entry. If not
+ * found, returns -1.
+ *
+ * This function is useful when the caller needs the position of a matched
+ * string for further processing or lookup.
+ *
+ * @param val  String to search for.
+ * @param vs   Array of value-string mappings.
+ * @return     Index of the matching entry, or -1 if not found.
+ */
 WS_DLL_PUBLIC
 int
 str_to_val_idx(const char *val, const value_string *vs);
@@ -158,46 +315,147 @@ str_to_val_idx(const char *val, const value_string *vs);
 typedef struct _value_string_ext value_string_ext;
 typedef const value_string *(*_value_string_match2_t)(const uint32_t, value_string_ext*);
 
+/**
+ * @brief Extended metadata for a value_string array.
+ *
+ * Encapsulates additional information and utilities for working with a
+ * `value_string` array, including match logic, bounds, and memory scope.
+ * This structure supports enhanced lookup and error reporting functionality.
+ */
 struct _value_string_ext {
-    _value_string_match2_t _vs_match2;
-    uint32_t               _vs_first_value; /* first value of the value_string array       */
-    unsigned               _vs_num_entries; /* number of entries in the value_string array */
-                                            /*  (excluding final {0, NULL})                */
-    const value_string    *_vs_p;           /* the value string array address              */
-    const char            *_vs_name;        /* vse "Name" (for error messages)             */
-    wmem_allocator_t      *_scope;          /* Saved scope of the value_string_ext for use when freeing   */
+    _value_string_match2_t _vs_match2;     /**< Optional custom match function for advanced lookup. */
+    uint32_t               _vs_first_value;/**< First value in the value_string array. */
+    unsigned               _vs_num_entries;/**< Number of entries in the array (excluding final {0, NULL}). */
+    const value_string    *_vs_p;          /**< Pointer to the value_string array. */
+    const char            *_vs_name;       /**< Name of the mapping (used in error messages). */
+    wmem_allocator_t      *_scope;         /**< Memory scope used for allocation and cleanup. */
 };
+
 
 #define VALUE_STRING_EXT_VS_P(x)           (x)->_vs_p
 #define VALUE_STRING_EXT_VS_NUM_ENTRIES(x) (x)->_vs_num_entries
 #define VALUE_STRING_EXT_VS_NAME(x)        (x)->_vs_name
 
+/**
+ * @brief Attempt to initialize and retrieve a value-string entry from an extended mapping.
+ *
+ * Searches the extended value-string structure `vse` for an entry matching `val`.
+ * If found, returns a pointer to the corresponding `value_string` entry.
+ * If not found, returns `NULL`. This function may also perform internal
+ * initialization of the `value_string_ext` structure if needed.
+ *
+ * @param val  Numeric value to look up.
+ * @param vse  Pointer to an extended value-string mapping structure.
+ * @return     Pointer to the matching `value_string` entry, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const value_string *
 _try_val_to_str_ext_init(const uint32_t val, value_string_ext *vse);
 #define VALUE_STRING_EXT_INIT(x) { _try_val_to_str_ext_init, 0, G_N_ELEMENTS(x)-1, x, #x, NULL }
 
+/**
+ * @brief Create a new extended value-string mapping structure.
+ *
+ * Allocates and initializes a `value_string_ext` object using the provided
+ * `value_string` array.
+ *
+ * @param scope              Memory allocator scope for the new structure.
+ * @param vs                 Pointer to the value-string array.
+ * @param vs_tot_num_entries Total number of entries in the array (excluding the final {0, NULL}).
+ * @param vs_name            Descriptive name for the mapping (used in diagnostics).
+ * @return                   Pointer to the newly created `value_string_ext` structure.
+ */
 WS_DLL_PUBLIC
 value_string_ext *
 value_string_ext_new(wmem_allocator_t* scope, const value_string *vs, unsigned vs_tot_num_entries, const char *vs_name);
 
+/**
+ * @brief Free an extended value-string mapping structure.
+ *
+ * Releases any memory associated with the given `value_string_ext` structure,
+ * including its internal scope if applicable. This function should be called
+ * when the extended mapping is no longer needed to avoid memory leaks.
+ *
+ * @param vse  Pointer to the `value_string_ext` structure to be freed.
+ */
 WS_DLL_PUBLIC
 void
 value_string_ext_free(value_string_ext *vse);
 
+/**
+ * @brief Convert a numeric value to a string using an extended value-string mapping.
+ *
+ * Searches the extended value-string structure `vse` for an entry matching `val`.
+ * If found, returns the corresponding string. If not found, formats the value
+ * using the provided `fmt` string. The result is allocated using the specified
+ * `wmem_allocator_t` scope.
+ *
+ * This function is useful for enhanced lookup scenarios where additional metadata
+ * or scoped memory management is required.
+ *
+ * @param scope  Memory allocator scope for the returned string.
+ * @param val    Numeric value to convert.
+ * @param vse    Pointer to the extended value-string mapping structure.
+ * @param fmt    Format string used if `val` is not found in `vse`.
+ * @return       A newly allocated string representing the value.
+ */
 WS_DLL_PUBLIC
 char *
 val_to_str_ext(wmem_allocator_t *scope, const uint32_t val, value_string_ext *vse, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Convert a numeric value to a constant string using an extended value-string mapping.
+ *
+ * Searches the extended value-string structure `vs` for an entry matching `val`.
+ * If found, returns the corresponding constant string. If not found, returns
+ * the specified `unknown_str`.
+ *
+ * This function does not allocate memory and is suitable for contexts where
+ * a constant string is sufficient and memory management must be avoided.
+ *
+ * @param val          Numeric value to convert.
+ * @param vs           Pointer to the extended value-string mapping structure.
+ * @param unknown_str  Fallback string if `val` is not found in `vs`.
+ * @return             A constant string representing the value or `unknown_str`.
+ */
 WS_DLL_PUBLIC
 const char *
 val_to_str_ext_const(const uint32_t val, value_string_ext *vs, const char *unknown_str);
 
+/**
+ * @brief Attempt to convert a numeric value to a string using an extended value-string mapping.
+ *
+ * Searches the extended value-string structure `vse` for an entry matching `val`.
+ * If found, returns the corresponding string. If not found, returns `NULL`.
+ *
+ * This function is useful when the caller wants to detect unknown values
+ * without allocating memory or falling back to a default string.
+ *
+ * @param val  Numeric value to convert.
+ * @param vse  Pointer to the extended value-string mapping structure.
+ * @return     A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val_to_str_ext(const uint32_t val, value_string_ext *vse);
 
+/**
+ * @brief Attempt to convert a numeric value to a string and retrieve its index from an extended mapping.
+ *
+ * Searches the extended value-string structure `vse` for an entry matching `val`.
+ * If found, returns the corresponding string and sets `*idx` to the index of the
+ * matching entry within the original `value_string` array. If not found, returns
+ * `NULL` and leaves `*idx` unchanged.
+ *
+ * This function is useful when both the string representation and its position
+ * in the mapping array are needed for diagnostics or further processing.
+ *
+ * @param val   Numeric value to convert.
+ * @param vse   Pointer to the extended value-string mapping structure.
+ * @param idx   Pointer to an integer to receive the index of the match.
+ * @return      A constant string if found, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val_to_str_idx_ext(const uint32_t val, value_string_ext *vse, int *idx);
@@ -207,176 +465,456 @@ try_val_to_str_idx_ext(const uint32_t val, value_string_ext *vse, int *idx);
 typedef struct _val64_string_ext val64_string_ext;
 typedef const val64_string *(*_val64_string_match2_t)(const uint64_t, val64_string_ext*);
 
+/**
+ * @brief Extended metadata for a 64-bit value-string mapping array.
+ *
+ * Encapsulates additional information and utilities for working with a
+ * `val64_string` array, including match logic, bounds, and memory scope.
+ */
 struct _val64_string_ext {
-    _val64_string_match2_t _vs_match2;
-    uint64_t               _vs_first_value; /* first value of the val64_string array       */
-    unsigned               _vs_num_entries; /* number of entries in the val64_string array */
-                                            /*  (excluding final {0, NULL})                */
-    const val64_string    *_vs_p;           /* the value string array address              */
-    const char            *_vs_name;        /* vse "Name" (for error messages)             */
-    wmem_allocator_t      *_scope;          /* Saved scope of the value_string_ext for use when freeing   */
+    _val64_string_match2_t _vs_match2;     /**< Optional custom match function for advanced lookup. */
+    uint64_t               _vs_first_value;/**< First value in the val64_string array. */
+    unsigned               _vs_num_entries;/**< Number of entries in the array (excluding final {0, NULL}). */
+    const val64_string    *_vs_p;          /**< Pointer to the val64_string array. */
+    const char            *_vs_name;       /**< Descriptive name for diagnostics and error messages. */
+    wmem_allocator_t      *_scope;         /**< Memory scope used for allocation and cleanup. */
 };
 
 #define VAL64_STRING_EXT_VS_P(x)           (x)->_vs_p
 #define VAL64_STRING_EXT_VS_NUM_ENTRIES(x) (x)->_vs_num_entries
 #define VAL64_STRING_EXT_VS_NAME(x)        (x)->_vs_name
 
+/**
+ * @brief Compare two value_string entries by their numeric value.
+ *
+ * Used primarily for sorting or searching operations on arrays of
+ * `value_string` structures. This function compares the `value` fields
+ * of the two entries pointed to by `a` and `b`.
+ *
+ * @param a  Pointer to the first `value_string` entry.
+ * @param b  Pointer to the second `value_string` entry.
+ * @return   Negative if `a < b`, zero if `a == b`, positive if `a > b`.
+ */
 WS_DLL_PUBLIC
 int
 value_str_value_compare(const void* a, const void* b);
 
+/**
+ * @brief Attempt to initialize and retrieve a 64-bit value-string entry from an extended mapping.
+ *
+ * Searches the extended `val64_string_ext` structure `vse` for an entry matching `val`.
+ * If found, returns a pointer to the corresponding `val64_string` entry.
+ * If not found, returns `NULL`. This function may also perform internal
+ * initialization of the `val64_string_ext` structure if required.
+ *
+ * This is useful for advanced lookup scenarios where metadata and scoped
+ * memory management are involved, and where direct access to the matched
+ * entry is needed for further processing.
+ *
+ * @param val  64-bit value to look up.
+ * @param vse  Pointer to an extended 64-bit value-string mapping structure.
+ * @return     Pointer to the matching `val64_string` entry, or `NULL` if not found.
+ */
 WS_DLL_PUBLIC
 const val64_string *
 _try_val64_to_str_ext_init(const uint64_t val, val64_string_ext *vse);
 #define VAL64_STRING_EXT_INIT(x) { _try_val64_to_str_ext_init, 0, G_N_ELEMENTS(x)-1, x, #x, NULL }
 
+/**
+ * @brief Create a new extended value string structure.
+ *
+ * @param scope Memory allocator scope for the new structure.
+ * @param vs Pointer to the base value string array.
+ * @param vs_tot_num_entries Total number of entries in the value string array.
+ * @param vs_name Name of the value string.
+ * @return A pointer to the newly created val64_string_ext structure, or NULL if an error occurred.
+ */
 WS_DLL_PUBLIC
 val64_string_ext *
 val64_string_ext_new(wmem_allocator_t* scope, const val64_string *vs, unsigned vs_tot_num_entries, const char *vs_name);
 
+/**
+ * @brief Frees a val64_string_ext structure.
+ *
+ * @param vse Pointer to the val64_string_ext structure to be freed.
+ */
 WS_DLL_PUBLIC
 void
 val64_string_ext_free(val64_string_ext *vse);
 
+/**
+ * @brief Convert a 64-bit unsigned integer to a string using an extended value string structure.
+ *
+ * @param scope Memory allocator scope for the returned string.
+ * @param val The 64-bit unsigned integer to convert.
+ * @param vse Pointer to the extended value string structure containing the mapping.
+ * @param fmt Format string used if `val` is not found in `vse`.
+ * @return A newly allocated string representing the value, or a formatted string if not found.
+ */
 WS_DLL_PUBLIC
 char *
 val64_to_str_ext_wmem(wmem_allocator_t *scope, const uint64_t val, val64_string_ext *vse, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Convert a 64-bit unsigned integer to a string using an extended value string structure.
+ *
+ * @param val The 64-bit unsigned integer to convert.
+ * @param vs The extended value string structure containing the mapping.
+ * @param unknown_str The string to return if the value is not found in the mapping.
+ * @return const char* The converted string or the unknown string if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 val64_to_str_ext_const(const uint64_t val, val64_string_ext *vs, const char *unknown_str);
 
+/**
+ * @brief Convert a 64-bit value to its corresponding string index and pointer.
+ *
+ * @param val The 64-bit value to convert.
+ * @param vse Pointer to the value_string_ext structure containing the mapping.
+ * @return The corresponding string pointer, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val64_to_str_ext(const uint64_t val, val64_string_ext *vse);
 
+/**
+ * @brief Convert a 64-bit value to its corresponding string index and pointer.
+ *
+ * @param val The 64-bit value to convert.
+ * @param vse Pointer to the value_string_ext structure containing the mapping.
+ * @param idx Pointer to store the resulting index.
+ * @return The corresponding string pointer, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_val64_to_str_idx_ext(const uint64_t val, val64_string_ext *vse, int *idx);
 
 /* STRING TO STRING MATCHING */
 
+/**
+ * @brief Maps a string key to a string value, used for table-driven string-to-string lookups.
+ */
 typedef struct _string_string {
-    const char *value;
-    const char *strptr;
+    const char *value;  /**< The string key to match against during lookup. */
+    const char *strptr; /**< The human-readable string returned when @ref value is matched. */
 } string_string;
 
+/**
+ * @brief Converts a string value to a formatted string using a value string table.
+ *
+ * @param scope The memory allocator scope for the returned string.
+ * @param val The input string value to convert.
+ * @param vs The value string table containing mappings from values to strings.
+ * @param fmt The format string to use if no exact match is found in the value string table.
+ * @return The converted string, or a default error message if both the value string table and format are NULL.
+ */
 WS_DLL_PUBLIC
 const char *
 str_to_str_wmem(wmem_allocator_t* scope, const char *val, const string_string *vs, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Converts a string to another string based on a value-string mapping.
+ *
+ * @param val The input string to convert.
+ * @param vs The value-string mapping table.
+ * @return The converted string, or NULL if no match is found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_str_to_str(const char *val, const string_string *vs);
 
+/**
+ * @brief Converts a string to an index in a string-string mapping table.
+ *
+ * @param val The string to look up.
+ * @param vs The string-string mapping table.
+ * @param idx Pointer to store the resulting index.
+ * @return The corresponding string from the table, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_str_to_str_idx(const char *val, const string_string *vs, int *idx);
 
 /* RANGE TO STRING MATCHING */
 
+/**
+ * @brief Maps an inclusive numeric range to a string value, used for table-driven range-to-string lookups.
+ */
 typedef struct _range_string {
-    uint64_t     value_min;
-    uint64_t     value_max;
-    const char *strptr;
+    uint64_t    value_min; /**< Inclusive lower bound of the numeric range for this entry. */
+    uint64_t    value_max; /**< Inclusive upper bound of the numeric range for this entry. */
+    const char *strptr;    /**< Human-readable string returned when a queried value falls within [@ref value_min, @ref value_max]. */
 } range_string;
 
+/**
+ * @brief Convert a 32-bit unsigned integer to its corresponding string representation based on a range string.
+ *
+ * @param scope Memory allocator for the returned string.
+ * @param val The 32-bit unsigned integer value to convert.
+ * @param rs Pointer to an array of range_string structures defining the mapping from values to strings.
+ * @param fmt Format string to use if no matching range is found. Must not be NULL.
+ * @return const char* The corresponding string representation, or a default string if no match is found and fmt is provided.
+ */
 WS_DLL_PUBLIC
 const char *
 rval_to_str_wmem(wmem_allocator_t* scope, const uint32_t val, const range_string *rs, const char *fmt)
 G_GNUC_PRINTF(4, 0);
 
+/**
+ * @brief Convert a 32-bit unsigned integer to its corresponding string representation based on a range string.
+ *
+ * @param val The 32-bit unsigned integer value to convert.
+ * @param rs Pointer to the range_string structure containing the mapping of values to strings.
+ * @return const char* The corresponding string representation, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 rval_to_str_const(const uint32_t val, const range_string *rs, const char *unknown_str);
 
+/**
+ * @brief Convert a 32-bit unsigned integer to its corresponding string representation based on a range string.
+ *
+ * @param val The 32-bit unsigned integer value to convert.
+ * @param rs Pointer to the range_string structure containing the mapping of values to strings.
+ * @return const char* The corresponding string representation, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_rval_to_str(const uint32_t val, const range_string *rs);
 
+/**
+ * @brief Converts a 32-bit unsigned integer value to its corresponding string representation based on a range_string array.
+ *
+ * @param val The 32-bit unsigned integer value to convert.
+ * @param rs Pointer to the range_string array containing the value ranges and their corresponding strings.
+ * @param idx Pointer to an integer where the index of the matched range will be stored. If no match is found, -1 is stored.
+ * @return const char* The string representation of the value if a match is found; otherwise, NULL.
+ */
 WS_DLL_PUBLIC
 const char *
 try_rval_to_str_idx(const uint32_t val, const range_string *rs, int *idx);
 
+/**
+ * @brief Convert a 64-bit unsigned integer value to a string based on a range of strings.
+ *
+ * @param val The 64-bit unsigned integer value to convert.
+ * @param rs Pointer to the range_string structure containing the mapping from values to strings.
+ * @return const char* A pointer to the corresponding string, or NULL if no match is found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_rval64_to_str(const uint64_t val, const range_string *rs);
 
+/**
+ * @brief Converts a 64-bit unsigned integer value to its corresponding string representation based on a range of values.
+ *
+ * This function searches through an array of range_string structures to find a match for the given value. If a match is found,
+ * it sets the index parameter to the position of the matching range and returns the corresponding string pointer. If no match
+ * is found, it sets the index to -1 and returns NULL.
+ *
+ * @param val The 64-bit unsigned integer value to convert.
+ * @param rs Pointer to an array of range_string structures containing the ranges and their corresponding strings.
+ * @param idx Pointer to an integer where the index of the matching range will be stored.
+ * @return A pointer to the string representation of the value, or NULL if no match is found.
+ */
 WS_DLL_PUBLIC
 const char *
 try_rval64_to_str_idx(const uint64_t val, const range_string *rs, int *idx);
 
 /* TIME TO STRING MATCHING */
 
+/**
+ * @brief Maps a timestamp key to a string value, used for table-driven time-to-string lookups.
+ */
 typedef struct _time_value_string {
-    nstime_t     value;
-    const char *strptr;
+    nstime_t    value;  /**< The timestamp key to match against during lookup. */
+    const char *strptr; /**< Human-readable string returned when @ref value is matched. */
 } time_value_string;
 
+/**
+ * @brief Tries to match a time value against an array of time_value_string entries.
+ *
+ * @param val Pointer to the nstime_t structure representing the time value to be matched.
+ * @param vs Pointer to the time_value_string array containing possible matches.
+ * @return const char* The associated string pointer if a match is found, otherwise NULL.
+ */
 WS_DLL_PUBLIC
 const char *
 try_time_val_to_str(const nstime_t *val, const time_value_string *vs);
 
 /* BYTES TO STRING MATCHING */
 
+/**
+ * @brief Maps a byte sequence key to a string value, used for table-driven binary-pattern-to-string lookups.
+ */
 typedef struct _bytes_string {
-  const uint8_t *value;
-  const size_t  value_length;
-  const char   *strptr;
+    const uint8_t *value;        /**< Pointer to the raw byte sequence to match against during lookup. */
+    const size_t   value_length; /**< Length in bytes of the byte sequence pointed to by @ref value. */
+    const char    *strptr;       /**< Human-readable string returned when @ref value matches the queried byte sequence. */
 } bytes_string;
 
+/**
+ * @brief Converts a byte value to a string using a format string.
+ *
+ * This function attempts to convert a byte value to a string based on a provided format string.
+ * If the conversion is successful, it returns the converted string; otherwise, it returns an error message.
+ *
+ * @param scope The memory allocator scope for the returned string.
+ * @param val The byte value to be converted.
+ * @param val_len The length of the byte value.
+ * @param bs A pointer to a bytes_string structure containing possible values and their corresponding strings.
+ * @param fmt The format string used for conversion. If NULL, an error message is returned.
+ * @return A pointer to the converted string or an error message if the conversion fails.
+ */
 WS_DLL_PUBLIC
 const char *
 bytesval_to_str_wmem(wmem_allocator_t* scope, const uint8_t *val, const size_t val_len, const bytes_string *bs, const char *fmt)
 G_GNUC_PRINTF(5, 0);
 
+/**
+ * @brief Convert a byte prefix to a string using a value_string array.
+ *
+ * This function attempts to find a prefix match of any prefix from the bytes_string array
+ * against the haystack and returns the corresponding string if found. If no match is found,
+ * it uses a format string to create a new string.
+ *
+ * @param val Pointer to the byte array to be matched.
+ * @param val_len Length of the byte array.
+ * @param bs Pointer to the bytes_string array containing prefix-value pairs.
+ * @return const char* The corresponding string if a match is found, otherwise NULL.
+ */
 WS_DLL_PUBLIC
 const char *
 try_bytesval_to_str(const uint8_t *val, const size_t val_len, const bytes_string *bs);
 
+/**
+ * @brief Convert a byte prefix to a string using a value_string array.
+ *
+ * This function attempts to find a prefix match of any prefix from the bytes_string array
+ * against the haystack and returns the corresponding string if found. If no match is found,
+ * it uses a format string to create a new string.
+ *
+ * @param scope Memory allocator scope for the returned string.
+ * @param haystack The byte array to search within.
+ * @param haystack_len Length of the haystack array.
+ * @param bs Pointer to the bytes_string array containing prefix-value pairs.
+ * @param fmt Format string to use if no prefix match is found.
+ * @return A newly allocated string representing the matched prefix or formatted value, or NULL on error.
+ */
 WS_DLL_PUBLIC
 const char *
 bytesprefix_to_str(wmem_allocator_t* scope, const uint8_t *haystack, const size_t haystack_len, const bytes_string *bs, const char *fmt)
 G_GNUC_PRINTF(5, 0);
 
+/**
+ * @brief Tries to find a string representation for a byte prefix in a bytes_string array.
+ *
+ * @param haystack The buffer containing the byte sequence to search.
+ * @param haystack_len The length of the byte sequence.
+ * @param bs The bytes_string array to search within.
+ * @return const char* A pointer to the corresponding string if found, NULL otherwise.
+ */
 WS_DLL_PUBLIC
 const char *
 try_bytesprefix_to_str(const uint8_t *haystack, const size_t haystack_len, const bytes_string *bs);
 
+/**
+ * @brief Registers an external value string with a given name.
+ *
+ * @param name The name under which the value string is registered.
+ * @param vs The value string to be registered.
+ */
 WS_DLL_PUBLIC
 void register_external_value_string(const char* name, const value_string* vs);
 
+/**
+ * @brief Retrieves an external value string by name.
+ *
+ * @param name The name of the value string to retrieve.
+ * @return A pointer to the value_string if found, otherwise NULL.
+ */
 WS_DLL_PUBLIC
 value_string* get_external_value_string(const char* name);
 
+/**
+ * @brief Registers an external value string extension.
+ *
+ * @param name The name of the value string extension to register.
+ * @param vse The value string extension to register.
+ */
 WS_DLL_PUBLIC
 void register_external_value_string_ext(const char* name, const value_string_ext* vse);
 
+/**
+ * @brief Retrieves an external value string extension by name.
+ *
+ * @param name The name of the external value string extension to retrieve.
+ * @return A pointer to the external value string extension, or NULL if not found.
+ */
 WS_DLL_PUBLIC
 value_string_ext* get_external_value_string_ext(const char* name);
 
 /* MISC (generally do not use) */
 
+/**
+ * @brief Initializes external value string and extension registries.
+ *
+ * This function initializes two hash tables to store registered external value strings and their extensions.
+ */
 WS_DLL_PUBLIC
 void value_string_externals_init(void);
 
+/**
+ * @brief Cleans up external value string resources.
+ *
+ * This function destroys the hash tables used to store registered value strings and their extensions.
+ */
 WS_DLL_PUBLIC
 void value_string_externals_cleanup(void);
 
+/**
+ * @brief Validates a value_string_ext structure.
+ *
+ * This function checks if the provided value_string_ext pointer is valid and if its match function pointer is one of the allowed types.
+ *
+ * @param vse Pointer to the value_string_ext structure to validate.
+ * @return true if the validation passes, false otherwise.
+ */
 WS_DLL_PUBLIC
 bool
 value_string_ext_validate(const value_string_ext *vse);
 
+/**
+ * @brief Returns a string representation of the match type for a value_string_ext.
+ *
+ * @param vse Pointer to the value_string_ext structure.
+ * @return const char* A string describing the match type, or "[Invalid]" if unknown.
+ */
 WS_DLL_PUBLIC
 const char *
 value_string_ext_match_type_str(const value_string_ext *vse);
 
+/**
+ * @brief Validates a value_string_ext structure.
+ *
+ * This function checks if the provided value_string_ext pointer is valid and if its match function is one of the allowed types.
+ *
+ * @param vse Pointer to the value_string_ext structure to validate.
+ * @return true if the validation passes, false otherwise.
+ */
 WS_DLL_PUBLIC
 bool
 val64_string_ext_validate(const val64_string_ext *vse);
 
+/**
+ * @brief Returns a string representation of the match type for a 64-bit value string extension.
+ *
+ * @param vse Pointer to the val64_string_ext structure containing the match type information.
+ * @return const char* A string describing the match type, or "[Invalid]" if the type is not recognized.
+ */
 WS_DLL_PUBLIC
 const char *
 val64_string_ext_match_type_str(const val64_string_ext *vse);

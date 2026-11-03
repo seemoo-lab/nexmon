@@ -76,21 +76,10 @@
          actual payload of their messages.
 */
 
-#if defined(__FreeBSD__)
-#include <sys/types.h>
-#include <netinet/in.h>
-#endif
 #include <stddef.h>
 
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#endif
-
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
-
 #include <epan/tfs.h>
+#include <wsutil/inet_addr.h>
 
 typedef uint8_t lbm_uint8_t;
 typedef uint16_t lbm_uint16_t;
@@ -152,7 +141,7 @@ typedef uint64_t lbm_uint64_t;
             *err = g_strdup("invalid address"); \
             return false; \
         } \
-        if (!IN_MULTICAST(g_ntohl(addr)) && (g_ntohl(addr) != 0)) \
+        if (!in4_addr_is_multicast(g_ntohl(addr)) && (g_ntohl(addr) != 0)) \
         { \
             *err = g_strdup("invalid multicast address"); \
             return false; \
@@ -213,6 +202,7 @@ typedef struct
     } stream_info;
 } lbm_uim_stream_endpoint_t;
 
+/* PUBLIC_HEADER: These appear to be used by custom dissectors and should be in the "install" target */
 typedef struct
 {
     uint64_t channel;
@@ -329,14 +319,14 @@ typedef struct
 /* LBT-RU RST reasons */
 #define LBTRU_RST_REASON_DEFAULT 0x0
 
-bool lbmc_test_lbmc_header(tvbuff_t * tvb, int offset);
-int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, const char * tag_name, uint64_t channel);
+bool lbmc_test_lbmc_header(tvbuff_t * tvb, unsigned offset);
+int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree, const char * tag_name, uint64_t channel);
 int lbmc_get_minimum_length(void);
-uint16_t lbmc_get_message_length(tvbuff_t * tvb, int offset);
-bool lbmpdm_verify_payload(tvbuff_t * tvb, int offset, int * encoding, int * length);
-int lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, uint64_t channel);
+uint16_t lbmc_get_message_length(tvbuff_t * tvb, unsigned offset);
+bool lbmpdm_verify_payload(tvbuff_t * tvb, unsigned offset, int * encoding, uint32_t* length);
+unsigned lbmpdm_dissect_lbmpdm_payload(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree, uint64_t channel);
 int lbmpdm_get_minimum_length(void);
-int lbmr_dissect_umq_qmgmt(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree);
+unsigned lbmr_dissect_umq_qmgmt(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree);
 
 extern const true_false_string lbm_ignore_flag;
 extern const value_string lbm_wildcard_pattern_type[];

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="filter-clear.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:ws="urn:x-wireshark-icon">
+  <ws:states>
+    <ws:swap
+       base="#888a85"
+       active="#cc0000"
+       selected="#a40000" />
+  </ws:states>
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="35.237428"
+     inkscape:cx="12.273881"
+     inkscape:cy="11.904955"
+     inkscape:window-width="1024"
+     inkscape:window-height="1186"
+     inkscape:window-x="2240"
+     inkscape:window-y="30"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <path
+     d="M 4.9722221,1 C 2.7784188,1 1,2.7784311 1,4.9722221 V 19.027778 C 1,21.221544 2.7784311,23 4.9722221,23 H 19.027778 C 21.221544,23 23,21.221544 23,19.027778 V 4.9722221 C 23,2.7784188 21.221544,1 19.027778,1 Z m 2.4073744,6.3795965 c 0.3579768,-0.3579766 0.9383856,-0.3579766 1.2963622,0 L 12,10.703588 15.324078,7.3795965 c 0.357988,-0.3579766 0.9383,-0.3579766 1.296288,0 0.35799,0.3579768 0.35799,0.9383856 0,1.2963622 L 13.296411,12 l 3.323955,3.324078 c 0.35799,0.357988 0.35799,0.9383 0,1.296288 -0.357988,0.35799 -0.9383,0.35799 -1.296288,0 L 12,13.296411 8.6759587,16.620366 c -0.3579766,0.35799 -0.9383854,0.35799 -1.2963622,0 -0.3579766,-0.357988 -0.3579766,-0.9383 0,-1.296288 L 10.703588,12 7.3795965,8.6759587 c -0.3579766,-0.3579766 -0.3579766,-0.9383854 0,-1.2963622 z"
+     fill="#888a85"
+     id="path1"
+     style="stroke-width:1" />
+</svg>

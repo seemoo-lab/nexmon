@@ -171,7 +171,7 @@ static const value_string plugin_proto_checksum_vals[] = {
 };
 
 static void
-dissect_DataStatus(tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pinfo, uint8_t u8DataStatus)
+dissect_DataStatus(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo, uint8_t u8DataStatus)
 {
     proto_item *sub_item;
     proto_tree *sub_tree;
@@ -219,9 +219,9 @@ dissect_DataStatus(tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pin
             offset, 0, "Output", "Output Frame (IO_Controller -> IO_Device)");
     }
 
-    sub_item = proto_tree_add_uint_format(tree, hf_pn_rt_data_status,
+    sub_item = proto_tree_add_uint_format_value(tree, hf_pn_rt_data_status,
         tvb, offset, 1, u8DataStatus,
-        "DataStatus: 0x%02x (Frame: %s and %s, Provider: %s and %s)",
+        "0x%02x (Frame: %s and %s, Provider: %s and %s)",
         u8DataStatus,
         (u8DataStatus & 0x04) ? "Valid"   : "Invalid",
         (u8DataStatus & 0x01) ? "Primary" : "Backup",
@@ -376,7 +376,6 @@ dissect_CSF_SDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
     uint8_t     u8SFDataLength = 255;
     uint8_t     u8SFCycleCounter;
     uint8_t     u8SFDataStatus;
-    uint16_t    u16SecurityLength;
     int         offset         = 0;
     int        security_data;
     uint32_t    u32SubStart;
@@ -384,10 +383,9 @@ dissect_CSF_SDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
     proto_tree *sub_tree;
     uint16_t    crc;
 
-    u16SecurityLength = tvb_get_uint16(tvb, 6, ENC_BIG_ENDIAN);
     security_data = tvb_captured_length_remaining(tvb, 8) + 4; /* Include cyclic status fields */
 
-    if (u16SecurityLength == security_data)
+    if (pn_is_valid_security_metadata(tvb, 0, security_data))
         offset = 8;
     else
         offset = 0;
@@ -473,8 +471,8 @@ dissect_CSF_SDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
 
 }
 
-int
-dissect_RTC3_with_security(tvbuff_t* tvb, int offset,
+unsigned
+dissect_RTC3_with_security(tvbuff_t* tvb, unsigned offset,
     packet_info* pinfo, proto_tree* tree, uint8_t* drep _U_, void* data)
 {
     proto_item* meta_data_item;
@@ -593,7 +591,7 @@ dissect_FRAG_PDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
         if (pnio_desegment)
         {
             uint32_t u32FragID;
-            uint32_t u32ReasembleID /*= 0xfedc ??*/;
+            uint32_t u32ReassembleID /*= 0xfedc ??*/;
             fragment_head *pdu_frag;
 
             u32FragID = (u16FrameID & 0xf);
@@ -604,10 +602,10 @@ dissect_FRAG_PDU_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
                 /* store it in the array */
                 start_frag_OR_ID[u32FragID] = u32FrameKey;
             }
-            u32ReasembleID = start_frag_OR_ID[u32FragID];
+            u32ReassembleID = start_frag_OR_ID[u32FragID];
             /* use frame data instead of "pnio fraglen" which sets 8 octet steps */
             pdu_frag = fragment_add_seq(&pdu_reassembly_table, tvb, offset,
-                                        pinfo, u32ReasembleID, NULL, uFragNumber,
+                                        pinfo, u32ReassembleID, NULL, uFragNumber,
                                         (tvb_captured_length_remaining(tvb, offset))/*u8FragDataLength*8*/, bMoreFollows, 0);
 
             if (pdu_frag && !bMoreFollows) /* PDU is complete! and last fragment */
@@ -656,7 +654,6 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     uint8_t      u8DataStatus;
     uint8_t      u8TransferStatus;
     uint8_t      u8ProtectionMode;
-    uint16_t     u16SecurityLength;
     uint16_t     u16CycleCounter;
     const char *pszProtAddInfo;
     const char *pszProtShort;
@@ -714,7 +711,7 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         return 0;
     }
 
-    /* TimeAwareness Information needed for differentiating RTC3 - RTSteam frames  */
+    /* TimeAwareness Information needed for differentiating RTC3 - RTStream frames  */
     conversation = find_conversation(pinfo->num, &pinfo->dl_src, &pinfo->dl_dst, CONVERSATION_NONE, 0, 0, 0);
 
     if (conversation != NULL) {
@@ -754,9 +751,8 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         pszProtComment  = "0x0082-0x00FF: Reserved ID";
         bCyclic         = false;
     } else if (u16FrameID <= 0x06FF && !isTimeAware) {
-        u16SecurityLength = tvb_get_uint16(tvb, 8, ENC_BIG_ENDIAN);
         security_data = tvb_captured_length_remaining(tvb, 10) - 16;
-        if (u16SecurityLength == security_data)
+        if (pn_is_valid_security_metadata(tvb, 2, security_data))
         {
             pszProtShort = "PN-RTC3sec";
             pszProtAddInfo = "RTC3sec, ";
@@ -772,9 +768,8 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         }
         bCyclic         = true;
     } else if (u16FrameID <= 0x0FFF && !isTimeAware) {
-        u16SecurityLength = tvb_get_uint16(tvb, 8, ENC_BIG_ENDIAN);
         security_data = tvb_captured_length_remaining(tvb, 10) - 16;
-        if (u16SecurityLength == security_data)
+        if (pn_is_valid_security_metadata(tvb, 2, security_data))
         {
             pszProtShort = "PN-RTC3sec";
             pszProtAddInfo = "RTC3sec, ";
@@ -833,9 +828,8 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         bCyclic = false;
     }
     else if (u16FrameID <= 0xBBFF) {
-        u16SecurityLength = tvb_get_uint16(tvb, 8, ENC_BIG_ENDIAN);
         security_data = tvb_captured_length_remaining(tvb, 10) - 16;
-        if (u16SecurityLength == security_data)
+        if (pn_is_valid_security_metadata(tvb, 2, security_data))
         {
             pszProtShort = "PN-RTC1sec";
             pszProtAddInfo = "RTC1sec, ";
@@ -851,9 +845,8 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         }
         bCyclic = true;
     } else if (u16FrameID <= 0xBFFF) {
-        u16SecurityLength = tvb_get_uint16(tvb, 8, ENC_BIG_ENDIAN);
         security_data = tvb_captured_length_remaining(tvb, 10) - 16;
-        if (u16SecurityLength == security_data)
+        if (pn_is_valid_security_metadata(tvb, 2, security_data))
         {
             pszProtShort = "PN-RTC1sec";
             pszProtAddInfo = "RTC1sec, ";
@@ -942,6 +935,12 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             pszProtSummary = "acyclic Real-Time";
             pszProtComment = "Real-Time: Acyclic PN-IO RSI";
         }
+        if (u16FrameID == 0xFE03) {
+            pszProtShort = "PN-SXP";
+            pszProtAddInfo = "";
+            pszProtSummary = "SXP via RTAv3";
+            pszProtComment = "Real-Time: Acyclic PN-IO SXP via RTAv3";
+        }
         if (u16FrameID == 0xFE42) {
             pszProtShort = "PNIO-RSIsec";
             pszProtAddInfo = "";
@@ -952,25 +951,25 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             pszProtShort    = "PN-RTA";
             pszProtAddInfo  = "";
             pszProtSummary  = "acyclic Real-Time";
-            pszProtComment  = "Real-Time: DCP (Dynamic Configuration Protocol) hello";
+            pszProtComment  = "Real-Time: DCP (Discovery and basic Configuration Protocol) hello";
         }
         if (u16FrameID == FRAME_ID_DCP_GETORSET) {
             pszProtShort    = "PN-RTA";
             pszProtAddInfo  = "";
             pszProtSummary  = "acyclic Real-Time";
-            pszProtComment  = "Real-Time: DCP (Dynamic Configuration Protocol) get/set";
+            pszProtComment  = "Real-Time: DCP (Discovery and basic Configuration Protocol) get/set";
         }
         if (u16FrameID == FRAME_ID_DCP_IDENT_REQ) {
             pszProtShort    = "PN-RTA";
             pszProtAddInfo  = "";
             pszProtSummary  = "acyclic Real-Time";
-            pszProtComment  = "Real-Time: DCP (Dynamic Configuration Protocol) identify multicast request";
+            pszProtComment  = "Real-Time: DCP (Discovery and basic Configuration Protocol) identify multicast request";
         }
         if (u16FrameID == FRAME_ID_DCP_IDENT_RES) {
             pszProtShort    = "PN-RTA";
             pszProtAddInfo  = "";
             pszProtSummary  = "acyclic Real-Time";
-            pszProtComment  = "Real-Time: DCP (Dynamic Configuration Protocol) identify response";
+            pszProtComment  = "Real-Time: DCP (Discovery and basic Configuration Protocol) identify response";
         }
     } else if (u16FrameID <= 0xFF01) {
         pszProtShort    = "PN-PTCP";
@@ -1023,10 +1022,9 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     }
 
     /* Set APDU_Status for RTA frames with security. If AE, it is encrypted. */
-    u16SecurityLength = tvb_get_uint16(tvb, 8, ENC_BIG_ENDIAN);
     security_data = tvb_captured_length_remaining(tvb, 10) - 16;
 
-    if ((u16SecurityLength == security_data) && bCyclic)
+    if (pn_is_valid_security_metadata(tvb, 2, security_data) && bCyclic)
     {
         u8ProtectionMode = tvb_get_uint8(tvb, 2);
         u8ProtectionMode &= 0x01;
@@ -1104,51 +1102,51 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         pn_rt_tree = proto_item_add_subtree(ti, ett_pn_rt);
 
         /* add frame ID */
-        proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_frame_id, tvb,
-          0, 2, u16FrameID, "FrameID: 0x%04x (%s)", u16FrameID, pszProtComment);
+                proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_frame_id, tvb,
+                    0, 2, u16FrameID, "0x%04x (%s)", u16FrameID, pszProtComment);
 
         /* APDU_Status for RTA frames with security. If AE, APDU_Status Info will not show because it is encrypted. */
-        if ((u16SecurityLength == security_data) && bCyclic)
+        if (pn_is_valid_security_metadata(tvb, 2, security_data) && bCyclic)
         {
             if (u8ProtectionMode == 0x00)
             {
                 /* add cycle counter */
-                proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_cycle_counter, tvb,
-                    pdu_len - 20, 2, u16CycleCounter, "CycleCounter: %u", u16CycleCounter);
+                proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_cycle_counter, tvb,
+                    pdu_len - 20, 2, u16CycleCounter, "%u", u16CycleCounter);
 
                 /* add data status subtree */
                 dissect_DataStatus(tvb, pdu_len - 18, pn_rt_tree, pinfo, u8DataStatus);
 
                 /* add transfer status */
                 if (u8TransferStatus) {
-                    proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
+                    proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
                         pdu_len - 17, 1, u8TransferStatus,
-                        "TransferStatus: 0x%02x (ignore this frame)", u8TransferStatus);
+                        "0x%02x (ignore this frame)", u8TransferStatus);
                 }
                 else {
-                    proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
+                    proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
                         pdu_len - 17, 1, u8TransferStatus,
-                        "TransferStatus: 0x%02x (OK)", u8TransferStatus);
+                        "0x%02x (OK)", u8TransferStatus);
                 }
             }
         }
         else if (bCyclic) {
             /* add cycle counter */
-            proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_cycle_counter, tvb,
-              pdu_len - 4, 2, u16CycleCounter, "CycleCounter: %u", u16CycleCounter);
+                        proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_cycle_counter, tvb,
+                            pdu_len - 4, 2, u16CycleCounter, "%u", u16CycleCounter);
 
             /* add data status subtree */
             dissect_DataStatus(tvb, pdu_len - 2, pn_rt_tree, pinfo, u8DataStatus);
 
             /* add transfer status */
             if (u8TransferStatus) {
-                proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
+                proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
                     pdu_len - 1, 1, u8TransferStatus,
-                    "TransferStatus: 0x%02x (ignore this frame)", u8TransferStatus);
+                    "0x%02x (ignore this frame)", u8TransferStatus);
             } else {
-                proto_tree_add_uint_format(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
+                proto_tree_add_uint_format_value(pn_rt_tree, hf_pn_rt_transfer_status, tvb,
                     pdu_len - 1, 1, u8TransferStatus,
-                    "TransferStatus: 0x%02x (OK)", u8TransferStatus);
+                    "0x%02x (OK)", u8TransferStatus);
             }
         }
     }
@@ -1162,7 +1160,7 @@ dissect_pn_rt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     col_set_str(pinfo->cinfo, COL_PROTOCOL, pszProtShort);
 
     /* get frame user data tvb (without header and footer) */
-    if ((u16SecurityLength == security_data) && bCyclic)
+    if (pn_is_valid_security_metadata(tvb, 2, security_data) && bCyclic)
     {
         next_tvb = tvb_new_subset_length(tvb, 2, data_len);
         if (!dissector_try_heuristic(heur_subdissector_list, next_tvb, pinfo, pn_rt_tree, &hdtbl_entry, GUINT_TO_POINTER((uint32_t)u16FrameID))) {

@@ -17,12 +17,12 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
-  * Represents a 32-bit IPv4 address in network byte order.
+  * @brief Represents a 32-bit IPv4 address in network byte order.
  */
 typedef uint32_t ws_in4_addr;
 
 /**
-  * Represents a 128-bit IPv6 address.
+  * @brief Represents a 128-bit IPv6 address.
  */
 typedef struct e_in6_addr {
     uint8_t bytes[16]; /**< Raw bytes of the IPv6 address. */
@@ -72,12 +72,26 @@ in6_addr_is_linklocal(const ws_in6_addr *a)
     return (a->bytes[0] == 0xfe) && ((a->bytes[1] & 0xc0) == 0x80);
 }
 
+/**
+ * @brief Determines if an IPv6 address is site-local.
+ *
+ * A site-local address is a unicast address that is intended for use within a single site or network.
+ *
+ * @param a Pointer to the ws_in6_addr structure representing the IPv6 address.
+ * @return true if the address is site-local, false otherwise.
+ */
 static inline bool
 in6_addr_is_sitelocal(const ws_in6_addr *a)
 {
     return (a->bytes[0] == 0xfe) && ((a->bytes[1] & 0xc0) == 0xc0);
 }
 
+/**
+ * @brief Determines if an IPv6 address is unique local.
+ *
+ * @param a Pointer to the ws_in6_addr structure representing the IPv6 address.
+ * @return true If the address is unique local, false otherwise.
+ */
 static inline bool in6_addr_is_uniquelocal(const ws_in6_addr *a)
 {
     return (a->bytes[0] & 0xfe) == 0xfc;
@@ -125,25 +139,56 @@ in6_addr_is_multicast(const ws_in6_addr *a)
 #define WS_INET_ADDRSTRLEN      16
 #define WS_INET6_ADDRSTRLEN     46
 
+/**
+ * @brief Convert an IPv6 address to a string representation.
+ *
+ * Converts an IPv6 address from its binary form to a human-readable string.
+ *
+ * @param src Pointer to the source IPv6 address in network byte order.
+ * @param dst Buffer where the resulting string will be stored.
+ * @param dst_size Size of the destination buffer.
+ * @return A pointer to the destination buffer if successful, NULL otherwise.
+ */
 /*
  * Utility for CIDR notation of subnets
  */
 #define WS_INET_CIDRADDRSTRLEN  19
+#define WS_INET6_CIDRADDRSTRLEN 50  /* max "xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx/128\0" */
 
 /*
  * To check for errors set errno to zero before calling ws_inet_ntop{4,6}.
  * ENOSPC is set if the result exceeds the given buffer size.
  */
+
+/**
+ * @brief Converts a binary IPv4 address to its string representation.
+ *
+ * @param src Pointer to the binary IPv4 address.
+ * @param dst Buffer to store the resulting string representation.
+ * @param dst_size Size of the destination buffer.
+ * @return const char* Pointer to the destination buffer containing the string representation, or NULL on failure.
+ */
 WS_DLL_PUBLIC WS_RETNONNULL
 const char *
 ws_inet_ntop4(const void *src, char *dst, size_t dst_size);
 
+/**
+ * @brief Converts a binary IPv6 address to its string representation.
+ *
+ * Parses a 128-bit network byte order IPv6 address from @p src and converts it into
+ * a human-readable format (e.g., "2001:db8::1") stored in @p dst up to @p dst_size characters.
+ *
+ * @param src Pointer to the binary representation of the IPv6 address.
+ * @param dst Buffer to store the string representation of the IPv6 address.
+ * @param dst_size Size of the destination buffer.
+ * @return A pointer to the resulting string, or NULL on failure.
+ */
 WS_DLL_PUBLIC WS_RETNONNULL
 const char *
 ws_inet_ntop6(const void *src, char *dst, size_t dst_size);
 
 /**
- * Parses a string-form IPv4 address into binary format.
+ * @brief Parses a string-form IPv4 address into binary format.
  *
  * Converts a human-readable IPv4 address (e.g., "127.0.0.1") from @p src
  * into its 32-bit network byte order representation and stores the result in @p dst.
@@ -158,7 +203,7 @@ bool
 ws_inet_pton4(const char *src, ws_in4_addr *dst);
 
 /**
- * Parses a string-form IPv6 address into binary format.
+ * @brief Parses a string-form IPv6 address into binary format.
  *
  * Converts a human-readable IPv6 address (e.g., "2001:db8::1") from @p src
  * into its 128-bit binary representation and stores the result in @p dst.

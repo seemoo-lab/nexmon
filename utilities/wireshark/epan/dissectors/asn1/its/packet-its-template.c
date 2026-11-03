@@ -148,6 +148,9 @@ static int proto_its_cpm;
 static int proto_its_imzm;
 static int proto_its_vam;
 static int proto_addgrpc;
+static int proto_its_pim;
+static int proto_its_mim;
+static int proto_its_mvm;
 
 /*
  * DENM SSP
@@ -203,6 +206,9 @@ static int hf_camssp_reserved;
 static int ett_denmssp_flags;
 static int ett_camssp_flags;
 
+
+static int dissect_cam_WrappedExtensionContainerData(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_);
+
 // Subdissectors
 static dissector_table_t its_version_subdissector_table;
 static dissector_table_t its_msgid_subdissector_table;
@@ -250,6 +256,7 @@ static int dissect_cpmcontainers_pdu(tvbuff_t* tvb, packet_info* pinfo, proto_tr
         call_data_dissector(tvb, pinfo, tree);
     return tvb_captured_length(tvb);
 }
+
 
 
 
@@ -335,17 +342,18 @@ static struct { CauseCodeType_enum cause; int* hf; } cause_to_subcause[] = {
     { trafficCondition, &hf_its_trafficCondition1 },
     { accident, &hf_its_accident2 },
     { roadworks, &hf_its_roadworks3 },
-    { adverseWeatherCondition_Precipitation, &hf_its_adverseWeatherCondition_Precipitation19 },
-    { adverseWeatherCondition_Visibility, &hf_its_adverseWeatherCondition_Visibility18 },
-    { adverseWeatherCondition_Adhesion, &hf_its_adverseWeatherCondition_Adhesion6 },
-    { adverseWeatherCondition_ExtremeWeatherCondition, &hf_its_adverseWeatherCondition_ExtremeWeatherCondition17 },
-    { hazardousLocation_AnimalOnTheRoad, &hf_its_hazardousLocation_AnimalOnTheRoad11 },
-    { hazardousLocation_ObstacleOnTheRoad, &hf_its_hazardousLocation_ObstacleOnTheRoad10 },
+    /* detectedRoadworks                                 SubCauseCodeType, */
+    { impassability, &hf_its_impassability5 },
+    { adhesion, &hf_its_adhesion6 },
     { hazardousLocation_SurfaceCondition, &hf_its_hazardousLocation_SurfaceCondition9 },
-    { hazardousLocation_DangerousCurve, &hf_its_hazardousLocation_DangerousCurve96 },
+    { hazardousLocation_ObstacleOnTheRoad, &hf_its_hazardousLocation_ObstacleOnTheRoad10 },
+    { hazardousLocation_AnimalOnTheRoad, &hf_its_hazardousLocation_AnimalOnTheRoad11 },
     { humanPresenceOnTheRoad, &hf_its_humanPresenceOnTheRoad12 },
     { wrongWayDriving, &hf_its_wrongWayDriving14 },
-    { rescueAndRecoveryWorkInProgress, &hf_its_rescueAndRecoveryWorkInProgress15 },
+    { rescueRecoveryAndMaintenanceWorkInProgress, &hf_its_rescueRecoveryAndMaintenanceWorkInProgress15 },
+    { adverseWeatherCondition_ExtremeWeatherCondition, &hf_its_adverseWeatherCondition_Wind17 },
+    { adverseWeatherCondition_Visibility, &hf_its_adverseWeatherCondition_Visibility18 },
+    { adverseWeatherCondition_Precipitation, &hf_its_adverseWeatherCondition_Precipitation19 },
     { slowVehicle, &hf_its_slowVehicle26 },
     { dangerousEndOfQueue, &hf_its_dangerousEndOfQueue27 },
     { vehicleBreakdown, &hf_its_vehicleBreakdown91 },
@@ -353,9 +361,11 @@ static struct { CauseCodeType_enum cause; int* hf; } cause_to_subcause[] = {
     { humanProblem, &hf_its_humanProblem93 },
     { stationaryVehicle, &hf_its_stationaryVehicle94 },
     { emergencyVehicleApproaching, &hf_its_emergencyVehicleApproaching95 },
+    { hazardousLocation_DangerousCurve, &hf_its_hazardousLocation_DangerousCurve96 },
     { collisionRisk, &hf_its_collisionRisk97 },
     { signalViolation, &hf_its_signalViolation98 },
     { dangerousSituation, &hf_its_dangerousSituation99 },
+    /*hf_its_railwayLevelCrossing100*/
     { 0, NULL },
 };
 
@@ -386,6 +396,39 @@ append_country_code_fmt(proto_item *item, tvbuff_t *val_tvb)
 }
 
 #include "packet-its-fn.c"
+
+static int
+dissect_cam_WrappedExtensionContainerData(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+    uint32_t ExtensionContainerId;
+    its_header_t* its_hdr = its_get_private_data(pinfo);
+    ExtensionContainerId = its_hdr->CamExtensionContainerId;
+
+    /*
+     * twoWheelerContainer ExtensionContainerId ::= 1
+     * eHorizonLocationSharingContainer ExtensionContainerId ::= 2
+     * veryLowFrequencyContainer ExtensionContainerId ::= 3
+     * pathPredictionContainer ExtensionContainerId ::= 4
+     * roadLanePositionsContainer ExtensionContainerId ::= 5
+     * vehicleMovementControlContainer ExtensionContainerId ::= 6
+    */
+    switch (ExtensionContainerId) {
+    case 1:
+        return dissect_cam_TwoWheelerContainer_PDU(tvb, pinfo, tree, data);
+    case 2:
+        return dissect_cam_EHorizonLocationSharingContainer_PDU(tvb, pinfo, tree, data);
+    case 3:
+        return dissect_cam_VeryLowFrequencyContainer_PDU(tvb, pinfo, tree, data);
+    case 4:
+        return dissect_cam_PathPredictionContainer_PDU(tvb, pinfo, tree, data);
+    case 5:
+        return dissect_cam_RoadLanePositionsContainer_PDU(tvb, pinfo, tree, data);
+    case 6:
+        return dissect_cam_VehicleMovementControlContainer_PDU(tvb, pinfo, tree, data);
+    default:
+        return tvb_reported_length(tvb);
+    }
+}
 
 static void
 its_latitude_fmt(char *s, uint32_t v)
@@ -485,11 +528,11 @@ static void
 its_sax_length_fmt(char *s, uint32_t v)
 {
   if (v == 4095) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 4094) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%d)", v * 0.01, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%u)", v * 0.01, v);
   }
 }
 
@@ -498,9 +541,9 @@ its_heading_value_fmt(char *s, uint32_t v)
 {
   const char *p = try_val_to_str(v, VALS(its_HeadingValue_vals));
   if (p) {
-    snprintf(s, ITEM_LABEL_LENGTH, "%s (%d)", p, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%s (%u)", p, v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%d)", v * 0.1, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%u)", v * 0.1, v);
   }
 }
 
@@ -508,11 +551,11 @@ static void
 its_heading_confidence_fmt(char *s, uint32_t v)
 {
   if (v == 127) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 126) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%d)", v * 0.1, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%u)", v * 0.1, v);
   }
 }
 
@@ -520,12 +563,12 @@ static void
 its_speed_value_fmt(char *s, uint32_t v)
 {
   if (v == 0) {
-    snprintf(s, ITEM_LABEL_LENGTH, "standstill (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "standstill (%u)", v);
   } else if (v == 16383) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     double vms = v * 0.01;
-    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s = %.1fkm/h (%d)",
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s = %.1fkm/h (%u)",
             vms, vms * 3.6, v);
   }
 }
@@ -534,29 +577,29 @@ static void
 its_speed_confidence_fmt(char *s, uint32_t v)
 {
   if (v == 127) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 126) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s (%d)", v * 0.01, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s (%u)", v * 0.01, v);
   }
 }
 
 static void
 its_speed_limit_fmt(char *s, uint32_t v)
 {
-  snprintf(s, ITEM_LABEL_LENGTH, "%dkm/h (%d)", v, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%dkm/h (%u)", v, v);
 }
 
 static void
 its_vehicle_length_value_fmt(char *s, uint32_t v)
 {
   if (v == 1023) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 1022) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%d)", v * 0.1, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%u)", v * 0.1, v);
   }
 }
 
@@ -564,11 +607,11 @@ static void
 its_vehicle_width_fmt(char *s, uint32_t v)
 {
   if (v == 62) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 61) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%d)", v * 0.1, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%u)", v * 0.1, v);
   }
 }
 
@@ -577,7 +620,7 @@ its_acceleration_value_fmt(char *s, uint32_t v)
 {
   int32_t acc = (int32_t)v;
   if (acc == 161) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     snprintf(s, ITEM_LABEL_LENGTH, "%.1fm/s² (%d)", acc * 0.1, acc);
   }
@@ -587,9 +630,9 @@ static void
 its_acceleration_confidence_fmt(char *s, uint32_t v)
 {
   if (v == 102) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 101) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
     snprintf(s, ITEM_LABEL_LENGTH, "%.1fm/s² (%d)", v * 0.1, v);
   }
@@ -600,9 +643,9 @@ its_curvature_value_fmt(char *s, uint32_t v)
 {
   int32_t curv = (int32_t)v;
   if (curv == 0) {
-    snprintf(s, ITEM_LABEL_LENGTH, "straight (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "straight (%u)", v);
   } else if (curv == 30001) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     snprintf(s, ITEM_LABEL_LENGTH, "%.3fm %s (%d)",
                30000.0 / curv,
@@ -616,9 +659,9 @@ its_yaw_rate_value_fmt(char *s, uint32_t v)
 {
   int32_t yaw = (int32_t)v;
   if (yaw == 0) {
-    snprintf(s, ITEM_LABEL_LENGTH, "straight (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "straight (%u)", v);
   } else if (yaw == 32767) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     snprintf(s, ITEM_LABEL_LENGTH, "%.2f°/s %s (%d)",
                yaw * 0.01,
@@ -632,9 +675,9 @@ its_swa_value_fmt(char *s, uint32_t v)
 {
   int32_t swa = (int32_t)v;
   if (swa == 0) {
-    snprintf(s, ITEM_LABEL_LENGTH, "straight (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "straight (%u)", v);
   } else if (swa == 512) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     snprintf(s, ITEM_LABEL_LENGTH, "%.1f° %s (%d)",
                swa * 1.5,
@@ -647,11 +690,11 @@ static void
 its_swa_confidence_fmt(char *s, uint32_t v)
 {
   if (v == 127) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 126) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%d)", v * 1.5, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%u)", v * 1.5, v);
   }
 }
 
@@ -659,9 +702,9 @@ static void
 dsrc_moi_fmt(char *s, uint32_t v)
 {
   if (v == 527040) {
-    snprintf(s, ITEM_LABEL_LENGTH, "invalid (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "invalid (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%ud %02u:%02u (%d)",
+    snprintf(s, ITEM_LABEL_LENGTH, "%ud %02u:%02u (%u)",
             v / 1440, v % 1440 / 60, v % 60, v);
   }
 }
@@ -670,11 +713,11 @@ static void
 dsrc_dsecond_fmt(char *s, uint32_t v)
 {
   if (v == 65535) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if ((61000 <= v) && (v <= 65534)) {
-    snprintf(s, ITEM_LABEL_LENGTH, "reserved (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "reserved (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%02u.%03u (%d)",
+    snprintf(s, ITEM_LABEL_LENGTH, "%02u.%03u (%u)",
             v / 1000, v % 1000, v);
   }
 }
@@ -683,11 +726,11 @@ static void
 dsrc_time_mark_fmt(char *s, uint32_t v)
 {
   if (v == 36001) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unknown (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unknown (%u)", v);
   } else if (v == 36000) {
-    snprintf(s, ITEM_LABEL_LENGTH, "moreThanHour (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "moreThanHour (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%02u:%02u.%u (%d)",
+    snprintf(s, ITEM_LABEL_LENGTH, "%02u:%02u.%u (%u)",
             v / 600, v % 600 / 10, v % 10, v);
   }
 }
@@ -705,7 +748,7 @@ its_timestamp_fmt(char *s, uint64_t v)
 static void
 its_validity_duration_fmt(char *s, uint32_t v)
 {
-  snprintf(s, ITEM_LABEL_LENGTH, "%02u:%02u:%02u (%d)",
+  snprintf(s, ITEM_LABEL_LENGTH, "%02u:%02u:%02u (%u)",
           v / 3600, v % 3600 / 60, v % 60, v);
 }
 
@@ -733,10 +776,10 @@ static void
 dsrc_velocity_fmt(char *s, uint32_t v)
 {
   if (v == 8191) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else {
     double vms = v * 0.02;
-    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s = %ukm/h (%d)",
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm/s = %ukm/h (%u)",
             vms, (int)lround(vms * 3.6), v);
   }
 }
@@ -744,7 +787,7 @@ dsrc_velocity_fmt(char *s, uint32_t v)
 static void
 dsrc_angle_fmt(char *s, uint32_t v)
 {
-  snprintf(s, ITEM_LABEL_LENGTH, "%.2f° (%d)", v * 0.0125, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.2f° (%u)", v * 0.0125, v);
 }
 
 static void
@@ -764,7 +807,7 @@ dsrc_delta_time_fmt(char *s, uint32_t v)
 }
 
 static void
-cpm_general_confidence_fmt(gchar* s, guint32 v)
+cpm_general_confidence_fmt(char* s, uint32_t v)
 {
     if (v == 0) {
         snprintf(s, ITEM_LABEL_LENGTH, "unknown (%u)", v);
@@ -778,30 +821,30 @@ cpm_general_confidence_fmt(gchar* s, guint32 v)
 }
 
 static void
-cpm_distance_value_fmt(gchar* s, guint32 v)
+cpm_distance_value_fmt(char* s, uint32_t v)
 {
-    gint32 sv = (gint32)v;
+    int32_t sv = (int32_t)v;
     snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%d)", sv * 0.01, sv);
 }
 
 static void
-cpm_distance_confidence_fmt(gchar* s, guint32 v)
+cpm_distance_confidence_fmt(char* s, uint32_t v)
 {
     if (v == 102) {
-        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
     }
     else if (v == 101) {
-        snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+        snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
     }
     else {
-        snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%d)", v * 0.01, v);
+        snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%u)", v * 0.01, v);
     }
 }
 
 static void
-cpm_speed_value_ext_fmt(gchar* s, guint32 v)
+cpm_speed_value_ext_fmt(char* s, uint32_t v)
 {
-    gint32 sv = (gint32)v;
+    int32_t sv = (int32_t)v;
     if (sv == 0) {
         snprintf(s, ITEM_LABEL_LENGTH, "standstill (%d)", sv);
     }
@@ -816,45 +859,45 @@ cpm_speed_value_ext_fmt(gchar* s, guint32 v)
 }
 
 static void
-cpm_cartesian_angle_value_fmt(gchar* s, guint32 v)
+cpm_cartesian_angle_value_fmt(char* s, uint32_t v)
 {
     if (v == 3601) {
-        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
     }
     else {
-        snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%d)", v * 0.1, v);
+        snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%u)", v * 0.1, v);
     }
 }
 
 static void
-cpm_angle_confidence_fmt(gchar* s, guint32 v)
+cpm_angle_confidence_fmt(char* s, uint32_t v)
 {
     if (v == 127) {
-        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+        snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
     }
     else if (v == 126) {
-        snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+        snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
     }
     else {
-        snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%d)", v * 0.1, v);
+        snprintf(s, ITEM_LABEL_LENGTH, "%.1f° (%u)", v * 0.1, v);
     }
 }
 
 static void
 cpm_object_dimension_value_fmt(char *s, uint32_t v)
 {
-  snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%d)", v * 0.1, v);
+  snprintf(s, ITEM_LABEL_LENGTH, "%.1fm (%u)", v * 0.1, v);
 }
 
 static void
 cpm_object_dimension_confidence_fmt(char *s, uint32_t v)
 {
   if (v == 32) {
-    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "unavailable (%u)", v);
   } else if (v == 31) {
-    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%d)", v);
+    snprintf(s, ITEM_LABEL_LENGTH, "outOfRange (%u)", v);
   } else {
-    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%d)", v * 0.01, v);
+    snprintf(s, ITEM_LABEL_LENGTH, "%.2fm (%u)", v * 0.01, v);
   }
 }
 
@@ -995,7 +1038,7 @@ void proto_register_its(void)
     { &hf_camssp_reserved, { "reserved", "its.ssp.cam.reserved", FT_UINT16, BASE_DEC, NULL, 0x0003, NULL, HFILL }},
     };
 
-    static int *ett[] = {
+     static int *ett[] = {
         &ett_its,
         &ett_denmssp_flags,
         &ett_camssp_flags,
@@ -1049,6 +1092,9 @@ void proto_register_its(void)
     proto_its_cpm = proto_register_protocol_in_name_only("ITS message - CPM", "CPM", "its.message.cpm", proto_its, FT_BYTES);
     proto_its_vam = proto_register_protocol_in_name_only("ITS message - VAM", "VAM", "its.message.vam", proto_its, FT_BYTES);
     proto_its_imzm = proto_register_protocol_in_name_only("ITS message - IMZM", "IMZM", "its.message.imzm", proto_its, FT_BYTES);
+    proto_its_pim = proto_register_protocol_in_name_only("ITS message - PIM", "PIM", "its.message.pim", proto_its, FT_BYTES);
+    proto_its_mim = proto_register_protocol_in_name_only("ITS message - MIM", "MIM", "its.message.mim", proto_its, FT_BYTES);
+    proto_its_mvm = proto_register_protocol_in_name_only("ITS message - MVM", "MVM", "its.message.mvm", proto_its, FT_BYTES);
 
     proto_addgrpc = proto_register_protocol_in_name_only("DSRC Addition Grp C (EU)", "ADDGRPC", "dsrc.addgrpc", proto_its, FT_BYTES);
 
@@ -1056,7 +1102,7 @@ void proto_register_its(void)
     static build_valid_func its_da_build_value[1] = {its_msgid_value};
     static decode_as_value_t its_da_values = {its_msgid_prompt, 1, its_da_build_value};
     static decode_as_t its_da = {"its", "its.msg_id", 1, 0, &its_da_values, NULL, NULL,
-                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL};
 
     register_decode_as(&its_da);
 
@@ -1093,6 +1139,9 @@ void proto_register_its(void)
 #define ITS_CPM_PROT_VER 2
 #define ITS_VAM_PROT_VER 3
 #define ITS_IMZM_PROT_VER 2
+#define ITS_MIM_PROT_VER 1
+#define ITS_PIM_PROT_VER 2
+#define ITS_MVM_PROT_VER 1
 
 void proto_reg_handoff_its(void)
 {
@@ -1110,27 +1159,37 @@ void proto_reg_handoff_its(void)
     // Enable decode as for its pdu's send via udp
     dissector_add_for_decode_as("udp.port", its_handle);
 
-    dissector_add_uint("its.msg_id", (ITS_DENM_PROT_VER << 16) + ITS_DENM,          create_dissector_handle(dissect_denm_DenmPayload_PDU, proto_its_denm ));
-    dissector_add_uint("its.msg_id", (ITS_DENM_PROT_VERv1 << 16) + ITS_DENM,        create_dissector_handle(dissect_denmv1_DecentralizedEnvironmentalNotificationMessageV1_PDU, proto_its_denmv1 ));
-    dissector_add_uint("its.msg_id", (ITS_CAM_PROT_VER << 16) + ITS_CAM,            create_dissector_handle( dissect_cam_CamPayload_PDU, proto_its_cam ));
-    dissector_add_uint("its.msg_id", (ITS_CAM_PROT_VERv1 << 16) + ITS_CAM,          create_dissector_handle( dissect_camv1_CoopAwarenessV1_PDU, proto_its_camv1));
-    dissector_add_uint("its.msg_id", (ITS_SPATEM_PROT_VERv1 << 16) + ITS_SPATEM,    create_dissector_handle( dissect_dsrc_SPAT_PDU, proto_its_spatemv1 ));
-    dissector_add_uint("its.msg_id", (ITS_SPATEM_PROT_VER << 16) + ITS_SPATEM,      create_dissector_handle( dissect_dsrc_SPAT_PDU, proto_its_spatem ));
-    dissector_add_uint("its.msg_id", (ITS_MAPEM_PROT_VERv1 << 16) + ITS_MAPEM,      create_dissector_handle( dissect_dsrc_MapData_PDU, proto_its_mapemv1 ));
-    dissector_add_uint("its.msg_id", (ITS_MAPEM_PROT_VER << 16) + ITS_MAPEM,        create_dissector_handle( dissect_dsrc_MapData_PDU, proto_its_mapem ));
-    dissector_add_uint("its.msg_id", (ITS_IVIM_PROT_VERv1 << 16) + ITS_IVIM,        create_dissector_handle( dissect_ivi_IviStructure_PDU, proto_its_ivimv1 ));
-    dissector_add_uint("its.msg_id", (ITS_IVIM_PROT_VER << 16) + ITS_IVIM,          create_dissector_handle( dissect_ivi_IviStructure_PDU, proto_its_ivim ));
-    dissector_add_uint("its.msg_id", ITS_RFU1  ,                                    create_dissector_handle( dissect_evrsr_EV_RSR_MessageBody_PDU, proto_its_evrsr ));
-    dissector_add_uint("its.msg_id", (ITS_SREM_PROT_VER << 16) + ITS_SREM,          create_dissector_handle( dissect_dsrc_SignalRequestMessage_PDU, proto_its_srem ));
-    dissector_add_uint("its.msg_id", (ITS_SSEM_PROT_VER << 16) + ITS_SSEM,          create_dissector_handle( dissect_dsrc_SignalStatusMessage_PDU, proto_its_ssem ));
-    dissector_add_uint("its.msg_id", (ITS_RTCMEM_PROT_VERv1 << 16) + ITS_RTCMEM,    create_dissector_handle( dissect_dsrc_RTCMcorrections_PDU, proto_its_rtcmemv1));
-    dissector_add_uint("its.msg_id", (ITS_RTCMEM_PROT_VER << 16) + ITS_RTCMEM,      create_dissector_handle(dissect_dsrc_RTCMcorrections_PDU, proto_its_rtcmem));
-    dissector_add_uint("its.msg_id", ITS_EVCSN,                                     create_dissector_handle( dissect_evcsn_EVChargingSpotNotificationPOIMessage_PDU, proto_its_evcsn ));
-    dissector_add_uint("its.msg_id", (ITS_TIS_TPG_PROT_VER << 16) + ITS_RFU2,       create_dissector_handle( dissect_tistpg_TisTpgTransaction_PDU, proto_its_tistpg ));
-    dissector_add_uint("its.msg_id", (ITS_CPM_PROT_VERv1 << 16) + ITS_CPM,          create_dissector_handle(dissect_cpmv1_CollectivePerceptionMessagev1_PDU, proto_its_cpmv1));
-    dissector_add_uint("its.msg_id", (ITS_CPM_PROT_VER << 16) + ITS_CPM,            create_dissector_handle(dissect_cpm_CpmPayload_PDU, proto_its_cpm));
-    dissector_add_uint("its.msg_id", (ITS_IMZM_PROT_VER << 16) + ITS_IMZM,          create_dissector_handle(dissect_imzm_InterferenceManagementZoneMessage_PDU, proto_its_imzm));
-    dissector_add_uint("its.msg_id", (ITS_VAM_PROT_VER << 16) + ITS_VAM,            create_dissector_handle(dissect_vam_VruAwareness_PDU, proto_its_vam));
+    dissector_add_uint("its.msg_id", (ITS_DENM_PROT_VER << 16) + ITS_DENM,          /* denm    (1) */create_dissector_handle(dissect_denm_DenmPayload_PDU, proto_its_denm));
+    dissector_add_uint("its.msg_id", (ITS_DENM_PROT_VERv1 << 16) + ITS_DENM,        /* denm    (1) */create_dissector_handle(dissect_denmv1_DecentralizedEnvironmentalNotificationMessageV1_PDU, proto_its_denmv1));
+    dissector_add_uint("its.msg_id", (ITS_CAM_PROT_VER << 16) + ITS_CAM,            /* cam     (2) */create_dissector_handle( dissect_cam_CamPayload_PDU, proto_its_cam ));
+    dissector_add_uint("its.msg_id", (ITS_CAM_PROT_VERv1 << 16) + ITS_CAM,          /* cam     (2) */create_dissector_handle( dissect_camv1_CoopAwarenessV1_PDU, proto_its_camv1));
+                                                                                    /* poim    (3) */
+    dissector_add_uint("its.msg_id", (ITS_SPATEM_PROT_VERv1 << 16) + ITS_SPATEM,    /*spatem   (4) */create_dissector_handle(dissect_dsrc_SPAT_PDU, proto_its_spatemv1));
+    dissector_add_uint("its.msg_id", (ITS_SPATEM_PROT_VER << 16) + ITS_SPATEM,      /*spatem   (4) */create_dissector_handle( dissect_dsrc_SPAT_PDU, proto_its_spatem ));
+    dissector_add_uint("its.msg_id", (ITS_MAPEM_PROT_VERv1 << 16) + ITS_MAPEM,      /* mapem   (5) */create_dissector_handle(dissect_dsrc_MapData_PDU, proto_its_mapemv1));
+    dissector_add_uint("its.msg_id", (ITS_MAPEM_PROT_VER << 16) + ITS_MAPEM,        /* mapem   (5) */create_dissector_handle( dissect_dsrc_MapData_PDU, proto_its_mapem ));
+    dissector_add_uint("its.msg_id", (ITS_IVIM_PROT_VERv1 << 16) + ITS_IVIM,        /* ivim    (6) */create_dissector_handle(dissect_ivi_IviStructure_PDU, proto_its_ivimv1));
+    dissector_add_uint("its.msg_id", (ITS_IVIM_PROT_VER << 16) + ITS_IVIM,          /* ivim    (6) */create_dissector_handle( dissect_ivi_IviStructure_PDU, proto_its_ivim ));
+    dissector_add_uint("its.msg_id", ITS_RFU1  ,                                    /* rfu1    (7) */create_dissector_handle(dissect_evrsr_EV_RSR_MessageBody_PDU, proto_its_evrsr));
+    dissector_add_uint("its.msg_id", (ITS_TIS_TPG_PROT_VER << 16) + ITS_RFU2,       /* rfu2    (8) */create_dissector_handle(dissect_tistpg_TisTpgTransaction_PDU, proto_its_tistpg));
+    dissector_add_uint("its.msg_id", (ITS_SREM_PROT_VER << 16) + ITS_SREM,          /* srem    (9) */create_dissector_handle(dissect_dsrc_SignalRequestMessage_PDU, proto_its_srem));
+    dissector_add_uint("its.msg_id", (ITS_SSEM_PROT_VER << 16) + ITS_SSEM,          /* ssem   (10) */create_dissector_handle(dissect_dsrc_SignalStatusMessage_PDU, proto_its_ssem));
+    dissector_add_uint("its.msg_id", ITS_EVCSN,                                     /* evcsn  (11) */create_dissector_handle(dissect_evcsn_EVChargingSpotNotificationPOIMessage_PDU, proto_its_evcsn));
+                                                                                    /* saem   (12) */
+    dissector_add_uint("its.msg_id", (ITS_RTCMEM_PROT_VERv1 << 16) + ITS_RTCMEM,    /* rtcmem (13) */create_dissector_handle(dissect_dsrc_RTCMcorrections_PDU, proto_its_rtcmemv1));
+    dissector_add_uint("its.msg_id", (ITS_RTCMEM_PROT_VER << 16) + ITS_RTCMEM,      /* rtcmem (13) */create_dissector_handle(dissect_dsrc_RTCMcorrections_PDU, proto_its_rtcmem));
+    dissector_add_uint("its.msg_id", (ITS_CPM_PROT_VERv1 << 16) + ITS_CPM,          /* cpm    (14) */create_dissector_handle(dissect_cpmv1_CollectivePerceptionMessagev1_PDU, proto_its_cpmv1));
+    dissector_add_uint("its.msg_id", (ITS_CPM_PROT_VER << 16) + ITS_CPM,            /* cpm    (14) */create_dissector_handle(dissect_cpm_CpmPayload_PDU, proto_its_cpm));
+    dissector_add_uint("its.msg_id", (ITS_IMZM_PROT_VER << 16) + ITS_IMZM,          /* imzm   (15) */create_dissector_handle(dissect_imzm_InterferenceManagementZoneMessage_PDU, proto_its_imzm));
+    dissector_add_uint("its.msg_id", (ITS_VAM_PROT_VER << 16) + ITS_VAM,            /* vam    (16) */create_dissector_handle(dissect_vam_VruAwareness_PDU, proto_its_vam));
+
+    /* dsm    (17) */
+
+    dissector_add_uint("its.msg_id", (ITS_MIM_PROT_VER << 16) + ITS_MIM,            /* mim    (18) */create_dissector_handle(dissect_mim_MIM_PDU, proto_its_mim));
+    dissector_add_uint("its.msg_id", (ITS_MVM_PROT_VER << 16) + ITS_MVM,            /* mvm    (19) */create_dissector_handle(dissect_mvm_MVM_PDU, proto_its_mvm));
+    /* mcm    (20) */
+
+    dissector_add_uint("its.msg_id", (ITS_PIM_PROT_VER << 16) + ITS_PIM,            /* pim    (21) */create_dissector_handle(dissect_pim_PimPayload_PDU, proto_its_pim));
 
     /* Missing definitions: ITS_POI, ITS_SAEM */
 

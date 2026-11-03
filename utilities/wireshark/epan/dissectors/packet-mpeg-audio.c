@@ -49,8 +49,8 @@ static int ett_mpeg_audio_Audio;
 static int ett_mpeg_audio_ID3v1;
 
 
-static int
-dissect_mpeg_audio_BIT_STRING_SIZE_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_BIT_STRING_SIZE_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      11, 11, false, NULL, 0, NULL, NULL);
 
@@ -67,8 +67,8 @@ static const value_string mpeg_audio_T_version_vals[] = {
 };
 
 
-static int
-dissect_mpeg_audio_T_version(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_T_version(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -85,8 +85,8 @@ static const value_string mpeg_audio_T_layer_vals[] = {
 };
 
 
-static int
-dissect_mpeg_audio_T_layer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_T_layer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -101,8 +101,8 @@ static const value_string mpeg_audio_T_protection_vals[] = {
 };
 
 
-static int
-dissect_mpeg_audio_T_protection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_T_protection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -111,8 +111,8 @@ dissect_mpeg_audio_T_protection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_mpeg_audio_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_INTEGER_0_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -121,8 +121,8 @@ dissect_mpeg_audio_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_mpeg_audio_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_INTEGER_0_3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 3U, NULL, false);
 
@@ -131,8 +131,8 @@ dissect_mpeg_audio_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_mpeg_audio_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_BOOLEAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -148,8 +148,8 @@ static const value_string mpeg_audio_T_channel_mode_vals[] = {
 };
 
 
-static int
-dissect_mpeg_audio_T_channel_mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_T_channel_mode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -166,8 +166,8 @@ static const value_string mpeg_audio_T_emphasis_vals[] = {
 };
 
 
-static int
-dissect_mpeg_audio_T_emphasis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_T_emphasis(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -192,8 +192,8 @@ static const per_sequence_t Audio_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_mpeg_audio_Audio(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_Audio(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_mpeg_audio_Audio, Audio_sequence);
 
@@ -202,8 +202,8 @@ dissect_mpeg_audio_Audio(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_mpeg_audio_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        3, 3, false, NULL);
 
@@ -212,8 +212,8 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_mpeg_audio_OCTET_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_OCTET_STRING_SIZE_30(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        30, 30, false, NULL);
 
@@ -222,8 +222,8 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_mpeg_audio_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        4, 4, false, NULL);
 
@@ -232,8 +232,8 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_mpeg_audio_OCTET_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_OCTET_STRING_SIZE_28(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        28, 28, false, NULL);
 
@@ -242,8 +242,8 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_mpeg_audio_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_INTEGER_0_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -381,9 +381,11 @@ static const value_string mpeg_audio_T_genre_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext mpeg_audio_T_genre_vals_ext = VALUE_STRING_EXT_INIT(mpeg_audio_T_genre_vals);
 
-static int
-dissect_mpeg_audio_T_genre(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_mpeg_audio_T_genre(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -404,8 +406,8 @@ static const per_sequence_t ID3v1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_mpeg_audio_ID3v1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_mpeg_audio_ID3v1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_mpeg_audio_ID3v1, ID3v1_sequence);
 
@@ -416,7 +418,7 @@ dissect_mpeg_audio_ID3v1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 void proto_register_mpeg_audio(void);
 void proto_reg_handoff_mpeg_audio(void);
 
-dissector_handle_t mpeg_audio_handle;
+static dissector_handle_t mpeg_audio_handle;
 
 static int proto_mpeg_audio;
 static dissector_handle_t id3v2_handle;
@@ -446,8 +448,8 @@ test_mpeg_audio(tvbuff_t *tvb, int offset)
 	return MPA_VALID(&mpa);
 }
 
-static int
-mpeg_resync(tvbuff_t *tvb, int offset)
+static unsigned
+mpeg_resync(tvbuff_t *tvb, unsigned offset)
 {
 	uint32_t hdr;
 	struct mpa mpa;
@@ -455,14 +457,13 @@ mpeg_resync(tvbuff_t *tvb, int offset)
 	/* This only looks to resync on another frame; it doesn't
 	 * look for an ID3 tag.
 	 */
-	offset = tvb_find_uint8(tvb, offset, -1, '\xff');
-	while (offset != -1 && tvb_bytes_exist(tvb, offset, 4)) {
+	while (tvb_find_uint8_remaining(tvb, offset, '\xff', &offset) && tvb_bytes_exist(tvb, offset, 4)) {
 		hdr = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
 		MPA_UNMARSHAL(&mpa, hdr);
 		if (MPA_VALID(&mpa)) {
 			return offset;
 		}
-		offset = tvb_find_uint8(tvb, offset + 1, -1, '\xff');
+		offset += 1;
 	}
 	return tvb_reported_length(tvb);
 }
@@ -472,9 +473,9 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	uint32_t h;
 	struct mpa mpa;
-	int data_size = 0;
+	unsigned data_size = 0;
 	asn1_ctx_t asn1_ctx;
-	int offset = 0;
+	unsigned offset = 0;
 	static const char *version_names[] = { "1", "2", "2.5" };
 
 	if (!tvb_bytes_exist(tvb, 0, 4))
@@ -491,7 +492,7 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	col_add_fstr(pinfo->cinfo, COL_INFO,
 				"Audio Layer %d", mpa_layer(&mpa) + 1);
 	if (MPA_BITRATE_VALID(&mpa) && MPA_FREQUENCY_VALID(&mpa)) {
-		data_size = (int)(MPA_DATA_BYTES(&mpa) - sizeof mpa);
+		data_size = (MPA_DATA_BYTES(&mpa) - sizeof mpa);
 		col_append_fstr(pinfo->cinfo, COL_INFO,
 						", %d kb/s, %g kHz",
 						mpa_bitrate(&mpa) / 1000,
@@ -517,7 +518,7 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	return offset / 8;
 }
 
-static int
+static unsigned
 dissect_id3v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	asn1_ctx_t asn1_ctx;
@@ -535,7 +536,8 @@ dissect_mpeg_audio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
 	proto_item *ti;
 	proto_tree *mpeg_audio_tree;
 
-	int magic, offset = 0;
+	int magic;
+	unsigned offset = 0;
 	uint32_t frame_len;
 	tvbuff_t *next_tvb;
 
@@ -662,7 +664,7 @@ proto_register_mpeg_audio(void)
         "INTEGER_0_255", HFILL }},
     { &hf_mpeg_audio_genre,
       { "genre", "mpeg-audio.genre",
-        FT_UINT32, BASE_DEC, VALS(mpeg_audio_T_genre_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &mpeg_audio_T_genre_vals_ext, 0,
         NULL, HFILL }},
 		{ &hf_mpeg_audio_header,
 			{ "Frame Header", "mpeg-audio.header",

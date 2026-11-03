@@ -573,7 +573,7 @@ xmpp_xml_frame_to_element_t(packet_info *pinfo, xml_frame_t *xml_frame, xmpp_ele
 
     if((elem = tvbparse_get(tt,want_stream_end_with_ns))!=NULL)
     {
-        node->default_ns_abbrev = tvb_get_string_enc(pinfo->pool, elem->sub->tvb, elem->sub->offset, elem->sub->len, ENC_ASCII);
+        node->default_ns_abbrev = (char*)tvb_get_string_enc(pinfo->pool, elem->sub->tvb, elem->sub->offset, elem->sub->len, ENC_ASCII);
     }
 
     child = xml_frame->first_child;
@@ -749,7 +749,7 @@ xmpp_element_to_string(wmem_allocator_t *pool, tvbuff_t *tvb, xmpp_element_t *el
 
     if(tvb_offset_exists(tvb, element->offset+element->length-1))
     {
-        buff = tvb_get_string_enc(pool, tvb, element->offset, element->length, ENC_ASCII);
+        buff = (char*)tvb_get_string_enc(pool, tvb, element->offset, element->length, ENC_ASCII);
     }
     return buff;
 }
@@ -881,6 +881,9 @@ xmpp_display_attrs_ext(proto_tree *tree, xmpp_element_t *element, packet_info *p
     ns_abbrevs_head = ns_abbrevs;
     ns_fullnames_head = ns_fullnames;
 
+    CLEANUP_PUSH_PFX(k, cleanup_glist_cb, ns_abbrevs_head);
+    CLEANUP_PUSH_PFX(v, cleanup_glist_cb, ns_fullnames_head);
+
     if(element->default_ns_abbrev)
         proto_item_append_text(item, "(%s)",element->default_ns_abbrev);
 
@@ -933,8 +936,8 @@ xmpp_display_attrs_ext(proto_tree *tree, xmpp_element_t *element, packet_info *p
     /*displays attributes that weren't recognized*/
     xmpp_unknown_attrs(tree, tvb, pinfo, element, false);
 
-    g_list_free(ns_abbrevs_head);
-    g_list_free(ns_fullnames_head);
+    CLEANUP_CALL_AND_POP_PFX(v);
+    CLEANUP_CALL_AND_POP_PFX(k);
 }
 
 typedef struct _name_attr_t

@@ -28,7 +28,7 @@
 #include <epan/tfs.h>
 #include <wsutil/array.h>
 #include <tap.h>
-#include <ui/tap-credentials.h>
+#include <epan/credentials.h>
 
 #include "packet-tcp.h"
 
@@ -361,11 +361,11 @@ static int dissect_zmtp_command(tvbuff_t *tvb, int offset, packet_info *pinfo _U
 
     /* command-name (len + bytes) */
     uint32_t command_name_length;
-    const unsigned char *command_name;
+    const char *command_name;
     len_ti = proto_tree_add_item_ret_uint(tree, hf_zmtp_command_name_length, tvb, offset, 1, ENC_BIG_ENDIAN, &command_name_length);
     proto_item_set_hidden(len_ti);
     offset++;
-    proto_tree_add_item_ret_string(tree, hf_zmtp_command_name, tvb, offset, command_name_length, ENC_ASCII, pinfo->pool, &command_name);
+    proto_tree_add_item_ret_string(tree, hf_zmtp_command_name, tvb, offset, command_name_length, ENC_ASCII, pinfo->pool, (const uint8_t**)&command_name);
     col_append_fstr(pinfo->cinfo, COL_INFO, "(%s) ", command_name);
     offset += command_name_length;
 
@@ -535,7 +535,7 @@ dissect_zmtp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 {
     proto_tree *zmtp_tree;
     proto_item *root_ti;
-    int offset = 0;
+    unsigned offset = 0;
     char* str_flags;
 
     /* Protocol column */
@@ -617,10 +617,10 @@ dissect_zmtp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
             proto_item_append_text(version_ti, " (%u.%u)", major, minor);
 
             /* mechanism (20 bytes). N.B. *must* must match setting from peer */
-            const unsigned char *mechanism;
+            const char *mechanism;
             unsigned mechanism_len;
             proto_tree_add_item_ret_string_and_length(zmtp_tree, hf_zmtp_mechanism, tvb, offset, 20, ENC_ASCII,
-                                                      pinfo->pool, &mechanism, &mechanism_len);
+                                                      pinfo->pool, (const uint8_t**)&mechanism, &mechanism_len);
             offset += mechanism_len;
             col_append_fstr(pinfo->cinfo, COL_INFO, " mechanism=%s", mechanism);
 

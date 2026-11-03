@@ -6,31 +6,36 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef FTYPES_INT_H
-#define FTYPES_INT_H
+#pragma once
 
 #include "ftypes.h"
 #include <epan/proto.h>
 #include <epan/packet.h>
 
+/**
+ * @brief Represents a typed field value used in protocol dissection.
+ *
+ * This structure encapsulates a value of a specific field type (`ftype`)
+ * and stores it in a union of supported primitive and complex types.
+ * It is used extensively in the display filter engine and dissector logic.
+ */
 struct _fvalue_t {
-	const ftype_t	*ftype;
+	const ftype_t *ftype; /**< Pointer to the field type descriptor. */
+
 	union {
-		/* Put a few basic types in here */
-		uint64_t		uinteger64;
-		int64_t			sinteger64;
-		double			floating;
-		wmem_strbuf_t		*strbuf;
-		GBytes			*bytes;
-		ipv4_addr_and_mask	ipv4;
-		ipv6_addr_and_prefix	ipv6;
-		e_guid_t		guid;
-		nstime_t		time;
-		protocol_value_t 	protocol;
-		uint16_t		sfloat_ieee_11073;
-		uint32_t		float_ieee_11073;
-	} value;
+		uint64_t uinteger64;              /**< Unsigned 64-bit integer value. */
+		int64_t sinteger64;               /**< Signed 64-bit integer value. */
+		double floating;                  /**< Floating-point value. */
+		wmem_strbuf_t *strbuf;            /**< Pointer to a string buffer. */
+		GBytes *bytes;                    /**< Pointer to a byte array. */
+		ipv4_addr_and_mask ipv4;          /**< IPv4 address with subnet mask. */
+		ipv6_addr_and_prefix ipv6;        /**< IPv6 address with prefix length. */
+		e_guid_t guid;                    /**< Globally Unique Identifier (GUID). */
+		nstime_t time;                    /**< Time value (seconds and nanoseconds). */
+		protocol_value_t protocol;        /**< Protocol-specific value. */
+		uint16_t sfloat_ieee_11073;       /**< IEEE 11073 16-bit SFLOAT format. */
+		uint32_t float_ieee_11073;        /**< IEEE 11073 32-bit FLOAT format. */
+	} value; /**< Union holding the actual field value. */
 };
 
 extern const ftype_t* type_list[FT_ENUM_SIZE + 1];
@@ -38,7 +43,7 @@ extern const ftype_t* type_list[FT_ENUM_SIZE + 1];
 /* Given an ftenum number, return an ftype_t* */
 #define FTYPE_LOOKUP(ftype, result)		\
 	/* Check input */			\
-	ws_assert(ftype < FT_NUM_TYPES);	\
+	ws_abort_if_fail(ftype < FT_NUM_TYPES);	\
 	result = type_list[ftype];
 
 typedef void (*FvalueNewFunc)(fvalue_t*);
@@ -62,7 +67,7 @@ typedef void (*FvalueSetBytesFunc)(fvalue_t*, GBytes *);
 typedef void (*FvalueSetGuidFunc)(fvalue_t*, const e_guid_t *);
 typedef void (*FvalueSetTimeFunc)(fvalue_t*, const nstime_t *);
 typedef void (*FvalueSetStrbufFunc)(fvalue_t*, wmem_strbuf_t *);
-typedef void (*FvalueSetProtocolFunc)(fvalue_t*, tvbuff_t *value, const char *name, int length);
+typedef void (*FvalueSetProtocolFunc)(fvalue_t*, tvbuff_t *value, const char *name, unsigned length);
 typedef void (*FvalueSetUnsignedIntegerFunc)(fvalue_t*, uint32_t);
 typedef void (*FvalueSetSignedIntegerFunc)(fvalue_t*, int32_t);
 typedef void (*FvalueSetUnsignedInteger64Func)(fvalue_t*, uint64_t);
@@ -95,113 +100,275 @@ typedef void (*FvalueSlice)(fvalue_t*, void *, unsigned offset, unsigned length)
 typedef enum ft_result (*FvalueUnaryOp)(fvalue_t *, const fvalue_t*, char **);
 typedef enum ft_result (*FvalueBinaryOp)(fvalue_t *, const fvalue_t*, const fvalue_t*, char **);
 
+/**
+ * @brief Describes a field type and its associated operations for display filtering.
+ *
+ * This structure defines the behavior of a specific field type (`ftenum_t`) used in
+ * protocol dissection and display filtering. It includes functions for creating,
+ * converting, comparing, and manipulating values of that type.
+ */
 struct _ftype_t {
-	ftenum_t		ftype;
-	int			wire_size;
-	FvalueNewFunc		new_value;
-	FvalueCopyFunc		copy_value;
-	FvalueFreeFunc		free_value;
+	ftenum_t ftype;              /**< Enum identifier for the field type. */
+	int wire_size;               /**< Size of the field on the wire, in bytes. */
 
-	FvalueFromLiteral	val_from_literal;
-	FvalueFromString	val_from_string;
-	FvalueFromCharConst	val_from_charconst;
-	FvalueFromUnsignedInt64	val_from_uinteger64;
-	FvalueFromSignedInt64	val_from_sinteger64;
-	FvalueFromDouble	val_from_double;
+	FvalueNewFunc new_value;     /**< Function to allocate a new value of this type. */
+	FvalueCopyFunc copy_value;   /**< Function to copy a value of this type. */
+	FvalueFreeFunc free_value;   /**< Function to free a value of this type. */
 
-	FvalueToStringRepr	val_to_string_repr;
+	FvalueFromLiteral val_from_literal;         /**< Converts from a literal token. */
+	FvalueFromString val_from_string;           /**< Converts from a string representation. */
+	FvalueFromCharConst val_from_charconst;     /**< Converts from a character constant. */
+	FvalueFromUnsignedInt64 val_from_uinteger64;/**< Converts from a 64-bit unsigned integer. */
+	FvalueFromSignedInt64 val_from_sinteger64;  /**< Converts from a 64-bit signed integer. */
+	FvalueFromDouble val_from_double;           /**< Converts from a double-precision float. */
 
-	FvalueToUnsignedInt64	val_to_uinteger64;
-	FvalueToSignedInt64	val_to_sinteger64;
-	FvalueToDouble		val_to_double;
+	FvalueToStringRepr val_to_string_repr;      /**< Converts to a string representation. */
 
+	FvalueToUnsignedInt64 val_to_uinteger64;    /**< Converts to a 64-bit unsigned integer. */
+	FvalueToSignedInt64 val_to_sinteger64;      /**< Converts to a 64-bit signed integer. */
+	FvalueToDouble val_to_double;               /**< Converts to a double-precision float. */
+
+	/**
+	 * @brief Union of function pointers for setting typed field values.
+	 *
+	 * Provides type-specific setter functions for assigning values to `fvalue_t`.
+	 */
 	union {
-		FvalueSetBytesFunc		set_value_bytes;
-		FvalueSetGuidFunc		set_value_guid;
-		FvalueSetTimeFunc		set_value_time;
-		FvalueSetStrbufFunc		set_value_strbuf;
-		FvalueSetProtocolFunc		set_value_protocol;
-		FvalueSetUnsignedIntegerFunc	set_value_uinteger;
-		FvalueSetSignedIntegerFunc	set_value_sinteger;
-		FvalueSetUnsignedInteger64Func	set_value_uinteger64;
-		FvalueSetSignedInteger64Func	set_value_sinteger64;
-		FvalueSetFloatingFunc		set_value_floating;
-		FvalueSetIpv4Func		set_value_ipv4;
-		FvalueSetIpv6Func		set_value_ipv6;
+		FvalueSetBytesFunc set_value_bytes;             /**< Sets a byte array value. */
+		FvalueSetGuidFunc set_value_guid;               /**< Sets a GUID value. */
+		FvalueSetTimeFunc set_value_time;               /**< Sets a time value. */
+		FvalueSetStrbufFunc set_value_strbuf;           /**< Sets a string buffer value. */
+		FvalueSetProtocolFunc set_value_protocol;       /**< Sets a protocol-specific value. */
+		FvalueSetUnsignedIntegerFunc set_value_uinteger;/**< Sets an unsigned integer value. */
+		FvalueSetSignedIntegerFunc set_value_sinteger;  /**< Sets a signed integer value. */
+		FvalueSetUnsignedInteger64Func set_value_uinteger64; /**< Sets a 64-bit unsigned integer. */
+		FvalueSetSignedInteger64Func set_value_sinteger64;   /**< Sets a 64-bit signed integer. */
+		FvalueSetFloatingFunc set_value_floating;       /**< Sets a floating-point value. */
+		FvalueSetIpv4Func set_value_ipv4;               /**< Sets an IPv4 address value. */
+		FvalueSetIpv6Func set_value_ipv6;               /**< Sets an IPv6 address value. */
 	} set_value;
 
+    /**
+     * @brief Union of function pointers for retrieving typed field values.
+     *
+     * Provides type-specific getter functions for extracting values from `fvalue_t`.
+     */
 	union {
-		FvalueGetBytesFunc		get_value_bytes;
-		FvalueGetGuidFunc		get_value_guid;
-		FvalueGetTimeFunc		get_value_time;
-		FvalueGetStrbufFunc		get_value_strbuf;
-		FvalueGetProtocolFunc		get_value_protocol;
-		FvalueGetUnsignedIntegerFunc	get_value_uinteger;
-		FvalueGetSignedIntegerFunc	get_value_sinteger;
-		FvalueGetUnsignedInteger64Func	get_value_uinteger64;
-		FvalueGetSignedInteger64Func	get_value_sinteger64;
-		FvalueGetFloatingFunc		get_value_floating;
-		FvalueGetIpv4Func		get_value_ipv4;
-		FvalueGetIpv6Func		get_value_ipv6;
+		FvalueGetBytesFunc get_value_bytes;             /**< Gets a byte array value. */
+		FvalueGetGuidFunc get_value_guid;               /**< Gets a GUID value. */
+		FvalueGetTimeFunc get_value_time;               /**< Gets a time value. */
+		FvalueGetStrbufFunc get_value_strbuf;           /**< Gets a string buffer value. */
+		FvalueGetProtocolFunc get_value_protocol;       /**< Gets a protocol-specific value. */
+		FvalueGetUnsignedIntegerFunc get_value_uinteger;/**< Gets an unsigned integer value. */
+		FvalueGetSignedIntegerFunc get_value_sinteger;  /**< Gets a signed integer value. */
+		FvalueGetUnsignedInteger64Func get_value_uinteger64; /**< Gets a 64-bit unsigned integer. */
+		FvalueGetSignedInteger64Func get_value_sinteger64;   /**< Gets a 64-bit signed integer. */
+		FvalueGetFloatingFunc get_value_floating;       /**< Gets a floating-point value. */
+		FvalueGetIpv4Func get_value_ipv4;               /**< Gets an IPv4 address value. */
+		FvalueGetIpv6Func get_value_ipv6;               /**< Gets an IPv6 address value. */
 	} get_value;
 
-	FvalueCompare		compare;
-	FvalueContains		contains;
-	FvalueMatches		matches;
+	FvalueCompare compare;       /**< Compares two values of this type. */
+	FvalueContains contains;     /**< Checks if one value contains another. */
+	FvalueMatches matches;       /**< Checks if a value matches a pattern. */
 
-	FvalueHashFunc		hash;
-	FvalueIs		is_zero;
-	FvalueIs		is_negative;
-	FvalueIs		is_nan;
-	FvalueLen		len;
-	FvalueSlice		slice;
-	FvalueBinaryOp		bitwise_and;
-	FvalueUnaryOp		unary_minus;
-	FvalueBinaryOp		add;
-	FvalueBinaryOp		subtract;
-	FvalueBinaryOp		multiply;
-	FvalueBinaryOp		divide;
-	FvalueBinaryOp		modulo;
+	FvalueHashFunc hash;         /**< Computes a hash of the value. */
+	FvalueIs is_zero;            /**< Checks if the value is zero. */
+	FvalueIs is_negative;        /**< Checks if the value is negative. */
+	FvalueIs is_nan;             /**< Checks if the value is NaN. */
+	FvalueLen len;               /**< Returns the length of the value. */
+	FvalueSlice slice;           /**< Extracts a slice from the value. */
+
+	FvalueBinaryOp bitwise_and;  /**< Bitwise AND operation. */
+	FvalueUnaryOp unary_minus;   /**< Unary negation operation. */
+	FvalueBinaryOp add;          /**< Addition operation. */
+	FvalueBinaryOp subtract;     /**< Subtraction operation. */
+	FvalueBinaryOp multiply;     /**< Multiplication operation. */
+	FvalueBinaryOp divide;       /**< Division operation. */
+	FvalueBinaryOp modulo;       /**< Modulo operation. */
 };
 
+/**
+ * @brief Registers a field type handler for Wireshark.
+ *
+ * This function registers a new field type handler with the specified details.
+ *
+ * @param ftype The enum value representing the field type to register.
+ * @param ft A pointer to the ftype_t structure containing details of the field type.
+ */
 void ftype_register(enum ftenum ftype, const ftype_t *ft);
 
+/**
+ * @brief Registers the bytes data type handler for Wireshark.
+ */
 void ftype_register_bytes(void);
+
+/**
+ * @brief Registers the double data type handler for Wireshark.
+ */
 void ftype_register_double(void);
+
+/**
+ * @brief Registers the IEEE 11073 float data type.
+ */
 void ftype_register_ieee_11073_float(void);
+
+/**
+ * @brief Registers all integer-related field types.
+ */
 void ftype_register_integers(void);
+
+/**
+ * @brief Registers IPv4 data type.
+ */
 void ftype_register_ipv4(void);
+
+/**
+ * @brief Registers IPv6 data type.
+ */
 void ftype_register_ipv6(void);
+
+/**
+ * @brief Registers the GUID data type.
+ */
 void ftype_register_guid(void);
+
+/**
+ * @brief Registers the "none" data type.
+ */
 void ftype_register_none(void);
+
+/**
+ * @brief Registers string field types.
+ */
 void ftype_register_string(void);
+
+/**
+ * @brief Registers time-related field types.
+ */
 void ftype_register_time(void);
+
+/**
+ * @brief Registers a new ftype for TVB (Protocol Data Unit) data.
+ */
 void ftype_register_tvbuff(void);
 
 /* For debugging. */
+
+/**
+ * @brief Registers pseudofields for byte-related data types.
+ *
+ * @param proto Protocol identifier to which the pseudofields will be registered.
+ */
 void ftype_register_pseudofields_bytes(int proto);
+
+/**
+ * @brief Registers pseudofields for double type.
+ *
+ * @param proto Protocol to register fields for.
+ */
 void ftype_register_pseudofields_double(int proto);
+
+/**
+ * @brief Registers pseudofields for IEEE 11073 float type.
+ *
+ * @param proto Protocol to register fields for.
+ */
 void ftype_register_pseudofields_ieee_11073_float(int proto);
+
+/**
+ * @brief Registers pseudofields for integer types.
+ *
+ * @param proto Protocol to register fields for.
+ */
 void ftype_register_pseudofields_integer(int proto);
+
+/**
+ * @brief Registers pseudofields for IPv4 data types.
+ *
+ * @param proto The protocol to register the fields with.
+ */
 void ftype_register_pseudofields_ipv4(int proto);
+
+/**
+ * @brief Registers pseudofields for IPv6 data types.
+ *
+ * @param proto The protocol to register the fields with.
+ */
 void ftype_register_pseudofields_ipv6(int proto);
+
+/**
+ * @brief Registers pseudofields for GUID type.
+ *
+ * @param proto Protocol to register fields for.
+ */
 void ftype_register_pseudofields_guid(int proto);
+
+/**
+ * @brief Registers pseudofields for a protocol with no specific type.
+ *
+ * @param proto The protocol identifier to register the fields for.
+ */
 void ftype_register_pseudofields_none(int proto);
+
+/**
+ * @brief Registers pseudofields for string types.
+ *
+ * @param proto Protocol number to register the fields with.
+ */
 void ftype_register_pseudofields_string(int proto);
+
+/**
+ * @brief Registers pseudofields for time-related data types.
+ *
+ * @param proto Protocol identifier to which the fields will be registered.
+ */
 void ftype_register_pseudofields_time(int proto);
+
+/**
+ * @brief Registers pseudofields for TVB (Protocol Data Unit) data.
+ *
+ * @param proto The protocol to register the fields with.
+ */
 void ftype_register_pseudofields_tvbuff(int proto);
 
+/**
+ * @brief Convert a literal string to a GByteArray.
+ *
+ * This function takes a literal string and converts it into a GByteArray.
+ * Leading colons are skipped, and special cases for one-byte hex literals are handled.
+ *
+ * @param s The input literal string.
+ * @param err_msg Pointer to store error message if any.
+ * @return A new GByteArray or NULL on failure.
+ */
 GByteArray *
 byte_array_from_literal(const char *s, char **err_msg);
 
+/**
+ * @brief Convert an unsigned long to a byte array.
+ *
+ * @param num The number to convert.
+ * @param err_msg Pointer to store error message if conversion fails.
+ * @return A new GByteArray containing the byte representation of num, or NULL on failure.
+ */
 GByteArray *
 byte_array_from_charconst(unsigned long num, char **err_msg);
 
+/**
+ * @brief Convert bytes to a string representation suitable for display filters.
+ *
+ * This function converts an array of bytes into a hexadecimal string with punctuation,
+ * which can be used in display filters.
+ *
+ * @param scope Memory allocation scope.
+ * @param src Pointer to the source byte array.
+ * @param src_size Size of the source byte array.
+ * @return A newly allocated string representing the bytes, or NULL on failure.
+ */
 char *
 bytes_to_dfilter_repr(wmem_allocator_t *scope,
 			const uint8_t *src, size_t src_size);
-
-#endif /* FTYPES_INT_H */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

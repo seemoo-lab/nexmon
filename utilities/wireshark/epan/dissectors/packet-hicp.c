@@ -88,7 +88,7 @@ dissect_hicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     proto_tree* hicp_tree;
 
     unsigned offset = 0;
-    int lengthp = 0;
+    unsigned lengthp = 0;
     double ext_value = 0;
 
     const char* parameters_ptr = NULL;
@@ -107,7 +107,7 @@ dissect_hicp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
     hicp_tree = proto_item_add_subtree(ti, ett_hicp);
 
-    parameters_ptr = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &lengthp, ENC_ASCII);
+    parameters_ptr = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &lengthp, ENC_ASCII);
     parameters = wmem_strsplit(pinfo->pool, (const char*)parameters_ptr, HICP_DELIMITER, -1);
     for (unsigned i = 0; i < g_strv_length(parameters); i++) {
         if (g_strrstr(parameters[i], " = ") != NULL) {

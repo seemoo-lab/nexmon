@@ -19,8 +19,8 @@
 #include <ui/qt/widgets/syntax_line_edit.h>
 
 #include <ui/qt/utils/qt_ui_utils.h>
-#include <ui/qt/utils/color_utils.h>
-#include <ui/qt/utils/stock_icon.h>
+#include <ui/qt/utils/themes/themed_icon.h>
+#include <ui/qt/utils/theme_manager.h>
 
 #include <QAbstractItemView>
 #include <QApplication>
@@ -76,59 +76,27 @@ void SyntaxLineEdit::allowCompletion(bool enabled)
 void SyntaxLineEdit::setSyntaxState(SyntaxState state) {
     syntax_state_ = state;
 
-    // XXX Should we drop the background colors here in favor of ::paintEvent below?
-    QColor valid_bg = ColorUtils::fromColorT(&prefs.gui_filter_valid_bg);
-    QColor valid_fg = ColorUtils::fromColorT(&prefs.gui_filter_valid_fg);
-    QColor invalid_bg = ColorUtils::fromColorT(&prefs.gui_filter_invalid_bg);
-    QColor invalid_fg = ColorUtils::fromColorT(&prefs.gui_filter_invalid_fg);
-    QColor deprecated_bg = ColorUtils::fromColorT(&prefs.gui_filter_deprecated_bg);
-    QColor deprecated_fg = ColorUtils::fromColorT(&prefs.gui_filter_deprecated_fg);
-
-    // Try to match QLineEdit's placeholder text color (which sets the
-    // alpha channel to 50%, which doesn't work in style sheets).
-    // Setting the foreground color lets us avoid yet another background
-    // color preference and should hopefully make things easier to
-    // distinguish for color blind folk.
-    QColor busy_fg = ColorUtils::alphaBlend(QApplication::palette().text(), QApplication::palette().base(), 0.5);
+    // Valid / Invalid / Deprecated backgrounds live in application.qss
+    // (global rules on SyntaxLineEdit[syntaxState="..."]).  Busy is
+    // handled here because the runtime stylesheet stops the QSS loader
+    // from doing wstheme(...) substitution — we resolve the tokens via
+    // the ThemeManager directly.  FilterBusy / FilterBusyText carry the
+    // historical "I'm working" look (placeholder-text fade over base)
+    // by default, but themes that ship explicit overrides in
+    // theme.filter take precedence.
+    ThemeManager *theme = ThemeManager::instance();
+    const QColor busy_bg = theme->color(ThemeManager::FilterBusy);
+    const QColor busy_fg = theme->color(ThemeManager::FilterBusyText);
 
     state_style_sheet_ = QStringLiteral(
             "SyntaxLineEdit[syntaxState=\"%1\"] {"
             "  color: %2;"
             "  background-color: %3;"
             "}"
-
-            "SyntaxLineEdit[syntaxState=\"%4\"] {"
-            "  color: %5;"
-            "  background-color: %6;"
-            "}"
-
-            "SyntaxLineEdit[syntaxState=\"%7\"] {"
-            "  color: %8;"
-            "  background-color: %9;"
-            "}"
-
-            "SyntaxLineEdit[syntaxState=\"%10\"] {"
-            "  color: %11;"
-            "  background-color: %12;"
-            "}"
             )
-
-            // CSS selector, foreground, background
-            .arg(Valid)
-            .arg(valid_fg.name())
-            .arg(valid_bg.name())
-
-            .arg(Invalid)
-            .arg(invalid_fg.name())
-            .arg(invalid_bg.name())
-
-            .arg(Deprecated)
-            .arg(deprecated_fg.name())
-            .arg(deprecated_bg.name())
-
             .arg(Busy)
             .arg(busy_fg.name())
-            .arg(palette().base().color().name())
+            .arg(busy_bg.name())
             ;
     setStyleSheet(style_sheet_);
 }
@@ -355,6 +323,9 @@ bool SyntaxLineEdit::event(QEvent *event)
         // qDebug() << "=so" << key_event->key() << key_event->modifiers() << key_event->text();
 
         if (key_event->modifiers() == Qt::KeyboardModifiers(Qt::ControlModifier|Qt::AltModifier)) {
+            if (key_event->key() == Qt::Key_F) {
+                return false;
+            }
             event->accept();
             return true;
         }
@@ -453,21 +424,22 @@ void SyntaxLineEdit::paintEvent(QPaintEvent *event)
     //
     // It's not clear if this is a bug or just how things work under Qt6.
     // Either way, it's easy to work around.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 3)
-    // Must match CaptureFilterEdit and DisplayFilterEdit stylesheets.
+
+    // Must match the DisplayFilterEdit stylesheet.
     int pad = style()->pixelMetric(QStyle::PM_DefaultFrameWidth) + 1;
     QRect full_cr = cr.adjusted(-pad, 0, -1, 0);
     QBrush bg;
 
+    ThemeManager *theme = ThemeManager::instance();
     switch (syntax_state_) {
     case Valid:
-        bg = ColorUtils::fromColorT(&prefs.gui_filter_valid_bg);
+        bg = theme->color(ThemeManager::FilterValid);
         break;
     case Invalid:
-        bg = ColorUtils::fromColorT(&prefs.gui_filter_invalid_bg);
+        bg = theme->color(ThemeManager::FilterInvalid);
         break;
     case Deprecated:
-        bg = ColorUtils::fromColorT(&prefs.gui_filter_deprecated_bg);
+        bg = theme->color(ThemeManager::FilterDeprecated);
         break;
     default:
         bg = palette().base();
@@ -475,18 +447,17 @@ void SyntaxLineEdit::paintEvent(QPaintEvent *event)
     }
 
     painter.fillRect(full_cr, bg);
-#endif
 
     QLineEdit::paintEvent(event);
 
-    QString si_name;
+    const char * si_name;
 
     switch (syntax_state_) {
     case Invalid:
-        si_name = "x-filter-invalid";
+        si_name = "filter-invalid";
         break;
     case Deprecated:
-        si_name = "x-filter-deprecated";
+        si_name = "filter-deprecated";
         break;
     default:
         return;
@@ -504,7 +475,7 @@ void SyntaxLineEdit::paintEvent(QPaintEvent *event)
         return;
     }
 
-    QIcon state_icon = StockIcon(si_name);
+    QIcon state_icon = ThemedIcon(si_name);
     if (state_icon.isNull()) {
         return;
     }
@@ -561,11 +532,7 @@ QStringList SyntaxLineEdit::splitLineUnderCursor()
     QPoint token_coords(getTokenUnderCursor());
 
     // Split line into preamble and word under cursor.
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     QString preamble = text().first(token_coords.x()).trimmed();
-#else
-    QString preamble = text().mid(0, token_coords.x()).trimmed();
-#endif
     // This should be trimmed already
     QString token_word = text().mid(token_coords.x(), token_coords.y());
 

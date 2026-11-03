@@ -30,12 +30,14 @@
 #include <epan/proto_data.h>
 #include <epan/conversation_table.h>
 #include <epan/conversation_filter.h>
+#include <epan/stats_tree.h>
 #include <epan/ftypes/ftypes.h>
 #include <epan/unit_strings.h>
 #include <epan/tfs.h>
 #include <wsutil/crc16.h>
 #include <wsutil/array.h>
 #include <wsutil/crc32.h>
+#include <wsutil/epochs.h>
 
 void proto_register_bpv7(void);
 void proto_reg_handoff_bpv7(void);
@@ -732,7 +734,7 @@ static nstime_t dtn_to_delta(const int64_t dtntime) {
  */
 static nstime_t dtn_to_utctime(const int64_t dtntime) {
     nstime_t utctime;
-    utctime.secs = 946684800 + dtntime / 1000;
+    utctime.secs = EPOCH_DELTA_2000_01_01_00_00_00_UTC + dtntime / 1000;
     utctime.nsecs = 1000000 * (dtntime % 1000);
     return utctime;
 }
@@ -1386,6 +1388,7 @@ static int dissect_block_canonical(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     }
 
     chunk = wscbor_chunk_read(pinfo->pool, tvb, &offset);
+    block->btsd_len = (chunk->head_value < INT_MAX) ? (int)(chunk->head_value) : INT_MAX;
     tvbuff_t *tvb_data = wscbor_require_bstr(wmem_file_scope(), chunk);
     field_ix++;
     block->data = tvb_data;
@@ -1692,6 +1695,8 @@ static int dissect_bp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
         proto_item_set_len(item_block, offset - block_start);
         block_ix++;
     }
+    // all done with PDU
+    bundle->pdu_len = offset;
 
     { // Extract primary block info first
         const bp_block_primary_t *primary = bundle->primary;
@@ -1747,9 +1752,9 @@ static int dissect_bp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
             }
 
             if (block->data) {
-                bundle->pyld_start = wmem_new(wmem_file_scope(), unsigned);
+                bundle->pyld_start = wmem_new(wmem_file_scope(), int);
                 *(bundle->pyld_start) = tvb_raw_offset(block->data) - tvb_raw_offset(tvb);
-                bundle->pyld_len = wmem_new(wmem_file_scope(), unsigned);
+                bundle->pyld_len = wmem_new(wmem_file_scope(), int);
                 *(bundle->pyld_len) = tvb_reported_length(block->data);
             }
         }
@@ -2441,6 +2446,49 @@ static char * bp_build_filter(packet_info *pinfo, void *user_data _U_) {
     );
 }
 
+static const char* st_str_bp = "Bundle";
+static const char* st_str_pdu = "PDU Length";
+static const char* st_str_blks = "Extension Block Count";
+static const char* st_str_btsd = "BTSD Length (by Block Type)";
+static int st_node_bp = -1;
+static int st_node_btsd = -1;
+
+static void
+bpv7_stats_tree_init(stats_tree *st)
+{
+    st_node_bp = stats_tree_create_node(st, st_str_bp, 0, STAT_DT_INT, false);
+    stats_tree_create_node(st, st_str_pdu, st_node_bp, STAT_DT_INT, false);
+    stats_tree_create_node(st, st_str_blks, st_node_bp, STAT_DT_INT, false);
+
+    st_node_btsd = stats_tree_create_pivot(st, st_str_btsd, 0);
+}
+
+static tap_packet_status
+bpv7_stats_tree_packet(stats_tree *st, packet_info *pinfo, epan_dissect_t *edt _U_, const void *p, tap_flags_t flags _U_)
+{
+    const bp_bundle_t *bundle = (const bp_bundle_t *)p;
+
+    tick_stat_node(st, st_str_bp, 0, false);
+    avg_stat_node_add_value_int(st, st_str_pdu, st_node_bp, false, bundle->pdu_len);
+    avg_stat_node_add_value_int(st, st_str_blks, st_node_bp, false, wmem_list_count(bundle->blocks));
+
+    // parent count of all bundles, not all blocks
+    tick_stat_node(st, st_str_btsd, 0, true);
+
+    for (wmem_list_frame_t *it = wmem_list_head(bundle->blocks); it;
+            it = wmem_list_frame_next(it)) {
+        const bp_block_canonical_t *block = wmem_list_frame_data(it);
+
+        const char *blk_type = "invalid";
+        if (block->type_code) {
+            blk_type = wmem_strdup_printf(pinfo->pool, "%" PRIu64, *(block->type_code));
+        }
+        avg_stat_node_add_value_int(st, blk_type, st_node_btsd, false, block->btsd_len);
+    }
+
+    return TAP_PACKET_REDRAW;
+}
+
 /// Overall registration of the protocol
 void proto_register_bpv7(void) {
     proto_bp = proto_register_protocol("DTN Bundle Protocol Version 7", "BPv7", "bpv7");
@@ -2452,7 +2500,7 @@ void proto_register_bpv7(void) {
     expert_module_t *expert = expert_register_protocol(proto_bp);
     expert_register_field_array(expert, expertitems, array_length(expertitems));
 
-    register_dissector("bpv7", dissect_bp, proto_bp);
+    register_dissector_with_description("bpv7", "Bundle Protocol Version 7", dissect_bp, proto_bp);
 
     eid_dissectors = register_dissector_table("bpv7.eid", "BPv7 EID Scheme-Specific Part", proto_bp, FT_UINT32, 0);
     block_dissectors = register_custom_dissector_table("bpv7.block_type", "BPv7 Block", proto_bp, g_int64_hash, g_int64_equal, g_free);
@@ -2463,7 +2511,6 @@ void proto_register_bpv7(void) {
     payload_dissectors_dtn_wkssp = register_dissector_table("bpv7.payload.dtn_wkssp", "BPv7 DTN-scheme well-known SSP", proto_bp, FT_STRING, STRING_CASE_SENSITIVE);
 
     payload_dissectors_dtn_serv = register_dissector_table("bpv7.payload.dtn_serv", "BPv7 DTN-scheme service", proto_bp, FT_STRING, STRING_CASE_SENSITIVE);
-    dissector_table_allow_decode_as(payload_dissectors_dtn_serv);
 
     static build_valid_func dtn_serv_da_build_value[1] = {dtn_serv_value};
     static decode_as_value_t dtn_serv_da_values[1] = {
@@ -2473,12 +2520,11 @@ void proto_register_bpv7(void) {
         "bpv7", "bpv7.payload.dtn_serv",
         1, 0, dtn_serv_da_values, NULL, NULL,
         decode_as_default_populate_list, decode_as_default_reset,
-        decode_as_default_change, NULL
+        decode_as_default_change, NULL, NULL, NULL
     };
     register_decode_as(&dtn_serv_da);
 
     payload_dissectors_ipn_serv = register_dissector_table("bpv7.payload.ipn_serv", "BPv7 IPN-scheme service", proto_bp, FT_UINT32, BASE_DEC);
-    dissector_table_allow_decode_as(payload_dissectors_ipn_serv);
 
     static build_valid_func ipn_serv_da_build_value[1] = {ipn_serv_value};
     static decode_as_value_t ipn_serv_da_values[1] = {
@@ -2488,7 +2534,7 @@ void proto_register_bpv7(void) {
         "bpv7", "bpv7.payload.ipn_serv",
         1, 0, ipn_serv_da_values, NULL, NULL,
         decode_as_default_populate_list, decode_as_default_reset,
-        decode_as_default_change, NULL
+        decode_as_default_change, NULL, NULL, NULL
     };
     register_decode_as(&ipn_serv_da);
 
@@ -2538,6 +2584,8 @@ void proto_reg_handoff_bpv7(void) {
 
     handle_cbor = find_dissector("cbor");
     handle_cborseq = find_dissector("cborseq");
+
+    stats_tree_register("bpv7", "bpv7", "DTN" STATS_TREE_MENU_SEPARATOR "BPv7", 0, bpv7_stats_tree_packet, bpv7_stats_tree_init, NULL);
 
     /* Packaged extensions */
     {

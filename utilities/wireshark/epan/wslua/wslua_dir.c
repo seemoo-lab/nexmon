@@ -197,9 +197,10 @@ WSLUA_CONSTRUCTOR Dir_open(lua_State* L) {
 
     dir = (Dir)g_malloc(sizeof(struct _wslua_dir));
     dir->dir = g_dir_open(dirname_clean, 0, NULL);
-    g_free(dirname_clean);
+    dir->path = dirname_clean;
 
     if (dir->dir == NULL) {
+        g_free(dir->path);
         g_free(dir);
 
         WSLUA_ARG_ERROR(Dir_open,PATHNAME,"could not open directory");
@@ -280,7 +281,7 @@ WSLUA_CONSTRUCTOR Dir_personal_config_path(lua_State* L) {
     /* Gets the https://www.wireshark.org/docs/wsug_html_chunked/ChAppFilesConfigurationSection.html[personal configuration] directory path, with filename if supplied. */
 #define WSLUA_OPTARG_Dir_personal_config_path_FILENAME 1 /* A filename. */
     const char *fname = luaL_optstring(L, WSLUA_OPTARG_Dir_personal_config_path_FILENAME,"");
-    char* filename = get_persconffile_path(fname,false);
+    char* filename = get_persconffile_path(fname,false, lua_app_env_var_prefix);
 
     lua_pushstring(L,filename);
     g_free(filename);
@@ -293,7 +294,7 @@ WSLUA_CONSTRUCTOR Dir_global_config_path(lua_State* L) {
     const char *fname = luaL_optstring(L, WSLUA_OPTARG_Dir_global_config_path_FILENAME,"");
     char* filename;
 
-    filename = get_datafile_path(fname);
+    filename = get_datafile_path(fname, lua_app_env_var_prefix);
     lua_pushstring(L,filename);
     g_free(filename);
     WSLUA_RETURN(1); /* The full pathname for a file in Wireshark's configuration directory. */
@@ -301,13 +302,13 @@ WSLUA_CONSTRUCTOR Dir_global_config_path(lua_State* L) {
 
 WSLUA_CONSTRUCTOR Dir_personal_plugins_path(lua_State* L) {
     /* Gets the personal plugins directory path. */
-    lua_pushstring(L, get_plugins_pers_dir());
+    lua_pushstring(L, get_plugins_pers_dir(lua_app_env_var_prefix));
     WSLUA_RETURN(1); /* The pathname of the https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html[personal plugins] directory. */
 }
 
 WSLUA_CONSTRUCTOR Dir_global_plugins_path(lua_State* L) {
     /* Gets the global plugins directory path. */
-    lua_pushstring(L, get_plugins_dir());
+    lua_pushstring(L, get_plugins_dir(lua_app_env_var_prefix));
     WSLUA_RETURN(1); /* The pathname of the https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html[global plugins] directory. */
 }
 
@@ -322,9 +323,22 @@ static int Dir__gc(lua_State* L) {
     }
 
     g_free(dir->ext);
+    g_free(dir->path);
     g_free(dir);
 
     return 0;
+}
+
+WSLUA_METAMETHOD Dir__tostring(lua_State* L) {
+    /* Returns a short label of the form `Dir: path=<path>` (with
+       `(closed)` appended once `Dir:close()` has run). `path` is
+       the directory Dir.open() resolved to, so symlinks and
+       relative paths show as their canonical form. */
+    Dir dir = checkDir(L,1);
+    lua_pushfstring(L, "Dir: path=%s%s",
+                    dir->path ? dir->path : "?",
+                    dir->dir ? "" : " (closed)");
+    WSLUA_RETURN(1); /* The string. */
 }
 
 WSLUA_METHODS Dir_methods[] = {
@@ -343,6 +357,7 @@ WSLUA_METHODS Dir_methods[] = {
 
 WSLUA_META Dir_meta[] = {
     WSLUA_CLASS_MTREG(Dir,call),
+    WSLUA_CLASS_MTREG(Dir,tostring),
     { NULL, NULL }
 };
 

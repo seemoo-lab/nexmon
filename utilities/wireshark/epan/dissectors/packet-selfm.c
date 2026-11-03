@@ -48,9 +48,8 @@
  * the Wireshark conversation functionality.
  */
 
-#define WS_LOG_DOMAIN "packet-selfm"
-
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-selfm"
 #include <wireshark.h>
 
 #include <epan/packet.h>
@@ -1161,7 +1160,7 @@ dissect_fmconfig_frame(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int 
 
     /* Get AI Channel Details */
     for (count = 0; count < num_ai; count++) {
-        ai_name = tvb_get_string_enc(pinfo->pool, tvb, offset, 6, ENC_ASCII);
+        ai_name = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, 6, ENC_ASCII);
 
         fmconfig_ai_tree = proto_tree_add_subtree_format(fmconfig_tree, tvb, offset, 10,
                     ett_selfm_fmconfig_ai, NULL, "Analog Channel: %s", ai_name);
@@ -1949,8 +1948,7 @@ dissect_fastmsg_frame(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int o
     offset += 1;
 
     /* Get Function Code, add to tree */
-    funccode = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(fastmsg_tree, hf_selfm_fastmsg_funccode, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(fastmsg_tree, hf_selfm_fastmsg_funccode, tvb, offset, 1, ENC_BIG_ENDIAN, &funccode);
 
     /* Append Column Info w/ Function Code */
     col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str_ext_const(funccode, &selfm_fastmsg_func_code_vals_ext, "Unknown Function Code"));
@@ -2192,8 +2190,7 @@ dissect_fastmsg_frame(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int o
              offset += 6;
 
              /* Number of Supported RX Function Codes */
-             rx_num_fc = tvb_get_uint8(tvb, offset);
-             fastmsg_def_fc_item = proto_tree_add_item(fastmsg_tree, hf_selfm_fastmsg_def_rx_num_fc, tvb, offset, 1, ENC_BIG_ENDIAN);
+             fastmsg_def_fc_item = proto_tree_add_item_ret_uint8(fastmsg_tree, hf_selfm_fastmsg_def_rx_num_fc, tvb, offset, 1, ENC_BIG_ENDIAN, &rx_num_fc);
              fastmsg_def_fc_tree = proto_item_add_subtree(fastmsg_def_fc_item, ett_selfm_fastmsg_def_fc);
              offset += 1;
 
@@ -2204,8 +2201,7 @@ dissect_fastmsg_frame(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int o
              }
 
              /* Number of Supported TX Function Codes */
-             tx_num_fc = tvb_get_uint8(tvb, offset);
-             fastmsg_def_fc_item = proto_tree_add_item(fastmsg_tree, hf_selfm_fastmsg_def_tx_num_fc, tvb, offset, 1, ENC_BIG_ENDIAN);
+             fastmsg_def_fc_item = proto_tree_add_item_ret_uint8(fastmsg_tree, hf_selfm_fastmsg_def_tx_num_fc, tvb, offset, 1, ENC_BIG_ENDIAN, &tx_num_fc);
              fastmsg_def_fc_tree = proto_item_add_subtree(fastmsg_def_fc_item, ett_selfm_fastmsg_def_fc);
              offset += 1;
 

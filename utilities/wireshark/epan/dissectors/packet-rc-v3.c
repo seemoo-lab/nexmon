@@ -26,11 +26,6 @@
 #include "packet-per.h"
 #include "packet-ntp.h"
 
-#define PNAME  "RC V3"
-#define PSNAME "RCv3"
-#define PFNAME "rc-v3"
-
-
 void proto_register_rc_v3(void);
 void proto_reg_handoff_rc_v3(void);
 
@@ -846,14 +841,14 @@ static int dissect_E2SM_RC_QueryHeader_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 
 /* RANParameter-Testing-Item -> RANParameter-Testing-Item/ranParameter-Type -> RANParameter-Testing-Item-Choice-List -> RANParameter-Testing-LIST -> RANParameter-Testing-Item */
 /* RANParameter-Testing-Item -> RANParameter-Testing-Item/ranParameter-Type -> RANParameter-Testing-Item-Choice-Structure -> RANParameter-Testing-STRUCTURE -> RANParameter-Testing-Item */
-static int dissect_rc_v3_RANParameter_Testing_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_rc_v3_RANParameter_Testing_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 /* RANParameter-Definition -> RANParameter-Definition-Choice -> RANParameter-Definition-Choice-LIST -> RANParameter-Definition-Choice-LIST/ranParameter-List -> RANParameter-Definition-Choice-LIST-Item -> RANParameter-Definition */
 /* RANParameter-Definition -> RANParameter-Definition-Choice -> RANParameter-Definition-Choice-STRUCTURE -> RANParameter-Definition-Choice-STRUCTURE/ranParameter-STRUCTURE -> RANParameter-Definition-Choice-STRUCTURE-Item -> RANParameter-Definition */
-static int dissect_rc_v3_RANParameter_Definition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_rc_v3_RANParameter_Definition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 /* RANParameter-ValueType -> RANParameter-ValueType-Choice-Structure -> RANParameter-STRUCTURE -> RANParameter-STRUCTURE/sequence-of-ranParameters -> RANParameter-STRUCTURE-Item -> RANParameter-ValueType */
-static int dissect_rc_v3_RANParameter_ValueType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_rc_v3_RANParameter_ValueType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 
 
@@ -864,8 +859,8 @@ static const value_string rc_v3_LogicalOR_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_LogicalOR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_LogicalOR(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -874,8 +869,8 @@ dissect_rc_v3_LogicalOR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_rc_v3_PLMNIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PLMNIdentity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        3, 3, false, NULL);
 
@@ -884,8 +879,8 @@ dissect_rc_v3_PLMNIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_rc_v3_NRCellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NRCellIdentity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      36, 36, false, NULL, 0, NULL, NULL);
 
@@ -899,8 +894,8 @@ static const per_sequence_t NR_CGI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NR_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NR_CGI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NR_CGI, NR_CGI_sequence);
 
@@ -909,8 +904,8 @@ dissect_rc_v3_NR_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 
-static int
-dissect_rc_v3_NR_PCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NR_PCI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1007U, NULL, false);
 
@@ -919,8 +914,8 @@ dissect_rc_v3_NR_PCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 
-static int
-dissect_rc_v3_FiveGS_TAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_FiveGS_TAC(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        3, 3, false, NULL);
 
@@ -935,8 +930,8 @@ static const value_string rc_v3_T_nR_mode_info_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_nR_mode_info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_nR_mode_info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -945,8 +940,8 @@ dissect_rc_v3_T_nR_mode_info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_INTEGER_0_maxNRARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_INTEGER_0_maxNRARFCN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, maxNRARFCN, NULL, false);
 
@@ -959,8 +954,8 @@ static const per_sequence_t NR_ARFCN_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NR_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NR_ARFCN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NR_ARFCN, NR_ARFCN_sequence);
 
@@ -969,8 +964,8 @@ dissect_rc_v3_NR_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_rc_v3_INTEGER_1_1024_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_INTEGER_1_1024_(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1024U, NULL, true);
 
@@ -983,8 +978,8 @@ static const per_sequence_t SupportedSULFreqBandItem_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_SupportedSULFreqBandItem(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SupportedSULFreqBandItem(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_SupportedSULFreqBandItem, SupportedSULFreqBandItem_sequence);
 
@@ -996,8 +991,8 @@ static const per_sequence_t SupportedSULBandList_sequence_of[1] = {
   { &hf_rc_v3_SupportedSULBandList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_SupportedSULFreqBandItem },
 };
 
-static int
-dissect_rc_v3_SupportedSULBandList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SupportedSULBandList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SupportedSULBandList, SupportedSULBandList_sequence_of,
                                                   0, maxnoofNrCellBands, false);
@@ -1012,8 +1007,8 @@ static const per_sequence_t NRFrequencyBandItem_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NRFrequencyBandItem(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NRFrequencyBandItem(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NRFrequencyBandItem, NRFrequencyBandItem_sequence);
 
@@ -1025,8 +1020,8 @@ static const per_sequence_t NRFrequencyBand_List_sequence_of[1] = {
   { &hf_rc_v3_NRFrequencyBand_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_NRFrequencyBandItem },
 };
 
-static int
-dissect_rc_v3_NRFrequencyBand_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NRFrequencyBand_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_NRFrequencyBand_List, NRFrequencyBand_List_sequence_of,
                                                   1, maxnoofNrCellBands, false);
@@ -1042,8 +1037,8 @@ static const value_string rc_v3_NRFrequencyShift7p5khz_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_NRFrequencyShift7p5khz(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NRFrequencyShift7p5khz(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -1058,8 +1053,8 @@ static const per_sequence_t NRFrequencyInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NRFrequencyInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NRFrequencyInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NRFrequencyInfo, NRFrequencyInfo_sequence);
 
@@ -1074,8 +1069,8 @@ static const value_string rc_v3_T_x2_Xn_established_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_x2_Xn_established(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_x2_Xn_established(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -1090,8 +1085,8 @@ static const value_string rc_v3_T_hO_validated_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_hO_validated(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_hO_validated(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -1100,8 +1095,8 @@ dissect_rc_v3_T_hO_validated(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_INTEGER_1_65535_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_INTEGER_1_65535_(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -1121,8 +1116,8 @@ static const per_sequence_t NeighborCell_Item_Choice_NR_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NeighborCell_Item_Choice_NR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NeighborCell_Item_Choice_NR(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NeighborCell_Item_Choice_NR, NeighborCell_Item_Choice_NR_sequence);
 
@@ -1131,8 +1126,8 @@ dissect_rc_v3_NeighborCell_Item_Choice_NR(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_rc_v3_EUTRACellIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EUTRACellIdentity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      28, 28, false, NULL, 0, NULL, NULL);
 
@@ -1146,8 +1141,8 @@ static const per_sequence_t EUTRA_CGI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EUTRA_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EUTRA_CGI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EUTRA_CGI, EUTRA_CGI_sequence);
 
@@ -1156,8 +1151,8 @@ dissect_rc_v3_EUTRA_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_rc_v3_E_UTRA_PCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E_UTRA_PCI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 503U, NULL, true);
 
@@ -1166,8 +1161,8 @@ dissect_rc_v3_E_UTRA_PCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_rc_v3_E_UTRA_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E_UTRA_ARFCN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, maxEARFCN, NULL, false);
 
@@ -1176,8 +1171,8 @@ dissect_rc_v3_E_UTRA_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_rc_v3_E_UTRA_TAC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E_UTRA_TAC(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        2, 2, false, NULL);
 
@@ -1192,8 +1187,8 @@ static const value_string rc_v3_T_x2_Xn_established_01_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_x2_Xn_established_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_x2_Xn_established_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -1208,8 +1203,8 @@ static const value_string rc_v3_T_hO_validated_01_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_hO_validated_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_hO_validated_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -1228,8 +1223,8 @@ static const per_sequence_t NeighborCell_Item_Choice_E_UTRA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NeighborCell_Item_Choice_E_UTRA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NeighborCell_Item_Choice_E_UTRA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NeighborCell_Item_Choice_E_UTRA, NeighborCell_Item_Choice_E_UTRA_sequence);
 
@@ -1249,8 +1244,8 @@ static const per_choice_t NeighborCell_Item_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NeighborCell_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NeighborCell_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_NeighborCell_Item, NeighborCell_Item_choice,
                                  NULL);
@@ -1263,8 +1258,8 @@ static const per_sequence_t NeighborCell_List_sequence_of[1] = {
   { &hf_rc_v3_NeighborCell_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_NeighborCell_Item },
 };
 
-static int
-dissect_rc_v3_NeighborCell_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NeighborCell_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_NeighborCell_List, NeighborCell_List_sequence_of,
                                                   1, maxnoofNeighbourCell, false);
@@ -1285,8 +1280,8 @@ static const per_choice_t ServingCell_PCI_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_ServingCell_PCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ServingCell_PCI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_ServingCell_PCI, ServingCell_PCI_choice,
                                  NULL);
@@ -1307,8 +1302,8 @@ static const per_choice_t ServingCell_ARFCN_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_ServingCell_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ServingCell_ARFCN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_ServingCell_ARFCN, ServingCell_ARFCN_choice,
                                  NULL);
@@ -1324,8 +1319,8 @@ static const per_sequence_t NeighborRelation_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NeighborRelation_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NeighborRelation_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_NeighborRelation_Info, NeighborRelation_Info_sequence);
 
@@ -1342,8 +1337,8 @@ static const value_string rc_v3_RRC_State_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_RRC_State(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RRC_State(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -1352,8 +1347,8 @@ dissect_rc_v3_RRC_State(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_rc_v3_RIC_EventTrigger_Cell_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_EventTrigger_Cell_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -1373,8 +1368,8 @@ static const per_choice_t CGI_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_CGI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_CGI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_CGI, CGI_choice,
                                  NULL);
@@ -1388,8 +1383,8 @@ static const per_sequence_t EventTrigger_Cell_Info_Item_Choice_Individual_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_Cell_Info_Item_Choice_Individual(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_Cell_Info_Item_Choice_Individual(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_Cell_Info_Item_Choice_Individual, EventTrigger_Cell_Info_Item_Choice_Individual_sequence);
 
@@ -1398,8 +1393,8 @@ dissect_rc_v3_EventTrigger_Cell_Info_Item_Choice_Individual(tvbuff_t *tvb _U_, i
 
 
 
-static int
-dissect_rc_v3_RANParameter_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 4294967295U, NULL, true);
 
@@ -1411,8 +1406,8 @@ static const per_sequence_t RANParameter_Testing_LIST_sequence_of[1] = {
   { &hf_rc_v3_RANParameter_Testing_LIST_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_Testing_Item },
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_LIST(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_LIST(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_RANParameter_Testing_LIST, RANParameter_Testing_LIST_sequence_of,
                                                   1, maxnoofItemsinList, false);
@@ -1426,8 +1421,8 @@ static const per_sequence_t RANParameter_Testing_Item_Choice_List_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_Item_Choice_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_Item_Choice_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Testing_Item_Choice_List, RANParameter_Testing_Item_Choice_List_sequence);
 
@@ -1439,8 +1434,8 @@ static const per_sequence_t RANParameter_Testing_STRUCTURE_sequence_of[1] = {
   { &hf_rc_v3_RANParameter_Testing_STRUCTURE_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_Testing_Item },
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_STRUCTURE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_STRUCTURE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_RANParameter_Testing_STRUCTURE, RANParameter_Testing_STRUCTURE_sequence_of,
                                                   1, maxnoofParametersinStructure, false);
@@ -1454,8 +1449,8 @@ static const per_sequence_t RANParameter_Testing_Item_Choice_Structure_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_Item_Choice_Structure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_Item_Choice_Structure(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Testing_Item_Choice_Structure, RANParameter_Testing_Item_Choice_Structure_sequence);
 
@@ -1464,8 +1459,8 @@ dissect_rc_v3_RANParameter_Testing_Item_Choice_Structure(tvbuff_t *tvb _U_, int 
 
 
 
-static int
-dissect_rc_v3_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BOOLEAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -1473,8 +1468,8 @@ dissect_rc_v3_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_rc_v3_INTEGER(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_INTEGER(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_integer(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -1482,8 +1477,8 @@ dissect_rc_v3_INTEGER(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_rc_v3_REAL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_REAL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_real(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -1491,8 +1486,8 @@ dissect_rc_v3_REAL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 
 
-static int
-dissect_rc_v3_BIT_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      NO_BOUND, NO_BOUND, false, NULL, 0, NULL, NULL);
 
@@ -1501,8 +1496,8 @@ dissect_rc_v3_BIT_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_rc_v3_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_OCTET_STRING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        NO_BOUND, NO_BOUND, false, NULL);
 
@@ -1511,8 +1506,8 @@ dissect_rc_v3_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_rc_v3_PrintableString(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PrintableString(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           NO_BOUND, NO_BOUND, false,
                                           NULL);
@@ -1541,8 +1536,8 @@ static const per_choice_t RANParameter_Value_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Value(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_RANParameter_Value, RANParameter_Value_choice,
                                  NULL);
@@ -1556,8 +1551,8 @@ static const per_sequence_t RANParameter_Testing_Item_Choice_ElementTrue_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_Item_Choice_ElementTrue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_Item_Choice_ElementTrue(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Testing_Item_Choice_ElementTrue, RANParameter_Testing_Item_Choice_ElementTrue_sequence);
 
@@ -1576,8 +1571,8 @@ static const value_string rc_v3_T_ranP_Choice_comparison_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ranP_Choice_comparison(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ranP_Choice_comparison(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      6, NULL, true, 0, NULL);
 
@@ -1595,8 +1590,8 @@ static const value_string rc_v3_T_ranP_Choice_presence_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ranP_Choice_presence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ranP_Choice_presence(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 1, NULL);
 
@@ -1616,8 +1611,8 @@ static const per_choice_t RANParameter_TestingCondition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_TestingCondition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_TestingCondition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_RANParameter_TestingCondition, RANParameter_TestingCondition_choice,
                                  NULL);
@@ -1633,8 +1628,8 @@ static const per_sequence_t RANParameter_Testing_Item_Choice_ElementFalse_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_Item_Choice_ElementFalse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_Item_Choice_ElementFalse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Testing_Item_Choice_ElementFalse, RANParameter_Testing_Item_Choice_ElementFalse_sequence);
 
@@ -1658,8 +1653,8 @@ static const per_choice_t T_ranParameter_Type_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ranParameter_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ranParameter_Type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ranParameter_Type, T_ranParameter_Type_choice,
                                  NULL);
@@ -1674,8 +1669,8 @@ static const per_sequence_t RANParameter_Testing_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   // RANParameter-Testing-Item -> RANParameter-Testing-Item/ranParameter-Type -> RANParameter-Testing-Item-Choice-List -> RANParameter-Testing-LIST -> RANParameter-Testing-Item
   increment_dissection_depth_by_n(actx->pinfo, 4);
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
@@ -1690,8 +1685,8 @@ static const per_sequence_t RANParameter_Testing_sequence_of[1] = {
   { &hf_rc_v3_RANParameter_Testing_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_Testing_Item },
 };
 
-static int
-dissect_rc_v3_RANParameter_Testing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Testing(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_RANParameter_Testing, RANParameter_Testing_sequence_of,
                                                   1, maxnoofRANparamTest, false);
@@ -1705,8 +1700,8 @@ static const per_sequence_t EventTrigger_Cell_Info_Item_Choice_Group_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_Cell_Info_Item_Choice_Group(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_Cell_Info_Item_Choice_Group(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_Cell_Info_Item_Choice_Group, EventTrigger_Cell_Info_Item_Choice_Group_sequence);
 
@@ -1726,8 +1721,8 @@ static const per_choice_t T_cellType_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_cellType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_cellType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_cellType, T_cellType_choice,
                                  NULL);
@@ -1743,8 +1738,8 @@ static const per_sequence_t EventTrigger_Cell_Info_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_Cell_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_Cell_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_Cell_Info_Item, EventTrigger_Cell_Info_Item_sequence);
 
@@ -1756,8 +1751,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofCellInfo_OF_EventTrigger_Cell
   { &hf_rc_v3_cellInfo_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_EventTrigger_Cell_Info_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellInfo_OF_EventTrigger_Cell_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellInfo_OF_EventTrigger_Cell_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofCellInfo_OF_EventTrigger_Cell_Info_Item, SEQUENCE_SIZE_1_maxnoofCellInfo_OF_EventTrigger_Cell_Info_Item_sequence_of,
                                                   1, maxnoofCellInfo, false);
@@ -1771,8 +1766,8 @@ static const per_sequence_t EventTrigger_Cell_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_Cell_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_Cell_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_Cell_Info, EventTrigger_Cell_Info_sequence);
 
@@ -1781,8 +1776,8 @@ dissect_rc_v3_EventTrigger_Cell_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_rc_v3_RIC_EventTrigger_UE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_EventTrigger_UE_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -1791,8 +1786,8 @@ dissect_rc_v3_RIC_EventTrigger_UE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_rc_v3_AMF_UE_NGAP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_AMF_UE_NGAP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
                                                             0U, UINT64_C(1099511627775), NULL, false);
 
@@ -1801,8 +1796,8 @@ dissect_rc_v3_AMF_UE_NGAP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_AMFRegionID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_AMFRegionID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      8, 8, false, NULL, 0, NULL, NULL);
 
@@ -1811,8 +1806,8 @@ dissect_rc_v3_AMFRegionID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_rc_v3_AMFSetID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_AMFSetID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      10, 10, false, NULL, 0, NULL, NULL);
 
@@ -1821,8 +1816,8 @@ dissect_rc_v3_AMFSetID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_rc_v3_AMFPointer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_AMFPointer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      6, 6, false, NULL, 0, NULL, NULL);
 
@@ -1838,8 +1833,8 @@ static const per_sequence_t GUAMI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GUAMI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GUAMI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GUAMI, GUAMI_sequence);
 
@@ -1848,8 +1843,8 @@ dissect_rc_v3_GUAMI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 
 
 
-static int
-dissect_rc_v3_GNB_CU_UE_F1AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GNB_CU_UE_F1AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -1862,8 +1857,8 @@ static const per_sequence_t UEID_GNB_CU_CP_F1AP_ID_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_GNB_CU_CP_F1AP_ID_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_CU_CP_F1AP_ID_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_GNB_CU_CP_F1AP_ID_Item, UEID_GNB_CU_CP_F1AP_ID_Item_sequence);
 
@@ -1875,8 +1870,8 @@ static const per_sequence_t UEID_GNB_CU_F1AP_ID_List_sequence_of[1] = {
   { &hf_rc_v3_UEID_GNB_CU_F1AP_ID_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_UEID_GNB_CU_CP_F1AP_ID_Item },
 };
 
-static int
-dissect_rc_v3_UEID_GNB_CU_F1AP_ID_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_CU_F1AP_ID_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_UEID_GNB_CU_F1AP_ID_List, UEID_GNB_CU_F1AP_ID_List_sequence_of,
                                                   1, maxF1APid, false);
@@ -1886,8 +1881,8 @@ dissect_rc_v3_UEID_GNB_CU_F1AP_ID_List(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_rc_v3_GNB_CU_CP_UE_E1AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GNB_CU_CP_UE_E1AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -1900,8 +1895,8 @@ static const per_sequence_t UEID_GNB_CU_CP_E1AP_ID_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_GNB_CU_CP_E1AP_ID_Item, UEID_GNB_CU_CP_E1AP_ID_Item_sequence);
 
@@ -1913,8 +1908,8 @@ static const per_sequence_t UEID_GNB_CU_CP_E1AP_ID_List_sequence_of[1] = {
   { &hf_rc_v3_UEID_GNB_CU_CP_E1AP_ID_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_Item },
 };
 
-static int
-dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_UEID_GNB_CU_CP_E1AP_ID_List, UEID_GNB_CU_CP_E1AP_ID_List_sequence_of,
                                                   1, maxE1APid, false);
@@ -1924,8 +1919,8 @@ dissect_rc_v3_UEID_GNB_CU_CP_E1AP_ID_List(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_rc_v3_RANUEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANUEID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        8, 8, false, NULL);
 
@@ -1934,8 +1929,8 @@ dissect_rc_v3_RANUEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_rc_v3_NG_RANnodeUEXnAPID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NG_RANnodeUEXnAPID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -1944,8 +1939,8 @@ dissect_rc_v3_NG_RANnodeUEXnAPID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_rc_v3_BIT_STRING_SIZE_22_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING_SIZE_22_32(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      22, 32, false, NULL, 0, NULL, NULL);
 
@@ -1963,8 +1958,8 @@ static const per_choice_t GNB_ID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GNB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GNB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_GNB_ID, GNB_ID_choice,
                                  NULL);
@@ -1979,8 +1974,8 @@ static const per_sequence_t GlobalGNB_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GlobalGNB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GlobalGNB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GlobalGNB_ID, GlobalGNB_ID_sequence);
 
@@ -1989,8 +1984,8 @@ dissect_rc_v3_GlobalGNB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_rc_v3_BIT_STRING_SIZE_20(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING_SIZE_20(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      20, 20, false, NULL, 0, NULL, NULL);
 
@@ -1999,8 +1994,8 @@ dissect_rc_v3_BIT_STRING_SIZE_20(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_rc_v3_BIT_STRING_SIZE_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING_SIZE_18(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      18, 18, false, NULL, 0, NULL, NULL);
 
@@ -2009,8 +2004,8 @@ dissect_rc_v3_BIT_STRING_SIZE_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_rc_v3_BIT_STRING_SIZE_21(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING_SIZE_21(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      21, 21, false, NULL, 0, NULL, NULL);
 
@@ -2032,8 +2027,8 @@ static const per_choice_t NgENB_ID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_NgENB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NgENB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_NgENB_ID, NgENB_ID_choice,
                                  NULL);
@@ -2048,8 +2043,8 @@ static const per_sequence_t GlobalNgENB_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GlobalNgENB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GlobalNgENB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GlobalNgENB_ID, GlobalNgENB_ID_sequence);
 
@@ -2069,8 +2064,8 @@ static const per_choice_t GlobalNGRANNodeID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GlobalNGRANNodeID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GlobalNGRANNodeID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_GlobalNGRANNodeID, GlobalNGRANNodeID_choice,
                                  NULL);
@@ -2080,8 +2075,8 @@ dissect_rc_v3_GlobalNGRANNodeID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_rc_v3_RNTI_Value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RNTI_Value(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -2095,8 +2090,8 @@ static const per_sequence_t Cell_RNTI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Cell_RNTI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Cell_RNTI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Cell_RNTI, Cell_RNTI_sequence);
 
@@ -2117,8 +2112,8 @@ static const per_sequence_t UEID_GNB_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_GNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_GNB, UEID_GNB_sequence);
 
@@ -2133,8 +2128,8 @@ static const per_sequence_t UEID_GNB_DU_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_GNB_DU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_DU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_GNB_DU, UEID_GNB_DU_sequence);
 
@@ -2148,8 +2143,8 @@ static const per_sequence_t UEID_GNB_CU_UP_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_GNB_CU_UP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_GNB_CU_UP(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_GNB_CU_UP, UEID_GNB_CU_UP_sequence);
 
@@ -2158,8 +2153,8 @@ dissect_rc_v3_UEID_GNB_CU_UP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_NGENB_CU_UE_W1AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NGENB_CU_UE_W1AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -2178,8 +2173,8 @@ static const per_sequence_t UEID_NG_ENB_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_NG_ENB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_NG_ENB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_NG_ENB, UEID_NG_ENB_sequence);
 
@@ -2193,8 +2188,8 @@ static const per_sequence_t UEID_NG_ENB_DU_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_NG_ENB_DU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_NG_ENB_DU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_NG_ENB_DU, UEID_NG_ENB_DU_sequence);
 
@@ -2203,8 +2198,8 @@ dissect_rc_v3_UEID_NG_ENB_DU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_ENB_UE_X2AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ENB_UE_X2AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4095U, NULL, false);
 
@@ -2213,8 +2208,8 @@ dissect_rc_v3_ENB_UE_X2AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_ENB_UE_X2AP_ID_Extension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ENB_UE_X2AP_ID_Extension(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4095U, NULL, true);
 
@@ -2223,8 +2218,8 @@ dissect_rc_v3_ENB_UE_X2AP_ID_Extension(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_rc_v3_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      28, 28, false, NULL, 0, NULL, NULL);
 
@@ -2248,8 +2243,8 @@ static const per_choice_t ENB_ID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_ENB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ENB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_ENB_ID, ENB_ID_choice,
                                  NULL);
@@ -2264,8 +2259,8 @@ static const per_sequence_t GlobalENB_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GlobalENB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GlobalENB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GlobalENB_ID, GlobalENB_ID_sequence);
 
@@ -2284,8 +2279,8 @@ static const per_sequence_t UEID_EN_GNB_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_EN_GNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_EN_GNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_EN_GNB, UEID_EN_GNB_sequence);
 
@@ -2294,8 +2289,8 @@ dissect_rc_v3_UEID_EN_GNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_rc_v3_MME_UE_S1AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MME_UE_S1AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -2304,8 +2299,8 @@ dissect_rc_v3_MME_UE_S1AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_MME_Group_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MME_Group_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        2, 2, false, NULL);
 
@@ -2314,8 +2309,8 @@ dissect_rc_v3_MME_Group_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_rc_v3_MME_Code(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MME_Code(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 1, false, NULL);
 
@@ -2330,8 +2325,8 @@ static const per_sequence_t GUMMEI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GUMMEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GUMMEI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GUMMEI, GUMMEI_sequence);
 
@@ -2349,8 +2344,8 @@ static const per_sequence_t UEID_ENB_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID_ENB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID_ENB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEID_ENB, UEID_ENB_sequence);
 
@@ -2380,8 +2375,8 @@ static const per_choice_t UEID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_UEID, UEID_choice,
                                  NULL);
@@ -2396,8 +2391,8 @@ static const per_sequence_t EventTrigger_UE_Info_Item_Choice_Individual_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UE_Info_Item_Choice_Individual(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UE_Info_Item_Choice_Individual(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UE_Info_Item_Choice_Individual, EventTrigger_UE_Info_Item_Choice_Individual_sequence);
 
@@ -2410,8 +2405,8 @@ static const per_sequence_t EventTrigger_UE_Info_Item_Choice_Group_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UE_Info_Item_Choice_Group(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UE_Info_Item_Choice_Group(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UE_Info_Item_Choice_Group, EventTrigger_UE_Info_Item_Choice_Group_sequence);
 
@@ -2431,8 +2426,8 @@ static const per_choice_t T_ueType_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ueType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ueType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ueType, T_ueType_choice,
                                  NULL);
@@ -2448,8 +2443,8 @@ static const per_sequence_t EventTrigger_UE_Info_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UE_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UE_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UE_Info_Item, EventTrigger_UE_Info_Item_sequence);
 
@@ -2461,8 +2456,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofUEInfo_OF_EventTrigger_UE_Inf
   { &hf_rc_v3_ueInfo_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_EventTrigger_UE_Info_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_EventTrigger_UE_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_EventTrigger_UE_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_EventTrigger_UE_Info_Item, SEQUENCE_SIZE_1_maxnoofUEInfo_OF_EventTrigger_UE_Info_Item_sequence_of,
                                                   1, maxnoofUEInfo, false);
@@ -2476,8 +2471,8 @@ static const per_sequence_t EventTrigger_UE_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UE_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UE_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UE_Info, EventTrigger_UE_Info_sequence);
 
@@ -2486,8 +2481,8 @@ dissect_rc_v3_EventTrigger_UE_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_rc_v3_RIC_EventTrigger_UEevent_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_EventTrigger_UEevent_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2501,8 +2496,8 @@ static const per_sequence_t EventTrigger_UEevent_Info_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UEevent_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UEevent_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UEevent_Info_Item, EventTrigger_UEevent_Info_Item_sequence);
 
@@ -2514,8 +2509,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofUEeventInfo_OF_EventTrigger_U
   { &hf_rc_v3_ueEvent_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_EventTrigger_UEevent_Info_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEeventInfo_OF_EventTrigger_UEevent_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEeventInfo_OF_EventTrigger_UEevent_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofUEeventInfo_OF_EventTrigger_UEevent_Info_Item, SEQUENCE_SIZE_1_maxnoofUEeventInfo_OF_EventTrigger_UEevent_Info_Item_sequence_of,
                                                   1, maxnoofUEeventInfo, false);
@@ -2529,8 +2524,8 @@ static const per_sequence_t EventTrigger_UEevent_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EventTrigger_UEevent_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EventTrigger_UEevent_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EventTrigger_UEevent_Info, EventTrigger_UEevent_Info_sequence);
 
@@ -2539,8 +2534,8 @@ dissect_rc_v3_EventTrigger_UEevent_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_rc_v3_RANParameter_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -2556,8 +2551,8 @@ static const per_sequence_t RANParameter_Definition_Choice_LIST_Item_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition_Choice_LIST_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition_Choice_LIST_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Definition_Choice_LIST_Item, RANParameter_Definition_Choice_LIST_Item_sequence);
 
@@ -2569,8 +2564,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_D
   { &hf_rc_v3_ranParameter_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_Definition_Choice_LIST_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_Definition_Choice_LIST_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_Definition_Choice_LIST_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_Definition_Choice_LIST_Item, SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_Definition_Choice_LIST_Item_sequence_of,
                                                   1, maxnoofItemsinList, false);
@@ -2584,8 +2579,8 @@ static const per_sequence_t RANParameter_Definition_Choice_LIST_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition_Choice_LIST(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition_Choice_LIST(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Definition_Choice_LIST, RANParameter_Definition_Choice_LIST_sequence);
 
@@ -2600,8 +2595,8 @@ static const per_sequence_t RANParameter_Definition_Choice_STRUCTURE_Item_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition_Choice_STRUCTURE_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition_Choice_STRUCTURE_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Definition_Choice_STRUCTURE_Item, RANParameter_Definition_Choice_STRUCTURE_Item_sequence);
 
@@ -2613,8 +2608,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANP
   { &hf_rc_v3_ranParameter_STRUCTURE_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_Definition_Choice_STRUCTURE_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_Definition_Choice_STRUCTURE_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_Definition_Choice_STRUCTURE_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_Definition_Choice_STRUCTURE_Item, SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_Definition_Choice_STRUCTURE_Item_sequence_of,
                                                   1, maxnoofParametersinStructure, false);
@@ -2628,8 +2623,8 @@ static const per_sequence_t RANParameter_Definition_Choice_STRUCTURE_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition_Choice_STRUCTURE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition_Choice_STRUCTURE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_Definition_Choice_STRUCTURE, RANParameter_Definition_Choice_STRUCTURE_sequence);
 
@@ -2649,8 +2644,8 @@ static const per_choice_t RANParameter_Definition_Choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition_Choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition_Choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_RANParameter_Definition_Choice, RANParameter_Definition_Choice_choice,
                                  NULL);
@@ -2664,8 +2659,8 @@ static const per_sequence_t RANParameter_Definition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_Definition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_Definition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   // RANParameter-Definition -> RANParameter-Definition-Choice -> RANParameter-Definition-Choice-LIST -> RANParameter-Definition-Choice-LIST/ranParameter-List -> RANParameter-Definition-Choice-LIST-Item -> RANParameter-Definition
   increment_dissection_depth_by_n(actx->pinfo, 5);
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
@@ -2681,8 +2676,8 @@ static const per_sequence_t RANParameter_ValueType_Choice_ElementTrue_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_ValueType_Choice_ElementTrue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ValueType_Choice_ElementTrue(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_ValueType_Choice_ElementTrue, RANParameter_ValueType_Choice_ElementTrue_sequence);
 
@@ -2695,8 +2690,8 @@ static const per_sequence_t RANParameter_ValueType_Choice_ElementFalse_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_ValueType_Choice_ElementFalse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ValueType_Choice_ElementFalse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_ValueType_Choice_ElementFalse, RANParameter_ValueType_Choice_ElementFalse_sequence);
 
@@ -2710,8 +2705,8 @@ static const per_sequence_t RANParameter_STRUCTURE_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_STRUCTURE_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_STRUCTURE_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_STRUCTURE_Item, RANParameter_STRUCTURE_Item_sequence);
 
@@ -2723,8 +2718,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANP
   { &hf_rc_v3_sequence_of_ranParameters_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_STRUCTURE_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_STRUCTURE_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_STRUCTURE_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_STRUCTURE_Item, SEQUENCE_SIZE_1_maxnoofParametersinStructure_OF_RANParameter_STRUCTURE_Item_sequence_of,
                                                   1, maxnoofParametersinStructure, false);
@@ -2738,8 +2733,8 @@ static const per_sequence_t RANParameter_STRUCTURE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_STRUCTURE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_STRUCTURE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_STRUCTURE, RANParameter_STRUCTURE_sequence);
 
@@ -2752,8 +2747,8 @@ static const per_sequence_t RANParameter_ValueType_Choice_Structure_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_ValueType_Choice_Structure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ValueType_Choice_Structure(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_ValueType_Choice_Structure, RANParameter_ValueType_Choice_Structure_sequence);
 
@@ -2765,8 +2760,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_S
   { &hf_rc_v3_list_of_ranParameter_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANParameter_STRUCTURE },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_STRUCTURE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_STRUCTURE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_STRUCTURE, SEQUENCE_SIZE_1_maxnoofItemsinList_OF_RANParameter_STRUCTURE_sequence_of,
                                                   1, maxnoofItemsinList, false);
@@ -2780,8 +2775,8 @@ static const per_sequence_t RANParameter_LIST_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_LIST(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_LIST(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_LIST, RANParameter_LIST_sequence);
 
@@ -2794,8 +2789,8 @@ static const per_sequence_t RANParameter_ValueType_Choice_List_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_ValueType_Choice_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ValueType_Choice_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANParameter_ValueType_Choice_List, RANParameter_ValueType_Choice_List_sequence);
 
@@ -2819,8 +2814,8 @@ static const per_choice_t RANParameter_ValueType_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANParameter_ValueType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANParameter_ValueType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   // RANParameter-ValueType -> RANParameter-ValueType-Choice-Structure -> RANParameter-STRUCTURE -> RANParameter-STRUCTURE/sequence-of-ranParameters -> RANParameter-STRUCTURE-Item -> RANParameter-ValueType
   increment_dissection_depth_by_n(actx->pinfo, 5);
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
@@ -2839,8 +2834,8 @@ static const per_sequence_t UEGroupDefinitionIdentifier_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEGroupDefinitionIdentifier_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEGroupDefinitionIdentifier_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEGroupDefinitionIdentifier_Item, UEGroupDefinitionIdentifier_Item_sequence);
 
@@ -2852,8 +2847,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxGroupDefinitionIdentifierParamete
   { &hf_rc_v3_ueGroupDefinitionIdentifier_LIST_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_UEGroupDefinitionIdentifier_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxGroupDefinitionIdentifierParameters_OF_UEGroupDefinitionIdentifier_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxGroupDefinitionIdentifierParameters_OF_UEGroupDefinitionIdentifier_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxGroupDefinitionIdentifierParameters_OF_UEGroupDefinitionIdentifier_Item, SEQUENCE_SIZE_1_maxGroupDefinitionIdentifierParameters_OF_UEGroupDefinitionIdentifier_Item_sequence_of,
                                                   1, maxGroupDefinitionIdentifierParameters, false);
@@ -2867,8 +2862,8 @@ static const per_sequence_t UE_Group_Definition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UE_Group_Definition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UE_Group_Definition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UE_Group_Definition, UE_Group_Definition_sequence);
 
@@ -2877,8 +2872,8 @@ dissect_rc_v3_UE_Group_Definition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_rc_v3_RAN_CallProcess_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RAN_CallProcess_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 4294967295U, NULL, true);
 
@@ -2887,8 +2882,8 @@ dissect_rc_v3_RAN_CallProcess_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_rc_v3_RIC_CallProcessType_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_CallProcessType_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2897,8 +2892,8 @@ dissect_rc_v3_RIC_CallProcessType_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_rc_v3_RIC_CallProcessType_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_CallProcessType_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -2908,8 +2903,8 @@ dissect_rc_v3_RIC_CallProcessType_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_rc_v3_RIC_CallProcessBreakpoint_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_CallProcessBreakpoint_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2918,8 +2913,8 @@ dissect_rc_v3_RIC_CallProcessBreakpoint_ID(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_rc_v3_RIC_CallProcessBreakpoint_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_CallProcessBreakpoint_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -2929,8 +2924,8 @@ dissect_rc_v3_RIC_CallProcessBreakpoint_Name(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_rc_v3_RIC_ControlAction_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_ControlAction_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2939,8 +2934,8 @@ dissect_rc_v3_RIC_ControlAction_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_rc_v3_RIC_ControlAction_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_ControlAction_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -2950,8 +2945,8 @@ dissect_rc_v3_RIC_ControlAction_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_rc_v3_RIC_EventTriggerCondition_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_EventTriggerCondition_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2960,8 +2955,8 @@ dissect_rc_v3_RIC_EventTriggerCondition_ID(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_rc_v3_RIC_InsertIndication_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_InsertIndication_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2970,8 +2965,8 @@ dissect_rc_v3_RIC_InsertIndication_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 
 
 
-static int
-dissect_rc_v3_RIC_InsertIndication_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_InsertIndication_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -2981,8 +2976,8 @@ dissect_rc_v3_RIC_InsertIndication_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_rc_v3_UE_Group_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UE_Group_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -2991,8 +2986,8 @@ dissect_rc_v3_UE_Group_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_rc_v3_EntityFilter_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EntityFilter_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, true);
 
@@ -3006,8 +3001,8 @@ static const per_sequence_t RIC_PolicyAction_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RIC_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RIC_PolicyAction_RANParameter_Item, RIC_PolicyAction_RANParameter_Item_sequence);
 
@@ -3019,8 +3014,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_RI
   { &hf_rc_v3_ranParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RIC_PolicyAction_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_RIC_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_RIC_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_RIC_PolicyAction_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_RIC_PolicyAction_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -3036,8 +3031,8 @@ static const value_string rc_v3_T_ric_PolicyDecision_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ric_PolicyDecision(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_PolicyDecision(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -3052,8 +3047,8 @@ static const per_sequence_t RIC_PolicyAction_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RIC_PolicyAction(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_PolicyAction(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RIC_PolicyAction, RIC_PolicyAction_sequence);
 
@@ -3062,8 +3057,8 @@ dissect_rc_v3_RIC_PolicyAction(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_rc_v3_UE_Filter_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UE_Filter_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 65535U, NULL, true);
 
@@ -3089,8 +3084,8 @@ static const per_sequence_t PartialUEID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_PartialUEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PartialUEID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_PartialUEID, PartialUEID_sequence);
 
@@ -3104,8 +3099,8 @@ static const per_sequence_t UEQuery_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEQuery(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEQuery(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEQuery, UEQuery_sequence);
 
@@ -3127,8 +3122,8 @@ static const per_choice_t T_ueType_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ueType_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ueType_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ueType_01, T_ueType_01_choice,
                                  NULL);
@@ -3144,8 +3139,8 @@ static const per_sequence_t Associated_UE_Info_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Associated_UE_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Associated_UE_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Associated_UE_Info_Item, Associated_UE_Info_Item_sequence);
 
@@ -3157,8 +3152,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofUEInfo_OF_Associated_UE_Info_
   { &hf_rc_v3_associatedUEInfo_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_Associated_UE_Info_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_Associated_UE_Info_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_Associated_UE_Info_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfo_OF_Associated_UE_Info_Item, SEQUENCE_SIZE_1_maxnoofUEInfo_OF_Associated_UE_Info_Item_sequence_of,
                                                   1, maxnoofUEInfo, false);
@@ -3172,8 +3167,8 @@ static const per_sequence_t Associated_UE_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Associated_UE_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Associated_UE_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Associated_UE_Info, Associated_UE_Info_sequence);
 
@@ -3193,8 +3188,8 @@ static const value_string rc_v3_InterfaceType_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_InterfaceType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      7, NULL, true, 0, NULL);
 
@@ -3207,8 +3202,8 @@ static const per_sequence_t InterfaceID_NG_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_NG(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_NG(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_NG, InterfaceID_NG_sequence);
 
@@ -3221,8 +3216,8 @@ static const per_sequence_t InterfaceID_Xn_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_Xn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_Xn(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_Xn, InterfaceID_Xn_sequence);
 
@@ -3231,8 +3226,8 @@ dissect_rc_v3_InterfaceID_Xn(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_GNB_DU_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GNB_DU_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
                                                             0U, UINT64_C(68719476735), NULL, false);
 
@@ -3246,8 +3241,8 @@ static const per_sequence_t InterfaceID_F1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_F1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_F1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_F1, InterfaceID_F1_sequence);
 
@@ -3256,8 +3251,8 @@ dissect_rc_v3_InterfaceID_F1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_GNB_CU_UP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GNB_CU_UP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
                                                             0U, UINT64_C(68719476735), NULL, false);
 
@@ -3271,8 +3266,8 @@ static const per_sequence_t InterfaceID_E1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_E1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_E1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_E1, InterfaceID_E1_sequence);
 
@@ -3285,8 +3280,8 @@ static const per_sequence_t InterfaceID_S1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_S1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_S1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_S1, InterfaceID_S1_sequence);
 
@@ -3304,8 +3299,8 @@ static const per_choice_t EN_GNB_ID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EN_GNB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EN_GNB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_EN_GNB_ID, EN_GNB_ID_choice,
                                  NULL);
@@ -3320,8 +3315,8 @@ static const per_sequence_t GlobalenGNB_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_GlobalenGNB_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_GlobalenGNB_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_GlobalenGNB_ID, GlobalenGNB_ID_sequence);
 
@@ -3341,8 +3336,8 @@ static const per_choice_t T_nodeType_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_nodeType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_nodeType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_nodeType, T_nodeType_choice,
                                  NULL);
@@ -3356,8 +3351,8 @@ static const per_sequence_t InterfaceID_X2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_X2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_X2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_X2, InterfaceID_X2_sequence);
 
@@ -3366,8 +3361,8 @@ dissect_rc_v3_InterfaceID_X2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_NGENB_DU_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NGENB_DU_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
                                                             0U, UINT64_C(68719476735), NULL, false);
 
@@ -3381,8 +3376,8 @@ static const per_sequence_t InterfaceID_W1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceID_W1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceID_W1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InterfaceID_W1, InterfaceID_W1_sequence);
 
@@ -3412,8 +3407,8 @@ static const per_choice_t InterfaceIdentifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InterfaceIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InterfaceIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_InterfaceIdentifier, InterfaceIdentifier_choice,
                                  NULL);
@@ -3430,8 +3425,8 @@ static const value_string rc_v3_T_messageType_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_messageType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_messageType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -3445,8 +3440,8 @@ static const per_sequence_t Interface_MessageID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Interface_MessageID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Interface_MessageID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Interface_MessageID, Interface_MessageID_sequence);
 
@@ -3461,8 +3456,8 @@ static const per_sequence_t MessageType_Choice_NI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_MessageType_Choice_NI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MessageType_Choice_NI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_MessageType_Choice_NI, MessageType_Choice_NI_sequence);
 
@@ -3487,8 +3482,8 @@ static const value_string rc_v3_RRCclass_LTE_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_RRCclass_LTE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RRCclass_LTE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      12, NULL, true, 0, NULL);
 
@@ -3509,8 +3504,8 @@ static const value_string rc_v3_RRCclass_NR_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_RRCclass_NR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RRCclass_NR(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, true, 0, NULL);
 
@@ -3530,8 +3525,8 @@ static const per_choice_t T_rrcType_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_rrcType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_rrcType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_rrcType, T_rrcType_choice,
                                  NULL);
@@ -3546,8 +3541,8 @@ static const per_sequence_t RRC_MessageID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RRC_MessageID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RRC_MessageID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RRC_MessageID, RRC_MessageID_sequence);
 
@@ -3560,8 +3555,8 @@ static const per_sequence_t MessageType_Choice_RRC_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_MessageType_Choice_RRC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MessageType_Choice_RRC(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_MessageType_Choice_RRC, MessageType_Choice_RRC_sequence);
 
@@ -3581,8 +3576,8 @@ static const per_choice_t MessageType_Choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_MessageType_Choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_MessageType_Choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_MessageType_Choice, MessageType_Choice_choice,
                                  NULL);
@@ -3598,8 +3593,8 @@ static const value_string rc_v3_T_messageDirection_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_messageDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_messageDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -3617,8 +3612,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format1_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format1_Item, E2SM_RC_EventTrigger_Format1_Item_sequence);
 
@@ -3630,8 +3625,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofMessages_OF_E2SM_RC_EventTrig
   { &hf_rc_v3_message_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_EventTrigger_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMessages_OF_E2SM_RC_EventTrigger_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMessages_OF_E2SM_RC_EventTrigger_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofMessages_OF_E2SM_RC_EventTrigger_Format1_Item, SEQUENCE_SIZE_1_maxnoofMessages_OF_E2SM_RC_EventTrigger_Format1_Item_sequence_of,
                                                   1, maxnoofMessages, false);
@@ -3646,8 +3641,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format1, E2SM_RC_EventTrigger_Format1_sequence);
 
@@ -3663,8 +3658,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format2, E2SM_RC_EventTrigger_Format2_sequence);
 
@@ -3673,8 +3668,8 @@ dissect_rc_v3_E2SM_RC_EventTrigger_Format2(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_rc_v3_INTEGER_1_512_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_INTEGER_1_512_(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 512U, NULL, true);
 
@@ -3690,8 +3685,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format3_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format3_Item, E2SM_RC_EventTrigger_Format3_Item_sequence);
 
@@ -3703,8 +3698,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofE2InfoChanges_OF_E2SM_RC_Even
   { &hf_rc_v3_e2NodeInfoChange_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_EventTrigger_Format3_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofE2InfoChanges_OF_E2SM_RC_EventTrigger_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofE2InfoChanges_OF_E2SM_RC_EventTrigger_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofE2InfoChanges_OF_E2SM_RC_EventTrigger_Format3_Item, SEQUENCE_SIZE_1_maxnoofE2InfoChanges_OF_E2SM_RC_EventTrigger_Format3_Item_sequence_of,
                                                   1, maxnoofE2InfoChanges, false);
@@ -3718,8 +3713,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format3, E2SM_RC_EventTrigger_Format3_sequence);
 
@@ -3733,8 +3728,8 @@ static const per_sequence_t TriggerType_Choice_RRCstate_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_RRCstate_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_RRCstate_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_RRCstate_Item, TriggerType_Choice_RRCstate_Item_sequence);
 
@@ -3746,8 +3741,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRRCstate_OF_TriggerType_Choic
   { &hf_rc_v3_rrcState_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_TriggerType_Choice_RRCstate_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRRCstate_OF_TriggerType_Choice_RRCstate_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRRCstate_OF_TriggerType_Choice_RRCstate_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRRCstate_OF_TriggerType_Choice_RRCstate_Item, SEQUENCE_SIZE_1_maxnoofRRCstate_OF_TriggerType_Choice_RRCstate_Item_sequence_of,
                                                   1, maxnoofRRCstate, false);
@@ -3761,8 +3756,8 @@ static const per_sequence_t TriggerType_Choice_RRCstate_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_RRCstate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_RRCstate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_RRCstate, TriggerType_Choice_RRCstate_sequence);
 
@@ -3775,8 +3770,8 @@ static const per_sequence_t TriggerType_Choice_UEID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_UEID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_UEID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_UEID, TriggerType_Choice_UEID_sequence);
 
@@ -3789,8 +3784,8 @@ static const per_sequence_t TriggerType_Choice_L2state_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_L2state(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_L2state(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_L2state, TriggerType_Choice_L2state_sequence);
 
@@ -3803,8 +3798,8 @@ static const per_sequence_t TriggerType_Choice_UEcontext_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_UEcontext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_UEcontext(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_UEcontext, TriggerType_Choice_UEcontext_sequence);
 
@@ -3819,8 +3814,8 @@ static const value_string rc_v3_T_mIMOtransModeState_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_mIMOtransModeState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_mIMOtransModeState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -3833,8 +3828,8 @@ static const per_sequence_t TriggerType_Choice_MIMOandBFconfig_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_MIMOandBFconfig(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_MIMOandBFconfig(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_MIMOandBFconfig, TriggerType_Choice_MIMOandBFconfig_sequence);
 
@@ -3852,8 +3847,8 @@ static const per_choice_t L2MACschChgType_Choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_L2MACschChgType_Choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_L2MACschChgType_Choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_L2MACschChgType_Choice, L2MACschChgType_Choice_choice,
                                  NULL);
@@ -3867,8 +3862,8 @@ static const per_sequence_t TriggerType_Choice_L2MACschChg_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice_L2MACschChg(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice_L2MACschChg(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_TriggerType_Choice_L2MACschChg, TriggerType_Choice_L2MACschChg_sequence);
 
@@ -3894,8 +3889,8 @@ static const per_choice_t TriggerType_Choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_TriggerType_Choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_TriggerType_Choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_TriggerType_Choice, TriggerType_Choice_choice,
                                  NULL);
@@ -3912,8 +3907,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format4_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format4_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format4_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format4_Item, E2SM_RC_EventTrigger_Format4_Item_sequence);
 
@@ -3925,8 +3920,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofUEInfoChanges_OF_E2SM_RC_Even
   { &hf_rc_v3_uEInfoChange_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_EventTrigger_Format4_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfoChanges_OF_E2SM_RC_EventTrigger_Format4_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfoChanges_OF_E2SM_RC_EventTrigger_Format4_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofUEInfoChanges_OF_E2SM_RC_EventTrigger_Format4_Item, SEQUENCE_SIZE_1_maxnoofUEInfoChanges_OF_E2SM_RC_EventTrigger_Format4_Item_sequence_of,
                                                   1, maxnoofUEInfoChanges, false);
@@ -3940,8 +3935,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_Format4_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger_Format4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger_Format4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger_Format4, E2SM_RC_EventTrigger_Format4_sequence);
 
@@ -3950,8 +3945,8 @@ dissect_rc_v3_E2SM_RC_EventTrigger_Format4(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_rc_v3_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_NULL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_null(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -3976,8 +3971,8 @@ static const per_choice_t T_ric_eventTrigger_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_eventTrigger_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_eventTrigger_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_eventTrigger_formats, T_ric_eventTrigger_formats_choice,
                                  NULL);
@@ -3991,8 +3986,8 @@ static const per_sequence_t E2SM_RC_EventTrigger_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EventTrigger(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EventTrigger(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EventTrigger, E2SM_RC_EventTrigger_sequence);
 
@@ -4001,8 +3996,8 @@ dissect_rc_v3_E2SM_RC_EventTrigger(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_rc_v3_RIC_Style_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_Style_Type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_integer(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -4015,8 +4010,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format1_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format1_Item, E2SM_RC_ActionDefinition_Format1_Item_sequence);
 
@@ -4028,8 +4023,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofParametersToReport_OF_E2SM_RC
   { &hf_rc_v3_ranP_ToBeReported_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersToReport_OF_E2SM_RC_ActionDefinition_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersToReport_OF_E2SM_RC_ActionDefinition_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofParametersToReport_OF_E2SM_RC_ActionDefinition_Format1_Item, SEQUENCE_SIZE_1_maxnoofParametersToReport_OF_E2SM_RC_ActionDefinition_Format1_Item_sequence_of,
                                                   1, maxnoofParametersToReport, false);
@@ -4043,8 +4038,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format1, E2SM_RC_ActionDefinition_Format1_sequence);
 
@@ -4058,8 +4053,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format2_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format2_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format2_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format2_Item, E2SM_RC_ActionDefinition_Format2_Item_sequence);
 
@@ -4071,8 +4066,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofPolicyConditions_OF_E2SM_RC_A
   { &hf_rc_v3_ric_PolicyConditions_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format2_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyConditions_OF_E2SM_RC_ActionDefinition_Format2_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyConditions_OF_E2SM_RC_ActionDefinition_Format2_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyConditions_OF_E2SM_RC_ActionDefinition_Format2_Item, SEQUENCE_SIZE_1_maxnoofPolicyConditions_OF_E2SM_RC_ActionDefinition_Format2_Item_sequence_of,
                                                   1, maxnoofPolicyConditions, false);
@@ -4086,8 +4081,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format2, E2SM_RC_ActionDefinition_Format2_sequence);
 
@@ -4101,8 +4096,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format3_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format3_Item, E2SM_RC_ActionDefinition_Format3_Item_sequence);
 
@@ -4114,8 +4109,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_InsertIndication_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format3_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format3_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format3_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -4131,8 +4126,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format3, E2SM_RC_ActionDefinition_Format3_sequence);
 
@@ -4146,8 +4141,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format4_RANP_Item_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format4_RANP_Item, E2SM_RC_ActionDefinition_Format4_RANP_Item_sequence);
 
@@ -4159,8 +4154,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_InsertIndication_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_RANP_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format4_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format4_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format4_RANP_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ActionDefinition_Format4_RANP_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -4175,8 +4170,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format4_Indication_Item_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format4_Indication_Item, E2SM_RC_ActionDefinition_Format4_Indication_Item_sequence);
 
@@ -4188,8 +4183,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2
   { &hf_rc_v3_ric_InsertIndication_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Indication_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_ActionDefinition_Format4_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_ActionDefinition_Format4_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_ActionDefinition_Format4_Indication_Item, SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_ActionDefinition_Format4_Indication_Item_sequence_of,
                                                   1, maxnoofInsertIndicationActions, false);
@@ -4204,8 +4199,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format4_Style_Item_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format4_Style_Item, E2SM_RC_ActionDefinition_Format4_Style_Item_sequence);
 
@@ -4217,8 +4212,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ActionDe
   { &hf_rc_v3_ric_InsertStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ActionDefinition_Format4_Style_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ActionDefinition_Format4_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ActionDefinition_Format4_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ActionDefinition_Format4_Style_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ActionDefinition_Format4_Style_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -4233,8 +4228,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_Format4_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition_Format4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition_Format4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition_Format4, E2SM_RC_ActionDefinition_Format4_sequence);
 
@@ -4258,8 +4253,8 @@ static const per_choice_t T_ric_actionDefinition_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_actionDefinition_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_actionDefinition_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_actionDefinition_formats, T_ric_actionDefinition_formats_choice,
                                  NULL);
@@ -4274,8 +4269,8 @@ static const per_sequence_t E2SM_RC_ActionDefinition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ActionDefinition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ActionDefinition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ActionDefinition, E2SM_RC_ActionDefinition_sequence);
 
@@ -4288,8 +4283,8 @@ static const per_sequence_t E2SM_RC_IndicationHeader_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationHeader_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationHeader_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationHeader_Format1, E2SM_RC_IndicationHeader_Format1_sequence);
 
@@ -4304,8 +4299,8 @@ static const per_sequence_t E2SM_RC_IndicationHeader_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationHeader_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationHeader_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationHeader_Format2, E2SM_RC_IndicationHeader_Format2_sequence);
 
@@ -4319,8 +4314,8 @@ static const per_sequence_t E2SM_RC_IndicationHeader_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationHeader_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationHeader_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationHeader_Format3, E2SM_RC_IndicationHeader_Format3_sequence);
 
@@ -4342,8 +4337,8 @@ static const per_choice_t T_ric_indicationHeader_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_indicationHeader_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_indicationHeader_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_indicationHeader_formats, T_ric_indicationHeader_formats_choice,
                                  NULL);
@@ -4357,8 +4352,8 @@ static const per_sequence_t E2SM_RC_IndicationHeader_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationHeader(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationHeader(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationHeader, E2SM_RC_IndicationHeader_sequence);
 
@@ -4372,8 +4367,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format1_Item_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format1_Item, E2SM_RC_IndicationMessage_Format1_Item_sequence);
 
@@ -4385,8 +4380,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_Reported_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format1_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format1_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -4400,8 +4395,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format1, E2SM_RC_IndicationMessage_Format1_sequence);
 
@@ -4415,8 +4410,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format2_RANParameter_Item_
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format2_RANParameter_Item, E2SM_RC_IndicationMessage_Format2_RANParameter_Item_sequence);
 
@@ -4428,8 +4423,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format2_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format2_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format2_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format2_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -4444,8 +4439,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format2_Item_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format2_Item, E2SM_RC_IndicationMessage_Format2_Item_sequence);
 
@@ -4457,8 +4452,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofUEID_OF_E2SM_RC_IndicationMes
   { &hf_rc_v3_ueParameter_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format2_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEID_OF_E2SM_RC_IndicationMessage_Format2_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofUEID_OF_E2SM_RC_IndicationMessage_Format2_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofUEID_OF_E2SM_RC_IndicationMessage_Format2_Item, SEQUENCE_SIZE_1_maxnoofUEID_OF_E2SM_RC_IndicationMessage_Format2_Item_sequence_of,
                                                   1, maxnoofUEID, false);
@@ -4472,8 +4467,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format2, E2SM_RC_IndicationMessage_Format2_sequence);
 
@@ -4489,8 +4484,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format3_Item_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format3_Item, E2SM_RC_IndicationMessage_Format3_Item_sequence);
 
@@ -4502,8 +4497,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_IndicationM
   { &hf_rc_v3_cellInfo_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format3_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_IndicationMessage_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_IndicationMessage_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_IndicationMessage_Format3_Item, SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_IndicationMessage_Format3_Item_sequence_of,
                                                   1, maxnoofCellID, false);
@@ -4517,8 +4512,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format3, E2SM_RC_IndicationMessage_Format3_sequence);
 
@@ -4532,8 +4527,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format5_Item_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format5_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format5_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format5_Item, E2SM_RC_IndicationMessage_Format5_Item_sequence);
 
@@ -4545,8 +4540,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_Requested_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format5_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format5_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format5_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format5_Item, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format5_Item_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -4560,8 +4555,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format5_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format5(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format5, E2SM_RC_IndicationMessage_Format5_sequence);
 
@@ -4575,8 +4570,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format6_RANP_Item_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format6_RANP_Item, E2SM_RC_IndicationMessage_Format6_RANP_Item_sequence);
 
@@ -4588,8 +4583,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_InsertIndication_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_RANP_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format6_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format6_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format6_RANP_Item, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_IndicationMessage_Format6_RANP_Item_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -4604,8 +4599,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format6_Indication_Item_se
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format6_Indication_Item, E2SM_RC_IndicationMessage_Format6_Indication_Item_sequence);
 
@@ -4617,8 +4612,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2
   { &hf_rc_v3_ric_InsertIndication_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Indication_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_IndicationMessage_Format6_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_IndicationMessage_Format6_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_IndicationMessage_Format6_Indication_Item, SEQUENCE_SIZE_1_maxnoofInsertIndicationActions_OF_E2SM_RC_IndicationMessage_Format6_Indication_Item_sequence_of,
                                                   1, maxnoofInsertIndicationActions, false);
@@ -4633,8 +4628,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format6_Style_Item_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format6_Style_Item, E2SM_RC_IndicationMessage_Format6_Style_Item_sequence);
 
@@ -4646,8 +4641,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_Indicati
   { &hf_rc_v3_ric_InsertStyle_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_IndicationMessage_Format6_Style_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_IndicationMessage_Format6_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_IndicationMessage_Format6_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_IndicationMessage_Format6_Style_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_IndicationMessage_Format6_Style_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -4661,8 +4656,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_Format6_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage_Format6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage_Format6(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage_Format6, E2SM_RC_IndicationMessage_Format6_sequence);
 
@@ -4690,8 +4685,8 @@ static const per_choice_t T_ric_indicationMessage_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_indicationMessage_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_indicationMessage_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_indicationMessage_formats, T_ric_indicationMessage_formats_choice,
                                  NULL);
@@ -4705,8 +4700,8 @@ static const per_sequence_t E2SM_RC_IndicationMessage_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_IndicationMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_IndicationMessage(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_IndicationMessage, E2SM_RC_IndicationMessage_sequence);
 
@@ -4719,8 +4714,8 @@ static const per_sequence_t E2SM_RC_CallProcessID_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_CallProcessID_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_CallProcessID_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_CallProcessID_Format1, E2SM_RC_CallProcessID_Format1_sequence);
 
@@ -4738,8 +4733,8 @@ static const per_choice_t T_ric_callProcessID_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_callProcessID_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_callProcessID_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_callProcessID_formats, T_ric_callProcessID_formats_choice,
                                  NULL);
@@ -4753,8 +4748,8 @@ static const per_sequence_t E2SM_RC_CallProcessID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_CallProcessID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_CallProcessID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_CallProcessID, E2SM_RC_CallProcessID_sequence);
 
@@ -4769,8 +4764,8 @@ static const value_string rc_v3_T_ric_ControlDecision_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ric_ControlDecision(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_ControlDecision(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -4786,8 +4781,8 @@ static const per_sequence_t E2SM_RC_ControlHeader_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlHeader_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlHeader_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlHeader_Format1, E2SM_RC_ControlHeader_Format1_sequence);
 
@@ -4802,8 +4797,8 @@ static const value_string rc_v3_T_ric_ControlDecision_01_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ric_ControlDecision_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_ControlDecision_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -4817,8 +4812,8 @@ static const per_sequence_t E2SM_RC_ControlHeader_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlHeader_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlHeader_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlHeader_Format2, E2SM_RC_ControlHeader_Format2_sequence);
 
@@ -4834,8 +4829,8 @@ static const per_sequence_t E2SM_RC_ControlHeader_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlHeader_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlHeader_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlHeader_Format3, E2SM_RC_ControlHeader_Format3_sequence);
 
@@ -4850,8 +4845,8 @@ static const value_string rc_v3_T_ric_ControlDecision_02_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ric_ControlDecision_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_ControlDecision_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -4867,8 +4862,8 @@ static const per_sequence_t E2SM_RC_ControlHeader_Format4_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlHeader_Format4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlHeader_Format4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlHeader_Format4, E2SM_RC_ControlHeader_Format4_sequence);
 
@@ -4892,8 +4887,8 @@ static const per_choice_t T_ric_controlHeader_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_controlHeader_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_controlHeader_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_controlHeader_formats, T_ric_controlHeader_formats_choice,
                                  NULL);
@@ -4907,8 +4902,8 @@ static const per_sequence_t E2SM_RC_ControlHeader_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlHeader(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlHeader(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlHeader, E2SM_RC_ControlHeader_sequence);
 
@@ -4922,8 +4917,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format1_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format1_Item, E2SM_RC_ControlMessage_Format1_Item_sequence);
 
@@ -4935,8 +4930,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlMessage_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format1_Item, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format1_Item_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -4950,8 +4945,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format1, E2SM_RC_ControlMessage_Format1_sequence);
 
@@ -4965,8 +4960,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format2_ControlAction_Item_se
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format2_ControlAction_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format2_ControlAction_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format2_ControlAction_Item, E2SM_RC_ControlMessage_Format2_ControlAction_Item_sequence);
 
@@ -4978,8 +4973,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_Con
   { &hf_rc_v3_ric_ControlAction_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlMessage_Format2_ControlAction_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlMessage_Format2_ControlAction_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlMessage_Format2_ControlAction_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlMessage_Format2_ControlAction_Item, SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlMessage_Format2_ControlAction_Item_sequence_of,
                                                   1, maxnoofMulCtrlActions, false);
@@ -4994,8 +4989,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format2_Style_Item_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format2_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format2_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format2_Style_Item, E2SM_RC_ControlMessage_Format2_Style_Item_sequence);
 
@@ -5007,8 +5002,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlM
   { &hf_rc_v3_ric_ControlStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlMessage_Format2_Style_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlMessage_Format2_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlMessage_Format2_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlMessage_Format2_Style_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlMessage_Format2_Style_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -5022,8 +5017,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format2, E2SM_RC_ControlMessage_Format2_sequence);
 
@@ -5037,8 +5032,8 @@ static const per_sequence_t EntitySpecific_ranP_ControlParameters_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EntitySpecific_ranP_ControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EntitySpecific_ranP_ControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EntitySpecific_ranP_ControlParameters, EntitySpecific_ranP_ControlParameters_sequence);
 
@@ -5050,8 +5045,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_En
   { &hf_rc_v3_entitySpecificControlRanP_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_EntitySpecific_ranP_ControlParameters },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_EntitySpecific_ranP_ControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_EntitySpecific_ranP_ControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_EntitySpecific_ranP_ControlParameters, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_EntitySpecific_ranP_ControlParameters_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -5067,8 +5062,8 @@ static const per_sequence_t E2SM_RC_EntityFilter_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_EntityFilter(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_EntityFilter(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_EntityFilter, E2SM_RC_EntityFilter_sequence);
 
@@ -5080,8 +5075,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedEntityFilters_OF_E2
   { &hf_rc_v3_listOfEntityFilters_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_EntityFilter },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedEntityFilters_OF_E2SM_RC_EntityFilter(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedEntityFilters_OF_E2SM_RC_EntityFilter(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedEntityFilters_OF_E2SM_RC_EntityFilter, SEQUENCE_SIZE_0_maxnoofAssociatedEntityFilters_OF_E2SM_RC_EntityFilter_sequence_of,
                                                   0, maxnoofAssociatedEntityFilters, false);
@@ -5096,8 +5091,8 @@ static const per_sequence_t EntityAgnostic_ranP_ControlParameters_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_EntityAgnostic_ranP_ControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_EntityAgnostic_ranP_ControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_EntityAgnostic_ranP_ControlParameters, EntityAgnostic_ranP_ControlParameters_sequence);
 
@@ -5109,8 +5104,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_En
   { &hf_rc_v3_entityAgnosticControlRanP_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_EntityAgnostic_ranP_ControlParameters },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_EntityAgnostic_ranP_ControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_EntityAgnostic_ranP_ControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_EntityAgnostic_ranP_ControlParameters, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_EntityAgnostic_ranP_ControlParameters_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -5125,8 +5120,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format3, E2SM_RC_ControlMessage_Format3_sequence);
 
@@ -5140,8 +5135,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format4_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format4_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format4_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format4_Item, E2SM_RC_ControlMessage_Format4_Item_sequence);
 
@@ -5153,8 +5148,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlMessage_Format4_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format4_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format4_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format4_Item, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlMessage_Format4_Item_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -5168,8 +5163,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_Format4_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage_Format4, E2SM_RC_ControlMessage_Format4_sequence);
 
@@ -5178,8 +5173,8 @@ dissect_rc_v3_E2SM_RC_ControlMessage_Format4(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage_Format5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage_Format5(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_null(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -5204,8 +5199,8 @@ static const per_choice_t T_ric_controlMessage_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_controlMessage_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_controlMessage_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_controlMessage_formats, T_ric_controlMessage_formats_choice,
                                  NULL);
@@ -5219,8 +5214,8 @@ static const per_sequence_t E2SM_RC_ControlMessage_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlMessage(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlMessage, E2SM_RC_ControlMessage_sequence);
 
@@ -5234,8 +5229,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format1_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format1_Item, E2SM_RC_ControlOutcome_Format1_Item_sequence);
 
@@ -5247,8 +5242,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_
   { &hf_rc_v3_ranP_List_item_03, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlOutcome_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format1_Item, SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format1_Item_sequence_of,
                                                   0, maxnoofRANOutcomeParameters, false);
@@ -5262,8 +5257,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format1, E2SM_RC_ControlOutcome_Format1_sequence);
 
@@ -5277,8 +5272,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format2_RANP_Item_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format2_RANP_Item, E2SM_RC_ControlOutcome_Format2_RANP_Item_sequence);
 
@@ -5290,8 +5285,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_04, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_RANP_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlOutcome_Format2_RANP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlOutcome_Format2_RANP_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlOutcome_Format2_RANP_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_ControlOutcome_Format2_RANP_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -5306,8 +5301,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item_s
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item, E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item_sequence);
 
@@ -5319,8 +5314,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_Con
   { &hf_rc_v3_ric_ControlOutcome_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item, SEQUENCE_SIZE_1_maxnoofMulCtrlActions_OF_E2SM_RC_ControlOutcome_Format2_ControlOutcome_Item_sequence_of,
                                                   1, maxnoofMulCtrlActions, false);
@@ -5335,8 +5330,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format2_Style_Item_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format2_Style_Item, E2SM_RC_ControlOutcome_Format2_Style_Item_sequence);
 
@@ -5348,8 +5343,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlO
   { &hf_rc_v3_ric_ControlStyle_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlOutcome_Format2_Style_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlOutcome_Format2_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlOutcome_Format2_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlOutcome_Format2_Style_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_E2SM_RC_ControlOutcome_Format2_Style_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -5363,8 +5358,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format2, E2SM_RC_ControlOutcome_Format2_sequence);
 
@@ -5378,8 +5373,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format3_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format3_Item, E2SM_RC_ControlOutcome_Format3_Item_sequence);
 
@@ -5391,8 +5386,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_
   { &hf_rc_v3_ranP_List_item_05, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_ControlOutcome_Format3_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format3_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format3_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format3_Item, SEQUENCE_SIZE_0_maxnoofRANOutcomeParameters_OF_E2SM_RC_ControlOutcome_Format3_Item_sequence_of,
                                                   0, maxnoofRANOutcomeParameters, false);
@@ -5406,8 +5401,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_Format3_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome_Format3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome_Format3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome_Format3, E2SM_RC_ControlOutcome_Format3_sequence);
 
@@ -5429,8 +5424,8 @@ static const per_choice_t T_ric_controlOutcome_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_controlOutcome_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_controlOutcome_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_controlOutcome_formats, T_ric_controlOutcome_formats_choice,
                                  NULL);
@@ -5444,8 +5439,8 @@ static const per_sequence_t E2SM_RC_ControlOutcome_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_ControlOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_ControlOutcome(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_ControlOutcome, E2SM_RC_ControlOutcome_sequence);
 
@@ -5460,8 +5455,8 @@ static const per_sequence_t E2SM_RC_QueryHeader_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryHeader_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryHeader_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryHeader_Format1, E2SM_RC_QueryHeader_Format1_sequence);
 
@@ -5479,8 +5474,8 @@ static const per_choice_t T_ric_queryHeader_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_queryHeader_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_queryHeader_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_queryHeader_formats, T_ric_queryHeader_formats_choice,
                                  NULL);
@@ -5494,8 +5489,8 @@ static const per_sequence_t E2SM_RC_QueryHeader_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryHeader(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryHeader(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryHeader, E2SM_RC_QueryHeader_sequence);
 
@@ -5509,8 +5504,8 @@ static const per_sequence_t E2SM_RC_QueryDefinition_Format1_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryDefinition_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryDefinition_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryDefinition_Format1_Item, E2SM_RC_QueryDefinition_Format1_Item_sequence);
 
@@ -5522,8 +5517,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_06, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_QueryDefinition_Format1_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryDefinition_Format1_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryDefinition_Format1_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryDefinition_Format1_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryDefinition_Format1_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -5537,8 +5532,8 @@ static const per_sequence_t E2SM_RC_QueryDefinition_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryDefinition_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryDefinition_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryDefinition_Format1, E2SM_RC_QueryDefinition_Format1_sequence);
 
@@ -5556,8 +5551,8 @@ static const per_choice_t T_ric_queryDefinition_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_queryDefinition_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_queryDefinition_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_queryDefinition_formats, T_ric_queryDefinition_formats_choice,
                                  NULL);
@@ -5571,8 +5566,8 @@ static const per_sequence_t E2SM_RC_QueryDefinition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryDefinition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryDefinition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryDefinition, E2SM_RC_QueryDefinition_sequence);
 
@@ -5586,8 +5581,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format1_ItemParameters_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemParameters, E2SM_RC_QueryOutcome_Format1_ItemParameters_sequence);
 
@@ -5599,8 +5594,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_07, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemParameters },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format1_ItemParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format1_ItemParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format1_ItemParameters, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format1_ItemParameters_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -5616,8 +5611,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format1_ItemCell_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemCell(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemCell(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemCell, E2SM_RC_QueryOutcome_Format1_ItemCell_sequence);
 
@@ -5629,8 +5624,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_QueryOutcom
   { &hf_rc_v3_cellInfo_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_QueryOutcome_Format1_ItemCell },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_QueryOutcome_Format1_ItemCell(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_QueryOutcome_Format1_ItemCell(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_QueryOutcome_Format1_ItemCell, SEQUENCE_SIZE_1_maxnoofCellID_OF_E2SM_RC_QueryOutcome_Format1_ItemCell_sequence_of,
                                                   1, maxnoofCellID, false);
@@ -5644,8 +5639,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format1, E2SM_RC_QueryOutcome_Format1_sequence);
 
@@ -5659,8 +5654,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format2_ItemParameters_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemParameters, E2SM_RC_QueryOutcome_Format2_ItemParameters_sequence);
 
@@ -5672,8 +5667,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2
   { &hf_rc_v3_ranP_List_item_08, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemParameters },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format2_ItemParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format2_ItemParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format2_ItemParameters, SEQUENCE_SIZE_0_maxnoofAssociatedRANParameters_OF_E2SM_RC_QueryOutcome_Format2_ItemParameters_sequence_of,
                                                   0, maxnoofAssociatedRANParameters, false);
@@ -5689,8 +5684,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format2_ItemUE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemUE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemUE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemUE, E2SM_RC_QueryOutcome_Format2_ItemUE_sequence);
 
@@ -5702,8 +5697,8 @@ static const per_sequence_t SEQUENCE_SIZE_0_maxnoofUEID_OF_E2SM_RC_QueryOutcome_
   { &hf_rc_v3_ueInfo_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_E2SM_RC_QueryOutcome_Format2_ItemUE },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofUEID_OF_E2SM_RC_QueryOutcome_Format2_ItemUE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_0_maxnoofUEID_OF_E2SM_RC_QueryOutcome_Format2_ItemUE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_0_maxnoofUEID_OF_E2SM_RC_QueryOutcome_Format2_ItemUE, SEQUENCE_SIZE_0_maxnoofUEID_OF_E2SM_RC_QueryOutcome_Format2_ItemUE_sequence_of,
                                                   0, maxnoofUEID, false);
@@ -5717,8 +5712,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_Format2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome_Format2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome_Format2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome_Format2, E2SM_RC_QueryOutcome_Format2_sequence);
 
@@ -5738,8 +5733,8 @@ static const per_choice_t T_ric_queryOutcome_formats_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_rc_v3_T_ric_queryOutcome_formats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ric_queryOutcome_formats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_rc_v3_T_ric_queryOutcome_formats, T_ric_queryOutcome_formats_choice,
                                  NULL);
@@ -5753,8 +5748,8 @@ static const per_sequence_t E2SM_RC_QueryOutcome_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_QueryOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_QueryOutcome(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_QueryOutcome, E2SM_RC_QueryOutcome_sequence);
 
@@ -5763,8 +5758,8 @@ dissect_rc_v3_E2SM_RC_QueryOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_rc_v3_T_ranFunction_ShortName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ranFunction_ShortName(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   tvbuff_t *value_tvb;
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
@@ -5773,7 +5768,7 @@ dissect_rc_v3_T_ranFunction_ShortName(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
   if (!actx->pinfo->fd->visited) {
     /* N.B. too early to work out exact dissector, as don't have OID yet */
     e2ap_store_ran_function_mapping(actx->pinfo, tree, value_tvb,
-                                    tvb_get_string_enc(actx->pinfo->pool, value_tvb, 0, tvb_captured_length(value_tvb), ENC_ASCII));
+                                    (char*)tvb_get_string_enc(actx->pinfo->pool, value_tvb, 0, tvb_captured_length(value_tvb), ENC_ASCII));
   }
 
 
@@ -5783,15 +5778,15 @@ dissect_rc_v3_T_ranFunction_ShortName(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 
 
 
-static int
-dissect_rc_v3_T_ranFunction_E2SM_OID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ranFunction_E2SM_OID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   tvbuff_t *parameter_tvb;
     offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 1000, true,
                                           &parameter_tvb);
 
   e2ap_update_ran_function_mapping(actx->pinfo, tree, parameter_tvb,
-                                   tvb_get_string_enc(actx->pinfo->pool, parameter_tvb, 0,
+                                   (char*)tvb_get_string_enc(actx->pinfo->pool, parameter_tvb, 0,
 				   tvb_captured_length(parameter_tvb), ENC_ASCII));
 
 
@@ -5802,8 +5797,8 @@ dissect_rc_v3_T_ranFunction_E2SM_OID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_rc_v3_PrintableString_SIZE_1_150_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PrintableString_SIZE_1_150_(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -5820,8 +5815,8 @@ static const per_sequence_t RANfunction_Name_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANfunction_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANfunction_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANfunction_Name, RANfunction_Name_sequence);
 
@@ -5830,8 +5825,8 @@ dissect_rc_v3_RANfunction_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_rc_v3_RIC_Style_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_Style_Name(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_PrintableString(tvb, offset, actx, tree, hf_index,
                                           1, 150, true,
                                           NULL);
@@ -5841,8 +5836,8 @@ dissect_rc_v3_RIC_Style_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_rc_v3_RIC_Format_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RIC_Format_Type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_integer(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -5856,8 +5851,8 @@ static const per_sequence_t RANFunctionDefinition_EventTrigger_Style_Item_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_EventTrigger_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_EventTrigger_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_EventTrigger_Style_Item, RANFunctionDefinition_EventTrigger_Style_Item_sequence);
 
@@ -5869,8 +5864,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_EventTriggerStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_EventTrigger_Style_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_EventTrigger_Style_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_EventTrigger_Style_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_EventTrigger_Style_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_EventTrigger_Style_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -5886,8 +5881,8 @@ static const per_sequence_t L2Parameters_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_L2Parameters_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_L2Parameters_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_L2Parameters_RANParameter_Item, L2Parameters_RANParameter_Item_sequence);
 
@@ -5899,8 +5894,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_L2
   { &hf_rc_v3_ran_L2Parameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_L2Parameters_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_L2Parameters_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_L2Parameters_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_L2Parameters_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_L2Parameters_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -5916,8 +5911,8 @@ static const per_sequence_t CallProcessBreakpoint_RANParameter_Item_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_CallProcessBreakpoint_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_CallProcessBreakpoint_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_CallProcessBreakpoint_RANParameter_Item, CallProcessBreakpoint_RANParameter_Item_sequence);
 
@@ -5929,8 +5924,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Ca
   { &hf_rc_v3_ran_CallProcessBreakpointParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_CallProcessBreakpoint_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CallProcessBreakpoint_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CallProcessBreakpoint_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CallProcessBreakpoint_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CallProcessBreakpoint_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -5946,8 +5941,8 @@ static const per_sequence_t RANFunctionDefinition_EventTrigger_Breakpoint_Item_s
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_EventTrigger_Breakpoint_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_EventTrigger_Breakpoint_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_EventTrigger_Breakpoint_Item, RANFunctionDefinition_EventTrigger_Breakpoint_Item_sequence);
 
@@ -5959,8 +5954,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofCallProcessBreakpoints_OF_RAN
   { &hf_rc_v3_callProcessBreakpoints_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_EventTrigger_Breakpoint_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessBreakpoints_OF_RANFunctionDefinition_EventTrigger_Breakpoint_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessBreakpoints_OF_RANFunctionDefinition_EventTrigger_Breakpoint_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessBreakpoints_OF_RANFunctionDefinition_EventTrigger_Breakpoint_Item, SEQUENCE_SIZE_1_maxnoofCallProcessBreakpoints_OF_RANFunctionDefinition_EventTrigger_Breakpoint_Item_sequence_of,
                                                   1, maxnoofCallProcessBreakpoints, false);
@@ -5976,8 +5971,8 @@ static const per_sequence_t RANFunctionDefinition_EventTrigger_CallProcess_Item_
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_EventTrigger_CallProcess_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_EventTrigger_CallProcess_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_EventTrigger_CallProcess_Item, RANFunctionDefinition_EventTrigger_CallProcess_Item_sequence);
 
@@ -5989,8 +5984,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofCallProcessTypes_OF_RANFuncti
   { &hf_rc_v3_ran_CallProcessTypes_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_EventTrigger_CallProcess_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessTypes_OF_RANFunctionDefinition_EventTrigger_CallProcess_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessTypes_OF_RANFunctionDefinition_EventTrigger_CallProcess_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofCallProcessTypes_OF_RANFunctionDefinition_EventTrigger_CallProcess_Item, SEQUENCE_SIZE_1_maxnoofCallProcessTypes_OF_RANFunctionDefinition_EventTrigger_CallProcess_Item_sequence_of,
                                                   1, maxnoofCallProcessTypes, false);
@@ -6006,8 +6001,8 @@ static const per_sequence_t UEIdentification_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_UEIdentification_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_UEIdentification_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_UEIdentification_RANParameter_Item, UEIdentification_RANParameter_Item_sequence);
 
@@ -6019,8 +6014,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_UE
   { &hf_rc_v3_ran_UEIdentificationParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_UEIdentification_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_UEIdentification_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_UEIdentification_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_UEIdentification_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_UEIdentification_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6036,8 +6031,8 @@ static const per_sequence_t CellIdentification_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_CellIdentification_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_CellIdentification_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_CellIdentification_RANParameter_Item, CellIdentification_RANParameter_Item_sequence);
 
@@ -6049,8 +6044,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Ce
   { &hf_rc_v3_ran_CellIdentificationParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_CellIdentification_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CellIdentification_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CellIdentification_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CellIdentification_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_CellIdentification_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6068,8 +6063,8 @@ static const per_sequence_t RANFunctionDefinition_EventTrigger_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_EventTrigger(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_EventTrigger(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_EventTrigger, RANFunctionDefinition_EventTrigger_sequence);
 
@@ -6084,8 +6079,8 @@ static const per_sequence_t Report_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Report_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Report_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Report_RANParameter_Item, Report_RANParameter_Item_sequence);
 
@@ -6097,8 +6092,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Re
   { &hf_rc_v3_ran_ReportParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_Report_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Report_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Report_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Report_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Report_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6118,8 +6113,8 @@ static const per_sequence_t RANFunctionDefinition_Report_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Report_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Report_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Report_Item, RANFunctionDefinition_Report_Item_sequence);
 
@@ -6131,8 +6126,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_ReportStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Report_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Report_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Report_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Report_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Report_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -6146,8 +6141,8 @@ static const per_sequence_t RANFunctionDefinition_Report_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Report(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Report(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Report, RANFunctionDefinition_Report_sequence);
 
@@ -6162,8 +6157,8 @@ static const per_sequence_t InsertIndication_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_InsertIndication_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_InsertIndication_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_InsertIndication_RANParameter_Item, InsertIndication_RANParameter_Item_sequence);
 
@@ -6175,8 +6170,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_In
   { &hf_rc_v3_ran_InsertIndicationParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_InsertIndication_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_InsertIndication_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_InsertIndication_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_InsertIndication_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_InsertIndication_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6192,8 +6187,8 @@ static const per_sequence_t RANFunctionDefinition_Insert_Indication_Item_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Insert_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Insert_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Insert_Indication_Item, RANFunctionDefinition_Insert_Indication_Item_sequence);
 
@@ -6205,8 +6200,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofInsertIndication_OF_RANFuncti
   { &hf_rc_v3_ric_InsertIndication_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Insert_Indication_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndication_OF_RANFunctionDefinition_Insert_Indication_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndication_OF_RANFunctionDefinition_Insert_Indication_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofInsertIndication_OF_RANFunctionDefinition_Insert_Indication_Item, SEQUENCE_SIZE_1_maxnoofInsertIndication_OF_RANFunctionDefinition_Insert_Indication_Item_sequence_of,
                                                   1, maxnoofInsertIndication, false);
@@ -6227,8 +6222,8 @@ static const per_sequence_t RANFunctionDefinition_Insert_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Insert_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Insert_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Insert_Item, RANFunctionDefinition_Insert_Item_sequence);
 
@@ -6240,8 +6235,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_InsertStyle_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Insert_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Insert_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Insert_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Insert_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Insert_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -6255,8 +6250,8 @@ static const per_sequence_t RANFunctionDefinition_Insert_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Insert(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Insert(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Insert, RANFunctionDefinition_Insert_sequence);
 
@@ -6271,8 +6266,8 @@ static const per_sequence_t ControlAction_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_ControlAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ControlAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_ControlAction_RANParameter_Item, ControlAction_RANParameter_Item_sequence);
 
@@ -6284,8 +6279,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Co
   { &hf_rc_v3_ran_ControlActionParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_ControlAction_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_ControlAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_ControlAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_ControlAction_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_ControlAction_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6301,8 +6296,8 @@ static const value_string rc_v3_T_ueGroup_ControlAction_Supported_vals[] = {
 };
 
 
-static int
-dissect_rc_v3_T_ueGroup_ControlAction_Supported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_T_ueGroup_ControlAction_Supported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -6318,8 +6313,8 @@ static const per_sequence_t RANFunctionDefinition_Control_Action_Item_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Control_Action_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Control_Action_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Control_Action_Item, RANFunctionDefinition_Control_Action_Item_sequence);
 
@@ -6331,8 +6326,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofControlAction_OF_RANFunctionD
   { &hf_rc_v3_ric_ControlAction_List_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Control_Action_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofControlAction_OF_RANFunctionDefinition_Control_Action_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofControlAction_OF_RANFunctionDefinition_Control_Action_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofControlAction_OF_RANFunctionDefinition_Control_Action_Item, SEQUENCE_SIZE_1_maxnoofControlAction_OF_RANFunctionDefinition_Control_Action_Item_sequence_of,
                                                   1, maxnoofControlAction, false);
@@ -6348,8 +6343,8 @@ static const per_sequence_t ControlOutcome_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_ControlOutcome_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ControlOutcome_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_ControlOutcome_RANParameter_Item, ControlOutcome_RANParameter_Item_sequence);
 
@@ -6361,8 +6356,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRANOutcomeParameters_OF_Contr
   { &hf_rc_v3_ran_ControlOutcomeParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_ControlOutcome_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRANOutcomeParameters_OF_ControlOutcome_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRANOutcomeParameters_OF_ControlOutcome_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRANOutcomeParameters_OF_ControlOutcome_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofRANOutcomeParameters_OF_ControlOutcome_RANParameter_Item_sequence_of,
                                                   1, maxnoofRANOutcomeParameters, false);
@@ -6379,8 +6374,8 @@ static const per_sequence_t AdditionalSupportedFormat_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_AdditionalSupportedFormat(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_AdditionalSupportedFormat(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_AdditionalSupportedFormat, AdditionalSupportedFormat_sequence);
 
@@ -6392,8 +6387,8 @@ static const per_sequence_t ListOfAdditionalSupportedFormats_sequence_of[1] = {
   { &hf_rc_v3_ListOfAdditionalSupportedFormats_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_AdditionalSupportedFormat },
 };
 
-static int
-dissect_rc_v3_ListOfAdditionalSupportedFormats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_ListOfAdditionalSupportedFormats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_ListOfAdditionalSupportedFormats, ListOfAdditionalSupportedFormats_sequence_of,
                                                   0, maxnoofFormatTypes, false);
@@ -6415,8 +6410,8 @@ static const per_sequence_t RANFunctionDefinition_Control_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Control_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Control_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Control_Item, RANFunctionDefinition_Control_Item_sequence);
 
@@ -6428,8 +6423,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_ControlStyle_List_item_02, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Control_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Control_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Control_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Control_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Control_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -6443,8 +6438,8 @@ static const per_sequence_t RANFunctionDefinition_Control_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Control(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Control(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Control, RANFunctionDefinition_Control_sequence);
 
@@ -6459,8 +6454,8 @@ static const per_sequence_t PolicyAction_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_PolicyAction_RANParameter_Item, PolicyAction_RANParameter_Item_sequence);
 
@@ -6472,8 +6467,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Po
   { &hf_rc_v3_ran_PolicyActionParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_PolicyAction_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyAction_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyAction_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyAction_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6489,8 +6484,8 @@ static const per_sequence_t PolicyCondition_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_PolicyCondition_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_PolicyCondition_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_PolicyCondition_RANParameter_Item, PolicyCondition_RANParameter_Item_sequence);
 
@@ -6502,8 +6497,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Po
   { &hf_rc_v3_ran_PolicyConditionParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_PolicyCondition_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyCondition_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyCondition_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyCondition_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_PolicyCondition_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6521,8 +6516,8 @@ static const per_sequence_t RANFunctionDefinition_Policy_Action_Item_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Policy_Action_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Policy_Action_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Policy_Action_Item, RANFunctionDefinition_Policy_Action_Item_sequence);
 
@@ -6534,8 +6529,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofPolicyAction_OF_RANFunctionDe
   { &hf_rc_v3_ric_PolicyAction_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Policy_Action_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyAction_OF_RANFunctionDefinition_Policy_Action_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyAction_OF_RANFunctionDefinition_Policy_Action_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofPolicyAction_OF_RANFunctionDefinition_Policy_Action_Item, SEQUENCE_SIZE_1_maxnoofPolicyAction_OF_RANFunctionDefinition_Policy_Action_Item_sequence_of,
                                                   1, maxnoofPolicyAction, false);
@@ -6552,8 +6547,8 @@ static const per_sequence_t RANFunctionDefinition_Policy_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Policy_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Policy_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Policy_Item, RANFunctionDefinition_Policy_Item_sequence);
 
@@ -6565,8 +6560,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_PolicyStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Policy_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Policy_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Policy_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Policy_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Policy_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -6580,8 +6575,8 @@ static const per_sequence_t RANFunctionDefinition_Policy_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Policy(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Policy(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Policy, RANFunctionDefinition_Policy_sequence);
 
@@ -6596,8 +6591,8 @@ static const per_sequence_t Query_RANParameter_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_Query_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_Query_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_Query_RANParameter_Item, Query_RANParameter_Item_sequence);
 
@@ -6609,8 +6604,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Qu
   { &hf_rc_v3_ran_QueryParameters_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_Query_RANParameter_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Query_RANParameter_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Query_RANParameter_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Query_RANParameter_Item, SEQUENCE_SIZE_1_maxnoofAssociatedRANParameters_OF_Query_RANParameter_Item_sequence_of,
                                                   1, maxnoofAssociatedRANParameters, false);
@@ -6629,8 +6624,8 @@ static const per_sequence_t RANFunctionDefinition_Query_Item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Query_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Query_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Query_Item, RANFunctionDefinition_Query_Item_sequence);
 
@@ -6642,8 +6637,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefin
   { &hf_rc_v3_ric_QueryStyle_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_rc_v3_RANFunctionDefinition_Query_Item },
 };
 
-static int
-dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Query_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Query_Item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_rc_v3_SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Query_Item, SEQUENCE_SIZE_1_maxnoofRICStyles_OF_RANFunctionDefinition_Query_Item_sequence_of,
                                                   1, maxnoofRICStyles, false);
@@ -6657,8 +6652,8 @@ static const per_sequence_t RANFunctionDefinition_Query_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_RANFunctionDefinition_Query(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_RANFunctionDefinition_Query(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_RANFunctionDefinition_Query, RANFunctionDefinition_Query_sequence);
 
@@ -6677,8 +6672,8 @@ static const per_sequence_t E2SM_RC_RANFunctionDefinition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_rc_v3_E2SM_RC_RANFunctionDefinition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_rc_v3_E2SM_RC_RANFunctionDefinition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_rc_v3_E2SM_RC_RANFunctionDefinition, E2SM_RC_RANFunctionDefinition_sequence);
 
@@ -6688,7 +6683,7 @@ dissect_rc_v3_E2SM_RC_RANFunctionDefinition(tvbuff_t *tvb _U_, int offset _U_, a
 /*--- PDUs ---*/
 
 static int dissect_E2SM_RC_EventTrigger_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_EventTrigger(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_EventTrigger_PDU);
@@ -6696,7 +6691,7 @@ static int dissect_E2SM_RC_EventTrigger_PDU(tvbuff_t *tvb _U_, packet_info *pinf
   return offset;
 }
 static int dissect_E2SM_RC_ActionDefinition_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_ActionDefinition(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_ActionDefinition_PDU);
@@ -6704,7 +6699,7 @@ static int dissect_E2SM_RC_ActionDefinition_PDU(tvbuff_t *tvb _U_, packet_info *
   return offset;
 }
 static int dissect_E2SM_RC_IndicationHeader_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_IndicationHeader(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_IndicationHeader_PDU);
@@ -6712,7 +6707,7 @@ static int dissect_E2SM_RC_IndicationHeader_PDU(tvbuff_t *tvb _U_, packet_info *
   return offset;
 }
 static int dissect_E2SM_RC_IndicationMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_IndicationMessage(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_IndicationMessage_PDU);
@@ -6720,7 +6715,7 @@ static int dissect_E2SM_RC_IndicationMessage_PDU(tvbuff_t *tvb _U_, packet_info 
   return offset;
 }
 static int dissect_E2SM_RC_CallProcessID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_CallProcessID(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_CallProcessID_PDU);
@@ -6728,7 +6723,7 @@ static int dissect_E2SM_RC_CallProcessID_PDU(tvbuff_t *tvb _U_, packet_info *pin
   return offset;
 }
 static int dissect_E2SM_RC_ControlHeader_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_ControlHeader(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_ControlHeader_PDU);
@@ -6736,7 +6731,7 @@ static int dissect_E2SM_RC_ControlHeader_PDU(tvbuff_t *tvb _U_, packet_info *pin
   return offset;
 }
 static int dissect_E2SM_RC_ControlMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_ControlMessage(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_ControlMessage_PDU);
@@ -6744,7 +6739,7 @@ static int dissect_E2SM_RC_ControlMessage_PDU(tvbuff_t *tvb _U_, packet_info *pi
   return offset;
 }
 static int dissect_E2SM_RC_ControlOutcome_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_ControlOutcome(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_ControlOutcome_PDU);
@@ -6752,7 +6747,7 @@ static int dissect_E2SM_RC_ControlOutcome_PDU(tvbuff_t *tvb _U_, packet_info *pi
   return offset;
 }
 static int dissect_E2SM_RC_QueryHeader_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_QueryHeader(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_QueryHeader_PDU);
@@ -6760,7 +6755,7 @@ static int dissect_E2SM_RC_QueryHeader_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
   return offset;
 }
 static int dissect_E2SM_RC_QueryDefinition_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_QueryDefinition(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_QueryDefinition_PDU);
@@ -6768,7 +6763,7 @@ static int dissect_E2SM_RC_QueryDefinition_PDU(tvbuff_t *tvb _U_, packet_info *p
   return offset;
 }
 static int dissect_E2SM_RC_QueryOutcome_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_QueryOutcome(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_QueryOutcome_PDU);
@@ -6776,7 +6771,7 @@ static int dissect_E2SM_RC_QueryOutcome_PDU(tvbuff_t *tvb _U_, packet_info *pinf
   return offset;
 }
 static int dissect_E2SM_RC_RANFunctionDefinition_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_rc_v3_E2SM_RC_RANFunctionDefinition(tvb, offset, &asn1_ctx, tree, hf_rc_v3_E2SM_RC_RANFunctionDefinition_PDU);
@@ -6792,7 +6787,7 @@ proto_reg_handoff_rc_v3(void)
 {
 //#include "packet-rc-v3-dis-tab.c"
 
-    static ran_function_dissector_t rc_v3 =
+    static const ran_function_dissector_t rc_v3 =
     { "ORAN-E2SM-RC",  "1.3.6.1.4.1.53148.1.1.2.3", 3, 5,
       {  dissect_E2SM_RC_RANFunctionDefinition_PDU,
 
@@ -8933,7 +8928,7 @@ void proto_register_rc_v3(void) {
 
 
   /* Register protocol */
-  proto_rc_v3 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_rc_v3 = proto_register_protocol("RC V3", "RCv3", "rc-v3");
   /* Register fields and subtrees */
   proto_register_field_array(proto_rc_v3, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

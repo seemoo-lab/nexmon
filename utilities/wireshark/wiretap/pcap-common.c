@@ -376,6 +376,8 @@ static const struct {
 	{ 214,		WTAP_ENCAP_X2E_XORAYA },
 	/* IEEE 802.15.4 Wireless PAN non-ASK PHY */
 	{ 215,		WTAP_ENCAP_IEEE802_15_4_NONASK_PHY },
+	/* "gsmtap" header followed by GSM Um interface packets */
+	{ 217,		WTAP_ENCAP_GSMTAP_UM },
 	/* USB packets with padded Linux-specified header */
 	{ 220,		WTAP_ENCAP_USB_LINUX_MMAPPED },
 	/* Fibre Channel FC-2 frame */
@@ -502,6 +504,9 @@ static const struct {
 	/* Auerswald log file captured from any supported Auerswald device */
 	{ 296,		WTAP_ENCAP_AUERSWALD_LOG },
 
+	/* Z-Wave Tap */
+	{ 297,		WTAP_ENCAP_ZWAVE_TAP },
+
 	/* Silicon Labs debug channel */
 	{ 298,		WTAP_ENCAP_SILABS_DEBUG_CHANNEL },
 
@@ -513,6 +518,9 @@ static const struct {
 
 	/* DECT_NR (DECT-2020 New Radio (NR) MAC layer) */
 	{ 301,		WTAP_ENCAP_DECT_NR },
+
+	/* DECT_NR TAP (DECT-2020 New Radio (NR) TAP header) */
+	{ 304,		WTAP_ENCAP_DECT_NR_TAP },
 
 	/*
 	 * To repeat:
@@ -2497,7 +2505,7 @@ fix_linux_usb_mmapped_length(wtap_rec *rec, const uint8_t *bp)
 		 * on the URB length.
 		 *
 		 * That's not correct, because the data isn't contiguous,
-		 * and the isochronous descriptos show how it's scattered.
+		 * and the isochronous descriptors show how it's scattered.
 		 *
 		 * Find the end of the last chunk of data in the buffer
 		 * referred to by the isochronous descriptors; that indicates

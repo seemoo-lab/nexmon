@@ -375,13 +375,12 @@ process_flags(proto_tree *sss_tree, tvbuff_t *tvb, uint32_t foffset)
 /* Find the delimiter, '*'.
  * Returns the number of bytes from foffset to the delimiter or 0 if not
  * found within 256 bytes from foffset */
-static int
-find_delimiter(tvbuff_t *tvb, int foffset)
+static unsigned
+find_delimiter(tvbuff_t *tvb, unsigned foffset)
 {
-    int offset;
+    unsigned offset;
 
-    offset = tvb_find_uint8(tvb, foffset, 256, '*');
-    if (offset >= foffset) {
+    if (tvb_find_uint8_length(tvb, foffset, 256, '*', &offset)) {
         return offset - foffset;
     }
     return 0;
@@ -514,7 +513,7 @@ dissect_sss_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ncp_tree, ncp
                 foffset = sss_string(tvb, hf_sss_secret, atree, foffset, true, 0);
                 msg_length = tvb_get_letohl(tvb, foffset);
                 foffset += (msg_length+4);   /* Unsure of what this length and parameter are */
-                /* A bad secret of length greater then 256 characters will cause frag
+                /* A bad secret of length greater than 256 characters will cause frag
                    packets and then we will see these as malformed packets.
                    So check to make sure we still have data in the packet anytime
                    we read a secret. */
@@ -528,7 +527,7 @@ dissect_sss_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ncp_tree, ncp
                 if (tvb_reported_length_remaining(tvb, foffset) > 4) {
                     msg_length = tvb_get_letohl(tvb, foffset);
                     foffset += 4;
-                    if (tvb_captured_length_remaining(tvb, foffset) < (int) msg_length) {
+                    if (tvb_captured_length_remaining(tvb, foffset) < msg_length) {
                         proto_tree_add_item(atree, hf_sss_enc_data, tvb, foffset, -1, ENC_NA);
                     } else {
                         proto_tree_add_item(atree, hf_sss_enc_data, tvb, foffset, msg_length, ENC_NA);
@@ -589,12 +588,13 @@ dissect_sss_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ncp_tree, uint8
     uint32_t            msg_length=0;
     uint32_t            return_code=0;
     uint32_t            number_of_items=0;
-    int32_t             length_of_string=0;
+    uint32_t            length_of_string=0;
     uint32_t            i = 0;
     const char          *str;
 
     proto_tree          *atree;
     proto_item          *expert_item;
+    proto_item          *ti;
 
     foffset = 8;
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "NSSS");
@@ -614,7 +614,8 @@ dissect_sss_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ncp_tree, uint8
             subverb = request_value->req_nds_flags;
             str = try_val_to_str(subverb, sss_verb_enum);
             if (str) {
-                proto_tree_add_uint(atree, hf_sss_verb, tvb, foffset, -1, subverb);
+                ti = proto_tree_add_uint(atree, hf_sss_verb, tvb, 0, 0, subverb);
+                proto_item_set_generated(ti);
             }
         }
         proto_tree_add_item(atree, hf_sss_length, tvb, foffset, 4, ENC_LITTLE_ENDIAN);

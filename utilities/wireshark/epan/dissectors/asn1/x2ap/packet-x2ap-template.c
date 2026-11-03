@@ -3,7 +3,7 @@
  * X2 Application Protocol (X2AP);
  * 3GPP TS 36.423 packet dissection
  * Copyright 2007-2014, Anders Broman <anders.broman@ericsson.com>
- * Copyright 2016-2024, Pascal Quantin <pascal@wireshark.org>
+ * Copyright 2016-2026, Pascal Quantin <pascal@wireshark.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref:
- * 3GPP TS 36.423 V18.2.0 (2024-06)
+ * 3GPP TS 36.423 V19.1.0 (2025-12)
  */
 
 #include "config.h"
@@ -21,7 +21,6 @@
 #include <epan/tfs.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
-#include <epan/sctpppids.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
@@ -38,15 +37,7 @@
 #include "packet-s1ap.h"
 #include "packet-f1ap.h"
 #include "packet-xnap.h"
-
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
-#define PNAME  "EUTRAN X2 Application Protocol (X2AP)"
-#define PSNAME "X2AP"
-#define PFNAME "x2ap"
+#include "packet-sctp.h"
 
 void proto_register_x2ap(void);
 
@@ -192,12 +183,13 @@ static int ett_x2ap_LastVisitedPSCell_Item;
 static int ett_x2ap_NRRAReportContainer;
 static int ett_x2ap_rAT_RestrictionInformation;
 static int ett_x2ap_PSCellListContainer;
+static int ett_x2ap_SCG_FailureReportContainer;
 #include "packet-x2ap-ett.c"
 
 /* Forward declarations */
-static int dissect_x2ap_Registration_Request_ENDC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_x2ap_ReportCharacteristics_ENDC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_x2ap_ReportingPeriodicity_ENDC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_x2ap_Registration_Request_ENDC(tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_x2ap_ReportCharacteristics_ENDC(tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_x2ap_ReportingPeriodicity_ENDC(tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 typedef enum {
   RRC_CONTAINER_TYPE_UNKNOWN,
@@ -745,13 +737,14 @@ void proto_register_x2ap(void) {
     &ett_x2ap_NRRAReportContainer,
     &ett_x2ap_rAT_RestrictionInformation,
     &ett_x2ap_PSCellListContainer,
+    &ett_x2ap_SCG_FailureReportContainer,
 #include "packet-x2ap-ettarr.c"
   };
 
   module_t *x2ap_module;
 
   /* Register protocol */
-  proto_x2ap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_x2ap = proto_register_protocol("EUTRAN X2 Application Protocol (X2AP)", "X2AP", "x2ap");
   /* Register fields and subtrees */
   proto_register_field_array(proto_x2ap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

@@ -21,11 +21,6 @@
 #include "packet-per.h"
 #include "packet-ntp.h"
 
-#define PNAME  "KPM V2"
-#define PSNAME "KPMv2"
-#define PFNAME "kpm-v2"
-
-
 void proto_register_kpm_v2(void);
 void proto_reg_handoff_kpm_v2(void);
 
@@ -58,7 +53,7 @@ proto_reg_handoff_kpm_v2(void)
 {
 //#include "packet-kpm-v2-dis-tab.c"
 
-    static ran_function_dissector_t kpm_v2 =
+    static const ran_function_dissector_t kpm_v2 =
     { "ORAN-E2SM-KPM", "1.3.6.1.4.1.53148.1.2.2.2", 2, 2,
       {  dissect_E2SM_KPM_RANfunction_Description_PDU,
 
@@ -103,7 +98,7 @@ void proto_register_kpm_v2(void) {
 
 
   /* Register protocol */
-  proto_kpm_v2 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_kpm_v2 = proto_register_protocol("KPM V2", "KPMv2", "kpm-v2");
   /* Register fields and subtrees */
   proto_register_field_array(proto_kpm_v2, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

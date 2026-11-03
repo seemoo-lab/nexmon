@@ -14,6 +14,12 @@
 #include "dfilter-int.h"
 #include <epan/ftypes/ftypes.h>
 
+/**
+ * @brief Retrieves the ftype enum for a pointer node.
+ *
+ * @param node The pointer node to process.
+ * @return The ftype enum corresponding to the node's type, or FT_NONE if unknown.
+ */
 ftenum_t
 sttype_pointer_ftenum(stnode_t *node);
 

@@ -86,7 +86,7 @@
   All functions in the Struct library are called as static member functions, not object methods,
   so they are invoked as "Struct.pack(...)" instead of "object:pack(...)".
 
-  The fist argument to several of the `Struct` functions is a format string, which describes
+  The first argument to several of the `Struct` functions is a format string, which describes
   the layout of the structure. The format string is a sequence of conversion elements, which
   respect the current endianness and the current alignment requirements. Initially, the
   current endianness is the machine's native endianness and the current alignment requirement
@@ -636,7 +636,7 @@ WSLUA_CONSTRUCTOR Struct_tohex (lua_State *L) {
   lowercase = wslua_optbool(L,WSLUA_OPTARG_Struct_tohex_LOWERCASE,false);
   sep = luaL_optstring(L,WSLUA_OPTARG_Struct_tohex_SEPARATOR,NULL);
 
-  wslua_bin2hex(L, s, (unsigned)len, lowercase, sep);
+  wslua_bin2hex(L, (const uint8_t*)s, (unsigned)len, lowercase, sep);
   WSLUA_RETURN(1); /* The Lua hex-ascii string */
 }
 
@@ -678,7 +678,7 @@ WSLUA_META Struct_meta[] = {
     { NULL, NULL }
 };
 
-LUALIB_API int Struct_register(lua_State* L) {
+extern int Struct_register(lua_State* L) {
   WSLUA_REGISTER_CLASS(Struct);
   return 0;
 }

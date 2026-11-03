@@ -30,7 +30,7 @@
 
 void register_tap_listener_sipstat(void);
 
-/* used to keep track of the statictics for an entire program interface */
+/* used to keep track of the statistics for an entire program interface */
 typedef struct _sip_stats_t {
 	char	    *filter;
 	uint32_t	     packets;	 /* number of sip packets, including continuations */
@@ -264,7 +264,7 @@ sipstat_packet(void *psp, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const
 		{
 			/* First of this type. Create structure and initialise */
 			sc = g_new(sip_request_method_t, 1);
-			sc->response = g_strdup(value->request_method);
+			sc->response = g_strdup((const char*)value->request_method);
 			sc->packets = 1;
 			sc->sp = sp;
 			/* Insert it into request table */

@@ -18,7 +18,7 @@
    Some stuff in the EDP Info field (no spec)
   - Things seen in traces
    Flags in the EDP Vlan field (value 0x01)
-  - TLV type 0x0e (ESL) shared link managemnt
+  - TLV type 0x0e (ESL) shared link management
    TLV type 0x15 (XOS only?) Link bit details (eth autoneg)
    EAPS type 0x10 (ESL?)
    ESRP state 0x03
@@ -272,9 +272,6 @@ static int ett_edp_link_flags;
 static int ett_edp_unknown;
 static int ett_edp_null;
 
-#define PROTO_SHORT_NAME "EDP"
-#define PROTO_LONG_NAME "Extreme Discovery Protocol"
-
 static const value_string extreme_pid_vals[] = {
 	{ 0x00bb, "EDP" },
 
@@ -430,7 +427,7 @@ dissect_display_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, p
 {
 	proto_item	*display_item;
 	proto_tree	*display_tree;
-	const uint8_t	*display_name;
+	const char	*display_name;
 
 	display_item = proto_tree_add_item(tree, hf_edp_display,
 		tvb, offset, length, ENC_BIG_ENDIAN);
@@ -442,9 +439,9 @@ dissect_display_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, p
 	length -= 4;
 
 	proto_tree_add_item_ret_string(display_tree, hf_edp_display_string, tvb, offset, length,
-		ENC_ASCII, pinfo->pool, &display_name);
+		ENC_ASCII, pinfo->pool, (const uint8_t**)&display_name);
 	proto_item_append_text(display_item, ": \"%s\"",
-		format_text(pinfo->pool, display_name, strlen((const char *)display_name)));
+		format_text(pinfo->pool, display_name, strlen(display_name)));
 }
 
 static int
@@ -550,7 +547,7 @@ dissect_vlan_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 	proto_item	*vlan_item;
 	proto_tree	*vlan_tree;
 	uint16_t		vlan_id;
-	const uint8_t	*vlan_name;
+	const char	*vlan_name;
 
 	vlan_item = proto_tree_add_item(tree, hf_edp_vlan, tvb,
 		offset, length, ENC_BIG_ENDIAN);
@@ -621,9 +618,9 @@ dissect_vlan_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 	length -= 4;
 
 	proto_tree_add_item_ret_string(vlan_tree, hf_edp_vlan_name, tvb, offset, length,
-		ENC_ASCII, pinfo->pool, &vlan_name);
+		ENC_ASCII, pinfo->pool, (const uint8_t**)&vlan_name);
 	proto_item_append_text(vlan_item, ", Name \"%s\"",
-		format_text(pinfo->pool, vlan_name, strlen((const char *)vlan_name)));
+		format_text(pinfo->pool, vlan_name, strlen(vlan_name)));
 	offset += length;
 
 
@@ -1009,8 +1006,8 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	uint16_t seqno;
 	vec_t cksum_vec[1];
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-	col_set_str(pinfo->cinfo, COL_INFO, PROTO_SHORT_NAME ":");
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "EDP");
+	col_set_str(pinfo->cinfo, COL_INFO, "EDP:");
 
 	ti = proto_tree_add_item(tree, proto_edp, tvb, offset, -1,
 				 ENC_NA);
@@ -1540,7 +1537,7 @@ proto_register_edp(void)
 
 	expert_module_t* expert_edp;
 
-	proto_edp = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "edp");
+	proto_edp = proto_register_protocol("Extreme Discovery Protocol", "EDP", "edp");
 	edp_handle = register_dissector("edp", dissect_edp, proto_edp);
 	proto_register_field_array(proto_edp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));

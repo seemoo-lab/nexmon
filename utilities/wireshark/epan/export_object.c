@@ -25,6 +25,11 @@ struct register_eo {
 
 static wmem_tree_t *registered_eo_tables;
 
+void export_object_init(void)
+{
+    registered_eo_tables = wmem_tree_new(wmem_epan_scope());
+}
+
 int
 register_export_object(const int proto_id, tap_packet_cb export_packet_func, export_object_gui_reset_cb reset_cb)
 {
@@ -37,9 +42,6 @@ register_export_object(const int proto_id, tap_packet_cb export_packet_func, exp
     table->tap_listen_str = wmem_strdup_printf(wmem_epan_scope(), "%s_eo", proto_get_protocol_filter_name(proto_id));
     table->eo_func = export_packet_func;
     table->reset_cb = reset_cb;
-
-    if (registered_eo_tables == NULL)
-        registered_eo_tables = wmem_tree_new(wmem_epan_scope());
 
     wmem_tree_insert_string(registered_eo_tables, proto_get_protocol_filter_name(proto_id), table, 0);
     return register_tap(table->tap_listen_str);
@@ -154,6 +156,22 @@ void eo_free_entry(export_object_entry_t *entry)
     g_free(entry->payload_data);
 
     g_free(entry);
+}
+
+unsigned eo_entry_hash(export_object_entry_t *entry)
+{
+    ws_return_val_if(!entry, 0U);
+    return wmem_strong_hash(entry->payload_data, entry->payload_len);
+}
+
+bool eo_entry_equal(export_object_entry_t *entry_a, export_object_entry_t *entry_b)
+{
+    ws_return_val_if(!(entry_a && entry_b), false);
+    return entry_a->payload_len == entry_b->payload_len &&
+        (memcmp(entry_a->payload_data, entry_b->payload_data, entry_a->payload_len) == 0) &&
+        (g_strcmp0(entry_a->hostname, entry_b->hostname) == 0) &&
+        (g_strcmp0(entry_a->content_type, entry_b->content_type) == 0) &&
+        (g_strcmp0(entry_a->filename, entry_b->filename) == 0);
 }
 
 /*

@@ -1,4 +1,4 @@
-/* packet-sm.c
+/* packet-cisco-sm.c
  * Routines for Cisco Session Management Protocol dissection
  * Copyright 2004, Duncan Sargeant <dunc-ethereal@rcpt.to>
  *
@@ -280,8 +280,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     offset = offset + 4;
     if (sm_message_type ==  MESSAGE_TYPE_PDU) {
-        proto_tree_add_item(sm_tree, hf_sm_protocol, tvb, offset, 2, ENC_BIG_ENDIAN);
-        protocol = tvb_get_ntohs(tvb,offset);
+        proto_tree_add_item_ret_uint16(sm_tree, hf_sm_protocol, tvb, offset, 2, ENC_BIG_ENDIAN, &protocol);
         offset = offset + 2;
         switch(protocol){
         /* start case RUDP BSM v.1  ---------------------------------------------------------- */
@@ -298,8 +297,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             offset = offset + 2;
             proto_tree_add_item(sm_tree, hf_sm_bearer, tvb, offset, 2, ENC_BIG_ENDIAN);
             offset = offset +2;
-            proto_tree_add_item(sm_tree, hf_sm_len, tvb, offset, 2, ENC_BIG_ENDIAN);
-            length = tvb_get_ntohs(tvb,offset);
+            proto_tree_add_item_ret_uint16(sm_tree, hf_sm_len, tvb, offset, 2, ENC_BIG_ENDIAN, &length);
             offset = offset +2;
             proto_item_set_len(ti, 16);
 
@@ -351,9 +349,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             proto_tree_add_item(sm_tree, hf_sm_eisup_msg_id, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset = offset + 1;
             /* XXX Problem are tags 1 or two bytes???*/
-            proto_tree_add_item(sm_tree, hf_sm_tag, tvb, offset, 2, ENC_BIG_ENDIAN);
-
-            tag = tvb_get_ntohs(tvb,offset);
+            proto_tree_add_item_ret_uint16(sm_tree, hf_sm_tag, tvb, offset, 2, ENC_BIG_ENDIAN, &tag);
             offset = offset +2;
             if (tag== 0x01ac) {
                 proto_tree_add_item(sm_tree, hf_sm_len, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -381,9 +377,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             proto_tree_add_item(sm_tree, hf_sm_eisup_msg_id, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset = offset + 1;
             /* XXX Problem are tags 1 or two bytes???*/
-            proto_tree_add_item(sm_tree, hf_sm_tag, tvb, offset, 2, ENC_BIG_ENDIAN);
-
-            tag = tvb_get_ntohs(tvb,offset);
+            proto_tree_add_item_ret_uint16(sm_tree, hf_sm_tag, tvb, offset, 2, ENC_BIG_ENDIAN, &tag);
             offset = offset +2;
             if (tag== 0x01ac) {
                 proto_tree_add_item(sm_tree, hf_sm_len, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -442,8 +436,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                     proto_tree_add_item(sm_tree, hf_sm_lsc_state_type, tvb, offset, 4, ENC_BIG_ENDIAN);
                     break;
                 case PDU_LSC_INDICATION:
-                    proto_tree_add_item(sm_tree, hf_sm_backhaul_event_code, tvb, offset, 4, ENC_BIG_ENDIAN);
-                    bh_event_code = tvb_get_ntohl(tvb,offset);
+                    proto_tree_add_item_ret_uint(sm_tree, hf_sm_backhaul_event_code, tvb, offset, 4, ENC_BIG_ENDIAN, &bh_event_code);
                     if (bh_event_code == 0x02 || bh_event_code == 0x04) {
                         offset += 4;
                         proto_tree_add_item(sm_tree, hf_sm_linkdown_cause_code, tvb, offset, 4, ENC_BIG_ENDIAN);

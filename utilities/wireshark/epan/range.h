@@ -10,10 +10,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __RANGE_H__
-#define __RANGE_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 #include <epan/wmem_scopes.h>
 
@@ -31,11 +28,15 @@ extern "C" {
 #define MAX_UDP_PORT 65535
 #define MAX_DCCP_PORT 65535
 
+/**
+ * @brief Represents a single contiguous range of unsigned integer values with an inclusive lower and upper bound.
+ */
 typedef struct range_admin_tag {
-    uint32_t low;
-    uint32_t high;
+    uint32_t low;  /**< Inclusive lower bound of the range. */
+    uint32_t high; /**< Inclusive upper bound of the range. */
 } range_admin_t;
-#define RANGE_ADMIN_T_INITIALIZER { 0, 0 }
+
+#define RANGE_ADMIN_T_INITIALIZER { 0, 0 } /**< Default initializer for a range_admin_t, setting both bounds to zero. */
 
 /** user specified range(s) */
 typedef struct epan_range {
@@ -44,18 +45,28 @@ typedef struct epan_range {
 } range_t;
 
 /**
- * Return value from range_convert_str().
+ * @brief Return value from range_convert_str().
  */
 typedef enum {
-    CVT_NO_ERROR,
-    CVT_SYNTAX_ERROR,
-    CVT_NUMBER_TOO_BIG
+    CVT_NO_ERROR,       /**< The range string was parsed successfully without errors */
+    CVT_SYNTAX_ERROR,   /**< The range string contains invalid or unrecognised syntax */
+    CVT_NUMBER_TOO_BIG  /**< The range string contains a numeric value that exceeds the allowed maximum */
 } convert_ret_t;
 
+/**
+ * @brief Creates an empty range_t structure.
+ *
+ * This function allocates memory for a new range_t structure and initializes it to represent an empty range.
+ *
+ * @param scope The memory allocation scope.
+ * @return A pointer to the newly created range_t structure, or NULL if allocation fails.
+ */
 WS_DLL_PUBLIC range_t *range_empty(wmem_allocator_t *scope);
 
 
-/*** Converts a range string to a fast comparable array of ranges.
+/**
+ * @brief Converts a range string to a fast comparable array of ranges.
+ *
  * This function allocates a range_t large enough to hold the number
  * of ranges specified, and fills the array range->ranges containing
  * low and high values with the number of ranges being range->nranges.
@@ -76,11 +87,22 @@ WS_DLL_PUBLIC range_t *range_empty(wmem_allocator_t *scope);
  * @param range the range
  * @param es points to the string to be converted.
  * @param max_value specifies the maximum value in a range.
- * @return convert_ret_t
+ * @return convert_ret_t indicating success or the type of parsing error.
  */
 WS_DLL_PUBLIC convert_ret_t range_convert_str(wmem_allocator_t *scope, range_t **range, const char *es,
     uint32_t max_value);
 
+/**
+ * @brief Internal worker for converting a textual range specification.
+ *
+ * @param scope       Memory scope used for allocating the resulting range_t.
+ * @param range       Output pointer receiving the allocated and populated range_t.
+ * @param es          The textual range expression to parse.
+ * @param max_value   Maximum allowed value for open‑ended or bounded ranges.
+ * @param err_on_max  If true, treat values > max_value as errors; if false,
+ *                    clamp them to max_value.
+ * @return convert_ret_t indicating success or the type of parsing error.
+ */
 WS_DLL_PUBLIC convert_ret_t range_convert_str_work(wmem_allocator_t *scope, range_t **range, const char *es,
     uint32_t max_value, bool err_on_max);
 
@@ -142,5 +164,3 @@ WS_DLL_PUBLIC range_t *range_copy(wmem_allocator_t *scope, const range_t *src);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __RANGE_H__ */

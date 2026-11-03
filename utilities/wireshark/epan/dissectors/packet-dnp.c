@@ -2178,26 +2178,23 @@ dnp3_al_process_object(tvbuff_t *tvb, packet_info *pinfo, int offset,
   switch (al_objq_range)
   {
     case AL_OBJQL_RANGE_SSI8:           /* 8-bit Start and Stop Indices in Range Field */
-      num_items = ( tvb_get_uint8(tvb, offset+1) - tvb_get_uint8(tvb, offset) + 1);
+      num_items = tvb_get_uint8(tvb, offset+1) - tvb_get_uint8(tvb, offset) + 1;
       proto_item_set_generated(range_item);
-      al_ptaddr = tvb_get_uint8(tvb, offset);
-      proto_tree_add_item(range_tree, hf_dnp3_al_range_start8, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item_ret_uint(range_tree, hf_dnp3_al_range_start8, tvb, offset, 1, ENC_LITTLE_ENDIAN, &al_ptaddr);
       proto_tree_add_item(range_tree, hf_dnp3_al_range_stop8, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
       rangebytes = 2;
       break;
     case AL_OBJQL_RANGE_SSI16:          /* 16-bit Start and Stop Indices in Range Field */
-      num_items = ( tvb_get_letohs(tvb, offset+2) - tvb_get_letohs(tvb, (offset)) + 1);
+      num_items = tvb_get_letohs(tvb, offset+2) - tvb_get_letohs(tvb, (offset)) + 1;
       proto_item_set_generated(range_item);
-      al_ptaddr = tvb_get_letohs(tvb, offset);
-      proto_tree_add_item(range_tree, hf_dnp3_al_range_start16, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item_ret_uint(range_tree, hf_dnp3_al_range_start16, tvb, offset, 2, ENC_LITTLE_ENDIAN, &al_ptaddr);
       proto_tree_add_item(range_tree, hf_dnp3_al_range_stop16, tvb, offset + 2, 2, ENC_LITTLE_ENDIAN);
       rangebytes = 4;
       break;
     case AL_OBJQL_RANGE_SSI32:          /* 32-bit Start and Stop Indices in Range Field */
-      num_items = ( tvb_get_letohl(tvb, offset+4) - tvb_get_letohl(tvb, offset) + 1);
+      num_items = tvb_get_letohl(tvb, offset+4) - tvb_get_letohl(tvb, offset) + 1;
       proto_item_set_generated(range_item);
-      al_ptaddr = tvb_get_letohl(tvb, offset);
-      proto_tree_add_item(range_tree, hf_dnp3_al_range_start32, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+      proto_tree_add_item_ret_uint(range_tree, hf_dnp3_al_range_start32, tvb, offset, 4, ENC_LITTLE_ENDIAN, &al_ptaddr);
       proto_tree_add_item(range_tree, hf_dnp3_al_range_stop32, tvb, offset + 4, 4, ENC_LITTLE_ENDIAN);
       rangebytes = 8;
       break;
@@ -2330,8 +2327,7 @@ dnp3_al_process_object(tvbuff_t *tvb, packet_info *pinfo, int offset,
               case AL_DATA_TYPE_NONE:
                 break;
               case AL_DATA_TYPE_VSTR:
-                da_len = tvb_get_uint8(tvb, data_pos);
-                proto_tree_add_item(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
+                proto_tree_add_item_ret_uint8(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN, &da_len);
                 data_pos++;
                 const uint8_t* da_value;
                 proto_tree_add_item_ret_string(point_tree, hf_dnp3_al_da_value, tvb, data_pos, da_len, ENC_ASCII|ENC_NA, pinfo->pool, &da_value);
@@ -2339,8 +2335,7 @@ dnp3_al_process_object(tvbuff_t *tvb, packet_info *pinfo, int offset,
                 data_pos += da_len;
                 break;
               case AL_DATA_TYPE_UINT:
-                da_len = tvb_get_uint8(tvb, data_pos);
-                proto_tree_add_item(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
+                proto_tree_add_item_ret_uint8(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN, &da_len);
                 data_pos++;
                 if (da_len == 1) {
                   proto_tree_add_item(point_tree, hf_dnp3_al_da_uint8, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
@@ -2359,8 +2354,7 @@ dnp3_al_process_object(tvbuff_t *tvb, packet_info *pinfo, int offset,
                 }
                 break;
               case AL_DATA_TYPE_INT:
-                da_len = tvb_get_uint8(tvb, data_pos);
-                proto_tree_add_item(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
+                proto_tree_add_item_ret_uint8(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN, &da_len);
                 data_pos++;
                 if (da_len == 1) {
                   proto_tree_add_item(point_tree, hf_dnp3_al_da_int8, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
@@ -2379,8 +2373,7 @@ dnp3_al_process_object(tvbuff_t *tvb, packet_info *pinfo, int offset,
                 }
                 break;
               case AL_DATA_TYPE_FLT:
-                da_len = tvb_get_uint8(tvb, data_pos);
-                proto_tree_add_item(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN);
+                proto_tree_add_item_ret_uint8(point_tree, hf_dnp3_al_da_length, tvb, data_pos, 1, ENC_LITTLE_ENDIAN, &da_len);
                 data_pos++;
                 if (da_len == 4) {
                   proto_tree_add_item(point_tree, hf_dnp3_al_da_flt, tvb, data_pos, 4, ENC_LITTLE_ENDIAN);
@@ -3782,7 +3775,7 @@ dissect_dnp3_al(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   /* If this packet is NOT the final Application Layer Message, exit and continue
      processing the remaining data in the fragment. */
   if (!(al_ctl & DNP3_AL_FIN)) {
-    t_robj = proto_tree_add_expert(al_tree, pinfo, &ei_dnp3_buffering_user_data_until_final_frame_is_received, tvb, offset, -1);
+    t_robj = proto_tree_add_expert_remaining(al_tree, pinfo, &ei_dnp3_buffering_user_data_until_final_frame_is_received, tvb, offset);
     return 1;
   }
 #endif
@@ -4017,7 +4010,7 @@ dissect_dnp3_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
   proto_tree  *dnp3_tree, *dl_tree, *field_tree;
   int          offset = 0, temp_offset = 0;
   bool         dl_prm;
-  uint8_t      dl_len, dl_ctl, dl_func;
+  uint8_t      dl_len, dl_ctl, dl_func, data_len;
   const char *func_code_str;
   uint16_t     dl_dst, dl_src, calc_dl_crc;
 
@@ -4075,7 +4068,11 @@ dissect_dnp3_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
   offset += 2;
 
   /* add length field */
-  proto_tree_add_item(dl_tree, hf_dnp3_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+  tdl = proto_tree_add_item(dl_tree, hf_dnp3_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+  if (ckd_sub(&data_len, dl_len, 5)) {
+    expert_add_info(pinfo, tdl, &ei_dnp_invalid_length);
+    data_len = 0;
+  }
   offset += 1;
 
   /* Add Control Byte Subtree */
@@ -4151,7 +4148,6 @@ dissect_dnp3_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     uint8_t     tr_ctl, tr_seq;
     bool        tr_fir, tr_fin;
     uint8_t    *al_buffer, *al_buffer_ptr;
-    uint8_t     data_len;
     int         data_start = offset;
     int         tl_offset;
     bool        crc_OK = false;
@@ -4215,8 +4211,6 @@ dissect_dnp3_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
     /* extract the application layer data, validating the CRCs */
 
-    /* XXX - check for dl_len <= 5 */
-    data_len = dl_len - 5;
     al_buffer = (uint8_t *)wmem_alloc(pinfo->pool, data_len);
     al_buffer_ptr = al_buffer;
     i = 0;
@@ -4265,7 +4259,7 @@ dissect_dnp3_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
       tvbuff_t *al_tvb;
       bool      save_fragmented;
 
-      al_tvb = tvb_new_child_real_data(tvb, al_buffer, (unsigned) (al_buffer_ptr-al_buffer), (int) (al_buffer_ptr-al_buffer));
+      al_tvb = tvb_new_child_real_data(tvb, al_buffer, (unsigned) (al_buffer_ptr-al_buffer), (unsigned) (al_buffer_ptr-al_buffer));
 
       /* Check for fragmented packet */
       save_fragmented = pinfo->fragmented;
@@ -4358,19 +4352,25 @@ check_dnp3_header(tvbuff_t *tvb, bool dnp3_heuristics)
   }
 
   /* For a heuristic match we must have at least a header, beginning with 0x0564
-     and a valid header CRC */
+     and a valid header CRC. The length, which does not include the sync, itself,
+     or any CRC checek octets, must be at least 5 (the link control octet and
+     the destination and source address octets). */
   if (dnp3_heuristics) {
-    if ( !goodCRC || (tvb_get_ntohs(tvb, 0) != 0x0564)) {
+    if ( !goodCRC || (tvb_get_ntohs(tvb, 0) != 0x0564) || (tvb_get_uint8(tvb, 2) < 5)) {
       return false;
     }
   }
   else {
     /* For a non-heuristic match, at least the first byte is 0x05 and if available
-       the second byte is 64 and if available the CRC is valid */
+       the second byte is 64 and if available the length is at least 5, and if
+       available the CRC is valid */
     if (tvb_get_uint8(tvb, 0) != 0x05) {
       return false;
     }
     if ((length > 1) && (tvb_get_uint8(tvb, 1) != 0x64)) {
+      return false;
+    }
+    if ((length > 2) && (tvb_get_uint8(tvb, 2) < 5)) {
       return false;
     }
     if ((length >= DNP_HDR_LEN) && !goodCRC) {
@@ -4387,7 +4387,7 @@ get_dnp3_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
   uint16_t message_len;  /* need 16 bits as total can exceed 255 */
   uint16_t data_crc;     /* No. of user data CRC bytes */
 
-  message_len = tvb_get_uint8(tvb, offset + 2);
+  message_len = MAX(tvb_get_uint8(tvb, offset + 2), 5U);
 
   /* Add in 2 bytes for header start octets,
             1 byte for len itself,

@@ -25,7 +25,8 @@
  */
 
 #include "config.h"
-
+#define WS_LOG_DOMAIN "Epan"
+#include <wsutil/wslog.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -137,21 +138,13 @@ void except_deinit(void)
  * We don't make the unhandled-exception-catcher, the allocator, or the
  * deallocator thread-specific, as we don't need to.
  *
- * We don't protext the init level with a mutex, as we only initialize
+ * We don't protect the init level with a mutex, as we only initialize
  * it and de-initialize it once.
  */
 static int init_counter;
 static void unhandled_catcher(except_t *);
 static void (*uh_catcher_ptr)(except_t *) = unhandled_catcher;
-/* We need this 'size_t' cast due to a glitch in GLib where g_malloc was prototyped
- * as 'void *g_malloc (unsigned long n_bytes)'. This was later fixed to the correct prototype
- * 'void *g_malloc (size_t n_bytes)'. In Wireshark we use the latter prototype
- * throughout the code. We can get away with this even with older versions of GLib by
- * adding a '(void *(*)(size_t))' cast whenever we refer to g_malloc. The only platform
- * supported by Wireshark where this isn't safe (sizeof size_t != sizeof unsigned long) is Win64.
- * However, we _always_ bundle the newest version of GLib on this platform so
- * the size_t issue doesn't exists here. Pheew.. */
-static void *(*allocator)(size_t) = (void *(*)(size_t)) g_malloc;
+static void *(*allocator)(size_t) = g_malloc;
 static void (*deallocator)(void *) = g_free;
 static WS_THREAD_LOCAL struct except_stacknode *stack_top;
 
@@ -179,6 +172,15 @@ void except_deinit(void)
 
 #endif
 
+const struct except_stacknode* except_get_top(void)
+{
+    return get_top();
+}
+
+void except_set_top(struct except_stacknode* node)
+{
+    set_top(node);
+}
 
 static int match(const volatile except_id_t *thrown, const except_id_t *caught)
 {
@@ -223,18 +225,19 @@ WS_NORETURN static void do_throw(except_t *except)
     abort();
 }
 
+WS_NORETURN
 static void unhandled_catcher(except_t *except)
 {
     if (except->except_message == NULL) {
-        fprintf(stderr, "Unhandled exception (group=%lu, code=%lu)\n",
+        ws_error("Unhandled exception (group=%lu, code=%lu)\n",
                 except->except_id.except_group,
                 except->except_id.except_code);
     } else {
-        fprintf(stderr, "Unhandled exception (\"%s\", group=%lu, code=%lu)\n",
+        ws_error("Unhandled exception (\"%s\", group=%lu, code=%lu)\n",
                 except->except_message, except->except_id.except_group,
                 except->except_id.except_code);
     }
-    abort();
+    ws_assert_not_reached();
 }
 
 static void stack_push(struct except_stacknode *node)

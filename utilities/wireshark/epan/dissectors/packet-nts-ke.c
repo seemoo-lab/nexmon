@@ -177,7 +177,7 @@ static const range_string nts_ke_aead_rvals[] = {
  *
  * All crypto functions will need GCRYPT >= 1.10.0 because
  * GCRY_CIPHER_MODE_SIV is a mandatory algorithm. If'ing out SIV algos
- * to compile sucessfully without GCRYPT support.
+ * to compile successfully without GCRYPT support.
  */
 static const nts_aead nts_ke_aead_gcry_map[] = {
 #if GCRYPT_VERSION_NUMBER >= 0x010a00
@@ -248,8 +248,8 @@ nts_cookie_t*
 nts_new_cookie(tvbuff_t *tvb, uint16_t aead, packet_info *pinfo)
 {
     unsigned int cookie_len = tvb_reported_length(tvb);
-    unsigned char *key_c2s = (char *)wmem_alloc0(pinfo->pool, NTS_KE_TLS13_KEY_MAX_LEN);
-    unsigned char *key_s2c = (char *)wmem_alloc0(pinfo->pool, NTS_KE_TLS13_KEY_MAX_LEN);
+    uint8_t *key_c2s = NULL;
+    uint8_t *key_s2c = NULL;
     uint8_t *tvb_bytes;
     nts_cookie_t *cookie;
     uint32_t strong_hash;
@@ -309,10 +309,11 @@ nts_new_cookie(tvbuff_t *tvb, uint16_t aead, packet_info *pinfo)
     if(!cookie) {
 
         /* Extract keys */
-        k1 = tls13_exporter(pinfo, false,
+        SslDecryptSession *tls_session = tls_get_parent_session(pinfo);
+        k1 = tls13_exporter(tls_session, false,
                 NTS_KE_EXPORTER_LABEL, ex_context_c2s,
                 sizeof(ex_context_c2s), aead_entry->key_len, &key_c2s);
-        k2 = tls13_exporter(pinfo, false,
+        k2 = tls13_exporter(tls_session, false,
                 NTS_KE_EXPORTER_LABEL, ex_context_s2c,
                 sizeof(ex_context_s2c), aead_entry->key_len, &key_s2c);
 
@@ -329,6 +330,8 @@ nts_new_cookie(tvbuff_t *tvb, uint16_t aead, packet_info *pinfo)
         } else {
             cookie->keys_present = false;
         }
+        wmem_free(NULL, key_c2s);
+        wmem_free(NULL, key_s2c);
 
         wmem_map_insert(nts_cookies, GUINT_TO_POINTER(strong_hash), cookie);
     }
@@ -454,7 +457,11 @@ dissect_nts_ke(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     proto_item *ti, *ti_record, *rt;
     proto_tree *nts_ke_tree, *record_tree;
     bool critical_bool, end_record = false;
-    bool request, direction_determined = false;
+    enum {
+        DIRECTION_UNKNOWN,
+        DIRECTION_REQUEST,
+        DIRECTION_RESPONSE
+    } direction = DIRECTION_UNKNOWN;
     wmem_list_t *next_protos = wmem_list_new(pinfo->pool);
     conversation_t *conv;
     nts_ke_req_resp_t *conv_data;
@@ -468,11 +475,11 @@ dissect_nts_ke(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "NTS-KE");
     col_clear(pinfo->cinfo,COL_INFO);
 
-    ti = proto_tree_add_item(tree, proto_nts_ke, tvb, 0, 0, ENC_NA);
+    ti = proto_tree_add_item(tree, proto_nts_ke, tvb, 0, -1, ENC_NA);
     nts_ke_tree = proto_item_add_subtree(ti, ett_nts_ke);
 
     /* Error on ALPN mismatch */
-    alpn = tls_get_alpn(pinfo);
+    alpn = pinfo->match_string;
     if(!alpn || strcmp(alpn, NTS_KE_ALPN) != 0)
         expert_add_info(pinfo, nts_ke_tree, &ei_nts_ke_alpn_mismatch);
 
@@ -486,23 +493,23 @@ dissect_nts_ke(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
      * to identify the direction.
      */
     tcp_conv = get_tcp_conversation_data_idempotent(conv);
-    if(tcp_conv && pinfo->destport == tcp_conv->server_port) {
-        direction_determined = true;
-        request = true;
-    } else if (tcp_conv && pinfo->srcport == tcp_conv->server_port) {
-        direction_determined = true;
-        request = false;
+    if(tcp_conv) {
+        if(pinfo->destport == tcp_conv->server_port) {
+            direction = DIRECTION_REQUEST;
+        } else if (pinfo->srcport == tcp_conv->server_port) {
+            direction = DIRECTION_RESPONSE;
+        }
     }
 
-    if (direction_determined) {
+    if (direction != DIRECTION_UNKNOWN) {
         if (!conv_data) {
             conv_data = wmem_new(wmem_file_scope(), nts_ke_req_resp_t);
-            conv_data->req_frame = request ? pinfo->num : 0;
-            conv_data->resp_frame = !request ? pinfo->num : 0;
+            conv_data->req_frame = (direction == DIRECTION_REQUEST) ? pinfo->num : 0;
+            conv_data->resp_frame = (direction == DIRECTION_RESPONSE) ? pinfo->num : 0;
             conversation_add_proto_data(conv, proto_nts_ke, conv_data);
         } else {
-            conv_data->req_frame = request ? pinfo->num : conv_data->req_frame;
-            conv_data->resp_frame = !request ? pinfo->num : conv_data->resp_frame;
+            conv_data->req_frame = (direction == DIRECTION_REQUEST) ? pinfo->num : conv_data->req_frame;
+            conv_data->resp_frame = (direction == DIRECTION_RESPONSE) ? pinfo->num : conv_data->resp_frame;
         }
     }
 
@@ -679,13 +686,25 @@ dissect_nts_ke(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     }
 
     /* Request/Response */
-    if(conv_data && direction_determined) {
-        if(request && conv_data->resp_frame > 0) {
-            rt = proto_tree_add_uint(nts_ke_tree, hf_nts_ke_response_in, tvb, 0, 0, conv_data->resp_frame);
-            proto_item_set_generated(rt);
-        } else if (!request && conv_data->req_frame > 0) {
-            rt = proto_tree_add_uint(nts_ke_tree, hf_nts_ke_response_to, tvb, 0, 0, conv_data->req_frame);
-            proto_item_set_generated(rt);
+    if(conv_data) {
+        switch (direction) {
+        case DIRECTION_REQUEST:
+            if(conv_data->resp_frame > 0) {
+                rt = proto_tree_add_uint(nts_ke_tree, hf_nts_ke_response_in, tvb, 0, 0, conv_data->resp_frame);
+                proto_item_set_generated(rt);
+            }
+            break;
+
+        case DIRECTION_RESPONSE:
+            if (conv_data->req_frame > 0) {
+                rt = proto_tree_add_uint(nts_ke_tree, hf_nts_ke_response_to, tvb, 0, 0, conv_data->req_frame);
+                proto_item_set_generated(rt);
+            }
+            break;
+
+        case DIRECTION_UNKNOWN:
+        default:
+            break;
         }
     }
 

@@ -24,9 +24,6 @@
 #include "packet-tcp.h"
 #include "packet-c1222.h"
 
-#define PNAME  "ANSI C12.22"
-#define PSNAME "C12.22"
-#define PFNAME "c1222"
 #define C1222_PORT 1153    /* TCP port */
 
 /* C12.22 flag definitions */
@@ -857,7 +854,7 @@ keylookup(uint8_t *keybuff, uint8_t keyid)
  *
  * \param buffer points to a memory copy of the packet to be authenticated/decrypted
  *        and contains the decrypted value on successful return.
- * \param length lenth of input packet
+ * \param length length of input packet
  * \param decrypt true if packet is to be authenticated and decrypted; false if authentication only is requested
  * \returns true if the requested operation was successful; otherwise false
  */
@@ -960,7 +957,7 @@ dissect_epsem(tvbuff_t *tvb, int offset, uint32_t len, packet_info *pinfo, proto
   proto_item *item = NULL;
   uint8_t flags;
   int local_offset;
-  int len2;
+  unsigned len2;
   int cmd_err;
   bool ind;
   unsigned char *buffer;
@@ -1042,14 +1039,14 @@ dissect_epsem(tvbuff_t *tvb, int offset, uint32_t len, packet_info *pinfo, proto
      * so we fetch such pairs until there isn't anything left (except possibly
      * the <mac>).
      */
-    while (tvb_offset_exists(epsem_buffer, local_offset+(hasmac?5:1))) {
+    while (tvb_captured_length_remaining(epsem_buffer, local_offset) > (hasmac?4U:0U)) {
       if (ber_len_ok(epsem_buffer, local_offset)) {
         local_offset = dissect_ber_length(pinfo, tree, epsem_buffer, local_offset, (uint32_t *)&len2, &ind);
       } else {
         expert_add_info(pinfo, tree, &ei_c1222_epsem_ber_length_error);
         return offset+len;
       }
-      if (tvb_offset_exists(epsem_buffer, local_offset+len2-1)) {
+      if (tvb_captured_length_remaining(epsem_buffer, local_offset) >= len2) {
         cmd_err = tvb_get_uint8(epsem_buffer, local_offset);
         ct = proto_tree_add_item(tree, hf_c1222_epsem_total, epsem_buffer, local_offset, len2, ENC_NA);
         cmd_tree = proto_item_add_subtree(ct, ett_c1222_cmd);
@@ -1062,7 +1059,7 @@ dissect_epsem(tvbuff_t *tvb, int offset, uint32_t len, packet_info *pinfo, proto
     }
   }
   if (hasmac) {
-    if (tvb_offset_exists(epsem_buffer, local_offset+4-1)) {
+    if (tvb_captured_length_remaining(epsem_buffer, local_offset) >= 4) {
       yt = proto_tree_add_item(tree, hf_c1222_epsem_mac, epsem_buffer, local_offset, 4, ENC_NA);
       /* now we have enough information to fill in the crypto subtree */
       crypto_tree = proto_item_add_subtree(yt, ett_c1222_crypto);
@@ -1094,7 +1091,7 @@ dissect_c1222_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     proto_tree      *c1222_tree = NULL;
 
     /* make entry in the Protocol column on summary display */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, PNAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "C12.22");
 
     /* create the c1222 protocol tree */
     c1222_item = proto_tree_add_item(tree, proto_c1222, tvb, 0, -1, ENC_NA);
@@ -1418,7 +1415,7 @@ void proto_register_c1222(void) {
   };
 
   /* Register protocol */
-  proto_c1222 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_c1222 = proto_register_protocol("ANSI C12.22", "C12.22", "c1222");
   /* Register fields and subtrees */
   proto_register_field_array(proto_c1222, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

@@ -102,7 +102,7 @@ wmem_list_remove_frame(wmem_list_t *list, wmem_list_frame_t *frame)
 }
 
 wmem_list_frame_t *
-wmem_list_find(wmem_list_t *list, const void *data)
+wmem_list_find(const wmem_list_t *list, const void *data)
 {
     wmem_list_frame_t *cur;
 
@@ -115,7 +115,7 @@ wmem_list_find(wmem_list_t *list, const void *data)
 }
 
 wmem_list_frame_t *
-wmem_list_find_custom(wmem_list_t *list, const void *data, GCompareFunc compare_func)
+wmem_list_find_custom(const wmem_list_t *list, const void *data, GCompareFunc compare_func)
 {
     wmem_list_frame_t *cur;
 
@@ -171,7 +171,7 @@ wmem_list_append(wmem_list_t *list, void *data)
     list->count++;
 }
 
-void
+wmem_list_frame_t*
 wmem_list_insert_sorted(wmem_list_t *list, void* data, GCompareFunc func)
 {
     wmem_list_frame_t *new_frame;
@@ -188,7 +188,7 @@ wmem_list_insert_sorted(wmem_list_t *list, void* data, GCompareFunc func)
     if (!list->head) {
         list->head = new_frame;
         list->tail = new_frame;
-        return;
+        return new_frame;
     }
 
     cur = list->head;
@@ -197,7 +197,7 @@ wmem_list_insert_sorted(wmem_list_t *list, void* data, GCompareFunc func)
         cur->prev = new_frame;
         new_frame->next = cur;
         list->head = new_frame;
-        return;
+        return new_frame;
     }
 
     do {
@@ -209,16 +209,18 @@ wmem_list_insert_sorted(wmem_list_t *list, void* data, GCompareFunc func)
         prev->next = new_frame;
         new_frame->prev = prev;
         list->tail = new_frame;
-        return;
+        return new_frame;
     }
 
     new_frame->prev = prev;
     new_frame->next = cur;
     new_frame->prev->next = new_frame;
     new_frame->next->prev = new_frame;
+
+    return new_frame;
 }
 
-void
+wmem_list_frame_t*
 wmem_list_append_sorted(wmem_list_t *list, void* data, GCompareFunc func)
 {
     wmem_list_frame_t *new_frame;
@@ -235,7 +237,7 @@ wmem_list_append_sorted(wmem_list_t *list, void* data, GCompareFunc func)
     if (!list->head) {
         list->head = new_frame;
         list->tail = new_frame;
-        return;
+        return new_frame;
     }
 
     cur = list->tail;
@@ -245,7 +247,7 @@ wmem_list_append_sorted(wmem_list_t *list, void* data, GCompareFunc func)
         cur->next = new_frame;
         new_frame->prev = cur;
         list->tail = new_frame;
-        return;
+        return new_frame;
     }
 
     do {
@@ -258,7 +260,7 @@ wmem_list_append_sorted(wmem_list_t *list, void* data, GCompareFunc func)
         next->prev = new_frame;
         new_frame->next = next;
         list->head = new_frame;
-        return;
+        return new_frame;
     }
 
     /* ordinary case: insert */
@@ -266,6 +268,8 @@ wmem_list_append_sorted(wmem_list_t *list, void* data, GCompareFunc func)
     new_frame->prev = cur;
     new_frame->prev->next = new_frame;
     new_frame->next->prev = new_frame;
+
+    return new_frame;
 }
 
 wmem_list_t *
@@ -300,7 +304,7 @@ wmem_destroy_list(wmem_list_t *list)
 }
 
 void
-wmem_list_foreach(wmem_list_t *list, GFunc foreach_func, void * user_data)
+wmem_list_foreach(const wmem_list_t *list, GFunc foreach_func, void * user_data)
 {
     wmem_list_frame_t *cur;
 

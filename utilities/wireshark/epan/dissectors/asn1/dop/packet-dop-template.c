@@ -32,10 +32,6 @@
 
 #include "packet-dop.h"
 
-#define PNAME  "X.501 Directory Operational Binding Management Protocol"
-#define PSNAME "DOP"
-#define PFNAME "dop"
-
 void proto_register_dop(void);
 void proto_reg_handoff_dop(void);
 
@@ -106,12 +102,12 @@ call_dop_oid_callback(const char *base_string, tvbuff_t *tvb, int offset, packet
 static int
 dissect_dop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
-	int offset = 0;
-	int old_offset;
+	unsigned offset = 0;
+	unsigned old_offset;
 	proto_item *item;
 	proto_tree *tree;
 	struct SESSION_DATA_STRUCTURE* session;
-	int (*dop_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
+	unsigned (*dop_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
 	const char *dop_op_name;
 	asn1_ctx_t asn1_ctx;
 
@@ -158,7 +154,7 @@ dissect_dop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dop_op_name = "Modify-Operational-Binding-Argument";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_dop_unsupported_opcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_dop_unsupported_opcode, tvb, offset,
 	        "Unsupported DOP Argument opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
@@ -178,7 +174,7 @@ dissect_dop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dop_op_name = "Modify-Operational-Binding-Result";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_dop_unsupported_opcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_dop_unsupported_opcode, tvb, offset,
 	            "Unsupported DOP Result opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
@@ -190,24 +186,24 @@ dissect_dop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	    dop_op_name = "Operational-Binding-Error";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_dop_unsupported_errcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_dop_unsupported_errcode, tvb, offset,
 	        "Unsupported DOP Error opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
 	  break;
 	default:
-	  proto_tree_add_expert(tree, pinfo, &ei_dop_unsupported_pdu, tvb, offset, -1);
+	  proto_tree_add_expert_remaining(tree, pinfo, &ei_dop_unsupported_pdu, tvb, offset);
 	  return tvb_captured_length(tvb);
 	}
 
 	if(dop_dissector) {
-      col_set_str(pinfo->cinfo, COL_INFO, dop_op_name);
+          col_set_str(pinfo->cinfo, COL_INFO, dop_op_name);
 
 	  while (tvb_reported_length_remaining(tvb, offset) > 0){
 	    old_offset=offset;
 	    offset=(*dop_dissector)(false, tvb, offset, &asn1_ctx, tree, -1);
 	    if(offset == old_offset){
-	      proto_tree_add_expert(tree, pinfo, &ei_dop_zero_pdu, tvb, offset, -1);
+                proto_tree_add_expert_remaining(tree, pinfo, &ei_dop_zero_pdu, tvb, offset);
 	      break;
 	    }
 	  }
@@ -246,7 +242,7 @@ void proto_register_dop(void) {
   module_t *dop_module;
 
   /* Register protocol */
-  proto_dop = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_dop = proto_register_protocol("X.501 Directory Operational Binding Management Protocol", "DOP", "dop");
 
   dop_handle = register_dissector("dop", dissect_dop, proto_dop);
 

@@ -35,6 +35,21 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+/**
+ * @def ws_cpuid
+ * @brief Execute the x86 CPUID instruction with the given selector.
+ *
+ * Retrieves CPU information by executing the CPUID instruction with the specified
+ * selector. The results are stored in the `CPUInfo` array as
+ * EAX, EBX, ECX, and EDX, respectively.
+ *
+ * @param CPUInfo   Pointer to an array of four uint32_t values to receive
+ *                  EAX, EBX, ECX, and EDX results, in that order.
+ * @param selector  Initial EAX value for the CPUID instruction.
+ * @return          true if cpuinfo is available, otherwise 0.
+ */
+
+
 #if defined(_MSC_VER)     /* MSVC */
 
 /*
@@ -69,6 +84,14 @@ ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 #elif defined(__GNUC__)  /* GCC/clang */
 
 #if defined(__x86_64__)
+
+/**
+ * @brief Execute a CPUID query on the current processor.
+ *
+ * @param CPUInfo  Output array of four 32-bit registers (EAX, EBX, ECX, EDX).
+ * @param selector The CPUID leaf (function ID) to query.
+ * @return true if the query was successful, false if unsupported.
+ */
 static inline bool
 ws_cpuid(uint32_t *CPUInfo, int selector)
 {
@@ -82,6 +105,14 @@ ws_cpuid(uint32_t *CPUInfo, int selector)
 	return true;
 }
 #elif defined(__i386__)
+
+/**
+ * @brief Execute a CPUID query on the current processor.
+ *
+ * @param CPUInfo  Output array of four 32-bit registers (EAX, EBX, ECX, EDX).
+ * @param selector The CPUID leaf (function ID) to query.
+ * @return true if the query was successful, false if unsupported.
+ */
 static bool
 ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 {
@@ -111,6 +142,14 @@ ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 	return false;
 }
 #else /* not x86 */
+
+/**
+ * @brief Execute a CPUID query on the current processor.
+ *
+ * @param CPUInfo  Output array of four 32-bit registers (EAX, EBX, ECX, EDX).
+ * @param selector The CPUID leaf (function ID) to query.
+ * @return true if the query was successful, false if unsupported.
+ */
 static bool
 ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 {
@@ -121,6 +160,13 @@ ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 
 #else /* Other compilers */
 
+/**
+ * @brief Execute a CPUID query on the current processor.
+ *
+ * @param CPUInfo  Output array of four 32-bit registers (EAX, EBX, ECX, EDX).
+ * @param selector The CPUID leaf (function ID) to query.
+ * @return true if the query was successful, false if unsupported.
+ */
 static bool
 ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 {
@@ -128,6 +174,11 @@ ws_cpuid(uint32_t *CPUInfo _U_, int selector _U_)
 }
 #endif
 
+/**
+ * @brief Checks if the CPU supports SSE4.2 instruction set.
+ *
+ * @return 1 if SSE4.2 is supported, otherwise returns 0.
+ */
 static int
 ws_cpuid_sse42(void)
 {

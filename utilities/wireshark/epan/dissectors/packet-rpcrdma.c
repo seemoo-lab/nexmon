@@ -1,4 +1,4 @@
-/* packet-rpcordma.c
+/* packet-rpcrdma.c
  * Routines for RPC over RDMA dissection (RFC 5666)
  * Copyright 2014-2015, Mellanox Technologies Ltd.
  * Code by Yan Burman.
@@ -236,7 +236,7 @@ enum {
 };
 
 /* Return the number of fragments of size 'b' in 'a' */
-#define NFRAGS(a,b) ((a)/(b) + ((a)%(b) ? 1: 0))
+#define NFRAGS(a,b) ((a)/(b) + (((a)%(b)) ? 1: 0))
 
 /*
  * Global variable set for every InfiniBand packet. This is used because
@@ -616,7 +616,7 @@ static tvbuff_t *add_ib_fragment(tvbuff_t *tvb,
 static void add_iwarp_padding(tvbuff_t *tvb, int offset,
         uint32_t msgid, uint32_t msgno, packet_info *pinfo)
 {
-    char *pbuf;
+    uint8_t *pbuf;
     tvbuff_t *pad_tvb;
     /* Size of payload data for current iWarp Read/Write */
     uint32_t bsize = tvb_reported_length_remaining(tvb, offset);
@@ -625,7 +625,7 @@ static void add_iwarp_padding(tvbuff_t *tvb, int offset,
 
     if (padding != 0) {
         /* Allocate buffer for the number of padding bytes that will be added */
-        pbuf = (char *)wmem_alloc(pinfo->pool, padding);
+        pbuf = (uint8_t *)wmem_alloc(pinfo->pool, padding);
         memset(pbuf, 0, padding);
         /* Create tvb buffer */
         pad_tvb = tvb_new_real_data(pbuf, padding, padding);
@@ -2040,11 +2040,7 @@ proto_register_rpcordma(void)
         &ett_rpcordma_fragments,
     };
 
-    proto_rpcordma = proto_register_protocol (
-        "RPC over RDMA", /* name       */
-        "RPCoRDMA",      /* short name */
-        "rpcordma"       /* abbrev     */
-        );
+    proto_rpcordma = proto_register_protocol ("RPC over RDMA", "RPCoRDMA", "rpcordma");
 
     proto_register_field_array(proto_rpcordma, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));

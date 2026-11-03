@@ -154,7 +154,7 @@ static int dissect_m2m(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	proto_tree *tlv_tree = NULL;
 	int burst_number = 0;
 	int length, offset = 0;
-	int tlv_count;
+	uint16_t tlv_count;
 	int tlv_type, tlv_len, tlv_offset, tlv_value;
 	int tlv_frag_type = 0;
 	int tlv_frag_number = 0;
@@ -185,8 +185,7 @@ static int dissect_m2m(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 		proto_tree_add_item(m2m_tree, hf_m2m_sequence_number, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 		/* display the TLV count */
-		proto_tree_add_item(m2m_tree, hf_m2m_tlv_count, tvb, offset, 2, ENC_BIG_ENDIAN);
-		tlv_count = tvb_get_ntohs(tvb, offset);
+		proto_tree_add_item_ret_uint16(m2m_tree, hf_m2m_tlv_count, tvb, offset, 2, ENC_BIG_ENDIAN, &tlv_count);
 		offset += 2;
 		/* parses the TLVs within current packet */
 		while ( tlv_count > 0)

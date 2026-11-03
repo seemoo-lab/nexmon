@@ -598,14 +598,12 @@ dissect_mtp3_routing_label(tvbuff_t *tvb, packet_info *pinfo, proto_tree *mtp3_t
     case JAPAN_STANDARD:
       label_tree = proto_tree_add_subtree(mtp3_tree, tvb, ROUTING_LABEL_OFFSET, JAPAN_ROUTING_LABEL_LENGTH, ett_mtp3_label, NULL, "Routing label");
 
-      label_dpc_item = proto_tree_add_item(label_tree, hf_mtp3_japan_dpc, tvb, ROUTING_LABEL_OFFSET, JAPAN_PC_LENGTH, ENC_LITTLE_ENDIAN);
-      dpc = tvb_get_letohs(tvb, ROUTING_LABEL_OFFSET);
+      label_dpc_item = proto_tree_add_item_ret_uint(label_tree, hf_mtp3_japan_dpc, tvb, ROUTING_LABEL_OFFSET, JAPAN_PC_LENGTH, ENC_LITTLE_ENDIAN, &dpc);
       if (mtp3_pc_structured()) {
         proto_item_append_text(label_dpc_item, " (%s)", mtp3_pc_to_str(pinfo->pool, dpc));
       }
 
-      label_opc_item = proto_tree_add_item(label_tree, hf_mtp3_japan_opc, tvb, JAPAN_OPC_OFFSET, JAPAN_PC_LENGTH, ENC_LITTLE_ENDIAN);
-      opc = tvb_get_letohs(tvb, JAPAN_OPC_OFFSET);
+      label_opc_item = proto_tree_add_item_ret_uint(label_tree, hf_mtp3_japan_opc, tvb, JAPAN_OPC_OFFSET, JAPAN_PC_LENGTH, ENC_LITTLE_ENDIAN, &opc);
       if (mtp3_pc_structured()) {
         proto_item_append_text(label_opc_item, " (%s)", mtp3_pc_to_str(pinfo->pool, opc));
       }

@@ -24,6 +24,7 @@
 #include <epan/asn1.h>
 #include <epan/dissectors/packet-windows-common.h>
 #include <epan/dissectors/packet-x509af.h>
+#include "opcua.h"
 #include "opcua_simpletypes.h"
 #include "opcua_hfindeces.h"
 #include "opcua_statuscode.h"
@@ -83,7 +84,6 @@
 
 
 /* Chosen arbitrarily */
-#define MAX_ARRAY_LEN 10000
 #define MAX_NESTING_DEPTH 100
 
 static int hf_opcua_diag_mask;
@@ -131,7 +131,7 @@ static int hf_opcua_diag_innerstatuscode;
 static int hf_opcua_extobj_mask;
 static int hf_opcua_extobj_mask_binbodyflag;
 static int hf_opcua_extobj_mask_xmlbodyflag;
-static int hf_opcua_ArraySize;
+int hf_opcua_ArraySize;
 static int hf_opcua_ServerIndex;
 static int hf_opcua_status_StructureChanged;
 static int hf_opcua_status_SemanticsChanged;
@@ -172,10 +172,8 @@ int hf_opcua_resultMask_browsename;
 int hf_opcua_resultMask_displayname;
 int hf_opcua_resultMask_typedefinition;
 
-static expert_field ei_array_length;
+expert_field ei_array_length;
 static expert_field ei_nesting_depth;
-
-extern int proto_opcua;
 
 /** NodeId encoding mask table */
 static const value_string g_nodeidmasks[] = {
@@ -347,7 +345,7 @@ static const value_string g_ResultMask[] = {
 /* trees */
 static int ett_opcua_diagnosticinfo;
 static int ett_opcua_diagnosticinfo_encodingmask;
-static int ett_opcua_nodeid;
+int ett_opcua_nodeid;
 static int ett_opcua_expandednodeid;
 static int ett_opcua_expandednodeid_encodingmask;
 static int ett_opcua_localizedtext;
@@ -357,7 +355,7 @@ static int ett_opcua_datavalue;
 static int ett_opcua_datavalue_encodingmask;
 static int ett_opcua_variant;
 static int ett_opcua_variant_arraydims;
-static int ett_opcua_extensionobject;
+int ett_opcua_extensionobject;
 static int ett_opcua_extensionobject_encodingmask;
 static int ett_opcua_statuscode;
 static int ett_opcua_statuscode_info;
@@ -476,7 +474,7 @@ void registerSimpleTypes(int proto)
         {&hf_opcua_datavalue_mask_servertimestampflag,  {"has server timestamp",               "opcua.datavalue.has_server_timestamp",             FT_BOOLEAN,         8,                      NULL,                      DATAVALUE_ENCODINGBYTE_SERVERTIMESTAMP,                 NULL, HFILL}},
         {&hf_opcua_datavalue_mask_sourcepicoseconds,    {"has source picoseconds",             "opcua.datavalue.has_source_picoseconds",           FT_BOOLEAN,         8,                      NULL,                      DATAVALUE_ENCODINGBYTE_SOURCEPICOSECONDS,               NULL, HFILL}},
         {&hf_opcua_datavalue_mask_serverpicoseconds,    {"has server picoseconds",             "opcua.datavalue.has_server_picoseconds",           FT_BOOLEAN,         8,                      NULL,                      DATAVALUE_ENCODINGBYTE_SERVERPICOSECONDS,               NULL, HFILL}},
-        {&hf_opcua_variant_encodingmask,                {"Variant Type",                       "opcua.variant.has_value",                          FT_UINT8,           BASE_HEX,               VALS(g_VariantTypes),      0x0,                                                    NULL, HFILL}},
+        {&hf_opcua_variant_encodingmask,                {"Variant Type",                       "opcua.variant.VariantType",                        FT_UINT8,           BASE_HEX,               VALS(g_VariantTypes),      0x0,                                                    NULL, HFILL}},
         {&hf_opcua_SourceTimestamp,                     {"SourceTimestamp",                    "opcua.datavalue.SourceTimestamp",                  FT_ABSOLUTE_TIME,   ABSOLUTE_TIME_LOCAL,    NULL,                      0x0,                                                    NULL, HFILL}},
         {&hf_opcua_SourcePicoseconds,                   {"SourcePicoseconds",                  "opcua.datavalue.SourcePicoseconds",                FT_UINT16,          BASE_DEC,               NULL,                      0x0,                                                    NULL, HFILL}},
         {&hf_opcua_ServerTimestamp,                     {"ServerTimestamp",                    "opcua.datavalue.ServerTimestamp",                  FT_ABSOLUTE_TIME,   ABSOLUTE_TIME_LOCAL,    NULL,                      0x0,                                                    NULL, HFILL}},
@@ -653,7 +651,7 @@ proto_item* parseString_ret_string_and_length(proto_tree *tree, tvbuff_t *tvb, p
     iOffset+=4;
 
     if (retval) {
-        *retval = "";
+        *retval = (const uint8_t*)"";
     }
     if (lenretval) {
         *lenretval = iLen;
@@ -673,7 +671,7 @@ proto_item* parseString_ret_string_and_length(proto_tree *tree, tvbuff_t *tvb, p
     }
     else if (iLen > 0)
     {
-        item = proto_tree_add_item_ret_string_and_length(tree, hfIndex, tvb, iOffset, iLen, ENC_UTF_8|ENC_NA, NULL, retval, lenretval);
+        item = proto_tree_add_item_ret_string(tree, hfIndex, tvb, iOffset, iLen, ENC_UTF_8|ENC_NA, pinfo->pool, retval);
         iOffset += iLen; /* eat the whole string */
     }
     else
@@ -1291,7 +1289,7 @@ void parseExtensionObject(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, i
 
     int     iOffset = *pOffset;
     uint8_t EncodingMask;
-    uint32_t TypeId;
+    ExtensionObjectTypeId TypeId;
     proto_tree *extobj_tree;
     proto_item *ti;
     unsigned    opcua_nested_count;
@@ -1309,9 +1307,9 @@ void parseExtensionObject(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, i
     opcua_nested_count++;
     p_add_proto_data(pinfo->pool, pinfo, proto_opcua, 0, GUINT_TO_POINTER(opcua_nested_count));
 
-    /* add nodeid subtree */
-    TypeId = getExtensionObjectType(tvb, &iOffset);
+    /* add nodeid subtree, then read the type ID from it (parseNodeId() shows a bad NodeId first) */
     parseNodeId(extobj_tree, tvb, pinfo, &iOffset, "TypeId");
+    TypeId = getExtensionObjectType(tvb, pinfo, pOffset);
 
     /* parse encoding mask */
     EncodingMask = tvb_get_uint8(tvb, iOffset);
@@ -1320,7 +1318,7 @@ void parseExtensionObject(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, i
 
     if (EncodingMask & EXTOBJ_ENCODINGMASK_BINBODY_FLAG) /* has binary body ? */
     {
-        dispatchExtensionObjectType(extobj_tree, tvb, pinfo, &iOffset, TypeId);
+        dispatchExtensionObjectType(extobj_tree, tvb, pinfo, &iOffset, &TypeId);
     }
 
     proto_item_set_end(ti, tvb, iOffset);
@@ -1395,11 +1393,12 @@ void parseExpandedNodeId(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, in
     *pOffset = iOffset;
 }
 
-uint32_t getExtensionObjectType(tvbuff_t *tvb, int *pOffset)
+ExtensionObjectTypeId getExtensionObjectType(tvbuff_t *tvb, packet_info *pinfo, int *pOffset)
 {
     int     iOffset = *pOffset;
     uint8_t EncodingMask;
-    uint32_t Numeric = 0;
+    int32_t iLen;
+    ExtensionObjectTypeId TypeId = { 0 };
 
     EncodingMask = tvb_get_uint8(tvb, iOffset);
     iOffset++;
@@ -1407,26 +1406,35 @@ uint32_t getExtensionObjectType(tvbuff_t *tvb, int *pOffset)
     switch(EncodingMask)
     {
     case 0x00: /* two byte node id */
-        Numeric = tvb_get_uint8(tvb, iOffset);
-        /*iOffset+=1;*/
+        TypeId.isNumeric = true;
+        TypeId.numeric = tvb_get_uint8(tvb, iOffset);
         break;
     case 0x01: /* four byte node id */
-        iOffset+=1;
-        Numeric = tvb_get_letohs(tvb, iOffset);
+        TypeId.isNumeric = true;
+        TypeId.ns = tvb_get_uint8(tvb, iOffset);
+        TypeId.numeric = tvb_get_letohs(tvb, iOffset + 1);
         break;
     case 0x02: /* numeric, that does not fit into four bytes */
-        iOffset+=2;
-        Numeric = tvb_get_letohl(tvb, iOffset);
+        TypeId.isNumeric = true;
+        TypeId.ns = tvb_get_letohs(tvb, iOffset);
+        TypeId.numeric = tvb_get_letohl(tvb, iOffset + 2);
         break;
     case 0x03: /* string */
-    case 0x04: /* uri */
-    case 0x05: /* guid */
-    case 0x06: /* byte string */
+        TypeId.ns = tvb_get_letohs(tvb, iOffset);
+        iLen = tvb_get_letohil(tvb, iOffset + 2);
+        if (iLen > 0)
+        {
+            TypeId.string = (const char *)tvb_get_string_enc(pinfo->pool, tvb, iOffset + 6, iLen, ENC_UTF_8);
+        }
+        break;
+    case 0x04: /* guid */
+    case 0x05: /* byte string */
         /* NOT USED */
+        TypeId.ns = tvb_get_letohs(tvb, iOffset);
         break;
     };
 
-    return Numeric;
+    return TypeId;
 }
 
 void parseNodeClassMask(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int *pOffset)

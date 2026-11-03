@@ -25,6 +25,7 @@
 #include <epan/decode_as.h>
 #include <epan/proto_data.h>
 #include <epan/unit_strings.h>
+#include <epan/uuid_types.h>
 #include <wiretap/wtap.h>
 #include "packet-llc.h"
 #include <epan/oui.h>
@@ -69,19 +70,19 @@ static wmem_tree_t *localhost_bdaddr;
 static wmem_tree_t *hci_vendors;
 static wmem_tree_t *cs_configurations;
 
-wmem_tree_t *bluetooth_uuids;
+static int bluetooth_uuid_id;
 
 static int bluetooth_tap;
 int bluetooth_device_tap;
 int bluetooth_hci_summary_tap;
 
 // UAT structure
-typedef struct _bt_uuid_t {
+typedef struct _bt_uuid_uat_t {
     char *uuid;
     char *label;
     bool long_attr;
-} bt_uuid_t;
-static bt_uuid_t *bt_uuids;
+} bt_uuid_uat_t;
+static bt_uuid_uat_t* bt_uuids;
 static unsigned num_bt_uuids;
 
 static bluetooth_uuid_t get_bluetooth_uuid_from_str(const char *str);
@@ -124,7 +125,7 @@ void proto_reg_handoff_bluetooth(void);
 static bool
 bt_uuids_update_cb(void *r, char **err)
 {
-    bt_uuid_t *rec = (bt_uuid_t *)r;
+    bt_uuid_uat_t *rec = (bt_uuid_uat_t *)r;
     bluetooth_uuid_t uuid;
 
     if (rec->uuid == NULL) {
@@ -163,8 +164,8 @@ bt_uuids_update_cb(void *r, char **err)
 static void *
 bt_uuids_copy_cb(void* n, const void* o, size_t siz _U_)
 {
-    bt_uuid_t* new_rec = (bt_uuid_t*)n;
-    const bt_uuid_t* old_rec = (const bt_uuid_t*)o;
+    bt_uuid_uat_t* new_rec = (bt_uuid_uat_t*)n;
+    const bt_uuid_uat_t* old_rec = (const bt_uuid_uat_t*)o;
 
     new_rec->uuid = g_strdup(old_rec->uuid);
     new_rec->label = g_strdup(old_rec->label);
@@ -176,16 +177,10 @@ bt_uuids_copy_cb(void* n, const void* o, size_t siz _U_)
 static void
 bt_uuids_free_cb(void*r)
 {
-    bt_uuid_t* rec = (bt_uuid_t*)r;
+    bt_uuid_uat_t* rec = (bt_uuid_uat_t*)r;
 
-    const char *found_label;
-
-    found_label = wmem_tree_lookup_string(bluetooth_uuids, rec->uuid, 0);
-
-    if (found_label != NULL && !strcmp(found_label, rec->label)) {
-        wmem_tree_remove_string(bluetooth_uuids, rec->uuid, 0);
-    }
-
+    bluetooth_uuid_t uuid = get_bluetooth_uuid_from_str(rec->uuid);
+    uuid_type_remove_if_present(bluetooth_uuid_id, &uuid);
     g_free(rec->uuid);
     g_free(rec->label);
 }
@@ -195,8 +190,9 @@ bt_uuids_post_update_cb(void)
 {
     if (num_bt_uuids) {
         for (unsigned i = 0; i < num_bt_uuids; i++) {
-            wmem_tree_insert_string(bluetooth_uuids, bt_uuids[i].uuid,
-                                    &bt_uuids[i], 0);
+            bluetooth_uuid_t uuid = get_bluetooth_uuid_from_str(bt_uuids[i].uuid);
+            bluetooth_uuid_t* uuid_copy = wmem_memdup(wmem_epan_scope(), &uuid, sizeof(uuid));
+            uuid_type_insert(bluetooth_uuid_id, uuid_copy, &bt_uuids[i]);
         }
     }
 }
@@ -206,40 +202,70 @@ bt_uuids_reset_cb(void)
 {
 }
 
-UAT_CSTRING_CB_DEF(bt_uuids, uuid, bt_uuid_t)
-UAT_CSTRING_CB_DEF(bt_uuids, label, bt_uuid_t)
-UAT_BOOL_CB_DEF(bt_uuids, long_attr, bt_uuid_t)
+UAT_CSTRING_CB_DEF(bt_uuids, uuid, bt_uuid_uat_t)
+UAT_CSTRING_CB_DEF(bt_uuids, label, bt_uuid_uat_t)
+UAT_BOOL_CB_DEF(bt_uuids, long_attr, bt_uuid_uat_t)
 
-void bluetooth_add_custom_uuid(const char *uuid, const char *label, bool long_attr)
+static unsigned
+bluetooth_uuid_hash(const void* uuid)
 {
-    bt_uuid_t* custom_uuid = wmem_new(wmem_epan_scope(), bt_uuid_t);
-
-    custom_uuid->uuid = wmem_strdup(wmem_epan_scope(), uuid);
-    custom_uuid->label = wmem_strdup(wmem_epan_scope(), label);
-    custom_uuid->long_attr = long_attr;
-
-    // It might make more sense to insert these as UUIDs instead of strings.
-    wmem_tree_insert_string(bluetooth_uuids, uuid, custom_uuid, 0);
+    const bluetooth_uuid_t* bt_uuid = (const bluetooth_uuid_t*)uuid;
+    return wmem_strong_hash(bt_uuid->data, bt_uuid->size);
 }
 
-bool bluetooth_get_custom_uuid_long_attr(wmem_allocator_t* scope, const bluetooth_uuid_t *uuid)
+static gboolean
+bluetooth_uuid_equal(const void* u1, const void* u2)
 {
-    bt_uuid_t* custom_uuid;
-    custom_uuid = wmem_tree_lookup_string(bluetooth_uuids, print_numeric_bluetooth_uuid(scope, uuid), 0);
+    const bluetooth_uuid_t *bt_u1 = (const bluetooth_uuid_t*)u1,
+                           *bt_u2 = (const bluetooth_uuid_t*)u2;
+    if (bt_u1->bt_uuid != bt_u2->bt_uuid)
+        return false;
+
+    if (bt_u1->size != bt_u2->size)
+        return false;
+
+    return (memcmp(bt_u1->data, bt_u2->data, bt_u1->size) == 0);
+}
+
+static const char*
+bluetooth_uuid_to_str(void* uuid, wmem_allocator_t* scope)
+{
+    return print_numeric_bluetooth_uuid(scope, (const bluetooth_uuid_t*)uuid);
+}
+
+void bluetooth_add_custom_uuid(const char *uuid_str, const char *label, bool long_attr)
+{
+    bluetooth_uuid_t uuid = get_bluetooth_uuid_from_str(uuid_str);
+    if (uuid.size > 0)
+    {
+        //Now that the UUID is valid, add it to the table
+        bluetooth_uuid_t* uuid_copy = wmem_memdup(wmem_epan_scope(), &uuid, sizeof(uuid));
+        bt_uuid_uat_t* custom_uuid = wmem_new(wmem_epan_scope(), bt_uuid_uat_t);
+
+        custom_uuid->uuid = wmem_strdup(wmem_epan_scope(), uuid_str);
+        custom_uuid->label = wmem_strdup(wmem_epan_scope(), label);
+        custom_uuid->long_attr = long_attr;
+
+        uuid_type_insert(bluetooth_uuid_id, uuid_copy, custom_uuid);
+    }
+}
+
+bool bluetooth_get_custom_uuid_long_attr(const bluetooth_uuid_t *uuid)
+{
+    bt_uuid_uat_t* custom_uuid = (bt_uuid_uat_t*)uuid_type_lookup(bluetooth_uuid_id, (void*)uuid);
     if (custom_uuid) {
         return custom_uuid->long_attr;
     }
     return false;
 }
 
-const char* bluetooth_get_custom_uuid_description(wmem_allocator_t* scope, const bluetooth_uuid_t *uuid)
+const char* bluetooth_get_custom_uuid_description(const bluetooth_uuid_t *uuid)
 {
-    bt_uuid_t* custom_uuid;
-    custom_uuid = wmem_tree_lookup_string(bluetooth_uuids, print_numeric_bluetooth_uuid(scope, uuid), 0);
+    bt_uuid_uat_t* custom_uuid = (bt_uuid_uat_t*)uuid_type_lookup(bluetooth_uuid_id, (void*)uuid);
     if (custom_uuid) {
         return custom_uuid->label;
     }
-    return false;
+    return NULL;
 }
 
 /* Decode As routines */
@@ -333,6 +359,11 @@ const value_string bluetooth_not_used_0xff_special[] = {
     {0, NULL}
 };
 
+const true_false_string tfs_rtt_accuracy = {
+    "10 ns",
+    "150 ns"
+};
+
 void
 save_local_device_name_from_eir_ad(tvbuff_t *tvb, int offset, packet_info *pinfo,
         uint8_t size, bluetooth_data_t *bluetooth_data)
@@ -355,7 +386,7 @@ save_local_device_name_from_eir_ad(tvbuff_t *tvb, int offset, packet_info *pinfo
         switch(tvb_get_uint8(tvb, offset + i + 1)) {
         case 0x08: /* Device Name, shortened */
         case 0x09: /* Device Name, full */
-            name = tvb_get_string_enc(pinfo->pool, tvb, offset + i + 2, length - 1, ENC_ASCII);
+            name = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + i + 2, length - 1, ENC_ASCII);
 
             k_interface_id = bluetooth_data->interface_id;
             k_adapter_id = bluetooth_data->adapter_id;
@@ -609,42 +640,83 @@ get_bluetooth_uuid(tvbuff_t *tvb, int offset, int size)
     return uuid;
 }
 
+/* Extract a UUID stored in big-endian order within a tvb. */
+bluetooth_uuid_t
+get_bluetooth_uuid_be(tvbuff_t *tvb, int offset, int size)
+{
+    bluetooth_uuid_t uuid;
+
+    memset(&uuid, 0, sizeof(uuid));
+
+    if (size != 2 && size != 4 && size != 16) {
+        return uuid;
+    }
+
+    tvb_memcpy(tvb, uuid.data, offset, size);
+
+    if (size == 2) {
+        /* [0x11, 0x01] in tvb -> 0x1101 */
+        uuid.bt_uuid = (uuid.data[0] << 8) | uuid.data[1];
+    }
+    else if (size == 4) {
+        /* Check if the 32-bit UUID can be collapsed to 16-bit */
+        if (uuid.data[0] == 0x00 && uuid.data[1] == 0x00) {
+            uuid.bt_uuid = (uuid.data[2] << 8) | uuid.data[3];
+            size = 2;
+        }
+    }
+    else {
+        /* Check if the 128-bit UUID can be collapsed to 16-bit */
+        if (uuid.data[0]  == 0x00 && uuid.data[1]  == 0x00 &&
+            uuid.data[4]  == 0x00 && uuid.data[5]  == 0x00 && uuid.data[6]  == 0x10 &&
+            uuid.data[7]  == 0x00 && uuid.data[8]  == 0x80 && uuid.data[9]  == 0x00 &&
+            uuid.data[10] == 0x00 && uuid.data[11] == 0x80 && uuid.data[12] == 0x5F &&
+            uuid.data[13] == 0x9B && uuid.data[14] == 0x34 && uuid.data[15] == 0xFB) {
+
+            uuid.bt_uuid = (uuid.data[2] << 8) | uuid.data[3];
+            size = 2;
+        }
+    }
+
+    uuid.size = size;
+    return uuid;
+}
+
+
 const char *
 print_numeric_bluetooth_uuid(wmem_allocator_t *pool, const bluetooth_uuid_t *uuid)
 {
     if (!(uuid && uuid->size > 0))
         return NULL;
 
-    if (uuid->size != 16) {
-        /* XXX - This is not right for UUIDs that were 32 or 128-bit in a
-         * tvb and converted to 16-bit UUIDs by get_bluetooth_uuid.
-         */
+    if (uuid->size == 2) {
+        return wmem_strdup_printf(pool, "%04x", uuid->bt_uuid);
+    }
+    else if (uuid->size != 16) {
         return bytes_to_str(pool, uuid->data, uuid->size);
-    } else {
-        char *text;
-
-        text = (char *) wmem_alloc(pool, 38);
-        bytes_to_hexstr(&text[0], uuid->data, 4);
-        text[8] = '-';
-        bytes_to_hexstr(&text[9], uuid->data + 4, 2);
-        text[13] = '-';
-        bytes_to_hexstr(&text[14], uuid->data + 4 + 2 * 1, 2);
-        text[18] = '-';
-        bytes_to_hexstr(&text[19], uuid->data + 4 + 2 * 2, 2);
-        text[23] = '-';
-        bytes_to_hexstr(&text[24], uuid->data + 4 + 2 * 3, 6);
-        text[36] = '\0';
-
-        return text;
     }
 
-    return NULL;
+    char *text;
+
+    text = (char *) wmem_alloc(pool, 38);
+    bytes_to_hexstr(&text[0], uuid->data, 4);
+    text[8] = '-';
+    bytes_to_hexstr(&text[9], uuid->data + 4, 2);
+    text[13] = '-';
+    bytes_to_hexstr(&text[14], uuid->data + 4 + 2 * 1, 2);
+    text[18] = '-';
+    bytes_to_hexstr(&text[19], uuid->data + 4 + 2 * 2, 2);
+    text[23] = '-';
+    bytes_to_hexstr(&text[24], uuid->data + 4 + 2 * 3, 6);
+    text[36] = '\0';
+
+    return text;
 }
 
 const char *
-print_bluetooth_uuid(wmem_allocator_t *pool, const bluetooth_uuid_t *uuid)
+try_print_bluetooth_uuid(const bluetooth_uuid_t *uuid)
 {
-    const char *description;
+    const char *description = NULL;
 
     if (uuid->bt_uuid) {
         const char *name;
@@ -666,11 +738,21 @@ print_bluetooth_uuid(wmem_allocator_t *pool, const bluetooth_uuid_t *uuid)
          */
     }
 
-    description = bluetooth_get_custom_uuid_description(pool, uuid);
-    if (description)
-        return description;
+    description = bluetooth_get_custom_uuid_description(uuid);
 
-    return "Unknown";
+    return description;
+}
+
+const char *
+print_bluetooth_uuid(const bluetooth_uuid_t *uuid)
+{
+    const char *description = try_print_bluetooth_uuid(uuid);
+
+    if (description == NULL) {
+        description = "Unknown";
+    }
+
+    return description;
 }
 
 bluetooth_data_t *
@@ -956,7 +1038,7 @@ proto_register_bluetooth(void)
     static build_valid_func bluetooth_uuid_da_build_value[1] = {bluetooth_uuid_value};
     static decode_as_value_t bluetooth_uuid_da_values = {bluetooth_uuid_prompt, 1, bluetooth_uuid_da_build_value};
     static decode_as_t bluetooth_uuid_da = {"bluetooth", "bluetooth.uuid", 1, 0, &bluetooth_uuid_da_values, NULL, NULL,
-            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
 
     proto_bluetooth = proto_register_protocol("Bluetooth", "Bluetooth", "bluetooth");
@@ -981,7 +1063,7 @@ proto_register_bluetooth(void)
     cs_configurations        = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 
     hci_vendor_table = register_dissector_table("bluetooth.vendor", "HCI Vendor", proto_bluetooth, FT_UINT16, BASE_HEX);
-    bluetooth_uuids          = wmem_tree_new(wmem_epan_scope());
+    bluetooth_uuid_id = uuid_type_dissector_register("bluetooth", bluetooth_uuid_hash, bluetooth_uuid_equal, bluetooth_uuid_to_str);
 
     bluetooth_tap = register_tap("bluetooth");
     bluetooth_device_tap = register_tap("bluetooth.device");
@@ -996,7 +1078,7 @@ proto_register_bluetooth(void)
 
     bluetooth_module = prefs_register_protocol(proto_bluetooth, NULL);
     bluetooth_uuids_uat = uat_new("Custom Bluetooth UUIDs",
-                                  sizeof(bt_uuid_t),
+                                  sizeof(bt_uuid_uat_t),
                                   "bluetooth_uuids",
                                   true,
                                   &bt_uuids,
@@ -1025,6 +1107,7 @@ proto_register_bluetooth(void)
     bluetooth_usb_handle = register_dissector("bluetooth.usb", dissect_bluetooth_usb, proto_bluetooth);
 
     register_external_value_string_ext("bluetooth_company_id_vals_ext", &bluetooth_company_id_vals_ext);
+    register_external_value_string_ext("bluetooth_uuid_vals_ext", &bluetooth_uuid_vals_ext);
 }
 
 void
@@ -1334,11 +1417,16 @@ proto_reg_handoff_btad_gaen(void)
 
 static int proto_btad_matter;
 
+#define MATTER_OPCODE_COMMISSIONABLE    0x00
+#define MATTER_OPCODE_NETWORK_RECOVERY  0x01
+
 static int hf_btad_matter_opcode;
-static int hf_btad_matter_version;
+static int hf_btad_matter_version_u8;
+static int hf_btad_matter_version_u16;
 static int hf_btad_matter_discriminator;
 static int hf_btad_matter_vendor_id;
 static int hf_btad_matter_product_id;
+static int hf_btad_matter_recovery_id;
 static int hf_btad_matter_flags;
 static int hf_btad_matter_flags_additional_data;
 static int hf_btad_matter_flags_ext_announcement;
@@ -1354,24 +1442,33 @@ void proto_reg_handoff_btad_matter(void);
 static int
 dissect_btad_matter(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    /* We are interested only in the last 8 bytes (Service Data Payload) */
-    int offset = tvb_captured_length(tvb) - 8;
-
+    unsigned offset = 0;
     proto_tree *main_item = proto_tree_add_item(tree, proto_btad_matter, tvb, offset, -1, ENC_NA);
     proto_tree *main_tree = proto_item_add_subtree(main_item, ett_btad_matter);
 
-    proto_tree_add_item(main_tree, hf_btad_matter_opcode, tvb, offset, 1, ENC_NA);
+    unsigned int opcode;
+    proto_tree_add_item_ret_uint(main_tree, hf_btad_matter_opcode, tvb, offset, 1, ENC_NA, &opcode);
     offset += 1;
 
-    proto_tree_add_item(main_tree, hf_btad_matter_version, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    proto_tree_add_item(main_tree, hf_btad_matter_discriminator, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    offset += 2;
-
-    proto_tree_add_item(main_tree, hf_btad_matter_vendor_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    offset += 2;
-
-    proto_tree_add_item(main_tree, hf_btad_matter_product_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    offset += 2;
+    switch (opcode) {
+    case MATTER_OPCODE_COMMISSIONABLE:
+        proto_tree_add_item(main_tree, hf_btad_matter_version_u16, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(main_tree, hf_btad_matter_discriminator, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(main_tree, hf_btad_matter_vendor_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        proto_tree_add_item(main_tree, hf_btad_matter_product_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+        break;
+    case MATTER_OPCODE_NETWORK_RECOVERY:
+        proto_tree_add_item(main_tree, hf_btad_matter_version_u8, tvb, offset, 1, ENC_NA);
+        offset += 1;
+        proto_tree_add_item(main_tree, hf_btad_matter_recovery_id, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+        offset += 8;
+        break;
+    default:
+        return offset;
+    }
 
     static int * const flags[] = {
         &hf_btad_matter_flags_additional_data,
@@ -1389,7 +1486,8 @@ void
 proto_register_btad_matter(void)
 {
     static const value_string opcode_vals[] = {
-        { 0x00, "Commissionable" },
+        { MATTER_OPCODE_COMMISSIONABLE, "Commissionable" },
+        { MATTER_OPCODE_NETWORK_RECOVERY, "Network Recovery" },
         { 0, NULL }
     };
 
@@ -1399,7 +1497,12 @@ proto_register_btad_matter(void)
             FT_UINT8, BASE_HEX, VALS(opcode_vals), 0x0,
             NULL, HFILL }
         },
-        {&hf_btad_matter_version,
+        {&hf_btad_matter_version_u8,
+          {"Advertisement Version", "bluetooth.matter.version",
+            FT_UINT8, BASE_DEC, NULL, 0xF0,
+            NULL, HFILL}
+        },
+        {&hf_btad_matter_version_u16,
           {"Advertisement Version", "bluetooth.matter.version",
             FT_UINT16, BASE_DEC, NULL, 0xF000,
             NULL, HFILL}
@@ -1418,6 +1521,11 @@ proto_register_btad_matter(void)
           { "Product ID", "bluetooth.matter.product_id",
             FT_UINT16, BASE_HEX, NULL, 0x0,
             "A 16-bit value identifying the product", HFILL }
+        },
+        { &hf_btad_matter_recovery_id,
+          { "Recovery ID", "bluetooth.matter.recovery_id",
+            FT_UINT64, BASE_HEX, NULL, 0x0,
+            "A 64-bit recovery ID", HFILL }
         },
         { &hf_btad_matter_flags,
           { "Flags", "bluetooth.matter.flags",

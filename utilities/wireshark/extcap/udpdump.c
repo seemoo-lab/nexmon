@@ -36,7 +36,6 @@
 #endif
 
 #include <writecap/pcapio.h>
-#include <wiretap/wtap.h>
 #include <wsutil/strtoi.h>
 #include <wsutil/inet_addr.h>
 #include <wsutil/filesystem.h>
@@ -46,8 +45,8 @@
 #include <wsutil/wslog.h>
 #include <wsutil/pint.h>
 #include <wsutil/exported_pdu_tlvs.h>
-
-#include <cli_main.h>
+#include <wsutil/nstime.h>
+#include <app/application_flavor.h>
 
 #define PCAP_SNAPLEN 0xffff
 
@@ -148,13 +147,13 @@ cleanup_setup_listener:
 
 }
 
-static int setup_dumpfile(const char* fifo, pcapio_writer** fp)
+static int setup_dumpfile(const char* fifo, ws_cwstream** fp)
 {
 	uint64_t bytes_written = 0;
 	int err;
 
 	if (!g_strcmp0(fifo, "-")) {
-		*fp = writecap_open_stdout(WTAP_UNCOMPRESSED, &err);
+		*fp = ws_cwstream_open_stdout(WS_FILE_UNCOMPRESSED, &err);
 		if (!(*fp)) {
 			ws_warning("Error opening standard out: %s", g_strerror(errno));
 			return EXIT_FAILURE;
@@ -163,7 +162,7 @@ static int setup_dumpfile(const char* fifo, pcapio_writer** fp)
 		return EXIT_SUCCESS;
 	}
 
-	*fp = writecap_fopen(fifo, WTAP_UNCOMPRESSED, &err);
+	*fp = ws_cwstream_open(fifo, WS_FILE_UNCOMPRESSED, &err);
 	if (!(*fp)) {
 		ws_warning("Error creating output file: %s", g_strerror(errno));
 		return EXIT_FAILURE;
@@ -174,7 +173,7 @@ static int setup_dumpfile(const char* fifo, pcapio_writer** fp)
 		return EXIT_FAILURE;
 	}
 
-	writecap_flush(*fp, &err);
+	ws_cwstream_flush(*fp, &err);
 
 	return EXIT_SUCCESS;
 }
@@ -245,7 +244,7 @@ static void add_end_options(uint8_t* mbuf, unsigned* offset)
 
 static int dump_packet(const char* proto_name, const uint16_t listenport, const char* buf,
 		const ssize_t buflen, const struct sockaddr_in clientaddr,
-		pcapio_writer* fp)
+		ws_cwstream* fp)
 {
 	uint8_t* mbuf;
 	unsigned offset = 0;
@@ -268,13 +267,13 @@ static int dump_packet(const char* proto_name, const uint16_t listenport, const 
 	offset += (unsigned)buflen;
 
 	if (!libpcap_write_packet(fp,
-			(uint32_t)(curtime / G_USEC_PER_SEC), (uint32_t)(curtime % G_USEC_PER_SEC),
+			(uint32_t)(curtime / WS_USECS_PER_SEC), (uint32_t)(curtime % WS_USECS_PER_SEC),
 			offset, offset, mbuf, &bytes_written, &err)) {
 		ws_warning("Can't write packet: %s", g_strerror(err));
 		ret = EXIT_FAILURE;
 	}
 
-	writecap_flush(fp, &err);
+	ws_cwstream_flush(fp, &err);
 
 	g_free(mbuf);
 	return ret;
@@ -287,11 +286,11 @@ static void run_listener(const char* fifo, const uint16_t port, const char* prot
 	socket_handle_t sock;
 	char* buf;
 	ssize_t buflen;
-	pcapio_writer* fp = NULL;
+	ws_cwstream* fp = NULL;
 
 	if (setup_dumpfile(fifo, &fp) == EXIT_FAILURE) {
 		if (fp)
-			writecap_close(fp, NULL);
+			ws_cwstream_close(fp, NULL);
 		return;
 	}
 
@@ -334,7 +333,7 @@ static void run_listener(const char* fifo, const uint16_t port, const char* prot
 		}
 	}
 
-	writecap_close(fp, NULL);
+	ws_cwstream_close(fp, NULL);
 	closesocket(sock);
 	g_free(buf);
 }
@@ -356,7 +355,7 @@ int main(int argc, char *argv[])
 	g_set_prgname("udpdump");
 
 	/* Initialize log handler early so we can have proper logging during startup. */
-	extcap_log_init();
+	extcap_log_init(extcap_conf);
 
 	/*
 	 * Get credential information for later use.
@@ -367,18 +366,18 @@ int main(int argc, char *argv[])
 	 * Attempt to get the pathname of the directory containing the
 	 * executable file.
 	 */
-	err_msg = configuration_init(argv[0]);
+	err_msg = configuration_init(argv[0], "wireshark");
 	if (err_msg != NULL) {
 		ws_warning("Can't get pathname of directory containing the extcap program: %s.",
 			err_msg);
 		g_free(err_msg);
 	}
 
-	help_url = data_file_url("udpdump.html");
+	help_url = data_file_url("udpdump.html", application_configuration_environment_prefix());
 	extcap_base_set_util_info(extcap_conf, argv[0], UDPDUMP_VERSION_MAJOR, UDPDUMP_VERSION_MINOR, UDPDUMP_VERSION_RELEASE,
 		help_url);
 	g_free(help_url);
-	extcap_base_register_interface(extcap_conf, UDPDUMP_EXTCAP_INTERFACE, "UDP Listener remote capture", 252, "Exported PDUs");
+	extcap_base_register_interface_ext(extcap_conf, UDPDUMP_EXTCAP_INTERFACE, "UDP Listener remote capture", 252, NULL, "Exported PDUs", EXTCAP_CONTROL_QUIT);
 
 	help_header = ws_strdup_printf(
 		" %s --extcap-interfaces\n"

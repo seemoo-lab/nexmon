@@ -30,10 +30,11 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/sctpppids.h>      /* include V5UA payload protocol ID */
 
 #include <wsutil/str_util.h>
 #include <wsutil/ws_roundup.h>
+
+#include "packet-sctp.h"
 
 void proto_register_v5ua(void);
 void proto_reg_handoff_v5ua(void);
@@ -214,23 +215,18 @@ dissect_dlci_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, prot
 {
    uint16_t efa = 0, offset = 0;
 
-   uint8_t sapi = -1;
-   uint8_t tei = -1;
-
+   uint32_t sapi, tei;
 
    if     (iua_version == RFC)   offset = DLCI_SAPI_OFFSET;
    else if(iua_version == DRAFT) offset = DLCI_HEADER_LENGTH + tvb_get_ntohs(parameter_tvb, DLCI_LENGTH_OFFSET);
 
-   proto_tree_add_item(parameter_tree, hf_dlci_zero_bit,  parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN);
-   proto_tree_add_item(parameter_tree, hf_dlci_spare_bit, parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN);
-   proto_tree_add_item(parameter_tree, hf_dlci_sapi,      parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN);
+   proto_tree_add_item(parameter_tree, hf_dlci_zero_bit,      parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN);
+   proto_tree_add_item(parameter_tree, hf_dlci_spare_bit,     parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN);
+   proto_tree_add_item_ret_uint(parameter_tree, hf_dlci_sapi, parameter_tvb, offset,  DLCI_SAPI_LENGTH,  ENC_BIG_ENDIAN, &sapi);
 
    offset += DLCI_SAPI_LENGTH;
-   proto_tree_add_item(parameter_tree, hf_dlci_one_bit,   parameter_tvb, offset,  DLCI_TEI_LENGTH,   ENC_BIG_ENDIAN);
-   proto_tree_add_item(parameter_tree, hf_dlci_tei,       parameter_tvb, offset,  DLCI_TEI_LENGTH,   ENC_BIG_ENDIAN);
-
-   sapi = tvb_get_ntohs(parameter_tvb, offset-DLCI_TEI_LENGTH-DLCI_SAPI_LENGTH)>>2;
-   tei = tvb_get_ntohs(parameter_tvb, offset-DLCI_TEI_LENGTH)>>1;
+   proto_tree_add_item(parameter_tree, hf_dlci_one_bit,       parameter_tvb, offset,  DLCI_TEI_LENGTH,   ENC_BIG_ENDIAN);
+   proto_tree_add_item_ret_uint(parameter_tree, hf_dlci_tei,  parameter_tvb, offset,  DLCI_TEI_LENGTH,   ENC_BIG_ENDIAN, &tei);
 
    offset += DLCI_TEI_LENGTH;
    efa = tvb_get_ntohs(parameter_tvb, offset);
@@ -397,10 +393,10 @@ dissect_status_type_identification_parameter(tvbuff_t *parameter_tvb, proto_tree
    proto_tree_add_item(parameter_tree, hf_status_type, parameter_tvb, NTFY_STATUS_TYPE_OFFSET, NTFY_STATUS_TYPE_LENGTH, ENC_BIG_ENDIAN);
    proto_tree_add_uint_format_value(parameter_tree, hf_status_id,  parameter_tvb, NTFY_STATUS_IDENT_OFFSET, NTFY_STATUS_IDENT_LENGTH,
          status_id, "%u (%s)", status_id,
-         val_to_str_const(status_type * 256 * 256 + status_id, status_type_id_values, "unknown"));
+         val_to_str_const((unsigned)status_type * 256 * 256 + status_id, status_type_id_values, "unknown"));
 
    proto_item_append_text(parameter_item, " (%s)",
-         val_to_str_const(status_type * 256 * 256 + status_id, status_type_id_values, "Unknown status information"));
+         val_to_str_const((unsigned)status_type * 256 * 256 + status_id, status_type_id_values, "Unknown status information"));
 }
 /*----------------------Notify (RFC)-------------------------------------------*/
 

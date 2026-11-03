@@ -12,8 +12,8 @@
 
 /*---------------------------------------------------------------------------*/
 
-#define WS_LOG_DOMAIN "TPNCP"
 #include "config.h"
+#define WS_LOG_DOMAIN "TPNCP"
 
 #include <epan/packet.h>
 #include <epan/exceptions.h>
@@ -76,11 +76,11 @@ static bool tpncp_desegment = true;
 
 /* Database for storing information about all TPNCP events. */
 static tpncp_data_field_info **tpncp_events_info_db;
-unsigned tpncp_events_info_len;
+static unsigned tpncp_events_info_len;
 
 /* Database for storing information about all TPNCP commands. */
 static tpncp_data_field_info **tpncp_commands_info_db;
-unsigned tpncp_commands_info_len;
+static unsigned tpncp_commands_info_len;
 
 /* Global variables for bitfields representation. */
 /* TPNCP packet header fields. */
@@ -101,6 +101,7 @@ static int ett_tpncp;
 static int ett_tpncp_body;
 
 static bool global_tpncp_load_db;
+static const char *tpncp_dat_path = NULL;
 
 static dissector_handle_t tpncp_handle;
 static dissector_handle_t tpncp_tcp_handle;
@@ -129,7 +130,7 @@ static void
 dissect_tpncp_data(unsigned data_id, packet_info *pinfo, tvbuff_t *tvb, proto_tree *ltree,
                    int *offset, tpncp_data_field_info **data_fields_info, int ver, unsigned encoding)
 {
-    int g_str_len;
+    unsigned g_str_len;
     tpncp_data_field_info *field = NULL;
     int bitindex = encoding == ENC_LITTLE_ENDIAN ? 7 : 0;
     enum AddressFamily address_family = TPNCP_IPV4;
@@ -202,7 +203,8 @@ dissect_tpncp_data(unsigned data_id, packet_info *pinfo, tvbuff_t *tvb, proto_tr
         case 5: case 6: case 7: case 8:
             /* add char array */
             if ((g_str_len = field->array_dim)) {
-                g_str_len = MIN(g_str_len, tvb_reported_length_remaining(tvb, *offset));
+                const unsigned remaining = tvb_reported_length_remaining(tvb, *offset);
+                g_str_len = MIN(g_str_len, remaining);
                 proto_tree_add_item(ltree, field->descr, tvb, *offset, g_str_len, ENC_NA | ENC_ASCII);
                 (*offset) += g_str_len;
             } else { /* add single char */
@@ -506,7 +508,7 @@ fill_enums_id_vals(char ***enum_names, value_string ***enum_value_strings, FILE 
 
                 char *enum_name_alloc = wmem_strdup(wmem_epan_scope(), enum_name);
                 wmem_array_append_one(enum_name_arr, enum_name_alloc);
-                g_strlcpy(enum_type, enum_name, sizeof enum_type);
+                (void) g_strlcpy(enum_type, enum_name, sizeof enum_type);
             }
             value_string const vs = {
                 .value  = enum_id,
@@ -726,7 +728,7 @@ init_tpncp_data_fields_info(tpncp_data_field_info ***data_fields_info, unsigned 
             continue;
         }
         data_id = (int) g_ascii_strtoll(tmp, NULL, 10);
-        if ((name = strtok(NULL, " ")) == NULL) {
+        if ((data_id < 0) || ((name = strtok(NULL, " ")) == NULL)) {
             report_failure(
                 "ERROR! Badly formed data base entry: %s - corresponding field's registration is skipped.",
                 entry_copy);
@@ -923,18 +925,29 @@ init_tpncp_data_fields_info(tpncp_data_field_info ***data_fields_info, unsigned 
 
 /*---------------------------------------------------------------------------*/
 
+static FILE *
+open_tpncp_dat(void)
+{
+    char *path_buf = NULL;
+    const char *tpncp_dat_file_path = tpncp_dat_path;
+    FILE *res;
+    if (!*tpncp_dat_file_path) {
+        tpncp_dat_file_path = path_buf = g_build_path(
+            G_DIR_SEPARATOR_S, get_datafile_dir(epan_get_environment_prefix()), "tpncp", "tpncp.dat", NULL);
+    }
+    res = ws_fopen(tpncp_dat_file_path, "r");
+    g_free(path_buf);
+    return res;
+}
+
 static int
 init_tpncp_db(void)
 {
-    char tpncp_dat_file_path[MAX_TPNCP_DB_ENTRY_LEN];
-    FILE *file;
-
-    snprintf(tpncp_dat_file_path, MAX_TPNCP_DB_ENTRY_LEN,
-               "%s" G_DIR_SEPARATOR_S "tpncp" G_DIR_SEPARATOR_S "tpncp.dat", get_datafile_dir());
-
     /* Open file with TPNCP data. */
-    if ((file = ws_fopen(tpncp_dat_file_path, "r")) == NULL)
+    FILE *file = open_tpncp_dat();
+    if (!file) {
         return (-1);
+    }
     fill_tpncp_id_vals(&tpncp_events_id_vals, file);
     fill_tpncp_id_vals(&tpncp_commands_id_vals, file);
     fill_enums_id_vals(&tpncp_enums_name_vals, &tpncp_enums_id_vals, file);
@@ -965,14 +978,16 @@ proto_reg_handoff_tpncp(void)
         dissector_add_uint("acdr.tls_application", TLS_APP_TPNCP, tpncp_handle);
         initialized = true;
     }
+
+    if (!global_tpncp_load_db)
+        return;
+
     /*  If we weren't able to load the database (and thus the hf_ entries)
      *  do not attach to any ports (if we did then we'd get a "dissector bug"
      *  assertions every time a packet is handed to us and we tried to use the
      *  hf_ entry).
-     */
-    if (!global_tpncp_load_db)
-        return;
 
+     */
     if (hf_allocated == 0 && init_tpncp_db() == -1) {
         report_failure("tpncp: Could not load tpncp.dat file, tpncp dissector will not work");
         return;
@@ -1045,6 +1060,11 @@ proto_register_tpncp(void)
                                    " disables the protocol; Wireshark has to be restarted for the"
                                    " setting to take effect.",
                                    &global_tpncp_load_db);
+    prefs_register_filename_preference(tpncp_module, "dat_file",
+                                   "TPNCP data file (tpncp.dat)",
+                                   "Path to tpncp.dat. If empty, the file shipped with Wireshark will be used.\n"
+                                   "Changing the path requires a Wireshark restart to take effect.",
+                                   &tpncp_dat_path, false);
 }
 
 /*

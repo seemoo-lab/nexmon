@@ -17,23 +17,19 @@
 #include "epan/prefs.h"
 #include "epan/addr_resolv.h"
 #include "epan/charsets.h"
-#include "epan/epan_dissect.h"
-#include "epan/tap.h"
 
-#include "ui/alert_box.h"
-#include "ui/simple_dialog.h"
 #include <ui/recent.h>
 #include <wsutil/utf8_entities.h>
 #include <wsutil/ws_assert.h>
 
-#include "wsutil/application_flavor.h"
-#include "wsutil/file_util.h"
 #include "wsutil/str_util.h"
+#include "wsutil/report_message.h"
 
 #include "ws_symbol_export.h"
 
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/utils/qt_ui_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 
 #include "progress_frame.h"
 
@@ -41,12 +37,13 @@
 
 #include <QElapsedTimer>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMutex>
 #include <QPrintDialog>
 #include <QPrinter>
 #include <QScrollBar>
-#include <QTextCodec>
+#include <glib.h>
 
 // To do:
 // - Show text while tapping.
@@ -65,11 +62,13 @@ static bool isReadRunning;
 
 Q_DECLARE_METATYPE(bytes_show_type)
 
-FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int proto_id) :
+FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int proto_id, const QString& previous_filter) :
     WiresharkDialog(parent, cf),
     ui(new Ui::FollowStreamDialog),
     b_find_(NULL),
     follower_(NULL),
+    previous_filter_(previous_filter),
+    follow_filter_(),
     client_buffer_count_(0),
     server_buffer_count_(0),
     client_packet_count_(0),
@@ -111,7 +110,6 @@ FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int pro
     cbcs->addItem(tr("EBCDIC"), SHOW_EBCDIC);
     cbcs->addItem(tr("Hex Dump"), SHOW_HEXDUMP);
     cbcs->addItem(tr("Raw"), SHOW_RAW);
-    // UTF-8 is guaranteed to exist as a QTextCodec
     cbcs->addItem(tr("UTF-8"), SHOW_CODEC);
     cbcs->addItem(tr("YAML"), SHOW_YAML);
     cbcs->setCurrentIndex(cbcs->findData(recent.gui_follow_show));
@@ -119,8 +117,19 @@ FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int pro
 
     ui->deltaComboBox->setCurrentIndex(recent.gui_follow_delta);
 
-    b_filter_out_ = ui->buttonBox->addButton(tr("Filter Out This Stream"), QDialogButtonBox::ActionRole);
-    connect(b_filter_out_, &QPushButton::clicked, this, &FollowStreamDialog::filterOut);
+    QMenu *filter_menu = new QMenu(this);
+    connect(filter_menu, &QMenu::aboutToShow, this, [this, filter_menu]() {
+        this->filterMenuAboutToShow(filter_menu, true);
+    });
+    b_filter_prepare_ = ui->buttonBox->addButton(tr("Prepare as Filter"), QDialogButtonBox::ActionRole);
+    b_filter_prepare_->setMenu(filter_menu);
+
+    filter_menu = new QMenu(this);
+    connect(filter_menu, &QMenu::aboutToShow, this, [this, filter_menu]() {
+        this->filterMenuAboutToShow(filter_menu, false);
+    });
+    b_filter_apply_ = ui->buttonBox->addButton(tr("Apply as Filter"), QDialogButtonBox::ActionRole);
+    b_filter_apply_->setMenu(filter_menu);
 
     b_print_ = ui->buttonBox->addButton(tr("Print"), QDialogButtonBox::ActionRole);
     connect(b_print_, &QPushButton::clicked, this, &FollowStreamDialog::printStream);
@@ -156,6 +165,16 @@ FollowStreamDialog::FollowStreamDialog(QWidget &parent, CaptureFile &cf, int pro
 
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &FollowStreamDialog::buttonBoxRejected);
 
+    // QTextDocument freezes each span's QTextCharFormat at insert time, so a
+    // theme flip cannot retint already-rendered text.  Rebuild the stream
+    // (and the hint, which also embeds theme colors).  No-op until a stream
+    // has actually been followed — readStream short-circuits if follow_info_
+    // is empty.
+    connect(ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
+        readStream();
+        fillHintLabel();
+    });
+
     fillHintLabel();
 }
 
@@ -165,15 +184,15 @@ FollowStreamDialog::~FollowStreamDialog()
     resetStream(); // Frees payload
 }
 
-void FollowStreamDialog::addCodecs(const QMap<QString, QTextCodec *> &codecMap)
+void FollowStreamDialog::addCodecs(const QMap<QString, const char *> &codecMap)
 {
     // Make the combobox respect max visible items?
     //ui->cbCharset->setStyleSheet("QComboBox { combobox-popup: 0;}");
     ui->cbCharset->insertSeparator(ui->cbCharset->count());
-    for (const auto &codec : codecMap) {
-        // This is already in the menu and handled separately
-        if (codec->name() != "US-ASCII" && codec->name() != "UTF-8")
-            ui->cbCharset->addItem(tr(codec->name()), SHOW_CODEC);
+    for (const auto &encoding : codecMap) {
+        QString name = QString::fromUtf8(encoding);
+        if (name != "US-ASCII" && name != "UTF-8")
+            ui->cbCharset->addItem(name, SHOW_CODEC);
     }
 }
 
@@ -187,35 +206,32 @@ void FollowStreamDialog::printStream()
 #endif
 }
 
-void FollowStreamDialog::fillHintLabel(int pkt)
+QString FollowStreamDialog::labelHint(int pkt)
 {
     QString hint;
 
-    if (application_flavor_is_stratoshark())  {
-        if (pkt > 0) {
-            hint = tr("Event %1. ").arg(pkt);
-        }
-
-        hint += tr("%Ln <span style=\"color: %1; background-color:%2\">reads</span>, ", "", client_packet_count_)
-                .arg(ColorUtils::fromColorT(prefs.st_client_fg).name(),
-                ColorUtils::fromColorT(prefs.st_client_bg).name())
-                + tr("%Ln <span style=\"color: %1; background-color:%2\">writes</span>, ", "", server_packet_count_)
-                .arg(ColorUtils::fromColorT(prefs.st_server_fg).name(),
-                ColorUtils::fromColorT(prefs.st_server_bg).name())
-                + tr("%Ln turn(s).", "", turns_);
-    } else {
         if (pkt > 0) {
             hint = tr("Packet %1. ").arg(pkt);
         }
 
+        ThemeManager *tm = ThemeManager::instance();
+        QColor clientBg = tm->color(ThemeManager::ConversationClient);
+        QColor clientFg = tm->color(ThemeManager::ConversationClientText);
+        QColor serverBg = tm->color(ThemeManager::ConversationServer);
+        QColor serverFg = tm->color(ThemeManager::ConversationServerText);
+
         hint += tr("%Ln <span style=\"color: %1; background-color:%2\">client</span> pkt(s), ", "", client_packet_count_)
-                .arg(ColorUtils::fromColorT(prefs.st_client_fg).name(),
-                ColorUtils::fromColorT(prefs.st_client_bg).name())
+                .arg(clientFg.name(), clientBg.name())
                 + tr("%Ln <span style=\"color: %1; background-color:%2\">server</span> pkt(s), ", "", server_packet_count_)
-                .arg(ColorUtils::fromColorT(prefs.st_server_fg).name(),
-                ColorUtils::fromColorT(prefs.st_server_bg).name())
+                .arg(serverFg.name(), serverBg.name())
                 + tr("%Ln turn(s).", "", turns_);
-    }
+
+    return hint;
+}
+
+void FollowStreamDialog::fillHintLabel(int pkt)
+{
+    QString hint = labelHint(pkt);
 
     if (pkt > 0) {
         hint.append(tr(" Click to select."));
@@ -237,6 +253,13 @@ void FollowStreamDialog::goToPacketForTextPos(int pkt)
     }
 }
 
+void FollowStreamDialog::filterMenuAboutToShow(QMenu *menu, bool prepare)
+{
+    menu->clear();
+    QActionGroup * group = FilterAction::createFilterGroup(follow_filter_, prepare, !follow_filter_.isEmpty(), menu);
+    menu->addActions(group->actions());
+}
+
 void FollowStreamDialog::updateWidgets(bool follow_in_progress)
 {
     // XXX: If follow_in_progress set cursor to Qt::BusyCursor or WaitCursor,
@@ -255,7 +278,8 @@ void FollowStreamDialog::updateWidgets(bool follow_in_progress)
     }
     ui->leFind->setEnabled(enable);
     ui->bFind->setEnabled(enable);
-    b_filter_out_->setEnabled(enable);
+    b_filter_prepare_->setEnabled(enable);
+    b_filter_apply_->setEnabled(enable);
     b_print_->setEnabled(enable);
     b_save_->setEnabled(enable);
 
@@ -316,7 +340,7 @@ void FollowStreamDialog::saveAs()
 
     QFile file(file_name);
     if (!file.open(QIODevice::WriteOnly)) {
-        open_failure_alert_box(file_name.toUtf8().constData(), errno, true);
+        report_open_failure(file_name.toUtf8().constData(), errno, true);
         return;
     }
 
@@ -349,23 +373,12 @@ void FollowStreamDialog::backButton()
     close();
 }
 
-void FollowStreamDialog::filterOut()
-{
-    if (terminating_)
-        return;
-
-    output_filter_ = filter_out_filter_;
-
-    close();
-}
-
 void FollowStreamDialog::close()
 {
     terminating_ = true;
 
     // Update filter - Use:
-    //     previous_filter if 'Close' (passed in follow() method)
-    //     filter_out_filter_ if 'Filter Out This Stream' (built by appending !current_stream to previous_filter)
+    //     previous_filter if 'Back' (passed in constructor)
     //     leave filter alone if window closed. (current stream)
     emit updateFilter(output_filter_, true);
 
@@ -477,7 +490,7 @@ void FollowStreamDialog::streamNumberSpinBoxValueChanged(int stream_num)
     }
 
     if (stream_num >= 0 && ok) {
-        follow(previous_filter_, true, stream_num, sub_stream_num);
+        follow(true, stream_num, sub_stream_num);
         previous_sub_stream_num_ = sub_stream_num;
     }
 }
@@ -516,7 +529,7 @@ void FollowStreamDialog::subStreamNumberSpinBoxValueChanged(int sub_stream_num)
     sub_stream_num = static_cast<int>(sub_stream_num_new);
 
     if (ok) {
-        follow(previous_filter_, true, stream_num, sub_stream_num);
+        follow(true, stream_num, sub_stream_num);
         previous_sub_stream_num_ = sub_stream_num;
     }
 }
@@ -673,11 +686,7 @@ void FollowStreamDialog::keyPressEvent(QKeyEvent *event)
 // Causes buffer to detach/deep copy *only* if a character has to be
 // replaced.
 static inline void sanitize_buffer(QByteArray &buffer, size_t nchars) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    for (int i = 0; i < (int)nchars; i++) {
-#else
     for (qsizetype i = 0; i < (qsizetype)nchars; i++) {
-#endif
         if (buffer.at(i) == '\n' || buffer.at(i) == '\r' || buffer.at(i) == '\t')
             continue;
         if (! g_ascii_isprint((unsigned char)buffer.at(i))) {
@@ -757,10 +766,16 @@ void FollowStreamDialog::showBuffer(QByteArray &buffer, size_t nchars, bool is_f
         // This assumes that multibyte characters don't span packets in the
         // stream. To handle that case properly (which might occur with fixed
         // block sizes, e.g. transferring over TFTP, we would need to create
-        // two stateful QTextDecoders, one for each direction, presumably in
-        // on_cbCharset_currentIndexChanged()
-        QTextCodec *codec = QTextCodec::codecForName(ui->cbCharset->currentText().toUtf8());
-        addText(codec->toUnicode(buffer), is_from_server, packet_num);
+        // two stateful decoders, one for each direction.
+        QByteArray encName = ui->cbCharset->currentText().toUtf8();
+        wmem_strbuf_t *utf8 = get_strbuf_enc_iconv(NULL,
+                                             (const uint8_t *)buffer.constData(),
+                                             buffer.size(),
+                                             encName.constData());
+        if (utf8) {
+            addText(QString::fromUtf8(utf8->str, utf8->len), is_from_server, packet_num);
+            wmem_strbuf_destroy(utf8);
+        }
         break;
     }
 
@@ -952,14 +967,68 @@ DIAG_ON(stringop-overread)
     }
 }
 
-bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, unsigned stream_num, unsigned sub_stream_num)
+QString FollowStreamDialog::serverToClientString() const
 {
-    QString             follow_filter;
-    const char          *hostname0 = NULL, *hostname1 = NULL;
-    char                *port0 = NULL, *port1 = NULL;
-    QString             server_to_client_string;
-    QString             client_to_server_string;
-    QString             both_directions_string;
+    const char* hostname0 = NULL, * hostname1 = NULL;
+    char* port0 = NULL, * port1 = NULL;
+    QString ret;
+
+    hostname0 = address_to_name(&follow_info_.client_ip);
+    hostname1 = address_to_name(&follow_info_.server_ip);
+
+    port0 = get_follow_port_to_display(follower_)(NULL, follow_info_.client_port);
+    port1 = get_follow_port_to_display(follower_)(NULL, follow_info_.server_port);
+
+    ret = QStringLiteral("%1:%2 %3 %4:%5 (%6)")
+        .arg(hostname0, port0)
+        .arg(UTF8_RIGHTWARDS_ARROW)
+        .arg(hostname1, port1)
+        .arg(gchar_free_to_qstring(format_size(
+            follow_info_.bytes_written[0],
+            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
+
+    wmem_free(NULL, port0);
+    wmem_free(NULL, port1);
+
+    return ret;
+}
+
+QString FollowStreamDialog::clientToServerString() const
+{
+    const char *hostname0 = NULL, *hostname1 = NULL;
+    char *port0 = NULL, *port1 = NULL;
+    QString ret;
+
+    hostname0 = address_to_name(&follow_info_.client_ip);
+    hostname1 = address_to_name(&follow_info_.server_ip);
+
+    port0 = get_follow_port_to_display(follower_)(NULL, follow_info_.client_port);
+    port1 = get_follow_port_to_display(follower_)(NULL, follow_info_.server_port);
+
+    ret = QStringLiteral("%1:%2 %3 %4:%5 (%6)")
+        .arg(hostname1, port1)
+        .arg(UTF8_RIGHTWARDS_ARROW)
+        .arg(hostname0, port0)
+        .arg(gchar_free_to_qstring(format_size(
+            follow_info_.bytes_written[1],
+            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
+
+    wmem_free(NULL, port0);
+    wmem_free(NULL, port1);
+
+    return ret;
+}
+
+QString FollowStreamDialog::bothDirectionsString() const
+{
+    return tr("Entire conversation (%1)")
+        .arg(gchar_free_to_qstring(format_size(
+            follow_info_.bytes_written[0] + follow_info_.bytes_written[1],
+            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
+}
+
+bool FollowStreamDialog::follow(bool use_stream_index, unsigned stream_num, unsigned sub_stream_num)
+{
     bool                is_follower = false;
     int                 stream_count;
     follow_stream_count_func stream_count_func = NULL;
@@ -987,11 +1056,11 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, 
     /* Create a new filter that matches all packets in the TCP stream,
         and set the display filter entry accordingly */
     if (use_stream_index) {
-        follow_filter = gchar_free_to_qstring(get_follow_index_func(follower_)(stream_num, sub_stream_num));
+        follow_filter_ = gchar_free_to_qstring(get_follow_index_func(follower_)(stream_num, sub_stream_num));
     } else {
-        follow_filter = gchar_free_to_qstring(get_follow_conv_func(follower_)(cap_file_.capFile()->edt, &cap_file_.capFile()->edt->pi, &stream_num, &sub_stream_num));
+        follow_filter_ = gchar_free_to_qstring(get_follow_conv_func(follower_)(cap_file_.capFile()->edt, &cap_file_.capFile()->edt->pi, &stream_num, &sub_stream_num));
     }
-    if (follow_filter.isEmpty()) {
+    if (follow_filter_.isEmpty()) {
         // XXX: This error probably has to do with tunneling (#18231), where
         // the addresses or ports changed after the TCP or UDP layer.
         // (The appropriate layer must be present, or else the GUI
@@ -1002,22 +1071,12 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, 
         return false;
     }
 
-    previous_filter_ = previous_filter;
-    /* append the negation */
-    if (!previous_filter.isEmpty()) {
-        filter_out_filter_ = QStringLiteral("%1 and !(%2)")
-                .arg(previous_filter, follow_filter);
-    }
-    else
-    {
-        filter_out_filter_ = QStringLiteral("!(%1)").arg(follow_filter);
-    }
-
+    follow_info_.stream_id = stream_num;
     follow_info_.substream_id = sub_stream_num;
 
     /* data will be passed via tap callback*/
     if (!registerTapListener(get_follow_tap_string(follower_), &follow_info_,
-                                follow_filter.toUtf8().constData(),
+                                follow_filter_.toUtf8().constData(),
                                 0, FollowStreamDialog::resetStream,
                                 get_follow_tap_handler(follower_), NULL)) {
         return false;
@@ -1053,6 +1112,8 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, 
         ui->subStreamNumberSpinBox->setVisible(true);
         ui->subStreamNumberLabel->setVisible(true);
     } else {
+        follow_info_.substream_id = SUBSTREAM_UNUSED;
+
         /* disable substream spin box for protocols without substreams */
         ui->subStreamNumberSpinBox->blockSignals(true);
         ui->subStreamNumberSpinBox->setEnabled(false);
@@ -1063,105 +1124,34 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index, 
         ui->subStreamNumberLabel->setVisible(false);
     }
 
-    beginRetapPackets();
     updateWidgets(true);
 
-    /* Run the display filter so it goes in effect - even if it's the
-       same as the previous display filter. */
-    /* XXX: This forces a cf_filter_packets() - but if a rescan (or something else
-     * that sets cf->read_lock) is in progress, this will queue the filter
-     * and return immediately. It will also cause a rescan in progress to
-     * stop and restart with the new filter. That also applies to this rescan;
-     * changing the main display filter (from the main window, or from, e.g.
-     * another FollowStreamDialog) will cause this to restart and reset the
-     * tap.
-     *
-     * Other tapping dialogs call cf_retap_packets (which retaps but doesn't
-     * set the main display filter, freeze the packet list, etc.), which
-     * has somewhat different behavior when another dialog tries to retap,
-     * but also results in the taps being reset mid tap.
-     *
-     * Either way, we should be event driven and listening for CaptureEvents
-     * instead of drawing after this returns. (Or like other taps, draw
-     * periodically in a callback, provided that can be done without causing
-     * issues with changing the Decode As type.)
-     */
-    emit updateFilter(follow_filter, true);
-
-    removeTapListeners();
-
-    if (application_flavor_is_stratoshark())  {
-        server_to_client_string =
-                tr("Read activity(%6)")
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[0],
-                                            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-
-        client_to_server_string =
-                tr("Write activity(%6)")
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[1],
-                                            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-
-        both_directions_string = tr("Entire I/O activity (%1)")
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[0] + follow_info_.bytes_written[1],
-                        FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-    } else {
-        hostname0 = address_to_name(&follow_info_.client_ip);
-        hostname1 = address_to_name(&follow_info_.server_ip);
-
-        port0 = get_follow_port_to_display(follower_)(NULL, follow_info_.client_port);
-        port1 = get_follow_port_to_display(follower_)(NULL, follow_info_.server_port);
-
-        server_to_client_string =
-                QStringLiteral("%1:%2 %3 %4:%5 (%6)")
-                .arg(hostname0, port0)
-                .arg(UTF8_RIGHTWARDS_ARROW)
-                .arg(hostname1, port1)
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[0],
-                                            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-
-        client_to_server_string =
-                QStringLiteral("%1:%2 %3 %4:%5 (%6)")
-                .arg(hostname1, port1)
-                .arg(UTF8_RIGHTWARDS_ARROW)
-                .arg(hostname0, port0)
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[1],
-                                            FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-
-        wmem_free(NULL, port0);
-        wmem_free(NULL, port1);
-
-        both_directions_string = tr("Entire conversation (%1)")
-                .arg(gchar_free_to_qstring(format_size(
-                                                follow_info_.bytes_written[0] + follow_info_.bytes_written[1],
-                        FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI)));
-    }
-
     setWindowSubtitle(tr("Follow %1 Stream (%2)").arg(proto_get_protocol_short_name(find_protocol_by_id(get_follow_proto_id(follower_))),
-                                                follow_filter));
-
-    ui->cbDirections->blockSignals(true);
-    ui->cbDirections->clear();
-    ui->cbDirections->addItem(both_directions_string);
-    ui->cbDirections->addItem(client_to_server_string);
-    ui->cbDirections->addItem(server_to_client_string);
-    ui->cbDirections->blockSignals(false);
-
-    followStream();
-    fillHintLabel();
-
-    updateWidgets(false);
-    endRetapPackets();
-
-    if (prefs.restore_filter_after_following_stream) {
-        emit updateFilter(previous_filter_, true);
-    }
+                                                follow_filter_));
+    cap_file_.retapPackets();
 
     return true;
+}
+
+void FollowStreamDialog::endRetapPackets()
+{
+    if (listening()) {
+        removeTapListeners();
+
+        ui->cbDirections->blockSignals(true);
+        ui->cbDirections->clear();
+        ui->cbDirections->addItem(bothDirectionsString());
+        ui->cbDirections->addItem(clientToServerString());
+        ui->cbDirections->addItem(serverToClientString());
+        ui->cbDirections->blockSignals(false);
+
+        followStream();
+        fillHintLabel();
+
+        updateWidgets(false);
+    }
+
+    WiresharkDialog::endRetapPackets();
 }
 
 void FollowStreamDialog::captureFileClosed()

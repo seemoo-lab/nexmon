@@ -38,6 +38,7 @@
 #include <epan/prefs.h>
 #include <epan/conversation.h>
 #include <epan/crc32-tvb.h>
+#include <epan/expert.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
 #include "packet-tcp.h"
@@ -51,13 +52,16 @@ static dissector_handle_t nvmet_tls_handle;
 
 #define NVME_TCP_PORT_RANGE    "4420,8009" /* IANA registered */
 
-#define NVME_FABRICS_TCP "NVMe/TCP"
 #define NVME_TCP_HEADER_SIZE 8
 #define PDU_LEN_OFFSET_FROM_HEADER 4
 static range_t *gPORT_RANGE;
 static bool nvme_tcp_check_hdgst;
 static bool nvme_tcp_check_ddgst;
 #define NVME_TCP_DATA_PDU_SIZE 24
+/* H2CTermReq/C2HTermReq header: the 8-byte common header, FES at offset 8,
+ * FEI at offset 10 and reserved bytes out to offset 24, where the terminated
+ * PDU's header starts. */
+#define NVME_TCP_TERMREQ_PDU_SIZE 24
 
 enum nvme_tcp_pdu_type {
     nvme_tcp_icreq = 0x0,
@@ -217,6 +221,8 @@ static int hf_nvme_tcp_data_pdu_data_resvd;
 
 static int ett_nvme_tcp;
 
+static expert_field ei_nvme_tcp_termreq_short;
+
 static unsigned
 get_nvme_tcp_pdu_len(packet_info *pinfo _U_,
                      tvbuff_t *tvb,
@@ -319,8 +325,8 @@ dissect_nvme_tcp_command(tvbuff_t *tvb,
     cmd_id = tvb_get_uint16(tvb, offset + 2, ENC_LITTLE_ENDIAN);
     cmd_ctx = bind_cmd_to_qctx(pinfo, &queue->n_q_ctx, cmd_id);
 
-    /* if record did not contain connect command we wont know qid,
-     * so lets guess if this is an admin queue */
+    /* if record did not contain connect command we won't know qid,
+     * so let's guess if this is an admin queue */
     if ((queue->n_q_ctx.qid == UINT16_MAX) && !nvme_is_io_queue_opcode(opcode))
         queue->n_q_ctx.qid = 0;
 
@@ -579,6 +585,16 @@ dissect_nvme_tcp_h2ctermreq(tvbuff_t *tvb, packet_info *pinfo,
                              tvb, offset, 8, ENC_NA);
     h2ctermreq_tree = proto_item_add_subtree(tf, ett_nvme_tcp);
 
+    /* tcp_dissect_pdus() only guarantees PLEN >= NVME_TCP_HEADER_SIZE, so a
+     * short PLEN would underflow the trailing data length below. */
+    if (packet_len < NVME_TCP_TERMREQ_PDU_SIZE) {
+        proto_tree_add_expert_format_remaining(h2ctermreq_tree, pinfo,
+                &ei_nvme_tcp_termreq_short, tvb, offset,
+                "PDU length %u is shorter than the %u byte Termination Request header",
+                packet_len, NVME_TCP_TERMREQ_PDU_SIZE);
+        return;
+    }
+
     proto_tree_add_item(h2ctermreq_tree, hf_nvme_tcp_h2ctermreq_fes,
                         tvb, offset + 8, 2, ENC_LITTLE_ENDIAN);
     fes = tvb_get_uint16(tvb, offset + 8, ENC_LITTLE_ENDIAN);
@@ -601,7 +617,8 @@ dissect_nvme_tcp_h2ctermreq(tvbuff_t *tvb, packet_info *pinfo,
         break;
     }
     proto_tree_add_item(h2ctermreq_tree, hf_nvme_tcp_h2ctermreq_data,
-                        tvb, offset + 24, packet_len - 24, ENC_NA);
+                        tvb, offset + NVME_TCP_TERMREQ_PDU_SIZE,
+                        packet_len - NVME_TCP_TERMREQ_PDU_SIZE, ENC_NA);
 }
 
 static void
@@ -617,6 +634,16 @@ dissect_nvme_tcp_c2htermreq(tvbuff_t *tvb, packet_info *pinfo,
     tf = proto_tree_add_item(tree, hf_nvme_tcp_c2htermreq,
                              tvb, offset, 8, ENC_NA);
     c2htermreq_tree = proto_item_add_subtree(tf, ett_nvme_tcp);
+
+    /* tcp_dissect_pdus() only guarantees PLEN >= NVME_TCP_HEADER_SIZE, so a
+     * short PLEN would underflow the trailing data length below. */
+    if (packet_len < NVME_TCP_TERMREQ_PDU_SIZE) {
+        proto_tree_add_expert_format_remaining(c2htermreq_tree, pinfo,
+                &ei_nvme_tcp_termreq_short, tvb, offset,
+                "PDU length %u is shorter than the %u byte Termination Request header",
+                packet_len, NVME_TCP_TERMREQ_PDU_SIZE);
+        return;
+    }
 
     proto_tree_add_item(tree, hf_nvme_tcp_c2htermreq_fes, tvb, offset + 8, 2,
                         ENC_LITTLE_ENDIAN);
@@ -640,7 +667,8 @@ dissect_nvme_tcp_c2htermreq(tvbuff_t *tvb, packet_info *pinfo,
         break;
     }
     proto_tree_add_item(c2htermreq_tree, hf_nvme_tcp_c2htermreq_data,
-                        tvb, offset + 24, packet_len - 24, ENC_NA);
+                        tvb, offset + NVME_TCP_TERMREQ_PDU_SIZE,
+                        packet_len - NVME_TCP_TERMREQ_PDU_SIZE, ENC_NA);
 }
 
 static void
@@ -742,7 +770,7 @@ dissect_nvme_tcp_pdu(tvbuff_t *tvb,
     conversation_t *conversation;
     struct nvme_tcp_q_ctx *q_ctx;
     proto_item *ti;
-    int offset = 0;
+    unsigned offset = 0;
     int nvme_tcp_pdu_offset;
     proto_tree *nvme_tcp_tree;
     unsigned packet_type;
@@ -784,17 +812,16 @@ dissect_nvme_tcp_pdu(tvbuff_t *tvb,
     proto_tree_add_bitmask_value(nvme_tcp_tree, tvb, offset + 1, hf_nvme_tcp_flags,
             ett_nvme_tcp, nvme_tcp_pdu_flags, (uint64_t)pdu_flags);
 
-    hlen = tvb_get_int8(tvb, offset + 2);
+    hlen = tvb_get_uint8(tvb, offset + 2);
     proto_tree_add_item(nvme_tcp_tree, hf_nvme_tcp_hlen, tvb, offset + 2, 1,
             ENC_NA);
 
-    pdo = tvb_get_int8(tvb, offset + 3);
+    pdo = tvb_get_uint8(tvb, offset + 3);
     proto_tree_add_uint(nvme_tcp_tree, hf_nvme_tcp_pdo, tvb, offset + 3, 1,
             pdo);
-    plen = tvb_get_letohl(tvb, offset + 4);
-    proto_tree_add_item(nvme_tcp_tree, hf_nvme_tcp_plen, tvb, offset + 4, 4,
-            ENC_LITTLE_ENDIAN);
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, NVME_FABRICS_TCP);
+    proto_tree_add_item_ret_uint(nvme_tcp_tree, hf_nvme_tcp_plen, tvb, offset + 4, 4,
+            ENC_LITTLE_ENDIAN, &plen);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "NVMe/TCP");
 
     if (pdu_flags & NVME_TCP_F_HDGST) {
         unsigned hdgst_flags = PROTO_CHECKSUM_NO_FLAGS;
@@ -897,7 +924,7 @@ dissect_nvme_tcp(tvbuff_t *tvb,
                  void *data)
 {
     col_clear(pinfo->cinfo, COL_INFO);
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, NVME_FABRICS_TCP);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "NVMe/TCP");
     tcp_dissect_pdus(tvb, pinfo, tree, true, NVME_TCP_HEADER_SIZE,
             get_nvme_tcp_pdu_len, dissect_nvme_tcp_pdu, data);
 
@@ -1147,11 +1174,22 @@ void proto_register_nvme_tcp(void) {
         &ett_nvme_tcp
     };
 
+    static ei_register_info ei[] = {
+        { &ei_nvme_tcp_termreq_short,
+            { "nvme-tcp.termreq_too_short", PI_MALFORMED, PI_ERROR,
+              "Termination Request PDU is shorter than its header", EXPFILL } },
+    };
+
+    expert_module_t *expert_nvme_tcp;
+
     proto_nvme_tcp = proto_register_protocol("NVM Express Fabrics TCP",
-            NVME_FABRICS_TCP, "nvme-tcp");
+            "NVMe/TCP", "nvme-tcp");
 
     proto_register_field_array(proto_nvme_tcp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    expert_nvme_tcp = expert_register_protocol(proto_nvme_tcp);
+    expert_register_field_array(expert_nvme_tcp, ei, array_length(ei));
 
     /* These names actually work for their purpose. Note if we're already
      * over TLS we don't need to do heuristics (it can't be more TLS instead

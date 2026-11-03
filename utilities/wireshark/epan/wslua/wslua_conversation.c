@@ -107,9 +107,70 @@ WSLUA_METAMETHOD Conversation__eq(lua_State *L) { /* Compares two Conversation o
     WSLUA_RETURN(1); /* True if both objects refer to the same underlying conversation structure. False otherwise. */
 }
 
+/* Map a conversation_type back to the trailing component of the
+ * convtypes.* string used by convtype_enums above (e.g. "TCP" for
+ * CONVERSATION_TCP). Returns "?" if the value is not in the table. */
+static const char *convtype_to_short_str(conversation_type t) {
+    for (const wslua_conv_types_t *e = convtype_enums; e->str; e++) {
+        if (e->id == t) {
+            const char *dot = strchr(e->str, '.');
+            return dot ? dot + 1 : e->str;
+        }
+    }
+    return "?";
+}
+
 WSLUA_METAMETHOD Conversation__tostring(lua_State *L) {
+    /* Returns a short label of the form
+       `Conversation: id=<idx> src=<addr1>:<port1>
+       dst=<addr2>:<port2> type=<convtype>`. Replaces the previous
+       pointer-leaking `Conversation object (0x...)` rendering. The
+       endpoints are labelled src/dst to match Pinfo's rendering,
+       even though Conversation itself is directionless; addr1/addr2
+       follow the order in the underlying conversation key.
+       Addresses default to `?` and ports are omitted when zero
+       (matching the wildcard options exposed by Conversation.find).
+       The convtype is the trailing component of the matching
+       `convtypes.*` enum (e.g. `TCP`, `UDP`); see convtype_enums
+       above. */
     Conversation conv = checkConversation(L,1);
-    lua_pushfstring(L, "Conversation object (%p)", conv);
+    if (!conv) {
+        lua_pushstring(L, "Conversation: (null)");
+        WSLUA_RETURN(1);
+    }
+
+    conversation_type ctype = CONVERSATION_NONE;
+    if (conv->key_ptr) {
+        for (conversation_element_t *e = conv->key_ptr; ; e++) {
+            if (e->type == CE_CONVERSATION_TYPE) {
+                ctype = e->conversation_type_val;
+                break;
+            }
+        }
+    }
+
+    const address *a1 = conv->key_ptr ? conversation_key_addr1(conv->key_ptr) : NULL;
+    const address *a2 = conv->key_ptr ? conversation_key_addr2(conv->key_ptr) : NULL;
+    uint32_t p1 = conv->key_ptr ? conversation_key_port1(conv->key_ptr) : 0;
+    uint32_t p2 = conv->key_ptr ? conversation_key_port2(conv->key_ptr) : 0;
+
+    char *a1s = a1 ? address_to_display(NULL, a1) : NULL;
+    char *a2s = a2 ? address_to_display(NULL, a2) : NULL;
+
+    GString *ep1 = g_string_new(a1s ? a1s : "?");
+    if (p1) g_string_append_printf(ep1, ":%u", (unsigned)p1);
+    GString *ep2 = g_string_new(a2s ? a2s : "?");
+    if (p2) g_string_append_printf(ep2, ":%u", (unsigned)p2);
+
+    lua_pushfstring(L, "Conversation: id=%d src=%s dst=%s type=%s",
+                    (int)conv->conv_index, ep1->str, ep2->str,
+                    convtype_to_short_str(ctype));
+
+    g_string_free(ep1, TRUE);
+    g_string_free(ep2, TRUE);
+    wmem_free(NULL, a1s);
+    wmem_free(NULL, a2s);
+
     WSLUA_RETURN(1); /* A string representation of the object. */
 }
 

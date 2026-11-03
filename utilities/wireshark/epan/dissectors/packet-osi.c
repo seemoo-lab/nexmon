@@ -16,15 +16,14 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include <epan/llcsaps.h>
 #include <epan/aftypes.h>
-#include <epan/nlpid.h>
-#include <epan/ppptypes.h>
-#include <epan/chdlctypes.h>
-#include <epan/ipproto.h>
+#include <epan/iana-info.h>
 #include "packet-osi.h"
+#include "packet-ppp.h"
 #include "packet-tpkt.h"
 #include "packet-juniper.h"
+#include "packet-llc.h"
+#include "packet-chdlc.h"
 
 void proto_reg_handoff_osi(void);
 void proto_register_osi(void);
@@ -96,8 +95,8 @@ osi_check_and_get_checksum( tvbuff_t *tvb, int offset, unsigned len, int offset_
   int           block, x, y;
 
   /* Make sure the checksum is part of the data being checksummed. */
-  DISSECTOR_ASSERT(offset_check >= offset);
-  DISSECTOR_ASSERT((unsigned)offset_check + 2 <= (unsigned)offset + len);
+  if ((offset_check < offset) || ((unsigned)offset_check + 2 > (unsigned)offset + len))
+    return false;
 
   /*
    * If we don't have all the data to be checksummed, report that and don't
@@ -505,7 +504,7 @@ proto_reg_handoff_osi(void)
   dissector_add_uint("chdlc.protocol", CHDLCTYPE_OSI, osi_handle);
   dissector_add_uint("null.type", BSD_AF_ISO, osi_handle);
   dissector_add_uint("gre.proto", SAP_OSINL5, osi_handle);
-  dissector_add_uint("ip.proto", IP_PROTO_ISOIP, osi_handle); /* ISO network layer PDUs [RFC 1070] */
+  dissector_add_uint("ip.proto", IP_PROTO_ISO_IP, osi_handle); /* ISO network layer PDUs [RFC 1070] */
 
   dissector_add_uint("juniper.proto", JUNIPER_PROTO_ISO, osi_juniper_handle);
   dissector_add_uint("juniper.proto", JUNIPER_PROTO_CLNP, osi_juniper_handle);

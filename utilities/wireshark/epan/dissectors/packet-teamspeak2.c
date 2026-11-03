@@ -300,7 +300,7 @@ static reassembly_table msg_reassembly_table;
 /* forward reference */
 static void ts2_add_checked_crc32(proto_tree *tree, int hf_item, int hf_item_status, expert_field* ei_item, tvbuff_t *tvb, packet_info *pinfo, uint16_t offset);
 static void ts2_parse_playerlist(tvbuff_t *tvb, proto_tree *ts2_tree);
-static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree, wmem_allocator_t *pool);
+static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_newplayerjoined(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_knownplayerupdate(tvbuff_t *tvb, proto_tree *ts2_tree);
 static void ts2_parse_playerleft(tvbuff_t *tvb, proto_tree *ts2_tree);
@@ -453,7 +453,7 @@ static void ts2_standard_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
                 ts2_parse_loginpart2(next_tvb, ts2_tree);
                 break;
             case TS2T_CHANNELLIST:
-                ts2_parse_channellist(next_tvb, ts2_tree, pinfo->pool);
+                ts2_parse_channellist(next_tvb, ts2_tree);
                 break;
             case TS2T_PLAYERLIST:
                 ts2_parse_playerlist(next_tvb, ts2_tree);
@@ -589,10 +589,10 @@ static void ts2_parse_loginpart2(tvbuff_t *tvb, proto_tree *ts2_tree)
 
 }
 /* Parses a ts2 channel list (TS2T_CHANNELLIST) and adds it to the tree */
-static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree, wmem_allocator_t *pool)
+static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    int32_t offset;
-    uint32_t string_len;
+    uint32_t offset;
+    unsigned string_len;
     proto_tree    *subtree;
     proto_item    *item;
 
@@ -624,14 +624,11 @@ static void ts2_parse_channellist(tvbuff_t *tvb, proto_tree *ts2_tree, wmem_allo
         offset+=2;
         proto_tree_add_item(ts2_tree, hf_ts2_max_users, tvb, offset, 2, ENC_LITTLE_ENDIAN);
         offset+=2;
-        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_name, tvb, offset, string_len, ENC_ASCII);
+        proto_tree_add_item_ret_length(ts2_tree, hf_ts2_channel_name, tvb, offset, -1, ENC_ASCII, &string_len);
         offset+=string_len;
-        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_topic, tvb, offset, string_len, ENC_ASCII);
+        proto_tree_add_item_ret_length(ts2_tree, hf_ts2_channel_topic, tvb, offset, -1, ENC_ASCII, &string_len);
         offset+=string_len;
-        tvb_get_stringz_enc(pool, tvb, offset, &string_len, ENC_ASCII);
-        proto_tree_add_item(ts2_tree, hf_ts2_channel_description, tvb, offset, string_len, ENC_ASCII);
+        proto_tree_add_item_ret_length(ts2_tree, hf_ts2_channel_description, tvb, offset, -1, ENC_ASCII, &string_len);
         offset+=string_len;
     }
 }
@@ -649,13 +646,11 @@ static void ts2_add_statusflags(tvbuff_t *tvb, proto_tree *ts2_tree, uint32_t of
 /* Parses a ts2 player list (TS2T_PLAYERLIST) and adds it to the tree */
 static void ts2_parse_playerlist(tvbuff_t *tvb, proto_tree *ts2_tree)
 {
-    int32_t offset;
-    int32_t number_of_players;
-    int32_t x;
+    uint32_t offset;
+    uint32_t number_of_players;
+    uint32_t x=0;
     offset=0;
-    x=0;
-    proto_tree_add_item(ts2_tree, hf_ts2_number_of_players, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-    number_of_players = tvb_get_letohl(tvb, 0);
+    proto_tree_add_item_ret_uint(ts2_tree, hf_ts2_number_of_players, tvb, offset, 4, ENC_LITTLE_ENDIAN, &number_of_players);
     offset+=4;
     while(offset<tvb_reported_length_remaining(tvb, 0) && x<number_of_players)
     {

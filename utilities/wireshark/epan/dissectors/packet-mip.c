@@ -478,12 +478,11 @@ static dissector_handle_t ip_handle;
 static int
 dissect_mip_priv_ext_3gpp2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-  int offset = 0;
+  unsigned offset = 0;
   uint16_t type;
-  int length = tvb_reported_length(tvb);
+  unsigned length = tvb_reported_length(tvb);
 
-  type = tvb_get_ntohs(tvb,offset);
-  proto_tree_add_item(tree, hf_mip_nvse_3gpp2_type, tvb, offset, 2, ENC_BIG_ENDIAN);
+  proto_tree_add_item_ret_uint16(tree, hf_mip_nvse_3gpp2_type, tvb, offset, 2, ENC_BIG_ENDIAN, &type);
   offset+=2;
 
   switch(type){
@@ -513,7 +512,7 @@ dissect_mip_priv_ext_3gpp2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
     proto_tree_add_item(tree, hf_mip_nvse_3gpp2_type17_sec_dns, tvb, offset, 4, ENC_BIG_ENDIAN);
     break;
   default:
-    proto_tree_add_expert(tree, pinfo, &ei_mip_data_not_dissected, tvb, offset, -1);
+    proto_tree_add_expert_remaining(tree, pinfo, &ei_mip_data_not_dissected, tvb, offset);
     break;
   }
 
@@ -522,21 +521,21 @@ dissect_mip_priv_ext_3gpp2(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 
 /* Code to dissect extensions */
 static void
-dissect_mip_extensions( tvbuff_t *tvb, int offset, proto_tree *tree, packet_info *pinfo)
+dissect_mip_extensions( tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo)
 {
   proto_tree   *exts_tree=NULL;
   proto_tree   *ext_tree;
   proto_tree   *pmipv4_tree;
-  int           ext_len;
+  unsigned      ext_len;
   uint8_t       ext_type;
   uint8_t       ext_subtype=0;
   uint8_t       pmipv4skipext_subscriberid_type;
-  int           hdrLen;
+  unsigned      hdrLen;
   uint32_t      cvse_vendor_id;
   uint16_t      cvse_3gpp2_type;
-  int           cvse_local_offset= 0;
-  int           nvse_local_offset= 0;
-  int           mne_local_offset= 0;
+  unsigned      cvse_local_offset= 0;
+  unsigned      nvse_local_offset= 0;
+  unsigned      mne_local_offset= 0;
 
   /* Add our tree, if we have extensions */
   exts_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_mip_exts, NULL, "Extensions");
@@ -771,8 +770,7 @@ dissect_mip_extensions( tvbuff_t *tvb, int offset, proto_tree *tree, packet_info
           /* Vendor/Org ID */
           /*Vendor ID & nvse type & nvse value are included in ext_len, so do not increment offset for them here.*/
           nvse_local_offset = offset + hdrLen;
-          nvse_vendor_org_id = tvb_get_ntohl(tvb, nvse_local_offset);
-          proto_tree_add_item(ext_tree, hf_mip_nvse_vendor_org_id, tvb, nvse_local_offset, 4, ENC_BIG_ENDIAN);
+          proto_tree_add_item_ret_uint(ext_tree, hf_mip_nvse_vendor_org_id, tvb, nvse_local_offset, 4, ENC_BIG_ENDIAN, &nvse_vendor_org_id);
           nvse_local_offset+=4;
 
           next_tvb = tvb_new_subset_length(tvb, nvse_local_offset, ext_len-6);
@@ -792,8 +790,7 @@ dissect_mip_extensions( tvbuff_t *tvb, int offset, proto_tree *tree, packet_info
       {
         uint8_t sub_type;
 
-        sub_type = tvb_get_uint8(tvb, offset);
-        proto_tree_add_item(ext_tree, hf_mip_mne_sub_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(ext_tree, hf_mip_mne_sub_type, tvb, offset, 1, ENC_BIG_ENDIAN, &sub_type);
         mne_local_offset = offset+1;
         switch (sub_type) {
         case 0:
@@ -810,7 +807,7 @@ dissect_mip_extensions( tvbuff_t *tvb, int offset, proto_tree *tree, packet_info
           mne_local_offset++;
           break;
         default:
-          proto_tree_add_expert_format(ext_tree, pinfo, &ei_mip_data_not_dissected, tvb, offset, -1, "Unable to decode (Unknown Sub-Type)");
+          proto_tree_add_expert_format_remaining(ext_tree, pinfo, &ei_mip_data_not_dissected, tvb, offset, "Unable to decode (Unknown Sub-Type)");
           return;
         }
         proto_tree_add_item(ext_tree, hf_mip_mne_prefix, tvb, mne_local_offset, 4, ENC_BIG_ENDIAN);
@@ -837,7 +834,7 @@ dissect_mip( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   proto_item    *ti;
   proto_tree    *mip_tree=NULL;
   uint8_t        type;
-  int            offset=0;
+  unsigned       offset=0;
   tvbuff_t      *next_tvb;
 
   /* Make entries in Protocol column and Info column on summary display */

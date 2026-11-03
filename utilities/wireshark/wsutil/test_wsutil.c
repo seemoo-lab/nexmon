@@ -14,8 +14,207 @@
 #include <wsutil/utf8_entities.h>
 #include <wsutil/time_util.h>
 #include <wsutil/to_str.h>
+#include <wsutil/saplzclzh.h>
 
 #include "inet_addr.h"
+
+#ifdef HAVE_ZSTD
+#include <errno.h>
+#include <limits.h>
+#include <zstd.h>
+#include <wsutil/file_compressed.h>
+#include <wsutil/file_util.h>
+
+static void
+test_zstd_writer(void)
+{
+    char *path = NULL;
+    int fd = g_file_open_tmp("wireshark-zstd-XXXXXX", &path, NULL);
+    g_assert_cmpint(fd, >=, 0);
+    ZSTDWFILE_T writer = zstdwfile_fdopen(fd, 9);
+    g_assert_nonnull(writer);
+
+    const size_t size = 1024 * 1024;
+    uint8_t *input = g_malloc(size);
+    uint8_t *output = g_malloc(size);
+    uint32_t random = 1;
+    for (size_t i = 0; i < size; i++) {
+        random ^= random << 13;
+        random ^= random >> 17;
+        random ^= random << 5;
+        input[i] = (uint8_t)random;
+    }
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input, 0), ==, 0);
+    g_assert_cmpint(zstdwfile_geterr(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input, 17), ==, 17);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input + 17, size - 17), ==, size - 17);
+    g_assert_cmpint(zstdwfile_close(writer), ==, 0);
+
+    char *compressed = NULL;
+    size_t compressed_size = 0;
+    g_assert_true(g_file_get_contents(path, &compressed, &compressed_size, NULL));
+    size_t decoded = ZSTD_decompress(output, size, compressed, compressed_size);
+    g_assert_false(ZSTD_isError(decoded));
+    g_assert_cmpuint(decoded, ==, size);
+    g_assert_cmpmem(output, size, input, size);
+    g_free(compressed);
+
+    /* Closing a writer without packets must still produce a valid frame. */
+    writer = zstdwfile_open(path, 0);
+    g_assert_nonnull(writer);
+    g_assert_cmpint(zstdwfile_close(writer), ==, 0);
+    g_assert_true(g_file_get_contents(path, &compressed, &compressed_size, NULL));
+    decoded = ZSTD_decompress(output, size, compressed, compressed_size);
+    g_assert_false(ZSTD_isError(decoded));
+    g_assert_cmpuint(decoded, ==, 0);
+
+    /* Invalid settings must not truncate an existing output file. */
+#if ZSTD_VERSION_NUMBER >= 10400
+    int min_level = ZSTD_minCLevel();
+#else
+    int min_level = 0;
+#endif
+    const int invalid_levels[] = { ZSTD_maxCLevel() + 1, min_level - 1, INT_MIN, INT_MAX };
+    for (size_t i = 0; i < G_N_ELEMENTS(invalid_levels); i++) {
+        writer = zstdwfile_open(path, invalid_levels[i]);
+        g_assert_null(writer);
+        g_assert_cmpint(errno, ==, EINVAL);
+        /* The descriptor must remain owned by the caller after rejection. */
+        fd = ws_open(path, O_BINARY|O_RDONLY, 0);
+        g_assert_cmpint(fd, >=, 0);
+        writer = zstdwfile_fdopen(fd, invalid_levels[i]);
+        g_assert_null(writer);
+        g_assert_cmpint(errno, ==, EINVAL);
+        g_assert_cmpint(ws_close(fd), ==, 0);
+    }
+    char *unchanged = NULL;
+    size_t unchanged_size = 0;
+    g_assert_true(g_file_get_contents(path, &unchanged, &unchanged_size, NULL));
+    g_assert_cmpmem(unchanged, unchanged_size, compressed, compressed_size);
+    g_free(unchanged);
+    g_free(compressed);
+
+    /* A read-only descriptor exercises error propagation without triggering
+     * the Windows CRT's invalid-parameter handler for a closed descriptor. */
+    fd = ws_open(path, O_BINARY|O_RDONLY, 0);
+    g_assert_cmpint(fd, >=, 0);
+    writer = zstdwfile_fdopen(fd, 0);
+    g_assert_nonnull(writer);
+    g_assert_cmpuint(zstdwfile_write(writer, input, size), ==, 0);
+    g_assert_cmpint(zstdwfile_geterr(writer), !=, 0);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, -1);
+    g_assert_cmpint(zstdwfile_close(writer), !=, 0);
+
+    ws_unlink(path);
+    g_free(path);
+    g_free(input);
+    g_free(output);
+}
+
+static void
+check_zstd_frames(const char *path, const uint8_t *input, size_t size, bool identical_frames)
+{
+    const size_t frame_size = 4 * 1024 * 1024;
+    char *compressed = NULL;
+    size_t compressed_size = 0;
+    g_assert_true(g_file_get_contents(path, &compressed, &compressed_size, NULL));
+    ZSTD_DStream *stream = ZSTD_createDStream();
+    g_assert_nonnull(stream);
+    uint8_t *output = g_malloc(frame_size + 1);
+    ZSTD_inBuffer encoded = { compressed, compressed_size, 0 };
+    size_t total = 0, frames = 0, first_frame_size = 0;
+
+    while (encoded.pos < encoded.size) {
+        /* Reset the decoder at every frame to verify independent decoding. */
+        g_assert_false(ZSTD_isError(ZSTD_initDStream(stream)));
+        ZSTD_outBuffer decoded = { output, frame_size + 1, 0 };
+        size_t frame_start = encoded.pos;
+        size_t remaining;
+        do {
+            size_t before_in = encoded.pos, before_out = decoded.pos;
+            remaining = ZSTD_decompressStream(stream, &decoded, &encoded);
+            g_assert_false(ZSTD_isError(remaining));
+            g_assert_true(encoded.pos != before_in || decoded.pos != before_out);
+            g_assert_cmpuint(decoded.pos, <=, frame_size);
+        } while (remaining != 0);
+        g_assert_cmpuint(decoded.pos, ==, MIN(size - total, frame_size));
+        g_assert_cmpmem(output, decoded.pos, input + total, decoded.pos);
+        total += decoded.pos;
+        if (frames == 0) {
+            first_frame_size = encoded.pos - frame_start;
+        } else if (frames == 1 && identical_frames) {
+            /* Identical full frames must retain the requested compression level. */
+            g_assert_cmpmem(compressed, first_frame_size,
+                            compressed + frame_start, encoded.pos - frame_start);
+        }
+        frames++;
+    }
+    g_assert_cmpuint(total, ==, size);
+    g_assert_cmpuint(frames, ==, (size + frame_size - 1) / frame_size);
+    ZSTD_freeDStream(stream);
+    g_free(output);
+    g_free(compressed);
+}
+
+static void
+test_zstd_writer_frames(const void *data)
+{
+    const size_t frame_size = 4 * 1024 * 1024;
+    const size_t size = 2 * frame_size + 17;
+    int level = GPOINTER_TO_INT(data);
+    uint8_t *input = g_malloc(size);
+    uint32_t random = 1;
+    for (size_t i = 0; i < frame_size; i++) {
+        random ^= random << 13;
+        random ^= random >> 17;
+        random ^= random << 5;
+        input[i] = (i & 31) ? (uint8_t)(i % 251) : (uint8_t)random;
+    }
+    memcpy(input + frame_size, input, frame_size);
+    memcpy(input + 2 * frame_size, input, 17);
+
+    char *path = NULL;
+    int fd = g_file_open_tmp("wireshark-zstd-frames-XXXXXX", &path, NULL);
+    g_assert_cmpint(fd, >=, 0);
+    ZSTDWFILE_T writer = zstdwfile_fdopen(fd, level);
+    g_assert_nonnull(writer);
+    /* A single write can cross more than one frame boundary. */
+    g_assert_cmpuint(zstdwfile_write(writer, input, size), ==, size);
+    g_assert_cmpint(zstdwfile_close(writer), ==, 0);
+    check_zstd_frames(path, input, size, true);
+
+    /* Flush within a frame, then close exactly at the boundary. Neither
+     * flushing nor an empty write may append an empty trailing frame. */
+    writer = zstdwfile_open(path, level);
+    g_assert_nonnull(writer);
+    g_assert_cmpuint(zstdwfile_write(writer, input, 17), ==, 17);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input + 17, frame_size - 17), ==, frame_size - 17);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input, 0), ==, 0);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpint(zstdwfile_close(writer), ==, 0);
+    check_zstd_frames(path, input, frame_size, false);
+
+    /* Resume after a flush and cross a boundary in the middle of a write. */
+    writer = zstdwfile_open(path, level);
+    g_assert_nonnull(writer);
+    g_assert_cmpuint(zstdwfile_write(writer, input, frame_size - 1), ==, frame_size - 1);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input + frame_size - 1, 2), ==, 2);
+    g_assert_cmpint(zstdwfile_flush(writer), ==, 0);
+    g_assert_cmpuint(zstdwfile_write(writer, input + frame_size + 1, frame_size - 1), ==, frame_size - 1);
+    g_assert_cmpint(zstdwfile_close(writer), ==, 0);
+    check_zstd_frames(path, input, 2 * frame_size, false);
+
+    ws_unlink(path);
+    g_free(path);
+    g_free(input);
+}
+#endif
 
 #define PROGNAME "test_wsutil"
 
@@ -89,11 +288,63 @@ static void test_ip_addr_to_str_test1(void)
     g_assert_cmpstr(result, ==, expect);
 }
 
+#include "wsjson.h"
+
+static void test_json_strip_jsonc_comments_basic(void)
+{
+    char buf[] =
+        "{\n"
+        "  // A line comment.\n"
+        "  \"a\": 1, /* A block\n"
+        "              comment. */ \"b\": 2\n"
+        "}\n";
+    jsmntok_t tokens[16];
+    int64_t val;
+
+    g_assert_true(json_strip_jsonc_comments(buf));
+    g_assert_true(json_validate((const uint8_t *)buf, strlen(buf)));
+
+    int ret = json_parse(buf, tokens, 16);
+    g_assert_cmpint(ret, >, 0);
+    g_assert_true(json_get_int(buf, &tokens[0], "a", &val));
+    g_assert_cmpint(val, ==, 1);
+    g_assert_true(json_get_int(buf, &tokens[0], "b", &val));
+    g_assert_cmpint(val, ==, 2);
+}
+
+static void test_json_strip_jsonc_comments_string_slashes(void)
+{
+    /* "//" and "/", "*" inside a JSON string are not comments. */
+    char buf[] = "{ \"url\": \"http://example.com/*not-a-comment*/\" }";
+    char *expect = g_strdup(buf);
+    jsmntok_t tokens[8];
+
+    g_assert_true(json_strip_jsonc_comments(buf));
+    g_assert_cmpstr(buf, ==, expect);
+    g_free(expect);
+
+    int ret = json_parse(buf, tokens, 8);
+    g_assert_cmpint(ret, >, 0);
+    char *url = json_get_string(buf, &tokens[0], "url");
+    g_assert_cmpstr(url, ==, "http://example.com/*not-a-comment*/");
+}
+
+static void test_json_strip_jsonc_comments_unterminated_block_comment(void)
+{
+    char buf[] = "{ \"a\": 1 } /* unterminated";
+
+    g_assert_false(json_strip_jsonc_comments(buf));
+}
+
 #include "str_util.h"
 
 static void test_format_size(void)
 {
     char *str;
+
+    str = format_size(10, FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI);
+    g_assert_cmpstr(str, ==, "10 bytes");
+    g_free(str);
 
     str = format_size(10000, FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI);
     g_assert_cmpstr(str, ==, "10 kB");
@@ -105,6 +356,14 @@ static void test_format_size(void)
 
     str = format_size(20971520, FORMAT_SIZE_UNIT_BITS, FORMAT_SIZE_PREFIX_IEC);
     g_assert_cmpstr(str, ==, "20 Mib");
+    g_free(str);
+
+    str = format_size(INT64_MAX, FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_SI);
+    g_assert_cmpstr(str, ==, "9223 PB");
+    g_free(str);
+
+    str = format_size(INT64_MAX, FORMAT_SIZE_UNIT_BYTES, FORMAT_SIZE_PREFIX_IEC);
+    g_assert_cmpstr(str, ==, "8191 PiB");
     g_free(str);
 }
 
@@ -165,6 +424,25 @@ static void test_escape_string(void)
     buf = ws_escape_csv(NULL, "CSV-style \" escape", true, '"', true, false);
     g_assert_cmpstr(buf, ==, "\"CSV-style \"\" escape\"");
     wmem_free(NULL, buf);
+}
+
+static void test_csv_value_is_formula(void)
+{
+    g_assert_true(ws_csv_value_is_formula("=HYPERLINK(\"http://example.com\")"));
+    g_assert_true(ws_csv_value_is_formula("+1+1"));
+    g_assert_true(ws_csv_value_is_formula("-1+1"));
+    g_assert_true(ws_csv_value_is_formula("@SUM(A1)"));
+    /* Leading blanks may be stripped on import */
+    g_assert_true(ws_csv_value_is_formula("   =1+1"));
+    g_assert_true(ws_csv_value_is_formula("\t=1+1"));
+    g_assert_true(ws_csv_value_is_formula("\r=1+1"));
+
+    g_assert_false(ws_csv_value_is_formula(NULL));
+    g_assert_false(ws_csv_value_is_formula(""));
+    g_assert_false(ws_csv_value_is_formula("   "));
+    g_assert_false(ws_csv_value_is_formula("GET / HTTP/1.1"));
+    g_assert_false(ws_csv_value_is_formula("192.0.2.1"));
+    g_assert_false(ws_csv_value_is_formula("1+1"));
 }
 
 static void test_strconcat(void)
@@ -885,6 +1163,92 @@ static void test_getopt_opterr1(void)
 #endif
 }
 
+static const uint8_t sap_lzclzh_expected[] =
+    "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST"
+    "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST"
+    "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST"
+    "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST"
+    "TESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTESTTEST";
+
+static const uint8_t sap_lzh_compressed[] = {
+    0x18, 0x1, 0x0, 0x0, 0x12, 0x1f, 0x9d, 0x2, 0x5d, 0x88, 0x6b, 0x70, 0x48, 0xc8, 0x28, 0xc6, 0xc0, 0x0
+};
+
+static const uint8_t sap_lzc_compressed[] = {
+    0x18, 0x1, 0x0, 0x0, 0x11, 0x1f, 0x9d, 0x8d, 0x54, 0x8a, 0x4c, 0xa1, 0x12, 0x70, 0x60, 0x41, 0x82, 0x2,
+    0x11, 0x1a, 0x4c, 0x78, 0xb0, 0x21, 0xc3, 0x87, 0xb, 0x23, 0x2a, 0x9c, 0xe8, 0x50, 0x62, 0x45, 0x8a, 0x10,
+    0x31, 0x5a, 0xcc, 0x78, 0xb1, 0x23, 0xc7, 0x8f, 0x1b, 0x43, 0x6a, 0x1c, 0xe9, 0x51, 0x64, 0x49, 0x92, 0x20,
+    0x51, 0x9a, 0x4c, 0x79, 0xf2, 0x20
+};
+
+static void
+test_sap_lzclzh_decompress(void)
+{
+    int rt = 0;
+    wmem_allocator_t *allocator;
+    uint8_t* str_out;
+    unsigned str_in_len, str_out_len;
+    const unsigned str_out_expected_len = (unsigned)strlen((const char*)sap_lzclzh_expected);
+
+    allocator = wmem_allocator_new(WMEM_ALLOCATOR_BLOCK);
+
+    /* LZH Decompression */
+    str_in_len = sizeof(sap_lzh_compressed);
+    str_out_len = str_out_expected_len;
+    str_out = wmem_alloc0(allocator, str_out_expected_len);
+    rt = sap_lzclzh_decompress(allocator, sap_lzh_compressed, str_in_len, str_out, &str_out_len);
+    g_assert_cmpint(rt, == , CS_END_OF_STREAM);
+    g_assert_cmpuint(str_out_len, ==, str_out_expected_len);
+    g_assert_cmpmem(sap_lzclzh_expected, str_out_expected_len, str_out, str_out_len);
+    wmem_free(allocator, str_out);
+
+    /* LZC Decompression */
+    str_in_len = sizeof(sap_lzc_compressed);
+    str_out_len = str_out_expected_len;
+    str_out = wmem_alloc0(allocator, str_out_expected_len);
+    rt = sap_lzclzh_decompress(allocator, sap_lzc_compressed, str_in_len, str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_END_OF_STREAM);
+    g_assert_cmpuint(str_out_len, ==, str_out_expected_len);
+    g_assert_cmpmem(sap_lzclzh_expected, str_out_expected_len, str_out, str_out_len);
+    wmem_free(allocator, str_out);
+
+    wmem_destroy_allocator(allocator);
+}
+
+static void
+test_sap_lzclzh_decompress_errors(void)
+{
+    uint8_t str_out[sizeof(sap_lzclzh_expected)];
+    uint8_t bad_magic[] = { 0x18, 0x1, 0x0, 0x0, 0x11, 0x0, 0x0, 0x0 };
+    uint8_t unknown_algorithm[] = { 0x18, 0x1, 0x0, 0x0, 0x13, 0x1f, 0x9d, 0x0 };
+    unsigned str_out_len;
+    int rt;
+
+    str_out_len = sizeof(str_out);
+    rt = sap_lzclzh_decompress(NULL, NULL, sizeof(sap_lzh_compressed), str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_E_INVALID_ADDR);
+
+    rt = sap_lzclzh_decompress(NULL, sap_lzh_compressed, sizeof(sap_lzh_compressed), str_out, NULL);
+    g_assert_cmpint(rt, ==, CS_E_INVALID_ADDR);
+
+    str_out_len = 0;
+    rt = sap_lzclzh_decompress(NULL, sap_lzh_compressed, sizeof(sap_lzh_compressed), str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_E_OUT_BUFFER_LEN);
+
+    str_out_len = 1;
+    rt = sap_lzclzh_decompress(NULL, sap_lzh_compressed, sizeof(sap_lzh_compressed), str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_END_OUTBUFFER);
+
+    str_out_len = sizeof(str_out);
+    rt = sap_lzclzh_decompress(NULL, bad_magic, sizeof(bad_magic), str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_E_FILENOTCOMPRESSED);
+
+    str_out_len = sizeof(str_out);
+    rt = sap_lzclzh_decompress(NULL, unknown_algorithm, sizeof(unknown_algorithm), str_out, &str_out_len);
+    g_assert_cmpint(rt, ==, CS_E_UNKNOWN_ALG);
+}
+
+
 #include <wsutil/strtoi.h>
 
 static void
@@ -1019,6 +1383,760 @@ static void test_ws_hexbuftou64(void)
     test_uint64(hexstr, 2, &hexstr[1], 0, true, 0, 0);
 }
 
+static void
+test_int64(const uint8_t *str, size_t len, const uint8_t *end, int base, bool result, int64_t value, int err)
+{
+    int64_t cint;
+    const uint8_t *endp;
+    int error;
+
+    errno = 0;
+    bool res = ws_basebuftoi64(str, len, end ? &endp : NULL, &cint, base);
+    error = errno;
+
+    g_assert_true(res == result);
+    g_assert_cmpstr(g_strerror(error), ==, g_strerror(err));
+    if (base == 16) {
+        g_assert_cmphex(cint, ==, value);
+    } else {
+        g_assert_cmpint(cint, ==, value);
+    }
+    if (end) {
+        g_assert_true(endp == end);
+    }
+}
+
+static void test_ws_basebuftoi64(void)
+{
+    WS_NONSTRING const uint8_t teststr[7] = "00123\0004";
+
+    /* Leading zeroes are fine when base 10 or 16 is specified. */
+    test_int64(teststr, 5, NULL, 10, true, 123, 0);
+    test_int64(teststr, 5, NULL, 16, true, 0x123, 0);
+
+    /* But means octal when base 0 is specified. */
+    test_int64(teststr, 5, NULL, 8, true, 83, 0);
+    test_int64(teststr, 5, NULL, 0, true, 83, 0);
+
+    /* Truncating before the NULL truncates. */
+    test_int64(teststr, 4, NULL, 10, true, 12, 0);
+
+    /* Including the NULL or later results in false. */
+    test_int64(teststr, 6, NULL, 10, false, 0, EINVAL);
+    test_int64(teststr, 7, NULL, 10, false, 0, EINVAL);
+
+    /* UINT64_MAX is too large for an int64_t. */
+    WS_NONSTRING uint8_t uintmaxstr[20] = "18446744073709551615";
+    test_int64(uintmaxstr, 20, NULL, 10, false, INT64_MAX, ERANGE);
+    uintmaxstr[19]++;
+    test_int64(uintmaxstr, 20, NULL, 10, false, INT64_MAX, ERANGE);
+
+    /* INT64_MIN is the smallest int64_t. */
+    WS_NONSTRING uint8_t intminstr[20] = "-9223372036854775808";
+    test_int64(intminstr, 20, NULL, 10, true, INT64_MIN, 0);
+    /* Two's complement isn't symmetric. */
+    test_int64(&intminstr[1], 19, NULL, 10, false, INT64_MAX, ERANGE);
+    intminstr[19]--;
+    test_int64(&intminstr[1], 19, NULL, 10, true, INT64_MAX, 0);
+
+    /* No trailing whitespace when end is NULL. */
+    uintmaxstr[19] = ' ';
+    test_int64(uintmaxstr, 20, NULL, 10, false, 0, EINVAL);
+
+    /* No signs allowed. */
+    test_int64((const uint8_t*)"-1", 2, NULL, 10, true, -1, 0);
+    test_int64((const uint8_t*)"+1", 2, NULL, 10, true, 1, 0);
+
+    /* This is allowed to break early when end is NULL */
+    WS_NONSTRING const uint8_t longstr[30] = "123456789012345678901234567890";
+    test_int64(longstr, 30, NULL, 10, false, INT64_MAX, ERANGE);
+}
+
+static void test_ws_basebuftoi64_end(void)
+{
+    WS_NONSTRING const uint8_t teststr[7] = "00123\0004";
+
+    /* Leading zeroes are fine when base 10 or 16 is specified. */
+    test_int64(teststr, 5, &teststr[5], 10, true, 123, 0);
+    test_int64(teststr, 5, &teststr[5], 16, true, 0x123, 0);
+
+    /* But means octal when base 0 is specified. */
+    test_int64(teststr, 5, &teststr[5], 8, true, 83, 0);
+    test_int64(teststr, 5, &teststr[5], 0, true, 83, 0);
+
+    /* Truncating before the NULL truncates. */
+    test_int64(teststr, 4, &teststr[4], 10, true, 12, 0);
+
+    /* Including the NULL or later results in true, pointing to it. */
+    test_int64(teststr, 6, &teststr[5], 10, true, 123, 0);
+    test_int64(teststr, 7, &teststr[5], 10, true, 123, 0);
+
+    /* UINT64_MAX is too large for an int64_t. */
+    WS_NONSTRING uint8_t uintmaxstr[20] = "18446744073709551615";
+    /* Yes, we can point to this address (C standard 6.5.6), so long as
+     * we don't dereference. &uintmaxstr[20] should be legal (6.5.3.2),
+     * though Coverity has sometimes complained. */
+    test_int64(uintmaxstr, 20, uintmaxstr + 20, 10, false, INT64_MAX, ERANGE);
+    uintmaxstr[19]++;
+    test_int64(uintmaxstr, 20, uintmaxstr + 20, 10, false, INT64_MAX, ERANGE);
+
+    /* INT64_MIN is the smallest int64_t. */
+    WS_NONSTRING uint8_t intminstr[20] = "-9223372036854775808";
+    test_int64(intminstr, 20, intminstr + 20, 10, true, INT64_MIN, 0);
+    /* Two's complement isn't symmetric. */
+    test_int64(&intminstr[1], 19, intminstr + 20, 10, false, INT64_MAX, ERANGE);
+    intminstr[19]--;
+    test_int64(&intminstr[1], 19, intminstr + 20, 10, true, INT64_MAX, 0);
+
+    /* Trailing whitespace is OK when end is specified. */
+    uintmaxstr[19] = ' ';
+    test_int64(uintmaxstr, 20, &uintmaxstr[19], 10, true, UINT64_MAX/10, 0);
+
+    /* Signs are ok. */
+    test_int64((const uint8_t*)"-1", 2, NULL, 10, true, -1, 0);
+    test_int64((const uint8_t*)"+1", 2, NULL, 10, true, 1, 0);
+
+    /* Go all the way to the end for very long strings when end != NULL */
+    WS_NONSTRING const uint8_t longstr[30] = "123456789012345678901234567890";
+    test_int64(longstr, 30, longstr + 30, 10, false, INT64_MAX, ERANGE);
+}
+
+static void test_ws_hexbuftoi64(void)
+{
+    WS_NONSTRING uint8_t hexstr[13] = "0x1234abcdefg";
+
+    /* Not decimal */
+    test_int64(hexstr, 8, NULL, 10, false, 0, EINVAL);
+    test_int64(&hexstr[2], 8, NULL, 10, false, 0, EINVAL);
+
+    /* Specifying base 16 works with or without the 0x */
+    test_int64(hexstr, 12, NULL, 16, true, 0x1234abcdef, 0);
+    test_int64(&hexstr[2], 10, NULL, 16, true, 0x1234abcdef, 0);
+
+    /* But base 0 only works with the prefix. */
+    test_int64(hexstr, 12, NULL, 0, true, 0x1234abcdef, 0);
+    test_int64(&hexstr[2], 12, NULL, 0, false, 0, EINVAL);
+
+    /* Upper case is also fine. */
+    hexstr[1] = 'X';
+    hexstr[6] = 'A';
+    test_int64(hexstr, 12, NULL, 16, true, 0x1234abcdef, 0);
+
+    /* The tricky edge case "0X" doesn't work with a NULL end. */
+    test_int64(hexstr, 2, NULL, 16, false, 0, EINVAL);
+    test_int64(hexstr, 2, NULL, 0, false, 0, EINVAL);
+
+    /* But it does with a non-NULL end, returning 0 and pointing end to x. */
+    test_int64(hexstr, 2, &hexstr[1], 16, true, 0, 0);
+    test_int64(hexstr, 2, &hexstr[1], 0, true, 0, 0);
+}
+#include <wsutil/process_lookup.h>
+#include <wsutil/socket.h>
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+#endif
+
+static uint32_t
+own_pid(void)
+{
+#ifdef _WIN32
+    return (uint32_t)GetCurrentProcessId();
+#else
+    return (uint32_t)getpid();
+#endif
+}
+
+/* A TCP or UDP socket bound to an ephemeral port on the given loopback address, listening if
+ * asked; INVALID_SOCKET if that isn't possible, e.g. without IPv6. */
+static socket_handle_t
+bound_socket(int family, int type, const char *addr_str, bool do_listen)
+{
+    socket_handle_t sock;
+    struct sockaddr_storage ss;
+    socklen_t len;
+
+    sock = socket(family, type, 0);
+    if (sock == INVALID_SOCKET)
+        return INVALID_SOCKET;
+    memset(&ss, 0, sizeof ss);
+    if (family == AF_INET) {
+        struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
+        ws_in4_addr addr;
+
+        g_assert_true(ws_inet_pton4(addr_str, &addr));
+        sin->sin_family = AF_INET;
+        memcpy(&sin->sin_addr, &addr, sizeof addr);
+        len = sizeof *sin;
+    } else {
+        struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
+        ws_in6_addr addr;
+
+        g_assert_true(ws_inet_pton6(addr_str, &addr));
+        sin6->sin6_family = AF_INET6;
+        memcpy(&sin6->sin6_addr, addr.bytes, sizeof addr.bytes);
+        len = sizeof *sin6;
+    }
+    if (bind(sock, (struct sockaddr *)&ss, len) != 0 || (do_listen && listen(sock, 1) != 0)) {
+        closesocket(sock);
+        return INVALID_SOCKET;
+    }
+    return sock;
+}
+
+static uint16_t
+socket_port(socket_handle_t sock)
+{
+    struct sockaddr_storage ss;
+    socklen_t len = sizeof ss;
+
+    g_assert_cmpint(getsockname(sock, (struct sockaddr *)&ss, &len), ==, 0);
+    if (ss.ss_family == AF_INET)
+        return g_ntohs(((struct sockaddr_in *)&ss)->sin_port);
+    return g_ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
+}
+
+static void
+endpoint4(ws_socket_endpoint_t *ep, const char *addr, uint16_t port)
+{
+    memset(ep, 0, sizeof *ep);
+    ep->ip_version = 4;
+    g_assert_true(ws_inet_pton4(addr, &ep->addr.ipv4));
+    ep->port = port;
+}
+
+static void
+endpoint6(ws_socket_endpoint_t *ep, const char *addr, uint16_t port)
+{
+    memset(ep, 0, sizeof *ep);
+    ep->ip_version = 6;
+    g_assert_true(ws_inet_pton6(addr, &ep->addr.ipv6));
+    ep->port = port;
+}
+
+/* The record must describe this very process. */
+static void
+check_own_process(const ws_process_info_t *info)
+{
+    uint64_t now_ns = (uint64_t)g_get_real_time() * 1000;
+
+    g_assert_nonnull(info);
+    g_assert_cmpuint(info->pid, ==, own_pid());
+    g_assert_nonnull(info->name);
+    g_assert_nonnull(strstr(info->name, "test_wsutil"));
+    g_assert_nonnull(info->path);
+    g_assert_nonnull(strstr(info->path, "test_wsutil"));
+    g_assert_nonnull(info->cmdline);
+    g_assert_cmpuint(info->cmdline_len, >, 0);
+    g_assert_nonnull(info->user);
+    g_assert_true(info->has_ppid);
+    g_assert_cmpuint(info->start_time_ns, >, 0);
+    /* The start time is derived from the boot time on some systems; allow it some slack. */
+    g_assert_cmpuint(info->start_time_ns, <=, now_ns + 2000000000ULL);
+#ifndef _WIN32
+    g_assert_true(info->has_uid);
+    g_assert_cmpuint(info->uid, ==, (uint32_t)getuid());
+#endif
+}
+
+static ws_process_lookup_t *
+new_lookup(void)
+{
+    char *err_msg = NULL;
+    ws_process_lookup_t *lookup = ws_process_lookup_new(&err_msg);
+
+    if (lookup == NULL)
+        g_error("ws_process_lookup_new: %s", err_msg);
+    /* check_own_process() wants every detail. */
+    ws_process_lookup_set_detail(lookup, WS_PROCESS_DETAIL_FULL);
+    return lookup;
+}
+
+/* Look a socket up that no process but this one can have open: its record, or NULL if none. */
+static const ws_process_info_t *
+lookup_only(ws_process_lookup_t *lookup, ws_process_lookup_protocol_t protocol,
+            const ws_socket_endpoint_t *local, const ws_socket_endpoint_t *remote)
+{
+    GPtrArray *procs = g_ptr_array_new();
+    const ws_process_info_t *info = NULL;
+
+    g_assert_cmpuint(ws_process_lookup_socket(lookup, protocol, local, remote, procs), ==, procs->len);
+    g_assert_cmpuint(procs->len, <=, 1);
+    if (procs->len == 1)
+        info = (const ws_process_info_t *)g_ptr_array_index(procs, 0);
+    g_ptr_array_free(procs, TRUE);
+    return info;
+}
+
+/* Whether this process is among those reported as having a socket open. */
+static bool
+lists_own_process(ws_process_lookup_t *lookup, ws_process_lookup_protocol_t protocol,
+                  const ws_socket_endpoint_t *local, const ws_socket_endpoint_t *remote)
+{
+    GPtrArray *procs = g_ptr_array_new();
+    bool found = false;
+
+    ws_process_lookup_socket(lookup, protocol, local, remote, procs);
+    for (unsigned i = 0; i < procs->len; i++) {
+        if (((const ws_process_info_t *)g_ptr_array_index(procs, i))->pid == own_pid())
+            found = true;
+    }
+    g_ptr_array_free(procs, TRUE);
+    return found;
+}
+
+static void
+test_process_lookup_tcp4(void)
+{
+    socket_handle_t listener, client, server;
+    struct sockaddr_in sin;
+    ws_in4_addr loopback;
+    uint16_t lport, cport;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l, c;
+    const ws_process_info_t *info;
+    char *err_msg = NULL;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    listener = bound_socket(AF_INET, SOCK_STREAM, "127.0.0.1", true);
+    g_assert_true(listener != INVALID_SOCKET);
+    lport = socket_port(listener);
+    client = socket(AF_INET, SOCK_STREAM, 0);
+    g_assert_true(client != INVALID_SOCKET);
+    memset(&sin, 0, sizeof sin);
+    sin.sin_family = AF_INET;
+    g_assert_true(ws_inet_pton4("127.0.0.1", &loopback));
+    memcpy(&sin.sin_addr, &loopback, sizeof loopback);
+    sin.sin_port = g_htons(lport);
+    g_assert_cmpint(connect(client, (struct sockaddr *)&sin, sizeof sin), ==, 0);
+    cport = socket_port(client);
+    server = accept(listener, NULL, NULL);
+    g_assert_true(server != INVALID_SOCKET);
+
+    lookup = new_lookup();
+    endpoint4(&c, "127.0.0.1", cport);
+    endpoint4(&l, "127.0.0.1", lport);
+
+    /* The connection, seen from either end, and the listening socket. */
+    info = lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &c, &l);
+    check_own_process(info);
+    g_assert_true(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, &c) == info);
+    g_assert_true(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL) == info);
+    /* The same record, by process ID. */
+    g_assert_true(ws_process_lookup_pid(lookup, own_pid()) == info);
+    /* A process that doesn't exist. */
+    g_assert_null(ws_process_lookup_pid(lookup, 0xfffffff0));
+
+    /* Once closed, the sockets have no owner (a TIME_WAIT socket has none). */
+    closesocket(client);
+    closesocket(server);
+    closesocket(listener);
+    g_assert_true(ws_process_lookup_refresh(lookup, &err_msg));
+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &c, &l));
+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL));
+
+    ws_process_lookup_free(lookup);
+    ws_cleanup_sockets();
+}
+
+static void
+test_process_lookup_wildcard_udp(void)
+{
+    socket_handle_t any_listener, udp;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l, r, u;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    any_listener = bound_socket(AF_INET, SOCK_STREAM, "0.0.0.0", true);
+    g_assert_true(any_listener != INVALID_SOCKET);
+    udp = bound_socket(AF_INET, SOCK_DGRAM, "127.0.0.1", false);
+    g_assert_true(udp != INVALID_SOCKET);
+
+    lookup = new_lookup();
+    /* A socket listening on any address matches a packet to any address on its port,
+     * whether or not the caller knows the other end. */
+    endpoint4(&l, "127.0.0.1", socket_port(any_listener));
+    endpoint4(&r, "127.0.0.1", 40000);
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL));
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, &r));
+    /* An unconnected UDP socket matches with or without a remote end. */
+    endpoint4(&u, "127.0.0.1", socket_port(udp));
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_UDP, &u, NULL));
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_UDP, &u, &r));
+    /* Not with the other protocol (some other process may happen to use that port). */
+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_UDP, &l, NULL));
+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &u, NULL));
+
+    ws_process_lookup_free(lookup);
+    closesocket(any_listener);
+    closesocket(udp);
+    ws_cleanup_sockets();
+}
+
+static void
+test_process_lookup_tcp6(void)
+{
+    socket_handle_t listener;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l6, l4;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    listener = bound_socket(AF_INET6, SOCK_STREAM, "::1", true);
+    if (listener == INVALID_SOCKET) {
+        ws_cleanup_sockets();
+        g_test_skip("no IPv6 loopback");
+        return;
+    }
+
+    lookup = new_lookup();
+    endpoint6(&l6, "::1", socket_port(listener));
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l6, NULL));
+    /* An IPv6 socket bound to ::1 is not reached over IPv4. */
+    endpoint4(&l4, "127.0.0.1", socket_port(listener));
+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &l4, NULL));
+
+    ws_process_lookup_free(lookup);
+    closesocket(listener);
+    ws_cleanup_sockets();
+}
+
+/* By default a record says what identifies the process and nothing else. */
+static void
+test_process_lookup_basic(void)
+{
+    socket_handle_t listener;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l;
+    const ws_process_info_t *info;
+    char *err_msg = NULL;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    listener = bound_socket(AF_INET, SOCK_STREAM, "127.0.0.1", true);
+    g_assert_true(listener != INVALID_SOCKET);
+    endpoint4(&l, "127.0.0.1", socket_port(listener));
+
+    lookup = ws_process_lookup_new(&err_msg);
+    if (lookup == NULL)
+        g_error("ws_process_lookup_new: %s", err_msg);
+    info = lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL);
+    g_assert_nonnull(info);
+    g_assert_cmpuint(info->pid, ==, own_pid());
+    g_assert_nonnull(info->name);
+    g_assert_nonnull(strstr(info->name, "test_wsutil"));
+    g_assert_cmpuint(info->start_time_ns, >, 0);
+    g_assert_null(info->path);
+    g_assert_null(info->cmdline);
+    g_assert_cmpuint(info->cmdline_len, ==, 0);
+    g_assert_null(info->user);
+    g_assert_false(info->has_ppid);
+    g_assert_false(info->has_uid);
+
+    ws_process_lookup_free(lookup);
+    closesocket(listener);
+    ws_cleanup_sockets();
+}
+
+/* An IPv4 connection to an IPv6 socket that accepts IPv4 as well is found by its IPv4 addresses. */
+static void
+test_process_lookup_tcp4_mapped(void)
+{
+    socket_handle_t listener, client, server;
+    struct sockaddr_in6 sin6;
+    struct sockaddr_in sin;
+    ws_in4_addr loopback;
+    int v6only = 0;
+    uint16_t lport, cport;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l, c;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    listener = socket(AF_INET6, SOCK_STREAM, 0);
+    memset(&sin6, 0, sizeof sin6);
+    sin6.sin6_family = AF_INET6;  /* any address, any port */
+    if (listener == INVALID_SOCKET ||
+        setsockopt(listener, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&v6only, sizeof v6only) != 0 ||
+        bind(listener, (struct sockaddr *)&sin6, sizeof sin6) != 0 || listen(listener, 1) != 0) {
+        if (listener != INVALID_SOCKET)
+            closesocket(listener);
+        ws_cleanup_sockets();
+        g_test_skip("no IPv6 sockets that accept IPv4");
+        return;
+    }
+    lport = socket_port(listener);
+    client = socket(AF_INET, SOCK_STREAM, 0);
+    g_assert_true(client != INVALID_SOCKET);
+    memset(&sin, 0, sizeof sin);
+    sin.sin_family = AF_INET;
+    g_assert_true(ws_inet_pton4("127.0.0.1", &loopback));
+    memcpy(&sin.sin_addr, &loopback, sizeof loopback);
+    sin.sin_port = g_htons(lport);
+    g_assert_cmpint(connect(client, (struct sockaddr *)&sin, sizeof sin), ==, 0);
+    cport = socket_port(client);
+    server = accept(listener, NULL, NULL);
+    g_assert_true(server != INVALID_SOCKET);
+    /* Without the listening socket only the accepted one, an IPv6 socket, has that local port. */
+    closesocket(listener);
+
+    lookup = new_lookup();
+    endpoint4(&c, "127.0.0.1", cport);
+    endpoint4(&l, "127.0.0.1", lport);
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, &c));
+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &c, &l));
+
+    ws_process_lookup_free(lookup);
+    closesocket(client);
+    closesocket(server);
+    ws_cleanup_sockets();
+}
+
+#ifndef _WIN32
+/* A socket that a child process inherited is reported for both, this older process first. */
+static void
+test_process_lookup_shared(void)
+{
+    socket_handle_t listener;
+    pid_t child;
+    int status;
+    ws_process_lookup_t *lookup;
+    ws_socket_endpoint_t l;
+    GPtrArray *procs;
+    const ws_process_info_t *info;
+
+    if (!ws_process_lookup_supported()) {
+        g_test_skip("not supported on this platform");
+        return;
+    }
+    g_assert_null(ws_init_sockets());
+
+    listener = bound_socket(AF_INET, SOCK_STREAM, "127.0.0.1", true);
+    g_assert_true(listener != INVALID_SOCKET);
+    endpoint4(&l, "127.0.0.1", socket_port(listener));
+
+    child = fork();
+    g_assert_cmpint(child, >=, 0);
+    if (child == 0) {
+        /* Hold the inherited socket until killed. */
+        for (;;)
+            pause();
+    }
+
+    lookup = new_lookup();
+    procs = g_ptr_array_new();
+    g_assert_cmpuint(ws_process_lookup_socket(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL, procs), ==, 2);
+    g_assert_cmpuint(procs->len, ==, 2);
+    check_own_process((const ws_process_info_t *)g_ptr_array_index(procs, 0));
+    info = (const ws_process_info_t *)g_ptr_array_index(procs, 1);
+    g_assert_cmpuint(info->pid, ==, (uint32_t)child);
+    g_assert_true(info->has_ppid);
+    g_assert_cmpuint(info->ppid, ==, own_pid());
+    g_assert_true(ws_process_lookup_pid(lookup, (uint32_t)child) == info);
+
+    /* Once we close it, the child is the only process that has it; the array is appended to. */
+    closesocket(listener);
+    g_assert_true(ws_process_lookup_refresh(lookup, NULL));
+    g_assert_cmpuint(ws_process_lookup_socket(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL, procs), ==, 1);
+    g_assert_cmpuint(procs->len, ==, 3);
+    g_assert_true(g_ptr_array_index(procs, 2) == info);
+
+    kill(child, SIGKILL);
+    g_assert_cmpint(waitpid(child, &status, 0), ==, child);
+    g_ptr_array_free(procs, TRUE);
+    ws_process_lookup_free(lookup);
+    ws_cleanup_sockets();
+}
+#endif
+
+#include <wsutil/packet_endpoints.h>
+
+/* Pieces of packets for the endpoint parser: link-layer headers and IP packets. */
+static const uint8_t ethernet_ipv4_hdr[] = {
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x08, 0x00
+};
+static const uint8_t ethernet_vlan_ipv6_hdr[] = {
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x81, 0x00,
+    0x00, 0x64, 0x86, 0xdd
+};
+static const uint8_t ethernet_arp_hdr[] = {
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0x08, 0x06
+};
+static const uint8_t null_hdr[] = { 2, 0, 0, 0 };          /* AF_INET, little-endian */
+static const uint8_t loop_hdr[] = { 0, 0, 0, 30 };         /* Darwin AF_INET6, big-endian */
+static const uint8_t sll_ipv6_hdr[] = {
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x00, 0x00,
+    0x86, 0xdd
+};
+static const uint8_t sll2_ipv4_hdr[] = {
+    0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x06,
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x00, 0x00
+};
+/* 10.0.0.1:12345 -> 10.0.0.2:80, SYN */
+static const uint8_t ipv4_tcp[] = {
+    0x45, 0x00, 0x00, 0x28, 0x00, 0x01, 0x40, 0x00, 0x40, 0x06, 0x00, 0x00,
+    10, 0, 0, 1, 10, 0, 0, 2,
+    0x30, 0x39, 0x00, 0x50, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+    0x50, 0x02, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+/* The second fragment of an IPv4 packet: no ports. */
+static const uint8_t ipv4_fragment[] = {
+    0x45, 0x00, 0x00, 0x28, 0x00, 0x01, 0x00, 0x05, 0x40, 0x11, 0x00, 0x00,
+    10, 0, 0, 1, 10, 0, 0, 2,
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+    0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14
+};
+/* 10.0.0.1 -> 10.0.0.2, ICMP echo */
+static const uint8_t ipv4_icmp[] = {
+    0x45, 0x00, 0x00, 0x1c, 0x00, 0x01, 0x40, 0x00, 0x40, 0x01, 0x00, 0x00,
+    10, 0, 0, 1, 10, 0, 0, 2,
+    0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01
+};
+/* 2001:db8::1:53 -> 2001:db8::2:5353 */
+static const uint8_t ipv6_udp[] = {
+    0x60, 0x00, 0x00, 0x00, 0x00, 0x0c, 17, 64,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    0x00, 0x35, 0x14, 0xe9, 0x00, 0x0c, 0x00, 0x00, 'h', 'i', '!', '\n'
+};
+/* The same, behind a hop-by-hop options header and a first-fragment header. */
+static const uint8_t ipv6_ext_udp[] = {
+    0x60, 0x00, 0x00, 0x00, 0x00, 0x1c, 0, 64,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    44, 0, 1, 4, 0, 0, 0, 0,                /* hop-by-hop: next header fragment, PadN */
+    17, 0, 0x00, 0x01, 0x12, 0x34, 0x56, 0x78,  /* fragment: offset 0, more fragments */
+    0x00, 0x35, 0x14, 0xe9, 0x00, 0x0c, 0x00, 0x00, 'h', 'i', '!', '\n'
+};
+/* The same, but a later fragment. */
+static const uint8_t ipv6_later_fragment[] = {
+    0x60, 0x00, 0x00, 0x00, 0x00, 0x14, 44, 64,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    17, 0, 0x00, 0x08, 0x12, 0x34, 0x56, 0x78,  /* fragment: offset 1 */
+    0x00, 0x35, 0x14, 0xe9, 0x00, 0x0c, 0x00, 0x00, 'h', 'i', '!', '\n'
+};
+
+static bool
+parse_packet(int linktype, const uint8_t *hdr, size_t hdr_len, const uint8_t *ip, size_t ip_len,
+             ws_packet_endpoints_t *ep)
+{
+    uint8_t packet[256];
+
+    g_assert_cmpuint(hdr_len + ip_len, <=, sizeof packet);
+    memcpy(packet, hdr, hdr_len);
+    memcpy(packet + hdr_len, ip, ip_len);
+    return ws_packet_endpoints_parse(linktype, packet, hdr_len + ip_len, ep);
+}
+
+#define PARSE(linktype, hdr, ip, ep) parse_packet(linktype, hdr, sizeof hdr, ip, sizeof ip, ep)
+
+static void
+check_ipv4_tcp(const ws_packet_endpoints_t *ep)
+{
+    ws_in4_addr src, dst;
+
+    g_assert_true(ws_inet_pton4("10.0.0.1", &src));
+    g_assert_true(ws_inet_pton4("10.0.0.2", &dst));
+    g_assert_cmpint(ep->protocol, ==, WS_PROCESS_LOOKUP_TCP);
+    g_assert_cmpuint(ep->src.ip_version, ==, 4);
+    g_assert_cmpuint(ep->dst.ip_version, ==, 4);
+    g_assert_cmpuint(ep->src.addr.ipv4, ==, src);
+    g_assert_cmpuint(ep->dst.addr.ipv4, ==, dst);
+    g_assert_cmpuint(ep->src.port, ==, 12345);
+    g_assert_cmpuint(ep->dst.port, ==, 80);
+}
+
+static void
+check_ipv6_udp(const ws_packet_endpoints_t *ep)
+{
+    ws_in6_addr src, dst;
+
+    g_assert_true(ws_inet_pton6("2001:db8::1", &src));
+    g_assert_true(ws_inet_pton6("2001:db8::2", &dst));
+    g_assert_cmpint(ep->protocol, ==, WS_PROCESS_LOOKUP_UDP);
+    g_assert_cmpuint(ep->src.ip_version, ==, 6);
+    g_assert_cmpuint(ep->dst.ip_version, ==, 6);
+    g_assert_cmpmem(ep->src.addr.ipv6.bytes, 16, src.bytes, 16);
+    g_assert_cmpmem(ep->dst.addr.ipv6.bytes, 16, dst.bytes, 16);
+    g_assert_cmpuint(ep->src.port, ==, 53);
+    g_assert_cmpuint(ep->dst.port, ==, 5353);
+}
+
+static void
+test_packet_endpoints_link_layers(void)
+{
+    ws_packet_endpoints_t ep;
+
+    g_assert_true(ws_packet_endpoints_linktype_supported(1));
+    g_assert_false(ws_packet_endpoints_linktype_supported(105));  /* IEEE 802.11 */
+
+    g_assert_true(PARSE(1, ethernet_ipv4_hdr, ipv4_tcp, &ep));      /* Ethernet */
+    check_ipv4_tcp(&ep);
+    g_assert_true(PARSE(1, ethernet_vlan_ipv6_hdr, ipv6_udp, &ep)); /* Ethernet, VLAN tagged */
+    check_ipv6_udp(&ep);
+    g_assert_false(PARSE(1, ethernet_arp_hdr, ipv4_tcp, &ep));      /* not IP */
+    g_assert_true(PARSE(0, null_hdr, ipv4_tcp, &ep));               /* BSD loopback */
+    check_ipv4_tcp(&ep);
+    g_assert_true(PARSE(108, loop_hdr, ipv6_udp, &ep));             /* OpenBSD loopback */
+    check_ipv6_udp(&ep);
+    g_assert_true(PARSE(113, sll_ipv6_hdr, ipv6_udp, &ep));         /* Linux cooked capture */
+    check_ipv6_udp(&ep);
+    g_assert_true(PARSE(276, sll2_ipv4_hdr, ipv4_tcp, &ep));        /* Linux cooked capture v2 */
+    check_ipv4_tcp(&ep);
+    g_assert_true(ws_packet_endpoints_parse(101, ipv4_tcp, sizeof ipv4_tcp, &ep));  /* raw IP */
+    check_ipv4_tcp(&ep);
+    g_assert_true(ws_packet_endpoints_parse(229, ipv6_udp, sizeof ipv6_udp, &ep));  /* raw IPv6 */
+    check_ipv6_udp(&ep);
+    g_assert_false(PARSE(105, ethernet_ipv4_hdr, ipv4_tcp, &ep));   /* a link type we don't handle */
+}
+
+static void
+test_packet_endpoints_ip(void)
+{
+    ws_packet_endpoints_t ep;
+
+    /* Extension headers are stepped over; a first fragment still has the ports. */
+    g_assert_true(ws_packet_endpoints_parse(229, ipv6_ext_udp, sizeof ipv6_ext_udp, &ep));
+    check_ipv6_udp(&ep);
+    /* Later fragments have no ports. */
+    g_assert_false(ws_packet_endpoints_parse(229, ipv6_later_fragment, sizeof ipv6_later_fragment, &ep));
+    g_assert_false(ws_packet_endpoints_parse(228, ipv4_fragment, sizeof ipv4_fragment, &ep));
+    /* Neither TCP nor UDP. */
+    g_assert_false(ws_packet_endpoints_parse(228, ipv4_icmp, sizeof ipv4_icmp, &ep));
+    /* Cut off before the ports, or within the IP header. */
+    g_assert_false(ws_packet_endpoints_parse(228, ipv4_tcp, 22, &ep));
+    g_assert_false(ws_packet_endpoints_parse(228, ipv4_tcp, 19, &ep));
+    g_assert_false(ws_packet_endpoints_parse(229, ipv6_udp, 42, &ep));
+    g_assert_true(ws_packet_endpoints_parse(228, ipv4_tcp, 24, &ep));  /* just the ports is enough */
+    check_ipv4_tcp(&ep);
+}
+
 int main(int argc, char **argv)
 {
     int ret;
@@ -1026,7 +2144,7 @@ int main(int argc, char **argv)
     /* Set the program name. */
     g_set_prgname(PROGNAME);
 
-    ws_log_init(NULL);
+    ws_log_init(NULL, "Test Logging Debug Console");
 
     g_test_init(&argc, &argv, NULL);
 
@@ -1035,9 +2153,14 @@ int main(int argc, char **argv)
     g_test_add_func("/inet_addr/inet_pton6", test_inet_pton6_test1);
     g_test_add_func("/inet_addr/inet_ntop6", test_inet_ntop6_test1);
 
+    g_test_add_func("/wsjson/strip_jsonc_comments_basic", test_json_strip_jsonc_comments_basic);
+    g_test_add_func("/wsjson/strip_jsonc_comments_string_slashes", test_json_strip_jsonc_comments_string_slashes);
+    g_test_add_func("/wsjson/strip_jsonc_comments_unterminated_block_comment", test_json_strip_jsonc_comments_unterminated_block_comment);
+
     g_test_add_func("/str_util/format_size", test_format_size);
     g_test_add_func("/str_util/format_units", test_format_units);
     g_test_add_func("/str_util/escape_string", test_escape_string);
+    g_test_add_func("/str_util/csv_value_is_formula", test_csv_value_is_formula);
     g_test_add_func("/str_util/strconcat", test_strconcat);
     g_test_add_func("/str_util/strsplit", test_strsplit);
     g_test_add_func("/str_util/str_ascii", test_str_ascii);
@@ -1076,6 +2199,34 @@ int main(int argc, char **argv)
     g_test_add_func("/strtoi/basebuftou64", test_ws_basebuftou64);
     g_test_add_func("/strtoi/basebuftou64_end", test_ws_basebuftou64_end);
     g_test_add_func("/strtoi/hexbuftou64", test_ws_hexbuftou64);
+    g_test_add_func("/strtoi/basebuftoi64", test_ws_basebuftoi64);
+    g_test_add_func("/strtoi/basebuftoi64_end", test_ws_basebuftoi64_end);
+    g_test_add_func("/strtoi/hexbuftoi64", test_ws_hexbuftoi64);
+
+    g_test_add_func("/sap_lzclzh_decompress", test_sap_lzclzh_decompress);
+    g_test_add_func("/sap_lzclzh_decompress/errors", test_sap_lzclzh_decompress_errors);
+
+    g_test_add_func("/process_lookup/tcp4", test_process_lookup_tcp4);
+    g_test_add_func("/process_lookup/basic", test_process_lookup_basic);
+    g_test_add_func("/process_lookup/wildcard_udp", test_process_lookup_wildcard_udp);
+    g_test_add_func("/process_lookup/tcp6", test_process_lookup_tcp6);
+    g_test_add_func("/process_lookup/tcp4_mapped", test_process_lookup_tcp4_mapped);
+#ifndef _WIN32
+    g_test_add_func("/process_lookup/shared", test_process_lookup_shared);
+#endif
+    g_test_add_func("/packet_endpoints/link_layers", test_packet_endpoints_link_layers);
+    g_test_add_func("/packet_endpoints/ip", test_packet_endpoints_ip);
+
+#ifdef HAVE_ZSTD
+    g_test_add_func("/compression/zstd", test_zstd_writer);
+    g_test_add_data_func("/compression/zstd-frames/default", GINT_TO_POINTER(0), test_zstd_writer_frames);
+    g_test_add_data_func("/compression/zstd-frames/level19", GINT_TO_POINTER(19), test_zstd_writer_frames);
+#if ZSTD_VERSION_NUMBER >= 10400
+    g_test_add_data_func("/compression/zstd-frames/fast1", GINT_TO_POINTER(-1), test_zstd_writer_frames);
+    g_test_add_data_func("/compression/zstd-frames/fast5", GINT_TO_POINTER(-5), test_zstd_writer_frames);
+    g_test_add_data_func("/compression/zstd-frames/fast-max", GINT_TO_POINTER(ZSTD_minCLevel()), test_zstd_writer_frames);
+#endif
+#endif
 
     ret = g_test_run();
 

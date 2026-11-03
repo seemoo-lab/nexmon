@@ -22,6 +22,8 @@
 #include "packet-osi.h"
 #include "packet-osi-options.h"
 
+extern void proto_register_osi_options(void);
+
 #define OSI_OPT_SECURITY                0xc5
 #define OSI_OPT_QOS_MAINTANANCE         0xc3
 #define OSI_OPT_PRIORITY                0xcd
@@ -363,7 +365,7 @@ dissect_osi_options(unsigned char opt_len, tvbuff_t *tvb, int offset, proto_tree
 
           case OSI_OPT_SEC_GLOBAL_UNIQUE:
               next_tvb = tvb_new_subset_length(tvb, offset + 1, parm_len - 1);
-              dissector_try_payload_with_data(subdissector_decode_as_opt_security_table,
+              (void) dissector_try_payload_with_data(subdissector_decode_as_opt_security_table,
                                      next_tvb, pinfo, osi_option_tree, true, NULL);
               break;
           }

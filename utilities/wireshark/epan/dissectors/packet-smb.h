@@ -142,6 +142,13 @@ typedef struct {
 	const char *name;
 } smb_transact2_info_t;
 
+typedef struct {
+    uint32_t        frame_num;
+    unsigned        command_count;
+    bool            multi_cmds;
+    unsigned        cmd_index;
+} multi_cmds_t;
+
 /*
  * The information we need to save about a request in order to show the
  * frame number of the request in the dissection of the reply.
@@ -195,9 +202,9 @@ typedef struct {
 	/* Unification of fid variable type (was int) */
 	uint16_t	 fid;
 	uint16_t	 lanman_cmd;
-	unsigned char	*param_descrip; /* Keep these descriptors around */
-	unsigned char	*data_descrip;
-	unsigned char	*aux_data_descrip;
+	const char	*param_descrip; /* Keep these descriptors around */
+	const char	*data_descrip;
+	const char	*aux_data_descrip;
 	int	 info_level;
 } smb_transact_info_t;
 
@@ -235,6 +242,9 @@ typedef struct conv_tables {
 
 	/* track uid to username mappings */
 	wmem_tree_t *uid_tree;
+
+	/* This table is used to track which request frame a [NT]Trans[2] response fragment maps to */
+	GHashTable  *trans_frag_resp;
 } conv_tables_t;
 
 /* si */
@@ -289,9 +299,11 @@ typedef struct _smb_locking_saved_info_t {
 
 /* fsi used for tracking fid/tid to filename/sharename openedframe closedframe */
 typedef struct _smb_fid_saved_info_t {
-	char	*filename;
+	char		*filename;
 	uint32_t	 create_flags;
-	uint32_t	 access_mask;
+	uint32_t	 desired_access;
+	uint32_t	 maximal_access;
+	uint32_t	 granted_access;
 	uint32_t	 file_attributes;
 	uint32_t	 share_access;
 	uint32_t	 create_options;
@@ -302,11 +314,11 @@ struct _smb_fid_into_t {
         uint16_t	tid,fid;
         /* The end_of_file will store the last registered offset or
            the reported end_of_file from the SMB protocol */
-        int64_t	end_of_file;
+        int64_t		end_of_file;
         /* These two were int */
 	unsigned	opened_in;
 	unsigned	closed_in;
-	int	type;
+	int		type;
 	smb_fid_saved_info_t *fsi;
 };
 
@@ -323,8 +335,8 @@ typedef struct _smb_tid_into_t {
  * Dissect an smb FID
  */
 extern smb_fid_info_t *dissect_smb_fid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-    int offset, int len, uint16_t fid, bool is_created, bool is_closed, bool is_generated, bool is_displayed, smb_info_t* si);
-
+	int offset, int len, uint16_t fid, bool is_created, bool is_closed, bool is_generated,
+	bool is_displayed, smb_info_t* si);
 /*
  * Dissect named pipe state information.
  */
@@ -339,7 +351,9 @@ extern int dissect_nt_create_options(tvbuff_t *tvb, proto_tree *parent_tree, int
 
 extern int dissect_nt_share_access(tvbuff_t *tvb, proto_tree *parent_tree, int offset);
 
-extern int dissect_smb_access_mask(tvbuff_t *tvb, proto_tree *parent_tree, int offset);
+extern int dissect_smb_access_mask(tvbuff_t *tvb, proto_tree *parent_tree, int offset, bool is_dir, int mask_type);
+extern int dissect_smb_access_mask_bits(tvbuff_t *tvb, proto_tree *parent_tree, int offset, int len,
+	uint32_t mask, bool is_dir, int mask_type);
 
 extern const value_string oa_open_vals[];
 extern const value_string impersonation_level_vals[];
@@ -359,7 +373,7 @@ extern int dissect_qfsi_FS_OBJECTID_INFO(tvbuff_t * tvb, packet_info * pinfo, pr
 extern int dissect_qfsi_FS_FULL_SIZE_INFO(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, int offset, uint16_t *bcp);
 extern int dissect_qfi_SMB_FILE_EA_INFO(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc);
 extern int dissect_qfi_SMB_FILE_STREAM_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset, uint16_t *bcp, bool *trunc, int unicode);
-extern int dissect_qfi_SMB_FILE_NAME_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc, bool unicode);
+extern int dissect_qfi_SMB_FILE_NAME_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc);
 extern int dissect_qfi_SMB_FILE_STANDARD_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc);
 extern int dissect_qfi_SMB_FILE_INTERNAL_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc);
 extern int dissect_qsfi_SMB_FILE_POSITION_INFO(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint16_t *bcp, bool *trunc);
@@ -381,6 +395,9 @@ extern const char *smb_get_unicode_or_ascii_string(wmem_allocator_t *scope, tvbu
 
 /* Returns an IP (v4 or v6) of the server in a SMB/SMB2 conversation */
 extern const char *tree_ip_str(packet_info *pinfo, uint16_t cmd);
+
+int dissect_smb_datetime(tvbuff_t *tvb, proto_tree *parent_tree, int offset,
+    int hf_date, int hf_dos_date, int hf_dos_time, bool time_first);
 
 #endif
 

@@ -26,8 +26,6 @@
 #include <epan/wmem_scopes.h>
 #include "packet-tcp.h"
 
-#include <wsutil/strtoi.h>
-
 /* bitmap length */
 #define BM_LEN 8
 
@@ -571,12 +569,12 @@ static uint64_t hex2bin(const char* hexstr, int len)
       if((offset -2 + len) > iso8583_len)\
         return NULL
 
-static char *get_bit(const struct iso_type *data_type, int hf, packet_info *pinfo, tvbuff_t *tvb, unsigned *off_set, proto_tree *tree, proto_item **exp, int *length, uint32_t iso8583_len)
+static char *get_bit(const struct iso_type *data_type, int hf, packet_info *pinfo, tvbuff_t *tvb, int *off_set, proto_tree *tree, proto_item **exp, int *length, uint32_t iso8583_len)
 {
   char aux[1024];
   char* ret=NULL;
   uint32_t len;
-  unsigned offset = *off_set;
+  int offset = *off_set;
   bool str_input = false;
 
   /* Check if it is a fixed or variable length
@@ -593,12 +591,10 @@ static char *get_bit(const struct iso_type *data_type, int hf, packet_info *pinf
     {
       case ASCII_CHARSET:
       {
-        uint8_t* sizestr;
         checksize(len);
 
-        sizestr = tvb_get_string_enc(pinfo->pool, tvb, offset, len , ENC_ASCII);
         offset += len;
-        if (!ws_strtou32(sizestr, NULL, &len))
+        if (!tvb_get_string_uint(tvb, offset, len, ENC_STR_DEC, &len, NULL))
           return NULL;
         break;
       }
@@ -646,7 +642,7 @@ static char *get_bit(const struct iso_type *data_type, int hf, packet_info *pinf
       }
       else if(charset_pref == NUM_NIBBLE_CHARSET)
       {
-        int tlen = (len%2)? len/2 + 1 : len/2;
+        uint32_t tlen = (len%2)? len/2 + 1 : len/2;
         checksize(tlen);
         tvb_memcpy(tvb, aux, offset, tlen);
         if((ret = bin2hex(pinfo->pool, (uint8_t *)aux, TYPE_BCD, len)) == NULL)
@@ -1013,7 +1009,7 @@ proto_register_iso8583(void)
 
   static hf_register_info hf_data[128];
 
-  static const char *hf_data_blurb[128] = {
+  static const char * const hf_data_blurb[128] = {
     /* Bit 1 */
     "Second Bit map present",
     /* Bit 2 */

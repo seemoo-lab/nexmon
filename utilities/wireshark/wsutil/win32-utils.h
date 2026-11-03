@@ -24,7 +24,10 @@
 extern "C" {
 #endif
 
-/** Quote the argument element if necessary, so that it will get
+/**
+ * @brief Quote a command-line argument for Windows process creation.
+ *
+ * Quote the argument element if necessary, so that it will get
  * reconstructed correctly in the C runtime startup code.  Note that
  * the unquoting algorithm in the C runtime is really weird, and
  * rather different than what Unix shells do. See stdargv.c in the C
@@ -41,7 +44,9 @@ extern "C" {
 WS_DLL_PUBLIC
 char * protect_arg (const char *argv);
 
-/** Tests a UTF-8 string to see if it is a Windows pipe name.
+/**
+ * @brief Tests a UTF-8 string to see if it is a Windows pipe name.
+ *
  * Under Windows, named pipes _must_ have the form "\\<server>\pipe\<pipename>".
  * <server> may be "." for localhost. This does not check that a pipe server
  * has actually created the pipe, only that the name is the proper form.
@@ -52,7 +57,8 @@ char * protect_arg (const char *argv);
 WS_DLL_PUBLIC
 bool win32_is_pipe_name(const char* pipe_name);
 
-/** Generate a string for a Windows error.
+/**
+ * @brief Generate a string for a Windows error.
  *
  * @param error The Windows error code
  * @return a localized UTF-8 string containing the corresponding error message
@@ -60,7 +66,8 @@ bool win32_is_pipe_name(const char* pipe_name);
 WS_DLL_PUBLIC
 const char * win32strerror(DWORD error);
 
-/** Generate a string for a Win32 exception code.
+/**
+ * @brief Generate a string for a Win32 exception code.
  *
  * @param exception The exception code
  * @return a non-localized string containing the error message
@@ -98,6 +105,25 @@ BOOL win32_create_process(const char *application_name, const char *command_line
     DWORD creation_flags, LPVOID environment,
     const char *current_directory, LPSTARTUPINFO startup_info, LPPROCESS_INFORMATION process_information
 );
+
+/**
+ * @brief Returns the command string associated with a file extension.
+ *
+ * Calls AssocQueryString in order to search the registry and find the
+ * ASSOCSTR_COMMAND, if any, associated with an extension. This is a
+ * string like looks like "\"C:\Program Files\Python\python.exe\" \"%1\" %*",
+ * where the original command should be substituted for "%1". Note everything
+ * is pre-quoted. The "%*" means the rest of the argument line, and does
+ * not need to be deleted; Windows will automatically ignore it. including
+ * if other custom parameters are appended to the command string (do append a
+ * space, though, if adding more parameters.)
+ *
+ * @param fileExtension Null-terminated string including the dot, e.g. ".py"
+ * @return Command string (free with g_free), or NULL on failure.
+ */
+extern
+char*
+win32_command_for_ext(const char* fileExtension);
 
 #ifdef	__cplusplus
 }

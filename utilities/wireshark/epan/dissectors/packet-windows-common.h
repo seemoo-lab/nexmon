@@ -5752,6 +5752,7 @@ extern value_string_ext HRES_errors_ext;
     XXX( SMBE_DOS_badshare,                         32, "Share mode on file conflict with open mode") \
     XXX( SMBE_DOS_lock,                             33, "Lock request conflicts with existing lock") \
     XXX( SMBE_DOS_unsup,                            50, "Request unsupported, returned by Win 95") /* RJS 20Jun98 */ \
+    XXX( SMBE_DOS_dupnamenet,                       52, "Duplicate name on network") /* returned by SMB TreeConnectAndX */ \
     XXX( SMBE_DOS_netnamedel,                       64, "Network name deleted or not available") \
     XXX( SMBE_DOS_noipc,                            66, "Don't support ipc")   \
     XXX( SMBE_DOS_nosuchshare,                      67, "Requested share does not exist") \
@@ -5871,7 +5872,6 @@ int dissect_nt_sid_ret_item(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 
 /* Misc/reserved */
 
-#define ACCESS_SACL_ACCESS     0x00800000
 #define SYSTEM_SECURITY_ACCESS 0x01000000
 #define MAXIMUM_ALLOWED_ACCESS 0x02000000
 
@@ -5889,7 +5889,7 @@ int dissect_nt_sid_ret_item(tvbuff_t *tvb, int offset, proto_tree *parent_tree,
 
 #define SPECIFIC_RIGHTS_MASK 0x0000FFFF /* Specific rights defined per-object */
 
-typedef void (nt_access_mask_fn_t)(tvbuff_t *tvb, int offset,
+typedef void (nt_access_mask_fn_t)(tvbuff_t *tvb, unsigned offset,
 				   proto_tree *tree, uint32_t access);
 
 /* Map generic access permissions to specific permissions */

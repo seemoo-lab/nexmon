@@ -123,7 +123,7 @@ rlc_3gpp_tap_info* select_rlc_lte_session(capture_file *cf,
     fdata = cf->current_frame;
 
     /* Dissect the data from the current frame. */
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     if (!cf_read_current_record(cf)) {
         dfilter_free(sfcode);
         wtap_rec_cleanup(&rec);
@@ -160,14 +160,13 @@ rlc_3gpp_tap_info* select_rlc_lte_session(capture_file *cf,
     if (th.num_hdrs>1){
         /* Can only handle a single RLC channel yet */
         wtap_rec_cleanup(&rec);
-        *err_msg = g_strdup("The selected packet has more than one LTE RLC channel in it.");
+        *err_msg = g_strdup("The selected packet has traffic from more than one RLC bearer.");
         return NULL;
     }
 
     /* For now, still always choose the first/only one */
     hdrs->num = fdata->num;
-    hdrs->rel_secs = rel_ts.secs;
-    hdrs->rel_usecs = rel_ts.nsecs/1000;
+    nstime_copy(&hdrs->rel_ts, &rel_ts);
 
     hdrs->rat = th.rlchdrs[0]->rat;
     hdrs->ueid = th.rlchdrs[0]->ueid;
@@ -199,8 +198,7 @@ static tap_packet_status rlc_lte_tap_for_graph_data(void *pct, packet_info *pinf
         struct rlc_segment *segment = g_new(struct rlc_segment, 1);
         segment->next = NULL;
         segment->num = pinfo->num;
-        segment->rel_secs = (uint32_t) pinfo->rel_ts.secs;
-        segment->rel_usecs = pinfo->rel_ts.nsecs/1000;
+        nstime_copy(&segment->rel_ts, &pinfo->rel_ts);
 
         segment->rat = rlchdr->rat;
         segment->ueid = rlchdr->ueid;

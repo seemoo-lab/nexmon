@@ -455,7 +455,7 @@ static int peekclassic_read_packet_v7(wtap *wth, FILE_T fh, wtap_rec *rec,
 	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
 	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
 	tsecs = (time_t) (timestamp/1000000);
-	tusecs = (uint32_t) (timestamp - tsecs*1000000);
+	tusecs = (uint32_t) (timestamp%1000000);
 	rec->ts.secs  = tsecs - EPOCH_DELTA_1904_01_01_00_00_00_UTC;
 	rec->ts.nsecs = tusecs * 1000;
 	rec->rec_header.packet_header.len    = length;

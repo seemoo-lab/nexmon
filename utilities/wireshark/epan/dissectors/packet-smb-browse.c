@@ -512,12 +512,12 @@ dissect_smb_server_type_flags(tvbuff_t *tvb, int offset, packet_info *pinfo,
 static int
 dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint8_t cmd;
 	proto_tree *tree = NULL;
 	proto_item *item = NULL;
 	uint32_t periodicity;
-	uint8_t *host_name;
+	char *host_name;
 	int namelen;
 	uint8_t server_count;
 	uint8_t os_major_ver, os_minor_ver;
@@ -558,7 +558,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		offset += 4;
 
 		/* server name */
-		host_name = tvb_get_stringzpad(pinfo->pool, tvb, offset, HOST_NAME_LEN, ENC_CP437|ENC_NA);
+		host_name = (char*)tvb_get_stringzpad(pinfo->pool, tvb, offset, HOST_NAME_LEN, ENC_CP437|ENC_NA);
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s", host_name);
 		proto_tree_add_string_format(tree, hf_server_name,
 			tvb, offset, HOST_NAME_LEN,
@@ -622,7 +622,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		break;
 	}
 	case BROWSE_REQUEST_ANNOUNCE: {
-		uint8_t *computer_name;
+		char *computer_name;
 
 		/* unused/unknown flags */
 		proto_tree_add_item(tree, hf_unused_flags,
@@ -630,9 +630,8 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		offset += 1;
 
 		/* name of computer to which to send reply */
-		computer_name = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &namelen, ENC_ASCII);
-		proto_tree_add_string(tree, hf_response_computer_name,
-			tvb, offset, namelen, computer_name);
+		proto_tree_add_item_ret_string(tree, hf_response_computer_name,
+			tvb, offset, -1, ENC_ASCII, pinfo->pool, (const uint8_t**)&computer_name);
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s", computer_name);
 		break;
 	}
@@ -741,7 +740,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 static int
 dissect_mailslot_lanman(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint8_t cmd;
 	proto_tree *tree;
 	proto_item *item;

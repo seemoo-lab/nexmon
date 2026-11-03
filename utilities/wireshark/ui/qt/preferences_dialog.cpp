@@ -17,15 +17,19 @@
 #include <epan/decode_as.h>
 #include <ui/language.h>
 #include <ui/preference_utils.h>
-#include <cfile.h>
+#include <epan/cfile.h>
 #include <ui/commandline.h>
 #include <ui/simple_dialog.h>
 #include <ui/recent.h>
 #include <main_window.h>
+#include <ui/qt/manager/interface_list_manager.h>
 #include <extcap.h>
 
 #include <ui/qt/utils/qt_ui_utils.h>
 #include <ui/qt/utils/color_utils.h>
+#include <ui/capture_globals.h>
+#include <app/application_flavor.h>
+
 
 #include "main_application.h"
 
@@ -63,7 +67,7 @@ module_prefs_get_redissect_flags(module_t *module, void *data)
     *must_redissect_p |= module->prefs_changed_flags;
 
     if (prefs_module_has_submodules(module))
-        return prefs_modules_foreach_submodules(module, module_prefs_get_redissect_flags, data);
+        return prefs_modules_foreach_submodules(module->submodules, module_prefs_get_redissect_flags, data);
 
     return 0;
 }
@@ -86,7 +90,7 @@ module_prefs_unstash(module_t *module, void *data)
     }
 
     if (prefs_module_has_submodules(module))
-        return prefs_modules_foreach_submodules(module, module_prefs_unstash, data);
+        return prefs_modules_foreach_submodules(module->submodules, module_prefs_unstash, data);
 
     return 0;     /* Keep unstashing. */
 }
@@ -103,7 +107,7 @@ module_prefs_clean_stash(module_t *module, void *)
     }
 
     if (prefs_module_has_submodules(module))
-        return prefs_modules_foreach_submodules(module, module_prefs_clean_stash, Q_NULLPTR);
+        return prefs_modules_foreach_submodules(module->submodules, module_prefs_clean_stash, Q_NULLPTR);
 
     return 0;     /* Keep cleaning modules */
 }
@@ -126,7 +130,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
 {
     advancedPrefsModel_.setSourceModel(&model_);
     modulePrefsModel_.setSourceModel(&model_);
-    saved_capture_no_extcap_ = prefs.capture_no_extcap;
 
     // Some classes depend on pref_ptr_to_pref_ so this MUST be called after
     // model_.populate().
@@ -166,10 +169,12 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::Expert)] = pd_ui_->expertFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::FilterButtons)] = pd_ui_->filterExpressonsFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::RSAKeys)] = pd_ui_->rsaKeysFrame;
+    prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::Aggregation)] = pd_ui_->aggregationFrame;
     prefs_pane_to_item_[PrefsModel::typeToString(PrefsModel::Advanced)] = pd_ui_->advancedFrame;
     prefs_pane_to_item_[MODULES_NAME] = NULL;
 
     pd_ui_->filterExpressonsFrame->setUat(uat_get_table_by_name("Display expressions"));
+    pd_ui_->aggregationFrame->setUat(uat_get_table_by_name("Aggregation fields"));
     pd_ui_->expertFrame->setUat(uat_get_table_by_name("Expert Info Severity Level Configuration"));
 
     connect(pd_ui_->prefsView, &PrefModuleTreeView::goToPane, this, &PreferencesDialog::selectPane);
@@ -190,7 +195,7 @@ PreferencesDialog::~PreferencesDialog()
 {
     delete pd_ui_;
     delete searchLineEditTimer;
-    prefs_modules_foreach_submodules(NULL, module_prefs_clean_stash, NULL);
+    prefs_modules_for_all_modules(module_prefs_clean_stash, NULL);
 }
 
 void PreferencesDialog::setPane(const QString module_name)
@@ -400,15 +405,24 @@ void PreferencesDialog::apply()
     //       "stashed" value is sometimes the last valid input, not, e.g., the
     //       input when the dialog was opened.
     // XXX - We're also too enthusiastic about setting must_redissect.
-    prefs_modules_foreach_submodules(NULL, module_prefs_get_redissect_flags, (void *)&redissect_flags);
+    prefs_modules_for_all_modules(module_prefs_get_redissect_flags, (void *)&redissect_flags);
+#ifdef HAVE_LIBGNUTLS
+    redissect_flags |= pd_ui_->rsaKeysFrame->acceptChanges();
+#endif
     if (redissect_flags & PREF_EFFECT_DISSECTION) {
         // Freeze the packet list early to avoid updating column data before doing a
         // full redissection. The packet list will be thawed when redissection is done.
         mainApp->emitAppSignal(MainApplication::FreezePacketList);
     }
-    prefs_modules_foreach_submodules(NULL, module_prefs_unstash, NULL);
+    prefs_modules_for_all_modules(module_prefs_unstash, NULL);
 
-    extcap_register_preferences();
+    // Extcap preferences have a file of their own, which prefs_main_write()
+    // below doesn't write for us. Write it here instead of registering the
+    // extcap preferences so that we have something to write, which caused
+    // warnings and unexpected behavior of its own: newly registered
+    // preferences don't get a stashed value in the model, which matters if the
+    // "Apply" button was selected instead of "Ok".
+    extcap_write_preferences();
 
     if (redissect_flags & PREF_EFFECT_GUI_LAYOUT) {
         // Layout type changed, reset sizes
@@ -421,12 +435,11 @@ void PreferencesDialog::apply()
     }
 
     pd_ui_->columnFrame->unstash();
+    pd_ui_->fontandcolorFrame->unstash();
     pd_ui_->welcomePageFrame->unstash();
     pd_ui_->filterExpressonsFrame->acceptChanges();
+    pd_ui_->aggregationFrame->acceptChanges();
     pd_ui_->expertFrame->acceptChanges();
-#ifdef HAVE_LIBGNUTLS
-    pd_ui_->rsaKeysFrame->acceptChanges();
-#endif
 
     //Filter expressions don't affect dissection, so there is no need to
     //send any events to that effect.  However, the app needs to know
@@ -434,14 +447,18 @@ void PreferencesDialog::apply()
     mainApp->emitAppSignal(MainApplication::FilterExpressionsChanged);
 
     prefs_main_write();
-    if (save_decode_as_entries(&err) < 0)
+    if (save_decode_as_entries(application_flavor_name_proper(), application_configuration_environment_prefix(), &err) < 0)
     {
         simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err);
         g_free(err);
     }
 
-    write_language_prefs();
-    mainApp->loadLanguage(QString(language));
+    if (!write_language_prefs(application_configuration_environment_prefix(), &err))
+    {
+        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err);
+        g_free(err);
+    }
+    mainApp->loadLanguage(QString(get_language_used()));
     /*
      * Apply the protocol preferences first - "gui_prefs_apply()" could
      * cause redissection, and we have to make sure the protocol
@@ -450,10 +467,9 @@ void PreferencesDialog::apply()
     prefs_apply_all();
 
     /* Fill in capture options with values from the preferences */
-    prefs_to_capture_opts();
-
-    if (redissect_flags & (PREF_EFFECT_GUI_COLOR)) {
-        mainApp->emitAppSignal(MainApplication::ColorsChanged);
+    prefs_to_capture_opts(&global_capture_opts);
+    if (redissect_flags & PREF_EFFECT_AGGREGATION) {
+        mainApp->emitAppSignal(MainApplication::AggregationChanged);
     }
 
     if (redissect_flags & PREF_EFFECT_FIELDS) {
@@ -472,9 +488,6 @@ void PreferencesDialog::apply()
     if (redissect_flags & PREF_EFFECT_GUI_LAYOUT) {
         mainApp->emitAppSignal(MainApplication::RecentPreferencesRead);
     }
-
-    if (prefs.capture_no_extcap != saved_capture_no_extcap_)
-        mainApp->refreshLocalInterfaces();
 }
 
 void PreferencesDialog::on_buttonBox_accepted()
@@ -487,6 +500,7 @@ void PreferencesDialog::on_buttonBox_rejected()
 {
     //handle frames that don't have their own OK/Cancel "buttons"
     pd_ui_->filterExpressonsFrame->rejectChanges();
+    pd_ui_->aggregationFrame->rejectChanges();
     pd_ui_->expertFrame->rejectChanges();
 #ifdef HAVE_LIBGNUTLS
     pd_ui_->rsaKeysFrame->rejectChanges();

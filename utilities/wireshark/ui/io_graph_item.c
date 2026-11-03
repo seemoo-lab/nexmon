@@ -15,12 +15,11 @@
 
 #include <epan/epan_dissect.h>
 
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>
+
+#include <wsutil/nstime.h>
 
 #include "ui/io_graph_item.h"
-
-// XXX - constant defined elsewhere, any benefit to store it in a global .h ?
-#define MICROSECS_PER_SEC 1000000
 
 int64_t get_io_graph_index(packet_info *pinfo, int interval) {
     nstime_t time_delta;
@@ -41,7 +40,7 @@ int64_t get_io_graph_index(packet_info *pinfo, int interval) {
     return ((time_delta.secs*INT64_C(1000000) + time_delta.nsecs/1000) / interval);
 }
 
-GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_unit_t item_unit)
+GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_unit_t item_unit, const char* type_unit_name)
 {
     GString *err_str = NULL;
     if (item_unit >= IOG_ITEM_UNIT_CALC_SUM) {
@@ -62,9 +61,8 @@ GString *check_field_unit(const char *field_name, int *hf_index, io_graph_item_u
             NULL
         };
 
-        if (application_flavor_is_stratoshark()) {
-            item_unit_names[0] = "Events";
-        }
+        //Overwrite the first entry with the type-specific name
+        item_unit_names[0] = type_unit_name;
 
         /* There was no field specified */
         if ((field_name == NULL) || (field_name[0] == 0)) {
@@ -157,11 +155,11 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val
     // more meaningful and consistent.
     switch (val_units_) {
     case IOG_ITEM_UNIT_PACKETS:
-        return asAOT ? MICROSECS_PER_SEC*item->frames/interval_ : item->frames;
+        return asAOT ? WS_USECS_PER_SEC*item->frames/interval_ : item->frames;
     case IOG_ITEM_UNIT_BYTES:
-        return (double)(asAOT ? MICROSECS_PER_SEC*item->bytes/interval_ : item->bytes);
+        return (double)(asAOT ? WS_USECS_PER_SEC*item->bytes/interval_ : item->bytes);
     case IOG_ITEM_UNIT_BITS:
-        return (double)(asAOT ? MICROSECS_PER_SEC*item->bytes*8/interval_ : item->bytes*8);
+        return (double)(asAOT ? WS_USECS_PER_SEC*item->bytes*8/interval_ : item->bytes*8);
     case IOG_ITEM_UNIT_CALC_FRAMES:
         return item->frames;
     case IOG_ITEM_UNIT_CALC_FIELDS:
@@ -199,7 +197,7 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val
             value = (double)item->int_min;
             break;
         case IOG_ITEM_UNIT_CALC_THROUGHPUT:
-            value = item->double_tot*MICROSECS_PER_SEC/interval_;
+            value = item->double_tot*WS_USECS_PER_SEC/interval_;
             break;
         case IOG_ITEM_UNIT_CALC_AVERAGE:
             if (item->fields) {
@@ -232,7 +230,7 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val
             value = (double)item->uint_min;
             break;
         case IOG_ITEM_UNIT_CALC_THROUGHPUT:
-            value = item->double_tot*MICROSECS_PER_SEC/interval_;
+            value = item->double_tot*WS_USECS_PER_SEC/interval_;
             break;
         case IOG_ITEM_UNIT_CALC_AVERAGE:
             if (item->fields) {

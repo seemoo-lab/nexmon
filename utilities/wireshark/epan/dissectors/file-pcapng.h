@@ -51,10 +51,12 @@ int dissect_options(proto_tree *tree, packet_info *pinfo,
 
 
 
-/* Used by custom dissector */
+/* PUBLIC_HEADER: This is used by custom dissectors and should be in the "install" target */
 
 /* File info */
 struct info {
+    uint64_t       block_offset;
+    uint32_t       prev_block_length;
     uint32_t       block_number;
     uint32_t       section_number;
     uint32_t       interface_number;

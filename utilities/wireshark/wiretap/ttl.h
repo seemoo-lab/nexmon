@@ -14,14 +14,90 @@
 #include <stdint.h>
 #include "wtap.h"
 
+/**
+ * @brief Open a TTL file.
+ *
+ * @param wth Pointer to the wtap structure.
+ * @param err Error code if an error occurs.
+ * @param err_info Error information if an error occurs.
+ * @return wtap_open_return_val Return value indicating whether the file is a TTL file or not.
+ */
 wtap_open_return_val ttl_open(wtap* wth, int* err, char** err_info);
 
+/**
+ * @brief Determines the interface type based on the address.
+ *
+ * @param addr The address to analyze.
+ * @return int The interface type, such as WTAP_ENCAP_MOST or WTAP_ENCAP_ETHERNET.
+ */
 WS_DLL_PUBLIC int ttl_get_address_iface_type(uint16_t addr);
+
+/**
+ * @brief Checks if the given address corresponds to a CHB (Channel B) address.
+ *
+ * @param addr The address to check.
+ * @return true if the address is a CHB address, false otherwise.
+ */
 WS_DLL_PUBLIC bool ttl_is_chb_addr(uint16_t addr);
+
+/**
+ * @brief Retrieves the master address corresponding to a given address.
+ *
+ * @param ht Hash table containing address mappings, or NULL if no mappings are available.
+ * @param addr The address for which to retrieve the master address.
+ * @return uint16_t The master address corresponding to the given address.
+ */
 WS_DLL_PUBLIC uint16_t ttl_get_master_address(GHashTable* ht, uint16_t addr);
+
+/**
+ * @brief Retrieves the cascade name corresponding to a given address.
+ *
+ * @param addr The address for which to retrieve the cascade name.
+ * @return const char* The cascade name corresponding to the given address, or NULL if not found.
+ */
 WS_DLL_PUBLIC const char* ttl_get_cascade_name(uint16_t addr);
+
+/**
+ * @brief Retrieves the device name corresponding to a given address.
+ *
+ * @param addr The address for which to retrieve the device name.
+ * @return const char* The device name corresponding to the given address, or "Unknown" if not found.
+ */
 WS_DLL_PUBLIC const char* ttl_get_device_name(uint16_t addr);
+
+/**
+ * @brief Retrieves the function name corresponding to a given address.
+ *
+ * @param addr The address for which to retrieve the function name.
+ * @return const char* The function name corresponding to the given address, or "Unknown" if not found.
+ */
 WS_DLL_PUBLIC const char* ttl_get_function_name(uint16_t addr);
+
+/**
+ * @brief Initialize TTL masters from preference file.
+ *
+ * This function attempts to initialize TTL masters by reading a preference file.
+ * It first tries to read from a user-specific configuration file, and if that fails,
+ * it tries to read from a system-wide configuration file.
+ *
+ * @param ht Hash table to store the parsed master information.
+ * @param app_env_var_prefix Prefix for application environment variables.
+ * @return true if initialization is successful, false otherwise.
+ */
+WS_DLL_PUBLIC bool ttl_init_masters_from_pref_file(GHashTable* ht, const char* app_env_var_prefix);
+
+/**
+ * @brief Initialize TTL names from preference file.
+ *
+ * This function attempts to initialize a hash table with TTL address names
+ * by reading from a preference file. It first tries to read from a user-specific
+ * configuration file, and if that fails, it tries the system-wide configuration file.
+ *
+ * @param ht Hash table to store the TTL address names.
+ * @param app_env_var_prefix Prefix for application environment variables.
+ * @return true if successful, false otherwise.
+ */
+WS_DLL_PUBLIC bool ttl_init_names_from_pref_file(GHashTable* ht, const char* app_env_var_prefix);
 
 #define ttl_addr_get_cascade(x)     (((x) >> 10) & 0x7)
 #define ttl_addr_get_device(x)      (((x) >> 6) & 0xf)
@@ -39,31 +115,35 @@ WS_DLL_PUBLIC const char* ttl_get_function_name(uint16_t addr);
 
 #define TTL_LOGFILE_INFO_SIZE   4080
 
- /*
-  * The header of the file changed between versions. The real size is
-  * indicated by the header_size field, with the bare minimum being 16 bytes.
-  * The data after header_size (if any) is composed of two parts:
-  * 1. Log File information
-  * 2. XML describing the logger configuration used to create the log file
-  *
-  * The XML is assumed to be there only if the header size is bigger
-  * than 4096 bytes (i.e. Log File information is 4080 bytes in size).
-  */
+/*
+ * The header of the file changed between versions. The real size is
+ * indicated by the header_size field, with the bare minimum being 16 bytes.
+ * The data after header_size (if any) is composed of two parts:
+ * 1. Log File information
+ * 2. XML describing the logger configuration used to create the log file
+ *
+ * The XML is assumed to be there only if the header size is bigger
+ * than 4096 bytes (i.e. Log File information is 4080 bytes in size).
+ */
 
- /* TTL File Header */
+/**
+ * @brief Fixed-size file header present at the start of every TTL capture file.
+ */
 typedef struct ttl_fileheader {
-    uint8_t     magic[4];       /* Magic Number - "TTL " */
-    uint32_t    version;        /* File Format version */
-    uint32_t    block_size;     /* Size of the blocks */
-    uint32_t    header_size;    /* Size of the complete header */
+    uint8_t  magic[4];      /**< Magic number identifying the file as a TTL capture; must be "TTL ". */
+    uint32_t version;       /**< TTL file format version number. */
+    uint32_t block_size;    /**< Size in bytes of each data block in the file. */
+    uint32_t header_size;   /**< Total size of the complete file header in bytes; minimum 16; if > 4096, an XML logger configuration follows the log file information. */
 } ttl_fileheader_t;
 
-/* TTL Entry Header */
+/**
+ * @brief Per-entry header preceding each logged frame in a TTL capture file.
+ */
 typedef struct ttl_entryheader {
-    uint16_t    size_type;          /* Type (4 bits) | Size (12 bits) */
-    uint16_t    dest_addr;          /* Meta 1 (3 bits) | Destination Address (13 bits) */
-    uint16_t    src_addr;           /* Meta 2 (3 bits) | Source Address (13 bits) */
-    uint16_t    status_info;        /* Meaning changes between types */
+    uint16_t size_type;    /**< Packed field: entry type in the upper 4 bits, payload size in the lower 12 bits. */
+    uint16_t dest_addr;    /**< Packed field: meta flag bits in the upper 3 bits, destination address in the lower 13 bits. */
+    uint16_t src_addr;     /**< Packed field: meta flag bits in the upper 3 bits, source address in the lower 13 bits. */
+    uint16_t status_info;  /**< Status or auxiliary information whose meaning depends on the entry type in @ref size_type. */
 } ttl_entryheader_t;
 
 #define TTL_BUS_DATA_ENTRY          0

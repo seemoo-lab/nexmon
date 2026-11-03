@@ -4,6 +4,7 @@
  *
  * Firebird home: http://www.firebirdsql.org
  * Source: http://sourceforge.net/projects/firebird/
+ * https://firebirdsql.org/file/documentation/html/en/firebirddocs/wireprotocol/firebird-wire-protocol.html
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -23,6 +24,7 @@ void proto_register_gdsdb(void);
 void proto_reg_handoff_gdsdb(void);
 
 static dissector_handle_t gdsdb_handle;
+/* IANA-registered port */
 #define TCP_PORT	3050
 
 static int proto_gdsdb;
@@ -167,10 +169,10 @@ static int hf_gdsdb_prepare_bufferlength;
 static int hf_gdsdb_fetch_statement;
 static int hf_gdsdb_fetch_message_number;
 static int hf_gdsdb_fetch_messages;
+#endif
 /* gdsdb_fetch_response */
 static int hf_gdsdb_fetchresponse_status;
 static int hf_gdsdb_fetchresponse_messages;
-#endif
 /* gdsdb_free_statement */
 static int hf_gdsdb_free_statement;
 static int hf_gdsdb_free_option;
@@ -380,6 +382,8 @@ static const value_string gdsdb_opcode[] = {
 	{ op_cancel,                 "cancel" },
 	{ 0, NULL }
 };
+static value_string_ext gdsdb_opcode_ext = VALUE_STRING_EXT_INIT(gdsdb_opcode);
+
 
 static const value_string gdsdb_architectures[] = {
 	{  1, "Generic" },
@@ -466,6 +470,12 @@ static const value_string gdsdb_arg_types[] = {
 	{ 0, NULL }
 };
 
+static const value_string gdsdb_response_status_vals[] = {
+	{ 0, "success" },
+	{ 100, "end of cursor" },
+	{ 0, NULL }
+};
+
 static int dword_align(int length)
 {
 	return WS_ROUNDUP_4(length);
@@ -531,6 +541,13 @@ gdsdb_connect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 		return -1;
 
 	count = tvb_get_ntohl(tvb, offset+total_length-4);
+	if (count < 0 || count > 255) {
+		/* This is a 32-bit integer on the wire but as a count of
+		 * the number of supported protocol versions to follow, it
+		 * should never have the high bytes set. */
+		expert_add_info(pinfo, NULL, &ei_gdsdb_invalid_length);
+		return tvb_reported_length(tvb);
+	}
 	total_length += (4+(count*20));
 	if (length < total_length)
 		return -1;
@@ -777,7 +794,6 @@ gdsdb_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offs
 {
 	int total_length = 16;
 	int length = tvb_reported_length_remaining(tvb, offset);
-	uint32_t size_length;
 
 	/* Calculate if we need more data */
 	if (length < total_length) {
@@ -795,12 +811,7 @@ gdsdb_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offs
 	proto_tree_add_item(tree, hf_gdsdb_response_blobid, tvb,
 							offset, 8, ENC_BIG_ENDIAN);
 	offset += 8;
-	proto_tree_add_item_ret_uint(tree, hf_gdsdb_response_datasize, tvb,
-							offset, 4, ENC_BIG_ENDIAN, &size_length);
-	offset += 4;
-	if (size_length > 0)
-		proto_tree_add_item(tree, hf_gdsdb_response_data, tvb, offset, size_length, ENC_NA);
-	offset += size_length;
+	offset = add_byte_array(tree, hf_gdsdb_response_datasize, hf_gdsdb_response_data, tvb, offset);
 
 	return gdsdb_status_vector(tree, tvb, offset);
 }
@@ -1215,10 +1226,12 @@ gdsdb_fetch_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, in
 		return -1;
 	}
 
-	if (tree) {
-/* hf_gdsdb_fetchresponse_status */
-/* hf_gdsdb_fetchresponse_messages */
-	}
+	proto_tree_add_item(tree, hf_gdsdb_fetchresponse_status, tvb,
+							offset, 4, ENC_BIG_ENDIAN);
+	offset += 4;
+	proto_tree_add_item(tree, hf_gdsdb_fetchresponse_messages, tvb,
+							offset, 4, ENC_BIG_ENDIAN);
+	//offset += 4;
 
 	return tvb_reported_length(tvb);
 }
@@ -1289,7 +1302,7 @@ gdsdb_sql_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int 
 	return tvb_reported_length(tvb);
 }
 
-static int (*gdsdb_handle_opcode[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset) = {
+static int (* const gdsdb_handle_opcode[])(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset) = {
 	gdsdb_dummy,             /* op_void */
 	gdsdb_connect,           /* op_connect */
 	gdsdb_dummy,             /* op_exit */
@@ -1406,11 +1419,22 @@ dissect_gdsdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 	while (tvb_reported_length_remaining(tvb, offset) >= 4)
 	{
 		opcode = tvb_get_ntohl(tvb, offset);
-		if(opcode >= op_max)
-			return 0;
+		if(opcode >= op_max) {
+			/* At least one opcode has been added to the tree, so
+			 * abort rather than rejecting the packet. */
+			return tvb_reported_length(tvb);
+		}
 
+		/* There is no length field for PDUs, so each opcode must be
+		 * scanned to determine the length.
+		 *
+		 * XXX - This should be done before adding anything to the tree
+		 * or columns for the opcode. Either there should be separate
+		 * functions that return the expected length, or the processing
+		 * functions should set pinfo->desegment_len themselves.
+		 */
 		col_append_sep_str(pinfo->cinfo, COL_INFO, ", ",
-				val_to_str(pinfo->pool, opcode, gdsdb_opcode, "Unknown opcode %u"));
+				val_to_str_ext(pinfo->pool, opcode, &gdsdb_opcode_ext, "Unknown opcode %u"));
 
 		ti = proto_tree_add_item(tree, proto_gdsdb, tvb, offset, -1, ENC_NA);
 		gdsdb_tree = proto_item_add_subtree(ti, ett_gdsdb);
@@ -1441,14 +1465,14 @@ proto_register_gdsdb(void)
 	static hf_register_info hf[] = {
 		{ &hf_gdsdb_opcode,
 			{ "Opcode", "gdsdb.opcode",
-			FT_UINT32, BASE_DEC, VALS(gdsdb_opcode), 0x0,
+			FT_UINT32, BASE_DEC|BASE_EXT_STRING, &gdsdb_opcode_ext, 0x0,
 			NULL, HFILL }
 		},
 		/* gdsdb_dummy */
 		/* gdsdb_connect */
 		{ &hf_gdsdb_connect_operation,
 			{ "Operation", "gdsdb.connect.operation",
-			FT_UINT32, BASE_DEC, VALS(gdsdb_opcode), 0x0,
+			FT_UINT32, BASE_DEC|BASE_EXT_STRING, &gdsdb_opcode_ext, 0x0,
 			NULL, HFILL }
 		},
 		{ &hf_gdsdb_connect_version,
@@ -1972,10 +1996,11 @@ proto_register_gdsdb(void)
 			FT_UINT32, BASE_DEC, NULL, 0x0,
 			NULL, HFILL }
 		},
+#endif
 		/* gdsdb_fetch_response */
 		{ &hf_gdsdb_fetchresponse_status,
 			{ "Status", "gdsdb.fetchresponse.status",
-			FT_UINT32, BASE_DEC, NULL, 0x0,
+			FT_UINT32, BASE_DEC, VALS(gdsdb_response_status_vals), 0x0,
 			NULL, HFILL }
 		},
 		{ &hf_gdsdb_fetchresponse_messages,
@@ -1983,7 +2008,6 @@ proto_register_gdsdb(void)
 			FT_UINT32, BASE_DEC, NULL, 0x0,
 			NULL, HFILL }
 		},
-#endif
 		/* gdsdb_free_statement */
 		{ &hf_gdsdb_free_statement,
 			{ "Statement", "gdsdb.fetchresponse.statement",

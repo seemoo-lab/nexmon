@@ -39,6 +39,7 @@
 #include <QCheckBox>
 
 #include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 #include <ui/qt/utils/qt_ui_utils.h>
 #include <ui/qt/rtp_player_dialog.h>
 #include <ui/qt/utils/stock_icon.h>
@@ -109,7 +110,7 @@ public:
             bg_color = color_cn_;
         } else if (statinfo->flags & STAT_FLAG_WRONG_SEQ) {
             status = "Wrong sequence number";
-            bg_color = ColorUtils::expert_color_error;
+            bg_color = ThemeManager::instance()->color(ThemeManager::ExpertError);
         } else if (statinfo->flags & STAT_FLAG_DUP_PKT) {
             status = "Suspected duplicate (MAC address) only delta time calculated";
             bg_color = color_rtp_warn_;
@@ -167,7 +168,7 @@ public:
         if (bg_color.isValid()) {
             for (int col = 0; col < columnCount(); col++) {
                 setBackground(col, bg_color);
-                setForeground(col, ColorUtils::expert_color_foreground);
+                setForeground(col, ThemeManager::instance()->color(ThemeManager::ExpertForeground));
             }
         }
     }
@@ -186,7 +187,7 @@ public:
                 << marker_str << status_str;
     }
 
-    bool operator< (const QTreeWidgetItem &other) const
+    bool operator< (const QTreeWidgetItem &other) const override
     {
         if (other.type() != rtp_analysis_type_) return QTreeWidgetItem::operator< (other);
         const RtpAnalysisTreeWidgetItem *other_row = static_cast<const RtpAnalysisTreeWidgetItem *>(&other);
@@ -265,7 +266,6 @@ RtpAnalysisDialog::RtpAnalysisDialog(QWidget &parent, CaptureFile &cf) :
 
     stream_ctx_menu_.addAction(ui->actionGoToPacket);
     stream_ctx_menu_.addAction(ui->actionNextProblem);
-    set_action_shortcuts_visible_in_context_menu(stream_ctx_menu_.actions());
 
     connect(ui->streamGraph, &QCustomPlot::mousePress, this, &RtpAnalysisDialog::graphClicked);
 
@@ -386,7 +386,7 @@ int RtpAnalysisDialog::addTabUI(tab_info_t *new_tab)
     ti->setText(marker_col_, tr("Marker"));
     ti->setText(status_col_, tr("Status"));
 
-    QColor color = ColorUtils::graphColor(tab_seq++);
+    QColor color = ThemeManager::instance()->graphColor(tab_seq++);
     ui->tabWidget->setUpdatesEnabled(false);
     horizontalLayout->addWidget(new_tab->tree_widget);
     new_tab_no = ui->tabWidget->count() - 1;
@@ -541,7 +541,7 @@ void RtpAnalysisDialog::updateWidgets()
     ui->actionNextProblem->setEnabled(enable_nav);
 
     if (enable_nav) {
-        hint.append(tr(" %1 streams, ").arg(tabs_.count() - 1));
+        hint.append(tr(" %Ln stream(s), ", "", static_cast<int>(tabs_.count())));
         hint.append(tr(" G: Go to packet, N: Next problem packet"));
     }
 
@@ -576,7 +576,8 @@ void RtpAnalysisDialog::on_actionGoToPacket_triggered()
     QTreeWidgetItem *ti = cur_tree->selectedItems()[0];
     if (ti->type() != rtp_analysis_type_) return;
 
-    RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>((RtpAnalysisTreeWidgetItem *)ti);
+    RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>(ti);
+    if (ra_ti == nullptr) return;
     emit goToPacket(ra_ti->frameNum());
 }
 
@@ -598,7 +599,8 @@ void RtpAnalysisDialog::on_actionNextProblem_triggered()
     QTreeWidgetItem *test_ti = cur_tree->itemBelow(sel_ti);
     if (!test_ti) test_ti = cur_tree->topLevelItem(0);
     while (test_ti != sel_ti) {
-        RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>((RtpAnalysisTreeWidgetItem *)test_ti);
+        RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>(test_ti);
+        if (ra_ti == nullptr) continue;
         if (!ra_ti->frameStatus()) {
             cur_tree->setCurrentItem(ra_ti);
             break;
@@ -623,18 +625,20 @@ void RtpAnalysisDialog::on_actionSaveGraph_triggered()
 {
     ui->tabWidget->setCurrentWidget(ui->graphTab);
 
-    QString file_name, extension;
+    QString file_name;
     QDir path(mainApp->openDialogInitialDir());
     QString pdf_filter = tr("Portable Document Format (*.pdf)");
     QString png_filter = tr("Portable Network Graphics (*.png)");
     QString bmp_filter = tr("Windows Bitmap (*.bmp)");
     // Gaze upon my beautiful graph with lossy artifacts!
     QString jpeg_filter = tr("JPEG File Interchange Format (*.jpeg *.jpg)");
-    QString filter = QStringLiteral("%1;;%2;;%3;;%4")
-            .arg(pdf_filter)
-            .arg(png_filter)
-            .arg(bmp_filter)
-            .arg(jpeg_filter);
+    QString filter = QStringLiteral("%1;;%2;;%3;;%4").arg(
+        pdf_filter,
+        png_filter,
+        bmp_filter,
+        jpeg_filter
+    );
+    QString extension = png_filter;
 
     QString save_file = path.canonicalPath();
     if (!file_closed_) {
@@ -876,7 +880,8 @@ void RtpAnalysisDialog::saveCsvData(QFile *save_file, QTreeWidget *tree)
     for (int row = 0; row < tree->topLevelItemCount(); row++) {
         QTreeWidgetItem *ti = tree->topLevelItem(row);
         if (ti->type() != rtp_analysis_type_) continue;
-        RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>((RtpAnalysisTreeWidgetItem *)ti);
+        RtpAnalysisTreeWidgetItem *ra_ti = dynamic_cast<RtpAnalysisTreeWidgetItem *>(ti);
+        if (ra_ti == nullptr) continue;
         QStringList values;
         foreach (QVariant v, ra_ti->rowData()) {
             if (!v.isValid()) {

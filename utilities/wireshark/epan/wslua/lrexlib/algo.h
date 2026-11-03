@@ -7,12 +7,70 @@
 #define REX_VERSION "Lrexlib " VERSION
 
 /* Forward declarations */
+/**
+ * @brief Pushes the subject string to the Lua stack.
+ *
+ * @param L The Lua state.
+ * @param argE Execution arguments containing the subject string.
+ */
 static void gmatch_pushsubject (lua_State *L, TArgExec *argE);
+
+/**
+ * @brief Executes a regex find operation.
+ *
+ * @param ud Userdata containing regex information.
+ * @param argE Execution arguments.
+ * @return Result of the find operation.
+ */
 static int findmatch_exec  (TUserdata *ud, TArgExec *argE);
+
+/**
+ * @brief Executes a regex split operation.
+ *
+ * @param ud Userdata containing regex information.
+ * @param argE Execution arguments.
+ * @param offset Starting offset for the search.
+ * @return Result of the split operation.
+ */
 static int split_exec      (TUserdata *ud, TArgExec *argE, int offset);
+
+/**
+ * @brief Executes a regex substitution operation.
+ *
+ * @param ud Userdata containing regex information.
+ * @param argE Execution arguments.
+ * @param offset Starting offset for the search.
+ * @return Result of the substitution operation.
+ */
 static int gsub_exec       (TUserdata *ud, TArgExec *argE, int offset);
+
+/**
+ * @brief Executes a regex global match operation.
+ *
+ * @param ud Userdata containing regex information.
+ * @param argE Execution arguments.
+ * @return Result of the global match operation.
+ */
 static int gmatch_exec     (TUserdata *ud, TArgExec *argE);
+
+/**
+ * @brief Compiles a regular expression.
+ *
+ * @param L Lua state.
+ * @param argC Compilation arguments.
+ * @param pud Pointer to user data for compiled regex.
+ * @return Result of the compilation operation.
+ */
 static int compile_regex   (lua_State *L, const TArgComp *argC, TUserdata **pud);
+
+/**
+ * @brief Generates an error in Lua.
+ *
+ * @param L Lua state.
+ * @param ud Pointer to user data.
+ * @param errcode Error code.
+ * @return Result of the error generation operation.
+ */
 static int generate_error  (lua_State *L, const TUserdata *ud, int errcode);
 
 #if LUA_VERSION_NUM == 501
@@ -43,6 +101,18 @@ static int generate_error  (lua_State *L, const TUserdata *ud, int errcode);
 #define METHOD_TFIND 3
 
 
+/**
+ * @brief Retrieves an optional limit value from Lua state.
+ *
+ * This function checks the Lua stack at a given position for an optional limit value.
+ * If the value is not provided, it returns GSUB_UNLIMITED. If a function is provided,
+ * it returns GSUB_CONDITIONAL. If a number is provided, it ensures the number is non-negative
+ * and returns it; otherwise, it returns 0. If the value is of an unsupported type, it raises a Lua error.
+ *
+ * @param L The Lua state.
+ * @param pos The position on the stack to check for the limit value.
+ * @return The limit value as an integer or GSUB_UNLIMITED/CONDTIONAL based on the input.
+ */
 static int OptLimit (lua_State *L, int pos) {
   if (lua_isnoneornil (L, pos))
     return GSUB_UNLIMITED;
@@ -56,6 +126,18 @@ static int OptLimit (lua_State *L, int pos) {
 }
 
 
+/**
+ * @brief Retrieves the start offset for a given position and length.
+ *
+ * This function calculates the start offset based on the provided stack position
+ * and length. If the start offset is positive, it decrements by one. If negative,
+ * it adjusts based on the length divided by ALG_CHARSIZE, ensuring it does not go below zero.
+ *
+ * @param L Lua state.
+ * @param stackpos Stack position for the start offset.
+ * @param len Length used in calculations.
+ * @return Adjusted start offset multiplied by ALG_CHARSIZE.
+ */
 static int get_startoffset(lua_State *L, int stackpos, size_t len) {
   int startoffset = (int)luaL_optinteger(L, stackpos, 1);
   if(startoffset > 0)
@@ -69,6 +151,16 @@ static int get_startoffset(lua_State *L, int stackpos, size_t len) {
 }
 
 
+/**
+ * @brief Retrieves a user data pointer from Lua state at a given position.
+ *
+ * This function checks if the value at the specified position in the Lua stack has a metatable matching ALG_ENVIRONINDEX.
+ * If it does, it casts the userdata to TUserdata and returns it. Otherwise, it returns NULL.
+ *
+ * @param L The Lua state.
+ * @param pos The position in the Lua stack where the value is located.
+ * @return A pointer to the TUserdata if successful, otherwise NULL.
+ */
 static TUserdata* test_ud (lua_State *L, int pos)
 {
   TUserdata *ud;
@@ -82,6 +174,14 @@ static TUserdata* test_ud (lua_State *L, int pos)
 }
 
 
+/**
+ * @brief Checks if the first argument on the Lua stack is a userdata of type TUserdata.
+ *
+ * If the argument is not a userdata of the expected type, it raises a type error.
+ *
+ * @param L The Lua state.
+ * @return A pointer to the TUserdata if successful, otherwise NULL.
+ */
 static TUserdata* check_ud (lua_State *L)
 {
   TUserdata *ud = test_ud(L, 1);
@@ -90,6 +190,13 @@ static TUserdata* check_ud (lua_State *L)
 }
 
 
+/**
+ * @brief Checks if the Lua value at the given position is a string, table, or userdata.
+ *
+ * @param L The Lua state.
+ * @param pos The position of the value to check.
+ * @param argE Pointer to the TArgExec structure where the text and its length will be stored.
+ */
 static void check_subject (lua_State *L, int pos, TArgExec *argE)
 {
   int stype;
@@ -125,6 +232,17 @@ static void check_subject (lua_State *L, int pos, TArgExec *argE)
   }
 }
 
+/**
+ * @brief Checks if the provided Lua value at the specified position is a string or a userdata.
+ *
+ * If the value is a string, it sets the pattern and its length in the TArgComp structure.
+ * If the value is a userdata, it attempts to retrieve a user data pointer and sets it in the TArgComp structure.
+ * If neither is valid, it raises a type error.
+ *
+ * @param L The Lua state.
+ * @param pos The position of the value on the Lua stack.
+ * @param argC Pointer to the TArgComp structure where the result will be stored.
+ */
 static void check_pattern (lua_State *L, int pos, TArgComp *argC)
 {
   if (lua_isstring (L, pos)) {
@@ -135,6 +253,14 @@ static void check_pattern (lua_State *L, int pos, TArgComp *argC)
     luaL_typerror(L, pos, "string or " REX_TYPENAME);
 }
 
+/**
+ * @brief Checks arguments for the 'new' function.
+ *
+ * This function validates and extracts the pattern, flags, and additional arguments from the Lua stack.
+ *
+ * @param L The Lua state.
+ * @param argC Pointer to the structure where the extracted arguments will be stored.
+ */
 static void checkarg_new (lua_State *L, TArgComp *argC) {
   argC->pattern = luaL_checklstring (L, 1, &argC->patlen);
   argC->cflags = ALG_GETCFLAGS (L, 2);
@@ -143,6 +269,16 @@ static void checkarg_new (lua_State *L, TArgComp *argC) {
 
 
 /* function gsub (s, patt, f, [n], [cf], [ef], [larg...]) */
+
+/**
+ * @brief Checks arguments for the gsub function.
+ *
+ * Validates the input arguments for the gsub function, ensuring that the third argument is a string, table, or function.
+ *
+ * @param L Lua state.
+ * @param argC Pointer to TArgComp structure for storing comparison arguments.
+ * @param argE Pointer to TArgExec structure for storing execution arguments.
+ */
 static void checkarg_gsub (lua_State *L, TArgComp *argC, TArgExec *argE) {
   check_subject (L, 1, argE);
   check_pattern (L, 2, argC);
@@ -162,6 +298,17 @@ static void checkarg_gsub (lua_State *L, TArgComp *argC, TArgExec *argE) {
 
 
 /* function count (s, patt, [cf], [ef], [larg...]) */
+
+/**
+ * @brief Checks the number of arguments for a function.
+ *
+ * This function verifies that the correct number of arguments are provided to a function.
+ * It checks the subject, pattern, and other parameters based on the given argument count.
+ *
+ * @param L The Lua state.
+ * @param argC Pointer to the TArgComp structure where pattern-related flags are stored.
+ * @param argE Pointer to the TArgExec structure where execution-related flags are stored.
+ */
 static void checkarg_count (lua_State *L, TArgComp *argC, TArgExec *argE) {
   check_subject (L, 1, argE);
   check_pattern (L, 2, argC);
@@ -173,6 +320,16 @@ static void checkarg_count (lua_State *L, TArgComp *argC, TArgExec *argE) {
 
 /* function find  (s, patt, [st], [cf], [ef], [larg...]) */
 /* function match (s, patt, [st], [cf], [ef], [larg...]) */
+
+/**
+ * @brief Checks arguments for the find_func function.
+ *
+ * Validates and extracts parameters from the Lua stack to prepare for pattern matching operations.
+ *
+ * @param L The Lua state.
+ * @param argC Pointer to a structure that will hold compilation arguments.
+ * @param argE Pointer to a structure that will hold execution arguments.
+ */
 static void checkarg_find_func (lua_State *L, TArgComp *argC, TArgExec *argE) {
   check_subject (L, 1, argE);
   check_pattern (L, 2, argC);
@@ -185,6 +342,16 @@ static void checkarg_find_func (lua_State *L, TArgComp *argC, TArgExec *argE) {
 
 /* function gmatch (s, patt, [cf], [ef], [larg...]) */
 /* function split  (s, patt, [cf], [ef], [larg...]) */
+
+/**
+ * @brief Checks arguments for the gmatch_split function.
+ *
+ * Validates and extracts parameters from the Lua stack to prepare for pattern matching operations.
+ *
+ * @param L The Lua state.
+ * @param argC Pointer to the TArgComp structure where compiled pattern information will be stored.
+ * @param argE Pointer to the TArgExec structure where execution flags will be stored.
+ */
 static void checkarg_gmatch_split (lua_State *L, TArgComp *argC, TArgExec *argE) {
   check_subject (L, 1, argE);
   check_pattern (L, 2, argC);
@@ -198,6 +365,16 @@ static void checkarg_gmatch_split (lua_State *L, TArgComp *argC, TArgExec *argE)
 /* method r:exec  (s, [st], [ef]) */
 /* method r:find  (s, [st], [ef]) */
 /* method r:match (s, [st], [ef]) */
+
+/**
+ * @brief Checks arguments for the find method.
+ *
+ * This function verifies and extracts necessary arguments from the Lua state for the find method.
+ *
+ * @param L The Lua state.
+ * @param argE Pointer to the TArgExec structure where extracted arguments will be stored.
+ * @param ud Pointer to a TUserdata pointer that will be set with the checked userdata.
+ */
 static void checkarg_find_method (lua_State *L, TArgExec *argE, TUserdata **ud) {
   *ud = check_ud (L);
   check_subject (L, 2, argE);
@@ -206,12 +383,32 @@ static void checkarg_find_method (lua_State *L, TArgExec *argE, TUserdata **ud) 
 }
 
 
+/**
+ * @brief Creates a new regular expression object.
+ *
+ * This function initializes a new regular expression object from the provided arguments and compiles it.
+ *
+ * @param L The Lua state.
+ * @return Number of values pushed onto the stack.
+ */
 static int algf_new (lua_State *L) {
   TArgComp argC;
   checkarg_new (L, &argC);
   return compile_regex (L, &argC, NULL);
 }
 
+/**
+ * @brief Pushes substrings from a regular expression match onto the Lua stack.
+ *
+ * This function iterates over the number of substrings specified in the user data
+ * and pushes each substring onto the Lua stack. If there is not enough space on the
+ * stack, it frees any associated free list and raises an error.
+ *
+ * @param L The Lua state to operate on.
+ * @param ud User data containing information about the regular expression match.
+ * @param text The original text that was matched against the regular expression.
+ * @param freelist A pointer to a free list that may need to be freed if there is not enough stack space.
+ */
 static void push_substrings (lua_State *L, TUserdata *ud, const char *text,
                              TFreeList *freelist) {
   int i;
@@ -225,6 +422,15 @@ static void push_substrings (lua_State *L, TUserdata *ud, const char *text,
   }
 }
 
+/**
+ * @brief Perform a global substitution on a string using a regular expression.
+ *
+ * This function takes a Lua state and performs a global substitution on a string
+ * using a compiled regular expression. It returns the number of substitutions made.
+ *
+ * @param L The Lua state.
+ * @return The number of substitutions made.
+ */
 static int algf_gsub (lua_State *L) {
   TUserdata *ud;
   TArgComp argC;
@@ -398,6 +604,14 @@ static int algf_gsub (lua_State *L) {
 }
 
 
+/**
+ * @brief Counts the number of matches for a given pattern in a text.
+ *
+ * This function takes a Lua state and arguments to count the occurrences of a pattern within a text.
+ *
+ * @param L The Lua state.
+ * @return The number of matches found.
+ */
 static int algf_count (lua_State *L) {
   TUserdata *ud;
   TArgComp argC;
@@ -453,6 +667,19 @@ static int algf_count (lua_State *L) {
 }
 
 
+/**
+ * @brief Completes a generic find operation in Lua.
+ *
+ * This function is responsible for handling the completion of a find operation,
+ * pushing offsets, captures, or a single substring based on the method and result.
+ *
+ * @param L The Lua state.
+ * @param ud Userdata containing algorithm state.
+ * @param argE Argument execution structure.
+ * @param method The type of method (e.g., METHOD_FIND, METHOD_MATCH).
+ * @param res Result of the find operation.
+ * @return Number of values pushed onto the Lua stack.
+ */
 static int finish_generic_find (lua_State *L, TUserdata *ud, TArgExec *argE,
   int method, int res)
 {
@@ -474,6 +701,15 @@ static int finish_generic_find (lua_State *L, TUserdata *ud, TArgExec *argE,
 }
 
 
+/**
+ * @brief Generic find function for Lua bindings.
+ *
+ * This function is used to perform a generic find operation in Lua scripts using regular expressions.
+ *
+ * @param L The Lua state.
+ * @param method The method type (e.g., METHOD_FIND, METHOD_MATCH).
+ * @return Number of values pushed onto the Lua stack.
+ */
 static int generic_find_func (lua_State *L, int method) {
   TUserdata *ud;
   TArgComp argC;
@@ -494,16 +730,38 @@ static int generic_find_func (lua_State *L, int method) {
 }
 
 
+/**
+ * @brief Finds a pattern in a string using Lua.
+ *
+ * @param L The Lua state.
+ * @return The number of values pushed onto the stack.
+ */
 static int algf_find (lua_State *L) {
   return generic_find_func (L, METHOD_FIND);
 }
 
 
+/**
+ * @brief Lua function to perform a match operation.
+ *
+ * This function is used to execute a match operation using a generic find function.
+ *
+ * @param L The Lua state.
+ * @return The number of results on the stack.
+ */
 static int algf_match (lua_State *L) {
   return generic_find_func (L, METHOD_MATCH);
 }
 
 
+/**
+ * @brief Iterate through matches of a regular expression.
+ *
+ * This function is used as an iterator in Lua to find all non-overlapping matches of a regular expression within a given text.
+ *
+ * @param L The Lua state.
+ * @return Number of values pushed onto the stack (1 for the next match or 0 if no more matches).
+ */
 static int gmatch_iter (lua_State *L) {
   int last_end, res;
   TArgExec argE;
@@ -549,6 +807,16 @@ static int gmatch_iter (lua_State *L) {
 }
 
 
+/**
+ * @brief Iterates through a string and splits it based on a regular expression.
+ *
+ * This function is used as an iterator in Lua to split a string into substrings
+ * using a regular expression pattern. It returns the next substring each time
+ * it is called until all substrings have been returned.
+ *
+ * @param L The Lua state.
+ * @return Number of values pushed onto the stack (1 for the next substring).
+ */
 static int split_iter (lua_State *L) {
   int incr, last_end, newoffset, res;
   TArgExec argE;
@@ -604,6 +872,14 @@ static int split_iter (lua_State *L) {
 }
 
 
+/**
+ * @brief Lua function to perform a global match using a regular expression.
+ *
+ * This function is used in Lua scripts to find all matches of a given pattern in a string.
+ *
+ * @param L The Lua state.
+ * @return Number of results on the stack.
+ */
 static int algf_gmatch (lua_State *L)
 {
   TArgComp argC;
@@ -621,6 +897,14 @@ static int algf_gmatch (lua_State *L)
   return 1;
 }
 
+/**
+ * @brief Splits a string using a regular expression.
+ *
+ * This function splits a given string into substrings based on a specified regular expression pattern.
+ *
+ * @param L The Lua state.
+ * @return The number of elements pushed onto the Lua stack.
+ */
 static int algf_split (lua_State *L)
 {
   TArgComp argC;
@@ -640,6 +924,16 @@ static int algf_split (lua_State *L)
 }
 
 
+/**
+ * @brief Pushes a substring table onto the Lua stack.
+ *
+ * This function creates a new Lua table and populates it with substrings from the given text,
+ * based on the number of substrings stored in the user data.
+ *
+ * @param L The Lua state to operate on.
+ * @param ud The user data containing information about the substrings.
+ * @param text The input text from which substrings are extracted.
+ */
 static void push_substring_table (lua_State *L, TUserdata *ud, const char *text) {
   int i;
   lua_newtable (L);
@@ -650,6 +944,15 @@ static void push_substring_table (lua_State *L, TUserdata *ud, const char *text)
 }
 
 
+/**
+ * @brief Pushes an offset table onto the Lua stack.
+ *
+ * This function creates a new Lua table and populates it with start and end offsets for valid subdissectors in a TUserdata structure.
+ *
+ * @param L The Lua state to operate on.
+ * @param ud The TUserdata structure containing information about subdissectors.
+ * @param startoffset The starting offset for the subdissectors.
+ */
 static void push_offset_table (lua_State *L, TUserdata *ud, int startoffset) {
   int i, j;
   lua_newtable (L);
@@ -670,6 +973,17 @@ static void push_offset_table (lua_State *L, TUserdata *ud, int startoffset) {
 }
 
 
+/**
+ * @brief Executes a generic find method based on the provided method type.
+ *
+ * This function is used to handle different find methods such as MATCH, FIND, and TFIND.
+ * It checks if the start offset is within the valid range of the text length and then
+ * calls the appropriate execution method based on the specified method.
+ *
+ * @param L The Lua state.
+ * @param method The type of find method to execute (METHOD_EXEC, METHOD_TFIND, METHOD_MATCH, METHOD_FIND).
+ * @return The number of values pushed onto the Lua stack.
+ */
 static int generic_find_method (lua_State *L, int method) {
   TUserdata *ud;
   TArgExec argE;
@@ -705,19 +1019,64 @@ static int generic_find_method (lua_State *L, int method) {
 }
 
 
+/**
+ * @brief Lua function to perform a find operation.
+ *
+ * This function is used to invoke a generic find method in the Lua state.
+ *
+ * @param L The Lua state.
+ * @return The result of the generic find method.
+ */
 static int algm_find (lua_State *L) {
   return generic_find_method (L, METHOD_FIND);
 }
+
+/**
+ * @brief Executes a method based on the provided Lua state.
+ *
+ * This function is responsible for finding and executing a method using the generic_find_method function.
+ *
+ * @param L The Lua state to operate on.
+ * @return The result of the method execution.
+ */
 static int algm_match (lua_State *L) {
   return generic_find_method (L, METHOD_MATCH);
 }
+
+/**
+ * @brief Finds a method in the Lua state.
+ *
+ * @param L The Lua state to operate on.
+ * @return The result of the method execution.
+ */
 static int algm_tfind (lua_State *L) {
   return generic_find_method (L, METHOD_TFIND);
 }
+
+/**
+ * @brief Executes a method based on the provided Lua state.
+ *
+ * This function is responsible for finding and executing a method using the generic_find_method function.
+ *
+ * @param L The Lua state to operate on.
+ * @return The result of the method execution.
+ */
 static int algm_exec (lua_State *L) {
   return generic_find_method (L, METHOD_EXEC);
 }
 
+/**
+ * @brief Registers methods and functions for a Lua module.
+ *
+ * This function registers the specified methods and functions into a new Lua table,
+ * which is then used as a metatable for the given module name. It handles compatibility
+ * with different versions of Lua (5.1 and later).
+ *
+ * @param L The Lua state to operate on.
+ * @param r_methods Pointer to an array of luaL_Reg structures containing method definitions.
+ * @param r_functions Pointer to an array of luaL_Reg structures containing function definitions.
+ * @param name The name of the module for which the methods and functions are being registered.
+ */
 static void alg_register (lua_State *L, const luaL_Reg *r_methods,
                           const luaL_Reg *r_functions, const char *name) {
   /* Create a new function environment to serve as a metatable for methods. */

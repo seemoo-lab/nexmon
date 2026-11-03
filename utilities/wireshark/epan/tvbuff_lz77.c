@@ -25,12 +25,6 @@ static bool do_uncompress(tvbuff_t *tvb, int offset, int in_size,
 	unsigned match_bytes, match_len, match_off;
 	unsigned i;
 
-	if (!tvb)
-		return false;
-
-	if (!in_size || in_size > MAX_INPUT_SIZE)
-		return false;
-
 	while (1) {
 		if (buf_flag_count == 0) {
 			buf_flags = tvb_get_letohl(tvb, offset+in_off);
@@ -78,16 +72,34 @@ static bool do_uncompress(tvbuff_t *tvb, int offset, int in_size,
 				}
 				match_len += 7;
 			}
-                        if (match_len > MAX_INPUT_SIZE)
-                            return false;
+			/* XXX - We could instead fail inside the loops, e.g.
+			 * testing wmem_array_get_count(obuf) > MAX_INPUT_SIZE,
+			 * and return what we could decompress in a tvb with
+			 * reported length greater than captured length. */
+			if (match_len > MAX_INPUT_SIZE)
+				return false;
 			match_len += 3;
-			for (i = 0; i < match_len; i++) {
-				uint8_t byte;
-				if (match_off > wmem_array_get_count(obuf))
-					return false;
-				if (wmem_array_try_index(obuf, wmem_array_get_count(obuf)-match_off, &byte))
-					return false;
-				wmem_array_append_one(obuf, byte);
+                        /* We can copy up to match_off bytes at a time.
+                         * (The overlap handling is *not* like memmove,
+                         * see [MS-XCA] 2.4.4.) */
+                        /* wmem_array_get_count only increases, so we only need
+                         * test this once. */
+			if (match_off > wmem_array_get_count(obuf))
+				return false;
+			uint8_t *src;
+			ws_assert(match_off != 0); // Guaranteed by line 45
+			/* Must call grow first, to realloc the array first
+			 * if needed and avoid invalidating pointers returned
+			 * from wmem_array_index when appending. */
+                        if (!wmem_array_grow(obuf, match_len))
+                                return false;
+			for (i = 0; i < match_len / match_off; i++) {
+				src = wmem_array_index(obuf, wmem_array_get_count(obuf) - match_off);
+				wmem_array_append(obuf, src, match_off);
+			}
+			for (i *= match_off; i < match_len; i++) {
+				src = wmem_array_index(obuf, wmem_array_get_count(obuf) - match_off);
+				wmem_array_append(obuf, src, 1);
 			}
 		}
 	}
@@ -96,12 +108,18 @@ static bool do_uncompress(tvbuff_t *tvb, int offset, int in_size,
 }
 
 tvbuff_t *
-tvb_uncompress_lz77(tvbuff_t *tvb, const int offset, int in_size)
+tvb_uncompress_lz77(tvbuff_t *tvb, const unsigned offset, unsigned in_size)
 {
 	volatile bool ok = false;
 	wmem_allocator_t *pool;
 	wmem_array_t *obuf;
 	tvbuff_t *out;
+
+	if (!tvb)
+		return NULL;
+
+	if (!in_size || in_size > MAX_INPUT_SIZE)
+		return NULL;
 
 	pool = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
 	obuf = wmem_array_sized_new(pool, 1, in_size*2);
@@ -119,6 +137,10 @@ tvb_uncompress_lz77(tvbuff_t *tvb, const int offset, int in_size)
 		 * pool, so we make an extra copy that uses bare
 		 * pointers. This could be optimized if tvb API had a
 		 * free pool callback of some sort.
+		 *
+		 * XXX - Maybe a tvb_set_free_cb_with_data or similar
+		 * that takes functions that take a void* userdata
+		 * parameter?
 		 */
 		unsigned size = wmem_array_get_count(obuf);
 		uint8_t *p = (uint8_t *)g_malloc(size);
@@ -135,7 +157,7 @@ tvb_uncompress_lz77(tvbuff_t *tvb, const int offset, int in_size)
 }
 
 tvbuff_t *
-tvb_child_uncompress_lz77(tvbuff_t *parent, tvbuff_t *tvb, const int offset, int in_size)
+tvb_child_uncompress_lz77(tvbuff_t *parent, tvbuff_t *tvb, const unsigned offset, unsigned in_size)
 {
 	tvbuff_t *new_tvb = tvb_uncompress_lz77(tvb, offset, in_size);
 	if (new_tvb)

@@ -9,6 +9,7 @@
 
 #include <ui/macosx/cocoa_bridge.h>
 #include <ui/macosx/macos_compat.h>
+#include <app/application_flavor.h>
 
 #import <Cocoa/Cocoa.h>
 
@@ -39,4 +40,17 @@ void CocoaBridge::showInFinder(char const *file_path)
     NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:file_path]];
 
     [[NSWorkspace sharedWorkspace] activateFileViewerSelectingURLs:@[url]];
+}
+
+void CocoaBridge::setCaptureIcon(bool capture_in_progress)
+{
+    NSImage *iconImage = nil;
+
+    if (capture_in_progress) {
+        // Look for an icon named WiresharkCapture or StratosharkCapture
+        // XXX How do we apply the current LG icon style?
+        iconImage = [NSImage imageNamed:[NSString stringWithFormat:@"%@%@", @(application_flavor_name_proper()), @"Capture"]];
+    }
+
+    [[NSApplication sharedApplication] setApplicationIconImage:iconImage];
 }

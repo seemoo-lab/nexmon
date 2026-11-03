@@ -295,6 +295,7 @@ static bool oscore_context_derive_params(oscore_context_t *context) {
     const char *key_label = "Key";
     uint8_t prk[32]; /* Pseudo-random key from HKDF-Extract step. 32 for SHA256. */
     GByteArray *info;
+    gcry_error_t err;
 
     const cose_aead_props_t *aead_props = cose_get_aead_props(context->algorithm);
     DISSECTOR_ASSERT(aead_props);
@@ -302,7 +303,8 @@ static bool oscore_context_derive_params(oscore_context_t *context) {
     info = g_byte_array_new();
 
     /* Common HKDF-Extract step on master salt */
-    hkdf_extract(GCRY_MD_SHA256, context->master_salt->data, context->master_salt->len, context->master_secret->data, context->master_secret->len, prk);
+    err = hkdf_extract(GCRY_MD_SHA256, context->master_salt->data, context->master_salt->len, context->master_secret->data, context->master_secret->len, prk);
+    DISSECTOR_ASSERT(err == 0);
 
     /* Request Decryption Key */
     wscbor_enc_array_head(info, 5);
@@ -319,9 +321,8 @@ static bool oscore_context_derive_params(oscore_context_t *context) {
      * in OSCORE_INFO_MAX_LEN */
     DISSECTOR_ASSERT(info->len < OSCORE_INFO_MAX_LEN);
     g_byte_array_set_size(context->request_decryption_key, aead_props->key_len);
-    hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->request_decryption_key->data, aead_props->key_len); /* 32 for SHA256 */
-
-
+    err = hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->request_decryption_key->data, aead_props->key_len); /* 32 for SHA256 */
+    DISSECTOR_ASSERT(err == 0);
 
     /* Response Decryption Key */
     g_byte_array_set_size(info, 0);
@@ -339,7 +340,8 @@ static bool oscore_context_derive_params(oscore_context_t *context) {
      * in OSCORE_INFO_MAX_LEN */
     DISSECTOR_ASSERT(info->len < OSCORE_INFO_MAX_LEN);
     g_byte_array_set_size(context->response_decryption_key, aead_props->key_len);
-    hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->response_decryption_key->data, aead_props->key_len); /* 32 for SHA256 */
+    err = hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->response_decryption_key->data, aead_props->key_len); /* 32 for SHA256 */
+    DISSECTOR_ASSERT(err == 0);
 
     /* Common IV */
     g_byte_array_set_size(info, 0);
@@ -356,7 +358,8 @@ static bool oscore_context_derive_params(oscore_context_t *context) {
     /* all static lengths, accounted for in OSCORE_INFO_MAX_LEN */
     DISSECTOR_ASSERT(info->len < OSCORE_INFO_MAX_LEN);
     g_byte_array_set_size(context->common_iv, aead_props->iv_len);
-    hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->common_iv->data, aead_props->iv_len); /* 32 for SHA256 */
+    err = hkdf_expand(GCRY_MD_SHA256, prk, sizeof(prk), info->data, info->len, context->common_iv->data, aead_props->iv_len); /* 32 for SHA256 */
+    DISSECTOR_ASSERT(err == 0);
 
     g_byte_array_free(info, true);
     return true;
@@ -434,7 +437,7 @@ oscore_create_nonce(uint8_t *out,
 static oscore_decryption_status_t
 oscore_decrypt_and_verify(tvbuff_t *tvb_ciphertext,
         packet_info *pinfo,
-        int *offset,
+        unsigned *offset,
         proto_tree *tree,
         oscore_context_t *context,
         oscore_info_t *info,
@@ -587,13 +590,13 @@ oscore_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_item *ti;
     proto_tree *oscore_tree;
     /* Other misc. local variables. */
-    int offset = 0;
+    unsigned offset = 0;
     oscore_info_t *info = (oscore_info_t *) data;
     oscore_context_t *context = NULL;
     oscore_decryption_status_t status;
     tvbuff_t *tvb_decrypted = NULL;
     coap_info *coinfo;
-    int oscore_length;
+    unsigned oscore_length;
     uint8_t code_class;
 
     /* Check that the packet is long enough for it to belong to us. */
@@ -657,7 +660,7 @@ oscore_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (coinfo) {
         dissect_coap_code(tvb_decrypted, oscore_tree, &offset, &dissect_oscore_hf, &code_class);
-        offset = dissect_coap_options(tvb_decrypted, pinfo, oscore_tree, offset, oscore_length, code_class, coinfo, &dissect_oscore_hf);
+        offset = dissect_coap_options(tvb_decrypted, pinfo, oscore_tree, offset, oscore_length, code_class, coinfo, &dissect_oscore_hf, NULL);
         if (oscore_length > offset) {
             dissect_coap_payload(tvb_decrypted, pinfo, oscore_tree, tree, offset, oscore_length, code_class, coinfo, &dissect_oscore_hf, true);
         }

@@ -1,5 +1,5 @@
 /* packet-edonkey.c
- * Routines for edonkey dissection
+ * Routines for eDonkey dissection
  * Copyright 2003, Xuan Zhang <xz@aemail4u.com>
  * Copyright 2007, Stefano Picerno <stefano.picerno@gmail.com>
  * Copyright 2008, Stefan Monhof <stefan.monhof@stud.uni-due.de>
@@ -31,6 +31,7 @@
 #include "packet-tcp.h"
 
 void proto_reg_handoff_edonkey(void);
+void proto_register_edonkey(void);
 
 static dissector_handle_t edonkey_tcp_handle;
 static dissector_handle_t edonkey_udp_handle;
@@ -299,7 +300,7 @@ static const value_string kademlia_tags[] = {
     { KADEMLIA_TAG_PORT              ,"TAG_PORT"         },
     { KADEMLIA_TAG_PREFERENCE        ,"TAG_PREFERENCE"   },
     { KADEMLIA_TAG_PRIORITY          ,"TAG_PRIORITY"     },
-    { KADEMLIA_TAG_QTIME             ,"TAG_QTIME"        },
+//    { KADEMLIA_TAG_QTIME             ,"TAG_QTIME"        }, Duplicated value
     { KADEMLIA_TAG_SERVERIP          ,"TAG_SERVERIP"     },
     { KADEMLIA_TAG_SERVERPORT        ,"TAG_SERVERPORT"   },
     { KADEMLIA_TAG_SOURCEIP          ,"TAG_SOURCEIP"     },
@@ -670,11 +671,11 @@ static int lookup_str_index(char* str, int length, const value_string *vs)
 
 static uint8_t edonkey_metatag_name_get_type(tvbuff_t *tvb, packet_info* pinfo, int start, int length, uint8_t special_tagtype)
 {
-    uint8_t *tag_name;
+    char *tag_name;
 
     if (try_val_to_str(special_tagtype, edonkey_special_tags) == NULL) {
         int idx;
-        tag_name = tvb_get_string_enc(pinfo->pool, tvb, start, length, ENC_ASCII|ENC_NA);
+        tag_name = (char*)tvb_get_string_enc(pinfo->pool, tvb, start, length, ENC_ASCII|ENC_NA);
         idx = lookup_str_index(tag_name, length, edonkey_special_tags);
         if (idx < 0)
             return EDONKEY_STAG_UNKNOWN;
@@ -984,7 +985,7 @@ static int dissect_kademlia_tagname(tvbuff_t *tvb, packet_info *pinfo,
     hidden_item = proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
     proto_item_set_hidden(hidden_item);
 
-    tagname = tvb_get_string_enc(pinfo->pool, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA);
+    tagname = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA);
 
     tag_full_name = "UnknownTagName";
 
@@ -1791,7 +1792,7 @@ static void dissect_edonkey_tcp_message(uint8_t msg_type,
             /* Client to Server: <Client Info> */
             /* Client to Client: 0x10 <Client Info> <Server address> */
             /* If Hello is sent to server 0x10 before UserHash is skipped,
-               but UserHash might starts with 0x10. To decrease posibility
+               but UserHash might starts with 0x10. To decrease possibility
                of mistake, we check also 6th and 15h byte of UserHash -
                they have constant value. The best way would be to process
                whole packet to check it. */
@@ -2797,12 +2798,11 @@ static int dissect_kademlia_udp_message(uint8_t msg_type,
             break;
         case KADEMLIA_SEARCH_REQ:
             {
-                int restrictive;
+                uint8_t restrictive;
                 /* Target (16bytes) */
                 offset = dissect_kademlia_hash(tvb, pinfo, offset, tree, &hf_kademlia_target_id);
                 /* Restrictive (1 byte) 0/1 */
-                restrictive = tvb_get_uint8(tvb, offset);
-                proto_tree_add_item(tree, hf_edonkey_kademlia_restrictive, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item_ret_uint8(tree, hf_edonkey_kademlia_restrictive, tvb, offset, 1, ENC_NA, &restrictive);
                 offset +=1;
 
                 if ( offset < msg_end && restrictive )
@@ -3059,7 +3059,7 @@ static int dissect_edonkey_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 {
     proto_item *ti;
     proto_tree *edonkey_tree = NULL, *edonkey_msg_tree = NULL;
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t protocol, msg_type;
     const char *protocol_name, *message_name;
 
@@ -3377,28 +3377,28 @@ void proto_register_edonkey(void) {
         { &hf_edonkey_unparsed_data_length,
             { "eDonkey unparsed data length", "edonkey.unparsed",
                 FT_UINT32, BASE_DEC_HEX, NULL, 0, "eDonkey trailing or unparsed data length", HFILL } },
-        { &hf_edonkey_hard_limit_files, 
-            { "Hard limit on number of files", "edonkey.hard_limit_files", 
+        { &hf_edonkey_hard_limit_files,
+            { "Hard limit on number of files", "edonkey.hard_limit_files",
                 FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_soft_limit_files, 
-            { "Soft limit on number of files", "edonkey.soft_limit_files", 
+        { &hf_edonkey_soft_limit_files,
+            { "Soft limit on number of files", "edonkey.soft_limit_files",
                 FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_number_of_lowid_users, 
-            { "Number of LowID Users", "edonkey.number_of_lowid_users", 
+        { &hf_edonkey_number_of_lowid_users,
+            { "Number of LowID Users", "edonkey.number_of_lowid_users",
                 FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_udp_flags, 
-            { "Server UDP Support Flags", "edonkey.udp_flags", 
+        { &hf_edonkey_udp_flags,
+            { "Server UDP Support Flags", "edonkey.udp_flags",
                 FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_tcp_obfuscation_port, 
-            { "TCP Obfuscation Port", "edonkey.tcp_obfuscation_port", 
-                FT_UINT16, BASE_PT_TCP, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_udp_obfuscation_port, 
-            { "UDP Obfuscation Port", "edonkey.udp_obfuscation_port", 
+        { &hf_edonkey_tcp_obfuscation_port,
+            { "TCP Obfuscation Port", "edonkey.tcp_obfuscation_port",
+                FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_udp_obfuscation_port,
+            { "UDP Obfuscation Port", "edonkey.udp_obfuscation_port",
                 FT_UINT16, BASE_PT_UDP, NULL, 0x0, NULL, HFILL }},
-        { &hf_edonkey_server_udp_key, 
-            { "Server UDP Key", "edonkey.server_udp_key", 
+        { &hf_edonkey_server_udp_key,
+            { "Server UDP Key", "edonkey.server_udp_key",
                 FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
-      
+
       /* Generated from convert_proto_tree_add_text.pl */
       { &hf_edonkey_list_size, { "List Size", "edonkey.list_size", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_meta_tag_value_revision, { "Meta Tag Value", "edonkey.meta_tag_value.revision", FT_UINT32, BASE_CUSTOM, CF_FUNC(edonkey_fmt_revision), 0x0, NULL, HFILL }},
@@ -3470,7 +3470,7 @@ void proto_register_edonkey(void) {
     module_t *edonkey_module;
     expert_module_t* expert_edonkey;
 
-    proto_edonkey = proto_register_protocol("eDonkey Protocol", "EDONKEY", "edonkey");
+    proto_edonkey = proto_register_protocol("eDonkey Protocol", "eDonkey", "edonkey");
 
     proto_register_field_array(proto_edonkey, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));

@@ -1,0 +1,17 @@
+<component>[: <subcomponent>]: <imperative change summary> [issue/ref]
+
+# Details (what/why), wrapped at 72 columns
+# - ...
+# - ...
+
+# If this fixes an issue, you can automatically close it with the
+# "Fixes" or "Closes" keywords.
+# Fixes #10000
+
+# If you used AI, say which tool(s) you used, e.g. "Assisted-by: Claude".
+# Assisted-by: [tool(s)]
+
+# Examples:
+#   CMake: Allow users to override _FORTIFY_SOURCE
+#   tools/check_spelling.py: Speed up using ProcessPoolExecutor
+#   SMPP: Fix request/response tracking (#20891)

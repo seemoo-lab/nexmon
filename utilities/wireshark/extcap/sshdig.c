@@ -15,7 +15,7 @@
 
 #include <extcap/extcap-base.h>
 #include <extcap/ssh-base.h>
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>     //Stratoshark only
 #include <wsutil/interface.h>
 #include <wsutil/file_util.h>
 #include <wsutil/strtoi.h>
@@ -27,8 +27,6 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-
-#include <cli_main.h>
 
 static char* sshdig_extcap_interface;
 #define DEFAULT_SSHDIG_EXTCAP_INTERFACE "sshdig"
@@ -43,16 +41,9 @@ enum {
     EXTCAP_BASE_OPTIONS_ENUM,
     OPT_HELP,
     OPT_VERSION,
-    OPT_REMOTE_HOST,
-    OPT_REMOTE_PORT,
-    OPT_REMOTE_USERNAME,
-    OPT_REMOTE_PASSWORD,
+    SSH_BASE_OPTIONS_ENUM,
     OPT_REMOTE_CAPTURE_COMMAND_SELECT,
     OPT_REMOTE_CAPTURE_COMMAND,
-    OPT_SSHKEY,
-    OPT_SSHKEY_PASSPHRASE,
-    OPT_PROXYCOMMAND,
-    OPT_SSH_SHA1,
     OPT_REMOTE_COUNT,
     OPT_REMOTE_PRIV,
     OPT_REMOTE_PRIV_USER,
@@ -72,51 +63,6 @@ static struct ws_option longopts[] = {
     {"remote-modern-bpf", ws_no_argument, NULL, OPT_REMOTE_MODERN_BPF},
     {"remote-io-snaplen", ws_required_argument, NULL, OPT_REMOTE_IO_SNAPLEN},
     {0, 0, 0, 0}};
-
-static int ssh_loop_read(ssh_channel channel, FILE* fp)
-{
-    int nbytes;
-    int ret = EXIT_SUCCESS;
-    char buffer[SSH_READ_BLOCK_SIZE];
-
-    /* read from stdin until data are available */
-    while (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {
-        nbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 0);
-        if (nbytes < 0) {
-            ws_warning("Error reading from channel");
-            goto end;
-        }
-        if (nbytes == 0) {
-            break;
-        }
-        if (fwrite(buffer, 1, nbytes, fp) != (unsigned)nbytes) {
-            ws_warning("Error writing to fifo");
-            ret = EXIT_FAILURE;
-            goto end;
-        }
-        fflush(fp);
-    }
-
-    /* read loop finished... maybe something wrong happened. Read from stderr */
-    while (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {
-        nbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 1);
-        if (nbytes < 0) {
-            ws_warning("Error reading from channel");
-            goto end;
-        }
-        if (fwrite(buffer, 1, nbytes, stderr) != (unsigned)nbytes) {
-            ws_warning("Error writing to stderr");
-            break;
-        }
-    }
-
-end:
-    if (ssh_channel_send_eof(channel) != SSH_OK) {
-        ws_warning("Error sending EOF in ssh channel");
-        ret = EXIT_FAILURE;
-    }
-    return ret;
-}
 
 static ssh_channel run_ssh_command(ssh_session sshs, const char* capture_command_select,
         const char* capture_command, const char* privilege,
@@ -222,7 +168,7 @@ static int ssh_open_remote_connection(const ssh_params_t* params, const char* cf
     }
 
     /* read from channel and write into fp */
-    if (ssh_loop_read(channel, fp) != EXIT_SUCCESS) {
+    if (ssh_async_loop_read(sshs, channel, fp) != EXIT_SUCCESS) {
         ws_warning("Error in read loop.");
         ret = EXIT_FAILURE;
         goto cleanup;
@@ -256,34 +202,12 @@ static int list_config(char *interface)
         return EXIT_FAILURE;
     }
 
-    printf("arg {number=%u}{call=--remote-host}{display=Remote SSH server address}"
-            "{type=string}{tooltip=The remote SSH host. It can be both "
-            "an IP address or a hostname}{required=true}{group=Server}\n", inc++);
-    printf("arg {number=%u}{call=--remote-port}{display=Remote SSH server port}"
-            "{type=unsigned}{default=22}{tooltip=The remote SSH host port (1-65535)}"
-            "{range=1,65535}{group=Server}\n", inc++);
-    printf("arg {number=%u}{call=--remote-username}{display=Remote SSH server username}"
-            "{type=string}{tooltip=The remote SSH username. If not provided, "
-            "the current user will be used}{group=Authentication}\n", inc++);
-    printf("arg {number=%u}{call=--remote-password}{display=Remote SSH server password}"
-            "{type=password}{tooltip=The SSH password, used when other methods (SSH agent "
-            "or key files) are unavailable.}{group=Authentication}\n", inc++);
-    printf("arg {number=%u}{call=--sshkey}{display=Path to SSH private key}"
-            "{type=fileselect}{tooltip=The path on the local filesystem of the private SSH key (OpenSSH format)}"
-            "{mustexist=true}{group=Authentication}\n", inc++);
-    printf("arg {number=%u}{call=--sshkey-passphrase}{display=SSH key passphrase}"
-            "{type=password}{tooltip=Passphrase to unlock the SSH private key}{group=Authentication}\n",
-            inc++);
-    printf("arg {number=%u}{call=--proxycommand}{display=ProxyCommand}"
-            "{type=string}{tooltip=The command to use as proxy for the SSH connection}"
-            "{group=Authentication}\n", inc++);
-    printf("arg {number=%u}{call=--ssh-sha1}{display=Support SHA-1 keys (deprecated)}"
-            "{type=boolflag}{tooltip=Support keys and key exchange algorithms using SHA-1 (deprecated)}{group=Authentication}"
-            "\n", inc++);
+    ssh_base_list_config(&inc);
+
     printf("arg {number=%u}{call=--remote-capture-command-select}{display=Remote capture command selection}"
             "{type=radio}{tooltip=The remote capture command to build a command line for}{group=Capture}\n", inc);
     printf("value {arg=%u}{value=sysdig}{display=sysdig}\n", inc);
-    // XXX Add falcodump?
+    // XXX Add dumpcalls?
     printf("value {arg=%u}{value=other}{display=Other:}\n", inc++);
     printf("arg {number=%u}{call=--remote-capture-command}{display=Remote capture command}"
             "{type=string}{tooltip=The remote command used to capture}{group=Capture}\n", inc++);
@@ -334,7 +258,7 @@ int main(int argc, char *argv[])
     g_set_prgname("sshdig");
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    extcap_log_init();
+    extcap_log_init(extcap_conf);
 
     sshdig_extcap_interface = g_path_get_basename(argv[0]);
     if (g_str_has_suffix(sshdig_extcap_interface, ".exe")) {
@@ -350,15 +274,14 @@ int main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    set_application_flavor(APPLICATION_FLAVOR_STRATOSHARK);
-    err_msg = configuration_init(argv[0]);
+    err_msg = configuration_init(argv[0], "stratoshark");
     if (err_msg != NULL) {
         ws_warning("Can't get pathname of directory containing the extcap program: %s.",
                 err_msg);
         g_free(err_msg);
     }
 
-    help_url = data_file_url("sshdig.html");
+    help_url = data_file_url("sshdig.html", application_configuration_environment_prefix());
     extcap_base_set_util_info(extcap_conf, argv[0], SSHDIG_VERSION_MAJOR, SSHDIG_VERSION_MINOR,
             SSHDIG_VERSION_RELEASE, help_url);
     g_free(help_url);
@@ -368,7 +291,7 @@ int main(int argc, char *argv[])
         interface_description = ws_strdup_printf("%s, custom version", interface_description);
         g_free(temp);
     }
-    extcap_base_register_interface(extcap_conf, sshdig_extcap_interface, interface_description, 147, "Remote capture dependent DLT");
+    extcap_base_register_interface_ext(extcap_conf, sshdig_extcap_interface, interface_description, 147, NULL, "Remote capture dependent DLT", EXTCAP_CONTROL_QUIT);
     g_free(interface_description);
 
     help_header = ws_strdup_printf(
@@ -382,14 +305,7 @@ int main(int argc, char *argv[])
     g_free(help_header);
     extcap_help_add_option(extcap_conf, "--help", "print this help");
     extcap_help_add_option(extcap_conf, "--version", "print the version");
-    extcap_help_add_option(extcap_conf, "--remote-host <host>", "the remote SSH host");
-    extcap_help_add_option(extcap_conf, "--remote-port <port>", "the remote SSH port");
-    extcap_help_add_option(extcap_conf, "--remote-username <username>", "the remote SSH username");
-    extcap_help_add_option(extcap_conf, "--remote-password <password>", "the remote SSH password. If not specified, ssh-agent and ssh-key are used");
-    extcap_help_add_option(extcap_conf, "--sshkey <private key path>", "the path of the SSH key (OpenSSH format)");
-    extcap_help_add_option(extcap_conf, "--sshkey-passphrase <private key passphrase>", "the passphrase to unlock private SSH key");
-    extcap_help_add_option(extcap_conf, "--proxycommand <proxy command>", "the command to use as proxy for the SSH connection");
-    extcap_help_add_option(extcap_conf, "--ssh-sha1", "support keys and key exchange using SHA-1 (deprecated)");
+    ssh_base_add_help_options(extcap_conf);
     extcap_help_add_option(extcap_conf, "--remote-capture-command-select <selection>", "sysdig or other remote capture command");
     extcap_help_add_option(extcap_conf, "--remote-capture-command <capture command>", "the remote capture command");
     extcap_help_add_option(extcap_conf, "--remote-priv <selection>", "none, sudo or doas");
@@ -403,6 +319,12 @@ int main(int argc, char *argv[])
 
     if (argc == 1) {
         extcap_help_print(extcap_conf);
+        goto end;
+    }
+
+    // Do this before reading the options, which sets up the control pipe
+    if (!ssh_base_setup_graceful_shutdown(extcap_conf)) {
+        ret = EXIT_FAILURE;
         goto end;
     }
 
@@ -461,6 +383,10 @@ int main(int argc, char *argv[])
 
             case OPT_SSH_SHA1:
                 ssh_params->ssh_sha1 = true;
+                break;
+
+            case OPT_UPDATE_KNOWN_HOSTS:
+                ssh_params->update_known_hosts = true;
                 break;
 
             case OPT_REMOTE_CAPTURE_COMMAND_SELECT:

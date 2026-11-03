@@ -79,7 +79,7 @@ typedef struct twamp_control_packet {
 typedef struct twamp_control_transaction {
     enum twamp_control_state last_state;
     uint32_t first_data_frame;
-    GSList *sessions;
+    wmem_list_t *sessions;
     proto_tree *tree;
 } twamp_control_transaction_t;
 
@@ -203,7 +203,7 @@ int find_twamp_session_by_first_accept_waiting (const void *element, const void 
 static int
 dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     bool is_request;
     proto_item *twamp_tree;
     proto_tree *it;
@@ -214,7 +214,7 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     uint8_t accept;
     uint16_t sender_port;
     uint16_t receiver_port;
-    GSList *list;
+    wmem_list_frame_t *frame;
     nstime_t ts;
     proto_tree *item;
     uint32_t modes;
@@ -237,6 +237,7 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
             conversation_add_proto_data(conversation, proto_twamp_control, ct);
             ct->last_state = CONTROL_STATE_UNKNOWN;
             ct->first_data_frame = pinfo->fd->num;
+            ct->sessions = wmem_list_new(wmem_file_scope());
         } else {
             /* Can't do anything until we get a greeting */
             return 0;
@@ -258,9 +259,9 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
             sender_port = tvb_get_ntohs(tvb, 12);
             receiver_port = tvb_get_ntohs(tvb, 14);
             /* try to find session from past visits */
-            if (g_slist_find_custom(ct->sessions, &sender_port,
+            if (wmem_list_find_custom(ct->sessions, &sender_port,
                     (GCompareFunc) find_twamp_session_by_sender_port) == NULL) {
-                session = g_new0(twamp_session_t, 1);
+                session = wmem_new0(wmem_file_scope(), twamp_session_t);
                 session->sender_port = sender_port;
                 session->receiver_port = receiver_port;
                 session->accepted = 0;
@@ -285,7 +286,7 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
                     memcpy(&session->receiver_address[0], pinfo->dst.data, pinfo->dst.len);
                 }
                 session->padding = tvb_get_ntohl(tvb, 64);
-                ct->sessions = g_slist_append(ct->sessions, session);
+                wmem_list_append(ct->sessions, session);
             }
         } else if (ct->last_state == CONTROL_STATE_REQUEST_SESSION) {
             ct->last_state = CONTROL_STATE_ACCEPT_SESSION;
@@ -293,11 +294,11 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
             if (accept == TWAMP_SESSION_ACCEPT_OK) {
                 receiver_port = tvb_get_ntohs(tvb, 2);
 
-                if ((list = g_slist_find_custom(ct->sessions, NULL,
+                if ((frame = wmem_list_find_custom(ct->sessions, NULL,
                         find_twamp_session_by_first_accept_waiting)) == NULL) {
                     return 0;
                 }
-                session = (twamp_session_t*) list->data;
+                session = (twamp_session_t*) wmem_list_frame_data(frame);
                 session->receiver_port = receiver_port;
 
                 cp->conversation = find_conversation(pinfo->fd->num, &pinfo->dst, &pinfo->src, CONVERSATION_UDP,
@@ -347,8 +348,7 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     case CONTROL_STATE_GREETING:
         proto_tree_add_item(twamp_tree, hf_twamp_control_unused, tvb, offset, 12, ENC_NA);
         offset += 12;
-        modes = tvb_get_ntohl(tvb, offset) & 0x00000007;
-        item = proto_tree_add_item(twamp_tree, hf_twamp_control_modes, tvb, offset, 4, ENC_BIG_ENDIAN);
+        item = proto_tree_add_item_ret_uint(twamp_tree, hf_twamp_control_modes, tvb, offset, 4, ENC_BIG_ENDIAN, &modes);
         proto_item_append_text(item, " (%s%s%s)",
                 (modes & TWAMP_MODE_UNAUTHENTICATED) ? " Unauthenticated " : "",
                 (modes & TWAMP_MODE_AUTHENTICATED) ? "Authenticated " : "",
@@ -438,8 +438,7 @@ dissect_twamp_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
         proto_tree_add_time(twamp_tree, hf_twamp_control_timeout, tvb, offset, 8, &ts);
         offset += 8;
 
-        type_p = tvb_get_ntohl(tvb, offset);
-        item = proto_tree_add_item(twamp_tree, hf_twamp_control_type_p, tvb, offset, 4, ENC_BIG_ENDIAN);
+        item = proto_tree_add_item_ret_uint(twamp_tree, hf_twamp_control_type_p, tvb, offset, 4, ENC_BIG_ENDIAN, &type_p);
         proto_item_append_text(item, " (DSCP: %d)", type_p);
         /* offset += 4; */
         break;
@@ -589,7 +588,7 @@ dissect_owamp_test(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
 static int
 dissect_twamp_test(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     proto_item *ti = NULL;
     proto_item *twamp_tree = NULL;
     int padding = 0;

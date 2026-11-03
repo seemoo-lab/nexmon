@@ -183,8 +183,8 @@ mtp3_msu_present(tvbuff_t *tvb, packet_info *pinfo, int fac, int level, const ch
 
 static bool dissect_syslog_info(proto_tree* tree, tvbuff_t* tvb, unsigned* offset, int hfindex)
 {
-  int end_offset = tvb_find_uint8(tvb, *offset, -1, CHR_SPACE);
-  if (end_offset == -1)
+  unsigned end_offset;
+  if (!tvb_find_uint8_remaining(tvb, *offset, CHR_SPACE, &end_offset))
     return false;
   proto_tree_add_item(tree, hfindex, tvb, *offset, end_offset - *offset, ENC_NA);
   *offset = end_offset + 1;
@@ -213,21 +213,29 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
     return false;
 
   /* Search the end */
-  int sd_end = tvb_find_uint16(tvb, *offset, -1, SD_STOP);
-  if (sd_end == -1)
-    return false;
+  unsigned sd_end;
+  if (!tvb_find_uint16_remaining(tvb, *offset, SD_STOP, &sd_end)) {
+    unsigned length = tvb_reported_length(tvb);
+    if (length > 0 && tvb_get_uint8(tvb, length - 1) == SD_END) {
+      sd_end = length;
+    }
+    else {
+      return false;
+    }
+  }
 
   ti = proto_tree_add_item(tree, hf_syslog_sd, tvb, *offset, sd_end - *offset + 1, ENC_NA);
   sd_tree = proto_item_add_subtree(ti, ett_syslog_sd);
 
   /* SD-ELEMENTS */
-  while(*offset < (unsigned)sd_end) {
+  while(*offset < sd_end) {
 
     proto_item *ti_element;
     proto_tree *element_tree;
 
     /* Find the end of current element (finding is guaranteed, because we already checked for SD_STOP) */
-    int element_end = tvb_find_uint8(tvb, *offset, -1, SD_END);
+    unsigned element_end;
+    DISSECTOR_ASSERT(tvb_find_uint8_remaining(tvb, *offset, SD_END, &element_end));
     ti_element = proto_tree_add_item(sd_tree, hf_syslog_sd_element, tvb, *offset, element_end - *offset + 1, ENC_NA);
     element_tree = proto_item_add_subtree(ti_element, ett_syslog_sd_element);
 
@@ -235,11 +243,11 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
     *offset = *offset + 1;
 
     /* SD-ELEMENT */
-    while(*offset < (unsigned)element_end) {
+    while(*offset < element_end) {
 
       /* Find the first space char (=SD-NAME), move to next element if failed */
-      int sdname_end = tvb_find_uint8(tvb, *offset, -1, CHR_SPACE);
-      if(sdname_end == -1 || sdname_end >= element_end) {
+      unsigned sdname_end;
+      if(!tvb_find_uint8_length(tvb, *offset, element_end - *offset, CHR_SPACE, &sdname_end)) {
         *offset = element_end + 1;
         break;
       }
@@ -250,16 +258,15 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
 
       /* PARAMETERS */
       counter_parameters = 0;
-      while(*offset < (unsigned)element_end) {
+      while(*offset < element_end) {
 
         proto_item *ti_param;
         proto_tree *param_tree;
 
         /* Find the first equals char ('=') which delimits param name and value, move to next element if failed */
-        int param_value_divide = tvb_find_uint8(tvb, *offset, -1, CHR_EQUAL);
-        if(param_value_divide == -1 || param_value_divide >= element_end) {
+        unsigned param_value_divide;
+        if(!tvb_find_uint8_length(tvb, *offset, element_end - *offset, CHR_EQUAL, &param_value_divide)) {
           *offset = element_end + 1;
-          break;
           break;
         }
 
@@ -273,13 +280,12 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
         *offset = param_value_divide + 1;
 
         /* Find the first and second quote char which marks the start and end of a value */
-        int value_start = tvb_find_uint8(tvb, *offset,   -1, CHR_QUOTE);
-        int value_end   = tvb_find_uint8(tvb, *offset+1, -1, CHR_QUOTE);
+        unsigned value_start, value_end;
 
         /* If start or end could not be determined, move to next element */
-        if(value_start == -1 || value_end == -1 || value_start >= element_end || value_end >= element_end) {
+        if(!tvb_find_uint8_length(tvb, *offset, element_end - *offset, CHR_QUOTE, &value_start) ||
+           !tvb_find_uint8_length(tvb, value_start + 1, element_end - value_start, CHR_QUOTE, &value_end)) {
           *offset = element_end + 1;
-          break;
           break;
         }
 
@@ -297,8 +303,9 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
 
   proto_item_append_text(ti, " (%d element%s)", counter_elements, plurality(counter_elements, "", "s"));
 
-  /* Move offset by one byte because space char is expected */
-  *offset = *offset + 1;
+  if (tvb_reported_length(tvb) != sd_end)
+    /* Move offset by one byte because space char is expected */
+    *offset = *offset + 1;
   return true;
 
 }
@@ -307,15 +314,14 @@ static bool dissect_syslog_sd(proto_tree* tree, tvbuff_t* tvb, packet_info *pinf
 static unsigned
 dissect_rfc5424_syslog_message(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo, unsigned offset)
 {
-  int end_offset;
+  unsigned end_offset;
 
   if (!dissect_syslog_info(tree, tvb, &offset, hf_syslog_version))
     return offset;
 
-  end_offset = tvb_find_uint8(tvb, offset, -1, CHR_SPACE);
-  if (end_offset == -1)
+  if (!tvb_find_uint8_remaining(tvb, offset, CHR_SPACE, &end_offset))
     return offset;
-  if ((unsigned)end_offset != offset) {
+  if (end_offset != offset) {
     /* do not call proto_tree_add_time_item with a length of 0 */
     proto_tree_add_time_item(tree, hf_syslog_timestamp, tvb, offset, end_offset - offset, ENC_ISO_8601_DATE_TIME,
       NULL, NULL, NULL);
@@ -450,7 +456,7 @@ dissect_syslog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
   framing_pdu_len = get_framed_syslog_pdu_len(pinfo, tvb, msg_off, data);
   if(framing_pdu_len > 0) {
-    framing_leading_str_len = snprintf(NULL, 0, "%d", framing_pdu_len) + 1;
+    framing_leading_str_len = snprintf(NULL, 0, "%u", framing_pdu_len) + 1;
     msg_off += framing_leading_str_len;
   }
 
@@ -534,10 +540,8 @@ dissect_syslog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     mtp3_item = proto_tree_add_boolean(syslog_tree, hf_syslog_msu_present,
                                         tvb, msg_off, msg_len, true);
     proto_item_set_generated(mtp3_item);
-  }
 
-  /* Call MTP dissector if encapsulated MSU was found... */
-  if (mtp3_tvb) {
+    /* Call MTP dissector if encapsulated MSU was found... */
     call_dissector(mtp_handle, mtp3_tvb, pinfo, tree);
   }
 

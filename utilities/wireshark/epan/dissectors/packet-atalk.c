@@ -16,9 +16,7 @@
 
 #include <epan/packet.h>
 #include <epan/etypes.h>
-#include <epan/ppptypes.h>
 #include <epan/aftypes.h>
-#include <epan/arcnet_pids.h>
 #include <epan/oui.h>
 #include <epan/conversation.h>
 #include <epan/prefs.h>
@@ -30,6 +28,9 @@
 #include <epan/capture_dissectors.h>
 #include "packet-atalk.h"
 #include "packet-afp.h"
+#include "packet-ppp.h"
+#include "packet-arcnet.h"
+
 
 void proto_register_atalk(void);
 void proto_reg_handoff_atalk(void);
@@ -49,6 +50,7 @@ static dissector_handle_t zip_ddp_handle;
 static dissector_handle_t rtmp_data_handle;
 static dissector_handle_t llap_handle;
 static capture_dissector_handle_t llap_cap_handle;
+static dissector_handle_t adsp_handle;
 
 
 static int proto_llap;
@@ -193,6 +195,36 @@ static int ett_zip;
 static int ett_zip_flags;
 static int ett_zip_zones_list;
 static int ett_zip_network_list;
+
+/* MacIP definitions */
+#define MACIP_ASSIGN  1
+#define MACIP_SERVER  3
+#define MACIP_ERROR  (-1)
+
+static int proto_macip;
+static int proto_macip_atp;
+static dissector_handle_t macip_handle;
+static dissector_handle_t macip_atp_handle;
+
+static int hf_macip_version;
+static int hf_macip_function;
+static int hf_macip_address;
+static int hf_macip_dns;
+static int hf_macip_broadcast;
+static int hf_macip_fileserver;
+static int hf_macip_other;
+static int hf_macip_pad;
+static int hf_macip_error;
+
+static const value_string macip_function_vals[] = {
+  {1, "ASSIGN"},
+  {3, "SERVER"},
+  {-1, "ERROR"},
+  {0, NULL}
+};
+static value_string_ext macip_function_vals_ext = VALUE_STRING_EXT_INIT(macip_function_vals);
+
+static int ett_macip;
 
 /* --------------------------------
  * from netatalk/include/atalk/ats.h
@@ -385,6 +417,127 @@ static value_string_ext pap_function_vals_ext = VALUE_STRING_EXT_INIT(pap_functi
 
 /* -------------------------------- */
 
+/* ADSP protocol cf. Inside AppleTalk chap. 12 */
+
+#define ADSP_HDRSIZE 13
+
+#define ADSP_CTRL_PROBE_ACK         0
+#define ADSP_CTRL_OPEN_REQ          1
+#define ADSP_CTRL_OPEN_ACK          2
+#define ADSP_CTRL_OPEN_REQACK       3
+#define ADSP_CTRL_OPEN_DENY         4
+#define ADSP_CTRL_CLOSE_ADVICE      5
+#define ADSP_CTRL_FORWARD_RESET     6
+#define ADSP_CTRL_FORWARD_RESET_ACK 7
+#define ADSP_CTRL_RETRANSMIT_ADVICE 8
+
+#define ADSP_FLAG_CONTROL   0x80
+#define ADSP_FLAG_ACK       0x40
+#define ADSP_FLAG_EOM       0x20
+#define ADSP_FLAG_ATTENTION 0x10
+
+static int proto_adsp;
+
+static int hf_adsp_connid;
+static int hf_adsp_first_byte_seq;
+static int hf_adsp_next_recv_seq;
+static int hf_adsp_recv_window;
+static int hf_adsp_descriptor;
+static int hf_adsp_flag_control;
+static int hf_adsp_flag_ack;
+static int hf_adsp_flag_eom;
+static int hf_adsp_flag_attn;
+static int hf_adsp_ctrl_code;
+static int hf_adsp_attn_code;
+static int hf_adsp_data;
+
+static int ett_adsp;
+static int ett_adsp_descriptor;
+
+/* Only meaningful when the Control flag (0x80) is set; a clear Control
+ * bit always means a Data packet regardless of these low bits (Inside
+ * AppleTalk ch. 12, Figure 12-2). */
+static const value_string adsp_ctrl_code_vals[] = {
+  { ADSP_CTRL_PROBE_ACK,         "Control (Probe/Ack)" },
+  { ADSP_CTRL_OPEN_REQ,          "Open Connection Request" },
+  { ADSP_CTRL_OPEN_ACK,          "Open Connection Ack" },
+  { ADSP_CTRL_OPEN_REQACK,       "Open Connection Req+Ack" },
+  { ADSP_CTRL_OPEN_DENY,         "Open Connection Deny" },
+  { ADSP_CTRL_CLOSE_ADVICE,      "Close Connection Advice" },
+  { ADSP_CTRL_FORWARD_RESET,     "Forward Reset" },
+  { ADSP_CTRL_FORWARD_RESET_ACK, "Forward Reset Ack" },
+  { ADSP_CTRL_RETRANSMIT_ADVICE, "Retransmit Advice" },
+  { 0, NULL }
+};
+
+static int
+dissect_adsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+  proto_tree *adsp_tree;
+  proto_item *ti;
+  uint8_t     descriptor;
+  bool        is_control;
+  uint8_t     ctrl_code;
+  uint16_t    connid;
+  int         offset;
+
+  static int * const descriptor_flags[] = {
+    &hf_adsp_flag_control,
+    &hf_adsp_flag_ack,
+    &hf_adsp_flag_eom,
+    &hf_adsp_flag_attn,
+    NULL
+  };
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "ADSP");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  descriptor = tvb_get_uint8(tvb, 12);
+  is_control = (descriptor & ADSP_FLAG_CONTROL) != 0;
+  ctrl_code  = descriptor & 0x0F;
+  connid     = tvb_get_ntohs(tvb, 0);
+
+  ti = proto_tree_add_item(tree, proto_adsp, tvb, 0, ADSP_HDRSIZE, ENC_NA);
+  adsp_tree = proto_item_add_subtree(ti, ett_adsp);
+
+  proto_tree_add_item(adsp_tree, hf_adsp_connid,         tvb, 0, 2, ENC_BIG_ENDIAN);
+  proto_tree_add_item(adsp_tree, hf_adsp_first_byte_seq, tvb, 2, 4, ENC_BIG_ENDIAN);
+  proto_tree_add_item(adsp_tree, hf_adsp_next_recv_seq,  tvb, 6, 4, ENC_BIG_ENDIAN);
+  proto_tree_add_item(adsp_tree, hf_adsp_recv_window,    tvb, 10, 2, ENC_BIG_ENDIAN);
+
+  proto_tree_add_bitmask(adsp_tree, tvb, 12, hf_adsp_descriptor,
+                          ett_adsp_descriptor, descriptor_flags, ENC_NA);
+
+  if (is_control) {
+    proto_tree_add_item(adsp_tree, hf_adsp_ctrl_code, tvb, 12, 1, ENC_NA);
+    col_add_fstr(pinfo->cinfo, COL_INFO, "%s  ConnID: %u",
+                 val_to_str(pinfo->pool, ctrl_code, adsp_ctrl_code_vals, "Unknown control (0x%01x)"),
+                 connid);
+  } else {
+    col_add_fstr(pinfo->cinfo, COL_INFO, "Data  ConnID: %u  Seq: %u",
+                 connid, tvb_get_ntohl(tvb, 2));
+  }
+
+  offset = ADSP_HDRSIZE;
+
+  /* Attention Data: Control=0, Attention=1 carries a 2-byte attention
+   * code ahead of its payload. A Control+Attention packet (0x90) is an
+   * Attention Ack instead and carries no extra payload. */
+  if (!is_control && (descriptor & ADSP_FLAG_ATTENTION)) {
+    proto_tree_add_item(adsp_tree, hf_adsp_attn_code, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+  }
+
+  if (tvb_reported_length_remaining(tvb, offset) > 0) {
+    proto_tree_add_item(adsp_tree, hf_adsp_data, tvb, offset, -1, ENC_NA);
+    offset = tvb_reported_length(tvb);
+  }
+
+  return offset;
+}
+
+/* -------------------------------- */
+
 static dissector_table_t ddp_dissector_table;
 
 #define DDP_SHORT_HEADER_SIZE 5
@@ -400,6 +553,8 @@ static const value_string op_vals[] = {
   {DDP_RTMPREQ,  "AppleTalk Routing Table request"},
   {DDP_ZIP,      "AppleTalk Zone Information Protocol packet"},
   {DDP_ADSP,     "AppleTalk Data Stream Protocol"},
+  {DDP_MACIP,    "MacIP"},
+  {DDP_ARP,      "DDP ARP"},
   {DDP_EIGRP,    "Cisco EIGRP for AppleTalk"},
   {0, NULL}
 };
@@ -893,8 +1048,13 @@ dissect_atp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
   if (new_tvb) {
     /* if port == 6 it's not an ASP packet but a ZIP packet */
-    if (pinfo->srcport == 6 || pinfo->destport == 6 )
+    if (pinfo->srcport == 6 || pinfo->destport == 6) {
       call_dissector_with_data(zip_atp_handle, new_tvb, pinfo, tree, &atp_asp_dsi_info);
+    }
+    /* if port == 72 it's a MacIP gateway configuration packet */
+    else if (pinfo->srcport == 72 || pinfo->destport == 72) {
+      call_dissector_with_data(macip_atp_handle, new_tvb, pinfo, tree, &atp_asp_dsi_info);
+    }
     else {
       /* XXX need a conversation_get_dissector function ? */
       if (!atp_asp_dsi_info.reply && !conversation_get_dissector(conversation, pinfo->num)) {
@@ -955,12 +1115,10 @@ dissect_pap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     pap_tree = proto_item_add_subtree(ti, ett_pap);
   }
 
-  connID = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(pap_tree, hf_pap_connid, tvb, offset, 1, ENC_BIG_ENDIAN);
+  proto_tree_add_item_ret_uint8(pap_tree, hf_pap_connid, tvb, offset, 1, ENC_BIG_ENDIAN, &connID);
   offset++;
 
-  fn = tvb_get_uint8(tvb, offset);
-  proto_tree_add_item(pap_tree, hf_pap_function, tvb, offset, 1, ENC_BIG_ENDIAN);
+  proto_tree_add_item_ret_uint8(pap_tree, hf_pap_function, tvb, offset, 1, ENC_BIG_ENDIAN, &fn);
   offset++;
 
   col_add_fstr(pinfo->cinfo, COL_INFO, "%s  ID: %d",
@@ -1021,6 +1179,16 @@ dissect_pap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     break;
   }
   return offset;
+}
+
+static int
+dissect_macip(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+  /* MacIP packets are IPv4 packets with a DDP header */
+  static dissector_handle_t ip_handle;
+  ip_handle = find_dissector("ip");
+  call_dissector(ip_handle, tvb, pinfo, tree);
+  return tvb_captured_length(tvb);
 }
 
 /* -----------------------------
@@ -1309,13 +1477,12 @@ dissect_atp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
       proto_tree_add_item(zip_tree, hf_zip_zero_value, tvb, offset, 1, ENC_NA);
       offset++;
-      count = tvb_get_ntohs(tvb, offset);
-      ti = proto_tree_add_item(zip_tree, hf_zip_count, tvb, offset, 2, ENC_BIG_ENDIAN);
+      ti = proto_tree_add_item_ret_uint16(zip_tree, hf_zip_count, tvb, offset, 2, ENC_BIG_ENDIAN, &count);
       offset += 2;
       sub_tree = proto_item_add_subtree(ti, ett_zip_zones_list);
       for (i = 0; i < count; i++) {
         len = tvb_get_uint8(tvb, offset);
-        proto_tree_add_item(sub_tree, hf_zip_zone_name, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+        proto_tree_add_item(sub_tree, hf_zip_zone_name, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
         offset += len +1;
       }
       break;
@@ -1365,8 +1532,7 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
   /* fn 1,7,2,8 are not tested */
   switch (fn) {
   case 1: /* Query */
-    count = tvb_get_uint8(tvb, offset);
-    ti    = proto_tree_add_item(zip_tree, hf_zip_network_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+    ti    = proto_tree_add_item_ret_uint(zip_tree, hf_zip_network_count, tvb, offset, 1, ENC_BIG_ENDIAN, &count);
     offset++;
     sub_tree = proto_item_add_subtree(ti, ett_zip_network_list);
     for (i = 0; i < count; i++) {
@@ -1382,11 +1548,10 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     offset += 4;
 
     len = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
     offset += len +1;
 
-    len = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(zip_tree, hf_zip_multicast_length,tvb, offset, 1,ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(zip_tree, hf_zip_multicast_length,tvb, offset, 1, ENC_BIG_ENDIAN, &len);
     offset++;
     proto_tree_add_item(zip_tree, hf_zip_multicast_address,tvb, offset, len,ENC_NA);
     offset += len;
@@ -1396,8 +1561,7 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
   case 2: /* Reply */
   case 8: /* Extended Reply */
-    count = tvb_get_uint8(tvb, offset);
-    ti = proto_tree_add_item(zip_tree, hf_zip_network_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+    ti = proto_tree_add_item_ret_uint(zip_tree, hf_zip_network_count, tvb, offset, 1, ENC_BIG_ENDIAN, &count);
     offset++;
     sub_tree = proto_item_add_subtree(ti, ett_zip_network_list);
     for (i = 0; i < count; i++) {
@@ -1406,7 +1570,7 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
       proto_tree_add_item(net_tree, hf_zip_network, tvb, offset, 2, ENC_BIG_ENDIAN);
       offset += 2;
       len = tvb_get_uint8(tvb, offset);
-      proto_tree_add_item(net_tree, hf_zip_zone_name, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+      proto_tree_add_item(net_tree, hf_zip_zone_name, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
       offset += len +1;
       proto_item_set_len(ti, len+3);
     }
@@ -1417,7 +1581,7 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     offset++;
     proto_tree_add_item(zip_tree, hf_zip_zero_value, tvb, offset, 4, ENC_NA);
     offset += 4;
-    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
     break;
 
   case 6 :  /* GetNetInfo reply */
@@ -1432,20 +1596,99 @@ dissect_ddp_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     offset += 2;
 
     len = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+    proto_tree_add_item(zip_tree, hf_zip_zone_name, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
     offset += len +1;
 
-    len = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(zip_tree, hf_zip_multicast_length,tvb, offset, 1,ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(zip_tree, hf_zip_multicast_length, tvb, offset, 1, ENC_BIG_ENDIAN, &len);
     offset++;
-    proto_tree_add_item(zip_tree, hf_zip_multicast_address,tvb, offset, len,ENC_NA);
+    proto_tree_add_item(zip_tree, hf_zip_multicast_address, tvb, offset, len,ENC_NA);
     offset += len;
     if ((flag & 0x80) != 0)
-      proto_tree_add_item(zip_tree, hf_zip_default_zone, tvb, offset, 1,ENC_ASCII|ENC_BIG_ENDIAN);
+      proto_tree_add_item(zip_tree, hf_zip_default_zone, tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
     break;
 
   default:
     break;
+  }
+  return tvb_captured_length(tvb);
+}
+
+/* -----------------------------
+   MacIP Gateway Protocol. Based on packet observation from various MacIP gateways and KIP source code.
+   Additional documentation in MacIP Gateway Protocol packet format can be found in section 3.8 of the
+   IETF MacIP draft specification at:
+   https://datatracker.ietf.org/doc/html/draft-ietf-appleip-MacIP-02
+*/
+
+static int
+dissect_atp_macip(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
+{
+  struct atp_asp_dsi_info* atp_asp_dsi_info;
+  int         captured = tvb_captured_length(tvb);
+  int         offset = 0;
+  proto_tree* macip_tree;
+  proto_item* ti;
+  int32_t     fn;
+
+  /* Reject the packet if data is NULL */
+  if (data == NULL)
+    return 0;
+
+  // ATP MacIP is carried over DDP
+  if (!(is_ddp_address(&pinfo->src) && is_ddp_address(&pinfo->dst))) {
+    return 0;
+  }
+
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "MacIP GP");
+  col_clear(pinfo->cinfo, COL_INFO);
+
+  atp_asp_dsi_info = (struct atp_asp_dsi_info*)data;
+
+  ti = proto_tree_add_item(tree, proto_macip_atp, tvb, offset, -1, ENC_NA);
+  macip_tree = proto_item_add_subtree(ti, ett_macip);
+  if (atp_asp_dsi_info->reply) {
+    /* ATP user bytes are technically undefined, but Apple inserts a version number */
+    proto_tree_add_item(macip_tree, hf_macip_version, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(macip_tree, hf_macip_pad, tvb, offset, 2, ENC_NA);
+    offset += 2;
+  }
+  else {
+    proto_tree_add_item(macip_tree, hf_macip_pad, tvb, offset, 4, ENC_NA);
+    offset += 4;
+  }
+  proto_tree_add_item_ret_int(macip_tree, hf_macip_function, tvb, offset, 4, ENC_BIG_ENDIAN, &fn);
+  if (atp_asp_dsi_info->reply)
+    col_add_fstr(pinfo->cinfo, COL_INFO, "Reply tid %u", atp_asp_dsi_info->tid);
+  else
+    col_add_fstr(pinfo->cinfo, COL_INFO, "Function: %s  tid %u",
+      val_to_str_ext(pinfo->pool, fn, &macip_function_vals_ext, "Unknown (0x%01x)"), atp_asp_dsi_info->tid);
+
+  if (atp_asp_dsi_info->reply) {
+    offset += 4;
+    proto_tree_add_item(macip_tree, hf_macip_address, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(macip_tree, hf_macip_dns, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(macip_tree, hf_macip_broadcast, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(macip_tree, hf_macip_fileserver, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(macip_tree, hf_macip_other, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    /* Some MacIP servers (ex: macipgw) don't output the full list of IPs, so handle that here */
+    if (offset < captured) {
+      proto_tree_add_item(macip_tree, hf_macip_other, tvb, offset, 4, ENC_BIG_ENDIAN);
+      offset += 4;
+      proto_tree_add_item(macip_tree, hf_macip_other, tvb, offset, 4, ENC_BIG_ENDIAN);
+      offset += 4;
+      proto_tree_add_item(macip_tree, hf_macip_other, tvb, offset, 4, ENC_BIG_ENDIAN);
+      offset += 4;
+    }
+    /* Variable length error messages are attached to the end of the reply block */
+    if (fn == MACIP_ERROR) {
+      proto_tree_add_item(macip_tree, hf_macip_error, tvb, offset, -1, ENC_STRING);
+    }
   }
   return tvb_captured_length(tvb);
 }
@@ -1521,10 +1764,10 @@ dissect_ddp_short(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 
   if (tree) {
     hidden_item = proto_tree_add_string(ddp_tree, hf_ddp_src, tvb,
-                                        4, 3, address_to_str(pinfo->pool, &pinfo->src));
+                                        3, 1, address_to_str(pinfo->pool, &pinfo->src));
     proto_item_set_hidden(hidden_item);
     hidden_item = proto_tree_add_string(ddp_tree, hf_ddp_dst, tvb,
-                                        6, 3, address_to_str(pinfo->pool, &pinfo->dst));
+                                        2, 1, address_to_str(pinfo->pool, &pinfo->dst));
     proto_item_set_hidden(hidden_item);
 
     proto_tree_add_uint(ddp_tree, hf_ddp_type, tvb, 4, 1, type);
@@ -2065,6 +2308,97 @@ proto_register_atalk(void)
 
   };
 
+  static hf_register_info hf_adsp[] = {
+    { &hf_adsp_connid,
+      { "Connection ID", "adsp.connid", FT_UINT16, BASE_HEX, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_first_byte_seq,
+      { "First Byte Sequence", "adsp.first_byte_seq", FT_UINT32, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_next_recv_seq,
+      { "Next Receive Sequence", "adsp.next_recv_seq", FT_UINT32, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_recv_window,
+      { "Receive Window", "adsp.recv_window", FT_UINT16, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_descriptor,
+      { "Descriptor", "adsp.descriptor", FT_UINT8, BASE_HEX, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_flag_control,
+      { "Control", "adsp.control", FT_BOOLEAN, 8, NULL, ADSP_FLAG_CONTROL,
+        "Set for control packets; clear for data packets", HFILL }},
+
+    { &hf_adsp_flag_ack,
+      { "Ack Request", "adsp.ackreq", FT_BOOLEAN, 8, NULL, ADSP_FLAG_ACK,
+        NULL, HFILL }},
+
+    { &hf_adsp_flag_eom,
+      { "End Of Message", "adsp.eom", FT_BOOLEAN, 8, NULL, ADSP_FLAG_EOM,
+        NULL, HFILL }},
+
+    { &hf_adsp_flag_attn,
+      { "Attention", "adsp.attention", FT_BOOLEAN, 8, NULL, ADSP_FLAG_ATTENTION,
+        NULL, HFILL }},
+
+    { &hf_adsp_ctrl_code,
+      { "Control Code", "adsp.ctrl_code", FT_UINT8, BASE_DEC, VALS(adsp_ctrl_code_vals), 0x0F,
+        NULL, HFILL }},
+
+    { &hf_adsp_attn_code,
+      { "Attention Code", "adsp.attn_code", FT_UINT16, BASE_DEC, NULL, 0x0,
+        NULL, HFILL }},
+
+    { &hf_adsp_data,
+      { "Data", "adsp.data", FT_BYTES, BASE_NONE, NULL, 0x0,
+        NULL, HFILL }},
+
+  };
+
+  static hf_register_info hf_macip[] = {
+
+  { &hf_macip_version,
+      { "Version",    "macip.version", FT_UINT16,  BASE_DEC, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_function,
+      { "Function",   "macip.function", FT_INT32,  BASE_DEC|BASE_EXT_STRING, &macip_function_vals_ext, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_address,
+      { "Assigned IP Address", "macip.address", FT_IPv4,  BASE_NONE, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_dns,
+      { "DNS Server", "macip.dns", FT_IPv4,  BASE_NONE, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_broadcast,
+      { "Broadcast Address", "macip.broadcast", FT_IPv4,  BASE_NONE, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_fileserver,
+      { "File Server IP Address", "macip.fileserver", FT_IPv4,  BASE_NONE, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_other,
+      { "Other IP Address", "macip.other", FT_IPv4, BASE_NONE, NULL, 0x0,
+        NULL, HFILL}},
+
+  { &hf_macip_error,
+      { "Error",    "macip.error",FT_STRINGZ, BASE_SHOW_ASCII_PRINTABLE, NULL, 0x0,
+        "Error Message", HFILL}},
+
+  { &hf_macip_pad,
+      { "Pad",        "macip.pad",FT_NONE, BASE_NONE, NULL, 0,
+       "Pad Byte", HFILL }},
+
+  };
+
   static ei_register_info ei_ddp[] = {
      { &ei_ddp_len_invalid, { "ddp.len_invalid", PI_PROTOCOL, PI_WARN, "Invalid length", EXPFILL }},
   };
@@ -2090,6 +2424,11 @@ proto_register_atalk(void)
     &ett_zip_flags,
     &ett_zip_zones_list,
     &ett_zip_network_list,
+
+    &ett_macip,
+
+    &ett_adsp,
+    &ett_adsp_descriptor,
   };
   module_t *atp_module;
   expert_module_t *expert_ddp;
@@ -2128,6 +2467,16 @@ proto_register_atalk(void)
   proto_pap = proto_register_protocol("Printer Access Protocol", "PrAP", "prap");
   proto_register_field_array(proto_pap, hf_pap, array_length(hf_pap));
   pap_handle = register_dissector("prap", dissect_pap, proto_pap);
+
+  proto_adsp = proto_register_protocol("AppleTalk Data Stream Protocol", "ADSP", "adsp");
+  proto_register_field_array(proto_adsp, hf_adsp, array_length(hf_adsp));
+  adsp_handle = register_dissector("adsp", dissect_adsp, proto_adsp);
+
+  proto_macip = proto_register_protocol("MacIP", "MacIP", "macip");
+  proto_macip_atp = proto_register_protocol("MacIP Gateway Protocol", "MacIP GP", "macip.atp");
+  proto_register_field_array(proto_macip_atp, hf_macip, array_length(hf_macip));
+  macip_handle = register_dissector("macip", dissect_macip, proto_macip);
+  macip_atp_handle = register_dissector("macip.atp", dissect_atp_macip, proto_macip_atp);
 
   proto_zip = proto_register_protocol("Zone Information Protocol", "ZIP", "zip");
   proto_register_field_array(proto_zip, hf_zip, array_length(hf_zip));
@@ -2171,6 +2520,8 @@ proto_reg_handoff_atalk(void)
   dissector_add_uint("ddp.type", DDP_RTMPREQ, rtmp_request_handle);
   dissector_add_uint("ddp.type", DDP_RTMPDATA, rtmp_data_handle);
   dissector_add_uint("ddp.type", DDP_ZIP, zip_ddp_handle);
+  dissector_add_uint("ddp.type", DDP_MACIP, macip_handle);
+  dissector_add_uint("ddp.type", DDP_ADSP, adsp_handle);
 
   dissector_add_uint("wtap_encap", WTAP_ENCAP_LOCALTALK, llap_handle);
   /*

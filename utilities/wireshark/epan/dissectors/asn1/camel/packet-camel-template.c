@@ -45,9 +45,8 @@
 #include "packet-inap.h"
 #include "packet-tcap.h"
 
-#define PNAME  "Camel"
-#define PSNAME "CAMEL"
-#define PFNAME "camel"
+void proto_reg_handoff_camel(void);
+void proto_register_camel(void);
 
 /* Initialize the protocol and registered fields */
 static int proto_camel;
@@ -108,19 +107,15 @@ static int hf_camel_timeandtimezone_tz;
 static struct camelsrt_info_t * gp_camelsrt_info;
 
 /* Forward declarations */
-static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset,asn1_ctx_t *actx);
-static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset,asn1_ctx_t *actx);
-static int dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, int offset,asn1_ctx_t *actx);
-static int dissect_camel_CAMEL_AChBillingChargingCharacteristics(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_camel_CAMEL_AChBillingChargingCharacteristicsV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_camel_CAMEL_CallResult(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_camel_EstablishTemporaryConnectionArgV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
-static int dissect_camel_SpecializedResourceReportArgV23(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, unsigned offset,asn1_ctx_t *actx);
+static unsigned dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, unsigned offset,asn1_ctx_t *actx);
+static unsigned dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, unsigned offset,asn1_ctx_t *actx);
+static unsigned dissect_camel_CAMEL_AChBillingChargingCharacteristics(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_camel_CAMEL_AChBillingChargingCharacteristicsV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_camel_CAMEL_CallResult(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_camel_EstablishTemporaryConnectionArgV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_camel_SpecializedResourceReportArgV23(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
-/* XXX - can we get rid of these and always do the SRT work? */
-static bool gcamel_PersistentSRT=false;
-static bool gcamel_DisplaySRT=false;
-bool gcamel_StatSRT=false;
 
 /* Initialize the subtree pointers */
 static int ett_camel;
@@ -167,8 +162,8 @@ static dissector_handle_t  camel_v4_handle;
 
 static uint8_t PDPTypeOrganization;
 static uint8_t PDPTypeNumber;
-const char *camel_obj_id;
-bool is_ExtensionField;
+static const char *camel_obj_id;
+static bool is_ExtensionField;
 
 /* Global hash tables*/
 static wmem_map_t *srt_calls;
@@ -188,7 +183,7 @@ static const value_string camel_Component_vals[] = {
   { 0, NULL }
 };
 
-const value_string  camelSRTtype_naming[]= {
+static const value_string  camelSRTtype_naming[]= {
   { CAMELSRT_SESSION,         "TCAP_Session" },
   { CAMELSRT_VOICE_INITIALDP, "InitialDP/Continue" },
   { CAMELSRT_VOICE_ACR1,      "Slice1_ACR/ACH" },
@@ -310,7 +305,7 @@ static const value_string camel_ectTreatmentIndicator_values[] = {
 #include "packet-camel-table.c"
 
 /*
- * DEBUG fonctions
+ * DEBUG functions
  */
 
 #undef DEBUG_CAMELSRT
@@ -406,7 +401,7 @@ dissect_RP_cause_ie(tvbuff_t *tvb, uint32_t offset, _U_ unsigned len,
   return curr_offset - offset;
 }
 
-static int dissect_camel_InitialDPArgExtensionV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_camel_InitialDPArgExtensionV2(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 #include "packet-camel-fn.c"
 
@@ -499,12 +494,6 @@ camelsrt_init_routine(void)
 {
   /* Reset the session counter */
   camelsrt_global_SessionId=1;
-
-  /* The Display of SRT is enable
-   * 1) For wireshark only if Persistent Stat is enable
-   * 2) For Tshark, if the SRT CLI tap is registered
-   */
-  gcamel_DisplaySRT=gcamel_PersistentSRT || gcamel_StatSRT;
 }
 
 
@@ -555,17 +544,6 @@ camelsrt_close_call_matching(packet_info *pinfo,
     p_camelsrt_info->msginfo[CAMELSRT_SESSION].is_delta_time = true;
     p_camelsrt_info->msginfo[CAMELSRT_SESSION].delta_time = delta; /* give it to tap */
     p_camelsrt_info->msginfo[CAMELSRT_SESSION].req_time = p_camelsrt_call->category[CAMELSRT_SESSION].req_time;
-
-    if ( !gcamel_PersistentSRT ) {
-      wmem_map_remove(srt_calls, &camelsrt_call_key);
-#ifdef DEBUG_CAMELSRT
-      dbg(20,"remove hash ");
-#endif
-    } else {
-#ifdef DEBUG_CAMELSRT
-      dbg(20,"keep hash ");
-#endif
-    }
   } /* call reference found */
 }
 
@@ -599,7 +577,7 @@ camelsrt_tcap_matching(tvbuff_t *tvb _U_, packet_info *pinfo,
 }
 
 /*
- * Create the record identifiying the Camel session
+ * Create the record identifying the Camel session
  * As the Tcap session id given by the TCAP dissector is uniq, it will be
  * used as main key.
  */
@@ -670,8 +648,7 @@ camelsrt_request_call_matching(tvbuff_t *tvb, packet_info *pinfo,
 #ifdef DEBUG_CAMELSRT
     dbg(12,"Found ");
 #endif
-    if (gcamel_DisplaySRT)
-      proto_tree_add_uint(tree, hf_camelsrt_SessionId, tvb, 0,0, p_camelsrt_call->session_id);
+    proto_tree_add_uint(tree, hf_camelsrt_SessionId, tvb, 0,0, p_camelsrt_call->session_id);
 
 
     /* Hmm.. As there are several slices ApplyChargingReport/ApplyCharging
@@ -724,10 +701,8 @@ camelsrt_request_call_matching(tvbuff_t *tvb, packet_info *pinfo,
           dbg(21,"Display_duplicate with req %d ", p_camelsrt_call->category[srt_type].req_num);
 #endif
           p_camelsrt_info->msginfo[srt_type].is_duplicate = true;
-          if (gcamel_DisplaySRT){
-            hidden_item = proto_tree_add_uint(tree, hf_camelsrt_Duplicate, tvb, 0,0, 77);
+          hidden_item = proto_tree_add_uint(tree, hf_camelsrt_Duplicate, tvb, 0,0, 77);
                 proto_item_set_hidden(hidden_item);
-          }
 
         } else {
           /* Ignore duplicate frame */
@@ -743,8 +718,7 @@ camelsrt_request_call_matching(tvbuff_t *tvb, packet_info *pinfo,
     } /* req_num != 0 */
 
       /* add link to response frame, if available */
-    if ( gcamel_DisplaySRT &&
-         (p_camelsrt_call->category[srt_type].rsp_num != 0) &&
+    if ( (p_camelsrt_call->category[srt_type].rsp_num != 0) &&
          (p_camelsrt_call->category[srt_type].req_num != 0) &&
          (p_camelsrt_call->category[srt_type].req_num == pinfo->num) ) {
 #ifdef DEBUG_CAMELSRT
@@ -770,7 +744,6 @@ camelsrt_display_DeltaTime(proto_tree *tree, tvbuff_t *tvb, nstime_t *value_ptr,
 {
   proto_item *ti;
 
-  if ( gcamel_DisplaySRT ) {
     switch(category) {
     case CAMELSRT_VOICE_INITIALDP:
       ti = proto_tree_add_time(tree, hf_camelsrt_DeltaTime31, tvb, 0, 0, value_ptr);
@@ -807,7 +780,6 @@ camelsrt_display_DeltaTime(proto_tree *tree, tvbuff_t *tvb, nstime_t *value_ptr,
     default:
       break;
     }
-  }
 }
 
 /*
@@ -839,8 +811,7 @@ camelsrt_report_call_matching(tvbuff_t *tvb, packet_info *pinfo,
 #ifdef DEBUG_CAMELSRT
     dbg(12,"Found, req=%d ",p_camelsrt_call->category[srt_type].req_num);
 #endif
-    if ( gcamel_DisplaySRT )
-      proto_tree_add_uint(tree, hf_camelsrt_SessionId, tvb, 0,0, p_camelsrt_call->session_id);
+    proto_tree_add_uint(tree, hf_camelsrt_SessionId, tvb, 0,0, p_camelsrt_call->session_id);
 
     if (srt_type==CAMELSRT_VOICE_ACR1) {
       if (p_camelsrt_call->category[CAMELSRT_VOICE_ACR3].req_num != 0
@@ -882,10 +853,8 @@ camelsrt_report_call_matching(tvbuff_t *tvb, packet_info *pinfo,
         dbg(21,"Display_duplicate rsp=%d ", p_camelsrt_call->category[srt_type].rsp_num);
 #endif
         p_camelsrt_info->msginfo[srt_type].is_duplicate = true;
-        if ( gcamel_DisplaySRT ){
-          hidden_item = proto_tree_add_uint(tree, hf_camelsrt_Duplicate, tvb, 0,0, 77);
-          proto_item_set_hidden(hidden_item);
-        }
+        hidden_item = proto_tree_add_uint(tree, hf_camelsrt_Duplicate, tvb, 0,0, 77);
+        proto_item_set_hidden(hidden_item);
       }
     } /* rsp_num != 0 */
 
@@ -899,14 +868,13 @@ camelsrt_report_call_matching(tvbuff_t *tvb, packet_info *pinfo,
       dbg(20,"Display_frameReqlink %d ",p_camelsrt_call->category[srt_type].req_num);
 #endif
       /* Indicate the frame to which this is a reply. */
-      if ( gcamel_DisplaySRT ) {
-        ti = proto_tree_add_uint_format(tree, hf_camelsrt_ResponseFrame, tvb, 0, 0,
+      ti = proto_tree_add_uint_format(tree, hf_camelsrt_ResponseFrame, tvb, 0, 0,
                                         p_camelsrt_call->category[srt_type].req_num,
                                         "Linked request %s in frame %u",
                                         val_to_str_const(srt_type, camelSRTtype_naming, "Unk"),
                                         p_camelsrt_call->category[srt_type].req_num);
-        proto_item_set_generated(ti);
-      }
+      proto_item_set_generated(ti);
+
       /* Calculate Service Response Time */
       nstime_delta(&delta, &pinfo->abs_ts, &p_camelsrt_call->category[srt_type].req_time);
 
@@ -1112,9 +1080,8 @@ dissect_camel_all(int version, const char* col_protocol, const char* suffix,
 
   /* If a Tcap context is associated to this transaction */
   if (gp_camelsrt_info->tcap_context ) {
-    if (gcamel_DisplaySRT && tree) {
-      stat_tree = proto_tree_add_subtree(tree, tvb, 0, 0, ett_camel_stat, NULL, "Stat");
-    }
+    stat_tree = proto_tree_add_subtree(tree, tvb, 0, 0, ett_camel_stat, NULL, "Stat");
+
     camelsrt_call_matching(tvb, pinfo, stat_tree, gp_camelsrt_info);
     tap_queue_packet(camel_tap, pinfo, gp_camelsrt_info);
   }
@@ -1516,7 +1483,7 @@ void proto_register_camel(void) {
   static stat_tap_table_ui camel_stat_table = {
     REGISTER_TELEPHONY_GROUP_GSM,
     "CAMEL Messages and Response Status",
-    PSNAME,
+    "CAMEL",
     "camel,counter",
     camel_stat_init,
     camel_stat_packet,
@@ -1530,7 +1497,7 @@ void proto_register_camel(void) {
   };
 
   /* Register protocol */
-  proto_camel = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_camel = proto_register_protocol("Camel", "CAMEL", "camel");
 
   camel_handle = register_dissector("camel", dissect_camel, proto_camel);
   camel_v1_handle = register_dissector("camel-v1", dissect_camel_v1, proto_camel);
@@ -1574,10 +1541,7 @@ void proto_register_camel(void) {
 
   prefs_register_obsolete_preference(camel_module, "srt");
 
-  prefs_register_bool_preference(camel_module, "persistentsrt",
-                                 "Persistent stats for SRT",
-                                 "Statistics for Response Time",
-                                 &gcamel_PersistentSRT);
+  prefs_register_obsolete_preference(camel_module, "persistentsrt");
 
   /* Routine for statistic */
   register_init_routine(&camelsrt_init_routine);
@@ -1585,9 +1549,9 @@ void proto_register_camel(void) {
   /* create new hash-table for SRT */
   srt_calls = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), camelsrt_call_hash, camelsrt_call_equal);
 
-  camel_tap=register_tap(PSNAME);
+  camel_tap=register_tap("CAMEL");
 
-  register_srt_table(proto_camel, PSNAME, 1, camelstat_packet, camelstat_init, NULL);
+  register_srt_table(proto_camel, "CAMEL", 1, camelstat_packet, camelstat_init, NULL);
   register_stat_tap_table_ui(&camel_stat_table);
 
   register_external_value_string("camelSRTtype_naming", camelSRTtype_naming);

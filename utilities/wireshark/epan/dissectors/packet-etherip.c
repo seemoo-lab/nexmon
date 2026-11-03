@@ -7,8 +7,8 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
 #include <epan/expert.h>
+#include <epan/iana-info.h>
 
 void proto_register_etherip(void);
 void proto_reg_handoff_etherip(void);

@@ -7,10 +7,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __STRUTIL_H__
-#define __STRUTIL_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #include <epan/wmem_scopes.h>
@@ -33,6 +30,7 @@ extern "C" {
  * @param eol A pointer that will receive the EOL location
  * @return A pointer to the EOL character(s) in "*eol".
  */
+WS_DLL_PUBLIC
 const unsigned char *find_line_end(const unsigned char *data, const unsigned char *dataend,
     const unsigned char **eol);
 
@@ -61,7 +59,10 @@ WS_DLL_PUBLIC
 bool       hex_str_to_bytes(const char *hex_str, GByteArray *bytes,
     bool force_separators);
 
-/* Turn a string of hex digits with optional separators (defined by encoding)
+/**
+ * @brief Turn a string of hex digits with optional separators (defined by encoding)
+ *
+ * Turn a string of hex digits with optional separators (defined by encoding)
  * into a byte array. Unlike hex_str_to_bytes(), this will read as many hex-char
  * pairs as possible and not error if it hits a non-hex-char; instead it just ends
  * there. (i.e., like strtol()/atoi()/etc.) But it must see two hex chars at the
@@ -112,7 +113,7 @@ bool       uri_str_to_bytes(const char *uri_str, GByteArray *bytes);
 
 /** Turn a OID string representation (dot notation) into a byte array.
  *
- * @param oid_str The OID string (dot notaion).
+ * @param oid_str The OID string (dot notation).
  * @param bytes The GByteArray that will receive the bytes.  This
  *        must be initialized by the caller.
  * @param is_absolute True if this is an absolute OID; false for relative OID.
@@ -123,7 +124,7 @@ bool       rel_oid_str_to_bytes(const char *oid_str, GByteArray *bytes, bool is_
 
 /** Turn a OID string representation (dot notation) into a byte array.
  *
- * @param oid_str The OID string (dot notaion).
+ * @param oid_str The OID string (dot notation).
  * @param bytes The GByteArray that will receive the bytes.  This
  *        must be initialized by the caller.
  * @return True if the string was converted successfully
@@ -176,7 +177,8 @@ char*     xml_escape(const char *unescaped);
 WS_DLL_PUBLIC
 uint8_t * convert_string_to_hex(const char *string, size_t *nbytes);
 
-/** Prep a string for case-sensitive vs case-insensitive searching.
+/**
+ * @brief Prep a string for case-sensitive vs case-insensitive searching.
  *
  * @param string The search string
  * @param case_insensitive true if case-insensitive, false if not
@@ -187,6 +189,13 @@ uint8_t * convert_string_to_hex(const char *string, size_t *nbytes);
 WS_DLL_PUBLIC
 char * convert_string_case(const char *string, bool case_insensitive);
 
+/**
+ * @brief Decodes an IA5-7BIT encoded string into a UTF-8 string.
+ *
+ * @param dest Destination buffer for the decoded string.
+ * @param src Source buffer containing the IA5-7BIT encoded data.
+ * @param len Length of the source data to decode.
+ */
 WS_DLL_PUBLIC
 void IA5_7BIT_decode(unsigned char * dest, const unsigned char* src, int len);
 
@@ -225,9 +234,14 @@ size_t ws_label_strcpy(char *label_str, size_t bufsize, size_t pos, const uint8_
 WS_DLL_PUBLIC
 size_t ws_label_strcat(char *label_str, size_t bufsize, const uint8_t *str, int flags);
 
-/*
- * Check name is valid. This covers names for display filter fields, dissector
+/**
+ * @brief Check if name is valid.
+ *
+ * This covers names for display filter fields, dissector
  * tables, preference modules, etc. Lower case is preferred.
+ * @param name The name to check.
+ * @param lower_only If true, only lower case letters are allowed.
+ * @return 0 if the name is valid, otherwise the first invalid character.
  */
 WS_DLL_LOCAL unsigned char
 module_check_valid_name(const char *name, bool lower_only);
@@ -235,5 +249,3 @@ module_check_valid_name(const char *name, bool lower_only);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __STRUTIL_H__ */

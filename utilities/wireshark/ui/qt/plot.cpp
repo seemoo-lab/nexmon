@@ -112,7 +112,7 @@ void Plot::setFilterField(const QString& filter, const QString& field)
     }
 
     if (field_.isEmpty()) { /* We must have a field */
-        config_err_ = tr("Field cannot be empty!");
+        config_err_ = tr("Field cannot be empty.");
         return;
     }
 
@@ -264,6 +264,14 @@ uint32_t Plot::packetFromTime(double ts) const
     }
 
     return 0;
+}
+
+void Plot::setAxisColor(QCPAxis* axis, const QPen& pen)
+{
+    axis->setBasePen(pen);
+    axis->setTickPen(pen);
+    axis->setSubTickPen(pen);
+    axis->setTickLabelColor(pen.color());
 }
 
 void Plot::tap_reset(void* plot_ptr)

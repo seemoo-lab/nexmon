@@ -31,10 +31,6 @@
   *     http://www.some-ip.com
   */
 
-#define SOMEIP_SD_NAME                          "SOME/IP-SD"
-#define SOMEIP_SD_NAME_LONG                     "SOME/IP Service Discovery Protocol"
-#define SOMEIP_SD_NAME_FILTER                   "someipsd"
-
 #define SOMEIP_SD_MESSAGEID                     0xffff8100
 #define SOMEIP_SD_SERVICE_ID_OTHER_SERVICE      0xfffe
 
@@ -514,7 +510,7 @@ dissect_someip_sd_pdu_options(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     while (tvb_bytes_exist(tvb, offset, SD_OPTION_MINLENGTH)) {
         if (optionnum >= SD_MAX_NUM_OPTIONS) {
             expert_add_info(pinfo, ti, &ei_someipsd_too_many_options);
-            return offset;
+            break;
         }
 
         option_ports[optionnum] = 0;
@@ -889,8 +885,8 @@ dissect_someip_sd_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
         NULL
     };
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, SOMEIP_SD_NAME);
-    col_set_str(pinfo->cinfo, COL_INFO, SOMEIP_SD_NAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "SOME/IP-SD");
+    col_set_str(pinfo->cinfo, COL_INFO, "SOME/IP-SD");
 
     ti = proto_tree_add_item(tree, proto_someip_sd, tvb, offset, -1, ENC_NA);
     tree = proto_item_add_subtree(ti, ett_someip_sd);
@@ -1284,29 +1280,29 @@ proto_register_someip_sd(void) {
     };
 
     static ei_register_info ei_sd[] = {
-        { &ei_someipsd_message_truncated,{ "someipsd.message_truncated", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Truncated message!", EXPFILL } },
-        { &ei_someipsd_entry_array_malformed,{ "someipsd.entry_array_malformed", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Entry Array length not multiple of 16 bytes!", EXPFILL } },
-        { &ei_someipsd_entry_array_empty,{ "someipsd.entry_array_empty", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Empty Entry Array!", EXPFILL } },
-        { &ei_someipsd_entry_unknown,{ "someipsd.entry_unknown", PI_MALFORMED, PI_WARN, "SOME/IP-SD Unknown Entry!", EXPFILL } },
-        { &ei_someipsd_offer_without_endpoint,{ "someipsd.offer_no_endpoints", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Offer Service references no endpoints!", EXPFILL } },
-        { &ei_someipsd_entry_stopsubsub,{ "someipsd.stopsub_sub", PI_PROTOCOL, PI_WARN, "SOME/IP-SD Subscribe after Stop Subscribe!", EXPFILL } },
-        { &ei_someipsd_option_array_truncated,{ "someipsd.option_array_truncated", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Option Array truncated!", EXPFILL } },
-        { &ei_someipsd_option_array_bytes_left,{ "someipsd.option_array_bytes_left", PI_MALFORMED, PI_WARN, "SOME/IP-SD Option Array bytes left after parsing options!", EXPFILL } },
-        { &ei_someipsd_option_unknown,{ "someipsd.option_unknown", PI_MALFORMED, PI_WARN, "SOME/IP-SD Unknown Option!", EXPFILL } },
-        { &ei_someipsd_option_wrong_length,{ "someipsd.option_wrong_length", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Option length is incorrect!", EXPFILL } },
-        { &ei_someipsd_L4_protocol_unsupported,{ "someipsd.L4_protocol_unsupported", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Unsupported Layer 4 Protocol!", EXPFILL } },
-        { &ei_someipsd_config_string_malformed,{ "someipsd.config_string_malformed", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Configuration String malformed!", EXPFILL } },
-        { &ei_someipsd_too_many_options,{ "someipsd.too_many_options", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Too many options!", EXPFILL } },
+        { &ei_someipsd_message_truncated,{ "someipsd.message_truncated", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Truncated message", EXPFILL } },
+        { &ei_someipsd_entry_array_malformed,{ "someipsd.entry_array_malformed", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Entry Array length not multiple of 16 bytes", EXPFILL } },
+        { &ei_someipsd_entry_array_empty,{ "someipsd.entry_array_empty", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Empty Entry Array", EXPFILL } },
+        { &ei_someipsd_entry_unknown,{ "someipsd.entry_unknown", PI_MALFORMED, PI_WARN, "SOME/IP-SD Unknown Entry", EXPFILL } },
+        { &ei_someipsd_offer_without_endpoint,{ "someipsd.offer_no_endpoints", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Offer Service references no endpoints", EXPFILL } },
+        { &ei_someipsd_entry_stopsubsub,{ "someipsd.stopsub_sub", PI_PROTOCOL, PI_WARN, "SOME/IP-SD Subscribe after Stop Subscribe", EXPFILL } },
+        { &ei_someipsd_option_array_truncated,{ "someipsd.option_array_truncated", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Option Array truncated", EXPFILL } },
+        { &ei_someipsd_option_array_bytes_left,{ "someipsd.option_array_bytes_left", PI_MALFORMED, PI_WARN, "SOME/IP-SD Option Array bytes left after parsing options", EXPFILL } },
+        { &ei_someipsd_option_unknown,{ "someipsd.option_unknown", PI_MALFORMED, PI_WARN, "SOME/IP-SD Unknown Option", EXPFILL } },
+        { &ei_someipsd_option_wrong_length,{ "someipsd.option_wrong_length", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Option length is incorrect", EXPFILL } },
+        { &ei_someipsd_L4_protocol_unsupported,{ "someipsd.L4_protocol_unsupported", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Unsupported Layer 4 Protocol", EXPFILL } },
+        { &ei_someipsd_config_string_malformed,{ "someipsd.config_string_malformed", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Configuration String malformed", EXPFILL } },
+        { &ei_someipsd_too_many_options,{ "someipsd.too_many_options", PI_MALFORMED, PI_ERROR, "SOME/IP-SD Too many options", EXPFILL } },
     };
 
     /* Register Protocol, Fields, ETTs, Expert Info, Taps, Dissector */
-    proto_someip_sd = proto_register_protocol(SOMEIP_SD_NAME_LONG, SOMEIP_SD_NAME, SOMEIP_SD_NAME_FILTER);
+    proto_someip_sd = proto_register_protocol("SOME/IP Service Discovery Protocol", "SOME/IP-SD", "someipsd");
     proto_register_field_array(proto_someip_sd, hf_sd, array_length(hf_sd));
     proto_register_subtree_array(ett_sd, array_length(ett_sd));
     expert_module_someip_sd = expert_register_protocol(proto_someip_sd);
     expert_register_field_array(expert_module_someip_sd, ei_sd, array_length(ei_sd));
     tap_someip_sd_entries = register_tap("someipsd_entries");
-    someip_sd_handle = register_dissector(SOMEIP_SD_NAME_FILTER, dissect_someip_sd_pdu, proto_someip_sd);
+    someip_sd_handle = register_dissector("someipsd", dissect_someip_sd_pdu, proto_someip_sd);
 
     /* Register preferences */
     someipsd_module = prefs_register_protocol(proto_someip_sd, NULL);

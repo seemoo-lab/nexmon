@@ -29,36 +29,121 @@ extern "C" {
  *    @{
  */
 
+/**
+ * @brief Duplicate a string using the specified memory allocator.
+ *
+ * Allocates memory for a copy of the null-terminated string `src` using the given
+ * `allocator`, and returns a pointer to the newly allocated string.
+ *
+ * @param allocator Pointer to the memory allocator to use.
+ * @param src Null-terminated string to duplicate.
+ * @return Pointer to the duplicated string, or NULL on failure.
+ *
+ * @note The returned memory is allocated and should be freed appropriately if not managed automatically.
+ */
 WS_DLL_PUBLIC
 char *
 wmem_strdup(wmem_allocator_t *allocator, const char *src)
 G_GNUC_MALLOC;
 
+/**
+ * @brief Convenience macro for duplicating a string using the NULL allocator.
+ *
+ * This macro wraps `wmem_strdup()` with a NULL allocator.
+ *
+ * @param src Null-terminated string to duplicate.
+ * @return Pointer to the duplicated string, or NULL on failure.
+ */
 #define ws_strdup(src) wmem_strdup(NULL, src)
 
+/**
+ * @brief Duplicate a string up to a specified length using the given memory allocator.
+ *
+ * Allocates memory for a copy of the first `len` characters of the null-terminated string `src`
+ * using the specified `allocator`. The resulting string is null-terminated.
+ *
+ * @param allocator Pointer to the memory allocator to use.
+ * @param src Null-terminated source string to duplicate.
+ * @param len Maximum number of characters to copy from the source string.
+ * @return Pointer to the newly allocated string, or NULL on failure.
+ *
+ * @note The returned memory is allocated and should be freed appropriately if not managed automatically.
+ */
 WS_DLL_PUBLIC
 char *
 wmem_strndup(wmem_allocator_t *allocator, const char *src, const size_t len)
 G_GNUC_MALLOC;
 
+/**
+ * @brief Convenience macro for duplicating a string up to a specified length using the NULL allocator.
+ *
+ * This macro wraps `wmem_strndup()` with a NULL allocator.
+ *
+ * @param src Null-terminated source string to duplicate.
+ * @param len Maximum number of characters to copy from the source string.
+ * @return Pointer to the newly allocated string, or NULL on failure.
+ */
 #define ws_strndup(src, len) wmem_strndup(NULL, src, len)
 
+/**
+ * @brief Allocate and format a string using the specified memory allocator.
+ *
+ * Formats a string using printf-style formatting and allocates memory for it
+ * using the given allocator. The resulting string is null-terminated.
+ *
+ * @param allocator Pointer to the memory allocator to use.
+ * @param fmt Format string (as used in printf).
+ * @param ... Additional arguments to format into the string.
+ * @return Pointer to the newly allocated formatted string, or NULL on failure.
+ *
+ * @note The returned memory is allocated and should be freed appropriately if not managed automatically.
+ */
 WS_DLL_PUBLIC
 char *
 wmem_strdup_printf(wmem_allocator_t *allocator, const char *fmt, ...)
 G_GNUC_MALLOC G_GNUC_PRINTF(2, 3);
 
+/**
+ * @brief Convenience macro for formatting a string using the NULL allocator.
+ *
+ * This macro wraps `wmem_strdup_printf()` with a NULL allocator.
+ *
+ * @param ... Format string and arguments (as used in printf).
+ * @return Pointer to the newly allocated formatted string, or NULL on failure.
+ */
 #define ws_strdup_printf(...) wmem_strdup_printf(NULL, __VA_ARGS__)
 
+/**
+ * @brief Allocate and format a string using a va_list and the specified memory allocator.
+ *
+ * Formats a string using a printf-style format string and a va_list of arguments,
+ * allocating memory for the resulting string using the given allocator.
+ *
+ * @param allocator Pointer to the memory allocator to use.
+ * @param fmt Format string (as used in printf).
+ * @param ap va_list containing the arguments to format into the string.
+ * @return Pointer to the newly allocated formatted string, or NULL on failure.
+ *
+ * @note The returned memory is allocated and should be freed appropriately if not managed automatically.
+ */
 WS_DLL_PUBLIC
 char *
 wmem_strdup_vprintf(wmem_allocator_t *allocator, const char *fmt, va_list ap)
 G_GNUC_MALLOC;
 
+/**
+ * @brief Convenience macro for formatting a string using a va_list and the NULL allocator.
+ *
+ * This macro wraps `wmem_strdup_vprintf()` with a NULL allocator.
+ *
+ * @param fmt Format string (as used in printf).
+ * @param ap va_list containing the arguments to format into the string.
+ * @return Pointer to the newly allocated formatted string, or NULL on failure.
+ */
 #define ws_strdup_vprintf(fmt, ap) wmem_strdup_vprintf(NULL, fmt, ap)
 
 /**
- * Return the first occurrence of needle in haystack.
+ * @brief Return the first occurrence of needle in haystack.
  *
  * @param haystack The data to search
  * @param haystack_len The length of the search data

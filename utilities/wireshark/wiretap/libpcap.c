@@ -1146,7 +1146,7 @@ static try_record_ret_t libpcap_try_record(wtap *wth, pcap_variant_t variant,
 			/*
 			 * 2 8-bit values that are filled in only
 			 * if libpcap is built with SMP debugging,
-			 * fllowed by 3 bytes of 8-bit padding,
+			 * followed by 3 bytes of 8-bit padding,
 			 * not guaranteed to be zero.
 			 *
 			 * Just skip them.
@@ -1371,12 +1371,6 @@ libpcap_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
 	if (phdr_len < 0)
 		return false;	/* error */
 
-	/*
-	 * Don't count any pseudo-header as part of the packet.
-	 */
-	orig_size -= phdr_len;
-	packet_size -= phdr_len;
-
 	wtap_setup_packet_rec(rec, wth->file_encap);
 	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
 	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
@@ -1398,13 +1392,29 @@ libpcap_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
 
 		rec->rec_header.packet_header.interface_id = (unsigned) interface_id;
 	}
-	rec->rec_header.packet_header.caplen = packet_size;
-	rec->rec_header.packet_header.len = orig_size;
+
+	/*
+	 * Don't count any pseudo-header as part of the packet.
+	 */
+	if (ckd_sub(&rec->rec_header.packet_header.caplen, packet_size, phdr_len)) {
+		/* pcap_process_pseudo_header should never return a length
+		 * greater than the cap_len it is given. */
+		*err = WTAP_ERR_INTERNAL;
+		*err_info = ws_strdup_printf("pcap: pseudo_header_len (%u) > cap_len (%u)",
+					    phdr_len, packet_size);
+		return false;
+	}
+	if (ckd_sub(&rec->rec_header.packet_header.len, orig_size, phdr_len)) {
+		/* The reported length must be less than the captured length.
+		 * Set it to zero, and let the frame dissector fix it, which
+		 * will add an expert warning. */
+		rec->rec_header.packet_header.len = 0;
+	}
 
 	/*
 	 * Read the packet data.
 	 */
-	if (!wtap_read_bytes_buffer(fh, &rec->data, packet_size, err, err_info))
+	if (!wtap_read_bytes_buffer(fh, &rec->data, rec->rec_header.packet_header.caplen, err, err_info))
 		return false;	/* failed */
 
 	pcap_read_post_process(is_nokia, wth->file_encap, rec,

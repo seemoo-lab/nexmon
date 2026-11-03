@@ -26,11 +26,13 @@
  * Definition of a UAT string container structure.
  *
  * "field_data" is the pointer array to the fields values
+ * "field_data_length" is the length of the data in that field
  * "uat_filename" is the file name of currently ussed uat
  */
 
 typedef struct {
-    char *field_data[MAXIMUM_ALLOWED_UAT_FIELD_COUNT];
+    uint8_t *field_data[MAXIMUM_ALLOWED_UAT_FIELD_COUNT];
+    unsigned field_data_length[MAXIMUM_ALLOWED_UAT_FIELD_COUNT];
     char *uat_filename;
 } uat_container_t;
 
@@ -49,7 +51,7 @@ static bool uat_update_cb(void *r, char **err)
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
     char *full_path = g_strjoin(G_DIR_SEPARATOR_S,
-        get_persconffile_path("", false),
+        get_persconffile_path("", false, lua_app_env_var_prefix),
         "plugins", "preferences_uat_callbacks.lua", NULL);
     /* if checker file not exist we will accept all walues! */
     if (!file_exists(full_path)) {
@@ -69,7 +71,7 @@ static bool uat_update_cb(void *r, char **err)
     lua_newtable(L);
     for (int i = 0; i < MAXIMUM_ALLOWED_UAT_FIELD_COUNT; i++) {
         lua_pushinteger(L, i);
-        lua_pushstring(L, record->field_data[i]);
+        lua_pushlstring(L, (char*)record->field_data[i], record->field_data_length[i]);
         lua_settable(L, -3);
     }
     /* second parameter uat filename */
@@ -105,8 +107,7 @@ static void txtmod_string_set_cb(
     const uint8_t * index = (const uint8_t *)u1;
     char * uat_file_name = (char *)u2;
     uat_container_t * record = (uat_container_t*)rec;
-    unsigned field_data_length;
-    char* new_val = uat_unesc(buf,len,&field_data_length);
+    uint8_t* new_val = uat_unesc(buf,len,&record->field_data_length[*index]);
     g_free((record->field_data[*index]));
     record->field_data[*index] = new_val;
     record->uat_filename = uat_file_name;
@@ -122,7 +123,7 @@ const void* UNUSED_PARAMETER(u2))
     const uint8_t * index = (const uint8_t *)u1;
     uat_container_t * record = (uat_container_t*)rec;
     if (record->field_data[*index]) {
-        *out_ptr = uat_esc(record->field_data[*index], (unsigned)strlen(record->field_data[*index]));
+        *out_ptr = uat_esc(record->field_data[*index], (unsigned)record->field_data_length[*index]);
         *out_len = (unsigned)strlen(*out_ptr);
     } else {
         *out_ptr = g_strdup("");
@@ -157,27 +158,39 @@ static enum_val_t* get_enum(lua_State *L, int idx)
 
         luaL_checktype(L, -1, LUA_TTABLE);
         lua_pushnil(L);
-        lua_next(L, -2);
+        if (! lua_next(L, -2)) {
+            luaL_argerror(L,idx,"An enum table entry must have a first value, the name");
+            g_array_free(es,true);
+            return NULL;
+        }
         if (! lua_isstring(L,-1)) {
-            luaL_argerror(L,idx,"First value of an enum table must be string");
+            luaL_argerror(L,idx,"The first value of an enum table entry, the name, must be a string");
             g_array_free(es,true);
             return NULL;
         }
         str1 = lua_tostring(L, -1);
 
         lua_pop(L, 1);
-        lua_next(L, -2);
+        if (! lua_next(L, -2)) {
+            luaL_argerror(L,idx,"An enum table entry must have a second value, the description");
+            g_array_free(es,true);
+            return NULL;
+        }
         if (! lua_isstring(L,-1)) {
-            luaL_argerror(L,idx,"Second value of an enum table must be string");
+            luaL_argerror(L,idx,"The second value of an enum table entry, the description, must be a string");
             g_array_free(es,true);
             return NULL;
         }
         str2 = lua_tostring(L, -1);
 
         lua_pop(L, 1);
-        lua_next(L, -2);
+        if (! lua_next(L, -2)) {
+            luaL_argerror(L,idx,"An enum table entry must be have a third value, the value");
+            g_array_free(es,true);
+            return NULL;
+        }
         if (! lua_isnumber(L,-1)) {
-            luaL_argerror(L,idx,"Third value of an enum table must be an integer");
+            luaL_argerror(L,idx,"The third value of an enum table entry, the value, must be an integer");
             g_array_free(es,true);
             return NULL;
         }
@@ -216,18 +229,26 @@ static uat_field_t* get_uat_flds_array(lua_State *L, int idx, char * uat_filenam
         /* field title */
         luaL_checktype(L, -1, LUA_TTABLE);
         lua_pushnil(L);
-        lua_next(L, -2);
+        if (! lua_next(L, -2)) {
+            luaL_argerror(L,idx,"A UAT table config must have a first value, the title");
+            g_array_free(fs,true);
+            return NULL;
+        }
         if (! lua_isstring(L,-1)) {
-            luaL_argerror(L,idx,"First value of an UAT table config must be string");
+            luaL_argerror(L,idx,"The first value of a UAT table config, the title, must be a string");
             g_array_free(fs,true);
             return NULL;
         }
         str1 = lua_tostring(L, -1);
         /* field description */
         lua_pop(L, 1);
-        lua_next(L, -2);
+        if (! lua_next(L, -2)) {
+            luaL_argerror(L,idx,"A UAT table config must have a second value, the description");
+            g_array_free(fs,true);
+            return NULL;
+        }
         if (! lua_isstring(L,-1)) {
-            luaL_argerror(L,idx,"Second value of an UAT table config must be string");
+            luaL_argerror(L,idx,"The second value of a UAT table config, the description, must be a string");
             g_array_free(fs,true);
             return NULL;
         }
@@ -283,7 +304,7 @@ static int new_pref(lua_State* L, pref_type_e type) {
              * prefs_register_string_preference() assumes that the
              * variable for the preference points to a static
              * string that is the initial (default) value of the
-             * preference.  It makes a g_strdup()ed copy of that
+             * preference.  It makes a wmem_strdup()ed copy of that
              * string, and assigns a pointer to that string to
              * the variable.
              *
@@ -490,8 +511,8 @@ WSLUA_CONSTRUCTOR Pref_uat(lua_State* L) {
         return result, errstring
     end
 
-    -- Reading existent uat: 
-    
+    -- Reading existent uat:
+
     proto_foo.prefs.preference_existent_uat_name = Pref.uat("Protobuf Search Paths")
     for i, row in ipairs(proto_foo.prefs.preference_existent_uat_name) do
         local row_str = ""
@@ -531,6 +552,124 @@ static range_t* get_range(lua_State *L, int idx_r, int idx_m)
     }
 
     return ret;
+}
+
+/* WSLUA_ATTRIBUTE Pref_name RO The name/abbreviation of the preference. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(Pref,name,name);
+
+/* WSLUA_ATTRIBUTE Pref_label RO The user-visible label of the preference. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(Pref,label,label);
+
+/* WSLUA_ATTRIBUTE Pref_description RO The human-readable description. */
+WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(Pref,description,desc);
+
+/* Map pref_type_e to a short descriptive string; used by the Pref.type
+ * attribute so scripts (and the debugger) can introspect without needing
+ * to know the enum values of prefs-int.h. */
+static const char *pref_type_to_string(pref_type_e type) {
+    switch (type) {
+        case PREF_BOOL:        return "bool";
+        case PREF_UINT:        return "uint";
+        case PREF_STRING:      return "string";
+        case PREF_ENUM:        return "enum";
+        case PREF_RANGE:       return "range";
+        case PREF_STATIC_TEXT: return "statictext";
+        case PREF_UAT:         return "uat";
+        default:               return "unknown";
+    }
+}
+
+/* WSLUA_ATTRIBUTE Pref_type RO The preference type as the raw pref_type_e
+   enum value (integer). Use `Pref.type_name` for the human-readable short
+   string ("bool", "uint", "string", "enum", "range", "statictext",
+   "uat"). */
+WSLUA_ATTRIBUTE_GET(Pref,type, {
+    lua_pushinteger(L, (lua_Integer)obj->type);
+});
+
+/* WSLUA_ATTRIBUTE Pref_type_name RO Human-readable short string matching
+   the Pref.type enum: "bool", "uint", "string", "enum", "range",
+   "statictext", "uat", or "unknown". */
+WSLUA_ATTRIBUTE_GET(Pref,type_name, {
+    lua_pushstring(L, pref_type_to_string(obj->type));
+});
+
+/* WSLUA_ATTRIBUTE Pref_value RO The current value of the preference.
+ *
+ * The concrete Lua type depends on Pref.type: bool/uint/string/enum/range
+ * return the expected primitive, while statictext and uat return nil to
+ * match the existing behavior of Prefs.__index.
+ */
+WSLUA_ATTRIBUTE_GET(Pref,value, {
+    switch (obj->type) {
+        case PREF_BOOL:
+            lua_pushboolean(L, obj->value.b);
+            break;
+        case PREF_UINT:
+            lua_pushinteger(L, (lua_Integer)obj->value.u);
+            break;
+        case PREF_STRING:
+            lua_pushstring(L, obj->value.s);
+            break;
+        case PREF_ENUM:
+            lua_pushinteger(L, (lua_Integer)obj->value.e);
+            break;
+        case PREF_RANGE: {
+            char *push_str = range_convert_range(NULL, obj->value.r);
+            lua_pushstring(L, push_str);
+            wmem_free(NULL, push_str);
+            break;
+        }
+        default:
+            lua_pushnil(L);
+            break;
+    }
+});
+
+/* Build a short Lua-side preview of the current value. Used by
+ * Pref__tostring; mirrors the type-dispatched logic in the
+ * Pref.value getter but produces a string suitable for embedding
+ * in a one-line label. Returns a g_malloc'd buffer the caller
+ * must g_free. */
+static char *pref_value_preview(Pref pref) {
+    if (!pref) return g_strdup("?");
+    switch (pref->type) {
+        case PREF_BOOL:
+            return g_strdup(pref->value.b ? "true" : "false");
+        case PREF_UINT:
+            return g_strdup_printf("%u", pref->value.u);
+        case PREF_STRING:
+            return g_strdup_printf("\"%s\"", pref->value.s ? pref->value.s : "");
+        case PREF_ENUM:
+            return g_strdup_printf("%d", pref->value.e);
+        case PREF_RANGE: {
+            char *r = range_convert_range(NULL, pref->value.r);
+            char *out = g_strdup(r ? r : "");
+            wmem_free(NULL, r);
+            return out;
+        }
+        case PREF_STATIC_TEXT:
+        case PREF_UAT:
+        default:
+            return g_strdup("-");
+    }
+}
+
+WSLUA_METAMETHOD Pref__tostring(lua_State* L) {
+    /* Returns a short label of the form
+       `Pref: <name> type=<type> value=<value>` (e.g.
+       `Pref: mypref type=bool value=true`). Unregistered prefs
+       (created by `Pref.bool()` etc. but not yet assigned into a
+       `Prefs` table) render as
+       `Pref: (unregistered) type=<type> value=<value>`. */
+    Pref pref = checkPref(L,1);
+    char *value = pref_value_preview(pref);
+    lua_pushfstring(L, "Pref: %s type=%s value=%s",
+                    pref->name ? pref->name : "(unregistered)",
+                    pref_type_to_string(pref->type),
+                    value);
+    g_free(value);
+    WSLUA_RETURN(1); /* The string. */
 }
 
 /* Gets registered as metamethod automatically by WSLUA_REGISTER_CLASS/META */
@@ -613,12 +752,27 @@ WSLUA_METHODS Pref_methods[] = {
 };
 
 WSLUA_META Pref_meta[] = {
+    WSLUA_CLASS_MTREG(Pref,tostring),
     { NULL, NULL }
+};
+
+/* Registered as a sub-table of the class' metatable so that Pref.name,
+ * Pref.label, Pref.description, Pref.type and Pref.value resolve via the
+ * wslua attribute dispatcher. This also lets the Lua debugger expand
+ * each Pref and enumerate its attributes. */
+WSLUA_ATTRIBUTES Pref_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(Pref,name),
+    WSLUA_ATTRIBUTE_ROREG(Pref,label),
+    WSLUA_ATTRIBUTE_ROREG(Pref,description),
+    WSLUA_ATTRIBUTE_ROREG(Pref,type),
+    WSLUA_ATTRIBUTE_ROREG(Pref,type_name),
+    WSLUA_ATTRIBUTE_ROREG(Pref,value),
+    { NULL, NULL, NULL }
 };
 
 
 WSLUA_REGISTER Pref_register(lua_State* L) {
-    WSLUA_REGISTER_CLASS(Pref);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(Pref);
     return 0;
 }
 
@@ -822,7 +976,7 @@ WSLUA_METAMETHOD Prefs__index(lua_State* L) {
                     break;
                 case PREF_UAT:
                     {
-                        uat_load_all();
+                        uat_load_all(lua_app_env_var_prefix);
                         uat_t* get_uat = NULL;
                         if (prefs_p->info.uat_field_list_info.uat_field_list == NULL) {
                             // get uat by pref label in case of existent uat reading.
@@ -861,6 +1015,81 @@ WSLUA_METAMETHOD Prefs__index(lua_State* L) {
     return 0;
 }
 
+/* Stateless __pairs iterator: receives (prefs_userdata, prev_name_or_nil)
+ * and returns the next (name, Pref) pair or nil when exhausted. Using a
+ * linear scan keeps the closure state-free and sidesteps the need to
+ * expose the internal linked-list pointer to Lua. */
+static int Prefs_pairs_iter(lua_State *L) {
+    Pref prefs_p = checkPrefs(L, 1);
+    const char *prev = lua_isnoneornil(L, 2) ? NULL : luaL_checkstring(L, 2);
+
+    if (! prefs_p || ! prefs_p->next) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    Pref cur = prefs_p->next;
+    if (prev != NULL) {
+        while (cur != NULL && g_strcmp0(cur->name, prev) != 0) {
+            cur = cur->next;
+        }
+        if (cur != NULL) {
+            cur = cur->next;
+        }
+    }
+
+    if (cur == NULL) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    lua_pushstring(L, cur->name);
+
+    if (cur->ref != LUA_NOREF) {
+        /* Push the original Pref userdata held alive by the registry;
+         * creating a fresh userdata around the same pointer would later
+         * trigger Pref__gc on an already-registered pref, which that
+         * destructor explicitly forbids. */
+        lua_rawgeti(L, LUA_REGISTRYINDEX, cur->ref);
+    } else {
+        lua_pushnil(L);
+    }
+    return 2;
+}
+
+WSLUA_METAMETHOD Prefs__tostring(lua_State *L) {
+    /* Returns a short label of the form `Prefs: <proto> entries=<n>`,
+       where <proto> is the owning protocol's short name and <n> is
+       the number of registered prefs (zero for a freshly registered
+       proto with no `proto.prefs.foo = ...` assignments yet). */
+    Pref prefs_p = checkPrefs(L,1);
+    unsigned count = 0;
+    for (Pref p = prefs_p ? prefs_p->next : NULL; p != NULL; p = p->next) {
+        ++count;
+    }
+    const char *proto_name =
+        (prefs_p && prefs_p->proto && prefs_p->proto->name)
+            ? prefs_p->proto->name : "?";
+    lua_pushfstring(L, "Prefs: %s entries=%d", proto_name, (int)count);
+    WSLUA_RETURN(1); /* The string. */
+}
+
+WSLUA_METAMETHOD Prefs__pairs(lua_State *L) {
+    /*
+    Iterate over all registered preferences of a protocol.
+
+    ===== Example
+
+    [source,lua]
+    ----
+    for name, pref in pairs(proto_foo.prefs) do
+        debug(name .. " = " .. tostring(pref.value))
+    end
+    ----
+    */
+    WSLUA_STATELESS_PAIRS_BODY(Prefs);
+}
+
 /* Gets registered as metamethod automatically by WSLUA_REGISTER_CLASS/META */
 static int Prefs__gc(lua_State* L _U_) {
     /* do NOT free Prefs, it's a static part of Proto */
@@ -870,6 +1099,8 @@ static int Prefs__gc(lua_State* L _U_) {
 WSLUA_META Prefs_meta[] = {
     WSLUA_CLASS_MTREG(Prefs,newindex),
     WSLUA_CLASS_MTREG(Prefs,index),
+    WSLUA_CLASS_MTREG(Prefs,pairs),
+    WSLUA_CLASS_MTREG(Prefs,tostring),
     { NULL, NULL }
 };
 

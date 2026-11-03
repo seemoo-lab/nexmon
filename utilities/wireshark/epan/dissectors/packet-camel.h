@@ -1,7 +1,7 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-camel.h                                                             */
-/* asn2wrs.py -b -q -L -p camel -c ./camel.cnf -s ./packet-camel-template -D . -O ../.. CAP-object-identifiers.asn CAP-classes.asn CAP-datatypes.asn CAP-errorcodes.asn CAP-errortypes.asn CAP-operationcodes.asn CAP-GPRS-ReferenceNumber.asn CAP-gsmSCF-gsmSRF-ops-args.asn CAP-gsmSSF-gsmSCF-ops-args.asn CAP-gprsSSF-gsmSCF-ops-args.asn CAP-SMS-ops-args.asn CAP-U-ABORT-Data.asn CamelV2diff.asn ../ros/Remote-Operations-Information-Objects.asn ../ros/Remote-Operations-Generic-ROS-PDUs.asn */
+/* asn2wrs.py -b -N -q -L -p camel -c ./camel.cnf -s ./packet-camel-template -D . -O ../.. CAP-object-identifiers.asn CAP-classes.asn CAP-datatypes.asn CAP-errorcodes.asn CAP-errortypes.asn CAP-operationcodes.asn CAP-GPRS-ReferenceNumber.asn CAP-gsmSCF-gsmSRF-ops-args.asn CAP-gsmSSF-gsmSCF-ops-args.asn CAP-gprsSSF-gsmSCF-ops-args.asn CAP-SMS-ops-args.asn CAP-U-ABORT-Data.asn CamelV2diff.asn ../ros/Remote-Operations-Information-Objects.asn ../ros/Remote-Operations-Generic-ROS-PDUs.asn */
 
 /* packet-camel-template.h
  * Routines for Camel
@@ -27,9 +27,6 @@
 
 #include "ws_symbol_export.h"
 
-void proto_reg_handoff_camel(void);
-void proto_register_camel(void);
-
 /* Defines for the camel taps */
 #define	camel_MAX_NUM_OPR_CODES	256
 
@@ -39,7 +36,7 @@ WS_DLL_PUBLIC const value_string camel_opr_code_strings[];
 /** @file
 */
 #define NB_CAMELSRT_CATEGORY 9+1 /**< Number of type of message */
-/* for example TC_BEGIN with InitalDP, and TC_CONT with RequestReportBCSMEvent
+/* for example TC_BEGIN with InitialDP, and TC_CONT with RequestReportBCSMEvent
    is a category, we want to measure the delay between the two messages */
 
 #define CAMELSRT_SESSION 1
@@ -124,7 +121,5 @@ void camelsrt_call_matching(tvbuff_t *tvb,
 			    packet_info * pinfo _U_,
 			    proto_tree *tree,
 			    struct camelsrt_info_t * p_camel_info);
-
-WS_DLL_PUBLIC bool gcamel_StatSRT;
 
 #endif  /* PACKET_camel_H */

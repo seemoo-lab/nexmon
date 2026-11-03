@@ -64,7 +64,7 @@ Common dialog behavior on all systems:
 
 Wireshark adds the following controls:
 
-* View file preview information such as the size and the number of packets in a selected a capture file.
+* View file preview information such as the size and the number of packets in a selected capture file.
 
 // XXX - we need a better description of these read filters
 * Specify a read filter with the “Read filter” field.
@@ -99,7 +99,7 @@ This is the common Qt file open dialog along with some Wireshark extensions.
 The native capture file formats used by Wireshark are:
 
 * pcap. The default format used by the _libpcap_ packet capture library. Used
-  by _tcpdump, _Snort_, _Nmap_, _Ntop_, and many other tools.
+  by _tcpdump_, _Snort_, _Nmap_, _Ntop_, and many other tools.
 
 * pcapng.  A flexible, extensible successor to the pcap format.
   Wireshark 1.8 and later save files as pcapng by default.  Versions
@@ -123,7 +123,7 @@ The following file formats from other capture tools can be opened by Wireshark:
 * NETSCOUT (previously Network Associates/Network General) Windows-based
   Sniffer and Sniffer Pro captures
 
-* Network General/Network Associates DOS-based Sniffer captures
+* Network General/Network Associates DOS-based Sniffer
   (compressed or uncompressed) captures
 
 * LiveAction (previously WildPackets/Savvius)
@@ -262,7 +262,10 @@ You can perform the following actions:
 
 * The btn:[Help] button will take you to this section of the “User’s Guide”.
 
-* “Compress with gzip” will compress the capture file as it is being written to disk.
+* The compression options compress the capture file as it is being written to disk.
+  Depending on the libraries included in your build, you can choose gzip, LZ4,
+  or Zstandard (zstd). Zstandard captures use a `.zst` suffix, for example
+  `capture.pcapng.zst`.
 
 * Click the btn:[Save] button to accept your selected file and save it.
 
@@ -277,6 +280,27 @@ You can convert capture files from one format to another by opening a capture an
 ====
 
 If you wish to save some of the packets in your capture file you can do so via <<ChIOExportSpecifiedPacketsDialog>>.
+
+The `capture.zstd_compression_level` preference under menu:Edit[Preferences,Advanced]
+sets the Zstandard level for saved and exported captures. The default is 3.
+Levels 1 through 22 are supported; 0 selects the library default (3). Higher
+levels use more CPU and memory to produce smaller files.
+With Zstandard 1.4.0 or newer, negative levels select fast compression: -1
+corresponds to the Zstandard command-line option `--fast=1`, -5 to `--fast=5`,
+and so on. More negative levels favor speed over compression ratio. The minimum
+accepted level depends on the Zstandard library. Older libraries accept only
+nonnegative levels.
+
+This preference also applies when TShark rewrites a capture, for example:
+
+[source,sh]
+----
+tshark -r input.pcapng -w output.pcapng.zst --compress zstd -o capture.zstd_compression_level:-1
+----
+
+Editcap, Mergecap and Dumpcap use the library default level and do not read
+this preference. It does not change TShark's live capture compression level.
+
 
 [#ChIOOutputFormatsSection]
 
@@ -381,7 +405,7 @@ There are three ways to merge capture files using Wireshark:
 
 [#ChIOMergeDialog]
 
-==== The “Merge With Capture File” Dialog Box
+==== The “Merge Capture File” Dialog Box
 
 This lets you select a file to be merged into the currently loaded file.
 If your current data has not been saved you will be asked to save it first.
@@ -406,14 +430,14 @@ Append the packets from the selected file after the currently loaded packets.
 
 [#ChIOMergeFileWin32]
 
-.“Merge” on Microsoft Windows
+.“Merge Capture File” on Microsoft Windows
 image::images/ws-merge-win32.png[{medium-screenshot-attrs}]
 
 This is the common Windows file open dialog with additional Wireshark extensions.
 
 [#ChIOMergeFile2]
 
-.“Merge” on Linux and UNIX
+.“Merge Capture File” on Linux and UNIX
 image::images/ws-merge-qt5.png[{medium-screenshot-attrs}]
 
 This is the Qt file open dialog with additional Wireshark extensions.
@@ -501,7 +525,7 @@ I 2019-05-14T19:04:57Z
 ==== Regular Text Dumps
 
 Wireshark is also capable of scanning the input using a custom Perl regular
-expression as specified by GLib's https://docs.gtk.org/glib/struct.Regex.html[GRegex here].
+expression as specified by GLib's https://docs.gtk.org/glib/struct.Regex.html[GRegex].
 Using a regex capturing a single packet in the given file
 Wireshark will search the given file from start to the second to last character
 (the last character has to be `\n` and is ignored)
@@ -510,7 +534,7 @@ identify the fields to import using named capturing subgroups. Using provided
 format information for each field they are then decoded and translated into a
 standard libpcap file retaining packet order.
 
-Note that each named capturing subgroup has to match _exactly_ once a packet,
+Note that each named capturing subgroup has to match _exactly_ once per packet,
 but they may be present multiple times in the regex.
 
 For example, the following dump:
@@ -585,7 +609,7 @@ data, to be imported and set import parameters.
 .The “Import from Hex Dump” dialog in Hex Dump mode
 image::images/ws-file-import.png[{medium-screenshot-attrs}]
 
-Specific controls of this import dialog are split in three sections:
+Specific controls of this import dialog are split into three sections:
 
 File Source:: Determine which input file has to be imported
 
@@ -628,7 +652,7 @@ Packet format regular expression::
 This is the regex used for searching packets and metadata inside the input file.
 Named capturing subgroups are used to find the individual fields. Anchors `^` and
 `$` are set to match directly before and after newlines `\n` or `\r\n`. See
-https://docs.gtk.org/glib/struct.Regex.html[GRegex] for a full
+https://docs.gtk.org/glib/struct.Regex.html[GRegex] for full
 documentation.
 
 Data encoding::
@@ -666,12 +690,12 @@ field empty and timestamps will be generated based on the time of import.
 
 Encapsulation type::
 Here you can select which type of frames you are importing. This all depends on
-from what type of medium the dump to import was taken. It lists all types that
+what type of medium the dump to import was taken. It lists all types that
 Wireshark understands, so as to pass the capture file contents to the right
 dissector.
 
 Dummy header::
-When Ethernet encapsulation is selected you have to option to prepend dummy
+When Ethernet encapsulation is selected you have the option to prepend dummy
 headers to the frames to import. These headers can provide artificial Ethernet,
 IP, UDP, TCP or SCTP headers or SCTP data chunks. When selecting a type of
 dummy header, the applicable entries are enabled, others are greyed out and
@@ -685,7 +709,7 @@ You may not be interested in the full frames from the text file, just the first
 part. Here you can define how much data from the start of the frame you want to
 import. If you leave this open the maximum is set to 256kiB.
 
-Once all input and import parameters are setup click btn:[Import] to start the
+Once all input and import parameters are set up, click btn:[Import] to start the
 import. If your current data wasn’t saved before you will be asked to save it
 first.
 
@@ -750,7 +774,7 @@ Each line contains information about a file of the file set:
 
 Filename::
 The name of the file. If you click on the filename (or the radio
-button left to it), the current file will be closed and the corresponding
+button to its left), the current file will be closed and the corresponding
 capture file will be opened.
 
 Created::
@@ -1113,7 +1137,7 @@ The content type of this object.
 Size::
 The size of this object in bytes.
 
-Filename:
+Filename::
 The filename for this object. Each protocol generates
 the filename differently. For example, HTTP uses the
 final part of the URI and IMF uses the subject of the email.
@@ -1159,7 +1183,7 @@ Printed output can contain lots of text, particularly if you print packet detail
 image::images/ws-print.png[{medium-screenshot-attrs}]
 
 The “Print” dialog box shows a preview area which shows the result of changing the packet format settings.
-You can zoom in and out using the kbd:[{plus}] and kbd:[-] keys and reset the zoom level using the kbd:[0] key.
+You can zoom in and out using the kbd:[{plus}] (or kbd:[=]) and kbd:[-] keys and reset the zoom level using the kbd:[0] key.
 The following settings are available in the Print dialog box:
 
 Packet Format::
@@ -1233,7 +1257,7 @@ You can use it to specify which parts of dissection are exported or printed.
 .The “Packet Format” frame
 image::images/ws-packet-format.png[{small-screenshot-attrs}]
 
-Each of the settings below correspond to the packet list, packet detail, and packet bytes in the main window.
+Each of the settings below corresponds to the packet list, packet detail, and packet bytes in the main window.
 
 Packet summary line::
 Export or print each summary line as shown in the “Packet List” pane.
@@ -1274,5 +1298,24 @@ For example, when exporting to a text file this will put a form feed character b
 
 Capture information header::
 Add a header to each page with capture filename and the number of total packets and shown packets.
+
+==== JSON Format Options
+
+When JSON is selected as the export format, the "Packet Format" panel shows
+JSON-specific options:
+
+No duplicate keys::
+Merge duplicate keys in a JSON object into a single key whose value is a JSON
+array containing all values.
+
+Compact (no indentation)::
+Output compact JSON without indentation or extra whitespace. This significantly
+reduces output size and improves export performance.
+
+Values::
+Export a name/value pair for each field with the decoded field value.
+
+Raw Bytes::
+Export a name/value pair for each field with the raw hex bytes of its packet data.
 
 // End of WSUG Chapter IO

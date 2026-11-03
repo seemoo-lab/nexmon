@@ -92,7 +92,7 @@ static const value_string m_type_vals[] = {
 static int
 dissect_krb4_string(packet_info *pinfo _U_, int hf_index, proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-	int length;
+	unsigned length;
 	proto_tree_add_item_ret_length(tree, hf_index, tvb, offset, -1, ENC_ASCII|ENC_NA, &length);
 
 	return offset + length;
@@ -256,7 +256,7 @@ dissect_krb4_auth_msg_type(packet_info *pinfo, proto_tree *parent_tree, tvbuff_t
 	return offset;
 }
 
-static gboolean
+static int
 dissect_krb4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data _U_)
 {
 	proto_tree *tree;
@@ -270,7 +270,7 @@ dissect_krb4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	 */
 	version=tvb_get_uint8(tvb, offset);
 	if((version!=4)&&(version!=TRANSARC_SPECIAL_VERSION)){
-		return FALSE;
+		return 0;
 	}
 
 	opcode=tvb_get_uint8(tvb, offset+1);
@@ -286,7 +286,7 @@ dissect_krb4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	case AUTH_MSG_DIE:
 		break;
 	default:
-		return FALSE;
+		return 0;
 	}
 
 	/* create a tree for krb4 */
@@ -306,13 +306,13 @@ dissect_krb4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	encoding = opcode&0x01 ? ENC_LITTLE_ENDIAN : ENC_BIG_ENDIAN;
 	switch(opcode>>1){
 	case AUTH_MSG_KDC_REQUEST:
-		dissect_krb4_kdc_request(pinfo, tree, tvb, offset, encoding, version);
+		offset = dissect_krb4_kdc_request(pinfo, tree, tvb, offset, encoding, version);
 		break;
 	case AUTH_MSG_KDC_REPLY:
-		dissect_krb4_kdc_reply(pinfo, tree, tvb, offset, encoding);
+		offset = dissect_krb4_kdc_reply(pinfo, tree, tvb, offset, encoding);
 		break;
 	case AUTH_MSG_APPL_REQUEST:
-		dissect_krb4_appl_request(pinfo, tree, tvb, offset, encoding);
+		offset = dissect_krb4_appl_request(pinfo, tree, tvb, offset, encoding);
 		break;
 	case AUTH_MSG_APPL_REQUEST_MUTUAL:
 	case AUTH_MSG_ERR_REPLY:
@@ -322,7 +322,7 @@ dissect_krb4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
 	case AUTH_MSG_DIE:
 		break;
 	}
-	return TRUE;
+	return offset;
 }
 
 void

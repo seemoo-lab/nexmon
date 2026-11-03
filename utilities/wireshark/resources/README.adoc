@@ -7,20 +7,17 @@ and WiresharkDoc-*.png in the icons directory.
 
 File descriptions:
 
-wsicon16.png ... wsicon1024.png::
+wsicon16.png ... wsicon256.png::
 Wireshark application icons in various sizes
-
-wsiconcap16.png ... wsiconcap1024.png::
-“Capture in progress” application icon in various sizes
-
-wsiconinst16.png ... wsiconinst1024.png::
-Wireshark installer icons in various sizes.
-
-WiresharkDoc-16.png ... WiresharkDoc-256.png::
-Capture document icon in various sizes.
 
 wireshark.ico::
 Windows application icon file with 16x16, 24x24 32x32, 48x48, and 256x256 pixel images.
+
+wsiconcap16.png ... wsiconcap256.png::
+“Capture in progress” application icon in various sizes
+
+WiresharkDoc-16.png ... WiresharkDoc-256.png::
+Capture document icon in various sizes.
 
 wiresharkdoc.ico::
 Windows document icon file with 16 and 32 pixel 3D logo icons, high and low color.
@@ -37,6 +34,9 @@ Stratoshark application icons in various sizes.
 stratoshark.ico::
 Windows application icon file with 16x16, 32x32, 48x48, and 256x256 pixel images.
 
+ssiconcap16.png ... ssiconcap256.png::
+“Capture in progress” application icon in various sizes
+
 *.rc.in::
 MSVC++ resource templates
 
@@ -48,7 +48,8 @@ For example, the INS specifies “list-add” and “list-remove”. and we've a
 historic::
 Old assets that should no longer be used.
 
-The Wireshark application icon, document icon, and several toolbar icons were created by Elliott Aldrich.
+The modern macOS Wireshark application icon was created by Aaron Null.
+The classic Wireshark application icon, document icon, and several toolbar icons were created by Elliott Aldrich.
 The Stratoshark application and capture icons were created by Travis Andersen.
 The list-add and list-remove images were created by Peter Hosey and released under CC-PD.
 The list-clear images were created by Freepik, http://www.freepik.com from https://www.flaticon.com.

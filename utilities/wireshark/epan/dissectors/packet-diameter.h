@@ -36,6 +36,7 @@ typedef struct _diam_sub_dis_t {
 	uint32_t group_avp_code; /* Set AVP code for current dissected grouped AVP */
 	uint32_t vendor_id;
 	char *avp_str;
+	wmem_strbuf_t *group_avp_str;
 	proto_item* item;          /**< The item created for this AVP*/
 	uint32_t subscription_id_type;     /* Store the Subscription-Id-Type for use when we dissect Subscription-Id-Data */
 	uint32_t user_equipment_info_type; /* Store the User-Equipment-Info-Type for use when we dissect User-Equipment-Info-Value */
@@ -57,6 +58,7 @@ typedef struct _diam_sub_dis_t {
 #define DIAM_APPID_3GPP_SLH     16777291
 #define DIAM_APPID_3GPP_SD      16777303
 #define DIAM_APPID_3GPP_S7A     16777308
+#define DIAM_APPID_3GPP_S6C     16777312
 #define DIAM_APPID_3GPP_S6T     16777345
 
 #endif /* __PACKET_DIAMETER_H__ */

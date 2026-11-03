@@ -14,14 +14,14 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/afn.h>
-#include <epan/ipproto.h>
 #include <epan/in_cksum.h>
 #include <epan/prefs.h>
 #include <epan/ptvcursor.h>
 #include <epan/expert.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
+
 /*
  * RFC 3208
  *
@@ -499,9 +499,9 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 		case PGM_OPT_NAK_LIST:{
 			uint8_t optdata_len;
 			uint32_t naklist[PGM_MAX_NAK_LIST_SZ+1];
-			unsigned char *nakbuf;
+			wmem_strbuf_t *nakbuf;
 			bool firsttime;
-			int i, j, naks, soffset;
+			int i, j, naks;
 
 			TLV_CHECK(ett_pgm_opts_naklist);
 			ptvcursor_set_tree(cursor, opt_tree);
@@ -517,30 +517,26 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			optdata_len -= PGM_OPT_NAK_LIST_SIZE;
 			tvb_memcpy(tvb, (uint8_t *)naklist, ptvcursor_current_offset(cursor), optdata_len);
 			firsttime = true;
-			soffset = 0;
 			naks = (int)(optdata_len/sizeof(uint32_t));
-			nakbuf = (unsigned char *)wmem_alloc(pinfo->pool, 8192);
+			nakbuf = wmem_strbuf_new_sized(pinfo->pool, 64);
 			j = 0;
 			/*
 			 * Print out 8 per line
 			 */
 			for (i=0; i < naks; i++) {
-				soffset += MIN(8192-soffset,
-					snprintf(nakbuf+soffset, 8192-soffset, "0x%lx ",
-						(unsigned long)g_ntohl(naklist[i])));
+				wmem_strbuf_append_printf(nakbuf, "0x%x ", g_ntohl(naklist[i]));
 				if ((++j % 8) == 0) {
 					if (firsttime) {
 						proto_tree_add_bytes_format(opt_tree,
 							hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
-							nakbuf, "List(%d): %s", naks, nakbuf);
-						soffset = 0;
+							NULL, "List(%d): %s", naks, wmem_strbuf_get_str(nakbuf));
 						firsttime = false;
 					} else {
 						proto_tree_add_bytes_format_value(opt_tree,
 							hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
-							nakbuf, "%s", nakbuf);
-						soffset = 0;
+							NULL, "%s", wmem_strbuf_get_str(nakbuf));
 					}
+					wmem_strbuf_truncate(nakbuf, 0);
 					ptvcursor_advance(cursor, j*4);
 					j = 0;
 				}
@@ -549,14 +545,15 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 				if (firsttime) {
 					proto_tree_add_bytes_format(opt_tree,
 						hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
-						nakbuf, "List(%d): %s", naks, nakbuf);
+						NULL, "List(%d): %s", naks, wmem_strbuf_get_str(nakbuf));
 				} else {
 					proto_tree_add_bytes_format_value(opt_tree,
 						hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
-						nakbuf, "%s", nakbuf);
+						NULL, "%s", wmem_strbuf_get_str(nakbuf));
 				}
 				ptvcursor_advance(cursor, j*4);
 			}
+			wmem_strbuf_destroy(nakbuf);
 			break;
 		}
 		case PGM_OPT_PGMCC_DATA:{
@@ -585,11 +582,11 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 
 			switch (optdata_afi) {
 
-			case AFNUM_INET:
+			case AFNUM_IP:
 				ptvcursor_add(cursor, hf_pgm_opt_ccdata_acker, 4, ENC_BIG_ENDIAN);
 				break;
 
-			case AFNUM_INET6:
+			case AFNUM_IP6:
 				ptvcursor_add(cursor, hf_pgm_opt_ccdata_acker6, 16, ENC_NA);
 				break;
 
@@ -626,11 +623,11 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 
 			switch (optdata_afi) {
 
-			case AFNUM_INET:
+			case AFNUM_IP:
 				ptvcursor_add(cursor, hf_pgm_opt_ccfeedbk_acker, 4, ENC_BIG_ENDIAN);
 				break;
 
-			case AFNUM_INET6:
+			case AFNUM_IP6:
 				ptvcursor_add(cursor, hf_pgm_opt_ccfeedbk_acker6, 16, ENC_NA);
 				break;
 
@@ -710,11 +707,11 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 
 			switch (optdata_afi) {
 
-			case AFNUM_INET:
+			case AFNUM_IP:
 				ptvcursor_add(cursor, hf_pgm_opt_redirect_dlr, 4, ENC_BIG_ENDIAN);
 				break;
 
-			case AFNUM_INET6:
+			case AFNUM_IP6:
 				ptvcursor_add(cursor, hf_pgm_opt_redirect_dlr6, 16, ENC_NA);
 				break;
 
@@ -925,11 +922,11 @@ dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ptvcursor_add(cursor, hf_pgm_spm_res, 2, ENC_BIG_ENDIAN);
 
 		switch (afi) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			ptvcursor_add(cursor, hf_pgm_spm_path, 4, ENC_BIG_ENDIAN);
 			break;
 
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			ptvcursor_add(cursor, hf_pgm_spm_path6, 16, ENC_NA);
 			break;
 
@@ -964,11 +961,11 @@ dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ptvcursor_add(cursor, hf_pgm_nak_srcres, 2, ENC_BIG_ENDIAN);
 
 		switch (afi) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			ptvcursor_add(cursor, hf_pgm_nak_src, 4, ENC_BIG_ENDIAN);
 			break;
 
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			ptvcursor_add(cursor, hf_pgm_nak_src6, 16, ENC_NA);
 			break;
 
@@ -982,11 +979,11 @@ dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ptvcursor_add(cursor, hf_pgm_nak_grpres, 2, ENC_BIG_ENDIAN);
 
 		switch (afi) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			ptvcursor_add(cursor, hf_pgm_nak_grp, 4, ENC_BIG_ENDIAN);
 			break;
 
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			ptvcursor_add(cursor, hf_pgm_nak_grp6, 16, ENC_NA);
 			break;
 
@@ -1014,11 +1011,11 @@ dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		ptvcursor_add(cursor, hf_pgm_poll_res, 2, ENC_BIG_ENDIAN);
 
 		switch (afi) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			ptvcursor_add(cursor, hf_pgm_poll_path, 4, ENC_BIG_ENDIAN);
 			break;
 
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			ptvcursor_add(cursor, hf_pgm_poll_path6, 16, ENC_NA);
 			break;
 

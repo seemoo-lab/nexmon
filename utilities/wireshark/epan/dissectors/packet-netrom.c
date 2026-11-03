@@ -24,7 +24,7 @@
  *   packet-sdlc.c
  *   packet-x25.c
  *   packet-lapb.c
- *   paket-gprs-llc.c
+ *   packet-gprs-llc.c
  *   xdlc.c
  * with the base file built from README.developers.
  */
@@ -34,9 +34,9 @@
 #include <epan/packet.h>
 #include <epan/to_str.h>
 #include <epan/capture_dissectors.h>
-#include <epan/ax25_pids.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
+#include "packet-ax25.h"
 
 void proto_register_netrom(void);
 void proto_reg_handoff_netrom(void);
@@ -442,7 +442,7 @@ dissect_netrom_routing(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	tvbuff_t *next_tvb;
 	const uint8_t* mnemonic;
-	int mnemonic_len;
+	unsigned mnemonic_len;
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "NET/ROM");
 	col_set_str( pinfo->cinfo, COL_INFO, "routing table frame");

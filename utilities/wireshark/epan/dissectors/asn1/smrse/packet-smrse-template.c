@@ -16,11 +16,6 @@
 #include <wsutil/array.h>
 
 #include "packet-ber.h"
-#include "packet-smrse.h"
-
-#define PNAME  "Short Message Relaying Service"
-#define PSNAME "SMRSE"
-#define PFNAME "smrse"
 
 #define TCP_PORT_SMRSE 4321 /* Not IANA registered */
 
@@ -155,10 +150,10 @@ void proto_register_smrse(void) {
   };
 
   /* Register protocol */
-  proto_smrse = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_smrse = proto_register_protocol("Short Message Relaying Service", "SMRSE", "smrse");
 
   /* Register dissector */
-  smrse_handle = register_dissector(PFNAME, dissect_smrse, proto_smrse);
+  smrse_handle = register_dissector("smrse", dissect_smrse, proto_smrse);
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_smrse, hf, array_length(hf));

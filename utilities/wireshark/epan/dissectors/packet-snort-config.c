@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#define WS_LOG_DOMAIN "packet-snort-config"
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-snort-config"
 #include <wireshark.h>
 
 #include <stdlib.h>
@@ -32,7 +32,7 @@ static void parse_config_file(SnortConfig_t *snort_config, FILE *config_file_fd,
 /* Skip white space from 'source', return pointer to first non-whitespace char */
 static const char *skipWhiteSpace(const char *source, int *accumulated_offset)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     /* Skip any leading whitespace */
     while ((source[offset] == ' ') || (source[offset] == '\t')) {
@@ -53,7 +53,7 @@ static const char *skipWhiteSpace(const char *source, int *accumulated_offset)
 static char* read_token(const char* source, char delimeter, int *length, int *accumulated_length, bool copy)
 {
     static char static_buffer[MAX_LINE_LENGTH];
-    int offset = 0;
+    unsigned offset = 0;
 
     const char *source_proper = skipWhiteSpace(source, accumulated_length);
 
@@ -362,6 +362,7 @@ static bool parse_variables_line(SnortConfig_t *snort_config, const char *line)
     /* Now value */
     value = read_token(line + accumulated_length, ' ', &length, &accumulated_length, true);
     if (value == NULL) {
+        g_free(variable_name);
         return false;
     }
 
@@ -943,7 +944,6 @@ static void parse_config_file(SnortConfig_t *snort_config, FILE *config_file_fd,
 void create_config(SnortConfig_t **snort_config, const char *snort_config_file)
 {
     char* dirname;
-    char* basename;
     FILE *config_file_fd;
 
     ws_debug("create_config (%s)", snort_config_file);
@@ -964,7 +964,6 @@ void create_config(SnortConfig_t **snort_config, const char *snort_config_file)
 
     /* Extract separate directory and filename. */
     dirname =  g_path_get_dirname(snort_config_file);
-    basename =  g_path_get_basename(snort_config_file);
 
     /* Attempt to open the config file */
     config_file_fd = ws_fopen(snort_config_file, "r");
@@ -979,7 +978,6 @@ void create_config(SnortConfig_t **snort_config, const char *snort_config_file)
     }
 
     g_free(dirname);
-    g_free(basename);
 }
 
 

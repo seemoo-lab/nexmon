@@ -2642,8 +2642,8 @@ s7comm_add_timestamp_to_tree(tvbuff_t *tvb,
     tv.secs = mktime(&mt);
     tv.nsecs = msec * 1000000;
     if (mt.tm_mon >= 0 && mt.tm_mon <= 11) {
-        item = proto_tree_add_time_format(tree, hf_s7comm_data_ts, tvb, offset, timestamp_size, &tv,
-            "S7 Timestamp: %s %2d, %d %02d:%02d:%02d.%03d", mon_names[mt.tm_mon], mt.tm_mday,
+        item = proto_tree_add_time_format_value(tree, hf_s7comm_data_ts, tvb, offset, timestamp_size, &tv,
+            "%s %2d, %d %02d:%02d:%02d.%03d", mon_names[mt.tm_mon], mt.tm_mday,
             mt.tm_year + 1900, mt.tm_hour, mt.tm_min, mt.tm_sec,
             msec);
         time_tree = proto_item_add_subtree(item, ett_s7comm_data_item);
@@ -2963,7 +2963,7 @@ s7comm_try_block_data_heuristic(tvbuff_t *tvb,
         struct tvbuff* next_tvb = tvb_new_subset_remaining(tvb, offset);
 
         /*no need to call call_data_dissector() if dissector_try_heuristic() returns false*/
-        dissector_try_heuristic(s7comm_heur_subdissector_list_block_data, next_tvb, pinfo, tree, &hdtbl_entry, fc);
+        (void) dissector_try_heuristic(s7comm_heur_subdissector_list_block_data, next_tvb, pinfo, tree, &hdtbl_entry, fc);
     }
 }
 
@@ -3965,8 +3965,7 @@ s7comm_decode_ud_tis_item_address(tvbuff_t *tvb,
     proto_item_append_text(item, " [%d]%s:", item_no + 1, add_text);
 
     /* Area, 1 byte */
-    area = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(sub_tree, hf_s7comm_varstat_req_memory_area, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(sub_tree, hf_s7comm_varstat_req_memory_area, tvb, offset, 1, ENC_BIG_ENDIAN, &area);
     offset += 1;
 
     /* Length (repetition factor), 1 byte. If area is a bit address, then this is the bit number.
@@ -4975,11 +4974,9 @@ s7comm_decode_ud_tis_bstack(tvbuff_t *tvb, packet_info* pinfo,
             while (rem > 16) {
                 item = proto_tree_add_item(td_tree, hf_s7comm_data_item, tvb, offset, 16, ENC_NA);
                 item_tree = proto_item_add_subtree(item, ett_s7comm_data_item);
-                blocktype = tvb_get_ntohs(tvb, offset);
-                proto_tree_add_item(item_tree, hf_s7comm_tis_interrupted_blocktype, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint16(item_tree, hf_s7comm_tis_interrupted_blocktype, tvb, offset, 2, ENC_BIG_ENDIAN, &blocktype);
                 offset += 2;
-                blocknumber = tvb_get_ntohs(tvb, offset);
-                proto_tree_add_item(item_tree, hf_s7comm_tis_interrupted_blocknr, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint16(item_tree, hf_s7comm_tis_interrupted_blocknr, tvb, offset, 2, ENC_BIG_ENDIAN, &blocknumber);
                 offset += 2;
                 proto_tree_add_item(item_tree, hf_s7comm_tis_interrupted_address, tvb, offset, 2, ENC_BIG_ENDIAN);
                 offset += 2;
@@ -5477,8 +5474,7 @@ s7comm_decode_ud_ncprg_subfunc(tvbuff_t *tvb,
             /* File path and file data aren't always there */
             if (dlength > 24) {
                 if (subfunc == S7COMM_NCPRG_FUNCDOWNLOADBLOCK || subfunc == S7COMM_NCPRG_FUNCSTARTUPLOAD || subfunc == S7COMM_NCPRG_FUNCUPLOAD) {
-                    string_end_offset = tvb_find_uint8(tvb, offset, dlength-8-16, 0x0a);
-                    if (string_end_offset > 0) {
+                    if (tvb_find_uint8_length(tvb, offset, dlength-8-16, 0x0a, &string_end_offset)) {
                         string_len = string_end_offset - offset + 1;    /* include 0x0a */
                         proto_tree_add_item(data_tree, hf_s7comm_data_ncprg_filepath, tvb, offset, string_len, ENC_ASCII);
                         offset += string_len;
@@ -5621,8 +5617,7 @@ s7comm_decode_message_service(tvbuff_t *tvb,
             proto_tree_add_item(data_tree, hf_s7comm_cpu_msgservice_username, tvb, offset, 8, ENC_ASCII);
             offset += 8;
             if ((events & 0x80) && (dlength > 10)) {
-                almtype = tvb_get_uint8(tvb, offset);
-                proto_tree_add_item(data_tree, hf_s7comm_cpu_msgservice_almtype, tvb, offset, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint8(data_tree, hf_s7comm_cpu_msgservice_almtype, tvb, offset, 1, ENC_BIG_ENDIAN, &almtype);
                 col_append_fstr(pinfo->cinfo, COL_INFO, " AlmType=%s", val_to_str(pinfo->pool, almtype, cpu_msgservice_almtype_names, "Unknown type: 0x%02x"));
                 offset += 1;
                 if (almtype == S7COMM_CPU_MSG_ALMTYPE_AR_SEND_INITIATE || almtype == S7COMM_CPU_MSG_ALMTYPE_AR_SEND_ABORT) {
@@ -5639,8 +5634,7 @@ s7comm_decode_message_service(tvbuff_t *tvb,
             proto_tree_add_item(data_tree, hf_s7comm_cpu_msgservice_res_reserved1, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
             if (dlength > 2) {
-                almtype = tvb_get_uint8(tvb, offset);
-                proto_tree_add_item(data_tree, hf_s7comm_cpu_msgservice_almtype, tvb, offset, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint8(data_tree, hf_s7comm_cpu_msgservice_almtype, tvb, offset, 1, ENC_BIG_ENDIAN, &almtype);
                 col_append_fstr(pinfo->cinfo, COL_INFO, " AlmType=%s", val_to_str(pinfo->pool, almtype, cpu_msgservice_almtype_names, "Unknown type: 0x%02x"));
                 offset += 1;
                 if (almtype == S7COMM_CPU_MSG_ALMTYPE_AR_SEND_INITIATE || almtype == S7COMM_CPU_MSG_ALMTYPE_AR_SEND_ABORT) {
@@ -6609,7 +6603,7 @@ s7comm_decode_ud_data(tvbuff_t *tvb,
                     next_tvb = new_tvb;
                     offset = 0;
                 } else { /* make a new subset */
-                    next_tvb = tvb_new_subset_length(tvb, offset, -1);
+                    next_tvb = tvb_new_subset_remaining(tvb, offset);
                     col_append_fstr(pinfo->cinfo, COL_INFO, " (S7COMM fragment%s)", str_fragadd);
                     proto_item_append_text(data_tree, " (S7COMM fragment%s)", str_fragadd);
                     offset = 0;
@@ -6856,19 +6850,16 @@ s7comm_decode_ud(tvbuff_t *tvb,
     }
     offset_temp += 1;
     /* 1 Byte sequence number */
-    seq_num = tvb_get_uint8(tvb, offset_temp);
-    proto_tree_add_item(param_tree, hf_s7comm_userdata_param_seq_num, tvb, offset_temp, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(param_tree, hf_s7comm_userdata_param_seq_num, tvb, offset_temp, 1, ENC_BIG_ENDIAN, &seq_num);
     offset_temp += 1;
     if (varspec_syntax_id == S7COMM_SYNTAXID_EXT) {
         /* 1 Byte data unit reference. If packet is fragmented, all packets with this number belong together.
          * But there are function which use a different fragment identification methon.
          */
-        data_unit_ref = tvb_get_uint8(tvb, offset_temp);
-        proto_tree_add_item(param_tree, hf_s7comm_userdata_param_dataunitref, tvb, offset_temp, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(param_tree, hf_s7comm_userdata_param_dataunitref, tvb, offset_temp, 1, ENC_BIG_ENDIAN, &data_unit_ref);
         offset_temp += 1;
         /* 1 Byte fragmented flag, if this is not the last data unit (telegram is fragmented) this is != 0 */
-        last_data_unit = tvb_get_uint8(tvb, offset_temp);
-        proto_tree_add_item(param_tree, hf_s7comm_userdata_param_dataunit, tvb, offset_temp, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(param_tree, hf_s7comm_userdata_param_dataunit, tvb, offset_temp, 1, ENC_BIG_ENDIAN, &last_data_unit);
         offset_temp += 1;
         proto_tree_add_item_ret_uint(param_tree, hf_s7comm_param_errcod, tvb, offset_temp, 2, ENC_BIG_ENDIAN, &errorcode);
         if (errorcode > 0) {

@@ -646,6 +646,13 @@ netxray_open(wtap *wth, int *err, char **err_info)
 				*/
 				if (hdr.timeunit == 2) {
 					ticks_per_sec = pletohu32(hdr.realtick);
+					if (ticks_per_sec == 0.0) {
+						*err = WTAP_ERR_BAD_FILE;
+						*err_info = ws_strdup_printf(
+						    "netxray: Timeunit %u with invalid realtick 0 for Ethernet/ETH_CAPTYPE_NDIS version %.8s capture",
+						    hdr.timeunit, hdr.version);
+						return WTAP_OPEN_ERROR;
+					}
 				}
 				else {
 					ticks_per_sec = TpS[hdr.timeunit];
@@ -777,6 +784,14 @@ netxray_open(wtap *wth, int *err, char **err_info)
 		*err = WTAP_ERR_INTERNAL;
 		*err_info = ws_strdup_printf("netxray: version %d.%d somehow didn't get rejected",
 		                            version_major, version_minor);
+		return WTAP_OPEN_ERROR;
+	}
+	if (ticks_per_sec == 0.0) {
+		/* "Can't happen" - we should have rejected this in all the
+		 * cases above, but double-check. */
+		*err = WTAP_ERR_INTERNAL;
+		*err_info = ws_strdup_printf(
+		    "netxray: ticks_per_sec cannot be 0");
 		return WTAP_OPEN_ERROR;
 	}
 	start_timestamp = start_timestamp/ticks_per_sec;
@@ -1860,11 +1875,22 @@ netxray_dump_finish_1_1(wtap_dumper *wdh, int *err, char **err_info _U_)
 {
 	char hdr_buf[CAPTUREFILE_HEADER_SIZE - sizeof(netxray_magic)];
 	netxray_dump_t *netxray = (netxray_dump_t *)wdh->priv;
-	int64_t filelen;
+	int64_t tell_result;
+	uint64_t filelen;
 	struct netxray_hdr file_hdr;
 
-	if (-1 == (filelen = wtap_dump_file_tell(wdh, err)))
+	/*
+	 * XXX - should we determine this by getting the file size
+	 * directly?
+	 *
+	 * Should we fail if the size doesn't fit in a 32-bit integer,
+	 * as that isn't supported by NetXRay files, given that the
+	 * file size is 32 bits?
+	 */
+	tell_result = wtap_dump_file_tell(wdh, err);
+	if (-1 == tell_result)
 		return false;
+	filelen = (uint64_t) tell_result;
 
 	/* Go back to beginning */
 	if (wtap_dump_file_seek(wdh, 0, SEEK_SET, err) == -1)
@@ -2090,11 +2116,22 @@ netxray_dump_finish_2_0(wtap_dumper *wdh, int *err, char **err_info _U_)
 {
 	char hdr_buf[CAPTUREFILE_HEADER_SIZE - sizeof(netxray_magic)];
 	netxray_dump_t *netxray = (netxray_dump_t *)wdh->priv;
-	int64_t filelen;
+	int64_t tell_result;
+	uint64_t filelen;
 	struct netxray_hdr file_hdr;
 
-	if (-1 == (filelen = wtap_dump_file_tell(wdh, err)))
+	/*
+	 * XXX - should we determine this by getting the file size
+	 * directly?
+	 *
+	 * Should we fail if the size doesn't fit in a 32-bit integer,
+	 * as that isn't supported by NetXRay files, given that the
+	 * file size is 32 bits?
+	 */
+	tell_result = wtap_dump_file_tell(wdh, err);
+	if (-1 == tell_result)
 		return false;
+	filelen = (uint64_t) tell_result;
 
 	/* Go back to beginning */
 	if (wtap_dump_file_seek(wdh, 0, SEEK_SET, err) == -1)

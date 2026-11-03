@@ -270,8 +270,7 @@ raknet_dissect_system_address(proto_tree *tree, int hf,
        an empty string? */
     ti = proto_tree_add_string(tree, hf, tvb, *offset, -1, "");
     sub_tree = proto_item_add_subtree(ti, ett_raknet_system_address);
-    ip_version = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(sub_tree, hf_raknet_ip_version, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(sub_tree, hf_raknet_ip_version, tvb, *offset, 1, ENC_NA, &ip_version);
     (*offset)++;
     switch (ip_version) {
     case 4:
@@ -285,8 +284,7 @@ raknet_dissect_system_address(proto_tree *tree, int hf,
         addr_str = address_to_display(pinfo->pool, &addr);
         proto_tree_add_ipv4(sub_tree, hf_raknet_ipv4_address, tvb, *offset, 4, v4_addr);
         *offset += 4;
-        port = tvb_get_ntohs(tvb, *offset);
-        proto_tree_add_item(sub_tree, hf_raknet_port, tvb, *offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(sub_tree, hf_raknet_port, tvb, *offset, 2, ENC_BIG_ENDIAN, &port);
         *offset += 2;
         proto_item_set_len(ti, 1 + 4 + 2);
         proto_item_append_text(ti, "%s:%" PRIu16, addr_str, port);
@@ -295,8 +293,7 @@ raknet_dissect_system_address(proto_tree *tree, int hf,
         addr_str = tvb_ip6_to_str(pinfo->pool, tvb, *offset);
         proto_tree_add_item(sub_tree, hf_raknet_ipv6_address, tvb, *offset, 16, ENC_NA);
         *offset += 16;
-        port = tvb_get_ntohs(tvb, *offset);
-        proto_tree_add_item(sub_tree, hf_raknet_port, tvb, *offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(sub_tree, hf_raknet_port, tvb, *offset, 2, ENC_BIG_ENDIAN, &port);
         *offset += 2;
         proto_item_set_len(ti, 1 + 16 + 2);
         proto_item_append_text(ti, "[%s]:%" PRIu16, addr_str, port);
@@ -827,7 +824,7 @@ static int
 raknet_dissect_ACK(tvbuff_t *tvb, packet_info *pinfo,
                    proto_tree *tree, void* data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *sub_tree;
     uint32_t count;
     uint32_t i;
@@ -907,7 +904,7 @@ raknet_dissect_ACK(tvbuff_t *tvb, packet_info *pinfo,
 static int
 raknet_dissect_common_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *raknet_tree, void *data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     bool *has_multiple_messages;
     proto_item *ti;
     proto_item *raknet_ti;
@@ -1067,7 +1064,7 @@ raknet_dissect_common_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *rak
      */
     if (! *has_multiple_messages) {
         *has_multiple_messages =
-            tvb_reported_length_remaining(tvb, offset) > (int)payload_octets
+            tvb_reported_length_remaining(tvb, offset) > payload_octets
             ? true : false;
     }
 
@@ -1233,7 +1230,7 @@ raknet_dissect_connected_message(tvbuff_t *tvb, packet_info *pinfo,
     proto_item *ti;
     proto_tree *raknet_tree;
     int item_size;
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t msg_type;
 
     state = raknet_get_session_state(pinfo);
@@ -1944,11 +1941,7 @@ proto_register_raknet(void)
     /*
      * Register the protocol with Wireshark.
      */
-    proto_raknet = proto_register_protocol (
-            "RakNet game networking protocol", /* name */
-            "RakNet", /* short name */
-            "raknet"  /* abbrev */
-            );
+    proto_raknet = proto_register_protocol ("RakNet game networking protocol", "RakNet", "raknet");
 
     /*
      * Register expert support.

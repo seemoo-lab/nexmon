@@ -17,7 +17,6 @@
  */
 
 #include <config.h>
-
 #define WS_LOG_DOMAIN LOG_DOMAIN_WIRETAP
 
 #include <errno.h>
@@ -125,94 +124,88 @@ autosar_dlt_read_block(autosar_dlt_params_t *params, int64_t start_pos, int *err
     autosar_dlt_blockheader_t header;
     autosar_dlt_itemheader_t  item_header;
 
-    while (1) {
-        params->rec->data.first_free = params->rec->data.start;
-
-        if (!wtap_read_bytes_or_eof(params->fh, &header, sizeof header, err, err_info)) {
-            if (*err == WTAP_ERR_SHORT_READ) {
-                *err = WTAP_ERR_BAD_FILE;
-                g_free(*err_info);
-                *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short! Cannot find storage header at pos 0x%" PRIx64 "!", start_pos);
-            }
-            return false;
-        }
-
-        fix_endianness_autosar_dlt_blockheader(&header);
-
-        if (memcmp(header.magic, dlt_magic, sizeof(dlt_magic))) {
-            *err = WTAP_ERR_BAD_FILE;
-            *err_info = ws_strdup_printf("AUTOSAR DLT: Bad capture file! Object magic is not DLT\\x01 at pos 0x%" PRIx64 "!", start_pos);
-            return false;
-        }
-
-        /* Set to the byte after the magic. */
-        uint64_t current_start_of_item = file_tell(params->fh) - sizeof header + 4;
-
-        if (!wtap_read_bytes_or_eof(params->fh, &item_header, sizeof item_header, err, err_info)) {
+    if (!wtap_read_bytes_or_eof(params->fh, &header, sizeof header, err, err_info)) {
+        if (*err == WTAP_ERR_SHORT_READ) {
             *err = WTAP_ERR_BAD_FILE;
             g_free(*err_info);
-            *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short! Not enough bytes for item header at pos 0x%" PRIx64 "!", start_pos);
-            return false;
+            *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short. Cannot find storage header at pos 0x%" PRIx64 ".", start_pos);
         }
-
-        fix_endianness_autosar_dlt_itemheader(&item_header);
-
-        if (file_seek(params->fh, current_start_of_item, SEEK_SET, err) < 0) {
-            return false;
-        }
-
-        ws_buffer_assure_space(&params->rec->data, (size_t)(item_header.length + sizeof header));
-
-        /* Creating AUTOSAR DLT Encapsulation Header:
-         * uint32_t   time_s
-         * uint32_t   time_us
-         * uint8_t[4] ecuname
-         * uint8_t[1] 0x00 (termination)
-         * uint8_t[3] reserved
-         */
-        void *tmpbuf = g_malloc0(sizeof header);
-        if (!wtap_read_bytes_or_eof(params->fh, tmpbuf, sizeof header - 4, err, err_info)) {
-            /* this would have been caught before ...*/
-            g_free(tmpbuf);
-            *err = WTAP_ERR_BAD_FILE;
-            g_free(*err_info);
-            *err_info = ws_strdup_printf("AUTOSAR DLT: Internal Error! Not enough bytes for storage header at pos 0x%" PRIx64 "!", start_pos);
-            return false;
-        }
-        ws_buffer_append(&params->rec->data, tmpbuf, (size_t)(sizeof header));
-        g_free(tmpbuf);
-
-        tmpbuf = g_try_malloc0(item_header.length);
-        if (tmpbuf == NULL) {
-            *err = ENOMEM;  /* we assume we're out of memory */
-            return false;
-        }
-
-        if (!wtap_read_bytes_or_eof(params->fh, tmpbuf, item_header.length, err, err_info)) {
-            g_free(tmpbuf);
-            *err = WTAP_ERR_BAD_FILE;
-            g_free(*err_info);
-            *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short! Not enough bytes for item at pos 0x%" PRIx64 "!", start_pos);
-            return false;
-        }
-        ws_buffer_append(&params->rec->data, tmpbuf, (size_t)(item_header.length));
-        g_free(tmpbuf);
-
-        wtap_setup_packet_rec(params->rec, WTAP_ENCAP_AUTOSAR_DLT);
-        params->rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
-        params->rec->presence_flags = WTAP_HAS_TS | WTAP_HAS_CAP_LEN | WTAP_HAS_INTERFACE_ID;
-        params->rec->tsprec = WTAP_TSPREC_USEC;
-        params->rec->ts.secs = header.timestamp_s;
-        params->rec->ts.nsecs = header.timestamp_us * 1000;
-
-        params->rec->rec_header.packet_header.caplen = (uint32_t)(item_header.length + sizeof header);
-        params->rec->rec_header.packet_header.len = (uint32_t)(item_header.length + sizeof header);
-        params->rec->rec_header.packet_header.interface_id = autosar_dlt_lookup_interface(params, header.ecu_id);
-
-        return true;
+        return false;
     }
 
-    return false;
+    fix_endianness_autosar_dlt_blockheader(&header);
+
+    if (memcmp(header.magic, dlt_magic, sizeof(dlt_magic))) {
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = ws_strdup_printf("AUTOSAR DLT: Bad capture file. Object magic is not DLT\\x01 at pos 0x%" PRIx64 ".", start_pos);
+        return false;
+    }
+
+    /* Set to the byte after the magic. */
+    uint64_t current_start_of_item = file_tell(params->fh) - sizeof header + 4;
+
+    if (!wtap_read_bytes_or_eof(params->fh, &item_header, sizeof item_header, err, err_info)) {
+        *err = WTAP_ERR_BAD_FILE;
+        g_free(*err_info);
+        *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short. Not enough bytes for item header at pos 0x%" PRIx64 ".", start_pos);
+        return false;
+    }
+
+    fix_endianness_autosar_dlt_itemheader(&item_header);
+
+    if (file_seek(params->fh, current_start_of_item, SEEK_SET, err) < 0) {
+        return false;
+    }
+
+    ws_buffer_assure_space(&params->rec->data, (size_t)(item_header.length + sizeof header));
+
+    /* Creating AUTOSAR DLT Encapsulation Header:
+     * uint32_t   time_s
+     * uint32_t   time_us
+     * uint8_t[4] ecuname
+     * uint8_t[1] 0x00 (termination)
+     * uint8_t[3] reserved
+     */
+    void *tmpbuf = g_malloc0(sizeof header);
+    if (!wtap_read_bytes_or_eof(params->fh, tmpbuf, sizeof header - 4, err, err_info)) {
+        /* this would have been caught before ...*/
+        g_free(tmpbuf);
+        *err = WTAP_ERR_BAD_FILE;
+        g_free(*err_info);
+        *err_info = ws_strdup_printf("AUTOSAR DLT: Internal Error. Not enough bytes for storage header at pos 0x%" PRIx64 ".", start_pos);
+        return false;
+    }
+    ws_buffer_append(&params->rec->data, tmpbuf, (size_t)(sizeof header));
+    g_free(tmpbuf);
+
+    tmpbuf = g_try_malloc0(item_header.length);
+    if (tmpbuf == NULL) {
+        *err = ENOMEM;  /* we assume we're out of memory */
+        return false;
+    }
+
+    if (!wtap_read_bytes_or_eof(params->fh, tmpbuf, item_header.length, err, err_info)) {
+        g_free(tmpbuf);
+        *err = WTAP_ERR_BAD_FILE;
+        g_free(*err_info);
+        *err_info = ws_strdup_printf("AUTOSAR DLT: Capture file cut short. Not enough bytes for item at pos 0x%" PRIx64 ".", start_pos);
+        return false;
+    }
+    ws_buffer_append(&params->rec->data, tmpbuf, (size_t)(item_header.length));
+    g_free(tmpbuf);
+
+    wtap_setup_packet_rec(params->rec, WTAP_ENCAP_AUTOSAR_DLT);
+    params->rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+    params->rec->presence_flags = WTAP_HAS_TS | WTAP_HAS_CAP_LEN | WTAP_HAS_INTERFACE_ID;
+    params->rec->tsprec = WTAP_TSPREC_USEC;
+    params->rec->ts.secs = header.timestamp_s;
+    params->rec->ts.nsecs = header.timestamp_us * 1000;
+
+    params->rec->rec_header.packet_header.caplen = (uint32_t)(item_header.length + sizeof header);
+    params->rec->rec_header.packet_header.len = (uint32_t)(item_header.length + sizeof header);
+    params->rec->rec_header.packet_header.interface_id = autosar_dlt_lookup_interface(params, header.ecu_id);
+
+    return true;
 }
 
 static bool autosar_dlt_read(wtap *wth, wtap_rec *rec, int *err, char **err_info, int64_t *data_offset) {
@@ -288,7 +281,9 @@ autosar_dlt_open(wtap *wth, int *err, char **err_info) {
         return WTAP_OPEN_NOT_MINE;
     }
 
-    file_seek(wth->fh, 0, SEEK_SET, err);
+    if (file_seek(wth->fh, 0, SEEK_SET, err) == -1) {
+        return WTAP_OPEN_ERROR;
+    }
 
     dlt = g_new(autosar_dlt_t, 1);
     dlt->ecu_to_iface_ht = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);

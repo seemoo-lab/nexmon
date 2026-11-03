@@ -352,24 +352,11 @@ static const range_string event_indication_element_id_coding[] = {
     { 0,         0,         NULL                                             }
 };
 
-static const value_string event_indication_raise_ceased_coding[] = {
-    { 0x00,    "Raise a fault" },
-    { 0x01,    "Cease a fault" },
-    { 0x02,    "Reserved"     },
-    { 0x03,    "Reserved"     },
-    { 0x04,    "Reserved"     },
-    { 0x05,    "Reserved"     },
-    { 0x06,    "Reserved"     },
-    { 0x07,    "Reserved"     },
-    { 0x08,    "Reserved"     },
-    { 0x09,    "Reserved"     },
-    { 0x0A,    "Reserved"     },
-    { 0x0B,    "Reserved"     },
-    { 0x0C,    "Reserved"     },
-    { 0x0D,    "Reserved"     },
-    { 0x0E,    "Reserved"     },
-    { 0x0F,    "Reserved"     },
-    { 0,       NULL           }
+static const range_string event_indication_raise_ceased_coding[] = {
+    { 0x00, 0x00,   "Raise a fault" },
+    { 0x01, 0x01,   "Cease a fault" },
+    { 0x02, 0x0F,   "Reserved"     },
+    { 0,    0,      NULL           }
 };
 
 static const range_string event_indication_fault_notif_coding[] = {
@@ -461,7 +448,7 @@ typedef struct {
 static dissector_handle_t oran_fh_handle;
 
 /**************************************************************************************************/
-/* Implementation of the functions                                                                */
+/* Main dissection function                                                                       */
 /**************************************************************************************************/
 static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
@@ -492,7 +479,7 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     proto_item *ti_num_faults;
     proto_item *ti_fault_notif;
 
-    int offset;
+    unsigned offset;
     uint32_t msg_type;
     uint32_t event_type;
     uint32_t concatenation;
@@ -567,13 +554,16 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
         /* eCPRI Message Type */
         proto_tree_add_item_ret_uint(header_tree, hf_common_header_ecpri_message_type, tvb, offset, 1, ENC_NA, &msg_type);
         /* Append Message Type into info column & header item */
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, ",", "Message Type: %s", try_rval_to_str(msg_type, ecpri_msg_types));
-        proto_item_append_text(header_item, "   MessageType: %s", try_rval_to_str(msg_type, ecpri_msg_types));
+        col_append_sep_fstr(pinfo->cinfo, COL_INFO, ",", "Message Type: %s (0x%x)", try_rval_to_str(msg_type, ecpri_msg_types), msg_type);
         offset += 1;
 
         /* eCPRI Payload Size */
         ti_payload_size = proto_tree_add_item(header_tree, hf_common_header_ecpri_payload_size, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
+
+        /* Summaries (type and payload length) for protocol and header roots */
+        proto_item_append_text(ecpri_item,  "   MessageType: %s (0x%x)  PayloadSize: %u)", try_rval_to_str(msg_type, ecpri_msg_types), msg_type, payload_size);
+        proto_item_append_text(header_item, "   MessageType: %s (0x%x)  PayloadSize: %u)", try_rval_to_str(msg_type, ecpri_msg_types), msg_type, payload_size);
 
         /* Note if C is set (i.e. further messages to follow after this one) */
         if (concatenation_bit) {
@@ -609,35 +599,29 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             /* - message type 0 (IQ DATA)                                                                  */
             /* - message type 2 (RT CTRL DATA)                                                             */
             /***********************************************************************************************/
-            if (call_dissector_only(oran_fh_handle, fh_tvb, pinfo, tree, &msg_type))
+            call_dissector_only(oran_fh_handle, fh_tvb, pinfo, tree, &msg_type);
+
+            switch (msg_type)
             {
-                /* Assume that it has claimed the entire paylength offered to it */
-                offset += payload_size;
-            }
-            else
-            {
-                /* ORAN FH-CUS dissector didn't handle it */
-                switch (msg_type)
-                {
                 case ECPRI_MESSAGE_TYPE_IQ_DATA: /* Message Type 0: 3.2.4.1. IQ Data */
-                    /* N.B. if ORAN dissector is enabled, it will handle this type instead! */
+                    /* N.B. if ORAN dissector is enabled, it will also dissect this message */
                     if (payload_size < ECPRI_MSG_TYPE_0_PAYLOAD_MIN_LENGTH)
                     {
                         expert_add_info_format(
                             pinfo, ti_payload_size, &ei_payload_size,
                             "Payload Size %u is too small for encoding Message Type %u. Should be min. %d",
                             payload_size, msg_type, ECPRI_MSG_TYPE_0_PAYLOAD_MIN_LENGTH);
-
-                        offset += payload_size;
                         break;
                     }
 
                     if (remaining_length >= ECPRI_MSG_TYPE_0_PAYLOAD_MIN_LENGTH)
                     {
+                        /* Add these as opaque fields */
                         proto_tree_add_item(ecpri_tree, hf_pc_id, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
                         proto_tree_add_item(ecpri_tree, hf_iq_data_seq_id, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
+
                         remaining_length -= ECPRI_MSG_TYPE_0_PAYLOAD_MIN_LENGTH;
                         if (remaining_length >= payload_size - ECPRI_MSG_TYPE_0_PAYLOAD_MIN_LENGTH)
                         {
@@ -667,6 +651,7 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                         remaining_length -= ECPRI_MSG_TYPE_1_PAYLOAD_MIN_LENGTH;
                         if (remaining_length >= payload_size - ECPRI_MSG_TYPE_1_PAYLOAD_MIN_LENGTH)
                         {
+                            /* Rest of message is opaque */
                             proto_tree_add_item(ecpri_tree, hf_bit_sequence_bit_sequence_of_user_data, tvb, offset, payload_size - ECPRI_MSG_TYPE_1_PAYLOAD_MIN_LENGTH, ENC_NA);
                             offset += payload_size - ECPRI_MSG_TYPE_1_PAYLOAD_MIN_LENGTH;
                         }
@@ -681,20 +666,21 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                             pinfo, ti_payload_size, &ei_payload_size,
                             "Payload Size %u is too small for encoding Message Type %u. Should be min. %d",
                             payload_size, msg_type, ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH);
-
-                        offset += payload_size;
                         break;
                     }
 
-                    if (remaining_length >= ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH)
-                    {
-                        proto_tree_add_item(ecpri_tree, hf_real_time_control_data_rtc_id, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    if (remaining_length >= ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH) {
+
+                        /* Add these as opaque fields */
+                        proto_tree_add_item(ecpri_tree, hf_pc_id, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
-                        proto_tree_add_item(ecpri_tree, hf_real_time_control_data_seq_id, tvb, offset, 2, ENC_BIG_ENDIAN);
+                        proto_tree_add_item(ecpri_tree, hf_iq_data_seq_id, tvb, offset, 2, ENC_BIG_ENDIAN);
                         offset += 2;
+
                         remaining_length -= ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH;
                         if (remaining_length >= payload_size - ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH)
                         {
+                            /* Rest of message is opaque */
                             proto_tree_add_item(ecpri_tree, hf_real_time_control_data_rtc_data, tvb, offset, payload_size - ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH, ENC_NA);
                             offset += payload_size - ECPRI_MSG_TYPE_2_PAYLOAD_MIN_LENGTH;
                         }
@@ -1232,8 +1218,8 @@ static int dissect_ecpri(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     offset += payload_size;
                     break;
                 }
-            }
         }
+
         /* If Preference not chosen,  Payload will be not decoded */
         else
         {
@@ -1319,7 +1305,7 @@ void proto_register_ecpri(void)
         { &hf_event_indication_number_of_faults_notifications, { "Number of Faults/Notifications", "ecpri.ei.numberfaultnotif", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_event_indication_element, { "Element", "ecpri.ei.element", FT_BYTES, SEP_COLON, NULL, 0x0, NULL, HFILL } },
         { &hf_event_indication_element_id, { "Element ID", "ecpri.ei.elementid", FT_UINT16, BASE_HEX|BASE_RANGE_STRING, RVALS(event_indication_element_id_coding),  0x0, NULL, HFILL } },
-        { &hf_event_indication_raise_cease, { "Raise/Cease", "ecpri.ei.raisecease", FT_UINT8, BASE_HEX, VALS(event_indication_raise_ceased_coding), 0xF0, NULL, HFILL } },
+        { &hf_event_indication_raise_cease, { "Raise/Cease", "ecpri.ei.raisecease", FT_UINT8, BASE_HEX|BASE_RANGE_STRING, RVALS(event_indication_raise_ceased_coding), 0xF0, NULL, HFILL } },
         { &hf_event_indication_fault_notification, { "Fault/Notification", "ecpri.ei.faultnotif", FT_UINT16, BASE_HEX|BASE_RANGE_STRING, RVALS(event_indication_fault_notif_coding), 0x0FFF, NULL, HFILL } },
         { &hf_event_indication_additional_information, { "Additional Information", "ecpri.ei.addinfo", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
     /* Message Type 8: IWF Start-Up */
@@ -1366,9 +1352,7 @@ void proto_register_ecpri(void)
     module_t* ecpri_module;
 
     /* Register the protocol name and description */
-    proto_ecpri = proto_register_protocol("evolved Common Public Radio Interface",    /* Protoname */
-                                          "eCPRI",                                    /* Proto Shortname */
-                                          "ecpri");                                   /* Proto Abbrev */
+    proto_ecpri = proto_register_protocol("evolved Common Public Radio Interface", "eCPRI", "ecpri"); /* name, short name, abbreviation */
     ecpri_handle = register_dissector("ecpri", dissect_ecpri, proto_ecpri);
 
 

@@ -14,57 +14,47 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="pageLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+
    <property name="leftMargin">
-    <number>38</number>
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
    </property>
    <property name="rightMargin">
-    <number>38</number>
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="titleSectionLayout">
-     <item>
-      <layout class="QHBoxLayout" name="titleSectionRowLayout">
-       <item>
-        <widget class="QLabel" name="mainWelcomeBanner">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:large;&quot;&gt;Welcome to Wireshark&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="titleSectionBannerSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="flavorBanner">
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="QLabel" name="fullReleaseLabel">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="WelcomeHeaderWidget" name="welcomeHeaderWidget">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="contentAreaLayout">
      <property name="spacing">
+      <number>12</number>
+     </property>
+     <property name="leftMargin">
+      <number>24</number>
+     </property>
+     <property name="topMargin">
+      <number>16</number>
+     </property>
+     <property name="rightMargin">
+      <number>24</number>
+     </property>
+     <property name="bottomMargin">
       <number>16</number>
      </property>
      <item>
@@ -75,147 +65,88 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>400</width>
+         <height>0</height>
+        </size>
+       </property>
        <layout class="QVBoxLayout" name="mainContentLayout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
-         <widget class="AccordionFrame" name="openFrame">
+         <layout class="QVBoxLayout" name="openFileSectionLayout">
+          <item>
+           <widget class="ClickableLabel" name="openFileSectionLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open a file on your file system&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="accessibleName">
+             <string>Open</string>
+            </property>
+            <property name="accessibleDescription">
+             <string>List of recently opened files. Files that can no longer be found on disk are shown in italics.</string>
+            </property>
+            <property name="text">
+             <string>&lt;h2&gt;Open&lt;/h2&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListView" name="openFileSectionRecentList">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>120</height>
+             </size>
+            </property>
+            <property name="accessibleName">
+             <string>Recent capture files</string>
+            </property>
+            <property name="accessibleDescription">
+             <string>Capture files that have been opened previously</string>
+            </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="CaptureCardWidget" name="captureSectionCard">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
-            <verstretch>2</verstretch>
+            <verstretch>0</verstretch>
            </sizepolicy>
           </property>
           <property name="frameShape">
            <enum>QFrame::Shape::NoFrame</enum>
           </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Plain</enum>
-          </property>
-          <property name="lineWidth">
-           <number>0</number>
-          </property>
-          <layout class="QVBoxLayout" name="openFileSectionLayout">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="ClickableLabel" name="recentLabel">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="accessibleName">
-              <string>Open</string>
-             </property>
-             <property name="accessibleDescription">
-              <string>List of recently opened files. Files that can no longer be found on disk are shown in italics.</string>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open a file on your file system&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>&lt;h2&gt;Open&lt;/h2&gt;</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QListWidget" name="recentList">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="accessibleName">
-              <string>Recent capture files</string>
-             </property>
-             <property name="accessibleDescription">
-              <string>Capture files that have been opened previously</string>
-             </property>
-             <property name="horizontalScrollBarPolicy">
-              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
          </widget>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="captureSectionLayout">
-          <item>
-           <widget class="ClickableLabel" name="captureLabel">
-            <property name="accessibleName">
-             <string>Capture</string>
-            </property>
-            <property name="accessibleDescription">
-             <string>Start a new capture session</string>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Capture live packets from your network.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>&lt;h2&gt;Capture&lt;/h2&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="captureSectionFilterRowLayout">
-            <item>
-             <widget class="QLabel" name="captureSectionFilterLabel">
-              <property name="text">
-               <string>…using this filter:</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="CaptureFilterCombo" name="captureFilterComboBox">
-              <property name="editable">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="btnInterfaceType">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <widget class="InterfaceFrame" name="interfaceFrame">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="accessibleName">
-             <string>Interface list</string>
-            </property>
-            <property name="accessibleDescription">
-             <string>List of available capture interfaces</string>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Shape::StyledPanel</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Shadow::Raised</enum>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>
@@ -316,27 +247,16 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>AccordionFrame</class>
-   <extends>QFrame</extends>
-   <header>accordion_frame.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>InfoBannerWidget</class>
    <extends>QFrame</extends>
    <header>widgets/info_banner_widget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>InterfaceFrame</class>
+   <class>CaptureCardWidget</class>
    <extends>QFrame</extends>
-   <header>interface_frame.h</header>
+   <header>widgets/capture_card_widget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>CaptureFilterCombo</class>
-   <extends>QComboBox</extends>
-   <header>widgets/capture_filter_combo.h</header>
   </customwidget>
   <customwidget>
    <class>ClickableLabel</class>
@@ -347,6 +267,12 @@
    <class>LearnCardWidget</class>
    <extends>QFrame</extends>
    <header>widgets/learn_card_widget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>WelcomeHeaderWidget</class>
+   <extends>QWidget</extends>
+   <header>widgets/welcome_header_widget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

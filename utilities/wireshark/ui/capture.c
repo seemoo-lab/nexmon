@@ -31,7 +31,6 @@
 #include "capture/iface_monitor.h"
 #include "ui/capture_info.h"
 #include "ui/capture_ui_utils.h"
-#include "ui/iface_lists.h"
 #include "ui/util.h"
 #include "ui/urls.h"
 #include "capture/capture-pcap-util.h"
@@ -43,23 +42,12 @@
 #include "ui/simple_dialog.h"
 #include "ui/ws_ui_util.h"
 
-#include <wsutil/application_flavor.h>
+#include <app/application_flavor.h>
 #include <wsutil/file_util.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/str_util.h>
 #include <wsutil/ws_assert.h>
 #include <wsutil/wslog.h>
-
-typedef struct if_stat_cache_item_s {
-    char *name;
-    struct pcap_stat ps;
-} if_stat_cache_item_t;
-
-struct if_stat_cache_s {
-    int stat_fd;
-    ws_process_id fork_child;
-    GList *cache_list;  /* List of if_stat_chache_entry_t */
-};
 
 /* this callback mechanism should possibly be replaced by the g_signal_...() stuff (if I only would know how :-) */
 typedef struct {
@@ -165,7 +153,7 @@ capture_start(capture_options *capture_opts, GPtrArray *capture_comments,
     /* spawn/exec of the capture child, without waiting for any response from it */
     capture_callback_invoke(capture_cb_capture_prepared, cap_session);
 
-    wtap_rec_init(&cap_session->rec, 1514);
+    wtap_rec_init(&cap_session->rec, DEFAULT_INIT_BUFFER_SIZE_2048);
 
     cap_session->wtap = NULL;
 
@@ -314,7 +302,7 @@ capture_input_read_all(capture_session *cap_session, bool is_tempfile,
 }
 
 static const char *
-cf_open_error_message(int err, char *err_info)
+cf_open_error_message(const char* app_name, int err, char *err_info)
 {
     const char *errmsg;
     static char errmsg_errno[1024 + 1];
@@ -331,14 +319,14 @@ cf_open_error_message(int err, char *err_info)
             /* Seen only when opening a capture file for reading. */
             snprintf(errmsg_errno, sizeof(errmsg_errno),
                 "The file \"%%s\" isn't a capture file in a format %s understands.",
-                application_flavor_name_proper());
+                app_name);
             errmsg = errmsg_errno;
             break;
 
         case WTAP_ERR_UNSUPPORTED:
             snprintf(errmsg_errno, sizeof(errmsg_errno),
                 "The file \"%%s\" contains record data that %s doesn't support.\n"
-                "(%s)", application_flavor_name_proper(),
+                "(%s)", app_name,
                 err_info != NULL ? err_info : "no information supplied");
             g_free(err_info);
             errmsg = errmsg_errno;
@@ -347,7 +335,7 @@ cf_open_error_message(int err, char *err_info)
         case WTAP_ERR_ENCAP_PER_PACKET_UNSUPPORTED:
             snprintf(errmsg_errno, sizeof(errmsg_errno),
                 "The file \"%%s\" is a capture for a network type that %s doesn't support.",
-                application_flavor_name_proper());
+                app_name);
             errmsg = errmsg_errno;
             break;
 
@@ -480,9 +468,9 @@ capture_input_new_file(capture_session *cap_session, char *new_file)
             wtap_close(cap_session->wtap);
         }
 
-        cap_session->wtap = wtap_open_offline(new_file, WTAP_TYPE_AUTO, &err, &err_info, false);
+        cap_session->wtap = wtap_open_offline(new_file, WTAP_TYPE_AUTO, &err, &err_info, false, application_configuration_environment_prefix());
         if (!cap_session->wtap) {
-            err_msg = ws_strdup_printf(cf_open_error_message(err, err_info),
+            err_msg = ws_strdup_printf(cf_open_error_message(application_flavor_name_proper(), err, err_info),
                                       new_file);
             ws_warning("capture_input_new_file: %d (%s)", err, err_msg);
             g_free(err_msg);
@@ -513,7 +501,7 @@ capture_info_new_packets(int to_read, wtap *wth, info_data_t* cap_info)
 
     /*ws_warning("new packets: %u", to_read);*/
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     while (to_read > 0) {
         wtap_cleareof(wth);
         if (!wtap_read(wth, &rec, &err, &err_info, &data_offset)) {
@@ -540,7 +528,6 @@ capture_info_new_packets(int to_read, wtap *wth, info_data_t* cap_info)
             /*ws_warning("new packet");*/
             to_read--;
         }
-        wtap_rec_reset(&rec);
     }
     wtap_rec_cleanup(&rec);
 
@@ -624,10 +611,8 @@ capture_input_drops(capture_session *cap_session, uint32_t dropped, const char* 
 }
 
 
-/* Capture child told us that an error has occurred while starting/running
-   the capture.
-   The buffer we're handed has *two* null-terminated strings in it - a
-   primary message and a secondary message, one right after the other.
+/* Capture child told us that an error has occurred while starting or
+   running the capture.
    The secondary message might be a null string.
  */
 static void
@@ -663,7 +648,7 @@ capture_input_error(capture_session *cap_session _U_, char *error_msg,
 }
 
 /* Capture child told us that an error has occurred while parsing a
-   capture filter when starting/running the capture.
+   capture filter when starting or running the capture.
  */
 static void
 capture_input_cfilter_error(capture_session *cap_session, unsigned i,
@@ -708,6 +693,51 @@ capture_input_cfilter_error(capture_session *cap_session, unsigned i,
     g_free(safe_cfilter);
 
     /* the capture child will close the sync_pipe if required, nothing to do for now */
+}
+
+/* Capture child told us that a warning has occurred while starting or
+   running the capture.
+   The secondary message might be a null string.
+ */
+static void
+capture_input_warning(capture_session *cap_session _U_, char *warning_msg,
+                      char *secondary_warning_msg)
+{
+    char *safe_warning_msg;
+    char *safe_secondary_warning_msg;
+
+    /* The primary message might be an empty string, e.g. when the error was
+     * from extcap. (The extcap stderr is gathered when the session closes
+     * and printed in capture_input_closed below.) */
+    if (*warning_msg != '\0') {
+        ws_message("Warning message from child: \"%s\", \"%s\"", warning_msg, secondary_warning_msg);
+    }
+
+    ws_assert(cap_session->state == CAPTURE_PREPARING || cap_session->state == CAPTURE_RUNNING);
+
+    safe_warning_msg = simple_dialog_format_message(warning_msg);
+    if (secondary_warning_msg != NULL && *secondary_warning_msg != '\0') {
+        /* We have both primary and secondary messages. */
+        safe_secondary_warning_msg = simple_dialog_format_message(secondary_warning_msg);
+        simple_message_box(ESD_TYPE_WARN, NULL, safe_secondary_warning_msg,
+                           "%s", safe_warning_msg);
+        g_free(safe_secondary_warning_msg);
+    } else {
+        /* We have only a primary message. */
+        simple_message_box(ESD_TYPE_WARN, NULL, NULL, "%s", safe_warning_msg);
+    }
+    g_free(safe_warning_msg);
+
+    /* It's just a warning, so nothing more to do */
+}
+
+/* Capture child sent a toolbar control message.
+ */
+static void
+capture_input_toolbar_control(capture_session *cap_session,
+                              const char *ifname _U_)
+{
+    capture_callback_invoke(capture_cb_capture_toolbar, cap_session);
 }
 
 /* capture child closed its side of the pipe, do the required cleanup */
@@ -886,234 +916,6 @@ capture_input_closed(capture_session *cap_session, char *msg)
     }
 }
 
-if_stat_cache_t *
-capture_stat_start(capture_options *capture_opts)
-{
-    int stat_fd;
-    ws_process_id fork_child;
-    char *msg;
-    if_stat_cache_t *sc = g_new0(if_stat_cache_t, 1);
-    if_stat_cache_item_t *sc_item;
-    unsigned i;
-    interface_t *device;
-
-    sc->stat_fd = -1;
-    sc->fork_child = WS_INVALID_PID;
-
-    /* Fire up dumpcap. */
-    /*
-     * XXX - on systems with BPF, the number of BPF devices limits the
-     * number of devices on which you can capture simultaneously.
-     *
-     * This means that
-     *
-     *    1) this might fail if you run out of BPF devices
-     *
-     * and
-     *
-     *    2) opening every interface could leave too few BPF devices
-     *       for *other* programs.
-     *
-     * It also means the system could end up getting a lot of traffic
-     * that it has to pass through the networking stack and capture
-     * mechanism, so opening all the devices and presenting packet
-     * counts might not always be a good idea.
-     */
-    if (sync_interface_stats_open(&stat_fd, &fork_child, NULL, &msg, NULL) == 0) {
-        sc->stat_fd = stat_fd;
-        sc->fork_child = fork_child;
-
-        /* Initialize the cache */
-        for (i = 0; i < capture_opts->all_ifaces->len; i++) {
-            device = &g_array_index(capture_opts->all_ifaces, interface_t, i);
-            if (device->if_info.type != IF_PIPE && device->if_info.type != IF_EXTCAP) {
-                sc_item = g_new0(if_stat_cache_item_t, 1);
-                ws_assert(device->if_info.name);
-                sc_item->name = g_strdup(device->if_info.name);
-                sc->cache_list = g_list_prepend(sc->cache_list, sc_item);
-            }
-        }
-    } else {
-        ws_warning("%s", msg);
-        g_free(msg); /* XXX: should we display this to the user via the GUI? */
-    }
-    return sc;
-}
-
-if_stat_cache_t *
-capture_interface_stat_start(capture_options *capture_opts _U_, GList **if_list)
-{
-    int stat_fd;
-    ws_process_id fork_child;
-    char *msg;
-    if_stat_cache_t *sc = g_new0(if_stat_cache_t, 1);
-    if_stat_cache_item_t *sc_item;
-    char *data = NULL;
-
-    sc->stat_fd = -1;
-    sc->fork_child = WS_INVALID_PID;
-
-    /* Fire up dumpcap. */
-    /*
-     * XXX - on systems with BPF, the number of BPF devices limits the
-     * number of devices on which you can capture simultaneously.
-     *
-     * This means that
-     *
-     *    1) this might fail if you run out of BPF devices
-     *
-     * and
-     *
-     *    2) opening every interface could leave too few BPF devices
-     *       for *other* programs.
-     *
-     * It also means the system could end up getting a lot of traffic
-     * that it has to pass through the networking stack and capture
-     * mechanism, so opening all the devices and presenting packet
-     * counts might not always be a good idea.
-     */
-    /* XXX - We should use capture_opts to control whether we request
-     * the monitor_mode version of the supported link-types for interfaces.
-     */
-    int status;
-    iface_mon_enable(false);
-    status = sync_interface_stats_open(&stat_fd, &fork_child, &data, &msg, NULL);
-    iface_mon_enable(true);
-    /* In order to initialize the stat cache (below), we need to have
-     * filled in capture_opts->all_ifaces
-     *
-     * Note that the operation above can return a failed status but
-     * valid data, e.g. if dumpcap returns an interface list but none
-     * of them have permission to do a capture.
-     */
-    int err = 0;
-    char *err_msg = NULL;
-    *if_list = deserialize_interface_list(data, &err, &err_msg);
-    if (err != 0) {
-        ws_info("%s", err_msg);
-        g_free(err_msg);
-    }
-    if (status == 0) {
-        sc->stat_fd = stat_fd;
-        sc->fork_child = fork_child;
-
-        /* Initialize the cache */
-        for (GList *if_entry = *if_list; if_entry != NULL; if_entry = g_list_next(if_entry)) {
-            if_info_t *if_info = (if_info_t*)if_entry->data;
-            /* We just got this list from dumpcap so it shouldn't
-             * contain stdin, pipes, extcaps, or remote interfaces
-             * list. We could test if_info->type and the name to
-             * exclude those types from the cache anyway, though.
-             */
-            sc_item = g_new0(if_stat_cache_item_t, 1);
-            ws_assert(if_info->name);
-            sc_item->name = g_strdup(if_info->name);
-            sc->cache_list = g_list_prepend(sc->cache_list, sc_item);
-        }
-    } else if (status == WS_EXIT_NO_INTERFACES) {
-        /*
-            * No interfaces were found.  If that's not the
-            * result of an error when fetching the local
-            * interfaces, let the user know.
-            */
-        ws_info("%s", msg);
-        g_free(msg); /* XXX: should we display this to the user via the GUI? */
-    } else {
-        ws_warning("%s", msg);
-        g_free(msg); /* XXX: should we display this to the user via the GUI? */
-    }
-
-#ifdef HAVE_PCAP_REMOTE
-    *if_list = append_remote_list(*if_list);
-#endif
-
-    *if_list = append_extcap_interface_list(*if_list);
-    return sc;
-}
-
-#define MAX_STAT_LINE_LEN 500
-
-static void
-capture_stat_cache_update(if_stat_cache_t *sc)
-{
-    char stat_line[MAX_STAT_LINE_LEN] = "";
-    char **stat_parts;
-    GList *sc_entry;
-    if_stat_cache_item_t *sc_item;
-
-    if (!sc || sc->fork_child == WS_INVALID_PID) {
-        return;
-    }
-
-    while (sync_pipe_gets_nonblock(sc->stat_fd, stat_line, MAX_STAT_LINE_LEN) > 0) {
-        g_strstrip(stat_line);
-        stat_parts = g_strsplit(stat_line, "\t", 3);
-        if (stat_parts[0] == NULL || stat_parts[1] == NULL ||
-                stat_parts[2] == NULL) {
-            g_strfreev(stat_parts);
-            continue;
-        }
-        for (sc_entry = sc->cache_list; sc_entry != NULL; sc_entry = g_list_next(sc_entry)) {
-            sc_item = (if_stat_cache_item_t *)sc_entry->data;
-            if (strcmp(sc_item->name, stat_parts[0]) == 0) {
-                sc_item->ps.ps_recv = (u_int) strtoul(stat_parts[1], NULL, 10);
-                sc_item->ps.ps_drop = (u_int) strtoul(stat_parts[2], NULL, 10);
-            }
-        }
-        g_strfreev(stat_parts);
-    }
-}
-
-bool
-capture_stats(if_stat_cache_t *sc, char *ifname, struct pcap_stat *ps)
-{
-    GList *sc_entry;
-    if_stat_cache_item_t *sc_item;
-
-    if (!sc || sc->fork_child == WS_INVALID_PID || !ifname || !ps) {
-        return false;
-    }
-
-    capture_stat_cache_update(sc);
-    for (sc_entry = sc->cache_list; sc_entry != NULL; sc_entry = g_list_next(sc_entry)) {
-        sc_item = (if_stat_cache_item_t *)sc_entry->data;
-        if (strcmp(sc_item->name, ifname) == 0) {
-            memcpy(ps, &sc_item->ps, sizeof(struct pcap_stat));
-            return true;
-        }
-    }
-    return false;
-}
-
-void
-capture_stat_stop(if_stat_cache_t *sc)
-{
-    GList *sc_entry;
-    if_stat_cache_item_t *sc_item;
-    int ret;
-    char *msg;
-
-    if (!sc) {
-        return;
-    }
-
-    if (sc->fork_child != WS_INVALID_PID) {
-        ret = sync_interface_stats_close(&sc->stat_fd, &sc->fork_child, &msg);
-        if (ret == -1) {
-            /* XXX - report failure? */
-            g_free(msg);
-        }
-    }
-
-    for (sc_entry = sc->cache_list; sc_entry != NULL; sc_entry = g_list_next(sc_entry)) {
-        sc_item = (if_stat_cache_item_t *)sc_entry->data;
-        g_free(sc_item->name);
-        g_free(sc_item);
-    }
-    g_list_free(sc->cache_list);
-    g_free(sc);
-}
-
 /* Initialize a capture session for our callbacks. */
 void
 capture_input_init(capture_session *cap_session, capture_file *cf)
@@ -1121,6 +923,8 @@ capture_input_init(capture_session *cap_session, capture_file *cf)
     capture_session_init(cap_session, cf,
                          capture_input_new_file, capture_input_new_packets,
                          capture_input_drops, capture_input_error,
-                         capture_input_cfilter_error, capture_input_closed);
+                         capture_input_cfilter_error,
+                         capture_input_warning, capture_input_toolbar_control,
+                         capture_input_closed);
 }
 #endif /* HAVE_LIBPCAP */

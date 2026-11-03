@@ -17,6 +17,7 @@
 
 #include <epan/packet.h>
 #include <epan/capture_dissectors.h>
+#include <wsutil/bits_ctz.h>
 #include <wsutil/pint.h>
 #include <epan/crc32-tvb.h>
 #include <wsutil/802_11-utils.h>
@@ -356,7 +357,7 @@ static int hf_radiotap_he_mu_chan2_rus_2_unknown;
 static int hf_radiotap_he_mu_chan2_rus_3;
 static int hf_radiotap_he_mu_chan2_rus_3_unknown;
 
-/* 0-length-psdu */
+/* 0-length-psdu / uncaptured */
 static int hf_radiotap_0_length_psdu_type;
 
 /* L-SIG */
@@ -713,7 +714,7 @@ static int radiotap_fcs_handling = USE_FCS_BIT;
 #define IEEE80211_RADIOTAP_F_SHORTGI	0x80
 #define IEEE80211_RADIOTAP_XCHANNEL	18
 
-/* Official specifcation:
+/* Official specification:
  *
  * http://www.radiotap.org/
  *
@@ -1370,7 +1371,7 @@ dissect_radiotap_he_info(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
 	uint8_t ltf_symbol_size = 0;
 
 	/*
-	 * This is set differetly for each packet, depending on
+	 * This is set differently for each packet, depending on
 	 * which values in data3 are known.  It thus will not
 	 * work if it's static.
 	 */
@@ -1625,7 +1626,7 @@ not_captured_custom(char *result, uint32_t value _U_)
 static void
 he_sig_b_symbols_custom(char *result, uint32_t value)
 {
-	snprintf(result, ITEM_LABEL_LENGTH, "%d", value+1);
+	snprintf(result, ITEM_LABEL_LENGTH, "%u", value+1);
 }
 
 static void
@@ -1658,7 +1659,7 @@ dissect_radiotap_he_mu_info(tvbuff_t *tvb, packet_info *pinfo _U_,
 	uint16_t flags2;
 
 	/*
-	 * This is set differetly for each packet, depending on
+	 * This is set differently for each packet, depending on
 	 * which values in flags1 are known.  It thus will not
 	 * work if it's static.
 	 */
@@ -1893,14 +1894,14 @@ dissect_radiotap_he_mu_info(tvbuff_t *tvb, packet_info *pinfo _U_,
 
 static const range_string zero_length_psdu_rsvals[] = {
 	{ 0, 0, "sounding PPDU" },
-	{ 1, 1, "reserved" },
+	{ 1, 1, "data not captured" },
 	{ 2, 254, "reserved" },
 	{ 255, 255, "vendor-specific" },
 	{ 0, 0, NULL }
 };
 
 static void
-dissect_radiotap_0_length_psdu(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+dissect_radiotap_0_length_psdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	int offset, struct ieee_802_11_phdr *phdr)
 {
 	proto_tree *zero_len_tree = NULL;
@@ -1917,16 +1918,22 @@ dissect_radiotap_0_length_psdu(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 	case 0:
 		phdr->has_zero_length_psdu_type = true;
 		phdr->zero_length_psdu_type = PHDR_802_11_SOUNDING_PSDU;
+		col_set_str(pinfo->cinfo, COL_INFO, "sounding PPDU");
 		break;
 
 	case 1:
 		phdr->has_zero_length_psdu_type = true;
 		phdr->zero_length_psdu_type = PHDR_802_11_DATA_NOT_CAPTURED;
+		col_set_str(pinfo->cinfo, COL_INFO, "PSDU not captured");
 		break;
 
 	case 0xff:
 		phdr->has_zero_length_psdu_type = true;
 		phdr->zero_length_psdu_type = PHDR_802_11_0_LENGTH_PSDU_VENDOR_SPECIFIC;
+		/* fall through */
+	default:
+		col_add_fstr(pinfo->cinfo, COL_INFO, "PSDU not captured (%s)",
+			     rval_to_str_const(psdu_type, zero_length_psdu_rsvals, ""));
 		break;
 	}
 }
@@ -1946,21 +1953,26 @@ static int * const l_sig_data2_headers[] = {
 
 static void
 dissect_radiotap_l_sig(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-	int offset)
+	int offset, int *l_sig_len)
 {
 	proto_tree *l_sig_tree = NULL;
+	uint64_t data1, data2;
 
 	l_sig_tree = proto_tree_add_subtree(tree, tvb, offset, 4,
 		ett_radiotap_l_sig, NULL, "L-SIG");
 
-	proto_tree_add_bitmask(l_sig_tree, tvb, offset,
+	proto_tree_add_bitmask_ret_uint64(l_sig_tree, tvb, offset,
 		hf_radiotap_l_sig_data_1, ett_radiotap_l_sig_data_1,
-		l_sig_data1_headers, ENC_LITTLE_ENDIAN);
+		l_sig_data1_headers, ENC_LITTLE_ENDIAN, &data1);
 	offset += 2;
 
-	proto_tree_add_bitmask(l_sig_tree, tvb, offset,
-		hf_radiotap_l_sig_data_2, ett_radiotap_l_sig_data_2,
-		l_sig_data2_headers, ENC_LITTLE_ENDIAN);
+	proto_tree_add_bitmask_ret_uint64(l_sig_tree, tvb, offset,
+			hf_radiotap_l_sig_data_2, ett_radiotap_l_sig_data_2,
+			l_sig_data2_headers, ENC_LITTLE_ENDIAN, &data2);
+
+	if (data1 & IEEE80211_RADIOTAP_L_SIG_LENGTH_KNOWN)
+		*l_sig_len = (data2 & IEEE80211_RADIOTAP_L_SIG_LENGTH_MASK) >>
+				ws_ctz(IEEE80211_RADIOTAP_L_SIG_LENGTH_MASK);
 }
 
 static int * const usig_common_headers[] = {
@@ -2335,7 +2347,8 @@ dissect_radiotap_eht(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	uint32_t known = 0;
 	uint32_t ru_alloc_1_known;
 	uint32_t ru_x_alloc;
-	uint16_t len = tvb_get_uint16(tvb, offset - 2, ENC_LITTLE_ENDIAN);
+	/* This is signed so that the len > 0 check below works. */
+	int len = tvb_get_uint16(tvb, offset - 2, ENC_LITTLE_ENDIAN);
 	proto_item *data = NULL, *item = NULL;
 	proto_tree *sub_tree = NULL, *user_info_tree = NULL;
 	bool data_ru_mru_size_known = false;
@@ -3252,7 +3265,7 @@ dissect_radiotap_db_antnoise(tvbuff_t *tvb, packet_info *pinfo _U_,
 static void
 dissect_radiotap_rx_flags(tvbuff_t *tvb, packet_info *pinfo _U_,
 	proto_tree *tree, int offset, proto_item **hdr_fcs_ti,
-	int *hdr_fcs_offset, int *sent_fcs)
+	int *hdr_fcs_offset, uint32_t *sent_fcs, bool *bad_plcp)
 {
 	if (radiotap_bit14_fcs) {
 		if (tree) {
@@ -3267,10 +3280,12 @@ dissect_radiotap_rx_flags(tvbuff_t *tvb, packet_info *pinfo _U_,
 			&hf_radiotap_rxflags_badplcp,
 			NULL
 		};
+		uint64_t flags;
 
-		proto_tree_add_bitmask(tree, tvb, offset,
+		proto_tree_add_bitmask_ret_uint64(tree, tvb, offset,
 				hf_radiotap_rxflags, ett_radiotap_rxflags,
-				rxflags, ENC_LITTLE_ENDIAN);
+				rxflags, ENC_LITTLE_ENDIAN, &flags);
+		*bad_plcp = flags & IEEE80211_RADIOTAP_F_RX_BADPLCP;
 	}
 }
 
@@ -3456,6 +3471,8 @@ dissect_radiotap(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* u
 	proto_item *hdr_fcs_ti        = NULL;
 	int         hdr_fcs_offset    = 0;
 	uint32_t    sent_fcs          = 0;
+	bool        bad_plcp          = false;
+	int         l_sig_len         = -1;
 	uint32_t    calc_fcs;
 	int         err               = -ENOENT;
 	void       *data;
@@ -3837,7 +3854,8 @@ dissect_radiotap(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* u
 		case IEEE80211_RADIOTAP_RX_FLAGS:
 			dissect_radiotap_rx_flags(tvb, pinfo, item_tree,
 						offset, &hdr_fcs_ti,
-						&hdr_fcs_offset, &sent_fcs);
+						&hdr_fcs_offset, &sent_fcs,
+						&bad_plcp);
 			break;
 
 		case IEEE80211_RADIOTAP_TX_FLAGS:
@@ -4070,8 +4088,8 @@ dissect_radiotap(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* u
 			uint8_t	    vht_flags, bw, mcs_nss;
 			unsigned	    bandwidth	 = 0;
 			unsigned	    gi_length	 = 0;
-			unsigned	    nss		 = 0;
-			unsigned	    mcs		 = 0;
+			unsigned	    nss;
+			unsigned	    mcs;
 			bool        can_calculate_rate;
 			unsigned	    user;
 
@@ -4308,7 +4326,7 @@ dissect_radiotap(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* u
 			zero_length_psdu = true;
 			break;
 		case IEEE80211_RADIOTAP_L_SIG:
-			dissect_radiotap_l_sig(tvb, pinfo, item_tree, offset);
+			dissect_radiotap_l_sig(tvb, pinfo, item_tree, offset, &l_sig_len);
 			break;
 		case IEEE80211_RADIOTAP_TLVS:
 			/* used for padding */
@@ -4361,6 +4379,10 @@ dissect_radiotap(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* u
 	 * Is there any more there?
 	 */
 	if (zero_length_psdu) {
+		if (l_sig_len >= 0)
+			col_append_fstr(pinfo->cinfo, COL_INFO, ", L-SIG length %d", l_sig_len);
+		if (bad_plcp)
+			col_append_str(pinfo->cinfo, COL_INFO, ", bad PLCP");
 		return tvb_captured_length(tvb);
 	}
 

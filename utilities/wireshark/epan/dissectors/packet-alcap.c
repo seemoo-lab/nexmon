@@ -177,9 +177,6 @@ static const value_string connection_priority[] = {
     { 0, NULL }
 };
 
-static const char *alcap_proto_name = "AAL type 2 signalling protocol (Q.2630)";
-static const char *alcap_proto_name_short = "ALCAP";
-
 static const value_string all_paths_vals[] = {
     { 0, "All Paths in association" },
     { 0, NULL }
@@ -435,9 +432,7 @@ static const char* dissect_fields_cau(packet_info* pinfo, tvbuff_t *tvb, proto_t
 
     msg_info->release_cause = tvb_get_uint8(tvb, offset+1) & 0x7f;
 
-    coding = tvb_get_uint8(tvb, offset) & 0x3;
-
-    proto_tree_add_item(tree, hf_alcap_cau_coding, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_alcap_cau_coding, tvb, offset, 1, ENC_BIG_ENDIAN, &coding);
 
     if (coding == 0) {
         pi = proto_tree_add_item(tree, hf_alcap_cau_value_itu, tvb, offset+1, 1, ENC_BIG_ENDIAN);
@@ -1173,16 +1168,14 @@ static const char* dissect_fields_sut(packet_info* pinfo, tvbuff_t *tvb, proto_t
      *
      * 7.4.18 Served User Transport
      */
-    unsigned sut_len;
+    uint8_t sut_len;
 
     if (len < 2) {
         proto_tree_add_expert(tree, pinfo, &ei_alcap_parameter_field_bad_length, tvb, offset, len);
         return NULL;
     }
 
-    sut_len = tvb_get_uint8(tvb,offset);
-
-    proto_tree_add_item(tree, hf_alcap_sut_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_alcap_sut_len, tvb, offset, 1, ENC_BIG_ENDIAN, &sut_len);
     proto_tree_add_item(tree, hf_alcap_sut, tvb, offset, sut_len, ENC_NA);
 
     return NULL;
@@ -1321,7 +1314,7 @@ static int dissect_alcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     proto_item* pi;
     proto_tree* compat_tree;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, alcap_proto_name_short);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ALCAP");
 
     if (tree) {
         proto_item *alcap_item = proto_tree_add_item(tree, proto_alcap, tvb, 0, -1, ENC_NA);
@@ -2384,7 +2377,7 @@ proto_register_alcap(void)
         { &ei_alcap_response, { "alcap.response", PI_RESPONSE_CODE, PI_NOTE, "Response", EXPFILL }},
     };
 
-    proto_alcap = proto_register_protocol(alcap_proto_name, alcap_proto_name_short, "alcap");
+    proto_alcap = proto_register_protocol("AAL type 2 signalling protocol (Q.2630)", "ALCAP", "alcap");
 
     alcap_handle = register_dissector("alcap", dissect_alcap, proto_alcap);
 

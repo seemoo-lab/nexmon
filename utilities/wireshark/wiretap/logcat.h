@@ -18,31 +18,46 @@
 /* maximum size of a message payload in a log entry */
 #define LOGGER_ENTRY_MAX_PAYLOAD 4076
 
+/**
+ * @brief Version 1 Android logger entry header, preceding the log message payload.
+ */
 struct logger_entry {
-    uint16_t len;   /* length of the payload */
-    uint16_t __pad; /* no matter what, we get 2 bytes of padding */
-    int32_t  pid;   /* generating process's pid */
-    int32_t  tid;   /* generating process's tid */
-    int32_t  sec;   /* seconds since Epoch */
-    int32_t  nsec;  /* nanoseconds */
-/*    char    msg[0]; *//* the entry's payload */
+    uint16_t len;    /**< Length in bytes of the message payload that follows this header. */
+    uint16_t __pad;  /**< Explicit padding to maintain 4-byte alignment; value is undefined. */
+    int32_t  pid;    /**< Process ID of the process that generated this log entry. */
+    int32_t  tid;    /**< Thread ID of the thread that generated this log entry. */
+    int32_t  sec;    /**< Timestamp seconds component, seconds since the Unix epoch. */
+    int32_t  nsec;   /**< Timestamp nanoseconds component. */
+/*  char     msg[0]; */ /**< Variable-length message payload immediately following this header. */
 };
 
+/**
+ * @brief Version 2/3 Android logger entry header, extending v1 with a self-describing size field and an ID union.
+ */
 struct logger_entry_v2 {
-    uint16_t len;    /* length of the payload */
-    uint16_t hdr_size; /* sizeof(struct logger_entry_v2) */
-    int32_t  pid;    /* generating process's pid */
-    int32_t  tid;    /* generating process's tid */
-    int32_t  sec;    /* seconds since Epoch */
-    int32_t  nsec;   /* nanoseconds */
+    uint16_t len;       /**< Length in bytes of the message payload that follows this header. */
+    uint16_t hdr_size;  /**< Size of this header structure in bytes, used to distinguish v2/v3 from v1. */
+    int32_t  pid;       /**< Process ID of the process that generated this log entry. */
+    int32_t  tid;       /**< Thread ID of the thread that generated this log entry. */
+    int32_t  sec;       /**< Timestamp seconds component, seconds since the Unix epoch. */
+    int32_t  nsec;      /**< Timestamp nanoseconds component. */
     union {
-                        /* v1: not present */
-        uint32_t euid;  /* v2: effective UID of logger */
-        uint32_t lid;   /* v3: log id of the payload */
-    } id;
-/*    char    msg[0]; *//* the entry's payload */
+        uint32_t euid;  /**< v2: Effective UID of the process that wrote this log entry. */
+        uint32_t lid;   /**< v3: Log buffer ID identifying the log stream (e.g., main, radio, events). */
+    } id;               /**< Identifier field whose interpretation depends on the header version. */
+/*  char     msg[0]; */ /**< Variable-length message payload immediately following this header. */
 };
 
+/**
+ * @brief Opens a logcat capture file for reading.
+ *
+ * This function initializes the wtap structure to read from a JSON log file.
+ *
+ * @param wth Pointer to the wtap structure that will be initialized.
+ * @param err Pointer to an integer where error codes can be stored.
+ * @param err_info Pointer to a string where error information can be stored.
+ * @return A value indicating the success or failure of the operation.
+ */
 wtap_open_return_val  logcat_open(wtap *wth, int *err, char **err_info);
 
 /**

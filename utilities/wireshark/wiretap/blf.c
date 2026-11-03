@@ -16,7 +16,7 @@
   * The repo above includes multiple examples files as well.
   */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_WIRETAP
 
 #include "blf.h"
@@ -36,6 +36,8 @@
 #include <wsutil/strtoi.h>
 #include <wsutil/time_util.h>
 #include <wsutil/zlib_compat.h>
+#include <wsutil/pint.h>
+#include <wsutil/ws_assert.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -97,6 +99,7 @@ typedef struct blf_data {
     int64_t     start_of_last_obj;
     int64_t     current_real_seek_pos;
     uint64_t    start_offset_ns;
+    uint64_t    end_offset_ns;
 
     GArray     *log_containers;
 
@@ -148,32 +151,37 @@ blf_calc_key_value(int pkt_encap, uint16_t channel, uint16_t hwchannel) {
     return (int64_t)(((uint64_t)pkt_encap << 32) | ((uint64_t)hwchannel << 16) | (uint64_t)channel);
 }
 
-/** Return the Epoch ns time of the capture start
+static time_t
+blf_date_to_sec(const blf_date_t *date) {
+    struct tm timestamp;
+    timestamp.tm_year = (date->year > 1970) ? date->year - 1900 : 70;
+    timestamp.tm_mon = date->month - 1;
+    timestamp.tm_mday = date->day;
+    timestamp.tm_hour = date->hour;
+    timestamp.tm_min = date->mins;
+    timestamp.tm_sec = date->sec;
+    timestamp.tm_isdst = -1;
+
+    return mktime(&timestamp);
+}
+
+/** Return the Epoch ns time of the blf date
  *
  * This is not intended to fully validate the date and time,
  * but just to check if the values are plausible.
  */
 static uint64_t
-blf_get_start_offset_ns(const blf_date_t* start_date) {
-    struct tm timestamp;
-    time_t start_offset_s;
-
-    if (start_date != NULL &&
-        (start_date->month >= 1 && start_date->month <= 12) &&
-        (start_date->day >= 1 && start_date->day <= 31) &&
-        (start_date->hour <= 23) && (start_date->mins <= 59) &&
-        (start_date->sec <= 61)  /* Apparently can be up to 61 on certain systems */
+blf_data_to_ns(const blf_date_t *date) {
+    if (date != NULL &&
+        (date->year < 2484) &&  /* max_uint64 / ns_per_year */
+        (date->month >= 1 && date->month <= 12) &&
+        (date->day >= 1 && date->day <= 31) &&
+        (date->hour <= 23) && (date->mins <= 59) &&
+        (date->sec <= 61)  /* Apparently can be up to 61 on certain systems */
         ) { /* Not checking if milliseconds are actually less than 1000 */
-        timestamp.tm_year = (start_date->year > 1970) ? start_date->year - 1900 : 70;
-        timestamp.tm_mon = start_date->month - 1;
-        timestamp.tm_mday = start_date->day;
-        timestamp.tm_hour = start_date->hour;
-        timestamp.tm_min = start_date->mins;
-        timestamp.tm_sec = start_date->sec;
-        timestamp.tm_isdst = -1;
-        start_offset_s = mktime(&timestamp);
-        if (start_offset_s >= 0) {
-            return (1000 * 1000 * (start_date->ms + (1000 * (uint64_t)start_offset_s)));
+        time_t offset_s = blf_date_to_sec(date);
+        if (offset_s >= 0) {
+            return (1000 * 1000 * (date->ms + (1000 * (uint64_t)offset_s)));
         }
     }
 
@@ -540,6 +548,32 @@ fix_endianness_blf_canfderror64(blf_canfderror64_t *header) {
 }
 
 static void
+fix_endianness_blf_canxlchannelframe(blf_canxlchannelframe_t *header) {
+    header->frameLength_in_ns = GUINT32_FROM_LE(header->frameLength_in_ns);
+    header->bitCount = GUINT16_FROM_LE(header->bitCount);
+    header->res2 = GUINT16_FROM_LE(header->res2);
+    header->frameIdentifier = GUINT32_FROM_LE(header->frameIdentifier);
+    header->dlc = GUINT16_FROM_LE(header->dlc);
+    header->dataLength = GUINT16_FROM_LE(header->dataLength);
+    header->stuffBitCount = GUINT16_FROM_LE(header->stuffBitCount);
+    header->prefaceCRC = GUINT16_FROM_LE(header->prefaceCRC);
+    header->acceptanceField = GUINT32_FROM_LE(header->acceptanceField);
+    header->res5 = GUINT16_FROM_LE(header->res5);
+    header->crc = GUINT32_FROM_LE(header->crc);
+    header->timeOffsetBrsNs = GUINT32_FROM_LE(header->timeOffsetBrsNs);
+    header->timeOffsetCrcDelNs = GUINT32_FROM_LE(header->timeOffsetCrcDelNs);
+    header->flags = GUINT32_FROM_LE(header->flags);
+    header->reserved = GUINT32_FROM_LE(header->reserved);
+    header->arbitrationDataBitTimingConfig = GUINT64_FROM_LE(header->arbitrationDataBitTimingConfig);
+    header->arbitrationDataHwChannelSettings = GUINT64_FROM_LE(header->arbitrationDataHwChannelSettings);
+    header->fdPhaseBitTimingConfig = GUINT64_FROM_LE(header->fdPhaseBitTimingConfig);
+    header->fdPhaseHwChannelSettings = GUINT64_FROM_LE(header->fdPhaseHwChannelSettings);
+    header->xlPhaseBitTimingConfig = GUINT64_FROM_LE(header->xlPhaseBitTimingConfig);
+    header->xlPhaseHwChannelSettings = GUINT64_FROM_LE(header->xlPhaseHwChannelSettings);
+}
+
+
+static void
 fix_endianness_blf_flexraydata(blf_flexraydata_t *header) {
     header->channel = GUINT16_FROM_LE(header->channel);
     header->messageId = GUINT16_FROM_LE(header->messageId);
@@ -761,12 +795,11 @@ blf_decompress_zlib(uint8_t *compressed_data, unsigned compressed_len, uint64_t 
      * on 32-bit platforms. */
     uint64_t total_out = 0;
 
-    /* blf_pull_logcontainer_into_memory already checks for 0 */
-    ws_assert(decompressed_len != 0);
-
-    /* blf_pull_logcontainer_into_memory already checks for 0 by
-     * checking the return value of g_[try_]malloc. */
-    ws_assert(compressed_len != 0);
+    if (decompressed_len == 0 || compressed_len == 0) {
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = ws_strdup("blf: compressed or decompressed container has 0 length");
+        return NULL;
+    }
 
     /* Typical compression ratios are between 2:1-5:1; the theoretical max
      * is somewhat above 1030:1; depending on what's being compressed, that
@@ -781,10 +814,10 @@ blf_decompress_zlib(uint8_t *compressed_data, unsigned compressed_len, uint64_t 
         return NULL;
     } else if (ratio > 5) {
         if (ckd_mul(&bufsize, compressed_len, 5)) {
-            bufsize = UINT_MAX;
+            bufsize = INT32_MAX;
         }
     } else {
-        bufsize = (unsigned)MIN(decompressed_len, UINT_MAX);
+        bufsize = (unsigned)MIN(decompressed_len, INT32_MAX);
     }
 
     unsigned char *buf = g_try_malloc(bufsize);
@@ -797,6 +830,7 @@ blf_decompress_zlib(uint8_t *compressed_data, unsigned compressed_len, uint64_t 
 
     infstream.avail_in  = compressed_len;
     infstream.next_in   = compressed_data;
+    infstream.avail_out = bufsize;
 
     /* the actual DE-compression work. */
     if (Z_OK != ZLIB_PREFIX(inflateInit)(&infstream)) {
@@ -822,7 +856,6 @@ blf_decompress_zlib(uint8_t *compressed_data, unsigned compressed_len, uint64_t 
 
 
     do {
-        infstream.avail_out = bufsize;
         infstream.next_out  = &buf[total_out];
         ret = ZLIB_PREFIX(inflate)(&infstream, Z_NO_FLUSH);
 
@@ -839,10 +872,11 @@ blf_decompress_zlib(uint8_t *compressed_data, unsigned compressed_len, uint64_t 
             }
             if (infstream.avail_out == 0) {
                 /* Increase the total buffer */
-                bufsize = (uint32_t)MIN(total_out, UINT32_MAX);
+                bufsize = (uint32_t)MIN(total_out, INT32_MAX);
                 bufsize = (uint32_t)MIN(decompressed_len - total_out, bufsize);
 
                 buf = (uint8_t*)g_realloc(buf, total_out + bufsize);
+                infstream.avail_out = bufsize;
             }
             continue;
 
@@ -977,11 +1011,9 @@ blf_pull_logcontainer_into_memory(blf_params_t *params, blf_log_container_t *con
         return false;
     }
     if (container->infile_length < container->infile_data_start - (uint64_t)container->infile_start_pos) {
-        /*
-         * XXX - does this represent a bug (WTAP_ERR_INTERNAL) or a
-         * malformed file (WTAP_ERR_BAD_FILE)?
-         */
-        *err = WTAP_ERR_INTERNAL;
+        /* The object length comes from the file, and is only checked
+         * against the block header length, not the container header. */
+        *err = WTAP_ERR_BAD_FILE;
         *err_info = ws_strdup_printf("blf_pull_logcontainer_into_memory: container.infile_length (%" PRIu64 ") < (container.infile_data_start (%" PRIu64 ") - container.infile_start_pos (%" PRId64 ")) = %" PRIu64,
             container->infile_length,
             container->infile_data_start, container->infile_start_pos,
@@ -1040,11 +1072,13 @@ blf_pull_logcontainer_into_memory(blf_params_t *params, blf_log_container_t *con
 
     } else if (container->compression_method == BLF_COMPRESSION_ZLIB) {
 #ifdef USE_ZLIB_OR_ZLIBNG
+        if (data_length == 0) {
+            *err = WTAP_ERR_BAD_FILE;
+            *err_info = ws_strdup("blf_pull_logcontainer_into_memory: compressed container has 0 length");
+            return false;
+        }
         unsigned char *compressed_data = g_try_malloc((size_t)data_length);
         if (compressed_data == NULL) {
-            /* g_try_malloc returns NULL if data_length is 0. Can data_length
-             * be zero, and in a way that we should just skip it, as above if
-             * the decompressed length is 0? */
             *err = WTAP_ERR_INTERNAL;
             *err_info = ws_strdup("blf_pull_logcontainer_into_memory: cannot allocate memory");
             return false;
@@ -1424,21 +1458,18 @@ blf_init_rec(blf_params_t *params, uint32_t flags, uint64_t object_timestamp, in
     wtap_setup_packet_rec(params->rec, pkt_encap);
     params->rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
     params->rec->presence_flags = WTAP_HAS_CAP_LEN | WTAP_HAS_INTERFACE_ID;
-    params->rec->ts_rel_cap_valid = false;
     switch (flags) {
     case BLF_TIMESTAMP_RESOLUTION_10US:
         params->rec->presence_flags |= WTAP_HAS_TS;
         params->rec->tsprec = WTAP_TSPREC_10_USEC;
         object_timestamp *= 10000;
         object_timestamp += params->blf_data->start_offset_ns;
-        params->rec->ts_rel_cap_valid = true;
         break;
 
     case BLF_TIMESTAMP_RESOLUTION_1NS:
         params->rec->presence_flags |= WTAP_HAS_TS;
         params->rec->tsprec = WTAP_TSPREC_NSEC;
         object_timestamp += params->blf_data->start_offset_ns;
-        params->rec->ts_rel_cap_valid = true;
         break;
 
     default:
@@ -1461,11 +1492,6 @@ blf_init_rec(blf_params_t *params, uint32_t flags, uint64_t object_timestamp, in
     params->rec->rec_header.packet_header.caplen = caplen;
     params->rec->rec_header.packet_header.len = len;
 
-    nstime_t tmp_ts;
-    tmp_ts.secs = params->blf_data->start_offset_ns / (1000 * 1000 * 1000);
-    tmp_ts.nsecs = params->blf_data->start_offset_ns % (1000 * 1000 * 1000);
-    nstime_delta(&params->rec->ts_rel_cap, &params->rec->ts, &tmp_ts);
-
     params->rec->rec_header.packet_header.interface_id = blf_lookup_interface(params, pkt_encap, channel, hwchannel, NULL);
 
     /* TODO: before we had to remove comments and verdict here to not leak memory but APIs have changed ... */
@@ -1473,7 +1499,7 @@ blf_init_rec(blf_params_t *params, uint32_t flags, uint64_t object_timestamp, in
 
 static void
 blf_add_direction_option(blf_params_t *params, uint16_t direction) {
-    uint32_t tmp = PACK_FLAGS_DIRECTION_INBOUND; /* dont care */
+    uint32_t tmp = PACK_FLAGS_DIRECTION_INBOUND; /* don't care */
 
     switch (direction) {
     case BLF_DIR_RX:
@@ -1609,7 +1635,7 @@ blf_read_ethernetframe(blf_params_t *params, int *err, char **err_info, int64_t 
 
 static bool
 blf_read_ethernetframe_ext(blf_params_t *params, int *err, char **err_info, int64_t block_start,int64_t data_start,
-                            int64_t object_length, uint32_t flags, uint64_t object_timestamp, gboolean error) {
+                            int64_t object_length, uint32_t flags, uint64_t object_timestamp, bool error) {
     blf_ethernetframeheader_ex_t ethheader;
 
     if (object_length < (data_start - block_start) + (int) sizeof(blf_ethernetframeheader_ex_t)) {
@@ -1793,7 +1819,7 @@ blf_read_canmessage(blf_params_t *params, int *err, char **err_info, int64_t blo
 
     payload_length = canheader.dlc;
     if (payload_length > 8) {
-        ws_debug("regular CAN tries more than 8 bytes? Cutting to 8!");
+        ws_debug("regular CAN tries more than 8 bytes? Cutting to 8.");
         payload_length = 8;
     }
 
@@ -1866,7 +1892,7 @@ blf_read_canfdmessage(blf_params_t *params, int *err, char **err_info, int64_t b
     }
 
     if (payload_length > canheader.validDataBytes) {
-        ws_debug("shortening canfd payload because valid data bytes shorter!");
+        ws_debug("shortening canfd payload because valid data bytes shorter.");
         payload_length = canheader.validDataBytes;
     }
 
@@ -1880,7 +1906,7 @@ blf_read_canfdmessage(blf_params_t *params, int *err, char **err_info, int64_t b
     payload_length_valid = payload_length;
 
     if (payload_length_valid > object_length - (data_start - block_start) + sizeof(canheader)) {
-        ws_debug("shortening can payload because buffer is too short!");
+        ws_debug("shortening can payload because buffer is too short.");
         payload_length_valid = (uint8_t)(object_length - (data_start - block_start));
     }
 
@@ -1931,7 +1957,7 @@ blf_read_canfdmessage64(blf_params_t *params, int *err, char **err_info, int64_t
     }
 
     if (payload_length > canheader.validDataBytes) {
-        ws_debug("shortening canfd payload because valid data bytes shorter!");
+        ws_debug("shortening canfd payload because valid data bytes shorter.");
         payload_length = canheader.validDataBytes;
     }
 
@@ -1945,7 +1971,7 @@ blf_read_canfdmessage64(blf_params_t *params, int *err, char **err_info, int64_t
     payload_length_valid = payload_length;
 
     if (payload_length_valid > object_length - (data_start - block_start)) {
-        ws_debug("shortening can payload because buffer is too short!");
+        ws_debug("shortening can payload because buffer is too short.");
         payload_length_valid = (uint8_t)(object_length - (data_start - block_start));
     }
 
@@ -2170,6 +2196,114 @@ blf_read_canfderror64(blf_params_t *params, int *err, char **err_info, int64_t b
 }
 
 static bool
+blf_read_canxlchannelframe(blf_params_t *params, int *err, char **err_info, int64_t block_start, int64_t data_start, int64_t object_length, uint32_t flags, uint64_t object_timestamp) {
+    blf_canxlchannelframe_t canxlheader;
+
+    if (object_length < (data_start - block_start) + (int)sizeof(canxlheader)) {
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = ws_strdup("blf: CAN_XL_CHANNEL_HEADER: not enough bytes for canxlchannelframe header in object");
+        ws_debug("not enough bytes for canxlchannelframe header in object");
+        return false;
+    }
+
+    if (!blf_read_bytes(params, data_start, &canxlheader, sizeof(canxlheader), err, err_info)) {
+        ws_debug("not enough bytes for canxlchannelframe header in file");
+        return false;
+    }
+    fix_endianness_blf_canxlchannelframe(&canxlheader);
+
+    uint16_t payload_length = canxlheader.dataLength;
+    bool is_canxl = canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_XLF;
+
+    if (is_canxl) {
+        uint16_t canid = canxlheader.frameIdentifier & CAN_SFF_MASK;
+
+        uint8_t canxl_flags = 0;
+        if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_XLF) == BLF_CANXLCHANNELFRAME_FLAG_XLF) {
+            canxl_flags |= CANXL_XLF;
+        }
+
+        if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_SEC) == BLF_CANXLCHANNELFRAME_FLAG_SEC) {
+            canxl_flags |= CANXL_SEC;
+        }
+
+        if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_RRS) == BLF_CANXLCHANNELFRAME_FLAG_RRS) {
+            canxl_flags |= CANXL_RRS;
+        }
+
+        uint8_t  tmpbuf[12] = { 0 };
+        tmpbuf[1] = canxlheader.virtualControllerAreaNetChannelID;
+        phtonu16(tmpbuf + 2, canid);
+        tmpbuf[4] = canxl_flags;
+        tmpbuf[5] = canxlheader.serviceDataUnitType;
+        phtoleu16(tmpbuf + 6, payload_length);
+        phtoleu32(tmpbuf + 8, canxlheader.acceptanceField);
+
+        if (object_length < (data_start - block_start) + (int)sizeof(canxlheader) + payload_length) {
+            *err = WTAP_ERR_BAD_FILE;
+            *err_info = ws_strdup("blf: CAN_XL_CHANNEL_HEADER: not enough bytes for canxl payload in object");
+            ws_debug("not enough bytes for canxl payload in object");
+            return false;
+        }
+
+        ws_buffer_assure_space(&params->rec->data, sizeof(tmpbuf) + payload_length);
+        ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
+
+        if (payload_length > 0 && !blf_read_bytes(params, data_start + sizeof(blf_canxlchannelframe_t), ws_buffer_end_ptr(&params->rec->data), payload_length, err, err_info)) {
+            ws_debug("copying canxl payload failed");
+            return false;
+        }
+        ws_buffer_increase_length(&params->rec->data, payload_length);
+
+        blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_SOCKETCAN, canxlheader.channel, UINT16_MAX, sizeof(tmpbuf) + payload_length, sizeof(tmpbuf) + payload_length);
+    } else {
+        // Support for CAN or CAN-FD in CAN-XL Channel Frame format is experimental as of 2025!
+        // If you have samples traces, please create a ticket and attach them to it: https://gitlab.com/wireshark/wireshark/-/issues
+
+        bool canfd = canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_FDF;
+        uint8_t canfd_flags = 0;
+
+        if (canfd) {
+            if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_BRS) == BLF_CANXLCHANNELFRAME_FLAG_BRS) {
+                canfd_flags |= CANFD_BRS;
+            }
+            if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_ESI) == BLF_CANXLCHANNELFRAME_FLAG_ESI) {
+                canfd_flags |= CANFD_ESI;
+            }
+            if ((canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_FDF) == BLF_CANXLCHANNELFRAME_FLAG_FDF) {
+                canfd_flags |= CANFD_FDF;
+            }
+        } else {
+            if (canxlheader.dlc > 8) {
+                ws_debug("Regular CAN should not have DLC > 8.");
+            }
+
+            canfd_flags = 0;
+        }
+
+        uint32_t canid = canxlheader.frameIdentifier;
+
+        /* Unclear how to reconstruct the EFF Flag. Let's make sure, we set it if the ID is more than 11 bits */
+        if ((canid & CAN_EFF_MASK) > CAN_SFF_MASK) {
+            canid |= CAN_EFF_FLAG;
+        }
+
+        if (!canfd && (canxlheader.flags & BLF_CANXLCHANNELFRAME_FLAG_REMOTE_FRAME) == BLF_CANXLCHANNELFRAME_FLAG_REMOTE_FRAME) {
+            canid |= CAN_RTR_FLAG;
+            payload_length = 0;
+        }
+
+        if (!blf_can_fill_buf_and_rec(params, err, err_info, canid, (uint8_t)payload_length, (uint8_t)payload_length, data_start + sizeof(canxlheader), flags, object_timestamp, canxlheader.channel, canfd_flags)) {
+            return false;
+        }
+    }
+
+    blf_add_direction_option(params, canxlheader.dir ? BLF_DIR_TX : BLF_DIR_RX);
+
+    return true;
+}
+
+static bool
 blf_read_flexraydata(blf_params_t *params, int *err, char **err_info, int64_t block_start, int64_t data_start, int64_t object_length, uint32_t flags, uint64_t object_timestamp) {
     blf_flexraydata_t frheader;
 
@@ -2199,7 +2333,7 @@ blf_read_flexraydata(blf_params_t *params, int *err, char **err_info, int64_t bl
     }
 
     if (payload_length_valid > object_length - (data_start - block_start) - sizeof(frheader)) {
-        ws_debug("shortening FlexRay payload because buffer is too short!");
+        ws_debug("shortening FlexRay payload because buffer is too short.");
         payload_length_valid = (uint8_t)(object_length - (data_start - block_start) - sizeof(frheader));
     }
 
@@ -2271,7 +2405,7 @@ blf_read_flexraymessage(blf_params_t *params, int *err, char **err_info, int64_t
     }
 
     if (payload_length_valid > object_length - (data_start - block_start) - sizeof(frheader)) {
-        ws_debug("shortening FlexRay payload because buffer is too short!");
+        ws_debug("shortening FlexRay payload because buffer is too short.");
         payload_length_valid = (uint8_t)(object_length - (data_start - block_start) - sizeof(frheader));
     }
 
@@ -2371,7 +2505,7 @@ blf_read_flexrayrcvmessageex(blf_params_t *params, int *err, char **err_info, in
     }
 
     if (payload_length_valid > object_length - (data_start - block_start) - frheadersize) {
-        ws_debug("shortening FlexRay payload because buffer is too short!");
+        ws_debug("shortening FlexRay payload because buffer is too short.");
         payload_length_valid = (uint8_t)(object_length - (data_start - block_start) - frheadersize);
     }
 
@@ -2470,6 +2604,16 @@ blf_read_linmessage(blf_params_t* params, int* err, char** err_info, int64_t blo
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
     len = sizeof(tmpbuf) + payload_length;
 
+    /* make sure that the payload is 4 or 8 bytes long */
+    const uint8_t padding[4] = { 0, 0, 0, 0 };
+    if (payload_length < 4) {
+        ws_buffer_append(&params->rec->data, padding, 4 - payload_length);
+        len += 4 - payload_length;
+    } else if (payload_length > 4 && payload_length < 8) {
+        ws_buffer_append(&params->rec->data, padding, 8 - payload_length);
+        len += 8 - payload_length;
+    }
+
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, len, len);
     blf_add_direction_option(params, linmessage.dir);
 
@@ -2496,7 +2640,7 @@ blf_read_linrcverror(blf_params_t* params, int* err, char** err_info, int64_t bl
     linmessage.dlc &= 0x0f;
     linmessage.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2508,9 +2652,12 @@ blf_read_linrcverror(blf_params_t* params, int* err, char** err_info, int64_t bl
      * For now we always treat it as framing error,
      * but in the future we should expand it. */
     tmpbuf[7] = LIN_ERROR_FRAMING_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
-
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, sizeof(tmpbuf), sizeof(tmpbuf));
 
     return true;
@@ -2536,7 +2683,7 @@ blf_read_linsenderror(blf_params_t* params, int* err, char** err_info, int64_t b
     linmessage.dlc &= 0x0f;
     linmessage.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2545,9 +2692,12 @@ blf_read_linsenderror(blf_params_t* params, int* err, char** err_info, int64_t b
     tmpbuf[5] = linmessage.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = 0; /* checksum */
     tmpbuf[7] = LIN_ERROR_NO_SLAVE_RESPONSE; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
-
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.channel, UINT16_MAX, sizeof(tmpbuf), sizeof(tmpbuf));
 
     return true;
@@ -2644,6 +2794,16 @@ blf_read_linmessage2(blf_params_t* params, int* err, char** err_info, int64_t bl
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
     len = sizeof(tmpbuf) + payload_length;
 
+    /* make sure that the payload is 4 or 8 bytes long */
+    const uint8_t padding[4] = { 0, 0, 0, 0 };
+    if (payload_length < 4) {
+        ws_buffer_append(&params->rec->data, padding, 4 - payload_length);
+        len += 4 - payload_length;
+    } else if (payload_length > 4 && payload_length < 8) {
+        ws_buffer_append(&params->rec->data, padding, 8 - payload_length);
+        len += 8 - payload_length;
+    }
+
     blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_LIN, linmessage.linDataByteTimestampEvent.linMessageDescriptor.linSynchFieldEvent.linBusEvent.channel, UINT16_MAX, len, len);
     blf_add_direction_option(params, linmessage.dir);
 
@@ -2675,7 +2835,7 @@ blf_read_lincrcerror2(blf_params_t* params, int* err, char** err_info, int64_t b
 
     payload_length = MIN(linmessage.linDataByteTimestampEvent.linMessageDescriptor.dlc, 8);
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2696,6 +2856,10 @@ blf_read_lincrcerror2(blf_params_t* params, int* err, char** err_info, int64_t b
     tmpbuf[5] = linmessage.linDataByteTimestampEvent.linMessageDescriptor.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = (uint8_t)(linmessage.crc & 0xff); /* checksum */
     tmpbuf[7] = LIN_ERROR_CHECKSUM_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
     ws_buffer_append(&params->rec->data, linmessage.data, payload_length);
@@ -2736,7 +2900,7 @@ blf_read_linrcverror2(blf_params_t* params, int* err, char** err_info, int64_t b
         payload_length = 0;
     }
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2760,6 +2924,10 @@ blf_read_linrcverror2(blf_params_t* params, int* err, char** err_info, int64_t b
      * For now we always treat it as framing error,
      * but in the future we should expand it. */
     tmpbuf[7] = LIN_ERROR_FRAMING_ERROR; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
     if (payload_length > 0) {
@@ -2792,7 +2960,7 @@ blf_read_linsenderror2(blf_params_t* params, int* err, char** err_info, int64_t 
     linmessage.linMessageDescriptor.dlc &= 0x0f;
     linmessage.linMessageDescriptor.id &= 0x3f;
 
-    uint8_t tmpbuf[8];
+    uint8_t tmpbuf[12];
     tmpbuf[0] = 1; /* message format rev = 1 */
     tmpbuf[1] = 0; /* reserved */
     tmpbuf[2] = 0; /* reserved */
@@ -2813,6 +2981,10 @@ blf_read_linsenderror2(blf_params_t* params, int* err, char** err_info, int64_t 
     tmpbuf[5] = linmessage.linMessageDescriptor.id; /* parity (2bit) | id (6bit) */
     tmpbuf[6] = 0; /* checksum */
     tmpbuf[7] = LIN_ERROR_NO_SLAVE_RESPONSE; /* errors */
+    tmpbuf[8] = 0;
+    tmpbuf[9] = 0;
+    tmpbuf[10] = 0;
+    tmpbuf[11] = 0;
 
     ws_buffer_append(&params->rec->data, tmpbuf, sizeof(tmpbuf));
 
@@ -2955,7 +3127,7 @@ blf_parse_xml_port(const xmlChar* str, char** name, uint16_t* hwchannel, bool* s
 
     if (str == NULL) return false;
 
-    char** tokens = g_strsplit_set((const gchar*)str, ";", -1);
+    char** tokens = g_strsplit_set((const char*)str, ";", -1);
     if (tokens == NULL) {
         ws_debug("cannot split XML port data");
         return false;
@@ -2987,19 +3159,19 @@ static int
 blf_get_xml_pkt_encap(const xmlChar* str) {
     if (str == NULL) return 0;
 
-    if (xmlStrcmp(str, "CAN") == 0) {
+    if (xmlStrcmp(str, (const xmlChar*)"CAN") == 0) {
         return WTAP_ENCAP_SOCKETCAN;
     }
-    if (xmlStrcmp(str, "FlexRay") == 0) {
+    if (xmlStrcmp(str, (const xmlChar*)"FlexRay") == 0) {
         return WTAP_ENCAP_FLEXRAY;
     }
-    if (xmlStrcmp(str, "LIN") == 0) {
+    if (xmlStrcmp(str, (const xmlChar*)"LIN") == 0) {
         return WTAP_ENCAP_LIN;
     }
-    if (xmlStrcmp(str, "Ethernet") == 0) {
+    if (xmlStrcmp(str, (const xmlChar*)"Ethernet") == 0) {
         return WTAP_ENCAP_ETHERNET;
     }
-    if (xmlStrcmp(str, "WLAN") == 0) {    /* Not confirmed with a real capture */
+    if (xmlStrcmp(str, (const xmlChar*)"WLAN") == 0) {    /* Not confirmed with a real capture */
         return WTAP_ENCAP_IEEE_802_11;
     }
 
@@ -3088,7 +3260,7 @@ blf_set_xml_channels(blf_params_t* params, const char* text, size_t len) {
                 if (xmlStrcmp(attr->name, (const xmlChar*)"number") == 0) {
                     xmlChar* str_channel = xmlNodeListGetString(current_channel_node->doc, attr->children, 1);
                     if (str_channel != NULL) {
-                        ws_strtou16(str_channel, NULL, &channel);
+                        ws_strtou16((const char*)str_channel, NULL, &channel);
                         xmlFree(str_channel);
                     }
                 } else if (xmlStrcmp(attr->name, (const xmlChar*)"type") == 0) {
@@ -3100,7 +3272,9 @@ blf_set_xml_channels(blf_params_t* params, const char* text, size_t len) {
                 } else if (xmlStrcmp(attr->name, (const xmlChar*)"network") == 0) {
                     xmlChar* str_network = xmlNodeListGetString(current_channel_node->doc, attr->children, 1);
                     if (str_network != NULL) {
-                        channel_name = ws_strdup((const char*)str_network);
+                        if (channel_name == NULL) {
+                            channel_name = ws_strdup((const char*)str_network);
+                        }
                         xmlFree(str_network);
                     }
                 }
@@ -3278,7 +3452,7 @@ blf_read_apptextmessage(blf_params_t *params, int *err, char **err_info, int64_t
             metadata_info->payload_start = params->rec->data.first_free;
         }
 
-        ws_buffer_append(&params->rec->data, text, apptextheader.textLength);
+        ws_buffer_append(&params->rec->data, (const uint8_t*)text, apptextheader.textLength);
         g_free(text);
 
         if ((apptextheader.reservedAppText1 & 0x00ffffff) > apptextheader.textLength) {
@@ -3287,7 +3461,7 @@ blf_read_apptextmessage(blf_params_t *params, int *err, char **err_info, int64_t
         }
 
         if (((apptextheader.reservedAppText1 >> 24) & 0xff) == BLF_APPTEXT_XML_CHANNELS) {
-            blf_set_xml_channels(params, params->rec->data.data + metadata_info->payload_start, params->rec->data.first_free - metadata_info->payload_start);
+            blf_set_xml_channels(params, (const char*)(params->rec->data.data + metadata_info->payload_start), params->rec->data.first_free - metadata_info->payload_start);
         }
 
         /* Override the timestamp with 0 for metadata objects. Thay can only occur at the beginning of the file, and they usually already have a timestamp of 0. */
@@ -3312,21 +3486,19 @@ blf_read_apptextmessage(blf_params_t *params, int *err, char **err_info, int64_t
             info_line = ws_strdup_printf("Trace line%s: %s", (apptextheader.reservedAppText1 & 0x00000010) ? "" : " (hidden)", text);
             break;
         default:
-            break;
+            ws_assert_not_reached();
         }
 
         wtap_buffer_append_epdu_string(&params->rec->data, EXP_PDU_TAG_COL_INFO_TEXT, info_line);
         wtap_buffer_append_epdu_end(&params->rec->data);
 
         size_t text_length = strlen(text);  /* The string can contain '\0' before textLength bytes */
-        ws_buffer_append(&params->rec->data, text, text_length);    /* The dissector doesn't need NULL-terminated strings */
+        ws_buffer_append(&params->rec->data, (const uint8_t*)text, text_length);    /* The dissector doesn't need NULL-terminated strings */
 
         /* We'll write this as a WS UPPER PDU packet with a text blob */
         blf_init_rec(params, flags, object_timestamp, WTAP_ENCAP_WIRESHARK_UPPER_PDU, 0, UINT16_MAX, (uint32_t)ws_buffer_length(&params->rec->data), (uint32_t)ws_buffer_length(&params->rec->data));
         g_free(text);
-        if (info_line) {
-            g_free(info_line);
-        }
+        g_free(info_line);
         return apptextheader.source;
     }
     default:
@@ -3600,6 +3772,9 @@ blf_read_block(blf_params_t *params, int64_t start_pos, int *err, char **err_inf
         case BLF_OBJTYPE_CAN_FD_ERROR_64:
             return blf_read_canfderror64(params, err, err_info, start_pos, start_pos + header.header_length, header.object_length, flags, object_timestamp);
 
+        case BLF_OBJTYPE_CAN_XL_CHANNEL_FRAME:
+            return blf_read_canxlchannelframe(params, err, err_info, start_pos, start_pos + header.header_length, header.object_length, flags, object_timestamp);
+
         case BLF_OBJTYPE_FLEXRAY_DATA:
             return blf_read_flexraydata(params, err, err_info, start_pos, start_pos + header.header_length, header.object_length, flags, object_timestamp);
 
@@ -3818,9 +3993,10 @@ blf_open(wtap *wth, int *err, char **err_info) {
 
     /* Prepare our private context. */
     blf = g_new(blf_t, 1);
-    blf->log_containers = g_array_new(false, false, sizeof(blf_log_container_t));
+    blf->log_containers = g_array_new(FALSE, FALSE, sizeof(blf_log_container_t));
     blf->current_real_seek_pos = 0;
-    blf->start_offset_ns = blf_get_start_offset_ns(&header.start_date);
+    blf->start_offset_ns = blf_data_to_ns(&header.start_date);
+    blf->end_offset_ns = blf_data_to_ns(&header.end_date);
 
     blf->channel_to_iface_ht = g_hash_table_new_full(g_int64_hash, g_int64_equal, &blf_free_key, &blf_free_channel_to_iface_entry);
     blf->channel_to_name_ht = g_hash_table_new_full(g_int64_hash, g_int64_equal, &blf_free_key, &blf_free_channel_to_name_entry);
@@ -3830,6 +4006,10 @@ blf_open(wtap *wth, int *err, char **err_info) {
     wth->file_encap = WTAP_ENCAP_NONE;
     wth->snapshot_length = 0;
     wth->file_tsprec = WTAP_TSPREC_UNKNOWN;
+    wth->file_start_ts.secs = blf->start_offset_ns / (1000 * 1000 * 1000);
+    wth->file_start_ts.nsecs = blf->start_offset_ns % (1000 * 1000 * 1000);
+    wth->file_end_ts.secs = blf->end_offset_ns / (1000 * 1000 * 1000);
+    wth->file_end_ts.nsecs = blf->end_offset_ns % (1000 * 1000 * 1000);
     wth->subtype_read = blf_read;
     wth->subtype_seek_read = blf_seek_read;
     wth->subtype_close = blf_close;
@@ -3925,7 +4105,7 @@ blf_dump_expand_interface_mapping(wtap_dumper *wdh, unsigned new_size) {
 static bool
 blf_dump_set_interface_mapping(wtap_dumper *wdh, uint32_t interface_id, int pkt_encap, uint16_t channel, uint16_t hw_channel) {
     if (channel == 0) {
-        ws_warning("Trying to set channel to 0! That will probably lead to an unreadable file! Replacing by 1 to limit problem!");
+        ws_warning("Trying to set channel to 0. That will probably lead to an unreadable file. Replacing by 1 to limit problem.");
         channel = 1;
     }
 
@@ -3962,7 +4142,7 @@ blf_dump_get_interface_mapping(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
 
     *err = WTAP_ERR_INTERNAL;
     *err_info = ws_strdup_printf("blf: cannot find interface mapping for %u", interface_id);
-    ws_critical("BLF Interface Mapping cannot be found!");
+    ws_critical("BLF Interface Mapping cannot be found.");
 
     return NULL;
 }
@@ -3971,7 +4151,7 @@ static bool
 blf_init_file_header(wtap_dumper *wdh, int *err) {
     if (wdh == NULL || wdh->priv == NULL) {
         *err = WTAP_ERR_INTERNAL;
-        ws_debug("internal error: blf private data not found!");
+        ws_debug("internal error: blf private data not found.");
         return false;
     }
 
@@ -4032,7 +4212,7 @@ blf_write_date_to_blf_header(blf_fileheader_t *fileheader, bool start, uint64_t 
         target->mins = tmp.tm_min;
         target->sec = tmp.tm_sec;
 
-        uint64_t tmp_date = blf_get_start_offset_ns((const blf_date_t *)target);
+        uint64_t tmp_date = blf_data_to_ns((const blf_date_t *)target);
 
         target->ms = (uint16_t)((ns_timestamp - tmp_date) / (1000 * 1000));
     }
@@ -4080,20 +4260,16 @@ blf_finalize_file_header(wtap_dumper *wdh, int *err) {
     return true;
 }
 
-static bool blf_dump_write_logcontainer(wtap_dumper *wdh, int *err, char **err_info) {
+static bool blf_dump_write_logcontainer(wtap_dumper *wdh, int *err, char **err_info _U_) {
     blf_writer_data_t *writer_data = (blf_writer_data_t *)wdh->priv;
 
     if (!wtap_dump_file_write(wdh, &(writer_data->logcontainer_block_header), sizeof(blf_blockheader_t), err)) {
-        *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup_printf("blf: cannot write Log Container Block Header");
-        ws_warning("Cannot write Log Container Block Header");
+        ws_debug("Cannot write Log Container Block Header");
         return false;
     }
 
     if (!wtap_dump_file_write(wdh, &(writer_data->logcontainer_header), sizeof(blf_logcontainerheader_t), err)) {
-        *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup_printf("blf: cannot write Log Container");
-        ws_warning("Cannot write Log Container");
+        ws_debug("Cannot write Log Container");
         return false;
     }
 
@@ -4275,6 +4451,7 @@ static uint8_t blf_get_direction(const wtap_rec *rec) {
 
     if (tmp_direction == PACK_FLAGS_DIRECTION_OUTBOUND) {
         return BLF_DIR_TX;
+
     }
 
     return BLF_DIR_RX;
@@ -4369,6 +4546,89 @@ static bool blf_dump_ethernet(wtap_dumper *wdh, const wtap_rec *rec, int *err, c
     return blf_write_add_padding(wdh, err, padding_needed);
 }
 
+static bool blf_dump_socketcanxl(wtap_dumper *wdh, const wtap_rec *rec, int *err, char **err_info, uint64_t obj_timestamp,
+                                 const uint8_t *pd, size_t length, bool is_rx, bool is_tx) {
+    /* LINKTYPE_CAN_SOCKETCAN */
+    /* https://www.tcpdump.org/linktypes/LINKTYPE_CAN_SOCKETCAN.html */
+
+    //blf_writer_data_t *writer_data = (blf_writer_data_t *)wdh->priv;
+    blf_channel_to_iface_entry_t *iface_entry = blf_dump_get_interface_mapping(wdh, rec, err, err_info);
+    if (iface_entry == NULL) {
+        return false;
+    }
+
+    if (length < 12) {
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
+        *err_info = ws_strdup_printf("blf: record length %u for Socket CAN XL message header is lower than minimum of 12", (uint32_t)length);
+        ws_debug("LINKTYPE_CAN_SOCKETCAN header is too short (CAN XL).");
+        return false;
+    }
+
+    uint8_t  socketcan_vcid = pd[1];
+    uint16_t socketcan_id = pntohu16(pd + 2) & CAN_SFF_MASK;
+    uint8_t  socketcan_flags = pd[4];
+    uint8_t  socketcan_sdut = pd[5];
+    uint16_t socketcan_payload_length = pletohu16(pd + 6);
+
+    if ((socketcan_flags & CANXL_XLF) != CANXL_XLF) {
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
+        *err_info = ws_strdup_printf("blf: Socket CAN XL message does not have XL Flag set.");
+        ws_debug("LINKTYPE_CAN_SOCKETCAN CAN XL flag not set for CAN XL?");
+        return false;
+    }
+
+    if (length < (size_t)socketcan_payload_length + 12) {
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
+        *err_info = ws_strdup_printf("blf: Socket CAN message (length %u) does not contain full payload (%u) (CAN XL)", (uint32_t)length, socketcan_payload_length);
+        ws_debug("LINKTYPE_CAN_SOCKETCAN header is too short (CAN XL).");
+        return false;
+    }
+    uint32_t socketcan_acceptance_field = pletohu32(pd + 8);
+
+    /* LINKTYPE_LINUX_SLL would have set is_tx or is_rx */
+    uint8_t frame_dir = is_tx ? BLF_DIR_TX : BLF_DIR_RX;
+    if (!is_rx && !is_tx) {
+        frame_dir = blf_get_direction(rec);
+    }
+
+    blf_canxlchannelframe_t canxl = {0};
+    canxl.channel = (uint8_t)iface_entry->channel;
+    canxl.dir = frame_dir;
+    canxl.frameIdentifier = socketcan_id;
+    canxl.serviceDataUnitType = socketcan_sdut;
+    canxl.dlc = socketcan_payload_length - 1;
+    canxl.dataLength = socketcan_payload_length;
+    canxl.virtualControllerAreaNetChannelID = socketcan_vcid;
+    canxl.acceptanceField = socketcan_acceptance_field;
+
+    if ((socketcan_flags & CANXL_XLF) == CANXL_XLF) {
+        /* should be always true but we might refactor */
+        canxl.flags |= BLF_CANXLCHANNELFRAME_FLAG_XLF;
+    }
+    if ((socketcan_flags & CANXL_SEC) == CANXL_SEC) {
+        canxl.flags |= BLF_CANXLCHANNELFRAME_FLAG_SEC;
+    }
+    if ((socketcan_flags & CANXL_RRS) == CANXL_RRS) {
+        canxl.flags |= BLF_CANXLCHANNELFRAME_FLAG_RRS;
+    }
+
+    fix_endianness_blf_canxlchannelframe(&canxl);
+
+    if (!blf_dump_objheader(wdh, err, obj_timestamp, BLF_OBJTYPE_CAN_XL_CHANNEL_FRAME, sizeof(blf_canxlchannelframe_t) + socketcan_payload_length)) {
+        return false;
+    }
+
+    if (!wtap_dump_file_write(wdh, &(canxl), sizeof(blf_canxlchannelframe_t), err)) {
+        return false;
+    }
+
+    if (!wtap_dump_file_write(wdh, &(pd[12]), socketcan_payload_length, err)) {
+        return false;
+    }
+
+    return true;
+}
+
 static const uint8_t canfd_length_to_dlc[] = { 0, 1, 2, 3,   4, 5, 6, 7,   8, 0, 0, 0,  9, 0, 0, 0,
                                               10, 0, 0, 0,  11, 0, 0, 0,  12, 0, 0, 0,  0, 0, 0, 0,
                                               13, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,  0, 0, 0, 0,
@@ -4380,31 +4640,30 @@ static bool blf_dump_socketcan(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
     /* LINKTYPE_CAN_SOCKETCAN */
     /* https://www.tcpdump.org/linktypes/LINKTYPE_CAN_SOCKETCAN.html */
 
+    if (length < 8) {
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
+        *err_info = ws_strdup_printf("blf: record length %u for Socket CAN message header is lower than minimum of 8", (uint32_t)length);
+        ws_debug("LINKTYPE_CAN_SOCKETCAN header is too short.");
+        return false;
+    }
+
+    /* check for CAN-XL */
+    if ((pd[4] & CANXL_XLF) == CANXL_XLF) {
+        return blf_dump_socketcanxl(wdh, rec, err, err_info, obj_timestamp, pd, length, is_rx, is_tx);
+    }
+
     //blf_writer_data_t *writer_data = (blf_writer_data_t *)wdh->priv;
     blf_channel_to_iface_entry_t *iface_entry = blf_dump_get_interface_mapping(wdh, rec, err, err_info);
     if (iface_entry == NULL) {
         return false;
     }
 
-    if (length < 8) {
-        *err = WTAP_ERR_INTERNAL;
-        *err_info = ws_strdup_printf("blf: record length %u for Socket CAN message header is lower than minimum of 8", (uint32_t)length);
-        ws_warning("LINKTYPE_CAN_SOCKETCAN header is too short!");
-        return false;
-    }
-
-    /* check for CAN-XL */
-    if ((pd[4] & CANXL_XLF) == CANXL_XLF) {
-        ws_message("CAN-XL not supported yet! Skipping.");
-        return true;
-    }
-
     uint8_t payload_length = pd[4];
 
     if (length < (size_t)payload_length + 8) {
-        *err = WTAP_ERR_INTERNAL;
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
         *err_info = ws_strdup_printf("blf: Socket CAN message (length %u) does not contain full payload (%u)", (uint32_t)length, payload_length);
-        ws_warning("LINKTYPE_CAN_SOCKETCAN header is too short!");
+        ws_debug("LINKTYPE_CAN_SOCKETCAN header is too short.");
         return false;
     }
 
@@ -4426,7 +4685,7 @@ static bool blf_dump_socketcan(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
         }
     }
 
-    /* XXX endianess is not defined. Assuming BE as this seems the common choice*/
+    /* XXX endianness is not defined. Assuming BE as this seems the common choice*/
     uint32_t can_id = pntohu32(pd);
 
     /* lets check if can_id makes sense
@@ -4555,9 +4814,9 @@ static bool blf_dump_sll(wtap_dumper *wdh, const wtap_rec *rec, int *err, char *
     size_t length = ws_buffer_length(&rec->data);
 
     if (length < 16) {
-        *err = WTAP_ERR_INTERNAL;
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
         *err_info = ws_strdup_printf("blf: record length %u for CAN message header (LINKTYPE_LINUX_SLL) is lower than minimum of 16", (uint32_t)length);
-        ws_warning("LINKTYPE_LINUX_SLL header is too short!");
+        ws_debug("LINKTYPE_LINUX_SLL header is too short.");
         return false;
     }
 
@@ -4574,6 +4833,9 @@ static bool blf_dump_sll(wtap_dumper *wdh, const wtap_rec *rec, int *err, char *
         break;
     case 0x000D: /* CAN-FD */
         return blf_dump_socketcan(wdh, rec, err, err_info, obj_timestamp, &(pd[16]), length - 16, false, true, !frame_tx, frame_tx);
+        break;
+    case 0x000E: /* CAN-XL */
+        return blf_dump_socketcanxl(wdh, rec, err, err_info, obj_timestamp, &(pd[16]), length - 16, !frame_tx, frame_tx);
         break;
     default:
         return false;
@@ -4597,9 +4859,9 @@ static bool blf_dump_flexray(wtap_dumper *wdh, const wtap_rec *rec, int *err, ch
     size_t length = ws_buffer_length(&rec->data);
 
     if (length < 1) {
-        *err = WTAP_ERR_INTERNAL;
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
         *err_info = ws_strdup_printf("blf: record length %u for FlexRay header (LINKTYPE_FLEXRAY) is lower than minimum of 1", (uint32_t)length);
-        ws_warning("LINKTYPE_FLEXRAY header is too short (< 1 Byte)!");
+        ws_debug("LINKTYPE_FLEXRAY header is too short (< 1 Byte).");
         return false;
     }
 
@@ -4608,9 +4870,9 @@ static bool blf_dump_flexray(wtap_dumper *wdh, const wtap_rec *rec, int *err, ch
         /* Symbol */
 
         if (length < 2) {
-            *err = WTAP_ERR_INTERNAL;
+            *err = WTAP_ERR_UNWRITABLE_REC_DATA;
             *err_info = ws_strdup_printf("blf: record length %u for FlexRay Symbol (LINKTYPE_FLEXRAY) is lower than minimum of 2", (uint32_t)length);
-            ws_warning("LINKTYPE_FLEXRAY Symbol is too short (< 2 Byte)!");
+            ws_debug("LINKTYPE_FLEXRAY Symbol is too short (< 2 Byte).");
             return false;
         }
 
@@ -4623,9 +4885,9 @@ static bool blf_dump_flexray(wtap_dumper *wdh, const wtap_rec *rec, int *err, ch
         /* Frame */
 
         if (length < 2 + FLEXRAY_HEADER_LENGTH) {
-            *err = WTAP_ERR_INTERNAL;
+            *err = WTAP_ERR_UNWRITABLE_REC_DATA;
             *err_info = ws_strdup_printf("blf: record length %u for FlexRay Frame header (LINKTYPE_FLEXRAY) is lower than minimum of 7", (uint32_t)length);
-            ws_warning("LINKTYPE_FLEXRAY Frame Header is too short (< 7 Byte)!");
+            ws_debug("LINKTYPE_FLEXRAY Frame Header is too short (< 7 Byte).");
             return false;
         }
 
@@ -4664,7 +4926,7 @@ static bool blf_dump_flexray(wtap_dumper *wdh, const wtap_rec *rec, int *err, ch
         bool null_frame = (pd[2] & FLEXRAY_NFI_MASK) != FLEXRAY_NFI_MASK;
 
         if (null_frame) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_NULL_FRAME;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_NULL_FRAME;
             /* LINKTYPE_FLEXRAY has no payload for Null Frames present */
             payload_length = 0;
         }
@@ -4672,52 +4934,52 @@ static bool blf_dump_flexray(wtap_dumper *wdh, const wtap_rec *rec, int *err, ch
         /* TODO: check truncated data */
         if (payload_length > 0) {
             /* Data Valid*/
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_VALID_DATA;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_VALID_DATA;
         }
 
         if ((pd[2] & FLEXRAY_SFI_MASK) == FLEXRAY_SFI_MASK) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_SYNC;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_SYNC;
         }
 
         if ((pd[2] & FLEXRAY_STFI_MASK) == FLEXRAY_STFI_MASK) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_STARTUP;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_STARTUP;
         }
 
         if ((pd[2] & FLEXRAY_PPI_MASK) == FLEXRAY_PPI_MASK) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_PAYLOAD_PREAM;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_PAYLOAD_PREAM;
         }
 
         if ((pd[2] & FLEXRAY_RES_MASK) == FLEXRAY_RES_MASK) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_RES_20;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_RES_20;
         }
 
         /* if any error flag is set */
         if ((pd[1] & FLEXRAY_ERRORS_DEFINED) != 0x00) {
-            frmsg.frameFlags &= BLF_FLEXRAYRCVMSG_FRAME_FLAG_ERROR;
+            frmsg.frameFlags |= BLF_FLEXRAYRCVMSG_FRAME_FLAG_ERROR;
         }
 
         /* Not sure how to determine this as we do not know the low level parameters */
         //if ( ) {
         //    /* DYNAMIC SEG =1 (Bit 20)*/
-        //    frmsg.frameFlags &= 0x100000;
+        //    frmsg.frameFlags |= 0x100000;
         //}
 
         frmsg.appParameter = 0;
 
         fix_endianness_blf_flexrayrcvmessage(&frmsg);
 
+        if (length < (size_t)payload_length + 2 + FLEXRAY_HEADER_LENGTH) {
+            *err = WTAP_ERR_UNWRITABLE_REC_DATA;
+            *err_info = ws_strdup_printf("blf: record length %u for FlexRay Frame (LINKTYPE_FLEXRAY) is truncated", (uint32_t)length);
+            ws_debug("LINKTYPE_FLEXRAY Frame truncated.");
+            return false;
+        }
+
         if (!blf_dump_objheader(wdh, err, obj_timestamp, BLF_OBJTYPE_FLEXRAY_RCVMESSAGE, sizeof(blf_flexrayrcvmessage_t) + 254)) {
             return false;
         }
 
         if (!wtap_dump_file_write(wdh, &(frmsg), sizeof(blf_flexrayrcvmessage_t), err)) {
-            return false;
-        }
-
-        if (length < (size_t)payload_length + 2 + FLEXRAY_HEADER_LENGTH) {
-            *err = WTAP_ERR_INTERNAL;
-            *err_info = ws_strdup_printf("blf: record length %u for FlexRay Frame (LINKTYPE_FLEXRAY) is truncated", (uint32_t)length);
-            ws_warning("LINKTYPE_FLEXRAY Frame truncated!");
             return false;
         }
 
@@ -4757,9 +5019,9 @@ static bool blf_dump_lin(wtap_dumper *wdh, const wtap_rec *rec, int *err, char *
     size_t length = ws_buffer_length(&rec->data);
 
     if (length < 8) {
-        *err = WTAP_ERR_INTERNAL;
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
         *err_info = ws_strdup_printf("blf: record length %u for LIN message/symbol/error is lower than minimum of 8", (uint32_t)length);
-        ws_warning("LIN Data is too short (less than 8 bytes)!");
+        ws_debug("LIN Data is too short (less than 8 bytes).");
         return false;
     }
 
@@ -4780,9 +5042,9 @@ static bool blf_dump_lin(wtap_dumper *wdh, const wtap_rec *rec, int *err, char *
 
     /* we need to have at least the data */
     if (length < (size_t)dlc + 8) {
-        *err = WTAP_ERR_INTERNAL;
+        *err = WTAP_ERR_UNWRITABLE_REC_DATA;
         *err_info = ws_strdup_printf("blf: record length %u for LIN message is too low for data. DLC: %u.", (uint32_t)length, dlc);
-        ws_error("LIN Data is too short (less than needed)!");
+        ws_debug("LIN Data is too short (less than needed).");
         return false;
     }
 
@@ -4846,9 +5108,9 @@ static bool blf_dump_upper_pdu(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
     bool done = false;
     while (!done) {
         if (length - pos < 4) {
-            *err = WTAP_ERR_INTERNAL;
+            *err = WTAP_ERR_UNWRITABLE_REC_DATA;
             *err_info = ws_strdup_printf("blf: Upper PDU has no or truncated tags (pos: %u, length: %u)", (uint32_t)pos, (uint32_t)length);
-            ws_warning("Upper PDU has truncated tags!");
+            ws_debug("Upper PDU has truncated tags.");
             return false;
         }
 
@@ -4856,9 +5118,9 @@ static bool blf_dump_upper_pdu(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
         uint16_t tag_len = pntohu16(pd + pos + 2);
 
         if ((length - pos) < (size_t)tag_len + 4) {
-            *err = WTAP_ERR_INTERNAL;
+            *err = WTAP_ERR_UNWRITABLE_REC_DATA;
             *err_info = ws_strdup_printf("blf: Upper PDU has truncated tags (pos: %u, tag_type: %u, tag_len: %u)", (uint32_t)pos, tag_type, tag_len);
-            ws_warning("Upper PDU has truncated tags!");
+            ws_debug("Upper PDU has truncated tags.");
             return false;
         }
 
@@ -4887,21 +5149,21 @@ static bool blf_dump_upper_pdu(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
         pos += tag_len;
     }
 
-    /* strip zero termination, if existing */
-    while (pd[tag_diss_pos + tag_diss_len - 1] == 0) {
+    /* strip zero termination, if existing (a missing tag has length 0) */
+    while (tag_diss_len > 0 && pd[tag_diss_pos + tag_diss_len - 1] == 0) {
         tag_diss_len -= 1;
     }
 
-    while (pd[col_proto_pos + col_proto_len - 1] == 0) {
+    while (col_proto_len > 0 && pd[col_proto_pos + col_proto_len - 1] == 0) {
         col_proto_len -= 1;
     }
 
-    while (pd[col_info_pos + col_info_len - 1] == 0) {
+    while (col_info_len > 0 && pd[col_info_pos + col_info_len - 1] == 0) {
         col_info_len -= 1;
     }
 
-    if (tag_diss_len == strlen(BLF_APPTEXT_TAG_DISS_DEFAULT) && 0 == strncmp(BLF_APPTEXT_TAG_DISS_DEFAULT, &pd[tag_diss_pos], tag_diss_len)) {
-        if (col_proto_len == strlen(BLF_APPTEXT_COL_PROT_TEXT) && 0 == strncmp(BLF_APPTEXT_COL_PROT_TEXT, &pd[col_proto_pos], col_proto_len)) {
+    if (tag_diss_len == strlen(BLF_APPTEXT_TAG_DISS_DEFAULT) && 0 == strncmp(BLF_APPTEXT_TAG_DISS_DEFAULT, (const char*)&pd[tag_diss_pos], tag_diss_len)) {
+        if (col_proto_len == strlen(BLF_APPTEXT_COL_PROT_TEXT) && 0 == strncmp(BLF_APPTEXT_COL_PROT_TEXT, (const char*)&pd[col_proto_pos], col_proto_len)) {
             blf_apptext_t apptext_header;
             apptext_header.source = BLF_APPTEXT_METADATA;
             apptext_header.reservedAppText1 = 0;
@@ -4911,15 +5173,15 @@ static bool blf_dump_upper_pdu(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
 
             /* Metadata */
             /* tags: BLF_APPTEXT_TAG_DISS_DEFAULT, BLF_APPTEXT_COL_PROT_TEXT, BLF_APPTEXT_COL_INFO_TEXT_... */
-            if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_GENERAL) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_GENERAL, &pd[col_info_pos], col_info_len)) {
+            if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_GENERAL) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_GENERAL, (const char*)&pd[col_info_pos], col_info_len)) {
                 /* BLF_APPTEXT_METADATA: BLF_APPTEXT_XML_GENERAL */
                 apptext_header.reservedAppText1 = (BLF_APPTEXT_XML_GENERAL << 24) | (0xffffff & payload_len);
-            } else if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_CHANNELS) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_CHANNELS, &pd[col_info_pos], col_info_len)) {
+            } else if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_CHANNELS) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_CHANNELS, (const char*)&pd[col_info_pos], col_info_len)) {
                 /* BLF_APPTEXT_METADATA: BLF_APPTEXT_XML_CHANNELS */
                     if (writer_data->iface_to_channel_names_recovered) {
                     apptext_header.reservedAppText1 = (BLF_APPTEXT_XML_CHANNELS << 24) | (0xffffff & payload_len);
                 }
-            } else if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_IDENTITY) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_IDENTITY, &pd[col_info_pos], col_info_len)) {
+            } else if (col_info_len == strlen(BLF_APPTEXT_COL_INFO_TEXT_IDENTITY) && 0 == strncmp(BLF_APPTEXT_COL_INFO_TEXT_IDENTITY, (const char*)&pd[col_info_pos], col_info_len)) {
                 /* BLF_APPTEXT_METADATA: BLF_APPTEXT_XML_IDENTITY */
                 apptext_header.reservedAppText1 = (BLF_APPTEXT_XML_IDENTITY << 24) | (0xffffff & payload_len);
 
@@ -4940,10 +5202,10 @@ static bool blf_dump_upper_pdu(wtap_dumper *wdh, const wtap_rec *rec, int *err, 
             }
 
             if (payload_len > 2048 && (apptext_header.source != BLF_APPTEXT_METADATA)) {
-                ws_warning("Only Meta Data can be broken into smaller chunks!");
+                ws_warning("Only Meta Data can be broken into smaller chunks.");
             }
 
-            uint32_t chunk_size = payload_len;
+            uint32_t chunk_size;
             bool last_round = false;
             do {
                 if (payload_len > 2048 && apptext_header.source == BLF_APPTEXT_METADATA) {
@@ -5006,7 +5268,7 @@ static bool blf_dump_interface_setup_by_blf_based_idb_desc(wtap_dumper *wdh, int
     blf_writer_data_t *writer_data = (blf_writer_data_t *)wdh->priv;
     bool iface_descr_found;
 
-    /* check all interfaces first to avoid inconstistent state */
+    /* check all interfaces first to avoid inconsistent state */
     for (unsigned i = 0; i < wdh->interface_data->len; i++) {
         ws_debug("interface: %d (pass 1)", i);
 
@@ -5102,7 +5364,8 @@ static bool blf_dump_interface_setup(wtap_dumper *wdh, int *err) {
         const wtapng_if_descr_mandatory_t *mand_data = (wtapng_if_descr_mandatory_t *) idb->mandatory_data;
 
         if (mand_data->wtap_encap == WTAP_ENCAP_ETHERNET || mand_data->wtap_encap == WTAP_ENCAP_SLL ||
-            mand_data->wtap_encap == WTAP_ENCAP_LIN || mand_data->wtap_encap == WTAP_ENCAP_SOCKETCAN) {
+            mand_data->wtap_encap == WTAP_ENCAP_LIN || mand_data->wtap_encap == WTAP_ENCAP_SOCKETCAN ||
+            mand_data->wtap_encap == WTAP_ENCAP_FLEXRAY) {
 
             char *iface_name = NULL;
             bool iface_name_found = wtap_block_get_string_option_value(idb, OPT_IDB_NAME, &iface_name) == WTAP_OPTTYPE_SUCCESS;
@@ -5270,7 +5533,7 @@ blf_dump_open(wtap_dumper *wdh, int *err, char **err_info) {
 
     if (wdh == NULL || wdh->priv != NULL) {
         *err = WTAP_ERR_INTERNAL;
-        ws_debug("internal error: blf wdh is NULL or private data already set!");
+        ws_debug("internal error: blf wdh is NULL or private data already set.");
         return false;
     }
 
@@ -5283,7 +5546,7 @@ blf_dump_open(wtap_dumper *wdh, int *err, char **err_info) {
     wdh->priv = writer_data;
 
     /* set up and init interface mappings */
-    writer_data->iface_to_channel_array = g_array_new(true, true, sizeof(blf_channel_to_iface_entry_t));
+    writer_data->iface_to_channel_array = g_array_new(TRUE, TRUE, sizeof(blf_channel_to_iface_entry_t));
     blf_dump_expand_interface_mapping(wdh, wdh->interface_data->len);
     writer_data->iface_to_channel_names_recovered = false;
 

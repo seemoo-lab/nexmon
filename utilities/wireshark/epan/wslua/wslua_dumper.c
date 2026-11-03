@@ -147,11 +147,177 @@ static int PseudoHeader_nettl(lua_State* L) { luaL_error(L,"not implemented"); r
 static int PseudoHeader_k12(lua_State* L) { luaL_error(L,"not implemented"); return 0; }
 #endif
 
+/* Short, stable names for the lua_pseudoheader_type enum. Indexed by enum
+ * value so PseudoHeader.type_name stays aligned with PseudoHeader.type. */
+static const char *pseudoheader_type_name(enum lua_pseudoheader_type t) {
+    switch (t) {
+        case PHDR_NONE:   return "none";
+        case PHDR_ETH:    return "eth";
+        case PHDR_X25:    return "x25";
+        case PHDR_ISDN:   return "isdn";
+        case PHDR_ATM:    return "atm";
+        case PHDR_ASCEND: return "ascend";
+        case PHDR_P2P:    return "p2p";
+        case PHDR_WIFI:   return "wifi";
+        case PHDR_COSINE: return "cosine";
+        case PHDR_IRDA:   return "irda";
+        case PHDR_NETTL:  return "nettl";
+        case PHDR_MTP2:   return "mtp2";
+        case PHDR_K12:    return "k12";
+        default:          return "unknown";
+    }
+}
+
+/* Keys exposed by __pairs for a given variant. Kept NULL-terminated so
+ * the iterator can walk them without a size argument. Only variants
+ * that Lua can actually construct need entries; anything else resolves
+ * to an empty list (type only). */
+static const char *pseudoheader_keys_for(enum lua_pseudoheader_type t) {
+    /* NOLINTBEGIN - Return an opaque list; the iterator knows the
+     * termination sentinel. */
+    static const char *none_keys[] = { NULL };
+    static const char *eth_keys[]  = { "fcs_len", NULL };
+    static const char *atm_keys[]  = {
+        "aal", "vpi", "vci", "channel", "cells",
+        "aal5t_u2u", "aal5t_len", NULL
+    };
+    static const char *mtp2_keys[] = {
+        "sent", "annex_a_used", "link_number", NULL
+    };
+    /* NOLINTEND */
+    switch (t) {
+        case PHDR_ETH:  return (const char *)eth_keys;
+        case PHDR_ATM:  return (const char *)atm_keys;
+        case PHDR_MTP2: return (const char *)mtp2_keys;
+        case PHDR_NONE:
+        default:        return (const char *)none_keys;
+    }
+}
+
+/* Push a variant-specific field as a Lua value, mirroring the field
+ * layout used by the constructors. Returns false if the key is not
+ * valid for this variant. */
+static bool pseudoheader_push_value(lua_State *L, PseudoHeader ph,
+                                    const char *key) {
+    if (!ph || !ph->wph || !key) return false;
+    switch (ph->type) {
+        case PHDR_ETH:
+            if (g_strcmp0(key, "fcs_len") == 0) {
+                lua_pushinteger(L, ph->wph->eth.fcs_len);
+                return true;
+            }
+            break;
+        case PHDR_ATM:
+            if (g_strcmp0(key, "aal") == 0) {
+                lua_pushinteger(L, ph->wph->atm.aal); return true;
+            }
+            if (g_strcmp0(key, "vpi") == 0) {
+                lua_pushinteger(L, ph->wph->atm.vpi); return true;
+            }
+            if (g_strcmp0(key, "vci") == 0) {
+                lua_pushinteger(L, ph->wph->atm.vci); return true;
+            }
+            if (g_strcmp0(key, "channel") == 0) {
+                lua_pushinteger(L, ph->wph->atm.channel); return true;
+            }
+            if (g_strcmp0(key, "cells") == 0) {
+                lua_pushinteger(L, ph->wph->atm.cells); return true;
+            }
+            if (g_strcmp0(key, "aal5t_u2u") == 0) {
+                lua_pushinteger(L, ph->wph->atm.aal5t_u2u); return true;
+            }
+            if (g_strcmp0(key, "aal5t_len") == 0) {
+                lua_pushinteger(L, ph->wph->atm.aal5t_len); return true;
+            }
+            break;
+        case PHDR_MTP2:
+            if (g_strcmp0(key, "sent") == 0) {
+                lua_pushinteger(L, ph->wph->mtp2.sent); return true;
+            }
+            if (g_strcmp0(key, "annex_a_used") == 0) {
+                lua_pushinteger(L, ph->wph->mtp2.annex_a_used); return true;
+            }
+            if (g_strcmp0(key, "link_number") == 0) {
+                lua_pushinteger(L, ph->wph->mtp2.link_number); return true;
+            }
+            break;
+        default:
+            break;
+    }
+    return false;
+}
+
+/* Read-only attributes exposing the discriminant. */
+
+/* WSLUA_ATTRIBUTE PseudoHeader_type RO The pseudoheader variant as the
+   internal lua_pseudoheader_type enum value (integer). Use
+   `PseudoHeader.type_name` for the short string form ("none", "eth",
+   "atm", ...). */
+WSLUA_ATTRIBUTE_GET(PseudoHeader,type, {
+    lua_pushinteger(L, obj ? (lua_Integer)obj->type : (lua_Integer)PHDR_NONE);
+});
+
+/* WSLUA_ATTRIBUTE PseudoHeader_type_name RO Short string identifying the
+   variant: "none", "eth", "atm", "mtp2", etc. */
+WSLUA_ATTRIBUTE_GET(PseudoHeader,type_name, {
+    lua_pushstring(L,
+        pseudoheader_type_name(obj ? obj->type : PHDR_NONE));
+});
+
+/* __tostring returns a compact tag so the debugger/print show what kind
+ * of pseudoheader this is without dumping the full variant struct.
+ * Shape matches the shared convention: `Class: key=value` pairs. */
+static int PseudoHeader__tostring(lua_State *L) {
+    PseudoHeader ph = checkPseudoHeader(L, 1);
+    lua_pushfstring(L, "PseudoHeader: type=%s",
+                    pseudoheader_type_name(ph ? ph->type : PHDR_NONE));
+    return 1;
+}
+
+/* Stateless __pairs iterator. Uses the variant's key list as the walk
+ * order and the provided `prev` key for resume. Only non-nil
+ * variant-specific fields are yielded. */
+static int PseudoHeader_pairs_iter(lua_State *L) {
+    PseudoHeader ph = checkPseudoHeader(L, 1);
+    const char *prev = lua_isnoneornil(L, 2) ? NULL : luaL_checkstring(L, 2);
+    if (!ph) { lua_pushnil(L); return 1; }
+
+    const char **keys = (const char **)pseudoheader_keys_for(ph->type);
+    /* Skip past prev, if any. */
+    const char **p = keys;
+    if (prev) {
+        while (*p && g_strcmp0(*p, prev) != 0) ++p;
+        if (*p) ++p;   /* move to the next key */
+    }
+    if (!*p) { lua_pushnil(L); return 1; }
+
+    lua_pushstring(L, *p);
+    if (!pseudoheader_push_value(L, ph, *p)) {
+        lua_pushnil(L);
+    }
+    return 2;
+}
+
+WSLUA_METAMETHOD PseudoHeader__pairs(lua_State *L) {
+    /*
+    Iterate over the variant-specific fields of the pseudoheader (for
+    example `fcs_len` on Ethernet pseudoheaders or `aal`/`vpi`/`vci`
+    on ATM ones). Nothing is yielded for `PseudoHeader.none`.
+    */
+    WSLUA_STATELESS_PAIRS_BODY(PseudoHeader);
+}
+
 /* Gets registered as metamethod automatically by WSLUA_REGISTER_CLASS/META */
 static int PseudoHeader__gc(lua_State* L _U_) {
     /* do NOT free PseudoHeader */
     return 0;
 }
+
+WSLUA_ATTRIBUTES PseudoHeader_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(PseudoHeader,type),
+    WSLUA_ATTRIBUTE_ROREG(PseudoHeader,type_name),
+    { NULL, NULL, NULL }
+};
 
 WSLUA_METHODS PseudoHeader_methods[] = {
     WSLUA_CLASS_FNREG(PseudoHeader,mtp2),
@@ -162,11 +328,13 @@ WSLUA_METHODS PseudoHeader_methods[] = {
 };
 
 WSLUA_META PseudoHeader_meta[] = {
+    WSLUA_CLASS_MTREG(PseudoHeader,tostring),
+    WSLUA_CLASS_MTREG(PseudoHeader,pairs),
     {0,0}
 };
 
 int PseudoHeader_register(lua_State* L) {
-    WSLUA_REGISTER_CLASS(PseudoHeader)
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(PseudoHeader);
     return 0;
 }
 
@@ -232,7 +400,7 @@ WSLUA_CONSTRUCTOR Dumper_new(lua_State* L) {
     /* XXX - Check for an existing file, or the same file name as the current
      * capture file?
      */
-    d = wtap_dump_open(filename, filetype, WTAP_UNCOMPRESSED, &params, &err,
+    d = wtap_dump_open(filename, filetype, WS_FILE_UNCOMPRESSED, &params, &err,
                        &err_info);
 
     if (! d ) {
@@ -466,7 +634,7 @@ WSLUA_METHOD Dumper_new_for_current(lua_State* L) {
 
     encap = lua_pinfo->rec->rec_header.packet_header.pkt_encap;
     params.encap = encap;
-    d = wtap_dump_open(filename, filetype, WTAP_UNCOMPRESSED, &params, &err,
+    d = wtap_dump_open(filename, filetype, WS_FILE_UNCOMPRESSED, &params, &err,
                        &err_info);
 
     if (! d ) {
@@ -650,6 +818,118 @@ static int Dumper__gc(lua_State* L) {
 }
 
 
+/* Read-only attributes. These intentionally do not go through
+ * checkDumper() because that raises "Dumper already closed" for a
+ * closed handle (FAIL_ON_NULL). A closed Dumper is still reachable
+ * from the Variables view via its binding name, and it is convenient
+ * to inspect metadata such as the chosen file type even after close.
+ * Each getter therefore uses luaL_checkudata directly, treats
+ * *dp == NULL as "closed", and returns nil for metadata it cannot
+ * compute in that state. */
+
+/* WSLUA_ATTRIBUTE Dumper_is_open RO True while the dumper is open,
+   false once Dumper:close() has run. */
+static int Dumper_get_is_open(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    lua_pushboolean(L, dp && *dp ? 1 : 0);
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_file_type RO The numeric wiretap file-type-
+   subtype (as returned by wtap_name_to_file_type_subtype()), or nil if
+   the dumper is closed. */
+static int Dumper_get_file_type(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    lua_pushinteger(L, wtap_dump_file_type_subtype(*dp));
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_file_type_name RO Short wiretap name of the
+   file type (e.g. "pcapng"), or nil if the dumper is closed. */
+static int Dumper_get_file_type_name(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    const char *name = wtap_file_type_subtype_name(
+        wtap_dump_file_type_subtype(*dp));
+    if (name) lua_pushstring(L, name); else lua_pushnil(L);
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_file_type_description RO Human-readable
+   description of the file type (e.g. "Wireshark/... - pcapng"), or nil
+   if the dumper is closed. */
+static int Dumper_get_file_type_description(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    const char *desc = wtap_file_type_subtype_description(
+        wtap_dump_file_type_subtype(*dp));
+    if (desc) lua_pushstring(L, desc); else lua_pushnil(L);
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_encap RO The numeric WTAP_ENCAP_* chosen at
+   open time, or nil if the dumper is closed. */
+static int Dumper_get_encap(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    lua_pushinteger(L, DUMPER_ENCAP(*dp));
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_encap_name RO Short wiretap name of the
+   encapsulation (e.g. "ETHERNET"), or nil if the dumper is closed. */
+static int Dumper_get_encap_name(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    const char *name = wtap_encap_name(DUMPER_ENCAP(*dp));
+    if (name) lua_pushstring(L, name); else lua_pushnil(L);
+    return 1;
+}
+
+/* WSLUA_ATTRIBUTE Dumper_encap_description RO Human-readable description
+   of the encapsulation (e.g. "Ethernet"), or nil if the dumper is
+   closed. */
+static int Dumper_get_encap_description(lua_State* L) {
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) { lua_pushnil(L); return 1; }
+    const char *desc = wtap_encap_description(DUMPER_ENCAP(*dp));
+    if (desc) lua_pushstring(L, desc); else lua_pushnil(L);
+    return 1;
+}
+
+WSLUA_METAMETHOD Dumper__tostring(lua_State* L) {
+    /* Returns a short label of the form
+       `Dumper: file_type=<name> encap=<name>` while open, or
+       `Dumper: (closed)` once `Dumper:close()` has run. Like the
+       read-only attributes above, this deliberately bypasses
+       checkDumper so a closed dumper is still inspectable from the
+       debugger's Variables view. */
+    Dumper *dp = (Dumper *)luaL_checkudata(L, 1, "Dumper");
+    if (!dp || !*dp) {
+        lua_pushstring(L, "Dumper: (closed)");
+        WSLUA_RETURN(1);
+    }
+    const char *ftype = wtap_file_type_subtype_name(
+        wtap_dump_file_type_subtype(*dp));
+    const char *encap = wtap_encap_name(DUMPER_ENCAP(*dp));
+    lua_pushfstring(L, "Dumper: file_type=%s encap=%s",
+                    ftype ? ftype : "?",
+                    encap ? encap : "?");
+    WSLUA_RETURN(1); /* The string. */
+}
+
+WSLUA_ATTRIBUTES Dumper_attributes[] = {
+    WSLUA_ATTRIBUTE_ROREG(Dumper,is_open),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,file_type),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,file_type_name),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,file_type_description),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,encap),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,encap_name),
+    WSLUA_ATTRIBUTE_ROREG(Dumper,encap_description),
+    { NULL, NULL, NULL }
+};
+
 WSLUA_METHODS Dumper_methods[] = {
     WSLUA_CLASS_FNREG(Dumper,new),
     WSLUA_CLASS_FNREG(Dumper,new_for_current),
@@ -661,6 +941,7 @@ WSLUA_METHODS Dumper_methods[] = {
 };
 
 WSLUA_META Dumper_meta[] = {
+    WSLUA_CLASS_MTREG(Dumper,tostring),
     { NULL, NULL }
 };
 
@@ -669,7 +950,7 @@ int Dumper_register(lua_State* L) {
         g_hash_table_unref(dumper_encaps);
     }
     dumper_encaps = g_hash_table_new(g_direct_hash,g_direct_equal);
-    WSLUA_REGISTER_CLASS(Dumper);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(Dumper);
     return 0;
 }
 

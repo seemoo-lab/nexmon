@@ -20,7 +20,9 @@
 #include "packet-dtls.h"
 
 void proto_register_data(void);
+void event_register_data(void);
 void proto_reg_handoff_data(void);
+void event_reg_handoff_data(void);
 
 
 static int proto_data;
@@ -98,7 +100,7 @@ dissect_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 			if(generate_md5_hash) {
 				const uint8_t *cp;
-				uint8_t	      digest[HASH_MD5_LENGTH];
+				uint8_t	      digest[HASH_MD5_LENGTH] = {0};
 				const char   *digest_string;
 
 				cp = tvb_get_ptr(tvb, 0, bytes);
@@ -116,8 +118,8 @@ dissect_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	return tvb_captured_length(tvb);
 }
 
-void
-proto_register_data(void)
+static void
+common_register_data(void)
 {
 	static hf_register_info hf[] = {
 		{ &hf_data_data,
@@ -158,11 +160,7 @@ proto_register_data(void)
 
 	module_t *module_data;
 
-	proto_data = proto_register_protocol (
-		"Data",		/* name */
-		"Data",		/* short name */
-		"data"		/* abbrev */
-		);
+	proto_data = proto_register_protocol ("Data", "Data", "data");
 
 	data_handle = register_dissector("data", dissect_data, proto_data);
 
@@ -200,25 +198,46 @@ proto_register_data(void)
 	proto_set_cant_toggle(proto_data);
 }
 
+void
+proto_register_data(void)
+{
+	common_register_data();
+}
+
+void event_register_data(void)
+{
+	common_register_data();
+}
+
 static void
 add_foreach_decode_as(const char *table_name, const char *ui_name _U_, void *user_data)
 {
-        dissector_handle_t handle = (dissector_handle_t) user_data;
-        dissector_table_t dissector_table = find_dissector_table(table_name);
+	dissector_handle_t handle = (dissector_handle_t) user_data;
+	dissector_table_t dissector_table = find_dissector_table(table_name);
 
 
-        if (dissector_table_supports_decode_as(dissector_table))
-                dissector_add_for_decode_as(table_name, handle);
+	if (dissector_table_supports_decode_as(dissector_table))
+		dissector_add_for_decode_as(table_name, handle);
+}
+
+static void common_reg_handoff_data(void)
+{
+	dissector_add_string("media_type", "application/octet-stream", data_handle);
+	dissector_all_tables_foreach_table(add_foreach_decode_as, (void*)data_handle, NULL);
 }
 
 void
 proto_reg_handoff_data(void)
 {
-	dissector_add_string("media_type", "application/octet-stream", data_handle);
+	common_reg_handoff_data();
 	ssl_dissector_add(0, data_handle);
 	dtls_dissector_add(0, data_handle);
+}
 
-	dissector_all_tables_foreach_table(add_foreach_decode_as, (void *)data_handle, NULL);
+void
+event_reg_handoff_data(void)
+{
+	common_reg_handoff_data();
 }
 
 /*

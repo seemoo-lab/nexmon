@@ -34,6 +34,7 @@
 static int proto_btle;
 static int proto_btle_rf;
 static int proto_nordic_ble;
+static int proto_silabs_dch;
 
 static int hf_access_address;
 static int hf_coding_indicator;
@@ -1299,7 +1300,7 @@ reverse_bits_per_byte(const uint32_t val)
 }
 
 static int
-dissect_feature_set(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_feature_set(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_item           *sub_item;
     proto_tree           *sub_tree;
@@ -1335,7 +1336,7 @@ dissect_feature_set(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_conn_param_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_conn_param_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_interval_min, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
@@ -1377,7 +1378,7 @@ dissect_conn_param_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_length_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_length_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_max_rx_octets, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
@@ -1395,7 +1396,7 @@ dissect_length_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_phy_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_phy_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_bitmask(btle_tree, tvb, offset, hf_control_tx_phys, ett_tx_phys, hfx_control_phys_sender, ENC_NA);
     offset += 1;
@@ -1407,7 +1408,7 @@ dissect_phy_req_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_periodic_sync_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset, packet_info *pinfo, uint32_t interface_id, uint32_t adapter_id)
+dissect_periodic_sync_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset, packet_info *pinfo, uint32_t interface_id, uint32_t adapter_id)
 {
     uint32_t              sync_offset, interval;
     int                   reserved_offset;
@@ -1477,7 +1478,7 @@ dissect_periodic_sync_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset, pack
 }
 
 static int
-dissect_cis_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cis_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     uint32_t              interval;
     proto_item           *item;
@@ -1550,7 +1551,7 @@ dissect_cis_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cis_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cis_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cis_offset_min, tvb, offset, 3, ENC_LITTLE_ENDIAN);
     offset += 3;
@@ -1565,7 +1566,7 @@ dissect_cis_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cis_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cis_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset += 4;
@@ -1586,7 +1587,7 @@ dissect_cis_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cis_terminate_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cis_terminate_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cig_id, tvb, offset, 1, ENC_NA);
     offset += 1;
@@ -1601,7 +1602,7 @@ dissect_cis_terminate_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_power_control_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_power_control_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_bitmask(btle_tree, tvb, offset, hf_control_pwr_phy, ett_pwr_phy, hfx_control_pwr_phy, ENC_NA);
     offset += 1;
@@ -1617,7 +1618,7 @@ dissect_power_control_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 
 
 static int
-dissect_power_control_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_power_control_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_bitmask(btle_tree, tvb, offset, hf_control_pwrflags, ett_pwrflags, hfx_control_pwrflags, ENC_NA);
     offset += 1;
@@ -1635,7 +1636,7 @@ dissect_power_control_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_power_control_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_power_control_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_bitmask(btle_tree, tvb, offset, hf_control_pwr_phy, ett_pwr_phy, hfx_control_pwr_phy, ENC_NA);
     offset += 1;
@@ -1653,7 +1654,7 @@ dissect_power_control_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_subrate_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_subrate_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_subrate_factor_min, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
@@ -1674,7 +1675,7 @@ dissect_subrate_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_subrate_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_subrate_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_subrate_factor, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
@@ -1695,7 +1696,7 @@ dissect_subrate_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_channel_reporting_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_channel_reporting_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_channel_reporting_enable, tvb, offset, 1, ENC_NA);
     offset += 1;
@@ -1710,7 +1711,7 @@ dissect_channel_reporting_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_channel_status_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_channel_status_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_channel_classification, tvb, offset, 10, ENC_NA);
     offset += 10;
@@ -1720,7 +1721,7 @@ dissect_channel_status_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 
 
 static int
-dissect_periodic_sync_wr_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset, packet_info *pinfo, uint32_t interface_id, uint32_t adapter_id)
+dissect_periodic_sync_wr_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset, packet_info *pinfo, uint32_t interface_id, uint32_t adapter_id)
 {
     /* The first part of LL_PERIODIC_SYNC_WR_IND is identical to LL_PERIODIC_SYNC_IND */
     /* dissect_periodic_sync_ind returns the new offset, not bytes dissected. */
@@ -1745,7 +1746,7 @@ dissect_periodic_sync_wr_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset, p
 }
 
 static int
-dissect_cs_capabilities_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_capabilities_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_capabilities_mode_types, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     offset += 1;
@@ -1823,7 +1824,7 @@ dissect_cs_capabilities_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int of
 }
 
 static int
-dissect_cs_config_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_config_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_config_req_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_config_req_action, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -1914,7 +1915,7 @@ dissect_cs_config_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_config_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_config_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_config_rsp_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_config_rsp_rfu, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -1924,7 +1925,7 @@ dissect_cs_config_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_req_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_req_rfu, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -1983,7 +1984,7 @@ dissect_cs_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_rsp_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_rsp_rfu1, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -2026,7 +2027,7 @@ dissect_cs_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_ind_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_ind_rfu1, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -2066,7 +2067,7 @@ dissect_cs_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_terminate_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_terminate_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_terminate_config_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(btle_tree, hf_control_cs_terminate_rfu, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -2082,7 +2083,7 @@ dissect_cs_terminate_req_and_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offse
 }
 
 static int
-dissect_cs_sec_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_sec_req(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_sec_iv_c, tvb, offset, 8, ENC_LITTLE_ENDIAN);
     offset += 8;
@@ -2097,7 +2098,7 @@ dissect_cs_sec_req(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_sec_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_sec_rsp(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_sec_iv_p, tvb, offset, 8, ENC_LITTLE_ENDIAN);
     offset += 8;
@@ -2112,7 +2113,7 @@ dissect_cs_sec_rsp(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_cs_channel_map_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
+dissect_cs_channel_map_ind(tvbuff_t *tvb, proto_tree *btle_tree, unsigned offset)
 {
     proto_tree_add_item(btle_tree, hf_control_cs_channel_map_ind_0, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     offset += 1;
@@ -2151,7 +2152,7 @@ dissect_cs_channel_map_ind(tvbuff_t *tvb, proto_tree *btle_tree, int offset)
 }
 
 static int
-dissect_ctrl_pdu_without_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *btle_tree, int offset)
+dissect_ctrl_pdu_without_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *btle_tree, unsigned offset)
 {
     if (tvb_reported_length_remaining(tvb, offset) > 3) {
         proto_tree_add_expert(btle_tree, pinfo, &ei_unknown_data, tvb, offset, tvb_reported_length_remaining(tvb, offset) - 3);
@@ -2519,7 +2520,7 @@ dissect_ad_eir(tvbuff_t *tvb, uint32_t interface_id, uint32_t adapter_id, uint32
             break;
         length = tvb_get_uint8(tvb, offset);
         ++offset;
-        if (length <= 0)
+        if (length == 0)
             continue;
         --remain;
         if (remain < length)
@@ -2610,10 +2611,10 @@ static const btle_context_t * get_btle_context(packet_info *pinfo,
     ubertooth_data_t *ubertooth_data = NULL;
 
     wmem_list_frame_t * list_data = wmem_list_frame_prev(wmem_list_tail(pinfo->layers));
-    if (list_data) {
+    if (list_data && data) {
         int previous_proto = GPOINTER_TO_INT(wmem_list_frame_data(list_data));
 
-        if ((previous_proto == proto_btle_rf)||(previous_proto == proto_nordic_ble)) {
+        if ((previous_proto == proto_btle_rf)||(previous_proto == proto_nordic_ble)||(previous_proto == proto_silabs_dch)) {
             btle_context = (const btle_context_t *) data;
             bluetooth_data = btle_context->previous_protocol_data.bluetooth_data;
         } else if (previous_proto == proto_bluetooth) {
@@ -3629,7 +3630,6 @@ dissect_btle_acl(tvbuff_t *tvb,
                                 * Missing fragment for previous L2CAP and fragment start for this.
                                 * Set more_fragments and increase l2cap_index to avoid reassembly.
                                 */
-                            btle_frame_info->more_fragments = 1;
                             btle_frame_info->missing_start = 1;
                             btle_frame_info->l2cap_index = l2cap_index;
                             connection_info->direction_info[direction].l2cap_index = l2cap_index;
@@ -3782,8 +3782,7 @@ dissect_btle_acl(tvbuff_t *tvb,
         }
         break;
     case 0x03: /* Control PDU */
-        control_proc_item = proto_tree_add_item(btle_tree, hf_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        control_opcode = tvb_get_uint8(tvb, offset);
+        control_proc_item = proto_tree_add_item_ret_uint8(btle_tree, hf_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN, &control_opcode);
         offset += 1;
 
         col_add_fstr(pinfo->cinfo, COL_INFO, "Control Opcode: %s",
@@ -5417,8 +5416,7 @@ dissect_btle_broadcast_iso(tvbuff_t *tvb,
         break;
 
     case 0x03: /* BIG Control PDU */
-        proto_tree_add_item(btle_tree, hf_big_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        control_opcode = tvb_get_uint8(tvb, offset);
+		proto_tree_add_item_ret_uint8(btle_tree, hf_big_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN, &control_opcode);
         offset += 1;
 
         col_add_fstr(pinfo->cinfo, COL_INFO, "BIG Control Opcode: %s",
@@ -5484,8 +5482,7 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     btle_item = proto_tree_add_item(tree, proto_btle, tvb, offset, -1, ENC_NA);
     btle_tree = proto_item_add_subtree(btle_item, ett_btle);
 
-    sub_item = proto_tree_add_item(btle_tree, hf_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-    access_address = tvb_get_letohl(tvb, offset);
+    sub_item = proto_tree_add_item_ret_uint(btle_tree, hf_access_address, tvb, offset, 4, ENC_LITTLE_ENDIAN, &access_address);
     if (btle_context) {
         switch(btle_context->aa_category) {
         case E_AA_MATCHED:
@@ -5568,6 +5565,26 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         } else {
             /* Length is unknown. */
             length = 0;
+        }
+    }
+
+    /* Look up connection_info for CRC validation */
+    if (access_address != ACCESS_ADDRESS_ADVERTISING) {
+        wmem_tree_key_t key[4];
+        wmem_tree_t *wmem_tree;
+
+        key[0].length = 1;
+        key[0].key = &interface_id;
+        key[1].length = 1;
+        key[1].key = &adapter_id;
+        key[2].length = 1;
+        key[2].key = &access_address;
+        key[3].length = 0;
+        key[3].key = NULL;
+
+        wmem_tree = (wmem_tree_t *) wmem_tree_lookup32_array(connection_info_tree, key);
+        if (wmem_tree) {
+            connection_info = (connection_info_t *) wmem_tree_lookup32_le(wmem_tree, pinfo->num);
         }
     }
 
@@ -6472,7 +6489,7 @@ proto_register_btle(void)
         },
         { &hf_control_peripheral_session_initialization_vector,
             { "Peripheral Session Initialization Vector",       "btle.control.peripheral_session_initialization_vector",
-            FT_UINT64, BASE_DEC_HEX, NULL, 0x0,
+            FT_UINT32, BASE_DEC_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_control_max_rx_octets,
@@ -7981,6 +7998,7 @@ proto_reg_handoff_btle(void)
 
     proto_btle_rf = proto_get_id_by_filter_name("btle_rf");
     proto_nordic_ble = proto_get_id_by_filter_name("nordic_ble");
+    proto_silabs_dch = proto_get_id_by_filter_name("silabs-dch");
 
     dissector_add_uint("bluetooth.encap", WTAP_ENCAP_BLUETOOTH_LE_LL, btle_handle);
 }
