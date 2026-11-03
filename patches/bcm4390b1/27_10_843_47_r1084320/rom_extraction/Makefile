@@ -147,7 +147,7 @@ gen/ucode%.bin: $(FW_PATH)/ucode%.bin
 
 gen/ucode%_compressed.bin : gen/ucode%.bin
 	@printf "\033[0;32m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode%_compressed.c : gen/ucode%_compressed.bin
 	@printf "\033[0;32m  GENERATING C FILE\033[0m %s => %s\n" $< $@

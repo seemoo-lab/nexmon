@@ -132,7 +132,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

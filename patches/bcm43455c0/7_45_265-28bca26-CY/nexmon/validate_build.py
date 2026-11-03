@@ -78,6 +78,23 @@ def section(title):
     print(f"  {title}")
     print(f"{'='*60}")
 
+def _require_artifacts():
+    """Exit early when the firmware has not been built.
+
+    The patched .bin and gen/ are build outputs (gitignored), so on a fresh
+    checkout there is nothing to validate. Skip with a clear message unless
+    --require / NEXMON_REQUIRE_BUILD=1 is set (use that after a build).
+    """
+    if os.path.isfile(PATCHED) and os.path.isfile(PATCH_ELF):
+        return
+    require = '--require' in sys.argv[1:] or os.environ.get('NEXMON_REQUIRE_BUILD') == '1'
+    print(f"build artifacts not found ({os.path.relpath(PATCHED)}, gen/patch.elf);"
+          f" {'FAILING' if require else 'skipping'} build validation.")
+    print("Build the firmware first (make -C patches/bcm43455c0/7_45_265-28bca26-CY/nexmon).")
+    sys.exit(1 if require else 0)
+
+_require_artifacts()
+
 def read_bin(path):
     with open(path, 'rb') as f:
         return f.read()
@@ -406,7 +423,7 @@ if os.path.isfile(ucode_orig) and os.path.isfile(ucode_gen):
     if orig_hash == gen_hash:
         ok(f"Ucode binary matches original (sha256: {orig_hash}...)")
     else:
-        warn(f"Ucode binary differs from original (expected if custom ucode.asm used)")
+        warn("Ucode binary differs from original (expected if custom ucode.asm used)")
 
 if os.path.isfile(ucode_comp) and os.path.isfile(ucode_gen):
     comp_size = os.path.getsize(ucode_comp)
@@ -519,7 +536,7 @@ if os.path.isfile(ORIGINAL):
 
 # ═══════════════════════════════════════════════════════════════
 print(f"\n{'='*60}")
-print(f"  VALIDATION SUMMARY")
+print("  VALIDATION SUMMARY")
 print(f"{'='*60}")
 print(f"  ✅ Passed:  {passed}")
 print(f"  ❌ Failed:  {failed}")

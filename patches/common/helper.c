@@ -53,8 +53,10 @@ schedule_work(void *context, void *data, void *mainfn, int ms, int periodic)
     struct hndrte_timer *task;
     task = hndrte_init_timer(context, data, mainfn, 0);
     if (task) {
-        if(!hndrte_add_timer(task, ms, periodic))
+        if (!hndrte_add_timer(task, ms, periodic)) {
             hndrte_free_timer(task);
+            return 0;
+        }
     }
     return task;
 }
@@ -82,7 +84,10 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
 {
     struct hndrte_timer *task;
     struct delayed_task *delayed_task = malloc(sizeof(struct delayed_task), 0);
-    
+
+    if (!delayed_task)
+        return 0;
+
     delayed_task->context = context;
     delayed_task->data = data;
     delayed_task->mainfn = mainfn;
@@ -90,9 +95,14 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
     delayed_task->periodic = periodic;
 
     task = hndrte_init_timer(context, delayed_task, perform_delayed_task, 0);
-    if (task) {
-        if(!hndrte_add_timer(task, delay_ms, 0))
-            hndrte_free_timer(task);
+    if (!task) {
+        free(delayed_task);
+        return 0;
+    }
+    if (!hndrte_add_timer(task, delay_ms, 0)) {
+        hndrte_free_timer(task);
+        free(delayed_task);
+        return 0;
     }
     return task;
 }
@@ -131,9 +141,14 @@ _hexdump(char *desc, void *addr, int len, int (*_printf)(const char *, ...))
     unsigned char buff[17];
     unsigned char *pc = (unsigned char*)addr;
 
+    buff[0] = '\0';
+
     // Output description if given.
     if (desc != 0)
         _printf("%s:\n", desc);
+
+    if (len <= 0 || pc == 0)
+        return;
 
     // Process every byte in the data.
     for (i = 0; i < len; i++) {

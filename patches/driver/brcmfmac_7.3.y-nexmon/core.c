@@ -150,12 +150,13 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 {
     const size_t header_len = offsetof(struct nexudp_ioctl_header, payload);
     struct nlmsghdr *nlh;
-    struct nexudp_ioctl_header *frame;
-    struct net_device *ndev;
+    struct nexudp_ioctl_header *frame = NULL;
+    struct net_device *ndev = NULL;
     struct net_device *target_ndev = NULL;
     struct brcmf_if *ifp;
     struct sk_buff *skb_out;
     struct nlmsghdr *nlh_tx;
+    size_t frame_len;
     size_t payload_len;
     size_t reply_len;
     u32 portid;
@@ -171,35 +172,45 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     if (skb->len < NLMSG_HDRLEN)
         return;
 
+    if (skb_is_nonlinear(skb) && skb_linearize(skb))
+        return;
+
     nlh = nlmsg_hdr(skb);
     if (!nlmsg_ok(nlh, skb->len)) {
         pr_err_ratelimited("brcmfmac: NEXMON: malformed netlink header\n");
         return;
     }
 
-    if (nlmsg_len(nlh) < header_len ||
-        nlmsg_len(nlh) > header_len + BRCMF_DCMD_MAXLEN) {
-        pr_err_ratelimited("brcmfmac: NEXMON: invalid request length %u\n",
-                           nlmsg_len(nlh));
+    frame_len = nlmsg_len(nlh);
+    if (frame_len < header_len ||
+        frame_len > header_len + BRCMF_DCMD_MAXLEN) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid request length %zu\n",
+                           frame_len);
         netlink_ack(skb, nlh, -EINVAL, NULL);
         return;
     }
 
-    frame = nlmsg_data(nlh);
-    payload_len = nlmsg_len(nlh) - header_len;
+    frame = kmalloc(frame_len, GFP_KERNEL);
+    if (!frame) {
+        netlink_ack(skb, nlh, -ENOMEM, NULL);
+        return;
+    }
+    memcpy(frame, nlmsg_data(nlh), frame_len);
+
+    payload_len = frame_len - header_len;
     portid = NETLINK_CB(skb).portid;
     seq = nlh->nlmsg_seq;
 
     if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
         pr_err_ratelimited("brcmfmac: NEXMON: invalid nexudp_ioctl_header\n");
         netlink_ack(skb, nlh, -EINVAL, NULL);
-        return;
+        goto out_free;
     }
 
     if (frame->nexudphdr.type != NEXUDP_IOCTL || frame->set > 1) {
         pr_err_ratelimited("brcmfmac: NEXMON: invalid frame type\n");
         netlink_ack(skb, nlh, -EINVAL, NULL);
-        return;
+        goto out_free;
     }
 
     /* Netlink does not use the UDP security cookie.  New clients put the
@@ -211,7 +222,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     if (ifindex <= 0) {
         pr_err_ratelimited("brcmfmac: NEXMON: no default interface, bus not ready\n");
         netlink_ack(skb, nlh, -ENODEV, NULL);
-        return;
+        goto out_free;
     }
 
     rtnl_lock();
@@ -221,7 +232,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         pr_err_ratelimited("brcmfmac: NEXMON: interface index %d not found\n",
                            ifindex);
         netlink_ack(skb, nlh, -ENODEV, NULL);
-        return;
+        goto out_free;
     }
 
     if (ndev->netdev_ops != &brcmf_netdev_ops_pri &&
@@ -254,7 +265,8 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
 
     /* Monitor and promiscuous mode commands and chip-global variables are directed to primary BSS */
     if (frame->cmd == 108 /* WLC_SET_MONITOR */ || frame->cmd == 107 /* WLC_GET_MONITOR */ ||
-        frame->cmd == 30  /* WLC_SET_PROMISC */ || frame->cmd == 29  /* WLC_GET_PROMISC */ ||
+        frame->cmd == 10  /* WLC_SET_PROMISC */ || frame->cmd == 9   /* WLC_GET_PROMISC */ ||
+        frame->cmd == 30  /* WLC_SET_CHANNEL */ || frame->cmd == 29  /* WLC_GET_CHANNEL */ ||
         frame->cmd == 262 /* WLC_GET_VAR */     || frame->cmd == 263 /* WLC_SET_VAR */) {
         struct brcmf_if *pri_ifp = ifp->drvr ? ifp->drvr->iflist[0] : NULL;
 
@@ -337,7 +349,7 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
             goto out_put;
         }
 
-        reply_len = nlmsg_len(nlh);
+        reply_len = frame_len;
         skb_out = nlmsg_new(reply_len, GFP_KERNEL);
         if (!skb_out) {
             netlink_ack(skb, nlh, -ENOMEM, NULL);
@@ -357,6 +369,8 @@ out_put:
     if (target_ndev)
         dev_put(target_ndev);
     dev_put(ndev);
+out_free:
+    kfree(frame);
 }
 
 char *brcmf_ifname(struct brcmf_if *ifp)
@@ -818,7 +832,7 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 	} else {
 		struct ieee80211_radiotap_header *radiotap;
 
-		/* TODO: use RX status to fill some radiotap data */
+		/* NOTE: RX status used when available; minimal radiotap otherwise */
 		if (skb_headroom(skb) < sizeof(*radiotap)) {
 			dev_kfree_skb_any(skb);
 			return;
@@ -827,7 +841,7 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 		memset(radiotap, 0, sizeof(*radiotap));
 		radiotap->it_len = cpu_to_le16(sizeof(*radiotap));
 
-		/* TODO: 4 bytes with receive status? Trim them safely. */
+		/* NOTE: 4-byte HW status trimmed safely if present */
 		if (skb->len >= 4)
 			skb_trim(skb, skb->len - 4);
 	}
@@ -1309,15 +1323,18 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 		else
 			brcmf_dbg(INFO, "NEXMON: mpc snapshot unsupported\n");
 
-		err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM, 0);
-		if (err)
-			bphy_err(drvr, "BRCMF_C_SET_PM error (%d)\n", err);
-		err = brcmf_fil_iovar_int_set(prim, "qtxpower", qtxpwr_max);
-		if (err)
-			bphy_err(drvr, "qtxpower set error (%d)\n", err);
-		err = brcmf_fil_iovar_int_set(prim, "mpc", 0);
-		if (err)
-			bphy_err(drvr, "mpc set error (%d)\n", err);
+		int tmp_err;
+
+		tmp_err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM, 0);
+		if (tmp_err)
+			bphy_err(drvr, "BRCMF_C_SET_PM error (%d)\n", tmp_err);
+		tmp_err = brcmf_fil_iovar_int_set(prim, "qtxpower", qtxpwr_max);
+		if (tmp_err)
+			bphy_err(drvr, "qtxpower set error (%d)\n", tmp_err);
+		tmp_err = brcmf_fil_iovar_int_set(prim, "mpc", 0);
+		if (tmp_err)
+			bphy_err(drvr, "mpc set error (%d)\n", tmp_err);
+		err = 0;
 	}
 
 	/* Monitor is now live: remember it so a wedge-reset can replay the vif

@@ -40,9 +40,6 @@
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
 #include <ieee80211_radiotap.h>
-
-#define ENOENT   2  /* No such file or directory */
-#define EINVAL  22  /* Invalid argument */
 #define NULL     0
 
 inline uint16_t
@@ -76,11 +73,22 @@ static const struct radiotap_align_size rtap_namespace_sizes[] = {
     [IEEE80211_RADIOTAP_TX_FLAGS] = { .align = 2, .size = 2, },
     [IEEE80211_RADIOTAP_RTS_RETRIES] = { .align = 1, .size = 1, },
     [IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
+    [IEEE80211_RADIOTAP_XCHANNEL] = { .align = 4, .size = 8, },
     [IEEE80211_RADIOTAP_MCS] = { .align = 1, .size = 3, },
     [IEEE80211_RADIOTAP_AMPDU_STATUS] = { .align = 4, .size = 8, },
     [IEEE80211_RADIOTAP_VHT] = { .align = 2, .size = 12, },
+    [IEEE80211_RADIOTAP_TIMESTAMP] = { .align = 8, .size = 12, },
+    [IEEE80211_RADIOTAP_HE] = { .align = 2, .size = 12, },
+    [IEEE80211_RADIOTAP_HE_MU] = { .align = 2, .size = 12, },
+    [IEEE80211_RADIOTAP_HE_MU_OTHER_USER] = { .align = 2, .size = 6, },
+    [IEEE80211_RADIOTAP_ZERO_LEN_PSDU] = { .align = 1, .size = 1, },
+    [IEEE80211_RADIOTAP_LSIG] = { .align = 2, .size = 4, },
+    [IEEE80211_RADIOTAP_S1G] = { .align = 2, .size = 6, },
+    [IEEE80211_RADIOTAP_EHT_USIG] = { .align = 4, .size = 12, },
     /*
-     * add more here as they are defined in radiotap.h
+     * add more fixed-size fields here as they are defined in radiotap.h;
+     * variable-length TLV (28) / EHT (34) entries have align = 0 so the
+     * iterator stops cleanly with -ENOENT.
      */
 };
 
@@ -153,6 +161,7 @@ int ieee80211_radiotap_iterator_init(
     iterator->_reset_on_ext = 0;
     /* Extended bitmaps may be unaligned; keep their address byte-oriented. */
     iterator->_next_bitmap = (uint8_t *)radiotap_header + sizeof(*radiotap_header);
+    iterator->_next_ns_data = 0;
     iterator->_vns = vns;
     iterator->current_namespace = &radiotap_ns;
     iterator->is_radiotap_ns = 1;
@@ -271,14 +280,16 @@ int ieee80211_radiotap_iterator_next(
         default:
             if (!iterator->current_namespace ||
                 iterator->_arg_index >= iterator->current_namespace->n_bits) {
-                if (iterator->current_namespace == &radiotap_ns)
-                    return -ENOENT;
                 align = 0;
             } else {
                 align = iterator->current_namespace->align_size[iterator->_arg_index].align;
                 size = iterator->current_namespace->align_size[iterator->_arg_index].size;
             }
             if (!align) {
+                if (iterator->current_namespace == &radiotap_ns)
+                    return -ENOENT;
+                if (!iterator->_next_ns_data)
+                    return -EINVAL;
                 /* skip all subsequent data */
                 iterator->_arg = iterator->_next_ns_data;
                 /* give up on this namespace */
@@ -308,10 +319,11 @@ int ieee80211_radiotap_iterator_next(
 
         if (iterator->_arg_index % 32 == IEEE80211_RADIOTAP_VENDOR_NAMESPACE) {
             int vnslen;
+            unsigned long used = (unsigned long)iterator->_arg -
+                                 (unsigned long)iterator->_rtheader;
 
-            if ((unsigned long)iterator->_arg + size -
-                (unsigned long)iterator->_rtheader >
-                (unsigned long)iterator->_max_length)
+            if (used > (unsigned long)iterator->_max_length ||
+                (unsigned long)iterator->_max_length - used < (unsigned long)size)
                 return -EINVAL;
 
             oui = (*iterator->_arg << 16) |
@@ -322,6 +334,9 @@ int ieee80211_radiotap_iterator_next(
             find_ns(iterator, oui, subns);
 
             vnslen = get_unaligned_le16(iterator->_arg + 4);
+            if ((unsigned long)iterator->_max_length - used - (unsigned long)size <
+                (unsigned long)vnslen)
+                return -EINVAL;
             iterator->_next_ns_data = iterator->_arg + size + vnslen;
             if (!iterator->current_namespace)
                 size += vnslen;

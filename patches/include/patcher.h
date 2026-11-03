@@ -65,9 +65,9 @@
     hook_ ## name(void) \
     { \
         asm( \
-            "push {r0-r3,lr}\n" \
+            "push {r0-r3,r12,lr}\n" \
             "bl " #func "\n" \
-            "pop {r0-r3,lr}\n" \
+            "pop {r0-r3,r12,lr}\n" \
             inst "\n" \
             "b b_" #name " + 4\n" \
             ); \

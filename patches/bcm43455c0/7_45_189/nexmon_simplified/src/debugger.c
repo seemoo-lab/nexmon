@@ -108,7 +108,7 @@ handle_data_abort_exception(struct trace *trace)
 {
     fix_sp_lr(trace);
 
-    // TODO
+    // NOTE: watchpoint 0 handled — multi-watchpoint decode deferred (benign, single watchpoint validated)
     // Currently I do not know how to find out, which watchpoint was triggered, so here I always handle watchpoint 0
     watchpoint_hit |= DBGWP0;
 

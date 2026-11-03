@@ -109,11 +109,12 @@ wlc_bmac_write_objmem64(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigne
 void
 wlc_bmac_write_objmem32_objaddr(struct wlc_hw_info *wlc_hw, unsigned int objaddr, unsigned int value)
 {
+  unsigned int base = objaddr & ~1U;
   unsigned int low;
   unsigned int high;
 
     // first we read in one QWORD of existing bytes stored in the d11 object memory
-  wlc_bmac_read_objmem64_objaddr(wlc_hw, objaddr, &low, &high);
+  wlc_bmac_read_objmem64_objaddr(wlc_hw, base, &low, &high);
     
     // then we replace the DWORD that should be written in this QWORD
   if (objaddr & 1) {
@@ -126,13 +127,13 @@ wlc_bmac_write_objmem32_objaddr(struct wlc_hw_info *wlc_hw, unsigned int objaddr
     // a whole QWORD to be able to read back the written value at the next call to the
     // wlc_bmac_read_objmem64 function. Writing less than 64 bits (one QWORD) does not
     // deliver the new but the old value on the next read.
-  wlc_bmac_write_objmem64_objaddr(wlc_hw, objaddr, low, high);
+  wlc_bmac_write_objmem64_objaddr(wlc_hw, base, low, high);
 }
 
 void
 wlc_bmac_write_objmem32(struct wlc_hw_info *wlc_hw, unsigned int offset, unsigned int value, int sel)
 {
-  wlc_bmac_write_objmem32_objaddr(wlc_hw, sel | ((offset & 0xfffffff8) >> 2), value);
+  wlc_bmac_write_objmem32_objaddr(wlc_hw, sel | ((offset & 0xfffffffc) >> 2), value);
 }
 
 void

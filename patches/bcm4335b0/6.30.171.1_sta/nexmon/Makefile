@@ -1,4 +1,4 @@
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
 include ../version.mk
 include $(FW_PATH)/definitions.mk
 
@@ -106,7 +106,7 @@ gen/patch.elf: patch.ld gen/nexmon.ld gen/memory.ld $(OBJS)
 fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
+	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/patches.log
 
 ###################################################################
 # ucode compression related
@@ -130,7 +130,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

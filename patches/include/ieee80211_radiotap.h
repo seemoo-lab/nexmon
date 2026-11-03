@@ -245,11 +245,19 @@ enum ieee80211_radiotap_type {
     IEEE80211_RADIOTAP_VHT = 21,
     IEEE80211_RADIOTAP_TIMESTAMP = 22,
     IEEE80211_RADIOTAP_HE = 23,
+    IEEE80211_RADIOTAP_HE_MU = 24,
+    IEEE80211_RADIOTAP_HE_MU_OTHER_USER = 25,
+    IEEE80211_RADIOTAP_ZERO_LEN_PSDU = 26,
+    IEEE80211_RADIOTAP_LSIG = 27,
+    IEEE80211_RADIOTAP_TLV = 28,
 
     /* valid in every it_present bitmap, even vendor namespaces */
     IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE = 29,
     IEEE80211_RADIOTAP_VENDOR_NAMESPACE = 30,
-    IEEE80211_RADIOTAP_EXT = 31
+    IEEE80211_RADIOTAP_EXT = 31,
+    IEEE80211_RADIOTAP_S1G = 32,
+    IEEE80211_RADIOTAP_EHT_USIG = 33,
+    IEEE80211_RADIOTAP_EHT = 34
 };
 
 /* Channel flags. */
@@ -444,7 +452,7 @@ struct ieee80211_radiotap_iterator {
     const struct ieee80211_radiotap_namespace *current_namespace;
 
     unsigned char *_arg, *_next_ns_data;
-    unsigned int *_next_bitmap;
+    uint8 *_next_bitmap;
 
     unsigned char *this_arg;
     int this_arg_index;
@@ -486,6 +494,13 @@ struct nexmon_radiotap_header {
     unsigned short vendor_skip_length;
 #endif
 } __attribute__((packed));
+
+#ifndef ENOENT
+#define ENOENT   2  /* No such file or directory */
+#endif
+#ifndef EINVAL
+#define EINVAL  22  /* Invalid argument */
+#endif
 
 extern int
 ieee80211_radiotap_iterator_init(struct ieee80211_radiotap_iterator *iterator,

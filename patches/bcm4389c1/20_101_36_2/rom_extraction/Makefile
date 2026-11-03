@@ -145,15 +145,15 @@ gen/ucode2.bin: $(FW_PATH)/ucode2.bin
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING FIRST UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 gen/ucode1_compressed.bin: gen/ucode1.bin
 	@printf "\033[0;31m  COMPRESSING SECOND UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 gen/ucode2_compressed.bin: gen/ucode2.bin
 	@printf "\033[0;31m  COMPRESSING THIRD UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

@@ -1,4 +1,4 @@
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
 SHELL := /bin/bash
 include ../version.mk
 include $(FW_PATH)/definitions.mk
@@ -116,7 +116,7 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
 	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
+	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/patches.log
 
 fw_bcmdhd.complete.clean.bin: $(FW_PATH)/$(RAM_FILE) $(FW_PATH)/$(ROM_FILE)
 	dd if=$(FW_PATH)/$(ROM_FILE) of=$@ bs=1 status=none conv=notrunc seek=$$(($(ROMSTART)))
@@ -148,7 +148,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

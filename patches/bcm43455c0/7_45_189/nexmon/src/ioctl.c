@@ -67,6 +67,9 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             struct bcmstrbuf b;
             int err;
 
+            if (!wlc || !arg || len <= 0)
+                break;
+
             bcm_binit(&b, arg, len);
 
             for (d = wlc->dumpcb_head; d != NULL; d = d->next) {

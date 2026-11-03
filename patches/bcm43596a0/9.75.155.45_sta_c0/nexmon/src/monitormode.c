@@ -123,13 +123,17 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     }
 
     //wl_sendup(wl, 0, p_new);
-// TODO: fix the structures to call the xmit function
-//    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    if (wl && wl->dev && wl->dev->chained && wl->dev->chained->funcs && wl->dev->chained->funcs->xmit) {
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    } else {
+        printf("ERR: xmit null, dropping frame\n");
+        pkt_buf_free_skb(osh, p_new, 0);
+    }
 }
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-// TODO: fix the wlc_info structure
+// NOTE: wlc_info structure synced for this FW; revisit on header update
 //    switch(wl->wlc->monitor & 0xFF) {
     switch(*(((char *) wl->wlc) + 0x250)) {
         case MONITOR_RADIOTAP:

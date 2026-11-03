@@ -73,7 +73,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     switch(cmd) {
         case NEX_GET_CAPABILITIES:
         {
-            if (len == 4) {
+            if (len >= 4 && arg) {
                 memcpy(arg, &capabilities, 4);
                 ret = IOCTL_SUCCESS;
             }
@@ -92,6 +92,9 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             dumpcb_t *d;
             struct bcmstrbuf b;
             int err;
+
+            if (!wlc || !arg || len <= 0)
+                break;
 
             bcm_binit(&b, arg, len);
 

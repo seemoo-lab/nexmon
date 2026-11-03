@@ -1,5 +1,10 @@
 SHELL = /bin/bash
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+.DEFAULT_GOAL := all
+.DELETE_ON_ERROR:
+
+# Skip heavy shell probes when only cleaning — saves 3 forks and a sha256.
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
+KBUILD_EXTRA_SYMV = $(if $(SYMVERS_SUPPLEMENT),KBUILD_EXTRA_SYMBOLS=$(SYMVERS_SUPPLEMENT))
 include ../version.mk
 include $(FW_PATH)/definitions.mk
 
@@ -7,7 +12,8 @@ LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
 COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
 FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
-OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
+OBJS=$(sort $(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o))))
+PREFILES=$(OBJS:.o=.pre)
 
 # Auto-generated header dependencies (-MMD/-MP below). Without these a change to
 # a shared header (patches/include, ./include, or the firmware headers) would
@@ -15,21 +21,10 @@ OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o
 DEPS=$(OBJS:.o=.d)
 -include $(DEPS)
 
-KERNEL_VERSION = $(shell uname -r | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
-DRIVER_FOLDER_NAME = $(NEXMON_ROOT)/patches/driver/brcmfmac_$(KERNEL_VERSION).y-nexmon
-
-# A kernel tree whose Module.symvers lacks the vmlinux built-in exports makes
-# modpost fail an out-of-tree module with hundreds of "undefined" symbols,
-# module_layout among them, even though every source file compiles. Recover the
-# missing rows from the kernel's own .vmlinux.export.c. This expands to nothing
-# when the tree is healthy, so it costs one grep and changes no other behaviour.
-SYMVERS_SUPPLEMENT = $(shell $(NEXMON_ROOT)/buildtools/scripts/kernel-symvers-supplement.sh /lib/modules/$(shell uname -r)/build 2>/dev/null)
-KBUILD_EXTRA_SYMV = $(if $(SYMVERS_SUPPLEMENT),KBUILD_EXTRA_SYMBOLS=$(SYMVERS_SUPPLEMENT))
-
 CFLAGS= \
 	-fplugin=$(CCPLUGIN) \
-	-fplugin-arg-nexmon-objfile=$@ \
-	-fplugin-arg-nexmon-prefile=gen/nexmon.pre \
+	-fplugin-arg-nexmon-objfile=obj/$*.o \
+	-fplugin-arg-nexmon-prefile=obj/$*.pre.tmp \
 	-fplugin-arg-nexmon-chipver=$(NEXMON_CHIP_NUM) \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
@@ -58,29 +53,36 @@ all: $(RAM_FILE) brcmfmac.ko
 
 firmware-only: $(RAM_FILE)
 
-init: FORCE
+init: check-nexmon-setup-env
 	$(Q)mkdir -p obj gen log
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
-# By default every build increments BUILD_NUMBER and re-touches version.c, which
-# defeats no-op and reproducible builds (the artifact changes even when nothing
-# else did). Set NEXMON_FREEZE_BUILD_NUMBER=1 for a reproducible build that keeps
-# BUILD_NUMBER fixed and only rebuilds version.c when it actually changed.
+# By default every build increments BUILD_NUMBER and rebuilds version.o. Keep
+# this explicit rather than touching a source while make is checking its mtime.
+# Set NEXMON_FREEZE_BUILD_NUMBER=1 to keep the number fixed and only rebuild
+# version.o when its inputs actually changed.
 ifndef NEXMON_FREEZE_BUILD_NUMBER
 	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
-	$(Q)touch src/version.c
 endif
-	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
+	$(Q)$(MAKE) -s -f $(NEXMON_ROOT)/patches/common/header.mk
+
+ifndef NEXMON_FREEZE_BUILD_NUMBER
+obj/version.o obj/version.pre: FORCE
+endif
+
+# These can be requested directly or built concurrently with the objects.
+gen/memory.ld gen/ucode.asm gen/ucode.bin gen/ucode_compressed.bin \
+src/ucode_compressed.c src/templateram.c: | init
 
 brcmfmac.ko: check-nexmon-setup-env
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)KBUILD_MODPOST_WARN=1 make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
+	$(Q)KBUILD_MODPOST_WARN=1 $(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) >log/driver.log
 else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)ARCH="arm64" KBUILD_MODPOST_WARN=1 make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
+	$(Q)ARCH="arm64" KBUILD_MODPOST_WARN=1 $(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) >log/driver.log
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a Raspberry Pi)
 endif
@@ -88,40 +90,51 @@ else
 	$(warning Warning: Driver for kernel $(KERNEL_VERSION) not found)
 endif
 
-obj/%.o: src/%.c
-	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
-	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
+# A multi-target pattern rule produces the object and its plugin metadata in
+# one invocation, including when an old build has objects but no .pre files.
+# The plugin appends, so start with an empty private file and publish it only
+# after successful compilation. No compiler rewrites another object's metadata.
+define compile_object
+	@printf "\033[0;31m  COMPILING\033[0m %s => obj/$*.o (details: log/compiler.log)\n" $<
+	$(Q): > obj/$*.pre.tmp
+	$(Q)$(CC)gcc $(CFLAGS) -c $< -o obj/$*.o >>log/compiler.log && mv obj/$*.pre.tmp obj/$*.pre
+endef
 
-obj/%.o: $(NEXMON_ROOT)/patches/common/%.c
-	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
-	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
+obj/%.o obj/%.pre: src/%.c | init
+	$(compile_object)
 
-obj/%.o: $(FW_PATH)/%.c
-	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
-	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
+obj/%.o obj/%.pre: $(NEXMON_ROOT)/patches/common/%.c | init
+	$(compile_object)
 
-gen/nexmon.ld: $(OBJS)
+obj/%.o obj/%.pre: $(FW_PATH)/%.c | init
+	$(compile_object)
+
+# Merge only the current source set, in a stable order, once all compilers have
+# finished. FORCE also handles removed sources; unchanged metadata keeps its
+# timestamp so a frozen incremental build need not regenerate linker scripts.
+gen/nexmon.pre: $(OBJS) $(PREFILES) FORCE | init
+	$(Q)cat $(PREFILES) > $@.tmp
+	$(Q)if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
+
+gen/nexmon.ld: gen/nexmon.pre
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)sort gen/nexmon.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
 
-gen/nexmon.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/nexmon.mk: gen/nexmon.pre gen/patch.elf $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)printf "$(RAM_FILE): gen/patch.elf FORCE\n" > $@
 	$(Q)sort gen/nexmon.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
-	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
+	$(Q)gawk '!a[$$0]++' $@ > $@.tmp && mv $@.tmp $@
 
-gen/flashpatches.ld: $(OBJS)
+gen/flashpatches.ld: gen/nexmon.pre
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)sort gen/nexmon.pre | \
 		gawk -f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.ld.awk > $@
 
-gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/flashpatches.mk: gen/nexmon.pre $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)cat gen/nexmon.pre | gawk \
 		-v fp_data_base=$(FP_DATA_BASE) \
@@ -151,9 +164,9 @@ gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
-	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
+	$(Q)$(MAKE) -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
+	$(Q)$(MAKE) -f gen/nexmon.mk >>log/patches.log 2>>log/patches.log
 
 ###################################################################
 # ucode compression related
@@ -162,7 +175,7 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 gen/ucode.asm: $(FW_PATH)/ucode.bin
 	@printf "\033[0;31m  DISASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
+	$(Q)$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > $@.tmp && mv $@.tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
@@ -182,7 +195,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -239,9 +252,11 @@ clean: clean-firmware
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean
+	$(Q)$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER
+
+.PHONY: all firmware-only init check-nexmon-setup-env clean clean-firmware FORCE
 
 FORCE:

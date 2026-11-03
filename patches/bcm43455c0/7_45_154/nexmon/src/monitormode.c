@@ -71,14 +71,18 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 
 static void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-    skb_pull(p, PLCP_HDR_LEN);
+    if (!p || p->len <= PLCP_HDR_LEN)
+        return;
+
     void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
 
-    if (p->data - head < sizeof(struct nexmon_radiotap_header))
+    if ((p->data + PLCP_HDR_LEN) - head < sizeof(struct nexmon_radiotap_header))
     {
         printf("%s: no space for header\n", __FUNCTION__);
         return;
     }
+
+    skb_pull(p, PLCP_HDR_LEN);
 
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) skb_push(p, sizeof(struct nexmon_radiotap_header));
 
@@ -122,6 +126,12 @@ void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     unsigned char monitor = wl->wlc->monitor & 0xFF;
 
+    if (monitor & MONITOR_DROP_FRM) {
+        if (monitor & MONITOR_LOG_ONLY)
+            printf("frame received (dropped)\n");
+        return;
+    }
+
     if (monitor & MONITOR_STS) {
         void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
 
@@ -135,27 +145,17 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
         memcpy(p->data, sts, sizeof(struct wl_rxsts));
         p->fieldE |= 0x80u;
         wl_sendup_multiif(wl, p);
-    }
-
-    if (monitor & MONITOR_RADIOTAP) {
+    } else if (monitor & MONITOR_RADIOTAP) {
         wl_monitor_radiotap(wl, sts, p);
-    }
-
-    if (monitor & MONITOR_IEEE80211) {
+    } else if (monitor & MONITOR_IEEE80211) {
+        if (!p || p->len <= PLCP_HDR_LEN)
+            return;
         skb_pull(p, PLCP_HDR_LEN);
         p->fieldE |= 0x80u;
         wl_sendup_multiif(wl, p);
-    }
-
-    if (monitor & MONITOR_LOG_ONLY) {
+    } else if (monitor & MONITOR_LOG_ONLY) {
         printf("frame received\n");
-    }
-
-    if (monitor & MONITOR_DROP_FRM) {
-        ;
-    }
-
-    if (monitor & MONITOR_IPV4_UDP) {
+    } else if (monitor & MONITOR_IPV4_UDP) {
         printf("MONITOR over udp is not supported!\n");
     }
 }

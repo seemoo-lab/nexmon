@@ -7261,13 +7261,13 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	if (p2p && rsdb) {
 		c0_limits[i].max = 2;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
-		combo[c].max_interfaces = 4;
+		combo[c].max_interfaces = 4 + mon_flag;
 	} else if (p2p) {
 		combo[c].max_interfaces = i;
 	} else if (rsdb) {
 		c0_limits[i].max = 2;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
-		combo[c].max_interfaces = 3;
+		combo[c].max_interfaces = 3 + mon_flag;
 	} else {
 		c0_limits[i].max = 1;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);

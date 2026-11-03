@@ -121,6 +121,9 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             struct bcmstrbuf b;
             int err;
 
+            if (!wlc || !arg || len <= 0)
+                break;
+
             bcm_binit(&b, arg, len);
 
             for (d = wlc->dumpcb_head; d != NULL; d = d->next) {
@@ -136,9 +139,9 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
         case 512:
         {
             extern int dbg_hook_calls, dbg_hook_m_zero, dbg_hook_p_null, dbg_hook_len_small;
-            extern int dbg_hook_short_nz, dbg_hook_rtap_bad, dbg_inject_calls, dbg_inject_rate;
+            extern int dbg_hook_short_nz, dbg_hook_rtap_bad, dbg_inject_calls, dbg_sf_rate;
             extern int dbg_sf_calls, dbg_sf_txoff_null, dbg_sf_no_scb, dbg_sf_wlc_down;
-            extern int dbg_sf_txfifo_calls, dbg_sf_rate, dbg_sf_band, dbg_sf_hw_up, dbg_sf_wlc_clk;
+            extern int dbg_sf_txfifo_calls, dbg_sf_band, dbg_sf_hw_up, dbg_sf_wlc_clk;
             extern unsigned int dbg_sf_scb_ptr, dbg_wlc_ptr, dbg_wlc_10, dbg_wlc_14;
             extern unsigned int dbg_di_ptr, dbg_fn_ptr, dbg_p_len, dbg_txh_p28;
             extern unsigned int dbg_txh_dump[16];
@@ -146,10 +149,11 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             extern int dbg_scb_check_null_count, dbg_scb_check_ok_count;
             extern unsigned int dbg_sf_p_scb, dbg_mctl_before, dbg_mctl_after;
 
-            printf("IOCTL 512 called len=%d\n", len);
+            if (!wlc)
+                break;
 
             struct dma_info *di = 0;
-            if (wlc && wlc->hw)
+            if (wlc->hw)
                 di = wlc->hw->di[1];
             else if (dbg_di_ptr)
                 di = (struct dma_info *) dbg_di_ptr;
@@ -162,7 +166,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             unsigned int psmdbg = 0, phydbg = 0, frmtx = 0, frmtx2 = 0, clkctl = 0;
             unsigned short phytxerr = 0;
             char *regs = *(char **)((char *)wlc + 0x0c);
-            if (wlc && wlc->hw && wlc->hw->up && regs) {
+            if (wlc->hw && wlc->hw->up && regs) {
                 macctl = *(unsigned int *)(regs + 0x120);
                 maccmd = *(unsigned int *)(regs + 0x124);
                 macstatus = *(unsigned int *)(regs + 0x128);
@@ -178,8 +182,8 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             void *scb_bss = (scb) ? *(void **)((char *)scb + 16) : 0;
             unsigned int bss_flags = (scb_bss) ? *(unsigned int *)((char *)scb_bss + 232) : 0;
             void *active_q = *(void **)((char *)wlc + 0x5d0);
-            int susp_depth = (wlc && wlc->hw) ? *(int *)((char *)wlc->hw + 0xf0) : -1;
-            int hw_144 = (wlc && wlc->hw) ? *(int *)((char *)wlc->hw + 0x144) : -1;
+            int susp_depth = (wlc->hw) ? *(int *)((char *)wlc->hw + 0xf0) : -1;
+            int hw_144 = (wlc->hw) ? *(int *)((char *)wlc->hw + 0x144) : -1;
 
             argprintf("sf=%d scb_ok=%d scb_null=%d ret=%d inj=%d rate=%d\n"
                       "scb=%p p_scb=%08x bss=%p bss_f=%08x\n"

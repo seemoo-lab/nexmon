@@ -142,8 +142,11 @@ void
 sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
     void *scb;
+    unsigned int dump_len;
 
+#ifdef NEXMON_TX_DEBUG
     printf("sendframe called: wlc=%p p=%p fifo=%u rate=%u\n", wlc, p, fifo, rate);
+#endif
     dbg_sf_calls++;
 
     /* Guarantee headroom for the D11 TX header wlc_sendctl->wlc_d11hdrs
@@ -182,7 +185,10 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     if (wlc->hw && fifo < 6 && wlc->hw->di[fifo])
         dbg_di_ptr = (unsigned int) wlc->hw->di[fifo];
     dbg_p_len = p->len;
-    memcpy(dbg_txh_dump, p->data, 64);
+    memset(dbg_txh_dump, 0, sizeof(dbg_txh_dump));
+    dump_len = p->len < sizeof(dbg_txh_dump) ? p->len : sizeof(dbg_txh_dump);
+    if (dump_len > 0 && p->data)
+        memcpy(dbg_txh_dump, p->data, dump_len);
 
     p->scb = scb;
     dbg_sf_p_scb = (unsigned int) p->scb;
@@ -201,14 +207,20 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     if (wlc->regs) dbg_mctl_before = wlc->regs->maccontrol;
     wlc_enable_mac(wlc);
     if (wlc->regs) dbg_mctl_after = wlc->regs->maccontrol;
+#ifdef NEXMON_TX_DEBUG
     printf("sendframe: wlc=%p p=%p fifo=%u rate=%u len=%u scb=%p\n", wlc, p, fifo, rate, p->len, scb);
+#endif
     if (wlc->hw->up) {
         dbg_sendctl_ret = wlc_sendctl(wlc, p, wlc->active_queue, scb, fifo, rate, 0);
+#ifdef NEXMON_TX_DEBUG
         printf("wlc_sendctl ret=%d (up)\n", dbg_sendctl_ret);
+#endif
     } else {
         dbg_sf_wlc_down++;
         dbg_sendctl_ret = wlc_sendctl(wlc, p, wlc->active_queue, scb, fifo, rate, 1);
+#ifdef NEXMON_TX_DEBUG
         printf("wlc_sendctl ret=%d (down)\n", dbg_sendctl_ret);
+#endif
         printf("ERR: wlc down\n");
     }
     dbg_sf_txfifo_calls++;
