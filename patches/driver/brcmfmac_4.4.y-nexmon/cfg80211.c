@@ -20,6 +20,7 @@
 #include <linux/etherdevice.h>
 #include <linux/module.h>
 #include <linux/vmalloc.h>
+#include <linux/ctype.h>
 #include <net/cfg80211.h>
 #include <net/netlink.h>
 
@@ -6210,20 +6211,46 @@ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
 	struct brcmf_cfg80211_info *cfg = wiphy_priv(wiphy);
 	struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
 	struct brcmf_fil_country_le ccreq;
+	char *alpha2;
+	s32 err;
 	int i;
 
-	brcmf_dbg(TRACE, "enter: initiator=%d, alpha=%c%c\n", req->initiator,
-		  req->alpha2[0], req->alpha2[1]);
+	err = brcmf_fil_iovar_data_get(ifp, "country", &ccreq, sizeof(ccreq));
+	if (err) {
+		brcmf_err("Country code iovar returned err = %d\n", err);
+		return;
+	}
+
+	/* The country code gets set to "00" by default at boot - substitute
+	 * any saved ccode from the nvram file unless there is a valid code
+	 * already set.
+	 */
+	alpha2 = req->alpha2;
+	if (alpha2[0] == '0' && alpha2[1] == '0') {
+		extern char saved_ccode[2];
+
+		if ((isupper(ccreq.country_abbrev[0]) &&
+		     isupper(ccreq.country_abbrev[1])) ||
+		    !saved_ccode[0])
+			return;
+		alpha2 = saved_ccode;
+		pr_debug("brcmfmac: substituting saved ccode %c%c\n",
+			 alpha2[0], alpha2[1]);
+	}
 
 	/* ignore non-ISO3166 country codes */
-	for (i = 0; i < sizeof(req->alpha2); i++)
-		if (req->alpha2[i] < 'A' || req->alpha2[i] > 'Z') {
+	for (i = 0; i < 2; i++)
+		if (alpha2[i] < 'A' || alpha2[i] > 'Z') {
 			brcmf_err("not a ISO3166 code\n");
 			return;
 		}
+
+	brcmf_dbg(TRACE, "enter: initiator=%d, alpha=%c%c\n", req->initiator,
+		  alpha2[0], alpha2[1]);
+
 	memset(&ccreq, 0, sizeof(ccreq));
 	ccreq.rev = cpu_to_le32(-1);
-	memcpy(ccreq.ccode, req->alpha2, sizeof(req->alpha2));
+	memcpy(ccreq.ccode, alpha2, 2);
 	if (brcmf_fil_iovar_data_set(ifp, "country", &ccreq, sizeof(ccreq))) {
 		brcmf_err("firmware rejected country setting\n");
 		return;

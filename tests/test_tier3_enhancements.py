@@ -153,6 +153,26 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"Word end boundary check missing in {drv_ver}"
             )
 
+    def test_otp_regulatory_country_code_precedence(self):
+        """RPi Kernel (b29497b1828b): NVRAM ccode intercept and OTP regulatory precedence."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            fw_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/firmware.c"
+            self.assertTrue(fw_c.is_file(), f"Missing {fw_c}")
+            fw_content = fw_c.read_text(errors="replace")
+            self.assertIn("char saved_ccode[2]", fw_content, f"saved_ccode declaration missing in {drv_ver}/firmware.c")
+            self.assertIn("saved_ccode[0] = ccode[0];", fw_content, f"saved_ccode[0] assign missing in {drv_ver}/firmware.c")
+            self.assertIn("saved_ccode[1] = ccode[1];", fw_content, f"saved_ccode[1] assign missing in {drv_ver}/firmware.c")
+
+            cfg_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/cfg80211.c"
+            self.assertTrue(cfg_c.is_file(), f"Missing {cfg_c}")
+            cfg_content = cfg_c.read_text(errors="replace")
+            self.assertIn("extern char saved_ccode[2];", cfg_content, f"extern saved_ccode missing in {drv_ver}/cfg80211.c")
+            self.assertIn("alpha2 = saved_ccode;", cfg_content, f"alpha2 substitution missing in {drv_ver}/cfg80211.c")
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
