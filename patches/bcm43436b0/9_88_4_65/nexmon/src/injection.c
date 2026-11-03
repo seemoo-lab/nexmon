@@ -67,7 +67,7 @@ inject_frame(struct wl_info *wl, sk_buff *p) {
     rtap_len = rtap_len_of(p);
 
     if (rtap_len < (int) sizeof(struct ieee80211_radiotap_header) ||
-        rtap_len > (int) p->len) {
+        rtap_len >= (int) p->len) {
         return 0;
     }
 
@@ -105,15 +105,21 @@ inject_frame(struct wl_info *wl, sk_buff *p) {
 int
 wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
+    if (!dev || !dev->softc)
+        return -1;
     struct wl_info *wl = (struct wl_info *) dev->softc;
+    if (!wl || !wl->wlc)
+        return -1;
     struct wlc_info *wlc = wl->wlc;
 
     //printf("wlc->monitor:%d p:%p p->data:%p ((short *) p->data)[0]:%02X\n", wlc->monitor, p, p->data, ((short *) p->data)[0]);
-    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+    if (wlc->monitor && p != 0 && p->data != 0 &&
+        p->len >= sizeof(struct ieee80211_radiotap_header) &&
+        ((short *) p->data)[0] == 0) {
         int rtap_len = rtap_len_of(p);
 
         if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
-            rtap_len <= (int) p->len) {
+            rtap_len < (int) p->len) {
             return inject_frame(wl, p);
         }
     }

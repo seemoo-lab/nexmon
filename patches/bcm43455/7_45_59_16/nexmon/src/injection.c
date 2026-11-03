@@ -78,7 +78,7 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     rtap_len = rtap_len_of(p);
 
     if (rtap_len < (int) sizeof(struct ieee80211_radiotap_header) ||
-        rtap_len > (int) p->len) {
+        rtap_len >= (int) p->len) {
         pkt_buf_free_skb(wlc->osh, p, 0);
         return 0;
     }

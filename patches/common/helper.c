@@ -128,6 +128,9 @@ skb_push(sk_buff *p, unsigned int len)
 void *
 skb_pull(sk_buff *p, unsigned int len)
 {
+    if (len > p->len)
+        return 0;
+
     p->data += len;
     p->len -= len;
 

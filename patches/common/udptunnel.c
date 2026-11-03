@@ -84,7 +84,10 @@ static const struct ethernet_ip_udp_header ethernet_ipv4_udp_header = {
 static inline uint16_t
 calc_checksum(uint16_t total_len)
 {
-    return ~(23078 + total_len);
+    uint32_t sum = 23078 + total_len;
+    while (sum >> 16)
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    return ~sum;
 }
 
 void
