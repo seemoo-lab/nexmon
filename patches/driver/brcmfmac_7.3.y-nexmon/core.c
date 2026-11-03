@@ -31,6 +31,9 @@
 /* NEXMON */
 #include <linux/if_arp.h>
 #include <linux/netlink.h>
+#include <net/genetlink.h>
+#include <linux/ip.h>
+#include <linux/udp.h>
 #include "nexmon_ioctls.h"
 #include "defs.h"
 #include "sdio.h"
@@ -38,6 +41,55 @@
 /* NEXMON */
 #define NETLINK_USER                     31
 #define NEXUDP_IOCTL                      0
+
+/* NEXMON Generic Netlink CSI streaming definitions */
+#define NEXMON_CSI_GENL_NAME "nexmon_csi"
+#define NEXMON_CSI_GENL_VERSION 1
+#define NEXMON_CSI_GENL_MCGRP_NAME "csi"
+
+enum {
+	NEXMON_CSI_CMD_UNSPEC,
+	NEXMON_CSI_CMD_SAMPLE,
+	__NEXMON_CSI_CMD_MAX,
+};
+#define NEXMON_CSI_CMD_MAX (__NEXMON_CSI_CMD_MAX - 1)
+
+enum {
+	NEXMON_CSI_ATTR_UNSPEC,
+	NEXMON_CSI_ATTR_RAW,
+	NEXMON_CSI_ATTR_TSFT,
+	NEXMON_CSI_ATTR_IFINDEX,
+	NEXMON_CSI_ATTR_PAD,
+	__NEXMON_CSI_ATTR_MAX,
+};
+#define NEXMON_CSI_ATTR_MAX (__NEXMON_CSI_ATTR_MAX - 1)
+
+enum {
+	NEXMON_CSI_MCGRP_CSI,
+};
+
+static const struct genl_multicast_group nexmon_csi_mcgrps[] = {
+	[NEXMON_CSI_MCGRP_CSI] = { .name = NEXMON_CSI_GENL_MCGRP_NAME },
+};
+
+static const struct nla_policy nexmon_csi_genl_policy[NEXMON_CSI_ATTR_MAX + 1] = {
+	[NEXMON_CSI_ATTR_RAW] = { .type = NLA_BINARY, .len = 4096 },
+	[NEXMON_CSI_ATTR_TSFT] = { .type = NLA_U64 },
+	[NEXMON_CSI_ATTR_IFINDEX] = { .type = NLA_U32 },
+};
+
+static struct genl_family nexmon_csi_gnl_family = {
+	.name = NEXMON_CSI_GENL_NAME,
+	.version = NEXMON_CSI_GENL_VERSION,
+	.maxattr = NEXMON_CSI_ATTR_MAX,
+	.policy = nexmon_csi_genl_policy,
+	.netnsok = true,
+	.module = THIS_MODULE,
+	.mcgrps = nexmon_csi_mcgrps,
+	.n_mcgrps = ARRAY_SIZE(nexmon_csi_mcgrps),
+	.resv_start_op = NEXMON_CSI_CMD_MAX + 1,
+};
+static bool nexmon_csi_gnl_registered;
 
 #define MONITOR_DISABLED  0
 #define MONITOR_IEEE80211 1
@@ -1043,6 +1095,109 @@ static int brcmf_rx_hdrpull(struct brcmf_pub *drvr, struct sk_buff *skb,
 	return 0;
 }
 
+/*
+ * Zero-copy Netlink CSI streaming:
+ * Detects Nexmon CSI frames emitted by firmware UDP tunneling (port 5500, magic 0x11111111).
+ * If userspace Netlink listeners are active, multicasts the payload directly via
+ * Generic Netlink (family "nexmon_csi", group "csi") and frees the incoming skb,
+ * eliminating host broadcast flooding and socket buffer overflow at 80/160 MHz.
+ * Returns true if consumed, false if unhandled (passes through to standard rx).
+ */
+static bool nexmon_csi_handle_rx(struct brcmf_if *ifp, struct sk_buff *skb)
+{
+	struct iphdr *iph;
+	struct udphdr *uh;
+	u8 *payload;
+	u32 payload_len;
+	u32 ip_hlen;
+	struct sk_buff *nl_skb;
+	void *msg_hdr;
+	bool has_genl_listeners;
+	bool has_nl_listeners;
+
+	if (skb->protocol != htons(ETH_P_IP))
+		return false;
+
+	if (!pskb_may_pull(skb, sizeof(struct iphdr) + sizeof(struct udphdr) + 18))
+		return false;
+
+	iph = (struct iphdr *)skb->data;
+	if (iph->version != 4 || iph->protocol != IPPROTO_UDP)
+		return false;
+
+	ip_hlen = iph->ihl * 4;
+	if (ip_hlen < sizeof(struct iphdr) || skb->len < ip_hlen + sizeof(struct udphdr) + 18)
+		return false;
+
+	uh = (struct udphdr *)(skb->data + ip_hlen);
+	if (uh->dest != htons(5500))
+		return false;
+
+	payload = (u8 *)uh + sizeof(struct udphdr);
+	payload_len = ntohs(uh->len);
+	if (payload_len < sizeof(struct udphdr) + 18)
+		return false;
+	payload_len -= sizeof(struct udphdr);
+
+	if (payload + payload_len > skb->data + skb->len)
+		payload_len = (skb->data + skb->len) - payload;
+
+	/* Validate Nexmon CSI Magic: 0x11111111 */
+	if (*(__le32 *)payload != cpu_to_le32(0x11111111))
+		return false;
+
+	has_genl_listeners = genl_has_listeners(&nexmon_csi_gnl_family, &init_net, NEXMON_CSI_MCGRP_CSI);
+	has_nl_listeners = nl_sock && netlink_has_listeners(nl_sock, 1);
+
+	if (has_genl_listeners || has_nl_listeners) {
+		if (has_genl_listeners) {
+			nl_skb = genlmsg_new(nla_total_size(payload_len) +
+					     nla_total_size_64bit(sizeof(u64)) +
+					     nla_total_size(sizeof(u32)), GFP_ATOMIC);
+			if (nl_skb) {
+				msg_hdr = genlmsg_put(nl_skb, 0, 0, &nexmon_csi_gnl_family,
+						      0, NEXMON_CSI_CMD_SAMPLE);
+				if (msg_hdr) {
+					nla_put(nl_skb, NEXMON_CSI_ATTR_RAW, payload_len, payload);
+					nla_put_u64_64bit(nl_skb, NEXMON_CSI_ATTR_TSFT,
+							  div_u64(ktime_get_boottime_ns(), 1000),
+							  NEXMON_CSI_ATTR_PAD);
+					if (ifp && ifp->ndev)
+						nla_put_u32(nl_skb, NEXMON_CSI_ATTR_IFINDEX, ifp->ndev->ifindex);
+					genlmsg_end(nl_skb, msg_hdr);
+					genlmsg_multicast_allns(&nexmon_csi_gnl_family, nl_skb, 0,
+								NEXMON_CSI_MCGRP_CSI);
+				} else {
+					nlmsg_free(nl_skb);
+				}
+			}
+		}
+
+		if (has_nl_listeners) {
+			nl_skb = nlmsg_new(payload_len, GFP_ATOMIC);
+			if (nl_skb) {
+				struct nlmsghdr *nlh = nlmsg_put(nl_skb, 0, 0, NLMSG_DONE, payload_len, 0);
+				if (nlh) {
+					memcpy(nlmsg_data(nlh), payload, payload_len);
+					nlmsg_multicast(nl_sock, nl_skb, 0, 1, GFP_ATOMIC);
+				} else {
+					nlmsg_free(nl_skb);
+				}
+			}
+		}
+
+		if (ifp && ifp->ndev) {
+			ifp->ndev->stats.rx_bytes += skb->len;
+			ifp->ndev->stats.rx_packets++;
+		}
+
+		brcmu_pkt_buf_free_skb(skb);
+		return true;
+	}
+
+	return false;
+}
+
 void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event,
 		    bool inirq)
 {
@@ -1053,6 +1208,9 @@ void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event,
 	brcmf_dbg(DATA, "Enter: %s: rxp=%p\n", dev_name(dev), skb);
 
 	if (brcmf_rx_hdrpull(drvr, skb, &ifp))
+		return;
+
+	if (nexmon_csi_handle_rx(ifp, skb))
 		return;
 
 	if (brcmf_proto_is_reorder_skb(skb)) {
@@ -2466,6 +2624,14 @@ int __init brcmf_core_init(void)
 		goto error_netlink_create;
 	}
 
+	/* NEXMON Generic Netlink CSI streaming init */
+	err = genl_register_family(&nexmon_csi_gnl_family);
+	if (err) {
+		pr_warn("brcmfmac: NEXMON: failed to register genl family nexmon_csi: %d\n", err);
+	} else {
+		nexmon_csi_gnl_registered = true;
+	}
+
 	return 0;
 
 error_netlink_create:
@@ -2480,6 +2646,11 @@ error_usb_register:
 void __exit brcmf_core_exit(void)
 {
 	/* NEXMON */
+	if (nexmon_csi_gnl_registered) {
+		genl_unregister_family(&nexmon_csi_gnl_family);
+		nexmon_csi_gnl_registered = false;
+	}
+
 	if (nl_sock) {
 		netlink_kernel_release(nl_sock);
 		nl_sock = NULL;

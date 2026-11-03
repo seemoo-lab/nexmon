@@ -11,7 +11,18 @@ import unittest
 NEXMON_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(NEXMON_ROOT, "python"))
 
-from pynexmon.csi import CSIReceiver, parse_csi_payload, NEXMON_CSI_MAGIC
+from pynexmon.csi import (
+    CSIReceiver,
+    NetlinkCSIReceiver,
+    UDPCSIReceiver,
+    parse_csi_payload,
+    resolve_genl_family,
+    NEXMON_CSI_MAGIC,
+    NEXMON_CSI_CMD_SAMPLE,
+    NEXMON_CSI_ATTR_RAW,
+    NEXMON_CSI_ATTR_TSFT,
+    NEXMON_CSI_ATTR_IFINDEX,
+)
 
 
 def create_synthetic_csi_frame(
@@ -134,6 +145,77 @@ class TestCSIPipeline(unittest.TestCase):
             assert pkt is not None
             self.assertEqual(pkt.seq, 999)
             self.assertEqual(pkt.num_subcarriers, 64)
+
+    def test_resolve_genl_family(self):
+        try:
+            fid, groups = resolve_genl_family("nl80211")
+            self.assertIsInstance(fid, int)
+            self.assertGreater(fid, 0)
+            self.assertIsInstance(groups, dict)
+        except OSError:
+            self.skipTest("AF_NETLINK not available on this platform")
+
+        with self.assertRaises(RuntimeError):
+            resolve_genl_family("definitely_nonexistent_family_12345")
+
+    def test_netlink_csi_receiver_synthetic_decode(self):
+        raw_csi = create_synthetic_csi_frame(seq=1234, num_subcarriers=64)
+        tsft_us = 9876543210
+        ifindex = 3
+
+        # Attr 1 (RAW)
+        nla1_len = 4 + len(raw_csi)
+        pad1 = (4 - (len(raw_csi) % 4)) % 4
+        nla1 = struct.pack("<HH", nla1_len, NEXMON_CSI_ATTR_RAW) + raw_csi + (b"\0" * pad1)
+
+        # Attr 2 (TSFT: u64)
+        nla2 = struct.pack("<HHQ", 12, NEXMON_CSI_ATTR_TSFT, tsft_us)
+
+        # Attr 3 (IFINDEX: u32)
+        nla3 = struct.pack("<HHI", 8, NEXMON_CSI_ATTR_IFINDEX, ifindex)
+
+        attrs = nla1 + nla2 + nla3
+        genl_hdr = struct.pack("<BBH", NEXMON_CSI_CMD_SAMPLE, 1, 0)
+        family_id = 99
+        nl_len = 16 + len(genl_hdr) + len(attrs)
+        nl_hdr = struct.pack("<IHHII", nl_len, family_id, 0, 1, 0)
+
+        packet_bytes = nl_hdr + genl_hdr + attrs
+
+        rx = NetlinkCSIReceiver()
+        rx._family_id = family_id
+
+        class MockSocket:
+            def settimeout(self, t):
+                pass
+            def recv(self, bufsize):
+                return packet_bytes
+
+        rx._sock = MockSocket()
+        pkt = rx.recv(timeout=1.0)
+        self.assertIsNotNone(pkt)
+        assert pkt is not None
+        self.assertEqual(pkt.seq, 1234)
+        self.assertEqual(pkt.tsft_us, tsft_us)
+        self.assertEqual(pkt.ifindex, ifindex)
+        self.assertAlmostEqual(pkt.timestamp, tsft_us / 1e6)
+        self.assertEqual(pkt.num_subcarriers, 64)
+
+    def test_csi_receiver_mode_selection(self):
+        rx_udp = CSIReceiver(mode="udp", port=5500)
+        self.assertEqual(rx_udp.mode, "udp")
+        rx_udp.start()
+        self.assertEqual(rx_udp.backend, "udp")
+        rx_udp.close()
+
+        rx_custom_port = CSIReceiver(mode="auto", port=5599)
+        rx_custom_port.start()
+        self.assertEqual(rx_custom_port.backend, "udp")
+        rx_custom_port.close()
+
+        rx_bad_nl = CSIReceiver(mode="netlink", family_name="nonexistent_family_xyz")
+        with self.assertRaises(Exception):
+            rx_bad_nl.start()
 
 
 if __name__ == "__main__":

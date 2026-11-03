@@ -99,6 +99,24 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
         self.assertIn("nex_ioctl_nonblock", nexutil_c)
         self.assertIn('"nonblock"', nexutil_c)
 
+    def test_zero_copy_netlink_csi_streaming(self):
+        """Zero-Copy Netlink CSI Streaming: kernel GENL family and userspace receiver."""
+        for drv_ver in ("7.3", "7.4"):
+            core_c = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c").read_text(errors="replace")
+            self.assertIn('NEXMON_CSI_GENL_NAME "nexmon_csi"', core_c)
+            self.assertIn("struct genl_family nexmon_csi_gnl_family", core_c)
+            self.assertIn("nexmon_csi_handle_rx", core_c)
+            self.assertIn("genlmsg_multicast_allns(&nexmon_csi_gnl_family", core_c)
+            self.assertIn("brcmu_pkt_buf_free_skb(skb)", core_c)
+            self.assertIn("genl_register_family(&nexmon_csi_gnl_family)", core_c)
+            self.assertIn("genl_unregister_family(&nexmon_csi_gnl_family)", core_c)
+
+        csi_py = (ROOT / "python/pynexmon/csi.py").read_text(errors="replace")
+        self.assertIn("class NetlinkCSIReceiver", csi_py)
+        self.assertIn("class UDPCSIReceiver", csi_py)
+        self.assertIn("resolve_genl_family", csi_py)
+        self.assertIn("NEXMON_CSI_GENL_NAME", csi_py)
+
     def test_runt_frame_injection_guards(self):
         """Ensure all secondary/legacy chip firmware targets reject runt injection frames."""
         target_injections = [
