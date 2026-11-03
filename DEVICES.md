@@ -93,8 +93,25 @@
 
 - Raspberry Pi 3 Model B+
 - Raspberry Pi 4 Model B
+- Raspberry Pi 400
+- Raspberry Pi 5 Model B
+- Raspberry Pi 500
+- Compute Module 4 (CM4)
+- Compute Module 5 (CM5)
 - Huawei P9
 - LG G5
+
+## BCM4378
+802.11ax MIMO 2x2 + BT 5.0 (Apple Silicon)
+
+- Apple Mac mini (M1 / M2)
+- Apple MacBook Air (M1 / M2)
+- Apple MacBook Pro (M1 / M2)
+
+## BCM4390 / BCM4398
+Wi-Fi 7 (802.11be) 2x2 + BT 5.4
+
+- Google Pixel 9 / Pixel 9 Pro (BCM4390B1)
 
 ```bash
 dmesg | grep -i dhd  # Broadcom chip

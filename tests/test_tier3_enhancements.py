@@ -32,7 +32,7 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
 
     def test_p2p_detach_race_rtnl_wiphy_locks(self):
         """Kernel 7.4-rc1 (08a3f02fea63): Guard P2P netdev-less VIF detach with rtnl_lock and wiphy_lock."""
-        for drv_ver in ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3"):
+        for drv_ver in ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"):
             core_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c"
             self.assertTrue(core_c.is_file(), f"Missing {core_c}")
             content = core_c.read_text(errors="replace")
@@ -40,6 +40,51 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
             self.assertIn("rtnl_lock();", content, f"rtnl_lock missing in {drv_ver}")
             self.assertIn("if (ifp->ndev)", content, f"ifp->ndev branch missing in {drv_ver}")
             self.assertIn("brcmf_remove_interface(ifp, true);", content, f"locked remove missing in {drv_ver}")
+
+    def test_nvram_comment_parsing_bounded(self):
+        """Kernel 7.4-rc1 (3ffb0de666c6): Bounded NVRAM comment parsing with strnchr and memchr."""
+        for drv_ver in ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"):
+            fw_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/firmware.c"
+            self.assertTrue(fw_c.is_file(), f"Missing {fw_c}")
+            content = fw_c.read_text(errors="replace")
+            self.assertIn("size_t data_len;", content, f"data_len field missing in {drv_ver}")
+            self.assertIn("remaining = nvp->data_len - nvp->pos;", content, f"remaining missing in {drv_ver}")
+            self.assertIn("eoc = strnchr(sol, remaining, '\\n');", content, f"strnchr missing in {drv_ver}")
+            self.assertIn("eoc = memchr(sol, '\\0', remaining);", content, f"memchr missing in {drv_ver}")
+            self.assertIn("nvp->data_len = data_len;", content, f"nvp->data_len assignment missing in {drv_ver}")
+
+    def test_driver_7_4_support(self):
+        """Verify Linux 7.4 driver support (cfg80211 nl80211_key_type ops and module version)."""
+        cfg_c = (ROOT / "patches/driver/brcmfmac_7.4.y-nexmon/cfg80211.c").read_text(errors="replace")
+        self.assertIn("enum nl80211_key_type type", cfg_c)
+        common_c = (ROOT / "patches/driver/brcmfmac_7.4.y-nexmon/common.c").read_text(errors="replace")
+        self.assertIn('MODULE_VERSION("7.4.0-nexmon");', common_c)
+
+    def test_runt_frame_injection_guards(self):
+        """Ensure all secondary/legacy chip firmware targets reject runt injection frames."""
+        target_injections = [
+            ROOT / "patches/bcm43430a1/7_45_41_46/nexmon/src/injection.c",
+            ROOT / "patches/bcm43430a1/7_45_41_26/nexmon/src/injection.c",
+            ROOT / "patches/bcm43436b0/9_88_4_65/nexmon/src/injection.c",
+            ROOT / "patches/bcm4335b0/6.30.171.1_sta/nexmon/src/injection.c",
+            ROOT / "patches/bcm4339/6_37_34_43/nexmon/src/injection.c",
+            ROOT / "patches/bcm4358/7_112_300_14_sta/nexmon/src/injection.c",
+            ROOT / "patches/bcm43596a0/9.96.4_sta_c0/nexmon/src/injection.c",
+        ]
+        for inj_file in target_injections:
+            self.assertTrue(inj_file.is_file(), f"Missing {inj_file}")
+            text = inj_file.read_text(errors="replace")
+            self.assertIn("rtap_len >= (int) p->len", text, f"{inj_file} missing inject_frame runt guard")
+            if "wl_send_hook" in text or "handle_sdio_xmit_request_hook" in text:
+                self.assertIn("rtap_len < (int) p->len", text, f"{inj_file} missing hook payload guard")
+
+    def test_firmware_helper_and_udptunnel_bounds(self):
+        """Verify helper.c skb_pull bounds checking and udptunnel.c 1's complement folded checksum."""
+        helper_c = (ROOT / "patches/common/helper.c").read_text(errors="replace")
+        self.assertIn("if (len > p->len)", helper_c, "skb_pull underflow check missing")
+
+        udptunnel_c = (ROOT / "patches/common/udptunnel.c").read_text(errors="replace")
+        self.assertIn("while (sum >> 16)", udptunnel_c, "calc_checksum folded 1's complement missing")
 
     def test_l01_firmware_common_static_inline_and_statistics(self):
         """L-01: Ensure helper.h uses static inline, statistics.mk supports DISABLE_STATISTICS, and typo is fixed."""
@@ -166,6 +211,27 @@ class TestTier3PythonSDKAndTooling(unittest.TestCase):
             self.assertIn("modified_sha256", res)
             edited_bytes = out_file.read_bytes()
             self.assertEqual(edited_bytes[0x10:0x14], b"\xde\xad\xbe\xef")
+
+    def test_zstandard_firmware_support(self):
+        """Verify nexfirmware transparently supports .zst compressed firmware and NVRAM/CLM files."""
+        import nexfirmware
+        import zstandard
+        with tempfile.TemporaryDirectory(prefix="nex-t3-zst-") as tmp:
+            tmp_path = Path(tmp)
+            raw_data = b"NEXMON_ZST_TEST_BLOB_BCM43455_7.45.206" + (b"\x00" * 1024)
+            cctx = zstandard.ZstdCompressor()
+            compressed = cctx.compress(raw_data)
+
+            zst_file = tmp_path / "firmware.bin.zst"
+            zst_file.write_bytes(compressed)
+
+            decompressed = nexfirmware.read_firmware_blob(zst_file)
+            self.assertEqual(decompressed, raw_data)
+
+            # Test uncompressed fallback
+            raw_file = tmp_path / "firmware.bin"
+            raw_file.write_bytes(raw_data)
+            self.assertEqual(nexfirmware.read_firmware_blob(raw_file), raw_data)
 
     def test_m07_nexbench_and_multiframe_channel_options(self):
         """M-07: Ensure nexbench and benchmark_multiframe pass -I to nexutil and parse 6g channels."""

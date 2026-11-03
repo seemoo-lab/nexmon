@@ -213,6 +213,25 @@ def extract_firmware_version(data: bytes) -> str:
     match = FIRMWARE_VERSION_RE.search(data)
     return match.group(1).decode("utf-8", errors="ignore") if match else ""
 
+
+def read_firmware_blob(path: Union[str, Path]) -> bytes:
+    """Read a firmware blob, automatically decompressing if ending in .zst."""
+    path = Path(path)
+    data = path.read_bytes()
+    if path.suffix == ".zst":
+        try:
+            import zstandard
+            dctx = zstandard.ZstdDecompressor()
+            return dctx.decompress(data, max_output_size=32 * 1024 * 1024)
+        except Exception:
+            pass
+        try:
+            res = subprocess.run(["zstd", "-dc"], input=data, capture_output=True, check=True)
+            return res.stdout
+        except Exception:
+            pass
+    return data
+
 # Known SDIO Device IDs
 SDIO_DEVICE_MAP: Dict[str, str] = {
     "02d0:4345": "BCM43455 / BCM43456 SDIO Wi-Fi",
@@ -795,7 +814,7 @@ class DeviceDetector:
 
         candidates = []
         for c in chip_candidates:
-            candidates.extend([
+            for base_cand in [
                 f"/etc/alternatives/cyfmac{c}-sdio.bin",
                 f"/etc/alternatives/brcmfmac{c}-sdio.bin",
                 f"/lib/firmware/cypress/cyfmac{c}-sdio.bin",
@@ -804,7 +823,9 @@ class DeviceDetector:
                 f"/lib/firmware/nexmon/cyfmac{c}-sdio-standard-265.bin",
                 f"/lib/firmware/nexmon/cyfmac{c}-sdio-standard.bin",
                 f"/lib/firmware/nexmon/brcmfmac{c}-sdio.bin",
-            ])
+            ]:
+                candidates.append(base_cand)
+                candidates.append(f"{base_cand}.zst")
 
         # Check dmesg for current running firmware message
         fw_ver_dmesg = ""
@@ -841,8 +862,9 @@ class DeviceDetector:
         except OSError:
             return None
         try:
-            with open(target_path, "rb") as f:
-                data = f.read()
+            data = read_firmware_blob(target_path)
+            if target_path.endswith(".zst"):
+                fsize = len(data)
         except OSError:
             return None
 
@@ -856,21 +878,31 @@ class DeviceDetector:
 
         # Find associated NVRAM and CLM blob
         base_dir = os.path.dirname(target_path)
-        stem = Path(target_path).stem.replace("-standard", "").replace("-265", "").replace("-206", "")
+        clean_name = target_path[:-4] if target_path.endswith(".zst") else target_path
+        stem = Path(clean_name).stem.replace("-standard", "").replace("-265", "").replace("-206", "")
         nvram_p = ""
-        for ext in [".txt", ".nvram"]:
+        for ext in [".txt", ".nvram", ".txt.zst", ".nvram.zst"]:
             cand = os.path.join(base_dir, stem + ext)
             if os.path.isfile(cand):
                 nvram_p = cand
                 break
-        if not nvram_p and os.path.isfile("/lib/firmware/brcm/brcmfmac43455-sdio.txt"):
-            nvram_p = "/lib/firmware/brcm/brcmfmac43455-sdio.txt"
+        if not nvram_p:
+            for cand in [
+                "/lib/firmware/brcm/brcmfmac43455-sdio.txt",
+                "/lib/firmware/brcm/brcmfmac43455-sdio.txt.zst",
+            ]:
+                if os.path.isfile(cand):
+                    nvram_p = cand
+                    break
 
         clm_p = ""
         for cand in [
             os.path.join(base_dir, stem + ".clm_blob"),
+            os.path.join(base_dir, stem + ".clm_blob.zst"),
             "/lib/firmware/cypress/cyfmac43455-sdio.clm_blob",
-            "/lib/firmware/brcm/brcmfmac43455-sdio.clm_blob"
+            "/lib/firmware/cypress/cyfmac43455-sdio.clm_blob.zst",
+            "/lib/firmware/brcm/brcmfmac43455-sdio.clm_blob",
+            "/lib/firmware/brcm/brcmfmac43455-sdio.clm_blob.zst",
         ]:
             if os.path.isfile(cand):
                 clm_p = cand
