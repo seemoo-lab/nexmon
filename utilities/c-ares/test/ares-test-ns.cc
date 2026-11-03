@@ -48,6 +48,7 @@ struct ContainerInfo {
   std::string hostname_;
   std::string domainname_;
   VoidToIntFn fn_;
+  uid_t outer_uid_;
 };
 
 int EnterContainer(void *data) {
@@ -60,12 +61,26 @@ int EnterContainer(void *data) {
               << std::endl;
   }
 
-  // Ensure we are apparently root before continuing.
-  int count = 10;
-  while (getuid() != 0 && count > 0) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    count--;
+  // Map ourselves to root inside the new user namespace.  The parent is
+  // suspended until we exit (CLONE_VFORK), so we write our own map; a process
+  // may map its own outer uid this way without further privilege.
+  std::stringstream contentss;
+  contentss << "0 " << container->outer_uid_ << " 1" << std::endl;
+  std::string content = contentss.str();
+  int fd = open("/proc/self/uid_map", O_WRONLY);
+  if (fd < 0) {
+    std::cerr << "Failed to open /proc/self/uid_map, errno=" << errno
+              << std::endl;
+    return -1;
   }
+  ssize_t wrc = write(fd, content.c_str(), content.size());
+  if (wrc != (ssize_t)content.size()) {
+    std::cerr << "Failed to write uid map, rc=" << wrc << ", errno=" << errno
+              << std::endl;
+    close(fd);
+    return -1;
+  }
+  close(fd);
   if (getuid() != 0) {
     std::cerr << "Child in user namespace has uid " << getuid() << std::endl;
     return -1;
@@ -132,40 +147,28 @@ int RunInContainer(ContainerFilesystem* fs, const std::string& hostname,
                    const std::string& domainname, VoidToIntFn fn) {
   const int stack_size = 1024 * 1024;
   std::vector<byte> stack(stack_size, 0);
-  ContainerInfo container = {fs, hostname, domainname, fn};
+  ContainerInfo container = {fs, hostname, domainname, fn, geteuid()};
 
-  // Start a child process in a new user and UTS namespace
+  // Start a child process in a new user and UTS namespace.  CLONE_VM shares our
+  // memory with the child, so that test failures, mock expectations and
+  // coverage counters recorded inside the container are seen here.  But the
+  // child also shares our thread-local storage (errno, allocator caches, the
+  // AddressSanitizer fake stack, ...), so we must not run at the same time as
+  // it: CLONE_VFORK suspends us until it exits.
   pid_t child = clone(EnterContainer, stack.data() + stack_size,
-                      CLONE_VM|CLONE_NEWNS|CLONE_NEWUSER|CLONE_NEWUTS|SIGCHLD,
+                      CLONE_VM|CLONE_VFORK|CLONE_NEWNS|CLONE_NEWUSER|
+                      CLONE_NEWUTS|SIGCHLD,
                       (void *)&container);
   if (child < 0) {
     std::cerr << "Failed to clone(), errno=" << errno << std::endl;
     return -1;
   }
 
-  // Build the UID map that makes us look like root inside the namespace.
-  std::stringstream mapfiless;
-  mapfiless << "/proc/" << child << "/uid_map";
-  std::string mapfile = mapfiless.str();
-  int fd = open(mapfile.c_str(), O_CREAT|O_WRONLY|O_TRUNC, 0644);
-  if (fd < 0) {
-    std::cerr << "Failed to create '" << mapfile << "'" << std::endl;
-    return -1;
-  }
-  std::stringstream contentss;
-  contentss << "0 " << getuid() << " 1" << std::endl;
-  std::string content = contentss.str();
-  ssize_t rc = write(fd, content.c_str(), content.size());
-  if (rc != (ssize_t)content.size()) {
-    std::cerr << "Failed to write uid map to '" << mapfile << "'" << std::endl;
-  }
-  close(fd);
-
-  // Wait for the child process and retrieve its status.
+  // Reap the child process and retrieve its status.
   int status;
-  waitpid(child, &status, 0);
-  if (rc <= 0) {
-    std::cerr << "Failed to waitpid(" << child << ")" << std::endl;
+  if (waitpid(child, &status, 0) != child) {
+    std::cerr << "Failed to waitpid(" << child << "), errno=" << errno
+              << std::endl;
     return -1;
   }
   if (!WIFEXITED(status)) {

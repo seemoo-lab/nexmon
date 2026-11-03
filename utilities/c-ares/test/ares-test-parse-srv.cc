@@ -312,38 +312,5 @@ TEST_F(LibraryTest, ParseSrvReplyAllocFail) {
   }
 }
 
-// RFC 2782: the SRV TARGET must not use name compression.  A response whose
-// SRV target is a compression pointer must be rejected rather than followed.
-TEST_F(LibraryTest, ParseSrvRejectsCompressedTarget) {
-  const unsigned char data[] = {
-    0x12, 0x34,              // qid
-    0x84, 0x00,              // response + AA, rcode NOERROR
-    0x00, 0x01,              // qdcount
-    0x00, 0x01,              // ancount
-    0x00, 0x00,              // nscount
-    0x00, 0x00,              // arcount
-    // Question (name starts at offset 0x0c)
-    0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e',
-    0x03, 'c', 'o', 'm',
-    0x00,
-    0x00, 0x21,              // type SRV (33)
-    0x00, 0x01,              // class IN
-    // Answer
-    0xc0, 0x0c,              // name -> pointer to example.com
-    0x00, 0x21,              // type SRV
-    0x00, 0x01,              // class IN
-    0x00, 0x00, 0x00, 0x3c,  // TTL
-    0x00, 0x08,              // rdlength
-    0x00, 0x0a,              // priority
-    0x00, 0x14,              // weight
-    0x00, 0x1e,              // port
-    0xc0, 0x0c,              // TARGET -> compression pointer (illegal for SRV)
-  };
-
-  ares_dns_record_t *dnsrec = NULL;
-  EXPECT_EQ(ARES_EBADNAME, ares_dns_parse(data, sizeof(data), 0, &dnsrec));
-  EXPECT_EQ(nullptr, dnsrec);
-}
-
 }  // namespace test
 }  // namespace ares

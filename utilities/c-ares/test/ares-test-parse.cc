@@ -423,9 +423,107 @@ TEST_F(LibraryTest, ParseMultipleOptRejected) {
   EXPECT_EQ(nullptr, dnsrec);
 }
 
-// RFC 3597: only RR types defined in RFC 1035 may use name compression within
-// their RDATA.  A modern type such as SVCB must reject a compressed target,
-// same as SRV -- this exercises the shared policy, not an SRV special case.
+// RFC 3597 section 4 recommends decompressing these older RR types on read,
+// while still prohibiting compression in their outgoing RDATA.
+TEST_F(LibraryTest, ParseCompressedLegacyRdataNames)
+{
+  const struct {
+    ares_dns_rec_type_t type;
+    ares_dns_rr_key_t   key;
+    std::vector<byte>   prefix;
+    std::vector<byte>   suffix;
+  } cases[] = {
+    { ARES_REC_TYPE_SRV,
+     ARES_RR_SRV_TARGET,        { 0x00, 0x0a, 0x00, 0x14, 0x00, 0x1e },
+     {}       },
+    { ARES_REC_TYPE_SIG,
+     ARES_RR_SIG_SIGNERS_NAME,  { 0x00, 0x01, 0x08, 0x02,  // type covered, algorithm, labels
+        0x00, 0x00, 0x00, 0x3c,  // original TTL
+        0x00, 0x00, 0x00, 0x02,  // expiration
+        0x00, 0x00, 0x00, 0x01,  // inception
+        0x00, 0x01 },
+     { 0x01 } }, // key tag, signature
+    { ARES_REC_TYPE_NAPTR,
+     ARES_RR_NAPTR_REPLACEMENT, { 0x00, 0x64, 0x00, 0x0a,  // order, preference
+        0x01, 'S', 0x00, 0x00 },
+     {}       }  // flags, services, regexp
+  };
+
+  const std::vector<byte> name = { 0x07, 'e',  'x', 'a', 'm', 'p', 'l',
+                                   'e',  0x03, 'c', 'o', 'm', 0x00 };
+
+  for (const auto &tc : cases) {
+    SCOPED_TRACE(tc.type);
+    std::vector<byte> data = {
+      0x12, 0x34, 0x84, 0x00,  // qid, response + AA
+      0x00, 0x01, 0x00, 0x01,  // one question, one answer
+      0x00, 0x00, 0x00, 0x00   // no authority/additional RRs
+    };
+    data.insert(data.end(), name.begin(), name.end());
+    data.insert(
+      data.end(),
+      { 0x00, static_cast<byte>(tc.type), 0x00, 0x01,  // question type, IN
+        0xc0, 0x0c,                                    // owner -> question name
+        0x00, static_cast<byte>(tc.type), 0x00, 0x01,  // answer type, IN
+        0x00, 0x00, 0x00, 0x3c,                        // TTL
+        0x00, static_cast<byte>(tc.prefix.size() + 2 + tc.suffix.size()) });
+    std::vector<byte> expected = data;
+    expected.back() =
+      static_cast<byte>(tc.prefix.size() + name.size() + tc.suffix.size());
+    expected.insert(expected.end(), tc.prefix.begin(), tc.prefix.end());
+    expected.insert(expected.end(), name.begin(), name.end());
+    expected.insert(expected.end(), tc.suffix.begin(), tc.suffix.end());
+
+    data.insert(data.end(), tc.prefix.begin(), tc.prefix.end());
+    data.insert(data.end(), { 0xc0, 0x0c });  // RDATA name -> example.com
+    data.insert(data.end(), tc.suffix.begin(), tc.suffix.end());
+
+    ares_dns_record_t *dnsrec = nullptr;
+    ares_status_t status = ares_dns_parse(data.data(), data.size(), 0, &dnsrec);
+    EXPECT_EQ(ARES_SUCCESS, status);
+    if (status != ARES_SUCCESS) {
+      continue;
+    }
+    ASSERT_NE(nullptr, dnsrec);
+    const ares_dns_rr_t *rr =
+      ares_dns_record_rr_get_const(dnsrec, ARES_SECTION_ANSWER, 0);
+    EXPECT_STREQ("example.com", ares_dns_rr_get_str(rr, tc.key));
+
+    unsigned char *wire     = nullptr;
+    size_t         wire_len = 0;
+    EXPECT_EQ(ARES_SUCCESS, ares_dns_write(dnsrec, &wire, &wire_len));
+    if (wire != nullptr) {
+      EXPECT_EQ(expected, std::vector<byte>(wire, wire + wire_len));
+    }
+    ares_free_string(wire);
+    ares_dns_record_destroy(dnsrec);
+
+    if (tc.type == ARES_REC_TYPE_SRV) {
+      struct ares_srv_reply *srv = nullptr;
+      EXPECT_EQ(ARES_SUCCESS,
+                ares_parse_srv_reply(data.data(), (int)data.size(), &srv));
+      EXPECT_NE(nullptr, srv);
+      if (srv != nullptr) {
+        EXPECT_STREQ("example.com", srv->host);
+        EXPECT_EQ(10, srv->priority);
+        EXPECT_EQ(20, srv->weight);
+        EXPECT_EQ(30, srv->port);
+      }
+      ares_free_data(srv);
+    }
+
+    // Allowing compression must still reject a pointer to its own location.
+    size_t name_offset    = data.size() - tc.suffix.size() - 2;
+    data[name_offset + 1] = static_cast<byte>(name_offset);
+    dnsrec                = nullptr;
+    EXPECT_EQ(ARES_EBADNAME,
+              ares_dns_parse(data.data(), data.size(), 0, &dnsrec));
+    EXPECT_EQ(nullptr, dnsrec);
+    ares_dns_record_destroy(dnsrec);
+  }
+}
+
+// RFC 3597 does not extend receive-side compression to newer types like SVCB.
 TEST_F(LibraryTest, ParseSvcbRejectsCompressedTarget) {
   const unsigned char data[] = {
     0x12, 0x34,              // qid
@@ -453,6 +551,16 @@ TEST_F(LibraryTest, ParseSvcbRejectsCompressedTarget) {
   ares_dns_record_t *dnsrec = NULL;
   EXPECT_EQ(ARES_EBADNAME, ares_dns_parse(data, sizeof(data), 0, &dnsrec));
   EXPECT_EQ(nullptr, dnsrec);
+}
+
+TEST_F(DefaultChannelTest, ParseNameserverUriLinkLocalUninitialized) {
+  // Issue #1299: parse_nameserver_uri did not zero-initialize sconfig.
+  // When parsing multiple servers in a loop, if a URI server entry has a link-local
+  // interface, subsequent URI server entries without one would retain the previous
+  // entry's interface.
+  EXPECT_EQ(ARES_SUCCESS,
+            ares_set_servers_csv(channel_, "dns://[fe80::1%25iface0],dns://2.3.4.5"));
+  EXPECT_EQ("2.3.4.5:53", GetNameServers(channel_));
 }
 
 }  // namespace test

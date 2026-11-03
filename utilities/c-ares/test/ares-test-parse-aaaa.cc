@@ -201,6 +201,36 @@ TEST_F(LibraryTest, ParseAaaaReplyErrors) {
                                                  &host, info, &count));
 }
 
+TEST_F(LibraryTest, ParseAaaaReplyNegativeTtlCount) {
+  // Issue #1300: a negative *naddrttls used to wrap to SIZE_MAX, so every
+  // record in the reply was written into the caller's array regardless of
+  // its size.  Up to 1.20.1 a negative count stored nothing; keep it that
+  // way.  The reply carries more AAAA records than info[] can hold so the
+  // pre-fix code overruns the array (caught under ASan).
+  DNSPacket pkt;
+  pkt.set_qid(0x1234).set_response().set_aa()
+    .add_question(new DNSQuestion("example.com", T_AAAA))
+    .add_answer(new DNSAaaaRR("example.com", 100,
+                              {0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02,
+                               0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x04}))
+    .add_answer(new DNSAaaaRR("example.com", 100,
+                              {0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02,
+                               0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x05}))
+    .add_answer(new DNSAaaaRR("example.com", 100,
+                              {0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02,
+                               0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x06}));
+  std::vector<byte> data = pkt.data();
+
+  struct hostent *host = nullptr;
+  struct ares_addr6ttl info[2];
+  int count = -1;
+  EXPECT_EQ(ARES_SUCCESS, ares_parse_aaaa_reply(data.data(), (int)data.size(),
+                                                &host, info, &count));
+  EXPECT_EQ(0, count);
+  ASSERT_NE(nullptr, host);
+  ares_free_hostent(host);
+}
+
 TEST_F(LibraryTest, ParseAaaaReplyAllocFail) {
   DNSPacket pkt;
   pkt.set_qid(0x1234).set_response().set_aa()
