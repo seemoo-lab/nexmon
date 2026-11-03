@@ -1,0 +1,170 @@
+[
+  {
+    "backend": "raw",
+    "variant": "bare",
+    "channel": 100,
+    "source": "02:4e:58:64:00:01",
+    "length": 44,
+    "sent": [
+      44,
+      44,
+      44
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "raw",
+    "variant": "rate",
+    "channel": 100,
+    "source": "02:4e:58:64:00:02",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "raw",
+    "variant": "ofdm6",
+    "channel": 100,
+    "source": "02:4e:58:64:00:03",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "raw",
+    "variant": "ofdm54",
+    "channel": 100,
+    "source": "02:4e:58:64:00:04",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "raw",
+    "variant": "padded128",
+    "channel": 100,
+    "source": "02:4e:58:64:00:05",
+    "length": 164,
+    "sent": [
+      164,
+      164,
+      164
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "raw",
+    "variant": "padded256",
+    "channel": 100,
+    "source": "02:4e:58:64:00:06",
+    "length": 292,
+    "sent": [
+      292,
+      292,
+      292
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "bare",
+    "channel": 100,
+    "source": "02:4e:58:64:01:01",
+    "length": 44,
+    "sent": [
+      44,
+      44,
+      44
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "rate",
+    "channel": 100,
+    "source": "02:4e:58:64:01:02",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "ofdm6",
+    "channel": 100,
+    "source": "02:4e:58:64:01:03",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "ofdm54",
+    "channel": 100,
+    "source": "02:4e:58:64:01:04",
+    "length": 45,
+    "sent": [
+      45,
+      45,
+      45
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "padded128",
+    "channel": 100,
+    "source": "02:4e:58:64:01:05",
+    "length": 164,
+    "sent": [
+      164,
+      164,
+      164
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  },
+  {
+    "backend": "pcap",
+    "variant": "padded256",
+    "channel": 100,
+    "source": "02:4e:58:64:01:06",
+    "length": 292,
+    "sent": [
+      292,
+      292,
+      292
+    ],
+    "outgoing_echoes": 3,
+    "incoming_probe_responses": 0
+  }
+]

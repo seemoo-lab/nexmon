@@ -8,12 +8,10 @@ and real-time socket receivers.
 
 import cmath
 import json
-import math
-import os
 import socket
 import struct
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 try:
     import numpy as np
@@ -54,7 +52,7 @@ class CSIPacket:
         self.chanspec = chanspec
         self.chip_id = chip_id
         self.raw_iq = raw_iq
-        self.timestamp = timestamp or time.time()
+        self.timestamp = timestamp if timestamp is not None else time.time()
         self.num_subcarriers = len(raw_iq)
 
         # Precompute complex samples
@@ -62,13 +60,27 @@ class CSIPacket:
 
     @property
     def bandwidth_mhz(self) -> int:
-        """Estimate bandwidth based on subcarrier count."""
+        """Estimate bandwidth based on subcarrier count and chanspec."""
         if self.num_subcarriers >= 480:
             return 160
         elif self.num_subcarriers >= 240:
             return 80
         elif self.num_subcarriers >= 120:
             return 40
+        elif self.num_subcarriers > 0:
+            return 20
+
+        # If subcarrier count is 0, derive from chanspec bits
+        if self.chanspec:
+            bw_field = self.chanspec & 0x3800
+            if bw_field == 0x2800:
+                return 160
+            elif bw_field in (0x2000, 0x3000):
+                return 80
+            elif bw_field == 0x1800:
+                return 40
+            elif bw_field == 0x1000:
+                return 20
         return 20
 
     @property
@@ -146,10 +158,14 @@ def parse_csi_payload(payload: bytes, offset: int = 0) -> CSIPacket:
       - uint16 chip_id
       - Followed by N * 4 bytes of raw I/Q pairs: int16 I, int16 Q.
     """
+    if offset < 0:
+        raise ValueError(f"Invalid offset: {offset} (must be non-negative)")
     if len(payload) < offset + 18:
         raise ValueError(f"CSI payload too short: {len(payload) - offset} bytes (minimum 18 required)")
 
     magic = struct.unpack_from("<I", payload, offset)[0]
+    if magic != NEXMON_CSI_MAGIC:
+        raise ValueError(f"Invalid Nexmon CSI magic: 0x{magic:08x} (expected 0x{NEXMON_CSI_MAGIC:08x})")
     src_mac = _format_mac(payload[offset + 4 : offset + 10])
     seq = struct.unpack_from("<H", payload, offset + 10)[0]
     core_spatial = struct.unpack_from("<H", payload, offset + 12)[0]
@@ -182,7 +198,7 @@ def parse_csi_payload(payload: bytes, offset: int = 0) -> CSIPacket:
 class CSIReceiver:
     """Real-time UDP receiver and listener for Nexmon CSI frames."""
 
-    def __init__(self, host: str = "0.0.0.0", port: int = DEFAULT_CSI_PORT, buffer_size: int = 4096):
+    def __init__(self, host: str = "0.0.0.0", port: int = DEFAULT_CSI_PORT, buffer_size: int = 65535):
         self.host = host
         self.port = port
         self.buffer_size = buffer_size
@@ -212,7 +228,7 @@ class CSIReceiver:
         self.close()
 
     def recv(self, timeout: Optional[float] = 1.0) -> Optional[CSIPacket]:
-        """Receive a single CSI packet. Returns None on timeout."""
+        """Receive a single CSI packet. Returns None on timeout or malformed UDP datagram."""
         if not self._sock:
             self.start()
         assert self._sock is not None
@@ -220,18 +236,24 @@ class CSIReceiver:
         self._sock.settimeout(timeout)
         try:
             data, _addr = self._sock.recvfrom(self.buffer_size)
-            return parse_csi_payload(data)
+            try:
+                return parse_csi_payload(data)
+            except ValueError:
+                return None
         except (socket.timeout, TimeoutError):
             return None
 
     def stream(self, max_packets: Optional[int] = None, timeout: Optional[float] = 2.0) -> Iterator[CSIPacket]:
-        """Stream received CSI packets continuously as an iterator."""
+        """Stream received CSI packets continuously as an iterator. Stops if socket times out."""
         count = 0
         while max_packets is None or count < max_packets:
             pkt = self.recv(timeout=timeout)
-            if pkt is not None:
-                count += 1
-                yield pkt
+            if pkt is None:
+                if timeout is not None:
+                    break
+                continue
+            count += 1
+            yield pkt
 
 
 def main():

@@ -3,7 +3,9 @@
 
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 NEXMON_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(NEXMON_ROOT, "buildtools", "scripts"))
@@ -43,6 +45,37 @@ class TestDefinitionParser(unittest.TestCase):
 
 
 class TestFirmwareValidator(unittest.TestCase):
+    def test_truncated_elf_is_reported_as_failure(self):
+        with tempfile.TemporaryDirectory(prefix="nexmon-validator-elf-") as tmp:
+            patch_dir = Path(tmp)
+            (patch_dir / "gen").mkdir()
+            (patch_dir / "gen" / "patch.elf").write_bytes(b"\x7fELF")
+
+            validator = FirmwareValidator(patch_dir=str(patch_dir), quiet=True)
+            validator.validate_elf()
+
+            self.assertEqual(validator.failed, 1)
+            self.assertTrue(
+                any("Truncated ELF header" in result["message"] for result in validator.results)
+            )
+
+    def test_region_outside_ram_is_reported_as_failure(self):
+        with tempfile.TemporaryDirectory(prefix="nexmon-validator-memory-") as tmp:
+            patch_dir = Path(tmp)
+            (patch_dir / "gen").mkdir()
+            (patch_dir / "gen" / "memory.ld").write_text(
+                "patch : ORIGIN = 0xffffffff, LENGTH = 0x2\n"
+            )
+
+            validator = FirmwareValidator(patch_dir=str(patch_dir), quiet=True)
+            validator.definitions = {"RAMSTART": 0x198000, "RAMSIZE": 0xC8000}
+            validator.validate_memory_map()
+
+            self.assertGreater(validator.failed, 0)
+            self.assertTrue(
+                any("Invalid linker region" in result["message"] for result in validator.results)
+            )
+
     def test_bcm43455c0_validation(self):
         patch_dir = os.path.join(NEXMON_ROOT, "patches", "bcm43455c0", "7_45_265-28bca26-CY", "nexmon")
         bin_path = os.path.join(patch_dir, "cyfmac43455-sdio-standard.bin")

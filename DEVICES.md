@@ -82,9 +82,17 @@
 - Samsung S7
 - Samsung S7 Edge
 
+## BCM43430 / BCM43438
+(43430a0 / 43430a1) 802.11bgn 1x1 + BT 4.1
+
+- Raspberry Pi 3 Model B (BCM43430A1)
+- Raspberry Pi Zero W / Zero 2 W (BCM43430A1 / BCM43436)
+
 ## BCM43455
 (43455c0) 802.11abgn+ac MIMO 1x1 + BT 4.1
 
+- Raspberry Pi 3 Model B+
+- Raspberry Pi 4 Model B
 - Huawei P9
 - LG G5
 

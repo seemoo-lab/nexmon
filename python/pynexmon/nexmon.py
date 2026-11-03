@@ -30,6 +30,11 @@ class NexmonError(Exception):
     pass
 
 
+class NexmonValueError(NexmonError, ValueError):
+    """Exception raised for invalid parameters or interface names."""
+    pass
+
+
 def _find_libnexio() -> str:
     """Find libnexio.so in the package, repo utilities, or system paths."""
     candidates = [
@@ -121,12 +126,24 @@ class Chanspec:
         return int(bindings.lib.wf_chanspec2mhz(chspec))
 
 
+IFNAMSIZ = 16
+
+
 class NexmonDevice:
     """Interface to a Broadcom wireless device running Nexmon firmware."""
 
     def __init__(self, ifname: str = "wlan0", mode: str = "ioctl", check_interface: bool = True):
+        if not ifname or len(ifname.encode("utf-8")) >= IFNAMSIZ or "/" in ifname or "\0" in ifname:
+            raise NexmonValueError(
+                f"Invalid interface name {ifname!r}: must be non-empty, < {IFNAMSIZ} bytes, and contain no slashes or null bytes"
+            )
+
+        mode_clean = mode.lower()
+        if mode_clean not in ("ioctl", "netlink"):
+            raise NexmonValueError(f"Unsupported mode {mode!r}: must be 'ioctl' or 'netlink'")
+
         self.ifname = ifname
-        self.mode = mode.lower()
+        self.mode = mode_clean
 
         if check_interface and not os.path.exists(f"/sys/class/net/{ifname}"):
             raise NexmonError(f"Network interface {ifname!r} does not exist in /sys/class/net")
@@ -157,10 +174,17 @@ class NexmonDevice:
         if not self._handle:
             raise NexmonError("Device handle is closed")
 
+        if not isinstance(cmd, int) or cmd < 0:
+            raise NexmonValueError(f"Invalid IOCTL command: {cmd!r} (must be a non-negative integer)")
+
         if isinstance(data, int):
+            if data < 0:
+                raise NexmonValueError(f"Negative integer data not supported for IOCTL: {data}")
             buf = bytearray(struct.pack("<I", data) if length == 4 else (data).to_bytes(length, "little"))
         else:
             buf = bytearray(data)
+            if len(buf) > length:
+                raise NexmonValueError(f"Data length ({len(buf)}) exceeds specified IOCTL buffer length ({length})")
             if len(buf) < length:
                 buf.extend(b"\x00" * (length - len(buf)))
 
@@ -200,6 +224,8 @@ class NexmonDevice:
         """Get current chanspec as (uint16_chanspec, formatted_string)."""
         var_req = bytearray(b"chanspec\x00\x00\x00\x00\x00")
         res = self.ioctl(WLC_GET_VAR, data=var_req, length=13, set_cmd=False)
+        if len(res) < 2 or res[:8] == b"chanspec":
+            raise NexmonError("Failed to get chanspec: firmware returned empty or unmodified response buffer")
         chanspec = struct.unpack("<H", res[:2])[0]
         return chanspec, Chanspec.ntoa(chanspec)
 

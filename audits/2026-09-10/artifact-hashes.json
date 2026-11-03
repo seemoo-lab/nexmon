@@ -1,0 +1,22 @@
+{
+  "stock_module": {
+    "path": "/lib/modules/7.3.0-rc2-v8-16k+/kernel/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko.xz",
+    "sha256": "73f55318216c5279d17681f51473b82fccfc61c8b7aeb0180b39b2c465a765c1"
+  },
+  "original_nexmon_module": {
+    "path": "/tmp/nexmon-audit-20260910-0530/brcmfmac-original-nexmon.ko",
+    "sha256": "7951e8264f86c1a0ca0bea04db8a7b9890d9e10c3a2405418996baca98620237"
+  },
+  "candidate_module": {
+    "path": "/tmp/nexmon-audit-20260910-0530/driver-candidate/brcmfmac.ko",
+    "sha256": "5a33f00b9892baca9fcaebc57a24a7205739925981582b8c14696f62d49ea01b"
+  },
+  "installed_firmware": {
+    "path": "/usr/lib/firmware/nexmon/cyfmac43455-sdio-standard-265.bin",
+    "sha256": "a90bd3da5f3fc15770a9cf44f969b5d42d3ab44d36a6ab6068b818db0484f4d0"
+  },
+  "repository_firmware": {
+    "path": "/root/nexmon/patches/bcm43455c0/7_45_265-28bca26-CY/nexmon/cyfmac43455-sdio-standard.bin",
+    "sha256": "71964ef6b8d7b714a4f70468f3ebbb7f7d63a26d66102198c8c5411b54d0abcf"
+  }
+}

@@ -22,12 +22,10 @@
 # monitor-restore-after-reset fix, a control-DCMD wedge (the -110 ETIMEDOUT
 # cascade -> brcmf_sdio_ctl_watchdog -> SDIO bus reset) now re-probes the chip
 # AND re-creates $MON automatically - same name, new ifindex - then brings it
-# back up, so a capture survives a wedge without re-running this script. Two
-# caveats after such a recovery: (1) the recreated vif comes up on the firmware
-# default channel (channel is not restored), and (2) after the re-probe an agent
-# (NetworkManager/udev) may re-up $STA, and cfg80211 then refuses monitor channel
-# hops with -EBUSY until $STA is down again. Re-running '$0 on' is idempotent and
-# re-asserts both; 'status' flags the $STA-up-while-$MON-present case.
+# back up and restores the active chanspec, so a capture survives a wedge
+# without re-running this script. The driver also automatically brings $STA
+# down during monitor restoration so cfg80211 immediately allows channel hopping
+# without -EBUSY. Re-running '$0 on' is idempotent and re-asserts full state.
 # Tearing down with '$0 off' happens with the bus up, so the driver clears its
 # restore intent - a later wedge will NOT bring monitor back. Intended semantics.
 #
@@ -38,17 +36,20 @@
 # against dmesg on first use.
 #
 # Usage:
-#   ./monitor-mode.sh [on]      enable monitor mode   (default)
-#   ./monitor-mode.sh off       tear down, hand the STA back to NetworkManager
-#   ./monitor-mode.sh status    show current state
+#   ./monitor-mode.sh [on] [channel] [country]  enable monitor mode (default)
+#   ./monitor-mode.sh <channel> [country]       enable monitor mode on channel
+#   ./monitor-mode.sh channel <channel>         switch channel on running monitor
+#   ./monitor-mode.sh off                       tear down, hand STA back to NM
+#   ./monitor-mode.sh status                    show current state
 #
-# Env overrides:  STA=wlan0  MON=mon0  CHAN=<channel>  NEXUTIL=<path>
+# Env overrides:  STA=wlan0  MON=mon0  CHAN=<channel>  COUNTRY=<cc>  NEXUTIL=<path>
 
 set -u
 
 STA="${STA:-wlan0}"
 MON="${MON:-mon0}"
 CHAN="${CHAN:-}"
+COUNTRY="${COUNTRY:-}"
 # QUIESCE=1 (default) stops wpa_supplicant for the monitor session. It keeps a
 # p2p-dev handle on the phy and background-polls get_channel; on the
 # single-outstanding BCDC/SDIO path those DCMDs collide with a fast channel
@@ -92,6 +93,96 @@ find_nexutil() {
     return 1
 }
 
+# Cached variant to avoid 6 forks per `on`
+__NEX_CACHED=""
+find_nexutil_cached() {
+    if [ -n "$__NEX_CACHED" ] && [ -x "$__NEX_CACHED" ]; then
+        printf '%s' "$__NEX_CACHED"
+        return 0
+    fi
+    __NEX_CACHED=$(find_nexutil) || return 1
+    printf '%s' "$__NEX_CACHED"
+}
+
+get_cfg_country() {
+    iw reg get 2>/dev/null | awk '/^country/{sub(/:/,"",$2); print $2; exit}'
+}
+
+get_fw_country() {
+    local dev="${1:-$STA}"
+    local nex cc hex
+    nex=$(find_nexutil_cached) || return 1
+    cc=$("$nex" -I "$dev" -g 262 -v country -l 16 -r 2>/dev/null | head -c 2 || true)
+    if [[ "$cc" =~ ^[A-Z0-9]{2}$ ]]; then
+        printf '%s' "$cc"
+        return 0
+    fi
+    hex=$("$nex" -I "$dev" -g 262 -v country -l 16 2>/dev/null | head -1 || true)
+    if [[ "$hex" =~ 0x[0-9a-fA-F]+:\ +([0-9a-fA-F]{2})\ +([0-9a-fA-F]{2}) ]]; then
+        printf '%b' "\\x${BASH_REMATCH[1]}\\x${BASH_REMATCH[2]}" 2>/dev/null || true
+        return 0
+    fi
+    return 1
+}
+
+poll_for_country() {
+    local expected="$1" tries=0 cur
+    while [ $tries -lt 10 ]; do
+        sleep 0.05
+        cur=$(get_cfg_country)
+        if [ -n "$expected" ] && [ "$cur" = "$expected" ]; then
+            return 0
+        fi
+        if [ -z "$expected" ] && [ -n "$cur" ] && [ "$cur" != "00" ]; then
+            return 0
+        fi
+        tries=$((tries+1))
+    done
+    return 1
+}
+
+sync_regulatory() {
+    local dev="${1:-$STA}"
+    local desired="${COUNTRY:-}"
+    local cfg_cc fw_cc
+
+    cfg_cc=$(get_cfg_country)
+    fw_cc=$(get_fw_country "$dev" 2>/dev/null || true)
+
+    if [ -n "$desired" ]; then
+        desired=$(printf '%s' "$desired" | tr '[:lower:]' '[:upper:]')
+        info "pinning regulatory domain to $desired (explicit COUNTRY override)"
+        iw reg set "$desired" 2>/dev/null || warn "iw reg set $desired returned non-zero"
+        poll_for_country "$desired" >/dev/null 2>&1 || sleep 0.05
+    else
+        if [ -z "$cfg_cc" ] || [ "$cfg_cc" = "00" ]; then
+            if [ -n "$fw_cc" ] && [ "$fw_cc" != "00" ] && [[ "$fw_cc" =~ ^[A-Z]{2}$ ]]; then
+                info "cfg80211 regdom is unset/world (00); syncing to firmware country ($fw_cc)"
+                iw reg set "$fw_cc" 2>/dev/null || true
+                poll_for_country "$fw_cc" >/dev/null 2>&1 || sleep 0.05
+            else
+                info "pinning regulatory domain to US (broad 5 GHz channel coverage)"
+                iw reg set US 2>/dev/null || true
+                poll_for_country "US" >/dev/null 2>&1 || sleep 0.05
+            fi
+        elif [ -n "$fw_cc" ] && [ "$fw_cc" != "$cfg_cc" ] && [[ "$cfg_cc" =~ ^[A-Z]{2}$ ]]; then
+            info "syncing firmware country ($fw_cc) to cfg80211 regdom ($cfg_cc)"
+            iw reg set "$cfg_cc" 2>/dev/null || true
+            poll_for_country "$cfg_cc" >/dev/null 2>&1 || sleep 0.05
+        fi
+    fi
+
+    cfg_cc=$(get_cfg_country)
+    fw_cc=$(get_fw_country "$dev" 2>/dev/null || echo "<unknown>")
+
+    if [ -n "$cfg_cc" ] && [ "$cfg_cc" = "$fw_cc" ]; then
+        info "regulatory domain synchronized: $cfg_cc (cfg80211: $cfg_cc, firmware: $fw_cc)"
+    else
+        warn "regulatory domain desynchronized: cfg80211=$cfg_cc, firmware=$fw_cc"
+        warn "  firmware may reject chanspec requests with -52 (-EBADE). Set COUNTRY=<cc> to match."
+    fi
+}
+
 # Refuse to tear down the interface the default route lives on. On the dev box
 # that is eth0 and the 43455 is wlan0, but do not assume it.
 #
@@ -99,21 +190,17 @@ find_nexutil() {
 # form collapsed both into an empty $dev, so the comparison passed silently and
 # the guard never fired.
 check_not_uplink() {
-    local routes dev
-    if ! routes=$(ip route show default 2>&1); then
-        die "cannot read the routing table: $routes
-       Refusing to guess whether $STA is the uplink - bringing down the
-       interface that carries the default route would cut you off."
-    fi
-    dev=$(printf '%s\n' "$routes" | awk '/^default/{print $5; exit}')
-    if [ -z "$dev" ]; then
-        info "no default route - no uplink to protect"
-        return 0
-    fi
-    if [ "$dev" = "$STA" ]; then
-        die "$STA carries the default route - bringing it down would cut you off.
+    local routes family dev
+    for family in -4 -6; do
+        if routes=$(ip "$family" route show default 2>&1); then
+            for dev in $(printf '%s\n' "$routes" | awk '{ for (i=1; i<=NF; i++) if ($i == "dev") print $(i+1) }'); do
+                if [ "$dev" = "$STA" ]; then
+                    die "$STA carries a default route ($family) - bringing it down would cut you off.
        Connect over another link (or set STA=<other iface>) first."
-    fi
+                fi
+            done
+        fi
+    done
 }
 
 # The precondition the crash hinges on: the STA must not be associated.
@@ -128,13 +215,13 @@ check_not_uplink() {
 # "unassociated" - reporting the exact state that traps the dongle.
 wait_unassociated() {
     local _ out
-    for _ in $(seq 1 20); do
+    for _ in $(seq 1 100); do
         if ! out=$(iw dev "$STA" link 2>&1); then
             warn "cannot query association state of $STA: $out"
             return 2
         fi
         case "$out" in
-            *Connected*) sleep 0.5 ;;
+            *Connected*) sleep 0.1 ;;
             *)           return 0 ;;
         esac
     done
@@ -142,28 +229,65 @@ wait_unassociated() {
 }
 
 fw_crashed_since() {
-    local mark="$1"
-    dmesg 2>/dev/null | awk -v m="$mark" 'index($0,m){seen=1} seen' \
-        | grep -c 'fw_crashed' || true
+    local mark="$1" out
+    [ -n "$mark" ] || { echo 0; return 0; }
+    out=$(dmesg 2>/dev/null | awk -v m="$mark" 'index($0,m){seen=1} seen' 2>/dev/null || true)
+    if [ -z "$out" ] || ! printf "%s" "$out" | grep -q . 2>/dev/null; then
+        if command -v journalctl >/dev/null 2>&1; then
+            out=$(journalctl -k --no-pager 2>/dev/null | awk -v m="$mark" 'index($0,m){seen=1} seen' 2>/dev/null || true)
+        elif [ -r /dev/kmsg ]; then
+            out=$(dd if=/dev/kmsg iflag=nonblock bs=64k 2>/dev/null | awk -v m="$mark" 'index($0,m){seen=1} seen' 2>/dev/null || true)
+        fi
+    fi
+    printf "%s" "$out" | grep -c 'fw_crashed' || true
 }
 
 phy_of() { cat "/sys/class/net/$1/phy80211/name" 2>/dev/null; }
 
 do_status() {
     info "driver:   $(cat /sys/module/brcmfmac/version 2>/dev/null || echo '<not loaded>')"
-    info "firmware: $(dmesg 2>/dev/null | grep 'Firmware: BCM' | tail -1 | sed 's/.*Firmware: //')"
+    local nex fw_ver="" cur_chan=""
+    nex=$(find_nexutil_cached 2>/dev/null || true)
+    if [ -n "$nex" ]; then
+        fw_ver=$("$nex" -I "$MON" -V 2>/dev/null | awk '/^firmware /{sub(/^firmware /,""); print; exit}' || true)
+        if [ -z "$fw_ver" ]; then
+            fw_ver=$("$nex" -I "$STA" -V 2>/dev/null | awk '/^firmware /{sub(/^firmware /,""); print; exit}' || true)
+        fi
+    fi
+    if [ -z "$fw_ver" ]; then
+        fw_ver=$(dmesg 2>/dev/null | grep 'Firmware: BCM' | tail -1 | sed 's/.*Firmware: //')
+    fi
+    info "firmware: ${fw_ver:-<unknown>}"
+
     ip -br link show "$STA" 2>/dev/null || warn "$STA absent"
     ip -br link show "$MON" 2>/dev/null || echo "$MON: not present"
-    # After a wedge auto-recovery an agent can re-up $STA, and cfg80211 then
-    # blocks monitor channel hops with -EBUSY. Flag that so it is obvious.
+
     if ip link show "$MON" >/dev/null 2>&1 && [ -e "/sys/class/net/$STA/flags" ] \
        && [ $(( $(cat "/sys/class/net/$STA/flags") & 1 )) -eq 1 ]; then
-        warn "$STA is admin-up while $MON exists - channel hops will fail (-EBUSY)."
-        warn "  (common after a wedge auto-recovery re-ups $STA)  fix: ip link set $STA down"
+        warn "$STA is admin-up while $MON exists - cfg80211 will block channel hops (-EBUSY)."
+        warn "  fix: ip link set $STA down"
     fi
-    if NEX=$(find_nexutil); then
-        echo -n "monitor:  "; "$NEX" -I "$MON" -m 2>/dev/null \
-            || "$NEX" -I "$STA" -m 2>/dev/null || echo "<unreadable>"
+
+    if [ -n "$nex" ]; then
+        echo -n "monitor:  "; "$nex" -I "$MON" -m 2>/dev/null \
+            || "$nex" -I "$STA" -m 2>/dev/null || echo "<unreadable>"
+        cur_chan=$("$nex" -I "$MON" -k 2>/dev/null || "$nex" -I "$STA" -k 2>/dev/null || true)
+        if [ -n "$cur_chan" ]; then
+            info "channel:  $cur_chan"
+        fi
+    fi
+
+    local cfg_cc fw_cc
+    cfg_cc=$(get_cfg_country)
+    fw_cc=$(get_fw_country "$MON" 2>/dev/null || get_fw_country "$STA" 2>/dev/null || echo "<unknown>")
+    if [ -n "$cfg_cc" ] && [ "$cfg_cc" = "$fw_cc" ]; then
+        info "regulatory: cfg80211=$cfg_cc, firmware=$fw_cc (in sync)"
+    elif [ "$cfg_cc" = "00" ]; then
+        warn "regulatory: cfg80211=00 (world), firmware=$fw_cc (DESYNCHRONIZED - Broadcom rejects '00'!)"
+        warn "  channels permitted by cfg80211 will fail in firmware with -52 (-EBADE). Fix: COUNTRY=$fw_cc $0 on"
+    else
+        warn "regulatory: cfg80211=$cfg_cc, firmware=$fw_cc (DESYNCHRONIZED - causes -52 errors!)"
+        warn "  fix: COUNTRY=$cfg_cc $0 on   # or COUNTRY=US / COUNTRY=DE"
     fi
     iw dev "$STA" link 2>/dev/null | head -2
 }
@@ -172,14 +296,24 @@ do_status() {
 # stopped in STATE_FILE so restore_daemons() can put it back on teardown.
 quiesce_daemons() {
     [ "$QUIESCE" = 1 ] || return 0
-    : > "$STATE_FILE" 2>/dev/null || true
     if command -v systemctl >/dev/null 2>&1 \
        && systemctl is-active --quiet wpa_supplicant 2>/dev/null; then
+        # Use flock to avoid TOCTOU race on concurrent `on` and ensure 600 perms.
+        (
+            flock -x 200 2>/dev/null || { warn "cannot acquire lock on $STATE_FILE"; exit 1; }
+            if ! grep -qx wpa_supplicant "$STATE_FILE" 2>/dev/null; then
+                ( umask 077 && touch "$STATE_FILE" ) 2>/dev/null || true
+                chmod 600 "$STATE_FILE" 2>/dev/null || true
+                if ! printf '%s\n' wpa_supplicant >> "$STATE_FILE" 2>/dev/null; then
+                    warn "cannot record daemon state in $STATE_FILE - refusing to stop wpa_supplicant"
+                    exit 1
+                fi
+            fi
+        ) 200>"$STATE_FILE.lock" || return 1
         info "stopping wpa_supplicant for the session (removes background phy polling)"
-        if systemctl stop wpa_supplicant >/dev/null 2>&1; then
-            echo "wpa_supplicant" >> "$STATE_FILE" 2>/dev/null || true
-        else
+        if ! systemctl stop wpa_supplicant >/dev/null 2>&1; then
             warn "could not stop wpa_supplicant - background scans may still collide with hops"
+            return 1
         fi
     fi
 }
@@ -187,13 +321,25 @@ quiesce_daemons() {
 # Undo quiesce_daemons(). Safe to call unconditionally; a no-op if nothing was stopped.
 restore_daemons() {
     [ -f "$STATE_FILE" ] || return 0
-    if grep -qx wpa_supplicant "$STATE_FILE" 2>/dev/null \
-       && command -v systemctl >/dev/null 2>&1; then
-        systemctl start wpa_supplicant >/dev/null 2>&1 \
-            && info "wpa_supplicant restarted" \
-            || warn "could not restart wpa_supplicant - 'systemctl start wpa_supplicant' by hand"
-    fi
-    rm -f "$STATE_FILE" 2>/dev/null || true
+    local rc=0
+    (
+        flock -x 200 2>/dev/null || exit 1
+        [ -f "$STATE_FILE" ] || exit 0
+        if grep -qx wpa_supplicant "$STATE_FILE" 2>/dev/null; then
+            if ! command -v systemctl >/dev/null 2>&1; then
+                warn "systemctl unavailable - retaining $STATE_FILE for a later restoration attempt"
+                exit 1
+            fi
+            if systemctl start wpa_supplicant >/dev/null 2>&1; then
+                info "wpa_supplicant restarted"
+            else
+                warn "could not restart wpa_supplicant - retaining $STATE_FILE; retry '$0 off'"
+                exit 1
+            fi
+        fi
+        rm -f "$STATE_FILE" || exit 1
+    ) 200>"$STATE_FILE.lock" || rc=$?
+    return $rc
 }
 
 do_off() {
@@ -201,17 +347,17 @@ do_off() {
     # $MON goes down with the bus up, so the driver's net_mon_stop clears its
     # monitor-restore intent: a later wedge will not auto-bring monitor back.
     # That is deliberate - 'off' means off, including across a reset.
-    if NEX=$(find_nexutil) && ip link show "$MON" >/dev/null 2>&1; then
+    if NEX=$(find_nexutil_cached) && ip link show "$MON" >/dev/null 2>&1; then
         "$NEX" -I "$MON" -m0 >/dev/null 2>&1 || true
     fi
     ip link set "$MON" down 2>/dev/null || true
     iw dev "$MON" del 2>/dev/null || true
     ip link set "$STA" up 2>/dev/null || true
-    if command -v nmcli >/dev/null 2>&1; then
+    if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
         nmcli dev set "$STA" managed yes >/dev/null 2>&1 || true
         info "$STA handed back to NetworkManager"
     fi
-    restore_daemons
+    restore_daemons || return $?
     info "done"
 }
 
@@ -220,20 +366,31 @@ do_off() {
 # do_off instead of leaving NetworkManager detached and the interfaces in a
 # partial monitor setup. Disarmed on success.
 _MON_ROLLBACK_ARMED=0
+_WAS_ALREADY_ON=0
 monitor_rollback() {
     [ "$_MON_ROLLBACK_ARMED" = 1 ] || return 0
     _MON_ROLLBACK_ARMED=0
     warn "monitor-mode setup did not complete - rolling back to a clean state"
-    do_off
+    if [ "${_WAS_ALREADY_ON:-0}" = 1 ]; then
+        warn "retaining pre-existing monitor session without full teardown"
+    else
+        do_off
+    fi
 }
 
 do_on() {
     check_not_uplink
 
-    NEX=$(find_nexutil) || die "nexutil not found - build utilities/nexutil, or set NEXUTIL=<path>"
+    NEX=$(find_nexutil_cached) || die "nexutil not found - build utilities/nexutil, or set NEXUTIL=<path>"
     info "nexutil: $NEX"
 
     ip link show "$STA" >/dev/null 2>&1 || die "$STA does not exist (is brcmfmac loaded?)"
+
+    local was_already_on=0
+    if ip link show "$MON" >/dev/null 2>&1 && iw dev "$MON" info 2>/dev/null | grep -q "type monitor"; then
+        was_already_on=1
+    fi
+    _WAS_ALREADY_ON=$was_already_on
 
     local mark
     mark=$(dmesg 2>/dev/null | tail -1)
@@ -245,7 +402,7 @@ do_on() {
 
     # 1. Stop NetworkManager reassociating behind our back. This is the step
     #    that separates this box from the rig Stage 5c was verified on.
-    if command -v nmcli >/dev/null 2>&1; then
+    if command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null; then
         info "setting $STA unmanaged"
         nmcli dev set "$STA" managed no >/dev/null 2>&1 \
             || warn "nmcli failed - if something re-associates $STA, this will trap the dongle"
@@ -254,11 +411,14 @@ do_on() {
     # 1b. Stop wpa_supplicant's background polling of the phy (see QUIESCE).
     #     Its get_channel DCMDs otherwise collide with airodump's channel hops
     #     and can time the firmware out (-110). Restored by do_off.
-    quiesce_daemons
+    quiesce_daemons || die "could not safely quiesce daemons"
 
     # 2. rfkill unblock, STA up (the vif is created off a live phy).
     command -v rfkill >/dev/null 2>&1 && rfkill unblock wifi 2>/dev/null || true
     ip link set "$STA" up || die "could not bring $STA up"
+
+    # 2b. Synchronize cfg80211 and Broadcom firmware regulatory domains.
+    sync_regulatory "$STA"
 
     # 3. Confirm the precondition before anything touches SET_MONITOR.
     info "waiting for $STA to be unassociated"
@@ -268,11 +428,11 @@ do_on() {
         0) info "$STA is unassociated - safe to proceed" ;;
         2) die "could not verify that $STA is unassociated.
        Refusing to issue SET_MONITOR: enabling monitor mode while the STA is
-       associated is what traps the firmware. Confirm that $STA exists and that
-       'iw dev $STA link' succeeds, then re-run." ;;
+        associated is what traps the firmware. Confirm that $STA exists and that
+        'iw dev $STA link' succeeds, then re-run." ;;
         *) die "$STA is still associated.
        Enabling monitor mode now is what traps the firmware. Disconnect it
-       (nmcli dev disconnect $STA, or stop wpa_supplicant) and re-run." ;;
+        (nmcli dev disconnect $STA, or stop wpa_supplicant) and re-run." ;;
     esac
 
     # 4. Monitor vif, before the mode. Note that bringing $MON up already makes
@@ -284,15 +444,19 @@ do_on() {
     [ -n "${PHY:-}" ] || die "could not read phy for $STA"
     info "phy: $PHY"
 
-    iw dev "$MON" del 2>/dev/null || true
-    info "adding monitor vif $MON"
-    iw phy "$PHY" interface add "$MON" type monitor \
-        || die "could not create $MON"
+    if [ "$was_already_on" = 1 ]; then
+        info "monitor vif $MON already active; reusing existing interface"
+    else
+        iw dev "$MON" del 2>/dev/null || true
+        info "adding monitor vif $MON"
+        iw phy "$PHY" interface add "$MON" type monitor \
+            || die "could not create $MON"
+    fi
 
     # Keep NetworkManager off the monitor vif too, so it never grabs or polls
     # get_channel on it (verified: with $STA + $MON both unmanaged and
     # wpa_supplicant stopped, nothing polls the phy while idle).
-    command -v nmcli >/dev/null 2>&1 && nmcli dev set "$MON" managed no >/dev/null 2>&1 || true
+    command -v nmcli >/dev/null 2>&1 && systemctl is-active --quiet NetworkManager 2>/dev/null && nmcli dev set "$MON" managed no >/dev/null 2>&1 || true
 
     ip link set "$MON" up || die "could not bring $MON up"
 
@@ -319,7 +483,15 @@ do_on() {
     "$NEX" -I "$MON" -m2 >/dev/null 2>&1 || true
     "$NEX" -I "$MON" -s86 -i -v0 >/dev/null 2>&1 || true
 
-    sleep 1
+    # Poll for monitor mode to settle (was fixed sleep 1) — 20×0.05s = 1s max
+    tries=0
+    while [ $tries -lt 20 ]; do
+        sleep 0.05
+        if "$NEX" -I "$MON" -m >/dev/null 2>&1; then
+            break
+        fi
+        tries=$((tries+1))
+    done
 
     # 6. Verify: mode readback, and no dongle trap since we started.
     local mode crashes
@@ -337,6 +509,12 @@ do_on() {
     info "no firmware trap detected"
     if [ -n "$CHAN" ]; then
         info "setting channel $CHAN"
+        # Check if the requested channel is marked disabled under active regulatory domain
+        if iw phy "$PHY" channels 2>/dev/null | grep -E "\[$CHAN\]" | grep -q "disabled"; then
+            warn "channel $CHAN is marked (disabled) under regulatory domain $(get_cfg_country)!"
+            warn "  firmware will likely reject this channel with -52 (-EBADE / BCME_BADCHAN)."
+            warn "  hint: US allows 5GHz 149-165; DE/NO/ETSI allows channels 12-13. Re-run with COUNTRY=<cc>."
+        fi
         # cfg80211 returns EBUSY for iw set channel while the STA vif is up;
         # nexutil talks to the firmware chanspec directly.
         iw dev "$MON" set channel "$CHAN" 2>/dev/null \
@@ -348,17 +526,69 @@ do_on() {
     info "hop/scan with:  airodump-ng $MON"
     info "5 GHz too:      airodump-ng --band abg $MON"
     info "tear down with: $0 off"
-    info "if the chip wedges (-110 cascade) the driver auto-recreates $MON;"
-    info "  after recovery run 'ip link set $STA down' (or '$0 on') to resume hops"
+    info "if the chip wedges (-110 cascade) the driver auto-recreates $MON and"
+    info "  restores channel & link state automatically (surviving wedges transparently)"
 
     # Success: keep the configured monitor state, disarm the rollback.
     _MON_ROLLBACK_ARMED=0
     trap - EXIT INT TERM
 }
 
+do_channel() {
+    local ch="${1:-}"
+    [ -n "$ch" ] || die "missing channel number. Usage: $0 channel <1-165>"
+    local nex phy
+    nex=$(find_nexutil_cached) || die "nexutil not found - build utilities/nexutil, or set NEXUTIL=<path>"
+    ip link show "$MON" >/dev/null 2>&1 || die "$MON is not present. Enable monitor mode first ('$0 on')."
+
+    phy=$(phy_of "$STA" 2>/dev/null || phy_of "$MON" 2>/dev/null || true)
+    if [ -n "$phy" ] && iw phy "$phy" channels 2>/dev/null | grep -E "\[$ch\]" | grep -q "disabled"; then
+        warn "channel $ch is marked (disabled) under regulatory domain $(get_cfg_country)!"
+        warn "  firmware will likely reject this channel with -52 (-EBADE / BCME_BADCHAN)."
+    fi
+
+    info "setting $MON channel to $ch"
+    if iw dev "$MON" set channel "$ch" 2>/dev/null || "$nex" -I "$MON" -k"$ch"; then
+        local curr
+        curr=$("$nex" -I "$MON" -k 2>/dev/null || true)
+        info "channel set: ${curr:-$ch}"
+    else
+        die "could not set channel $ch"
+    fi
+}
+
 case "${1:-on}" in
-    on|enable|"") do_on ;;
-    off|disable)  do_off ;;
-    status)       do_status ;;
-    *) die "usage: $0 [on|off|status]" ;;
+    on|enable)
+        if [ -n "${2:-}" ]; then
+            CHAN="$2"
+        fi
+        if [ -n "${3:-}" ]; then
+            COUNTRY="$3"
+        fi
+        do_on
+        ;;
+    "")
+        do_on
+        ;;
+    off|disable)
+        do_off
+        ;;
+    status)
+        do_status
+        ;;
+    channel|chan|set-channel|ch)
+        do_channel "${2:-}"
+        ;;
+    *)
+        if [[ "$1" =~ ^[0-9]+(/[0-9]+)?$ ]] || [[ "$1" =~ ^6g[0-9]+(/[0-9]+)?$ ]]; then
+            # Numeric / chanspec first argument: e.g. ./monitor-mode.sh 36 [country], 36/80, 6g37
+            CHAN="$1"
+            if [ -n "${2:-}" ]; then
+                COUNTRY="$2"
+            fi
+            do_on
+        else
+            die "usage: $0 [on [channel] [country] | off | status | channel <1-196>]"
+        fi
+        ;;
 esac

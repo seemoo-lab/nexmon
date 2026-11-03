@@ -120,7 +120,7 @@ def main():
         return p.stdout
 
     baseline = run("dmesg-before", ["dmesg"]).decode(errors="replace")
-    mark = max(float(x) for x in re.findall(r"^\[\s*([\d.]+)\]", baseline, re.M))
+    mark = max((float(x) for x in re.findall(r"^\[\s*([\d.]+)\]", baseline, re.M)), default=0.0)
 
     def check_kernel(tag):
         text = run(f"dmesg-{tag}", ["dmesg"]).decode(errors="replace")

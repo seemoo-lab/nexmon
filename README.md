@@ -29,43 +29,80 @@ additional features, the following projects might be interesting for you:
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
-# Supported Devices
-The following devices are currently supported by our nexmon firmware patch.
+## Firmware toolkit
 
-WiFi Chip                 | Firmware Version     | Used in                   | Operating System             |  M  | RT  |  I  | FP  | UC  | CT 
-------------------------- | -------------------- | ------------------------- | ---------------------------- | --- | --- | --- | --- | --- | ---
-bcm4330                   | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0             |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1               |  X  |  X  |  X  |     |  X  |  O 
-bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43439a0<sup>7</sup>    | 7_95_49 (2271bb6 CY) | Raspberry Pi Pico W       | Pico SDK                     |  X  |  X  |     |  X  |  X  |    
-bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
-bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
-bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
-bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                  | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1               |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19    |  X  |  X  |     |  X  |  X  |    
-bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
-bcm43455c0                | 7_45_206             | Raspberry Pi B3+/B4       | Raspberry Pi OS Kernel 5.4   |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0                | 7_45_234 (4ca95bb CY)| Raspberry Pi B3+/B4/5     | Raspberry Pi OS              |     |     |     |  X  |  X  |    
-bcm43436b0<sup>3</sup>    | 9_88_4_65            | Raspberry Pi Zero 2 W     | Raspberry Pi OS Kernel 5.10  |  X  |  X  |  X  |  X  |  X  |    
-bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock          |  X  |  X  |     |  X  |  X  |  O 
-bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
-bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
-bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
-bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta        | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
-bcm4389c1<sup>5,8,9</sup> | 20_82_42_sta (r994653) | Samsung Galaxy S22 Plus | Android 14, Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
-bcm4389c1<sup>5,8,9</sup> | 20_101_36_2 (r994653)| Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
-bcm4389c1<sup>5,8,9</sup> | 20_101_57 (r1035009)| Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
-bcm4398d0<sup>5,8,9</sup> | 24_671_6_9 (r1031525)| Google Pixel 8            | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
-bcm4390b1<sup>5,8,9</sup> | 27_10_1121_57_26 (g9f20a98) | Google Pixel 9 | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
-bcm6715b0<sup>5</sup> | 17_10_188_6401 (r808804)| Asus RT-AX86U Pro | Stock firmware 3.0.0.4_388.23565 |     |     |     |  /  |  X  |    
-qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
+`nexfirmware.py` detects the active Broadcom/Cypress firmware, analyzes firmware
+images, installs patched images, and restores stock firmware. Preview automatic
+stock-firmware discovery before changing the system:
+
+```sh
+./nexfirmware.py restore --dry-run
+sudo ./nexfirmware.py restore --reload
+```
+
+Discovery prefers stock images registered with `update-alternatives`, then
+checks standard system firmware directories, matching `firmwares/<chip>` source
+images, and preserved backups. A specific known-stock image can be supplied with
+`restore --source FILE`. The active image is backed up by default.
+
+The reverse-engineering command can also run `strings` and `binwalk` when those
+tools are installed. Omit an output filename to print the report, or provide one
+to save it:
+
+```sh
+./nexfirmware.py reverse firmware.bin --strings
+./nexfirmware.py reverse firmware.bin --strings strings.txt --binwalk binwalk.txt
+```
+
+### Chip support and memory map
+`nexfirmware.py` `CHIP_DATABASE` lists 10 primary chips with `default_ramstart` (e.g., `0x198000` for BCM43455c0, `0x0` for BCM43430a1, `0x180000` for BCM4339). `firmwares/` contains 23 chip/version combinations, some community-contributed with limited validation. `reverse` auto-detects `RAMSTART` from `firmwares/<chip>/<ver>/definitions.mk` or `CHIP_DATABASE` when `--ramstart` is not given; for other chips pass `--ramstart 0x...` explicitly (see `firmwares/<chip>/<ver>/definitions.mk`). `reverse` also supports `--extract-ucode FILE --disasm ADDR --count N --strings-min-length N`.
+
+# Supported Devices
+The following devices have validated Nexmon patches (M/RT/I = tested). `firmwares/` contains additional chip/version combinations (23 total) with community or limited validation — see `firmwares/<chip>` and `CHIP_DATABASE` in `nexfirmware.py`.
+
+WiFi Chip                 | Firmware Version         | Used in                   | Operating System             |  M  | RT  |  I  | FP  | UC  | CT 
+------------------------- | ------------------------ | ------------------------- | ---------------------------- | --- | --- | --- | --- | --- | ---
+bcm4330                   | 5_90_100_41_sta          | Samsung Galaxy S2         | Cyanogenmod 13.0             |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0                 | 6.30.171.1_sta           | Samsung Galaxy S4         | LineageOS 14.1               |  X  |  X  |  X  |     |  X  |  O 
+bcm4339                   | 6_37_34_43               | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_26               | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_46               | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43439a0<sup>7</sup>    | 7_95_49 (2271bb6 CY)     | Raspberry Pi Pico W       | Pico SDK                     |  X  |  X  |     |  X  |  X  |    
+bcm43451b1                | 7_63_43_0                | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw             | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_120_5_1_sta_C0         | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
+bcm43455                  | 7_120_7_1_sta_C0         | Galaxy J7 2017            | ?                            |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw(8-2017)     | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455<sup>5</sup>      | 7_46_77_11_hw            | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_59_16               | Sony Xperia Z5 Compact    | LineageOS 14.1               |  X  |  X  |  X  |  X  |  X  |    
+bcm43455c0                | 7_45_154                 | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19    |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_189                 | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_206                 | Raspberry Pi B3+/B4       | Raspberry Pi OS Kernel 5.4   |  X  |  X  |  X  |  X  |  X  |    
+bcm43455c0                | 7_45_234 (4ca95bb CY)    | Raspberry Pi B3+/B4/5     | Raspberry Pi OS              |     |     |     |  X  |  X  |    
+bcm43455c0                | 7_45_265 (28bca26 CY)    | Raspberry Pi B3+/B4/5     | Raspberry Pi OS              |  X  |  X  |  X  |  X  |  X  |    
+bcm43436b0<sup>3</sup>    | 9_88_4_65                | Raspberry Pi Zero 2 W     | Raspberry Pi OS Kernel 5.10  |  X  |  X  |  X  |  X  |  X  |    
+bcm4356                   | 7_35_101_5_sta           | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_200_17_sta         | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_201_3_sta          | Nexus 6P                  | Android 7.1.2 Stock          |  X  |  X  |     |  X  |  X  |  O 
+bcm4358<sup>2</sup>       | 7_112_300_14_sta         | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0       | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
+bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0            | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
+bcm4361b0                 | 13_38_55_1_sta           | Samsung Galaxy S8         | Android Stock / LineageOS    |  X  |  X  |     |  X  |  X  |    
+bcm43684b0<sup>5</sup>    | 17_10_121_41 (r796515)   | Asus RT-AX88U            | Stock firmware / Asuswrt-Merlin |     |     |     |  /  |  X  |    
+bcm43684b0<sup>5</sup>    | 17_10_157_2809 (r801046) | Asus RT-AX86U            | Stock firmware / Asuswrt-Merlin |     |     |     |  /  |  X  |    
+bcm43684c0<sup>5</sup>    | 17_10_157_2809 (r801046) | Asus GT-AXE11000         | Stock firmware / Asuswrt-Merlin |     |     |     |  /  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta             | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta            | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_80_87_3_sta (r1050079)| Samsung Galaxy S21 Ultra 5G | Android 14, Rooted with [Magisk](https://github.com/topjohnwu/Magisk) |     |     |     |  X  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_82_42_sta (r985250)   | Samsung Galaxy S22 Plus   | Android 14, Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_101_36_2 (r994653)    | Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_101_57 (r1035009)     | Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4390b1<sup>5,8,9</sup> | 27_10_843_47 (r1084320)  | Google Pixel 9            | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4398d0<sup>5,8,9</sup> | 24_671_6_9 (r1031525)    | Google Pixel 8            | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4398d0<sup>5,8,9</sup> | 24_67101_26_10 (r1048778)| Google Pixel 8 and 8 Pro | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm6715b0<sup>5</sup>     | 17_10_188_6401 (r808804) | Asus RT-AX86U Pro        | Stock firmware 3.0.0.4_388.23565 |     |     |     |  /  |  X  |    
+bcm6715b0<sup>5</sup>     | 17_10_188_6401 (r808804) | Asus RT-AX82U V2         | Stock firmware 3.0.0.4_388.23565 |     |     |     |  /  |  X  |    
+qca9500<sup>4</sup>       | 4-1-0_55                 | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
 
@@ -128,32 +165,33 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
-**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4, 5.10, 5.15, 6.1, 6.2, 6.6, 6.18, 7.2 and 7.3. The driver directory is selected automatically from `uname -r`, so a kernel whose `major.minor` has no matching `patches/driver/brcmfmac_<ver>.y-nexmon` directory builds the firmware but silently skips the driver. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
+## Build patches for bcm43430a1 on the RPI3/Zero W, bcm43455c0 on the RPI3+/RPI4/RPI5, or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
+**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4, 5.10, 5.15, 6.1, 6.2, 6.6, 6.18, 7.2 and 7.3. The driver directory is selected automatically from `uname -r`, so a kernel whose `major.minor` has no matching `patches/driver/brcmfmac_<ver>.y-nexmon` directory builds the firmware but silently skips the driver. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support firmware releases 7.45.189, 7.45.206, 7.45.234, and 7.45.265 (28bca26 CY) from Cypress / Raspberry Pi OS. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make autoconf libtool texinfo`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
+* The current vendored math libraries are MPFR 4.2.2 and ISL 0.28. The bundled GCC 5.4.1 firmware compiler still needs the older library ABIs; its compatibility sources are preserved in `buildtools/legacy/`. See [MPFR and ISL build notes](buildtools/MATH_LIBRARIES.md).
 * ### On 32bit Raspbian/Raspberry Pi OS
   * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
-  * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+  * `cd buildtools/legacy/isl-0.10`, `./configure`, `make`, `make install`, `ldconfig`
   * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
-  * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+  * From the repository root: `cd buildtools/legacy/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ldconfig`
 * ### On 64bit Raspberry Pi OS
   * `sudo dpkg --add-architecture armhf`
   * `sudo apt-get update`
-  * `sudo apt-get install libc6:armhf libisl23:armhf libmpfr6:armhf libmpc3:armhf libstdc++6:armhf`
-  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libisl.so.23.0.0  /usr/lib/arm-linux-gnueabihf/libisl.so.10`
-  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libmpfr.so.6.1.0 /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+  * `sudo apt-get install libc6:armhf libmpc3:armhf libstdc++6:armhf`
+  * Supply genuine armhf `libisl.so.10` and `libmpfr.so.4` libraries from matching packages or the preserved compatibility sources. `setup_env.sh` also searches the local `buildtools/armhf-compat-libs/` directory when present; see the [compatibility notes](buildtools/MATH_LIBRARIES.md#gcc-5-compatibility-sources).
+  * Do not symlink current `libisl.so.23` or `libmpfr.so.6` libraries to the old SONAMEs: their ABIs differ.
 
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
-* Go to the *patches* folder for the bcm43430a1/bcm43455c0/bcm43436b0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154 or 7_45_189>/nexmon/` / `cd patches/bcm43436b0/9_88_4_65/nexmon/`
+* Go to the *patches* folder for the bcm43430a1/bcm43455c0/bcm43436b0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154, 7_45_189, 7_45_206, 7_45_234_4ca95bb_CY or 7_45_265-28bca26-CY>/nexmon/` / `cd patches/bcm43436b0/9_88_4_65/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
-  * Install the patched firmware on your RPI3: `make install-firmware`
+  * Install the patched firmware on your Raspberry Pi: `make install-firmware`
 * Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`  
 Also, disabling power saving features (`iw dev wlan0 set power_save off`) can help prevent firmware crashes.
@@ -164,8 +202,9 @@ Also, disabling power saving features (`iw dev wlan0 set power_save off`) can he
 ```iw phy `iw dev wlan0 info | gawk '/wiphy/ {printf "phy" $2}'` interface add mon0 type monitor```
 * To activate monitor mode in the firmware, simply set the interface up: `ifconfig mon0 up`.
 * At this point, monitor mode is active. There is no need to call *airmon-ng*. 
-* The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
-* *Optional*: To make the RPI3 load the modified driver after reboot:
+ * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i mon0`
+ * Helper `monitor-mode.sh` wraps this (idempotent, handles `NetworkManager`/`wpa_supplicant`/`regulatory`): `sudo ./monitor-mode.sh on [channel] [country]` / `sudo ./monitor-mode.sh status` / `sudo ./monitor-mode.sh off` / `sudo ./monitor-mode.sh channel <1-165>`. Env: `STA=wlan0 MON=mon0 CHAN=36 COUNTRY=US NEXUTIL=/path/nexutil QUIESCE=0` (leave `wpa_supplicant` running) `STATE_FILE=/run/nexmon-monitor.state` (0600, `flock`).
+ * *Optional*: To make the RPI3 load the modified driver after reboot:
   * Find the path of the default driver at reboot: `modinfo brcmfmac` #the first line should be the full path
   * Backup the original driver: `mv "<PATH TO THE DRIVER>/brcmfmac.ko" "<PATH TO THE DRIVER>/brcmfmac.ko.orig"`
   * Copy the modified driver (Kernel 4.9): `cp /home/pi/nexmon/patches/bcm43430a1/7_45_41_46/nexmon/brcmfmac_kernel49/brcmfmac.ko "<PATH TO THE DRIVER>/"`
@@ -175,9 +214,10 @@ Also, disabling power saving features (`iw dev wlan0 set power_save off`) can he
   * **Note:** It is possible to connect to an access point or run your own access point in parallel to the monitor mode interface on the `wlan0` interface.
 
 # How to build the utilities
-To build the utilities such as nexmon or dhdutil for Android, you need to download the **old** NDK version 11c,
-extract it and export the environment variable `NDK_ROOT` pointing to the directory where you extracted the NDK 
-files.
+To build the utilities such as nexmon or dhdutil for Android, you need the Android NDK **r30 final**
+(Pkg.Revision 30.0.16248370) or newer. Extract it and export the environment variable `NDK_ROOT` pointing to
+the directory where you extracted the NDK files (`setup_env.sh` also auto-detects a standard SDK install and
+warns if the detected NDK is older than r30). The r30 *beta* packages are not supported.
 
 # How to extract the ROM
 The Wi-Fi firmware consists of a read-only part stored in the ROM of every Wi-Fi chip and another part that is 
@@ -199,13 +239,13 @@ dhdutil membytes -r 0x0 0xA0000 > rom.bin
 ```
 
 ## Dumping a clean ROM after copying to RAM
-For the BCM4339 and BCM4358, we created `rom_extraction` projects that load a firmware patch that copies ROM to 
-RAM and them dumps it using dhdutil. To dump the ROM simply execute the following in the project directory:
+For supported chipsets (such as BCM4339, BCM4358, and others), we created `rom_extraction` projects that load a firmware patch that copies ROM to 
+RAM and then dumps it using dhdutil. To dump the ROM simply execute the following in the project directory:
 ```
 make dump-rom
 ```
 
-After ROM extraction, the `rom.bin` file will be copies to the corresponding firmwares subdirectory. To apply the 
+After ROM extraction, the `rom.bin` file will be copied to the corresponding firmwares subdirectory. To apply the 
 flash patches of a specific RAM firmware version, enter its directory and execute:
 ```
 make rom.bin

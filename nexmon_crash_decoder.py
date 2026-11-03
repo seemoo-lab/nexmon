@@ -98,14 +98,13 @@ class ResolvedAddress:
     offset: int = 0
 
     def format_inline(self, color: bool = True) -> str:
-        b = Colors.BOLD if color else ""
         c = Colors.CYAN if color else ""
         r = Colors.RESET if color else ""
         y = Colors.YELLOW if color else ""
         dim = Colors.DIM if color else ""
 
         region_str = f"[{self.region.name}]" if self.region else "[UNKNOWN]"
-        thumb_str = f" (Thumb)" if self.is_thumb else ""
+        thumb_str = " (Thumb)" if self.is_thumb else ""
 
         if self.symbol:
             if self.offset == 0:
@@ -154,12 +153,23 @@ def parse_elf_symbols(elf_path: str) -> List[Symbol]:
                         strtab_off = strtab_sec[4]
                         strtab_len = strtab_sec[5]
                         strtab = data[strtab_off : strtab_off + strtab_len]
+                        # Build offset map to avoid O(symtab) find per symbol
+                        str_map = {}
+                        _off = 0
+                        for _part in strtab.split(b'\x00'):
+                            str_map[_off] = _part
+                            _off += len(_part) + 1
                         sym_count = sh_size // 16
                         for s in range(sym_count):
                             st_name, st_value, st_size, st_info = struct.unpack_from("<IIIB", data, sh_offset + s * 16)
                             if st_name < len(strtab) and st_value != 0:
-                                end = strtab.find(b"\x00", st_name)
-                                sym_name = strtab[st_name:end].decode("utf-8", errors="replace")
+                                if st_name in str_map:
+                                    sym_name = str_map[st_name].decode("utf-8", errors="replace")
+                                else:
+                                    end = strtab.find(b"\x00", st_name)
+                                    if end == -1:
+                                        end = len(strtab)
+                                    sym_name = strtab[st_name:end].decode("utf-8", errors="replace")
                                 if sym_name and not sym_name.startswith("$"):
                                     # Clear Thumb bit on symbol addresses if present
                                     symbols.append(Symbol(name=sym_name, address=st_value & ~1, size=st_size, source="patch.elf"))
@@ -179,15 +189,25 @@ def parse_elf_symbols(elf_path: str) -> List[Symbol]:
                         strtab_off = strtab_sec[4]
                         strtab_len = strtab_sec[5]
                         strtab = data[strtab_off : strtab_off + strtab_len]
+                        str_map = {}
+                        _off = 0
+                        for _part in strtab.split(b'\x00'):
+                            str_map[_off] = _part
+                            _off += len(_part) + 1
                         sym_count = sh_size // 24
                         for s in range(sym_count):
                             st_name, st_info, st_other, st_shndx, st_value, st_size = struct.unpack_from("<IBBHQQ", data, sh_offset + s * 24)
                             if st_name < len(strtab) and st_value != 0:
-                                end = strtab.find(b"\x00", st_name)
-                                sym_name = strtab[st_name:end].decode("utf-8", errors="replace")
+                                if st_name in str_map:
+                                    sym_name = str_map[st_name].decode("utf-8", errors="replace")
+                                else:
+                                    end = strtab.find(b"\x00", st_name)
+                                    if end == -1:
+                                        end = len(strtab)
+                                    sym_name = strtab[st_name:end].decode("utf-8", errors="replace")
                                 if sym_name and not sym_name.startswith("$"):
                                     symbols.append(Symbol(name=sym_name, address=st_value & ~1, size=st_size, source="elf"))
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     return symbols
@@ -227,13 +247,28 @@ class ChipTarget:
                     line = line.strip()
                     if "=" in line and not line.startswith("#"):
                         key, val = [x.strip() for x in line.split("=", 1)]
+                        # Handle makefile arithmetic like $$(...) or $((0x... - 0x...))
+                        clean_val = val
+                        if "$$" in clean_val or "$(" in clean_val:
+                            for k, v in self.definitions.items():
+                                if isinstance(v, int):
+                                    clean_val = clean_val.replace(f"$({k})", hex(v)).replace(f"${{{k}}}", hex(v))
+                            clean_val = re.sub(r"^\$+\(+|\)+$", "", clean_val).strip()
+                            try:
+                                if re.match(r"^[0-9a-fA-FxX\s\+\-\*\/\(\)]+$", clean_val):
+                                    self.definitions[key] = int(eval(clean_val, {"__builtins__": None}, {}))  # noqa: S307
+                                    continue
+                            except Exception:  # noqa: S110
+                                pass
                         # Try parsing hex values
-                        val_hex = re.findall(r"0x[0-9a-fA-F]+", val)
+                        val_hex = re.findall(r"0x[0-9a-fA-F]+", clean_val)
                         if val_hex:
                             try:
                                 self.definitions[key] = int(val_hex[0], 0)
                             except ValueError:
                                 self.definitions[key] = val
+                        elif clean_val.isdigit():
+                            self.definitions[key] = int(clean_val)
                         else:
                             self.definitions[key] = val
 
@@ -258,6 +293,10 @@ class ChipTarget:
 
         # Peripheral & MMIO Regions
         self.regions.append(MemoryRegion("PERIPHERALS", 0x18000000, 0x18100000, "Broadcom Core MMIO / ChipCommon / D11 Registers"))
+
+        # Sort regions by size ascending so specific smaller subregions (PATCH, UCODE)
+        # take precedence over enclosing general regions (RAM) in resolve_address.
+        self.regions.sort(key=lambda r: r.end - r.start)
 
     def _load_symbols(self):
         """Aggregate symbols from wrapper.c, patch.elf, flashpatches.c, and source annotations."""
@@ -554,6 +593,8 @@ class TrapParser:
                 j = i + 1
                 while j < n and j < i + 12:
                     subline = lines[j]
+                    if re.search(r"(?:dongle\s+trap\s+info|TRAP(?:_info)?):\s*type", subline) or re.search(r"TRAP:\s*type", subline):
+                        break
                     trap.raw_lines.append(subline)
 
                     # Extract all key-value register patterns: name 0xvalue
@@ -1033,7 +1074,7 @@ Examples:
             try:
                 res = subprocess.run(["dmesg"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
                 input_text = res.stdout
-                print(f"{Colors.DIM}Reading live kernel dmesg ringbuffer...{Colors.RESET}")
+                print(f"{Colors.DIM}Reading live kernel dmesg ringbuffer...{Colors.RESET}", file=sys.stderr)
             except Exception:
                 parser.print_help()
                 return 1

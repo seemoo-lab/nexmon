@@ -1,0 +1,32 @@
+name: Check vendored updates
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # weekly Monday 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Run check_updates
+        run: |
+          python3 buildtools/scripts/check_updates.py --format json > updates.json
+          cat updates.json
+          python3 buildtools/scripts/check_updates.py --check-only || echo "::warning::Updates available for vendored libraries — see updates.json"
+
+      - name: Upload updates artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendored-updates
+          path: updates.json
+          if-no-files-found: warn

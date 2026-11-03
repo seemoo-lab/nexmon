@@ -1,4 +1,3 @@
-import sys
 import time
 import subprocess
 from scapy.all import (
@@ -63,11 +62,11 @@ def get_test_frames(channel_num):
     ]
 
 def run_test_on_channel(ch_str, ch_num):
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"[*] Testing Multi-Frame Injection on Channel {ch_str}")
-    print(f"=======================================================")
+    print("=======================================================")
 
-    subprocess.run(["nexutil", "-k", ch_str], check=True)
+    subprocess.run(["nexutil", "-I", iface, "-k", ch_str], check=True)
     time.sleep(0.5)
 
     frames = get_test_frames(ch_num)
@@ -96,7 +95,7 @@ if __name__ == "__main__":
     print("=======================================================")
     all_ok = all(r[1] for r in res_24 + res_5g)
     if all_ok:
-        print(f"[+] All 6 802.11 frame categories injected successfully on both 2.4 GHz & 5 GHz!")
+        print("[+] All 6 802.11 frame categories injected successfully on both 2.4 GHz & 5 GHz!")
     else:
-        print(f"[-] Some frame injections failed.")
+        print("[-] Some frame injections failed.")
 

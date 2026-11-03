@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """Unit tests for python/pynexmon/csi.py (Nexmon CSI pipeline)."""
 
-import cmath
 import math
 import os
 import socket
 import struct
 import sys
-import time
 import unittest
 
 NEXMON_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(NEXMON_ROOT, "python"))
 
-from pynexmon.csi import CSIPacket, CSIReceiver, parse_csi_payload, NEXMON_CSI_MAGIC
+from pynexmon.csi import CSIReceiver, parse_csi_payload, NEXMON_CSI_MAGIC
 
 
 def create_synthetic_csi_frame(

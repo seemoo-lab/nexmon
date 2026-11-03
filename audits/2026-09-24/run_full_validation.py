@@ -64,13 +64,13 @@ def main():
 
     # 2. BCDC Unit Tests (Hardened response validation)
     run_step("bcdc-unit",
-             ["python3", str(AUDIT_DIR / "test_bcdc_responses.py")],
+             ["python3", str(NEXMON_ROOT / "tests/test_bcdc_responses.py")],
              expected_rc=(0,),
              note="BCDC driver response validation unit tests (8/8 passed)")
 
     # 3. Argprintf TX Logging Fix Verification
     run_step("argprintf-repro",
-             ["python3", str(AUDIT_DIR / "test_injection_argprintf.py")],
+             ["python3", str(NEXMON_ROOT / "tests/test_injection_argprintf.py")],
              expected_rc=(0,),
              note="Verifies elimination of sendframe argprintf corruption of IOCTL buffer")
 

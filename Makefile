@@ -11,7 +11,7 @@ ifndef NEXMON_SETUP_ENV
 SETUP_ENV := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))setup_env.sh
 
 __nexmon_bootstrap:
-	@bash -c 'source "$(SETUP_ENV)" && exec "$(MAKE)" --no-print-directory $(MAKECMDGOALS)'
+	@bash -c 'source "$$1" && shift && exec "$$1" --no-print-directory "$$@"' bash "$(SETUP_ENV)" "$(MAKE)" $(MAKECMDGOALS)
 
 ifeq ($(MAKECMDGOALS),)
 .DEFAULT_GOAL := __nexmon_bootstrap
@@ -29,36 +29,45 @@ all: buildtools firmwares
 
 ARCH_TARGETS := arm armv7 armeabi armeabi-v7a arm64 aarch64 arm64-v8a x86 x86_64 x64
 
-firmwares: buildtools FORCE
+firmwares: buildtools
 	@printf "\033[0;31m  EXTRACTING FLASHPATCHES AND UCODE\033[0m\n"
 	$(Q)$(MAKE) -C $@
 
-buildtools: FORCE
+buildtools:
 	@printf "\033[0;31m  BUILDING BUILDTOOLS\033[0m\n"
 	$(Q)$(MAKE) -C $@
 
-utilities: FORCE
+utilities:
 	@printf "\033[0;31m  BUILDING UTILITIES\033[0m\n"
 	$(Q)$(MAKE) -C $@
 
-$(ARCH_TARGETS:%=utilities-%): utilities-%: FORCE
+$(ARCH_TARGETS:%=utilities-%): utilities-%:
 	@printf "\033[0;31m  BUILDING UTILITIES ($*)\033[0m\n"
 	$(Q)$(MAKE) -C utilities ARCH=$*
 
 $(ARCH_TARGETS:%=all-%): all-%: buildtools firmwares utilities-%
 
-update: FORCE
+update:
 	@printf "\033[0;31m  CHECKING UTILITIES AND LIBRARIES VERSIONS\033[0m\n"
 	$(Q)$(PYTHON) buildtools/scripts/check_updates.py
 
-clean: FORCE
+test: check
+
+check:
+	@printf "\033[0;32m  RUNNING UNIT AND INTEGRATION TESTS\033[0m\n"
+	$(Q)$(PYTHON) -m unittest discover -s tests -v
+	$(Q)$(PYTHON) patches/bcm43455c0/7_45_265-28bca26-CY/nexmon/validate_build.py
+
+clean:
 	@printf "\033[0;31m  CLEANING FIRMWARES, BUILDTOOLS AND UTILITIES\033[0m\n"
 	$(Q)$(MAKE) -C firmwares clean
 	$(Q)$(MAKE) -C buildtools clean
 	$(Q)$(MAKE) -C utilities clean
 
-.PHONY: all $(ARCH_TARGETS:%=all-%) $(ARCH_TARGETS:%=utilities-%) firmwares buildtools utilities update clean FORCE
+.PHONY: all $(ARCH_TARGETS:%=all-%) $(ARCH_TARGETS:%=utilities-%) firmwares buildtools utilities update clean check test FORCE
 
+# Back-compat: some sub-makes still use FORCE as order-only
 FORCE:
+	@:
 
 endif

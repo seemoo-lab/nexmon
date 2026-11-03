@@ -95,7 +95,7 @@ def main():
             raise RuntimeError(f"airodump terminal run ended unexpectedly: {item}")
 
     before = run("dmesg-before", ["dmesg"])
-    mark = max(float(x) for x in re.findall(r"^\[\s*([\d.]+)\]", before, re.M))
+    mark = max((float(x) for x in re.findall(r"^\[\s*([\d.]+)\]", before, re.M)), default=0.0)
     original_up = int(Path("/sys/class/net/wlan0/flags").read_text(), 16) & 1
     original_mon_flags = int(Path("/sys/class/net/mon0/flags").read_text(), 16)
     original_debug = Path("/sys/module/brcmfmac/parameters/debug").read_text()

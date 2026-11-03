@@ -163,7 +163,7 @@ class BcmwifiChannelsTests(unittest.TestCase):
     def test_channel_overlap(self):
         """Test detection of overlapping channel allocations."""
         cs_ch1 = self.lib.wf_chspec_aton(b"1")
-        cs_ch6 = self.lib.wf_chspec_aton(b"6")
+        self.lib.wf_chspec_aton(b"6")
         cs_36_80 = self.lib.wf_chspec_aton(b"36/80")
         cs_40_20 = self.lib.wf_chspec_aton(b"40")
         cs_52_80 = self.lib.wf_chspec_aton(b"52/80")

@@ -112,6 +112,84 @@ class B64TranscoderTests(unittest.TestCase):
             dec = self._decode_ex(enc)
             self.assertEqual(dec, sample, f"Round-trip failed for size {size}")
 
+    def test_unpadded_valid_remainders(self):
+        """Test 2-char (1 byte) and 3-char (2 byte) unpadded base64 remainders."""
+        self.assertEqual(self._decode_ex("YQ"), b"a")
+        self.assertEqual(self._decode_ex("YWI"), b"ab")
+
+    def test_malformed_single_char_quantum_no_double_free(self):
+        """Regression test for C-06: 1-char trailing quantum must return NULL without double-free."""
+        for bad in [b"A", b"A=", b"A===", b"YWJjA", b"YWJjA==="]:
+            dec_len = ctypes.c_size_t(123)
+            ptr = self.lib.b64_decode_ex(bad, len(bad), ctypes.byref(dec_len))
+            self.assertIsNone(ptr, f"Expected NULL for invalid base64 {bad!r}")
+            self.assertEqual(dec_len.value, 0)
+
+    def test_non_ascii_high_bytes_safe(self):
+        """Regression test for C-06: signed-char negative bytes (>= 0x80) must not trigger UB or table corruption."""
+        for payload in [b"\xff\xfe\xfd\xfc", b"YQ==\xff", b"\x80"]:
+            dec_len = ctypes.c_size_t(77)
+            ptr = self.lib.b64_decode_ex(payload, len(payload), ctypes.byref(dec_len))
+            if ptr:
+                try:
+                    out = ctypes.string_at(ptr, dec_len.value)
+                    if payload.startswith(b"YQ=="):
+                        self.assertEqual(out, b"a")
+                    else:
+                        self.assertEqual(out, b"")
+                finally:
+                    self.libc.free(ptr)
+
+    def test_asan_ubsan_malformed_inputs(self):
+        """Compile b64-decode.c with ASan+UBSan and hammer 1-char and high-byte inputs."""
+        check = subprocess.run(
+            ["gcc", "-fsanitize=address,undefined", "-E", "-"],
+            input="", text=True, capture_output=True, timeout=5
+        )
+        if check.returncode != 0:
+            self.skipTest("ASan/UBSan not available")
+
+        with tempfile.TemporaryDirectory(prefix="nexmon-b64-asan-") as tmp:
+            exe = Path(tmp) / "b64_asan"
+            harness = Path(tmp) / "harness.c"
+            harness.write_text(
+                '#include <stdlib.h>\n'
+                '#include <string.h>\n'
+                '#include <assert.h>\n'
+                '#include "b64.h"\n'
+                'int main(void) {\n'
+                '    size_t sz = 99;\n'
+                '    assert(b64_decode_ex("A", 1, &sz) == NULL && sz == 0);\n'
+                '    sz = 99;\n'
+                '    assert(b64_decode_ex("A===", 4, &sz) == NULL && sz == 0);\n'
+                '    sz = 99;\n'
+                '    assert(b64_decode_ex("YWJjZ", 5, &sz) == NULL && sz == 0);\n'
+                '    unsigned char *ok = b64_decode_ex("YWJj", 4, &sz);\n'
+                '    assert(ok != NULL && sz == 3 && memcmp(ok, "abc", 3) == 0);\n'
+                '    free(ok);\n'
+                '    ok = b64_decode_ex("\\xff\\xfe", 2, &sz);\n'
+                '    assert(ok != NULL && sz == 0);\n'
+                '    free(ok);\n'
+                '    return 0;\n'
+                '}\n'
+            )
+            subprocess.run(
+                [
+                    "gcc", "-std=gnu11", "-O1", "-g", "-fsanitize=address,undefined",
+                    "-fno-omit-frame-pointer",
+                    str(harness),
+                    str(ROOT / "utilities/nexutil/b64-decode.c"),
+                    str(ROOT / "utilities/nexutil/b64-encode.c"),
+                    f"-I{ROOT / 'utilities/nexutil'}",
+                    f"-I{ROOT / 'utilities/nexutil/include'}",
+                    "-o", str(exe),
+                ],
+                check=True,
+                timeout=20,
+            )
+            res = subprocess.run([str(exe)], capture_output=True, text=True, timeout=10)
+            self.assertEqual(res.returncode, 0, res.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -39,3 +39,15 @@ __pycache__/
 /audits/**/*.pcap
 /audits/**/*.stdout
 /audits/**/*.stderr
+
+# --- test and diagnostic artifacts ----------------------------------------
+/firmware_backup/
+/.ruff_cache/
+/.pytest_cache/
+/DISABLE_STATISTICS
+/updates.json
+utilities/rawproxy/fuzz_radiotap_sanitize
+utilities/nexutil/nexutil
+*.ko
+*.mod*
+Module.symvers
