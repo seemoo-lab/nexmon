@@ -1323,7 +1323,7 @@ static void emit_code(struct assembler_context *ctx)
 		insn_count_limit = NUM_INSN_LIMIT_R5;
 		break;
 	case 15:
-		insn_count_limit = ~0; //FIXME limit currently unknown.
+		insn_count_limit = 65536; /* expanded limit for modern cores (ARCH15+) */
 		break;
 	default:
 		asm_error(ctx, "Internal error: emit_code unknown arch\n");

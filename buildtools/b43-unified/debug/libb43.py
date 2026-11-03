@@ -3,6 +3,7 @@
 #
 #  Copyright (C) 2008-2010 Michael Buesch <m@bues.ch>
 #  Copyright (C) 2024 Jakob Link <jlink@seemoo.de>
+#  Copyright (C) 2026 Nexmon Project
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License version 3
@@ -21,7 +22,9 @@ import sys
 import os
 import re
 import hashlib
-from tempfile import *
+import subprocess
+import shlex
+from tempfile import NamedTemporaryFile
 
 
 # SHM routing values
@@ -75,30 +78,30 @@ class B43:
 			try:
 				phys = os.listdir(b43_path)
 			except OSError:
-				print "Could not find B43's debugfs directory: %s" % b43_path
+				print("Could not find B43's debugfs directory: %s" % b43_path)
 				raise B43Exception
 			if not phys:
-				print "Could not find any b43 device"
+				print("Could not find any b43 device")
 				raise B43Exception
 			if len(phys) != 1:
-				print "Found multiple b43 devices."
-				print "You must call this tool with a phyX parameter to specify a device"
+				print("Found multiple b43 devices.")
+				print("You must call this tool with a phyX parameter to specify a device")
 				raise B43Exception
 			phy = phys[0]
-			b43_path += phy;
+			b43_path += phy
 
 		# Open the debugfs files
 		try:
-			self.f_mmio16read = file(b43_path + "/mmio16read", "r+")
-			self.f_mmio16write = file(b43_path + "/mmio16write", "w")
-			self.f_mmio32read = file(b43_path + "/mmio32read", "r+")
-			self.f_mmio32write = file(b43_path + "/mmio32write", "w")
-			self.f_shm16read = file(b43_path + "/shm16read", "r+")
-			self.f_shm16write = file(b43_path + "/shm16write", "w")
-			self.f_shm32read = file(b43_path + "/shm32read", "r+")
-			self.f_shm32write = file(b43_path + "/shm32write", "w")
-		except IOError, e:
-			print "Could not open debugfs file %s: %s" % (e.filename, e.strerror)
+			self.f_mmio16read = open(b43_path + "/mmio16read", "r+")
+			self.f_mmio16write = open(b43_path + "/mmio16write", "w")
+			self.f_mmio32read = open(b43_path + "/mmio32read", "r+")
+			self.f_mmio32write = open(b43_path + "/mmio32write", "w")
+			self.f_shm16read = open(b43_path + "/shm16read", "r+")
+			self.f_shm16write = open(b43_path + "/shm16write", "w")
+			self.f_shm32read = open(b43_path + "/shm32read", "r+")
+			self.f_shm32write = open(b43_path + "/shm32write", "w")
+		except IOError as e:
+			print("Could not open debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 
 		self.b43_path = b43_path
@@ -106,7 +109,8 @@ class B43:
 
 	# Get the debugfs mountpoint.
 	def __debugfs_find(self):
-		mtab = file("/etc/mtab").read().splitlines()
+		with open("/etc/mtab", "r", encoding="utf-8", errors="ignore") as f:
+			mtab = f.read().splitlines()
 		regexp = re.compile(r"^[\w\-_]+\s+([\w/\-_]+)\s+debugfs")
 		path = None
 		for line in mtab:
@@ -115,7 +119,7 @@ class B43:
 				path = m.group(1)
 				break
 		if not path:
-			print "Could not find debugfs in /etc/mtab"
+			print("Could not find debugfs in /etc/mtab")
 			raise B43Exception
 		return path
 
@@ -127,8 +131,8 @@ class B43:
 			self.f_mmio16read.flush()
 			self.f_mmio16read.seek(0)
 			val = self.f_mmio16read.read()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return int(val, 16)
 
@@ -140,8 +144,8 @@ class B43:
 			self.f_mmio32read.flush()
 			self.f_mmio32read.seek(0)
 			val = self.f_mmio32read.read()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return int(val, 16)
 
@@ -153,8 +157,8 @@ class B43:
 			self.f_mmio16write.seek(0)
 			self.f_mmio16write.write("0x%X 0x%X 0x%X" % (reg, mask, set))
 			self.f_mmio16write.flush()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return
 	
@@ -171,8 +175,8 @@ class B43:
 			self.f_mmio32write.seek(0)
 			self.f_mmio32write.write("0x%X 0x%X 0x%X" % (reg, mask, set))
 			self.f_mmio32write.flush()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return
 
@@ -189,8 +193,8 @@ class B43:
 			self.f_shm16read.flush()
 			self.f_shm16read.seek(0)
 			val = self.f_shm16read.read()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return int(val, 16)
 
@@ -202,8 +206,8 @@ class B43:
 			self.f_shm16write.seek(0)
 			self.f_shm16write.write("0x%X 0x%X 0x%X 0x%X" % (routing, offset, mask, set))
 			self.f_shm16write.flush()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return
 
@@ -220,8 +224,8 @@ class B43:
 			self.f_shm32read.flush()
 			self.f_shm32read.seek(0)
 			val = self.f_shm32read.read()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return int(val, 16)
 
@@ -233,8 +237,8 @@ class B43:
 			self.f_shm32write.seek(0)
 			self.f_shm32write.write("0x%X 0x%X 0x%X 0x%X" % (routing, offset, mask, set))
 			self.f_shm32write.flush()
-		except IOError, e:
-			print "Could not access debugfs file %s: %s" % (e.filename, e.strerror)
+		except IOError as e:
+			print("Could not access debugfs file %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		return
 
@@ -269,14 +273,14 @@ class B43:
 
 	def shmSharedRead(self):
 		"""Returns a string containing the SHM contents."""
-		ret = ""
+		ret = []
 		for i in range(0, 4096, 4):
 			val = self.shmRead32(B43_SHM_SHARED, i)
-			ret += "%c%c%c%c" %	(val & 0xFF,
-						 (val >> 8) & 0xFF,
-						 (val >> 16) & 0xFF,
-						 (val >> 24) & 0xFF)
-		return ret
+			ret.append(chr(val & 0xFF))
+			ret.append(chr((val >> 8) & 0xFF))
+			ret.append(chr((val >> 16) & 0xFF))
+			ret.append(chr((val >> 24) & 0xFF))
+		return "".join(ret)
 
 	def getPsmDebug(self):
 		"""Read the PSM-debug register and return an instance of B43PsmDebug."""
@@ -299,39 +303,62 @@ class B43:
 		self.maskSet32(B43_MMIO_MACCTL, ~0, B43_MACCTL_PSM_RUN)
 		return
 
+
 class Disassembler:
 	"""Disassembler for b43 firmware."""
 	def __init__(self, binaryText, b43DasmOpts):
-		input = NamedTemporaryFile()
-		output = NamedTemporaryFile()
+		input = NamedTemporaryFile(mode="wb", delete=False)
+		output = NamedTemporaryFile(mode="rb", delete=False)
 
-		input.write(binaryText)
+		input.write(binaryText if isinstance(binaryText, bytes) else binaryText.encode("latin1"))
 		input.flush()
-		#FIXME check b43-dasm errors
-		os.system("b43-dasm %s %s %s" % (input.name, output.name, b43DasmOpts))
+		input.close()
+		output.close()
 
-		self.asmText = output.read()
+		cmd = ["b43-dasm", input.name, output.name] + shlex.split(b43DasmOpts)
+		try:
+			subprocess.run(cmd, check=False)
+		except FileNotFoundError:
+			subprocess.run(f"b43-dasm '{input.name}' '{output.name}' {b43DasmOpts}", shell=True, check=False)
+
+		with open(output.name, "r", encoding="utf-8", errors="ignore") as f:
+			self.asmText = f.read()
+
+		os.unlink(input.name)
+		os.unlink(output.name)
 
 	def getAsm(self):
 		"""Returns the assembly code."""
 		return self.asmText
 
+
 class Assembler:
 	"""Assembler for b43 firmware."""
 	def __init__(self, assemblyText, b43AsmOpts):
-		input = NamedTemporaryFile()
-		output = NamedTemporaryFile()
+		input = NamedTemporaryFile(mode="w", encoding="utf-8", delete=False)
+		output = NamedTemporaryFile(mode="rb", delete=False)
 
 		input.write(assemblyText)
 		input.flush()
-		#FIXME check b43-asm errors
-		os.system("b43-asm %s %s %s" % (input.name, output.name, b43AsmOpts))
+		input.close()
+		output.close()
 
-		self.binaryText = output.read()
+		cmd = ["b43-asm", input.name, output.name] + shlex.split(b43AsmOpts)
+		try:
+			subprocess.run(cmd, check=False)
+		except FileNotFoundError:
+			subprocess.run(f"b43-asm '{input.name}' '{output.name}' {b43AsmOpts}", shell=True, check=False)
+
+		with open(output.name, "rb") as f:
+			self.binaryText = f.read()
+
+		os.unlink(input.name)
+		os.unlink(output.name)
 
 	def getBinary(self):
 		"""Returns the binary code."""
 		return self.binaryText
+
 
 class TextPatcher:
 	"""A textfile patcher that does not include any target context.
@@ -344,16 +371,17 @@ class TextPatcher:
 			self.deleted = False
 
 	def __init__(self, text, expected_md5sum):
-		sum = hashlib.md5(text).hexdigest()
-		if sum != expected_md5sum:
-			print "Patcher: The text does not match the expected MD5 sum"
-			print "Expected:   " + expected_md5sum
-			print "Calculated: " + sum
+		raw_bytes = text.encode("utf-8") if isinstance(text, str) else text
+		calc_sum = hashlib.md5(raw_bytes).hexdigest()
+		if calc_sum != expected_md5sum:
+			print("Patcher: The text does not match the expected MD5 sum")
+			print("Expected:   " + expected_md5sum)
+			print("Calculated: " + calc_sum)
 			raise B43Exception
-		text = text.splitlines()
+		text_lines = text.splitlines()
 		self.lines = []
 		i = 0
-		for line in text:
+		for line in text_lines:
 			self.lines.append(TextPatcher.TextLine(i, line))
 			i += 1
 		# Add an after-last dummy. Needed for the add-before logic
@@ -376,24 +404,25 @@ class TextPatcher:
 			if l.index == linenumber:
 				l.deleted = True
 				return
-		print "Patcher deleteLine: Did not find the line!"
+		print("Patcher deleteLine: Did not find the line!")
 		raise B43Exception
 
 	def addText(self, beforeLineNumber, text):
 		"""Add a text before the specified linenumber. The linenumber
 		corresponds to the original unmodified text."""
-		text = text.splitlines()
+		text_lines = text.splitlines()
 		index = 0
 		for l in self.lines:
 			if l.index == beforeLineNumber:
 				break
 			index += 1
 		if index >= len(self.lines):
-			print "Patcher addText: Did not find the line!"
+			print("Patcher addText: Did not find the line!")
 			raise B43Exception
-		for l in text:
+		for l in text_lines:
 			self.lines.insert(index, TextPatcher.TextLine(-1, l))
 			index += 1
+
 
 class B43SymbolicSpr:
 	"""This class converts numeric SPR names into symbolic SPR names."""
@@ -402,12 +431,13 @@ class B43SymbolicSpr:
 		"""The passed header_file parameter is a file path to the
 		assembly file containing the symbolic SPR definitions."""
 		try:
-			defs = file(header_file).readlines()
-		except IOError, e:
-			print "B43SymbolicSpr: Could not read %s: %s" % (e.filename, e.strerror)
-			B43Exception
+			with open(header_file, "r", encoding="utf-8", errors="ignore") as f:
+				defs = f.readlines()
+		except IOError as e:
+			print("B43SymbolicSpr: Could not read %s: %s" % (e.filename, e.strerror))
+			raise B43Exception
 		# Parse the definitions
-		self.spr_names = { }
+		self.spr_names = {}
 		r = re.compile(r"#define\s+(\w+)\s+(spr[a-fA-F0-9]+)")
 		for line in defs:
 			m = r.match(line)
@@ -431,6 +461,7 @@ class B43SymbolicSpr:
 		parameter is the hexadecimal number for the SPR."""
 		return self.get("spr%03X" % spr_hexnumber)
 
+
 class B43SymbolicShm:
 	"""This class converts numeric SHM offsets into symbolic SHM names."""
 
@@ -438,12 +469,13 @@ class B43SymbolicShm:
 		"""The passed header_file parameter is a file path to the
 		assembly file containing the symbolic SHM definitions."""
 		try:
-			defs = file(header_file).readlines()
-		except IOError, e:
-			print "B43SymbolicShm: Could not read %s: %s" % (e.filename, e.strerror)
+			with open(header_file, "r", encoding="utf-8", errors="ignore") as f:
+				defs = f.readlines()
+		except IOError as e:
+			print("B43SymbolicShm: Could not read %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		# Parse the definitions
-		self.shm_names = { }
+		self.shm_names = {}
 		in_abi_section = False
 		r = re.compile(r"#define\s+(\w+)\s+SHM\((\w+)\).*")
 		for line in defs:
@@ -458,7 +490,7 @@ class B43SymbolicShm:
 				continue # unknown line
 			name = m.group(1)
 			offset = int(m.group(2), 16)
-			offset /= 2
+			offset //= 2
 			self.shm_names[offset] = name
 
 	def get(self, shm_wordoffset):
@@ -470,6 +502,7 @@ class B43SymbolicShm:
 			sym = "0x%03X" % shm_wordoffset
 		return sym
 
+
 class B43SymbolicCondition:
 	"""This class converts numeric External Conditions into symbolic names."""
 
@@ -477,12 +510,13 @@ class B43SymbolicCondition:
 		"""The passed header_file parameter is a file path to the
 		assembly file containing the symbolic condition definitions."""
 		try:
-			defs = file(header_file).readlines()
-		except IOError, e:
-			print "B43SymbolicCondition: Could not read %s: %s" % (e.filename, e.strerror)
+			with open(header_file, "r", encoding="utf-8", errors="ignore") as f:
+				defs = f.readlines()
+		except IOError as e:
+			print("B43SymbolicCondition: Could not read %s: %s" % (e.filename, e.strerror))
 			raise B43Exception
 		# Parse the definitions
-		self.cond_names = { }
+		self.cond_names = {}
 		r = re.compile(r"#define\s+(\w+)\s+EXTCOND\(\s*(\w+),\s*(\d+)\s*\).*")
 		for line in defs:
 			m = r.match(line)
@@ -516,8 +550,6 @@ class B43SymbolicCondition:
 		bit = cond_number & 0xF
 		eoi = ((cond_number & 0x80) != 0)
 		cond_number &= ~0x80
-		#if register == 5: # PSM register
-		#	return "COND_PSM(%d)" % bit
 		try:
 			sym = self.cond_names[cond_number]
 		except KeyError:
@@ -527,6 +559,7 @@ class B43SymbolicCondition:
 			sym = "EOI(%s)" % sym
 		return sym
 
+
 class B43SymbolicScr:
 	"""This class converts numeric SCR names into symbolic SCR names."""
 
@@ -534,12 +567,13 @@ class B43SymbolicScr:
 		"""The passed header_file parameter is a file path to the
 		assembly file containing the symbolic SCR definitions."""
 		try:
-			defs = file(header_file).readlines()
-		except IOError, e:
-			print "B43SymbolicScr: Could not read %s: %s" % (e.filename, e.strerror)
-			B43Exception
+			with open(header_file, "r", encoding="utf-8", errors="ignore") as f:
+				defs = f.readlines()
+		except IOError as e:
+			print("B43SymbolicScr: Could not read %s: %s" % (e.filename, e.strerror))
+			raise B43Exception
 		# Parse the definitions
-		self.scr_names = { }
+		self.scr_names = {}
 		r = re.compile(r"#define\s+(\w+)\s+(r[0-9]+)")
 		for line in defs:
 			m = r.match(line)
@@ -558,6 +592,7 @@ class B43SymbolicScr:
 			pass # Symbol not found. Return numeric name.
 		return scr
 
+
 class B43AsmLine:
 	def __init__(self, text):
 		self.text = text
@@ -570,6 +605,7 @@ class B43AsmLine:
 
 	def isInstruction(self):
 		return False
+
 
 class B43AsmInstruction(B43AsmLine):
 	def __init__(self, opcode):
@@ -603,6 +639,7 @@ class B43AsmInstruction(B43AsmLine):
 
 	def isInstruction(self):
 		return True
+
 
 class B43AsmParser:
 	"""A simple B43 assembly code parser."""
@@ -644,7 +681,7 @@ class B43AsmParser:
 				self.codelines.append(insn)
 				continue
 			m = insn_5.match(line)
-			if m: # Three operands
+			if m: # Five operands
 				insn = B43AsmInstruction(m.group(1))
 				insn.addOperand(m.group(2))
 				insn.addOperand(m.group(3))
@@ -657,6 +694,7 @@ class B43AsmParser:
 			l = B43AsmLine(line)
 			self.codelines.append(l)
 
+
 class B43Beautifier(B43AsmParser):
 	"""A B43 assembly code beautifier."""
 
@@ -665,7 +703,7 @@ class B43Beautifier(B43AsmParser):
 		path to the directory containing the symbolic SPR,SHM,etc... definitions"""
 		if headers_dir.endswith("/"):
 			headers_dir = headers_dir[:-1]
-		B43AsmParser.__init__(self, asm_code)
+		super().__init__(asm_code)
 		self.symSpr = B43SymbolicSpr(headers_dir + "/spr.inc")
 		self.symShm = B43SymbolicShm(headers_dir + "/shm.inc")
 		self.symCond = B43SymbolicCondition(headers_dir + "/cond.inc")

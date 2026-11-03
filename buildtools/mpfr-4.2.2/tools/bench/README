@@ -1,0 +1,34 @@
+To compile mpfrbench, simply do:
+
+$ make mpfrbench
+
+To run it:
+
+$ ./mpfrbench
+
+On a typical computer, it should take around 12 minutes. The final output
+looks like (here on a Intel(R) Core(TM)2 Quad CPU Q9550 @ 2.83GHz with
+GCC 4.9.3, and --with-gmp-build=gmp-6.0.0), revision ef5f2c0:
+
+GMP : 6.0.0  MPFR : 3.2.0-dev 
+GMP compiler : gcc -std=gnu99
+GMP flags    : -O2 -pedantic -fomit-frame-pointer -m64 -mtune=core2 -march=core2
+
+
+        score for   mul :      1434798
+        score for   add :      6419546
+        score for   sub :      6228906
+        score for   div :       698843
+group score Arith   :      2516353
+
+        score for  sqrt :       550492
+        score for   exp :        26517
+        score for   log :        20034
+        score for   cos :        28853
+        score for   sin :        23044
+        score for  acos :         7639
+        score for  asin :         8010
+group score Special :        27501
+
+global score :         1076
+

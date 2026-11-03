@@ -7,15 +7,26 @@ respective upstream repositories/websites, and displays a comparison.
 
 import argparse
 import concurrent.futures
+import functools
 import json
 import os
 import re
 import subprocess
 import sys
+import threading
 import urllib.request
 import urllib.error
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Any
+
+# Per-URL cache to avoid 50× TLS handshakes to the same host (e.g. github.com
+# hit 20×). Thread-safe via lock; worst-case duplicate fetch is still safe.
+_GIT_TAGS_CACHE: Dict[str, List[str]] = {}
+_GIT_TAGS_LOCK = threading.Lock()
+_GIT_HEAD_CACHE: Dict[str, Optional[str]] = {}
+_GIT_HEAD_LOCK = threading.Lock()
+_WEB_CACHE: Dict[str, Optional[str]] = {}
+_WEB_LOCK = threading.Lock()
 
 # ANSI Colors
 class Colors:
@@ -54,31 +65,68 @@ def get_repo_root() -> str:
     return os.getcwd()
 
 
+@functools.lru_cache(maxsize=4096)
 def parse_version_tuple(v_str: str) -> Tuple:
-    """Parse version string into a comparable tuple."""
+    """Parse a release version into a consistently comparable key.
+
+    Numeric release components are separated from the prerelease marker so
+    ``1.2.3-rc1`` sorts below ``1.2.3`` while ``1.2.30`` sorts above it.
+    Build metadata is intentionally ignored.
+    """
     if not v_str:
         return ()
-    # Clean string
-    v_clean = re.sub(r'^[a-zA-Z_\-]+[_\-]', '', v_str.strip())
-    v_clean = re.sub(r'^v', '', v_clean, flags=re.I)
+    clean = re.sub(r"^[a-zA-Z_\-]+[_\-]", "", v_str.strip())
+    clean = re.sub(r"^v(?=\d)", "", clean, flags=re.IGNORECASE)
+    clean = clean.split("+", 1)[0]
 
-    # Split digits and alphabetic tokens
-    tokens = []
-    for part in re.split(r'[._\-+]', v_clean):
-        if not part:
-            continue
-        if part.isdigit():
-            tokens.append((0, int(part)))
+    match = re.match(r"^(\d+(?:\.\d+)*)(.*)$", clean)
+    if not match:
+        match = re.match(r"^(\d+(?:[._-]\d+)*)(.*)$", clean)
+    if not match:
+        return ()
+
+    release = [int(part) for part in re.split(r"[._-]", match.group(1))]
+    while len(release) > 1 and release[-1] == 0:
+        release.pop()
+
+    suffix = match.group(2).strip("._-").lower()
+    if not suffix:
+        phase = (1,)
+    elif re.match(r"^g?[0-9a-f]{7,40}$", suffix):
+        phase = (1, (suffix,))
+    else:
+        tokens = re.findall(r"[a-z]+|\d+", suffix)
+        label = next((token for token in tokens if token.isalpha()), "")
+        prerelease_rank = {
+            "dev": -1,
+            "snapshot": -1,
+            "alpha": 0,
+            "a": 0,
+            "beta": 1,
+            "b": 1,
+            "pre": 2,
+            "preview": 2,
+            "rc": 3,
+        }
+        token_key = tuple(
+            (0, int(token)) if token.isdigit() else (1, token)
+            for token in tokens
+        )
+        is_prerelease = False
+        if label in prerelease_rank:
+            if label in ("b", "a"):
+                idx = tokens.index(label)
+                if idx + 1 < len(tokens) and tokens[idx + 1].isdigit():
+                    is_prerelease = True
+            else:
+                is_prerelease = True
+
+        if is_prerelease:
+            phase = (0, prerelease_rank.get(label, 4), token_key)
         else:
-            sub = re.findall(r'(\d+|\D+)', part)
-            for s in sub:
-                if s.isdigit():
-                    tokens.append((0, int(s)))
-                else:
-                    # Prereleases ('rc', 'b', 'alpha') rank lower than release
-                    prerelease_weight = -1 if re.match(r'^(rc|beta|alpha|b|a|pre|preview)', s, re.I) else 1
-                    tokens.append((prerelease_weight, s.lower()))
-    return tuple(tokens)
+            phase = (2, token_key)
+
+    return (tuple(release), phase)
 
 
 def compare_versions(local_ver: str, upstream_ver: str) -> str:
@@ -99,13 +147,15 @@ def compare_versions(local_ver: str, upstream_ver: str) -> str:
     lv = re.sub(r'^v', '', local_ver.strip(), flags=re.I)
     uv = re.sub(r'^v', '', upstream_ver.strip(), flags=re.I)
 
-    # Exact string match or git sha match
-    if lv == uv or lv.startswith(uv) or uv.startswith(lv):
+    if lv.lower() == uv.lower():
         return "UP TO DATE"
 
-    # Git hash comparison
-    if re.match(r'^[0-9a-f]{7,40}$', lv, re.I) and re.match(r'^[0-9a-f]{7,40}$', uv, re.I):
-        return "UP TO DATE" if lv.startswith(uv) or uv.startswith(lv) else "UPDATE AVAILABLE"
+    # Prefix equivalence is valid for abbreviated commit IDs only, never for
+    # releases such as 1.2.3/1.2.30 or 1.2.3-rc1/1.2.3.
+    if re.fullmatch(r'[0-9a-f]{7,40}', lv, re.I) and re.fullmatch(r'[0-9a-f]{7,40}', uv, re.I):
+        lv_hash = lv.lower()
+        uv_hash = uv.lower()
+        return "UP TO DATE" if lv_hash.startswith(uv_hash) or uv_hash.startswith(lv_hash) else "UPDATE AVAILABLE"
 
     try:
         t_local = parse_version_tuple(lv)
@@ -122,6 +172,9 @@ def compare_versions(local_ver: str, upstream_ver: str) -> str:
 
 def fetch_git_tags(git_url: str, timeout: int = 8) -> List[str]:
     """Fetch remote git tags using git ls-remote without terminal prompts."""
+    with _GIT_TAGS_LOCK:
+        if git_url in _GIT_TAGS_CACHE:
+            return list(_GIT_TAGS_CACHE[git_url])
     try:
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
@@ -133,6 +186,8 @@ def fetch_git_tags(git_url: str, timeout: int = 8) -> List[str]:
             if "\trefs/tags/" in line:
                 tag = line.split("\trefs/tags/")[1].strip()
                 tags.append(tag)
+        with _GIT_TAGS_LOCK:
+            _GIT_TAGS_CACHE[git_url] = list(tags)
         return tags
     except Exception:
         return []
@@ -140,6 +195,10 @@ def fetch_git_tags(git_url: str, timeout: int = 8) -> List[str]:
 
 def fetch_git_head(git_url: str, branch: str = "HEAD", timeout: int = 8) -> Optional[str]:
     """Fetch remote git commit hash of branch."""
+    cache_key = f"{git_url}#{branch}"
+    with _GIT_HEAD_LOCK:
+        if cache_key in _GIT_HEAD_CACHE:
+            return _GIT_HEAD_CACHE[cache_key]
     try:
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
@@ -147,31 +206,44 @@ def fetch_git_head(git_url: str, branch: str = "HEAD", timeout: int = 8) -> Opti
         cmd = ["git", "ls-remote", git_url, branch]
         out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, env=env, timeout=timeout).decode("utf-8", errors="ignore")
         if out:
-            return out.split()[0][:8]
+            head = out.split()[0][:8]
+            with _GIT_HEAD_LOCK:
+                _GIT_HEAD_CACHE[cache_key] = head
+            return head
     except Exception:
         pass
+    with _GIT_HEAD_LOCK:
+        _GIT_HEAD_CACHE[cache_key] = None
     return None
 
 
 def fetch_web_regex(url: str, pattern: str, timeout: int = 8) -> Optional[str]:
     """Fetch URL and extract highest version matching regex."""
+    cache_key = f"{url}#{pattern}"
+    with _WEB_LOCK:
+        if cache_key in _WEB_CACHE:
+            return _WEB_CACHE[cache_key]
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Nexmon Update Checker)"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
             matches = re.findall(pattern, html)
             if matches:
-                # Sort matched versions
                 sorted_matches = sorted(matches, key=parse_version_tuple)
-                return sorted_matches[-1]
+                ver = sorted_matches[-1]
+                with _WEB_LOCK:
+                    _WEB_CACHE[cache_key] = ver
+                return ver
     except Exception:
         pass
+    with _WEB_LOCK:
+        _WEB_CACHE[cache_key] = None
     return None
 
 
 def _numeric_version_parts(v_tuple: Tuple) -> List[int]:
     """Return integer components of a parse_version_tuple result."""
-    return [part[1] for part in v_tuple if part[0] == 0 and isinstance(part[1], int)]
+    return list(v_tuple[0]) if v_tuple else []
 
 
 def extract_best_tag_version(
@@ -318,7 +390,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "category": "Library",
         "path": "utilities/c-ares",
         "extract_local": lambda root: (
-            (re.search(r'AC_INIT\s*\(\s*\[?c-ares\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/c-ares/configure.ac"))) or [None, "1.34.8"])[1]
+            (re.search(r'AC_INIT\s*\(\s*\[?c-ares\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/c-ares/configure.ac"))) or [None, "1.34.9"])[1]
         ),
         "upstream_type": "git_tags",
         "upstream_url": "https://github.com/c-ares/c-ares.git",
@@ -387,7 +459,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "category": "Utility",
         "path": "utilities/iperf3",
         "extract_local": lambda root: (
-            (re.search(r'AC_INIT\s*\(\s*\[?iperf\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/iperf3/configure.ac"))) or [None, "3.21"])[1]
+            (re.search(r'AC_INIT\s*\(\s*\[?iperf\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/iperf3/configure.ac"))) or [None, "3.22"])[1]
         ),
         "upstream_type": "git_tags",
         "upstream_url": "https://github.com/esnet/iperf.git",
@@ -462,7 +534,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libglib-2.0",
         "category": "Library (Wrapper)",
         "path": "utilities/libglib-2.0",
-        "extract_local": lambda root: "glib-2.90.0-wrapper",
+        "extract_local": lambda root: "glib-2.90.1-wrapper",
         "upstream_type": "local",
         "upstream_url": "utilities/glib wrapper",
         "website": "utilities/glib"
@@ -631,7 +703,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "category": "Library",
         "path": "utilities/pcre2",
         "extract_local": lambda root: (
-            (re.search(r'Version\s+([0-9\.]+)', safe_read(os.path.join(root, "utilities/pcre2/NEWS"))) or [None, "10.48"])[1]
+            (re.search(r'Version\s+([0-9\.]+)', safe_read(os.path.join(root, "utilities/pcre2/NEWS"))) or [None, "10.49"])[1]
         ),
         "upstream_type": "git_tags",
         "upstream_url": "https://github.com/PCRE2Project/pcre2.git",
@@ -1022,7 +1094,7 @@ def main():
         selected_components = [c for c in selected_components if q in c["name"].lower() or q in c["category"].lower()]
 
     if not selected_components:
-        print(f"No components matched the filter criteria.")
+        print("No components matched the filter criteria.")
         sys.exit(0)
 
     import time

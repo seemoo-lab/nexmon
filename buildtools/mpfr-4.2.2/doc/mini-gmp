@@ -1,0 +1,78 @@
+How to compile GNU MPFR with mini-gmp
+=====================================
+
+To build and test MPFR against mini-gmp:
+
+  ./configure --with-mini-gmp=DIR [other configure options]
+  make
+  make check
+
+where DIR is the directory that contains mini-gmp
+(for example .../gmp-6.2.0/mini-gmp).
+
+"make" will build mini-gmp with the same compiler as for MPFR.
+
+For "make check", tests that use features not supported by mini-gmp
+(mpq_t, mpf_t, and the gmp_*printf functions) are skipped.
+
+Note: To use this version of the MPFR library, you need to define
+the MPFR_USE_MINI_GMP macro before including mpfr.h (alternatively,
+you can modify mpfr.h to define this macro at the beginning, though
+this is discouraged). And since mini-gmp currently does not provide
+random functions, you also need to define the gmp_randstate_t type
+with
+
+  typedef long int gmp_randstate_t[1];
+
+before including mpfr.h (or you may want to modify mini-gmp.h).
+
+Remark: The random functions provided by MPFR configured with mini-gmp
+use the standard rand() function, thus one should avoid mini-gmp if one
+needs some really serious random functions. Another consequence is that
+these functions may not be thread-safe.
+
+The build with mini-gmp may require ISO C99+ features, such as "long long".
+
+This was tested with revision 39ac9e4 and GMP 6.2.0 on x86_64 GNU/Linux:
+============================================================================
+Testsuite summary for MPFR 4.1.0-dev
+============================================================================
+# TOTAL: 183
+# PASS:  172
+# SKIP:  11
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
+
+How to use mini-gmp with reduced limb size
+==========================================
+
+Following the idea of Micro-GMP [1], the GMP developers have adapted mini-gmp
+so that it can be used with a reduced limb size. For that, you need GMP 6.2.0
+(or later) and define the MINI_GMP_LIMB_TYPE macro with the associated base
+type, e.g.
+
+  -DMINI_GMP_LIMB_TYPE=char   (in practice, 8 bits)
+  -DMINI_GMP_LIMB_TYPE=short  (in practice, 16 bits)
+  -DMINI_GMP_LIMB_TYPE=int    (in practice, 32 bits)
+
+For example:
+
+  ./configure --with-mini-gmp=DIR CFLAGS="-DMINI_GMP_LIMB_TYPE=int"
+
+This was tested with revision 39ac9e4 and GMP 6.2.0 on x86_64 GNU/Linux:
+============================================================================
+Testsuite summary for MPFR 4.1.0-dev
+============================================================================
+# TOTAL: 183
+# PASS:  172
+# SKIP:  11
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
+
+[1] https://members.loria.fr/PZimmermann/talks/microgmp.pdf

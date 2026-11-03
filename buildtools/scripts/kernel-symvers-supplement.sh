@@ -16,6 +16,7 @@ set -u
 KB="${1:-}"
 [ -n "$KB" ] || exit 0
 [ -d "$KB" ] || exit 0
+KB=$(CDPATH='' cd -- "$KB" 2>/dev/null && pwd -P) || exit 0
 
 SYMVERS="$KB/Module.symvers"
 EXPORT_C="$KB/.vmlinux.export.c"
@@ -30,15 +31,57 @@ fi
 # rather than masking the real problem.
 [ -f "$EXPORT_C" ] || exit 0
 
-HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-OUT="/tmp/nexmon-symvers-$(uname -r)"
+HERE=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+# Per-user 0700 cache dir instead of a predictable world-writable /tmp path.
+CACHE_BASE=${XDG_CACHE_HOME:-"${HOME:-${TMPDIR:-/tmp}/nexmon-cache-$(id -u)}/.cache"}
+CACHE="$CACHE_BASE/nexmon"
+mkdir -p "$CACHE" && chmod 700 "$CACHE" || { echo "kernel-symvers: cannot create cache $CACHE" >&2; exit 1; }
 
-# Reuse a previously generated table when it is newer than the kernel artifact.
-if [ -f "$OUT" ] && [ "$OUT" -nt "$EXPORT_C" ]; then
-	echo "$OUT"
-	exit 0
+hash_file() {
+	if command -v sha256sum >/dev/null 2>&1; then
+		sha256sum "$1" | awk '{print $1}'
+	else
+		cksum "$1" | awk '{print $1 "-" $2}'
+	fi
+}
+
+hash_stream() {
+	if command -v sha256sum >/dev/null 2>&1; then
+		sha256sum | awk '{print $1}'
+	else
+		cksum | awk '{print $1 "-" $2}'
+	fi
+}
+
+EXPORT_HASH=$(hash_file "$EXPORT_C") || exit 0
+if [ -f "$SYMVERS" ]; then
+	SYMVERS_HASH=$(hash_file "$SYMVERS") || exit 0
+else
+	SYMVERS_HASH=missing
 fi
 
-if python3 "$HERE/recover_builtin_symvers.py" "$KB" "$OUT" >/dev/null 2>&1 && [ -s "$OUT" ]; then
-	echo "$OUT"
+# The cache identity includes the canonical input tree and both relevant file
+# contents. This prevents reuse across kernel trees or after Module.symvers is
+# changed without a helpful timestamp relationship.
+CACHE_KEY=$(
+	{
+		printf '%s\n' "$KB"
+		printf '%s\n' "$EXPORT_HASH"
+		printf '%s\n' "$SYMVERS_HASH"
+	} | hash_stream
+) || exit 0
+OUT="$CACHE/symvers-$CACHE_KEY"
+
+if [ ! -s "$OUT" ]; then
+	umask 077
+	TEMP_OUT=$(mktemp "$CACHE/.symvers-$CACHE_KEY.XXXXXX") || { echo "kernel-symvers: mktemp failed in $CACHE" >&2; exit 1; }
+	trap 'rm -f "$TEMP_OUT"' EXIT HUP INT TERM
+	if python3 "$HERE/recover_builtin_symvers.py" "$KB" "$TEMP_OUT" >/dev/null 2>&1 && [ -s "$TEMP_OUT" ]; then
+		chmod 600 "$TEMP_OUT" 2>/dev/null || true
+		mv -f "$TEMP_OUT" "$OUT" || { echo "kernel-symvers: mv failed" >&2; exit 1; }
+	fi
+	rm -f "$TEMP_OUT"
+	trap - EXIT HUP INT TERM
 fi
+
+[ -s "$OUT" ] && printf '%s\n' "$OUT"

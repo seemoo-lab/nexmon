@@ -129,7 +129,7 @@ static void shm_write32(struct ivals_context *ctx,
 {
 	if ((routing & 0xFF) == 0x01) {
 		/* Is SHM Shared-memory */
-//TODO		assert((offset & 0x0001) == 0);
+if (offset & 0x1) { fprintf(stderr, "Unaligned SHM offset 0x%x must be even\n", offset); exit(1); }
 		if (offset & 0x0003) {
 			/* Unaligned access */
 			shm_control_word(ctx, routing, offset >> 2);
@@ -153,7 +153,7 @@ static void shm_write16(struct ivals_context *ctx,
 {
 	if ((routing & 0xFF) == 0x01) {
 		/* Is SHM Shared-memory */
-//TODO		assert((offset & 0x0001) == 0);
+if (offset & 0x1) { fprintf(stderr, "Unaligned SHM offset 0x%x must be even\n", offset); exit(1); }
 		if (offset & 0x0003) {
 			/* Unaligned access */
 			shm_control_word(ctx, routing, offset >> 2);
@@ -177,12 +177,15 @@ static void assemble_write_shm(struct ivals_context *ctx,
 	case 0: case 1: case 2: case 3: case 4:
 		break;
 	default:
-		//TODO error
+		fprintf(stderr, "Invalid routing 0x%x\n", routing); exit(1);
 		break;
 	}
-	//TODO check offset
+	if (offset > 0xFFFF) { fprintf(stderr, "SHM offset 0x%x out of range\n", offset); exit(1); }
 
-	//TODO check value
+	if (size == SIZE_16BIT && value > 0xFFFF) {
+		fprintf(stderr, "SHM 16-bit value 0x%x out of range\n", value);
+		exit(1);
+	}
 	switch (size) {
 	case SIZE_16BIT:
 		shm_write16(ctx, routing, offset, value);
@@ -212,7 +215,7 @@ static void assemble_ival_section(struct ivals_context *ctx,
 
 	ctx->sect = sect;
 	if (list_empty(&sect->ops)) {
-		//TODO warning
+		fprintf(stderr, "Warning: empty initvals section %s\n", sect->name);
 		return;
 	}
 	list_for_each_entry(op, &sect->ops, list) {

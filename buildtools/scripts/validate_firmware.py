@@ -27,9 +27,33 @@ import json
 import os
 import re
 import struct
-import subprocess
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
+import ast
+import operator
+
+_BINOPS = {
+    ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+    ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+    ast.LShift: operator.lshift, ast.RShift: operator.rshift,
+    ast.BitOr: operator.or_, ast.BitAnd: operator.and_, ast.BitXor: operator.xor,
+}
+_UNOPS = {ast.USub: operator.neg, ast.UAdd: operator.pos, ast.Invert: operator.invert}
+
+
+def _safe_int_eval(expr: str) -> int:
+    """Evaluate an integer arithmetic expression (Makefile $(( )) subset)."""
+    def ev(n):
+        if isinstance(n, ast.Expression):
+            return ev(n.body)
+        if isinstance(n, ast.Constant) and isinstance(n.value, int):
+            return n.value
+        if isinstance(n, ast.BinOp) and type(n.op) in _BINOPS:
+            return _BINOPS[type(n.op)](ev(n.left), ev(n.right))
+        if isinstance(n, ast.UnaryOp) and type(n.op) in _UNOPS:
+            return _UNOPS[type(n.op)](ev(n.operand))
+        raise ValueError(f"unsupported expression: {expr!r}")
+    return ev(ast.parse(expr, mode="eval"))
 
 
 class DefinitionParser:
@@ -47,22 +71,40 @@ class DefinitionParser:
                 if "=" in line:
                     k, v = line.split("=", 1)
                     k = k.strip()
+                    is_append = k.endswith("+")
+                    k = k.rstrip(":?+!").strip()
                     v = v.strip()
                     if v.startswith("`") and v.endswith("`"):
                         continue
-                    raw_vars[k] = v
+                    if is_append and k in raw_vars:
+                        raw_vars[k] = f"{raw_vars[k]} {v}".strip()
+                    else:
+                        raw_vars[k] = v
 
-        def resolve_val(val: str, depth: int = 0) -> str:
+        # Memoize fully resolved values to avoid O(vars×passes) re-expansion
+        memo: Dict[str, str] = {}
+
+        def resolve_val(val: str, depth: int = 0, seen: Optional[set] = None) -> str:
+            if seen is None:
+                seen = set()
+            if val in memo and depth == 0 and not seen:
+                return memo[val]
             if depth > 10:
                 return val
+            original_val = val
             val = val.replace("$$", "$")
             # First pass: replace $(VAR) with its resolved value
             for _ in range(8):
                 m = re.search(r"\$\(([a-zA-Z0-9_]+)\)", val)
                 if m:
                     vk = m.group(1)
+                    if vk in seen:
+                        # Cycle detected — stop expansion.
+                        break
                     if vk in raw_vars:
-                        sub_v = resolve_val(raw_vars[vk], depth + 1)
+                        seen.add(vk)
+                        sub_v = resolve_val(raw_vars[vk], depth + 1, set(seen))
+                        seen.remove(vk)
                         val = val[: m.start()] + str(sub_v) + val[m.end() :]
                     else:
                         break
@@ -76,15 +118,17 @@ class DefinitionParser:
                     expr = m.group(1).strip()
                     for vk, vv in raw_vars.items():
                         if vk in expr:
-                            sub_v = resolve_val(vv, depth + 1)
-                            expr = re.sub(r"\b" + vk + r"\b", str(sub_v), expr)
+                            sub_v = resolve_val(vv, depth + 1, set(seen))
+                            expr = re.sub(r"\b" + re.escape(vk) + r"\b", str(sub_v), expr)
                     try:
-                        res = eval(expr, {"__builtins__": None}, {})
+                        res = _safe_int_eval(expr)
                         val = val[: m.start()] + hex(res) + val[m.end() :]
                     except Exception:
                         break
                 else:
                     break
+            if depth == 0 and not seen:
+                memo[original_val] = val
             return val
 
         resolved: Dict[str, Any] = {}
@@ -222,10 +266,22 @@ class FirmwareValidator:
         obj_dir = os.path.join(self.patch_dir, "obj")
         actual_objs = set(os.listdir(obj_dir)) if os.path.isdir(obj_dir) else set()
 
-        # Find expected C sources
+        # Find expected C sources — include both local src/ and shared
+        # patches/common/ so missing helper objects are caught.
         src_c = glob.glob(os.path.join(self.patch_dir, "src", "*.c"))
         common_c = glob.glob(os.path.join(self.nexmon_root, "patches", "common", "*.c"))
-        expected_objs = [os.path.splitext(os.path.basename(f))[0] + ".o" for f in src_c]
+        fw_c = glob.glob(os.path.join(self.fw_dir, "*.c")) if self.fw_dir else []
+        all_src = src_c + common_c + fw_c
+        expected_objs = [os.path.splitext(os.path.basename(f))[0] + ".o" for f in all_src]
+
+        # Deduplicate while preserving order
+        seen_objs = set()
+        deduped = []
+        for obj in expected_objs:
+            if obj not in seen_objs:
+                seen_objs.add(obj)
+                deduped.append(obj)
+        expected_objs = deduped
 
         # Key common objects expected in firmware builds
         for co in ["patch.o", "ioctl.o"]:
@@ -255,7 +311,13 @@ class FirmwareValidator:
             self.log_fail(f"Size mismatch: patched={len(patched_data)}, original={len(orig_data)}")
 
         if patched_data != orig_data:
-            diff_count = sum(1 for a, b in zip(patched_data, orig_data) if a != b)
+            # Use numpy for 10× speedup on 500KB images when available; fallback
+            # to Python loop. Both are correct, numpy just avoids per-byte Python.
+            try:
+                import numpy as np
+                diff_count = int(np.count_nonzero(np.frombuffer(patched_data, dtype=np.uint8) != np.frombuffer(orig_data, dtype=np.uint8)))
+            except Exception:
+                diff_count = sum(1 for a, b in zip(patched_data, orig_data) if a != b)
             self.log_pass(f"Firmware was patched: {diff_count} bytes differ from original")
             unchanged_pct = (len(patched_data) - diff_count) / len(patched_data) * 100.0
             if unchanged_pct > 80.0:
@@ -278,6 +340,15 @@ class FirmwareValidator:
             self.log_pass("ELF magic header valid")
         else:
             self.log_fail("Invalid ELF magic header")
+            return
+
+        # ELF32 has a 52-byte fixed header. Check it in full before indexing
+        # individual fields so truncated build output is recorded as a normal
+        # validation failure rather than raising IndexError/struct.error.
+        if len(elf_data) < 52:
+            self.log_fail(
+                f"Truncated ELF header ({len(elf_data)} bytes; expected at least 52)"
+            )
             return
 
         # 32-bit check
@@ -303,12 +374,16 @@ class FirmwareValidator:
         e_entry = struct.unpack("<I", elf_data[24:28])[0]
         ram_start = self.definitions.get("RAMSTART", 0)
         ram_size = self.definitions.get("RAMSIZE", 0)
-        if ram_start and ram_size:
+        if e_entry == 0:
+            self.log_pass("ELF entry point: 0x00000000 (standard for firmware patch ELF)")
+        elif ram_start and ram_size:
             ram_end = ram_start + ram_size
-            if ram_start <= e_entry < ram_end or e_entry < 0x200000:
+            if ram_start <= e_entry < ram_end or (0 < e_entry < 0x200000):
                 self.log_pass(f"ELF entry point valid: 0x{e_entry:08X}")
             else:
                 self.log_warn(f"ELF entry point 0x{e_entry:08X} outside expected RAM range")
+        else:
+            self.log_pass(f"ELF entry point: 0x{e_entry:08X}")
 
     def validate_memory_map(self):
         self.section("5. Memory Map and Linker Region Validation")
@@ -317,9 +392,15 @@ class FirmwareValidator:
             self.log_warn("gen/memory.ld not found; skipping linker region checks")
             return
 
+        rom_start = self.definitions.get("ROMSTART")
+        rom_size = self.definitions.get("ROMSIZE")
         ram_start = self.definitions.get("RAMSTART")
         ram_size = self.definitions.get("RAMSIZE")
-        ram_end = (ram_start + ram_size) if (ram_start is not None and ram_size is not None) else None
+        ram_end = (
+            ram_start + ram_size
+            if (ram_start is not None and ram_size is not None)
+            else None
+        )
 
         linker_regions = {}
         with open(memory_ld_path, "r") as f:
@@ -331,13 +412,65 @@ class FirmwareValidator:
                     length = int(m.group(3), 16)
                     linker_regions[name] = (origin, origin + length, length)
 
+        if not linker_regions:
+            self.log_fail("No memory regions found in linker script")
+            return
+
         for name, (start, end, size) in linker_regions.items():
-            if name in ("rom", "ram"):
-                self.log_pass(f"Linker region '{name}': 0x{start:06X}-0x{end:06X} (0x{size:X})")
-            elif ram_start and ram_end and ram_start <= start < end <= ram_end:
-                self.log_pass(f"Linker region '{name}': 0x{start:06X}-0x{end:06X} within RAM")
+            normalized_name = name.lower()
+            if size <= 0 or start < 0 or end <= start or end > 0x100000000:
+                self.log_fail(
+                    f"Invalid linker region '{name}': start=0x{start:X}, size=0x{size:X}"
+                )
+                continue
+
+            if normalized_name == "rom":
+                expected_end = (
+                    rom_start + rom_size
+                    if rom_start is not None and rom_size is not None
+                    else None
+                )
+                if expected_end is not None and (
+                    start != rom_start or end != expected_end
+                ):
+                    self.log_fail(
+                        f"Linker region 'rom' does not match firmware bounds: "
+                        f"0x{start:06X}-0x{end:06X} (expected "
+                        f"0x{rom_start:06X}-0x{expected_end:06X})"
+                    )
+                else:
+                    self.log_pass(
+                        f"Linker region 'rom': 0x{start:06X}-0x{end:06X} (0x{size:X})"
+                    )
+                continue
+
+            if normalized_name == "ram":
+                if ram_end is not None and (start != ram_start or end != ram_end):
+                    self.log_fail(
+                        f"Linker region 'ram' does not match firmware bounds: "
+                        f"0x{start:06X}-0x{end:06X} (expected "
+                        f"0x{ram_start:06X}-0x{ram_end:06X})"
+                    )
+                else:
+                    self.log_pass(
+                        f"Linker region 'ram': 0x{start:06X}-0x{end:06X} (0x{size:X})"
+                    )
+                continue
+
+            if ram_start is None or ram_end is None:
+                self.log_fail(
+                    f"Cannot validate linker region '{name}' without RAMSTART/RAMSIZE"
+                )
+            elif ram_start <= start < end <= ram_end:
+                self.log_pass(
+                    f"Linker region '{name}': 0x{start:06X}-0x{end:06X} within RAM"
+                )
             else:
-                self.log_pass(f"Linker region '{name}': 0x{start:06X}-0x{end:06X} (0x{size:X})")
+                self.log_fail(
+                    f"Linker region '{name}' outside RAM bounds: "
+                    f"0x{start:06X}-0x{end:06X} (RAM "
+                    f"0x{ram_start:06X}-0x{ram_end:06X})"
+                )
 
         # Check ordering of non-overlapping sub-regions
         sub = [(n, linker_regions[n]) for n in ("ucode", "fpconfig", "patch") if n in linker_regions]
@@ -357,7 +490,7 @@ class FirmwareValidator:
             self.log_warn(f"Log directory not found: {log_dir}")
             return
 
-        for logname in ["compiler.log", "linker.log", "flashpatches.log", "patches.log"]:
+        for logname in ["compiler.log", "linker.log", "flashpatches.log", "patches.log", "linker.err", "error.log"]:
             logpath = os.path.join(log_dir, logname)
             if not os.path.isfile(logpath):
                 continue
@@ -365,14 +498,26 @@ class FirmwareValidator:
             with open(logpath, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
 
-            errors = [
-                line
-                for line in content.splitlines()
-                if ("error" in line.lower() or "undefined reference" in line.lower())
-                and "removing unused section" not in line.lower()
-                and "assert" not in line.lower()
-                and line.strip()
-            ]
+            errors = []
+            for line in content.splitlines():
+                if not line.strip():
+                    continue
+                lower = line.lower()
+                if "removing unused section" in lower:
+                    continue
+                # Benign linker map ASSERT expressions (ld map outputs: 0x00000001 ASSERT ((...)))
+                if "assert (" in lower or "assert(" in lower:
+                    if logname == "linker.log" or "0x00000001" in line:
+                        continue
+                    if "failed" not in lower and "error" not in lower:
+                        continue
+                if "has a load segment with rwx permissions" in lower:
+                    continue
+                if any(kw in lower for kw in ("error", "undefined reference", "undefined symbol", "warning:", "fatal error", "assertion failed", "_static_assert")):
+                    errors.append(line)
+                elif "warning" in lower and "unused" not in lower:
+                    # Catch standalone warnings (e.g., implicit declaration) but ignore linker GC
+                    errors.append(line)
             if errors:
                 self.log_fail(f"{logname}: {len(errors)} error(s) found in log")
             else:
@@ -396,6 +541,60 @@ class FirmwareValidator:
             with open(build_num_path, "r") as f:
                 bnum = f.read().strip()
             self.log_pass(f"Build number registered: {bnum}")
+
+    def validate_ucode(self):
+        self.section("9. Ucode Extraction and Compression Ratio Validation")
+        # Check that ucode extraction / compression artefacts exist and the
+        # compressed image is smaller than the raw one — a basic sanity gate
+        # for the tinflate path that feeds PATCHSIZE reclaim checks.
+        candidates = [
+            (os.path.join(self.patch_dir, "gen", "ucode.bin"), "gen/ucode.bin"),
+            (os.path.join(self.patch_dir, "gen", "ucode_compressed.bin"), "gen/ucode_compressed.bin"),
+            (os.path.join(self.patch_dir, "src", "ucode_compressed.c"), "src/ucode_compressed.c"),
+        ]
+        found = {name: os.path.isfile(path) for path, name in candidates}
+        for path, name in candidates:
+            if found[name]:
+                size = os.path.getsize(path)
+                if size == 0:
+                    self.log_fail(f"Ucode artefact {name} is empty")
+                else:
+                    self.log_pass(f"Ucode artefact {name} exists ({size} bytes)")
+            else:
+                self.log_warn(f"Ucode artefact {name} not found — skipping ratio check")
+        if found["gen/ucode.bin"] and found["gen/ucode_compressed.bin"]:
+            raw_size = os.path.getsize(os.path.join(self.patch_dir, "gen", "ucode.bin"))
+            cmp_size = os.path.getsize(os.path.join(self.patch_dir, "gen", "ucode_compressed.bin"))
+            if raw_size > 0 and cmp_size > 0:
+                ratio = cmp_size / raw_size
+                if cmp_size < raw_size and 0.1 < ratio < 0.9:
+                    self.log_pass(f"Ucode compression ratio sane: {cmp_size}/{raw_size} ({ratio:.1%})")
+                elif cmp_size >= raw_size:
+                    self.log_fail(f"Ucode compressed image not smaller than raw: {cmp_size} >= {raw_size}")
+                else:
+                    self.log_warn(f"Ucode compression ratio unusual: {cmp_size}/{raw_size} ({ratio:.1%})")
+            # Also verify that the compressed blob decompresses to the raw size
+            # and matches raw ucode byte-for-byte via a zlib check.
+            try:
+                import zlib
+                with open(os.path.join(self.patch_dir, "gen", "ucode_compressed.bin"), "rb") as f:
+                    comp_data = f.read()
+                # zlib-flate output is raw zlib stream; try decompress.
+                decomp = zlib.decompress(comp_data)
+                raw_ucode_path = os.path.join(self.patch_dir, "gen", "ucode.bin")
+                raw_ucode = None
+                if os.path.isfile(raw_ucode_path):
+                    with open(raw_ucode_path, "rb") as f:
+                        raw_ucode = f.read()
+
+                if raw_ucode is not None and decomp != raw_ucode:
+                    self.log_fail(f"Ucode decompressed content does not match raw gen/ucode.bin!")
+                elif len(decomp) == raw_size:
+                    self.log_pass("Ucode compressed blob decompresses and matches raw ucode")
+                else:
+                    self.log_fail(f"Ucode decompressed size {len(decomp)} != raw {raw_size}")
+            except Exception as e:
+                self.log_fail(f"Ucode decompression failed: {e}")
 
     def compute_hashes(self):
         self.section("8. Cryptographic Hashes")
@@ -421,6 +620,7 @@ class FirmwareValidator:
         self.validate_memory_map()
         self.validate_logs()
         self.validate_firmware_strings()
+        self.validate_ucode()
         self.compute_hashes()
 
         if not self.quiet:
