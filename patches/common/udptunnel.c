@@ -93,11 +93,20 @@ calc_checksum(uint16_t total_len)
 void
 prepend_ethernet_ipv4_udp_header(struct sk_buff *p)
 {
-    uint16_t payload_len = (uint16_t) p->len;
-    uint16_t ip_total_len = (uint16_t) (payload_len + sizeof(struct ip_header) + sizeof(struct udp_header));
-    uint16_t udp_len = (uint16_t) (payload_len + sizeof(struct udp_header));
-    struct ethernet_ip_udp_header *hdr =
-        (struct ethernet_ip_udp_header *) skb_push(p, sizeof(ethernet_ipv4_udp_header));
+    uint16_t payload_len;
+    uint16_t ip_total_len;
+    uint16_t udp_len;
+    struct ethernet_ip_udp_header *hdr;
+
+    if (!p)
+        return;
+
+    payload_len = (uint16_t) p->len;
+    ip_total_len = (uint16_t) (payload_len + sizeof(struct ip_header) + sizeof(struct udp_header));
+    udp_len = (uint16_t) (payload_len + sizeof(struct udp_header));
+    hdr = (struct ethernet_ip_udp_header *) skb_push(p, sizeof(ethernet_ipv4_udp_header));
+    if (!hdr)
+        return;
 
     memcpy(hdr, (void *) &ethernet_ipv4_udp_header, sizeof(ethernet_ipv4_udp_header));
     hdr->ip.total_length = htons(ip_total_len);

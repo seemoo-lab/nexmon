@@ -107,17 +107,37 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
     return task;
 }
 
+static inline void *
+pkthead(sk_buff *p)
+{
+    if (!p || !p->data)
+        return 0;
+#if defined(NEXMON_CHIP) && (NEXMON_CHIP == CHIP_VER_BCM43455c0 || NEXMON_CHIP == CHIP_VER_BCM4389c1 || NEXMON_CHIP == CHIP_VER_BCM4398d0 || NEXMON_CHIP == CHIP_VER_BCM4378b1 || NEXMON_CHIP == CHIP_VER_BCM43439a0 || NEXMON_CHIP == CHIP_VER_BCM4383a3 || NEXMON_CHIP == CHIP_VER_BCM4375b1)
+    return (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+#elif defined(NEXMON_CHIP) && (NEXMON_CHIP == CHIP_VER_BCM4339 || NEXMON_CHIP == CHIP_VER_BCM4358 || NEXMON_CHIP == CHIP_VER_BCM4356 || NEXMON_CHIP == CHIP_VER_BCM4335b0 || NEXMON_CHIP == CHIP_VER_BCM4330)
+    return p->head;
+#else
+    return 0;
+#endif
+}
+
 /**
  *  add data to the start of a buffer
  */
 void *
 skb_push(sk_buff *p, unsigned int len)
 {
+    void *head;
+
+    if (!p || !p->data)
+        return 0;
+
+    head = pkthead(p);
+    if (head && (unsigned char *) p->data - len < (unsigned char *) head)
+        return 0;
+
     p->data -= len;
     p->len += len;
-
-    //if (p->data < p->head)
-    //    printf("%s: failed", __FUNCTION__);
 
     return p->data;
 }

@@ -38,6 +38,7 @@
 #include <wrapper.h>
 
 static int argprintf_written = 0;
+static volatile int argprintf_in_progress = 0;
 static char *argprintf_arg = 0;
 static int argprintf_len = 0;
 static bool argprintf_first_call = 1;
@@ -53,26 +54,35 @@ argprintf(const char *format, ...)
     if (!argprintf_arg || argprintf_len <= 0)
         return 0;
 
+    if (argprintf_in_progress)
+        return 0;
+    argprintf_in_progress = 1;
+
     if (argprintf_first_call) {
         memset(argprintf_arg, 0, argprintf_len);
         argprintf_first_call = 0;
     }
 
-    if (argprintf_written >= argprintf_len)
+    if (argprintf_written >= argprintf_len) {
+        argprintf_in_progress = 0;
         return 0;
+    }
 
     va_start(args, format);
     rc = vsnprintf(argprintf_arg + argprintf_written, argprintf_len - argprintf_written, format, args);
     va_end(args);
 
-    if (rc < 0)
+    if (rc < 0) {
+        argprintf_in_progress = 0;
         return rc;
+    }
 
     if (argprintf_written + rc >= argprintf_len)
         argprintf_written = argprintf_len;
     else
         argprintf_written += rc;
 
+    argprintf_in_progress = 0;
     return (rc);
 }
 
@@ -85,8 +95,10 @@ arghexdump(char *desc, void *addr, int len)
 void
 argprintf_init(char *arg, int len)
 {
-	argprintf_written = 0;
+    argprintf_in_progress = 1;
+    argprintf_written = 0;
     argprintf_first_call = 1;
     argprintf_arg = arg;
-    argprintf_len = len;
+    argprintf_len = (len > 0) ? len : 0;
+    argprintf_in_progress = 0;
 }

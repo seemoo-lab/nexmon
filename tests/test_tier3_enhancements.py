@@ -153,6 +153,39 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
         udptunnel_c = (ROOT / "patches/common/udptunnel.c").read_text(errors="replace")
         self.assertIn("while (sum >> 16)", udptunnel_c, "calc_checksum folded 1's complement missing")
 
+    def test_firmware_null_and_boundary_defenses(self):
+        """Verify firmware NULL pointer defenses and buffer boundary checks across helper, udptunnel, argprintf, and injection hooks."""
+        # 1. helper.c pkthead & skb_push
+        helper_c = (ROOT / "patches/common/helper.c").read_text(errors="replace")
+        self.assertIn("pkthead(sk_buff *p)", helper_c)
+        self.assertIn("p->head_off", helper_c)
+        self.assertIn("(unsigned char *) p->data - len < (unsigned char *) head", helper_c)
+
+        # 2. udptunnel.c
+        udptunnel_c = (ROOT / "patches/common/udptunnel.c").read_text(errors="replace")
+        self.assertIn("if (!p)\n        return;", udptunnel_c)
+        self.assertIn("if (!hdr)\n        return;", udptunnel_c)
+
+        # 3. argprintf.c reentrancy & validation
+        argprintf_c = (ROOT / "patches/common/argprintf.c").read_text(errors="replace")
+        self.assertIn("argprintf_in_progress", argprintf_c)
+        self.assertIn("argprintf_len = (len > 0) ? len : 0;", argprintf_c)
+
+        # 4. wl_send_hook in injection targets
+        hook_targets = [
+            ROOT / "patches/bcm43455c0/7_45_265-28bca26-CY/nexmon/src/injection.c",
+            ROOT / "patches/bcm43455c0/7_45_206/nexmon/src/injection.c",
+            ROOT / "patches/bcm43455c0/7_45_189/nexmon/src/injection.c",
+            ROOT / "patches/bcm43455c0/7_45_154/nexmon/src/injection.c",
+            ROOT / "patches/bcm43430a1/7_45_41_46/nexmon/src/injection.c",
+            ROOT / "patches/bcm43430a1/7_45_41_26/nexmon/src/injection.c",
+            ROOT / "patches/bcm43436b0/9_88_4_65/nexmon/src/injection.c",
+        ]
+        for inj_path in hook_targets:
+            text = inj_path.read_text(errors="replace")
+            self.assertIn("if (!dev || !dev->softc)", text, f"{inj_path} missing dev null check")
+            self.assertIn("if (!wl || !wl->wlc)", text, f"{inj_path} missing wl/wlc null check")
+
     def test_l01_firmware_common_static_inline_and_statistics(self):
         """L-01: Ensure helper.h uses static inline, statistics.mk supports DISABLE_STATISTICS, and typo is fixed."""
         helper_h = ROOT / "patches/include/helper.h"

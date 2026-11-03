@@ -123,7 +123,11 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
 int
 wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
+    if (!dev || !dev->softc)
+        return -1;
     struct wl_info *wl = (struct wl_info *) dev->softc;
+    if (!wl || !wl->wlc)
+        return -1;
     struct wlc_info *wlc = wl->wlc;
 
     dbg_hook_calls++;
