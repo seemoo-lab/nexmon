@@ -2686,6 +2686,7 @@ brcmf_cfg80211_del_key(struct wiphy *wiphy, BRCMF_OP_NDEV_ARG,
 	s32 err;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 4, 0)
 	bool pairwise = type == NL80211_KEYTYPE_PAIRWISE;
+	(void)pairwise;
 #endif
 
 	brcmf_dbg(TRACE, "Enter\n");
@@ -2740,6 +2741,7 @@ brcmf_cfg80211_add_key(struct wiphy *wiphy, BRCMF_OP_NDEV_ARG,
 	bool ext_key;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 4, 0)
 	bool pairwise = type == NL80211_KEYTYPE_PAIRWISE;
+	(void)pairwise;
 #endif
 
 	brcmf_dbg(TRACE, "Enter\n");
@@ -2878,6 +2880,7 @@ brcmf_cfg80211_get_key(struct wiphy *wiphy, BRCMF_OP_NDEV_ARG,
 	s32 err = 0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 4, 0)
 	bool pairwise = type == NL80211_KEYTYPE_PAIRWISE;
+	(void)pairwise;
 #endif
 
 	brcmf_dbg(TRACE, "Enter\n");

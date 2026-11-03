@@ -135,6 +135,10 @@ struct brcmf_pub {
 	u32 nexmon_saved_txpwr;
 	u32 nexmon_saved_mpc;
 
+	u32 nexmon_tsf_high;
+	u32 nexmon_last_tsf_low;
+	bool nexmon_tsf_initialized;
+
 	struct mutex proto_block;
 	unsigned char proto_buf[BRCMF_DCMD_MAXLEN];
 

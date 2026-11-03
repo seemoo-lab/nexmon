@@ -98,6 +98,81 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
         self.assertIn("DISABLE_STATISTICS", content_stats)
         self.assertNotIn("--no-check-certificate", content_stats)
 
+    def test_tsf64_hardware_timestamping_radiotap_header(self):
+        """Verify 64-bit microsecond TSF radiotap layout, alignment and presence bit in drivers."""
+        for drv_ver in ("7.3", "7.4"):
+            core_c = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c").read_text(errors="replace")
+            core_h = (ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.h").read_text(errors="replace")
+
+            # Check core.h fields in struct brcmf_pub
+            self.assertIn("u32 nexmon_tsf_high;", core_h, f"nexmon_tsf_high missing in {drv_ver}/core.h")
+            self.assertIn("u32 nexmon_last_tsf_low;", core_h, f"nexmon_last_tsf_low missing in {drv_ver}/core.h")
+            self.assertIn("bool nexmon_tsf_initialized;", core_h, f"nexmon_tsf_initialized missing in {drv_ver}/core.h")
+
+            # Check struct brcmf_mon_radiotap definition
+            self.assertIn("__le64 tsft;", core_c, f"__le64 tsft missing in {drv_ver}/core.c")
+            self.assertIn("BIT(IEEE80211_RADIOTAP_TSFT)", core_c, f"TSFT bit missing in {drv_ver}/core.c")
+            self.assertIn("brcmf_mon_recover_tsf64", core_c, f"brcmf_mon_recover_tsf64 missing in {drv_ver}/core.c")
+
+            # Check fallback path uses microsecond boottime
+            self.assertIn("ktime_get_boottime_ns()", core_c, f"ktime_get_boottime_ns missing in {drv_ver}/core.c")
+
+            # Check ARPHRD_IEEE80211_RADIOTAP unwraps tsf_h
+            self.assertIn("tsf[1] = cpu_to_le32((u32)(tsf64 >> 32));", core_c, f"tsf_h unwrap missing in {drv_ver}/core.c")
+
+    def test_tsf64_firmware_rollover_tracking(self):
+        """Verify firmware monitormode.c files track 32-bit hardware TSF rollover to populate tsf_h."""
+        for mm_path in ROOT.glob("patches/**/monitormode.c"):
+            content = mm_path.read_text(errors="replace")
+            if "wl_monitor_radiotap" in content and "sts->mactime" in content:
+                self.assertIn("fw_tsf_high", content, f"fw_tsf_high rollover tracking missing in {mm_path}")
+                self.assertIn("frame->tsf.tsf_h = fw_tsf_high;", content, f"tsf_h assignment missing in {mm_path}")
+
+    def test_tsf64_monotonic_unwrapper_simulation(self):
+        """Simulate brcmf_mon_recover_tsf64 logic across 32-bit boundaries and jitter."""
+        class MockDriver:
+            def __init__(self):
+                self.nexmon_tsf_high = 0
+                self.nexmon_last_tsf_low = 0
+                self.nexmon_tsf_initialized = False
+
+        def recover_tsf64(drvr, tsf_low):
+            if not tsf_low and not drvr.nexmon_tsf_initialized:
+                return 123456789  # mock boottime fallback
+            if not drvr.nexmon_tsf_initialized:
+                drvr.nexmon_tsf_initialized = True
+                drvr.nexmon_last_tsf_low = tsf_low
+                drvr.nexmon_tsf_high = 0
+            else:
+                if drvr.nexmon_last_tsf_low >= 0x80000000 and tsf_low < 0x80000000:
+                    drvr.nexmon_tsf_high += 1
+                drvr.nexmon_last_tsf_low = tsf_low
+            return (drvr.nexmon_tsf_high << 32) | tsf_low
+
+        drvr = MockDriver()
+        # Normal initial reception
+        self.assertEqual(recover_tsf64(drvr, 1000), 1000)
+        self.assertEqual(recover_tsf64(drvr, 2000), 2000)
+
+        # High quadrant progression
+        self.assertEqual(recover_tsf64(drvr, 0xFFFFFF00), 0xFFFFFF00)
+        # Small out-of-order jitter in high quadrant should not wrap
+        self.assertEqual(recover_tsf64(drvr, 0xFFFFFE80), 0xFFFFFE80)
+        self.assertEqual(drvr.nexmon_tsf_high, 0)
+
+        # 32-bit Rollover boundary crossing
+        self.assertEqual(recover_tsf64(drvr, 0x00000050), (1 << 32) | 0x00000050)
+        self.assertEqual(drvr.nexmon_tsf_high, 1)
+
+        # Monotonic continuation in epoch 1
+        self.assertEqual(recover_tsf64(drvr, 0x00000100), (1 << 32) | 0x00000100)
+        self.assertEqual(recover_tsf64(drvr, 0x80000010), (1 << 32) | 0x80000010)
+
+        # Second rollover
+        self.assertEqual(recover_tsf64(drvr, 0xFFFFFFF0), (1 << 32) | 0xFFFFFFF0)
+        self.assertEqual(recover_tsf64(drvr, 0x00000010), (2 << 32) | 0x00000010)
+        self.assertEqual(drvr.nexmon_tsf_high, 2)
+
         # Check typo in 43455c0 nexmon Makefile: gen/nexmon.mk should not log to flashpatches.log
         mf = ROOT / "patches/bcm43455c0/7_45_265-28bca26-CY/nexmon/Makefile"
         self.assertTrue(mf.is_file())

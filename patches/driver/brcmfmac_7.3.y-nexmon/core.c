@@ -82,6 +82,7 @@ struct wlc_d11rxhdr {
 
 struct brcmf_mon_radiotap {
 	struct ieee80211_radiotap_header hdr;
+	__le64 tsft;
 	u8 flags;
 	u8 pad;
 	__le16 channel_freq;
@@ -750,6 +751,31 @@ void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 	netif_rx(skb);
 }
 
+/*
+ * Recover 64-bit continuous microsecond hardware TSF timestamp from
+ * the 32-bit wlc_d11rxhdr tsf_l or radiotap low word.
+ * If tsf_low is 0 and uninitialized, falls back to ktime_get_boottime_ns() / 1000.
+ */
+static u64 brcmf_mon_recover_tsf64(struct brcmf_pub *drvr, u32 tsf_low)
+{
+	if (unlikely(!tsf_low && !drvr->nexmon_tsf_initialized))
+		return div_u64(ktime_get_boottime_ns(), 1000);
+
+	if (unlikely(!drvr->nexmon_tsf_initialized)) {
+		drvr->nexmon_tsf_initialized = true;
+		drvr->nexmon_last_tsf_low = tsf_low;
+		drvr->nexmon_tsf_high = 0;
+	} else {
+		/* Rollover check: detect wrap from upper quadrant to lower quadrant */
+		if (unlikely(drvr->nexmon_last_tsf_low >= 0x80000000U &&
+			     tsf_low < 0x80000000U))
+			drvr->nexmon_tsf_high++;
+		drvr->nexmon_last_tsf_low = tsf_low;
+	}
+
+	return ((u64)drvr->nexmon_tsf_high << 32) | (u64)tsf_low;
+}
+
 void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 {
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MONITOR_FMT_RADIOTAP)) {
@@ -760,6 +786,7 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 		unsigned int offset;
 		u16 RxStatus1, rx_chan;
 		s8 rx_rssi;
+		u32 rx_tsf_l;
 
 		/* The firmware controls the length of this buffer, so validate
 		 * that the receive header is fully present before dereferencing
@@ -775,6 +802,7 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 		RxStatus1 = le16_to_cpu(wlc_rxhdr->rxhdr.RxStatus1);
 		rx_chan = le16_to_cpu(wlc_rxhdr->rxhdr.RxChan);
 		rx_rssi = wlc_rxhdr->rssi;
+		rx_tsf_l = le32_to_cpu(wlc_rxhdr->tsf_l);
 
 		offset = sizeof(struct wlc_d11rxhdr);
 		/* MAC inserts 2 pad bytes for a4 headers or QoS or A-MSDU
@@ -817,9 +845,11 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 			memset(rtap, 0, sizeof(*rtap));
 			rtap->hdr.it_version = PKTHDR_RADIOTAP_VERSION;
 			rtap->hdr.it_len = cpu_to_le16(sizeof(*rtap));
-			rtap->hdr.it_present = cpu_to_le32(BIT(IEEE80211_RADIOTAP_FLAGS) |
+			rtap->hdr.it_present = cpu_to_le32(BIT(IEEE80211_RADIOTAP_TSFT) |
+							   BIT(IEEE80211_RADIOTAP_FLAGS) |
 							   BIT(IEEE80211_RADIOTAP_CHANNEL) |
 							   BIT(IEEE80211_RADIOTAP_DBM_ANTSIGNAL));
+			rtap->tsft = cpu_to_le64(brcmf_mon_recover_tsf64(ifp->drvr, rx_tsf_l));
 			rtap->flags = 0;
 			rtap->channel_freq = cpu_to_le16(freq);
 			rtap->channel_flags = cpu_to_le16(ch_flags);
@@ -830,16 +860,21 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 		if (skb->len >= 4)
 			skb_trim(skb, skb->len - 4);
 	} else {
-		struct ieee80211_radiotap_header *radiotap;
+		struct brcmf_mon_radiotap *rtap;
 
 		/* NOTE: RX status used when available; minimal radiotap otherwise */
-		if (skb_headroom(skb) < sizeof(*radiotap)) {
+		if (skb_headroom(skb) < sizeof(*rtap)) {
 			dev_kfree_skb_any(skb);
 			return;
 		}
-		radiotap = skb_push(skb, sizeof(*radiotap));
-		memset(radiotap, 0, sizeof(*radiotap));
-		radiotap->it_len = cpu_to_le16(sizeof(*radiotap));
+		rtap = skb_push(skb, sizeof(*rtap));
+		memset(rtap, 0, sizeof(*rtap));
+		rtap->hdr.it_version = PKTHDR_RADIOTAP_VERSION;
+		rtap->hdr.it_len = cpu_to_le16(sizeof(*rtap));
+		rtap->hdr.it_present = cpu_to_le32(BIT(IEEE80211_RADIOTAP_TSFT) |
+						   BIT(IEEE80211_RADIOTAP_FLAGS));
+		rtap->tsft = cpu_to_le64(div_u64(ktime_get_boottime_ns(), 1000));
+		rtap->flags = 0;
 
 		/* NOTE: 4-byte HW status trimmed safely if present */
 		if (skb->len >= 4)
@@ -904,6 +939,21 @@ static int brcmf_rx_hdrpull(struct brcmf_pub *drvr, struct sk_buff *skb,
 	}
 
 	if ((*ifp)->ndev->type == ARPHRD_IEEE80211_RADIOTAP) {
+		struct ieee80211_radiotap_header *rth = (void *)skb->data;
+
+		if (skb->len >= sizeof(*rth) + sizeof(u64) &&
+		    rth->it_version == PKTHDR_RADIOTAP_VERSION &&
+		    (le32_to_cpu(rth->it_present) & BIT(IEEE80211_RADIOTAP_TSFT))) {
+			__le32 *tsf = (__le32 *)(skb->data + sizeof(*rth));
+			u32 tsf_l = le32_to_cpu(tsf[0]);
+			u32 tsf_h = le32_to_cpu(tsf[1]);
+
+			if (tsf_h == 0 && tsf_l != 0 && !skb_shared(skb)) {
+				u64 tsf64 = brcmf_mon_recover_tsf64(drvr, tsf_l);
+				tsf[1] = cpu_to_le32((u32)(tsf64 >> 32));
+			}
+		}
+
 		skb->dev = (*ifp)->ndev;
 		skb_reset_mac_header(skb);
 		skb->ip_summed = CHECKSUM_UNNECESSARY;
