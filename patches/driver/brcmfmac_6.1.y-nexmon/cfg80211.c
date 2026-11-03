@@ -5155,6 +5155,16 @@ brcmf_cfg80211_update_mgmt_frame_registrations(struct wiphy *wiphy,
 }
 
 
+static atomic_t brcmf_mgmt_tx_id = ATOMIC_INIT(1);
+
+static inline u32 brcmf_next_mgmt_tx_id(void)
+{
+	u32 id = (u32)atomic_inc_return(&brcmf_mgmt_tx_id);
+	if (unlikely(id == 0))
+		id = (u32)atomic_inc_return(&brcmf_mgmt_tx_id);
+	return id;
+}
+
 static int
 brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		       struct cfg80211_mgmt_tx_params *params, u64 *cookie)
@@ -5177,7 +5187,8 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	brcmf_dbg(TRACE, "Enter\n");
 
-	*cookie = 0;
+	if (cookie)
+		*cookie = brcmf_next_mgmt_tx_id();
 
 	mgmt = (const struct ieee80211_mgmt *)buf;
 
@@ -5224,8 +5235,8 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			goto exit;
 		}
 		action_frame = &af_params->action_frame;
-		/* Add the packet Id */
-		action_frame->packet_id = cpu_to_le32(*cookie);
+		/* Add monotonic unique packet Id to prevent firmware TX completion collisions */
+		action_frame->packet_id = cpu_to_le32((u32)*cookie);
 		/* Add BSSID */
 		memcpy(&action_frame->da[0], &mgmt->da[0], ETH_ALEN);
 		memcpy(&af_params->bssid[0], &mgmt->bssid[0], ETH_ALEN);
@@ -5245,8 +5256,9 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		memcpy(action_frame->data, &buf[DOT11_MGMT_HDR_LEN],
 		       le16_to_cpu(action_frame->len));
 
-		brcmf_dbg(TRACE, "Action frame, cookie=%lld, len=%d, freq=%d\n",
-			  *cookie, le16_to_cpu(action_frame->len), freq);
+		brcmf_dbg(TRACE, "Action frame, cookie=%lld, packet_id=%u, len=%d, freq=%d\n",
+			  *cookie, le32_to_cpu(action_frame->packet_id),
+			  le16_to_cpu(action_frame->len), freq);
 
 		ack = brcmf_p2p_send_action_frame(cfg, cfg_to_ndev(cfg),
 						  af_params);

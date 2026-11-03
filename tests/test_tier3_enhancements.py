@@ -60,6 +60,16 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
         common_c = (ROOT / "patches/driver/brcmfmac_7.4.y-nexmon/common.c").read_text(errors="replace")
         self.assertIn('MODULE_VERSION("7.4.0-nexmon");', common_c)
 
+    def test_atomic_mgmt_tx_id_monotonic(self):
+        """Kernel 7.4-rc1 (60cbcc91dc89): Monotonic atomic mgmt_tx_id prevents firmware completion collisions."""
+        for drv_ver in ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"):
+            cfg_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/cfg80211.c"
+            self.assertTrue(cfg_c.is_file(), f"Missing {cfg_c}")
+            content = cfg_c.read_text(errors="replace")
+            self.assertIn("atomic_t brcmf_mgmt_tx_id", content, f"brcmf_mgmt_tx_id missing in {drv_ver}")
+            self.assertIn("brcmf_next_mgmt_tx_id", content, f"brcmf_next_mgmt_tx_id missing in {drv_ver}")
+            self.assertIn("action_frame->packet_id = cpu_to_le32(", content, f"packet_id assignment missing in {drv_ver}")
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
