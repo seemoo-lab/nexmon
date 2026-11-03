@@ -59,6 +59,9 @@ as cfg80211 now pre-assigns the cookie value before invoking drivers.
   disabled flags (`IEEE80211_CHAN_DISABLED`), logging explicit diagnostic messages when rejected early.
 
 ### Compiler & format warning fixes
+- `firmware.c`: Bounded comment parsing in `brcmf_nvram_handle_comment()` using `strnchr()`
+  and `memchr()` against `remaining = nvp->data_len - nvp->pos` (upstream fix `3ffb0de666c6`),
+  preventing out-of-bounds kernel memory reads on unterminated firmware NVRAM blobs.
 - `firmware.c`: Expanded `pci_path`, `pcie_path`, and `prefix` buffers from 9/10 bytes to 32 bytes
   to prevent GCC `-Werror=format-truncation` warnings when formatting `u16` bus and domain numbers.
 
