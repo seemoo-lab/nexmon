@@ -5769,6 +5769,8 @@ brcmf_bss_connect_done(struct brcmf_cfg80211_info *cfg,
 			conn_params.status = WLAN_STATUS_SUCCESS;
 		} else {
 			conn_params.status = WLAN_STATUS_AUTH_TIMEOUT;
+			brcmf_err("connect failed: event %u status %u reason %u\n",
+				  e->event_code, e->status, e->reason);
 		}
 		conn_params.bssid = profile->bssid;
 		conn_params.req_ie = conn_info->req_ie;

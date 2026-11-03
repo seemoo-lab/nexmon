@@ -91,6 +91,27 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"Memory barrier ordering incorrect in {drv_ver}: dec={dec_pos}, barrier={barrier_pos}, wq={wq_pos}"
             )
 
+    def test_connect_failure_diagnostic_logging(self):
+        """Kernel 7.4-rc1 (42aa76b3fd92): Diagnostic firmware status and reason logging on connection failure."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            cfg_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/cfg80211.c"
+            self.assertTrue(cfg_c.is_file(), f"Missing {cfg_c}")
+            content = cfg_c.read_text(errors="replace")
+            self.assertIn(
+                "connect failed: event %u status %u reason %u",
+                content,
+                f"Connect failure diagnostic logging missing in {drv_ver}"
+            )
+            self.assertIn(
+                "e->event_code, e->status, e->reason",
+                content,
+                f"Event status/reason parameters missing in {drv_ver}"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions

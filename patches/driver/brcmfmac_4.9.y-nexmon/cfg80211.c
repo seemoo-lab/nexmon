@@ -5693,6 +5693,9 @@ brcmf_bss_connect_done(struct brcmf_cfg80211_info *cfg,
 			brcmf_update_bss_info(cfg, ifp);
 			set_bit(BRCMF_VIF_STATUS_CONNECTED,
 				&ifp->vif->sme_state);
+		} else {
+			brcmf_err("connect failed: event %u status %u reason %u\n",
+				  e->event_code, e->status, e->reason);
 		}
 		cfg80211_connect_result(ndev,
 					(u8 *)profile->bssid,
