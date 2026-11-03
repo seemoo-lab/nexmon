@@ -588,7 +588,7 @@ class FirmwareValidator:
                         raw_ucode = f.read()
 
                 if raw_ucode is not None and decomp != raw_ucode:
-                    self.log_fail(f"Ucode decompressed content does not match raw gen/ucode.bin!")
+                    self.log_fail("Ucode decompressed content does not match raw gen/ucode.bin!")
                 elif len(decomp) == raw_size:
                     self.log_pass("Ucode compressed blob decompresses and matches raw ucode")
                 else:

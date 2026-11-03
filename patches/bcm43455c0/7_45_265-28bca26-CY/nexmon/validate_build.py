@@ -525,7 +525,10 @@ section("13. Patched Firmware Checksum")
 if os.path.isfile(PATCHED):
     patched_data = read_bin(PATCHED)
     sha = hashlib.sha256(patched_data).hexdigest()
-    md5 = hashlib.md5(patched_data).hexdigest()
+    try:
+        md5 = hashlib.md5(patched_data, usedforsecurity=False).hexdigest()
+    except TypeError:
+        md5 = hashlib.md5(patched_data).hexdigest()
     ok(f"SHA-256: {sha}")
     ok(f"MD5:     {md5}")
 

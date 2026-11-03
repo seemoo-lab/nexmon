@@ -562,7 +562,7 @@ class CSIReceiver:
                 self._delegate = nl_rx
                 self._active_backend = "netlink"
                 return
-            except Exception as ex:
+            except Exception:
                 if self.mode == "netlink":
                     raise
                 # Fall back to UDP for 'auto'

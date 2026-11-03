@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.join(NEXMON_ROOT, "python"))
 from pynexmon.csi import (
     CSIReceiver,
     NetlinkCSIReceiver,
-    UDPCSIReceiver,
     parse_csi_payload,
     resolve_genl_family,
     NEXMON_CSI_MAGIC,
