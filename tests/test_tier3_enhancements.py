@@ -173,6 +173,35 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
             self.assertIn("extern char saved_ccode[2];", cfg_content, f"extern saved_ccode missing in {drv_ver}/cfg80211.c")
             self.assertIn("alpha2 = saved_ccode;", cfg_content, f"alpha2 substitution missing in {drv_ver}/cfg80211.c")
 
+    def test_pcie_d3_timeout_wowl_handling(self):
+        """Kernel 7.4-rc1 (6f88e6ebdc1a): Non-fatal D3 timeout when WoWL is disabled."""
+        pcie_drv_versions = (
+            "4.4", "4.9", "4.14", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in pcie_drv_versions:
+            pcie_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/pcie.c"
+            self.assertTrue(pcie_c.is_file(), f"Missing {pcie_c}")
+            content = pcie_c.read_text(errors="replace")
+            self.assertIn(
+                "if (devinfo->wowl_enabled)",
+                content,
+                f"wowl_enabled check missing in {drv_ver}/pcie.c"
+            )
+            self.assertIn(
+                "No D3 ACK, continuing to power the device off",
+                content,
+                f"Non-fatal D3 ACK debug log missing in {drv_ver}/pcie.c"
+            )
+            # Ensure wowl_enabled check wraps the error exit
+            wowl_pos = content.find("if (devinfo->wowl_enabled)")
+            err_pos = content.find("Timeout on response for entering D3 substate", wowl_pos)
+            dbg_pos = content.find("No D3 ACK, continuing to power the device off", err_pos)
+            self.assertTrue(
+                wowl_pos < err_pos < dbg_pos,
+                f"D3 timeout handling ordering incorrect in {drv_ver}: wowl={wowl_pos}, err={err_pos}, dbg={dbg_pos}"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions

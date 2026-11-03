@@ -1979,8 +1979,12 @@ static int brcmf_pcie_suspend(struct pci_dev *pdev, pm_message_t state)
 			   devinfo->mbdata_completed,
 			   msecs_to_jiffies(BRCMF_PCIE_MBDATA_TIMEOUT));
 	if (!devinfo->mbdata_completed) {
-		brcmf_err("Timeout on response for entering D3 substate\n");
-		return -EIO;
+		if (devinfo->wowl_enabled) {
+			brcmf_err("Timeout on response for entering D3 substate\n");
+			return -EIO;
+		}
+
+		brcmf_dbg(PCIE, "No D3 ACK, continuing to power the device off\n");
 	}
 	brcmf_pcie_send_mb_data(devinfo, BRCMF_H2D_HOST_D0_INFORM_IN_USE);
 
