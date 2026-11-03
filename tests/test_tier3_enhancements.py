@@ -224,6 +224,69 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"vfree(buf) after dcmd_resp_wake missing in {drv_ver}/sdio.c"
             )
 
+    def test_p2p_action_frame_null_deref_guards(self):
+        """Kernel 7.4-rc1 (1b1edb9ebed4): P2P action frame handling without device vif."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        abort_drv_versions = ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4")
+
+        # 1. Check send_action_frame guard across all 14 trees
+        for drv_ver in all_drv_versions:
+            p2p_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/p2p.c"
+            self.assertTrue(p2p_c.is_file(), f"Missing {p2p_c}")
+            content = p2p_c.read_text(errors="replace")
+            self.assertIn(
+                "p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif &&\n\t    p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif->saved_ie.probe_req_ie_len",
+                content,
+                f"DEVICE vif guard missing in send_action_frame in {drv_ver}/p2p.c",
+            )
+
+        # 2. Check abort_action_frame fallback to PRIMARY vif across applicable trees
+        for drv_ver in abort_drv_versions:
+            p2p_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/p2p.c"
+            content = p2p_c.read_text(errors="replace")
+            self.assertIn(
+                "vif = p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif;\n\tif (!vif)\n\t\tvif = p2p->bss_idx[P2PAPI_BSSCFG_PRIMARY].vif;",
+                content,
+                f"PRIMARY vif fallback missing in abort_action_frame in {drv_ver}/p2p.c",
+            )
+
+    def test_msgbuf_dma_direction_initialization(self):
+        """Kernel 7.4-rc1 (f0ba5fd51ff2): Set DMA direction for msgbuf packet IDs in brcmf_msgbuf_init_pktids."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            mb_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/msgbuf.c"
+            self.assertTrue(mb_c.is_file(), f"Missing {mb_c}")
+            content = mb_c.read_text(errors="replace")
+            fn_pos = content.find("brcmf_msgbuf_init_pktids(")
+            self.assertNotEqual(fn_pos, -1, f"brcmf_msgbuf_init_pktids missing in {drv_ver}/msgbuf.c")
+            fn_end = content.find("return pktids;", fn_pos)
+            self.assertNotEqual(fn_end, -1, f"return pktids missing in {drv_ver}/msgbuf.c")
+            fn_text = content[fn_pos:fn_end]
+            self.assertIn(
+                "pktids->direction = direction;",
+                fn_text,
+                f"pktids->direction assignment missing in {drv_ver}/msgbuf.c",
+            )
+
+    def test_bcm43456_clm_blob_firmware_declaration(self):
+        """Kernel 7.4-rc1 (37f9b5f2465d): Declare clm_blob for BCM43456 in sdio.c."""
+        clm_drv_versions = ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4")
+        for drv_ver in clm_drv_versions:
+            sdio_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/sdio.c"
+            self.assertTrue(sdio_c.is_file(), f"Missing {sdio_c}")
+            content = sdio_c.read_text(errors="replace")
+            self.assertIn(
+                'BRCMF_FW_CLM_DEF(43456, "brcmfmac43456-sdio");',
+                content,
+                f"BRCMF_FW_CLM_DEF(43456) missing in {drv_ver}/sdio.c",
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions

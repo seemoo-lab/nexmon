@@ -621,7 +621,7 @@ BRCMF_FW_DEF(43430A0, "brcmfmac43430a0-sdio");
 BRCMF_FW_CLM_DEF(43430A1, "brcmfmac43430-sdio");
 BRCMF_FW_DEF(43430B0, "brcmfmac43430b0-sdio");
 BRCMF_FW_CLM_DEF(43455, "brcmfmac43455-sdio");
-BRCMF_FW_DEF(43456, "brcmfmac43456-sdio");
+BRCMF_FW_CLM_DEF(43456, "brcmfmac43456-sdio");
 BRCMF_FW_CLM_DEF(4354, "brcmfmac4354-sdio");
 BRCMF_FW_CLM_DEF(4356, "brcmfmac4356-sdio");
 BRCMF_FW_DEF(4359, "brcmfmac4359-sdio");
