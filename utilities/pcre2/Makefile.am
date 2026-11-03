@@ -314,7 +314,8 @@ EXTRA_DIST += \
   patches/pcre2-10.48-Fix-repeated-substitute-escapes.patch \
   patches/pcre2-10.48-Fix-scan-prefix-repeat-reset.patch \
   patches/pcre2-10.48-Keep-escape-error-offset-in-pattern.patch \
-  patches/pcre2-10.48-Write-serialization-padding.patch
+  patches/pcre2-10.48-Write-serialization-padding.patch \
+  patches/pcre2-10.49-Fix-large-stack-allocation.patch
 
 # These are support files for building with Bazel or Zig
 

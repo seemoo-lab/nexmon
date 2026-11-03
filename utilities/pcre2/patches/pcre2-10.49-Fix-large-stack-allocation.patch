@@ -1,0 +1,103 @@
+commit 2b4038298072684b0fae29b15bedfb1a75bda46d
+Author: Zoltan Herczeg <zherczeg@inf.u-szeged.hu>
+Date:   Mon Sep 21 07:46:13 2026 +0000
+
+    Fix large JIT stack allocation
+    
+    (GHSA-r9hj-j2rw-4q3m) Security fix to prevent an out of bounds write with
+    arbitrary data. Applications are only affected if using the
+    pcre2_jit_stack_assign() API to create a growable JIT stack, and then matching
+    against a pattern with an extremely JIT stack usage, such as a large number of
+    capturing groups.
+    
+    The implications of an out of bounds write could include arbitrary code
+    execution.
+    
+    The issue is not a regression and affects releases 10.48 and earlier.
+
+diff --git a/src/pcre2_jit_compile.c b/src/pcre2_jit_compile.c
+index 105a1dd3..c5da883c 100644
+--- a/src/pcre2_jit_compile.c
++++ b/src/pcre2_jit_compile.c
+@@ -99,7 +99,7 @@ Fast, but limited size. */
+ 
+ /* Growth rate for stack allocated by the OS. Should be the multiply
+ of page size. */
+-#define STACK_GROWTH_RATE 8192
++#define STACK_GROWTH_RATE (sljit_sw)8192
+ 
+ /* Enable to check that the allocation could destroy temporaries. */
+ #if defined SLJIT_DEBUG && SLJIT_DEBUG
+@@ -473,6 +473,8 @@ typedef struct compiler_common {
+   BOOL local_quit_available;
+   /* Currently in a positive assertion. */
+   BOOL in_positive_assertion;
++  /* More than STACK_GROWTH_RATE / 2 stack memory is allocated. */
++  BOOL large_stack_allocation;
+   /* Newline control. */
+   int nltype;
+   sljit_u32 nlmax;
+@@ -3528,6 +3530,8 @@ static SLJIT_INLINE void allocate_stack(compiler_common *common, sljit_s32 size)
+ DEFINE_COMPILER;
+ 
+ SLJIT_ASSERT(size > 0);
++if (size > (STACK_GROWTH_RATE / (SSIZE_OF(sw) * 2)))
++  common->large_stack_allocation = TRUE;
+ OP2(SLJIT_SUB, STACK_TOP, 0, STACK_TOP, 0, SLJIT_IMM, size * SSIZE_OF(sw));
+ #ifdef DESTROY_REGISTERS
+ OP1(SLJIT_MOV, TMP1, 0, SLJIT_IMM, 12345);
+@@ -14085,7 +14089,20 @@ SLJIT_ASSERT(TMP1 == SLJIT_R0 && STR_PTR == SLJIT_R1);
+ 
+ OP1(SLJIT_MOV, SLJIT_MEM1(SLJIT_SP), LOCAL1, STR_PTR, 0);
+ OP1(SLJIT_MOV, SLJIT_R0, 0, ARGUMENTS, 0);
+-OP2(SLJIT_SUB, SLJIT_R1, 0, STACK_LIMIT, 0, SLJIT_IMM, STACK_GROWTH_RATE);
++if (common->large_stack_allocation)
++  {
++  SLJIT_COMPILE_ASSERT((STACK_GROWTH_RATE & (STACK_GROWTH_RATE - 1)) == 0, stack_growth_must_be_power_of_2);
++  // Negative difference. The positive difference would also use the same amount
++  // of operations, but the last subtraction emits several instructions on x86.
++  OP2(SLJIT_SUB, SLJIT_R1, 0, STACK_TOP, 0, STACK_LIMIT, 0);
++  // Minimum extra space after allocation.
++  OP2(SLJIT_SUB, SLJIT_R1, 0, SLJIT_R1, 0, SLJIT_IMM, (STACK_GROWTH_RATE / 2));
++  // Rounds down negative numbers.
++  OP2(SLJIT_AND, SLJIT_R1, 0, SLJIT_R1, 0, SLJIT_IMM, ~(STACK_GROWTH_RATE - 1));
++  OP2(SLJIT_ADD, SLJIT_R1, 0, SLJIT_R1, 0, STACK_LIMIT, 0);
++  }
++else
++  OP2(SLJIT_SUB, SLJIT_R1, 0, STACK_LIMIT, 0, SLJIT_IMM, STACK_GROWTH_RATE);
+ OP1(SLJIT_MOV, SLJIT_R0, 0, SLJIT_MEM1(SLJIT_R0), SLJIT_OFFSETOF(jit_arguments, stack));
+ OP1(SLJIT_MOV, STACK_LIMIT, 0, TMP2, 0);
+ 
+diff --git a/testdata/testinput17 b/testdata/testinput17
+index a02e6be2..486998b4 100644
+--- a/testdata/testinput17
++++ b/testdata/testinput17
+@@ -188,6 +188,11 @@
+ /(?(R)a*(?1)|((?R))b)/
+ \= Expect JIT stack limit reached
+     aaaabcde
++
++# A single large stack allocation must grow beyond the current stack top.
++
++/((?(DEFINE)\[()\g{-1}]{1400}).{1}(?R)|)/expand,jit
++    AAAAAA\=jitstack=192
+     
+ # Invalid options disable JIT when called via pcre2_match(), causing the
+ # match to happen via the interpreter, but for fast JIT invalid options are
+diff --git a/testdata/testoutput17 b/testdata/testoutput17
+index c678587f..b6e7e1a6 100644
+--- a/testdata/testoutput17
++++ b/testdata/testoutput17
+@@ -350,6 +350,12 @@ Failed: error -46: JIT stack limit reached
+ \= Expect JIT stack limit reached
+     aaaabcde
+ Failed: error -46: JIT stack limit reached
++
++# A single large stack allocation must grow beyond the current stack top.
++
++/((?(DEFINE)\[()\g{-1}]{1400}).{1}(?R)|)/expand,jit
++    AAAAAA\=jitstack=192
++Failed: error -46: JIT stack limit reached
+     
+ # Invalid options disable JIT when called via pcre2_match(), causing the
+ # match to happen via the interpreter, but for fast JIT invalid options are

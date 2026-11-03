@@ -81,4 +81,4 @@ REVISION
        Last updated: 22 February 2025
 
 
-PCRE2 10.48                    22 February 2025                PCRE2-CONFIG(1)
+PCRE2 10.49                    22 February 2025                PCRE2-CONFIG(1)

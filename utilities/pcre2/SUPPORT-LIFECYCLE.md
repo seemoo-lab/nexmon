@@ -201,6 +201,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 Patches introduced:
 * `patches/pcre2-10.39-Fix-incorrect-detection.patch`: Significant bugfix for
@@ -219,6 +220,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 For the record, RHEL/CentOS 9 ships rather more backported patches than other
 distributions:
@@ -263,6 +265,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 ### PCRE2 10.43 16-February-2024
 
@@ -278,6 +281,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 Patches introduced:
 * `patches/pcre2-10.43-Avoid-LIMIT_HEAP-integer.patch`: Fix integer overflow in
@@ -304,6 +308,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 Patches introduced:
 * `patches/pcre2-10.44-Fix-locking-region.patch`: To be backported to 10.43 only
@@ -350,6 +355,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 ### PCRE2 10.47 21-October-2025
 
@@ -371,6 +377,7 @@ Backports to apply:
 * `patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch`
 * `patches/pcre2-10.48-Fix-compiler-integer-overflows.patch`
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`
 
 Patches introduced:
 * `patches/pcre2-10.47-Fix-for-callback.patch`: A fix for a significant memory
@@ -381,6 +388,9 @@ Patches introduced:
   JIT. This is probably not possible to backport.
 
 ### PCRE2 10.48 31-August-2026
+
+Do not use (update to 10.49, which is is a drop-in compatible release with a
+security fix).
 
 Patches introduced:
 * `patches/pcre2-10.48-Write-serialization-padding.patch`: Initializes
@@ -430,3 +440,11 @@ Patches introduced:
 * `patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch`: Prevents workspace
   size and offset overflows in DFA matching (GHSA-3r4p-g7gg-ppmf). The affected
   heap workspace was introduced in 10.32; affected releases are 10.32-10.47.
+
+### PCRE2 10.49 28-September-2026
+
+Patches introduced:
+* `patches/pcre2-10.49-Fix-large-stack-allocation.patch`: Prevents JIT stack
+  allocations larger than the stack growth increment from writing out of bounds
+  (GHSA-r9hj-j2rw-4q3m). The issue is not a regression and affects releases
+  10.48 and earlier.

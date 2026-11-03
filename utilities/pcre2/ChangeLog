@@ -8,6 +8,22 @@ Internal changes which are not visible to clients of the library are mostly not
 listed here.
 
 
+Version 10.49 28-September-2026
+-------------------------------
+
+1. (GHSA-r9hj-j2rw-4q3m) Security fix to prevent an out-of-bounds write with
+arbitrary data. Applications are only affected if using the
+pcre2_jit_stack_create() and pcre2_jit_stack_assign() APIs to provide a growable
+JIT stack, and then matching against a pattern with unusually high JIT stack
+usage, such as a large number of capturing groups.
+
+The implications of an out-of-bounds write could include arbitrary code
+execution.
+
+The issue is not a regression and affects releases 10.48 and earlier.
+
+
+
 Version 10.48 31-August-2026
 ----------------------------
 

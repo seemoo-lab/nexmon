@@ -250,7 +250,7 @@ surrounded by #ifndef/#endif lines so that the value can be overridden by -D. */
 #define PACKAGE_NAME "PCRE2"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "PCRE2 10.48"
+#define PACKAGE_STRING "PCRE2 10.49"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "pcre2"
@@ -259,7 +259,7 @@ surrounded by #ifndef/#endif lines so that the value can be overridden by -D. */
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "10.48"
+#define PACKAGE_VERSION "10.49"
 
 /* The value of PARENS_NEST_LIMIT specifies the maximum depth of nested
    parentheses (of any kind) in a pattern. This limits the amount of system
@@ -478,7 +478,7 @@ surrounded by #ifndef/#endif lines so that the value can be overridden by -D. */
 #endif
 
 /* Version number of package */
-#define VERSION "10.48"
+#define VERSION "10.49"
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */

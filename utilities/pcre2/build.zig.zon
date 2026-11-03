@@ -1,6 +1,6 @@
 .{
     .name = .pcre2,
-    .version = "10.48.0",
+    .version = "10.49.0",
 
     // Do NOT change this for new releases.
     // DO change this if making a fork of PCRE2 which is used by any Zig clients.
