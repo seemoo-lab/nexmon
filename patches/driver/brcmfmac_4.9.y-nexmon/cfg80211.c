@@ -2943,6 +2943,7 @@ brcmf_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 		else
 			brcmf_err("error (%d)\n", err);
 	}
+	brcmf_fil_iovar_int_set(ifp, "pm2_sleep_ret", 2000); /* 2000ms - the maximum */
 done:
 	brcmf_dbg(TRACE, "Exit\n");
 	return err;

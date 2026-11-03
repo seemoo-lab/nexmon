@@ -112,6 +112,26 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"Event status/reason parameters missing in {drv_ver}"
             )
 
+    def test_power_saving_delay_2s_optimization(self):
+        """RPi Kernel (e7d5c7bae4a9): Increase power saving sleep delay to 2s across driver matrix."""
+        all_drv_versions = (
+            "4.4", "4.9", "4.14", "4.19", "5.4", "5.10", "5.15",
+            "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4"
+        )
+        for drv_ver in all_drv_versions:
+            cfg_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/cfg80211.c"
+            self.assertTrue(cfg_c.is_file(), f"Missing {cfg_c}")
+            content = cfg_c.read_text(errors="replace")
+            self.assertIn(
+                '"pm2_sleep_ret"',
+                content,
+                f"pm2_sleep_ret missing in {drv_ver}"
+            )
+            self.assertTrue(
+                "2000" in content,
+                f"2000ms sleep return delay missing in {drv_ver}"
+            )
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
