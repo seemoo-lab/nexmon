@@ -525,6 +525,54 @@ nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set)
     return ret;
 }
 
+int
+nex_ioctl_nonblock(struct nexio *nexio, int cmd, void *buf, int len)
+{
+    struct nex_ioctl ioc = { 0 };
+
+    if (len < 0 || len > 0x100000 || (len > 0 && buf == NULL)) {
+        printf("%s: invalid length %d or NULL buffer\n", __FUNCTION__, len);
+        return -1;
+    }
+
+    ioc.cmd = cmd;
+    ioc.buf = buf;
+    ioc.len = len;
+    ioc.set = true;
+    ioc.driver = WLC_IOCTL_MAGIC;
+
+    if (nexio != NULL) {
+        switch(nexio->type) {
+            case NEXIO_TYPE_NETLINK: {
+                int frame_len = ioc.len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
+                struct nlmsghdr *nlh = (struct nlmsghdr *) malloc(NLMSG_SPACE(frame_len));
+                if (!nlh) return -1;
+                memset(nlh, 0, NLMSG_SPACE(frame_len));
+                nlh->nlmsg_len = NLMSG_SPACE(frame_len);
+                nlh->nlmsg_pid = nexio->nl_pid ? nexio->nl_pid : (uint32_t) getpid();
+                nlh->nlmsg_flags = 0;
+                struct nexudp_ioctl_header *frame = (struct nexudp_ioctl_header *) NLMSG_DATA(nlh);
+
+                memcpy(&frame->nexudphdr.nex, "NEX", 3);
+                frame->nexudphdr.type = NEXUDP_IOCTL;
+                frame->nexudphdr.securitycookie = nexio->securitycookie;
+                frame->cmd = ioc.cmd;
+                frame->set = ioc.set;
+
+                if (ioc.len > 0 && ioc.buf)
+                    memcpy(frame->payload, ioc.buf, ioc.len);
+
+                int ret = send(nexio->sock_tx, nlh, nlh->nlmsg_len, 0);
+                free(nlh);
+                return (ret < 0) ? -1 : 0;
+            }
+            default:
+                return nex_ioctl(nexio, cmd, buf, len, true);
+        }
+    }
+    return -1;
+}
+
 /* Release everything a nex_init_* constructor allocated: sockets, the ifreq,
  * and (for the vendor-cmd path) the netlink socket/callback. Safe on a
  * partially-initialised handle and on NULL. */

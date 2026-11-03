@@ -268,7 +268,8 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
     if (frame->cmd == 108 /* WLC_SET_MONITOR */ || frame->cmd == 107 /* WLC_GET_MONITOR */ ||
         frame->cmd == 10  /* WLC_SET_PROMISC */ || frame->cmd == 9   /* WLC_GET_PROMISC */ ||
         frame->cmd == 30  /* WLC_SET_CHANNEL */ || frame->cmd == 29  /* WLC_GET_CHANNEL */ ||
-        frame->cmd == 262 /* WLC_GET_VAR */     || frame->cmd == 263 /* WLC_SET_VAR */) {
+        frame->cmd == 262 /* WLC_GET_VAR */     || frame->cmd == 263 /* WLC_SET_VAR */ ||
+        frame->cmd == NEX_GET_CHANSPEC_OVERRIDE || frame->cmd == NEX_SET_CHANSPEC_OVERRIDE) {
         struct brcmf_if *pri_ifp = ifp->drvr ? ifp->drvr->iflist[0] : NULL;
 
         /*
@@ -292,6 +293,82 @@ nexmon_nl_ioctl_handler(struct sk_buff *skb)
         }
     }
     rtnl_unlock();
+
+    if (frame->cmd == NEX_SET_CHANSPEC_OVERRIDE) {
+        u16 cs = 0;
+        if (payload_len >= sizeof(u16))
+            cs = le16_to_cpu(*(u16 *)frame->payload);
+        if (cs == 0 && payload_len >= sizeof(u32))
+            cs = (u16)le32_to_cpu(*(u32 *)frame->payload);
+
+        if (cs) {
+            /* Fast-path channel hopping (sub-2ms): bypass cfg80211 locks,
+             * association checks, and regulatory scans. Directly set the
+             * chanspec on the radio hardware and update monitor state. */
+            err = brcmf_fil_iovar_int_set(target_ifp, "chanspec", cs);
+            if (!err)
+                nexmon_mon_restore_set_chanspec(cs);
+        } else {
+            err = -EINVAL;
+        }
+
+        if (err) {
+            if (err == -EBADE)
+                bphy_err_ratelimited(ifp->drvr,
+                                     "NEXMON: Fast channel hop to 0x%04x failed (-EBADE: disallowed by regulatory CLM)\n",
+                                     cs);
+            else
+                bphy_err_ratelimited(ifp->drvr,
+                                     "NEXMON: Fast channel hop to 0x%04x failed: %d\n",
+                                     cs, err);
+            netlink_ack(skb, nlh, err < 0 ? err : -err, NULL);
+            goto out_put;
+        }
+
+        skb_out = nlmsg_new(4, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 4, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), "ACK", 4);
+        nlmsg_unicast(nl_sock, skb_out, portid);
+        goto out_put;
+    }
+
+    if (frame->cmd == NEX_GET_CHANSPEC_OVERRIDE) {
+        u32 cs_val = (u32)nexmon_mon_restore_get_chanspec();
+        if (!cs_val) {
+            s32 fw_cs = 0;
+            if (!brcmf_fil_iovar_int_get(target_ifp, "chanspec", &fw_cs))
+                cs_val = (u32)(u16)fw_cs;
+        }
+
+        if (payload_len >= sizeof(u32))
+            *(__le32 *)frame->payload = cpu_to_le32(cs_val);
+        else if (payload_len >= sizeof(u16))
+            *(__le16 *)frame->payload = cpu_to_le16((u16)cs_val);
+
+        skb_out = nlmsg_new(frame_len, GFP_KERNEL);
+        if (!skb_out) {
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, frame_len, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            netlink_ack(skb, nlh, -ENOMEM, NULL);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), frame, frame_len);
+        nlmsg_unicast(nl_sock, skb_out, portid);
+        goto out_put;
+    }
 
     if (frame->set) {
         err = brcmf_fil_cmd_data_set(target_ifp, frame->cmd, frame->payload,

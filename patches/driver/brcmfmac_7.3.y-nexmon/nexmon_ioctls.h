@@ -12,4 +12,7 @@ typedef struct nex_ioctl {
     uint driver;    /* to identify target driver */
 } nex_ioctl_t;
 
+#define NEX_GET_CHANSPEC_OVERRIDE       418
+#define NEX_SET_CHANSPEC_OVERRIDE       419
+
 #endif /* NEXMON_IOCTLS_H */

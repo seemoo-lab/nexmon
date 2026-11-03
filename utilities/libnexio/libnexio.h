@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
+int nex_ioctl_nonblock(struct nexio *nexio, int cmd, void *buf, int len);
 
 struct nexio *nex_init_ioctl(const char *ifname);
 struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);

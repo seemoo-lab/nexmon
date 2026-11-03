@@ -60,6 +60,45 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
         common_c = (ROOT / "patches/driver/brcmfmac_7.4.y-nexmon/common.c").read_text(errors="replace")
         self.assertIn('MODULE_VERSION("7.4.0-nexmon");', common_c)
 
+    def test_fast_channel_hopping_infrastructure(self):
+        """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
+        # Check ioctl definitions
+        for drv_ver in ("7.3", "7.4"):
+            hdr = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/nexmon_ioctls.h"
+            content = hdr.read_text(errors="replace")
+            self.assertIn("NEX_GET_CHANSPEC_OVERRIDE", content)
+            self.assertIn("418", content)
+            self.assertIn("NEX_SET_CHANSPEC_OVERRIDE", content)
+            self.assertIn("419", content)
+
+        # Check driver fast paths
+        for drv_ver in ("7.3", "7.4"):
+            core_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/core.c"
+            content = core_c.read_text(errors="replace")
+            self.assertIn("NEX_SET_CHANSPEC_OVERRIDE", content)
+            self.assertIn("NEX_GET_CHANSPEC_OVERRIDE", content)
+            self.assertIn('brcmf_fil_iovar_int_set(target_ifp, "chanspec", cs)', content)
+            self.assertIn("nexmon_mon_restore_set_chanspec(cs)", content)
+
+        # Check firmware hook
+        fw_ioctl = ROOT / "patches/bcm43455c0/7_45_206/nexmon/src/ioctl.c"
+        content = fw_ioctl.read_text(errors="replace")
+        self.assertIn("case NEX_GET_CHANSPEC_OVERRIDE:", content)
+        self.assertIn("case NEX_SET_CHANSPEC_OVERRIDE:", content)
+        self.assertIn("WLC_SET_VAR", content)
+
+        # Check libnexio and nexutil
+        libnexio_h = (ROOT / "utilities/libnexio/libnexio.h").read_text(errors="replace")
+        self.assertIn("nex_ioctl_nonblock", libnexio_h)
+        libnexio_c = (ROOT / "utilities/libnexio/libnexio.c").read_text(errors="replace")
+        self.assertIn("int\nnex_ioctl_nonblock(", libnexio_c)
+
+        nexutil_c = (ROOT / "utilities/nexutil/nexutil.c").read_text(errors="replace")
+        self.assertIn("NEX_SET_CHANSPEC_OVERRIDE", nexutil_c)
+        self.assertIn("NEX_GET_CHANSPEC_OVERRIDE", nexutil_c)
+        self.assertIn("nex_ioctl_nonblock", nexutil_c)
+        self.assertIn('"nonblock"', nexutil_c)
+
     def test_runt_frame_injection_guards(self):
         """Ensure all secondary/legacy chip firmware targets reject runt injection frames."""
         target_injections = [

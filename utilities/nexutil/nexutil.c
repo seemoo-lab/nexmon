@@ -114,6 +114,7 @@ unsigned char   dump_objmem = false;
 unsigned char   disassociate = false;
 unsigned char   dump_wl_cnt = false;
 unsigned char   revinfo = false;
+unsigned char   nonblock = false;
 
 const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -137,6 +138,7 @@ static struct argp_option options[] = {
     {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     {"chanspec", 'k', "CHAR/INT", OPTION_ARG_OPTIONAL, "Set chanspec either as integer (e.g., 0x1001, set -i) or as string (e.g., 64/80)."},
+    {"nonblock", 'n', 0, 0, "Non-blocking channel hopping mode (sub-2ms fast hop)"},
     {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
     {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
     {"broadcast-ip", 'B', "CHAR", 0, "Broadcast IP to use for UDP tunneling (default: 192.168.222.255)"},
@@ -290,6 +292,11 @@ parse_opt(int key, char *arg, struct argp_state *state)
                 get_chanspec = true;
                 last_optional_opt = 'k';
             }
+            break;
+
+        case 'n':
+            nonblock = true;
+            last_optional_opt = 0;
             break;
 
         case 'v':
@@ -586,16 +593,28 @@ main(int argc, char **argv)
     }
 
     if (get_chanspec) {
-        char charbuf[16] __attribute__((aligned(4))) = "chanspec";
         char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+        uint32 cs32 = 0;
         uint16 chanspec = 0;
-        ret = nex_ioctl(nexio, WLC_GET_VAR, charbuf, 13, false);
-        if (ret < 0 || memcmp(charbuf, "chanspec", 8) == 0) {
-            fprintf(stderr, "ERR: failed to get chanspec\n");
-            failed = 1;
+
+        /* Try fast-path NEX_GET_CHANSPEC_OVERRIDE first (sub-2ms direct driver/firmware read) */
+        ret = nex_ioctl(nexio, NEX_GET_CHANSPEC_OVERRIDE, &cs32, sizeof(cs32), false);
+        if (ret == 0 && cs32 != 0) {
+            chanspec = (uint16) le32toh(cs32);
         } else {
-            memcpy(&chanspec, charbuf, sizeof(chanspec));
-            chanspec = le16toh(chanspec);
+            /* Fallback to legacy WLC_GET_VAR "chanspec" */
+            char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+            ret = nex_ioctl(nexio, WLC_GET_VAR, charbuf, 13, false);
+            if (ret < 0 || memcmp(charbuf, "chanspec", 8) == 0) {
+                fprintf(stderr, "ERR: failed to get chanspec\n");
+                failed = 1;
+            } else {
+                memcpy(&chanspec, charbuf, sizeof(chanspec));
+                chanspec = le16toh(chanspec);
+            }
+        }
+
+        if (!failed) {
             bool is_psc = wf_chspec_is_6g_psc((chanspec_t) chanspec);
             printf("chanspec: 0x%04x, %s%s\n", chanspec,
                    wf_chspec_ntoa_ex(chanspec, chanspec_str),
@@ -604,7 +623,6 @@ main(int argc, char **argv)
     }
 
     if (set_chanspec) {
-        char charbuf[16] __attribute__((aligned(4))) = "chanspec";
         uint32 cs = 0;
         uint32 cs_le = 0;
 
@@ -619,16 +637,36 @@ main(int argc, char **argv)
             return -1;
         } else {
             cs_le = htole32(cs);
-            memcpy(&charbuf[9], &cs_le, sizeof(cs_le));
-            ret = nex_ioctl(nexio, WLC_SET_VAR, charbuf, 13, true);
-            if (ret < 0) {
-                char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
-                bool is_psc = wf_chspec_is_6g_psc((chanspec_t) cs);
-                fprintf(stderr, "ERR: failed to set chanspec 0x%04x (%s%s)\n",
-                        cs, wf_chspec_ntoa_ex((chanspec_t) cs, chanspec_str),
-                        is_psc ? " [6GHz PSC]" : "");
-                nex_free(nexio);
-                return -1;
+            if (nonblock) {
+                /* Non-blocking fast channel hop (fire-and-forget sub-2ms) */
+                ret = nex_ioctl_nonblock(nexio, NEX_SET_CHANSPEC_OVERRIDE, &cs_le, sizeof(cs_le));
+                if (ret < 0) {
+                    char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+                    bool is_psc = wf_chspec_is_6g_psc((chanspec_t) cs);
+                    fprintf(stderr, "ERR: failed to non-blocking set chanspec 0x%04x (%s%s)\n",
+                            cs, wf_chspec_ntoa_ex((chanspec_t) cs, chanspec_str),
+                            is_psc ? " [6GHz PSC]" : "");
+                    nex_free(nexio);
+                    return -1;
+                }
+            } else {
+                /* Try fast-path NEX_SET_CHANSPEC_OVERRIDE first */
+                ret = nex_ioctl(nexio, NEX_SET_CHANSPEC_OVERRIDE, &cs_le, sizeof(cs_le), true);
+                if (ret < 0) {
+                    /* Fallback to legacy WLC_SET_VAR "chanspec" */
+                    char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                    memcpy(&charbuf[9], &cs_le, sizeof(cs_le));
+                    ret = nex_ioctl(nexio, WLC_SET_VAR, charbuf, 13, true);
+                    if (ret < 0) {
+                        char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+                        bool is_psc = wf_chspec_is_6g_psc((chanspec_t) cs);
+                        fprintf(stderr, "ERR: failed to set chanspec 0x%04x (%s%s)\n",
+                                cs, wf_chspec_ntoa_ex((chanspec_t) cs, chanspec_str),
+                                is_psc ? " [6GHz PSC]" : "");
+                        nex_free(nexio);
+                        return -1;
+                    }
+                }
             }
         }
     }
