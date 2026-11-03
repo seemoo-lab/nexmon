@@ -1,3 +1,44 @@
+2026-09-11  Werner Koch  <wk@gnupg.org>
+
+	Release 1.12.4.
+	+ commit 9a53b01742be48c50c3f4340b8e839010bc55d92
+
+
+2026-09-11  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:keccak: Fix padding in cSHAKE.
+	+ commit f54ce47180e23850fa1ff3f76cd3d880fb99808a
+	* cipher/keccak.c (cshake_input_s): Fix PADLEN calculation.
+
+2026-09-02  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sm4: add separate configure check for AVX512 SM4 instructions.
+	+ commit f0bc379e0f3585908707095db5d3c505e664726f
+	* cipher/sm4-intel-avx512-amd64.S: Check for
+	HAVE_GCC_INLINE_ASM_SM4_AVX512 instead of HAVE_GCC_INLINE_ASM_SM4.
+	* cipher/sm4.c (USE_INTEL_SM4_AVX512): Require USE_INTEL_SM4_AVX2 and
+	HAVE_GCC_INLINE_ASM_SM4_AVX512.
+	* configure.ac (gcry_cv_gcc_inline_asm_sm4_avx512)
+	(HAVE_GCC_INLINE_ASM_SM4_AVX512): New.
+
+2026-08-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:rsa:pss: Fix SALT-LENGTH handling.
+	+ commit 3ed69d3fb85bac0901dc5b4899d7983cf1f7bbe7
+	* cipher/pubkey-util.c (_gcry_pk_util_data_to_mpi): For
+	PUBKEY_OP_SIGN, just like for PUBKEY_OP_VERIFY, reject larger
+	SALT-LENGTH as the comment says.  Fix releasing LIST on error.
+
+2026-08-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:rsa:pss: Validate the length of hashed input.
+	+ commit 612eb8c157c057feeaf17d30644fd65b05c5ea25
+	* cipher/rsa-common.c (_gcry_rsa_pss_verify): Reject invalid input.
+
+	cipher:rsa:oaep: Validate all-zero PS.
+	+ commit cf55ce42d0268f9cfd7abc43aa4ec62d2e8c3f53
+	* cipher/rsa-common.c (_gcry_rsa_oaep_decode): Reject non-zero PS.
+
 2026-08-26  Werner Koch  <wk@gnupg.org>
 
 	Release 1.12.3.

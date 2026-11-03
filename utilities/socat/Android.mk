@@ -85,23 +85,18 @@ LOCAL_CFLAGS += -fcommon
 LOCAL_CFLAGS += -DRAND_F_SSLEAY_RAND_BYTES=100 -DRAND_R_PRNG_NOT_SEEDED=100
 
 LOCAL_STATIC_LIBRARIES += libssl libcrypto
-
-LOCAL_C_INCLUDES += .
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
-
-include $(BUILD_EXECUTABLE)
+LOCAL_LDLIBS := -lc++_static
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
 LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/$(TARGET_ARCH_ABI)/libssl.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
 LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/$(TARGET_ARCH_ABI)/libcrypto.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)

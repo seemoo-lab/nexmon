@@ -291,18 +291,23 @@ int _xioopen_socks5_connect(struct single *xfd,
    case SOCKS5_ADDRTYPE_IPV4:
       break;
    case SOCKS5_ADDRTYPE_NAME:
+      /* Must return, not just log: Error() only exits while the diagnostic
+	 exit level is at or below E_ERROR, and "socat -s" raises it to
+	 E_FATAL. Falling through with an oversized name truncated the length
+	 byte mod 256 and let memcpy() run past sendbuff. */
       if ((namelen = strlen(targetname)) > 255) {
 	 Error1("socks5: target name is longer than 255 bytes: \"%s\"",
 		targetname);
+	 return STAT_NORETRY;
       }
-      sendrequest->destaddr[0] = strlen(targetname);
-      *(sendrequest->destaddr+1) = '\0'; strncat(sendrequest->destaddr+1, targetname, sizeof(sendbuff)-5);
+      sendrequest->destaddr[0] = namelen;
+      memcpy(sendrequest->destaddr+1, targetname, namelen);
       break;
    case SOCKS5_ADDRTYPE_IPV6:
       break;
    default: Fatal("socks5: undefined address type in socks request");
    }
-   *((uint16_t *)&sendrequest->destaddr[strlen(targetname)+1]) = targetport;
+   *((uint16_t *)&sendrequest->destaddr[namelen+1]) = targetport;
    sendlen = sizeof(struct socks5_request) + namelen + 2;
 
    /* send socks request (target addr+port, +auth) */
@@ -409,10 +414,12 @@ int _xioopen_socks5_connect(struct single *xfd,
 int xio_socks5_username_password(int level, struct opt *opts,
 				 struct single *xfd) {
    /*!!! */
+   /* ver(1) + ulen(1) + username(<=255) + plen(1) + password(<=255) */
    unsigned char sendbuff[513];
    unsigned char *pos;
    char *username = NULL;
    char *password = NULL;
+   size_t userlen, passlen;
    unsigned char recvbuff[2];
    struct socks5_userpass_reply *reply;
    int result;
@@ -428,14 +435,30 @@ int xio_socks5_username_password(int level, struct opt *opts,
       return STAT_NORETRY;
    }
 
+   /* RFC 1929 carries each credential behind a single length byte, so neither
+      may exceed 255 bytes. Enforce that before building the request: sendbuff
+      is sized for exactly the maximum, and without the check a longer option
+      value overflowed it (and the length byte silently truncated mod 256).
+      Report only the length -- these are credentials. */
+   userlen = strlen(username);
+   if (userlen > 255) {
+      Error1("socks5: username is longer than 255 bytes ("F_Zu")", userlen);
+      return STAT_NORETRY;
+   }
+   passlen = strlen(password);
+   if (passlen > 255) {
+      Error1("socks5: password is longer than 255 bytes ("F_Zu")", passlen);
+      return STAT_NORETRY;
+   }
+
    pos = sendbuff;
    *pos++ = SOCKS5_USERPASS_VERSION;
-   *pos++ = strlen(username);
-   *pos = '\0'; strncat(pos, username, 255);
-   pos += strlen(username);
-   *pos++ = strlen(password);
-   *pos = '\0'; strncat(pos, password, 255);
-   pos += strlen(password);
+   *pos++ = userlen;
+   memcpy(pos, username, userlen);
+   pos += userlen;
+   *pos++ = passlen;
+   memcpy(pos, password, passlen);
+   pos += passlen;
 
    result =
      xio_socks5_dialog(level, xfd, sendbuff, pos-sendbuff,

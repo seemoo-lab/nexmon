@@ -1694,7 +1694,8 @@ cshake_input_s (KECCAK_CONTEXT *ctx, const void *s, unsigned int s_len,
   keccak_write (ctx, s, s_len);
 
   len_written += buf[0] + 1 + s_len;
-  padlen = ctx->blocksize - (len_written % ctx->blocksize);
+  padlen = ctx->blocksize - 1
+    - (len_written + ctx->blocksize - 1) % ctx->blocksize;
   memset (buf, 0, padlen);
   keccak_write (ctx, buf, padlen);
 }

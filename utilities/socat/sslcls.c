@@ -57,17 +57,17 @@ const SSL_METHOD *sycSSLv2_server_method(void) {
 
 const SSL_METHOD *sycSSLv3_client_method(void) {
    const SSL_METHOD *result;
-   Debug("SSLv3_client_method()");
-   result = SSLv3_client_method();
-   Debug1("SSLv3_client_method() -> %p", result);
+   Debug("TLS_client_method()");
+   result = TLS_client_method();
+   Debug1("TLS_client_method() -> %p", result);
    return result;
 }
 
 const SSL_METHOD *sycSSLv3_server_method(void) {
    const SSL_METHOD *result;
-   Debug("SSLv3_server_method()");
-   result = SSLv3_server_method();
-   Debug1("SSLv3_server_method() -> %p", result);
+   Debug("TLS_server_method()");
+   result = TLS_server_method();
+   Debug1("TLS_server_method() -> %p", result);
    return result;
 }
 

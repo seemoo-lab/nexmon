@@ -1,50 +1,96 @@
-/* config.h for argp-standalone 1.5.0 on Android / bionic (NDK, minSdkVersion 21).
+/* config.h for gnulib argp (MSYS2 libargp 20260115, gnulib e93789db) on
+ * Android / bionic (NDK, minSdkVersion 24).
  *
- * argp-standalone normally generates this via autoconf/meson. bionic's feature
- * set is fixed and known, so the values are hard-coded here instead of running
+ * gnulib normally generates this via autoconf. bionic's feature set is
+ * fixed and known, so the values are hard-coded here instead of running
  * a configure step inside ndk-build. Keep in sync with Android.mk.
  */
 
 #ifndef NEXMON_LIBARGP_CONFIG_H
 #define NEXMON_LIBARGP_CONFIG_H
 
-/* Headers bionic provides. */
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdalign.h>
+#include <string.h>
+
+#ifndef UCHAR_WIDTH
+# define UCHAR_WIDTH 8
+#endif
+#ifndef UINTPTR_WIDTH
+# define UINTPTR_WIDTH (8 * sizeof(uintptr_t))
+#endif
+#ifndef static_assert
+# if defined(__cplusplus)
+#  define static_assert(expr) static_assert(expr, #expr)
+# else
+#  define static_assert(expr) _Static_assert(expr, #expr)
+# endif
+#endif
+
+#ifndef streq
+static inline bool
+streq (const char *s1, const char *s2)
+{
+  return strcmp (s1, s2) == 0;
+}
+#endif
+
+#define _GL_CONFIG_H_INCLUDED 1
+#define HAVE_CONFIG_H 1
+
+#define _GL_INLINE_HEADER_BEGIN
+#define _GL_INLINE_HEADER_END
+#define _GL_INLINE static inline
+#define _GL_EXTERN_INLINE extern inline
+#define _GL_UNUSED __attribute__ ((__unused__))
+#define _GL_ATTRIBUTE_PURE __attribute__ ((__pure__))
+#define _GL_ATTRIBUTE_FORMAT(spec) __attribute__ ((__format__ spec))
+#define _GL_ATTRIBUTE_SPEC_PRINTF_STANDARD printf
+#define _GL_ATTRIBUTE_SPEC_PRINTF_SYSTEM printf
+#define _GL_ATTRIBUTE_DEALLOC(f, n)
+#define _GL_ATTRIBUTE_MALLOC
+#define _GL_ATTRIBUTE_RETURNS_NONNULL
+
 #define HAVE_UNISTD_H 1
 #define HAVE_ALLOCA_H 1
+#define HAVE_ALLOCA 1
 
-/* bionic has no <libintl.h>; argp falls back to passing messages through
- * untranslated (HAVE_LIBINTL_H intentionally left undefined). */
+#define ENABLE_NLS 0
+#define GNULIB_TEXT_DOMAIN "argp"
 
-/* Functions bionic always provides -> do not build the bundled copies. */
 #define HAVE_STRNDUP 1
 #define HAVE_STRCASECMP 1
+#define HAVE_SLEEP 1
+#define HAVE_VSNPRINTF 1
 
-/* Not exposed at API 21 (strchrnul: API 24, mempcpy: API 23) -> the bundled
- * strchrnul.c / mempcpy.c are compiled and declared by argp-namefrob.h. */
 #define HAVE_MEMPCPY 0
 #define HAVE_STRCHRNUL 0
+#define HAVE_RAWMEMCHR 0
 
-/* bionic has no program_invocation_name / program_invocation_short_name. */
+#ifndef __getopt_argv_const
+# define __getopt_argv_const const
+#endif
+
 #define HAVE_DECL_PROGRAM_INVOCATION_NAME 0
 #define HAVE_DECL_PROGRAM_INVOCATION_SHORT_NAME 0
 
-/* Route the *_unlocked stdio calls argp-help.c makes to the locked variants;
- * portable across every API level regardless of when bionic added each one. */
 #define HAVE_DECL_FPUTS_UNLOCKED 0
 #define HAVE_DECL_FWRITE_UNLOCKED 0
 #define HAVE_DECL_PUTC_UNLOCKED 0
+#define HAVE_DECL_FPUTC_UNLOCKED 0
+#define HAVE_DECL_FGETS_UNLOCKED 0
+#define HAVE_DECL_FREAD_UNLOCKED 0
+#define HAVE_DECL_FEOF_UNLOCKED 0
+#define HAVE_DECL_FERROR_UNLOCKED 0
+#define HAVE_DECL_FFLUSH_UNLOCKED 0
+#define HAVE_DECL_GETC_UNLOCKED 0
+#define HAVE_DECL_GETCHAR_UNLOCKED 0
+#define HAVE_DECL_PUTCHAR_UNLOCKED 0
+#define HAVE_DECL_CLEARERR_UNLOCKED 0
 
-/* Attribute helpers argp-standalone expects from its generated config.h
- * (argp-parse.c uses UNUSED unguarded; the others have their own fallbacks). */
-#define HAVE_GCC_ATTRIBUTE 1
-#if defined(__GNUC__)
-# define NORETURN __attribute__ ((__noreturn__))
-# define PRINTF_STYLE(f, a) __attribute__ ((__format__ (__printf__, f, a)))
-# define UNUSED __attribute__ ((__unused__))
-#else
-# define NORETURN
-# define PRINTF_STYLE(f, a)
-# define UNUSED
-#endif
+char *strchrnul (const char *s, int c);
+void *mempcpy (void *dest, const void *src, size_t n);
+void *rawmemchr (const void *s, int c);
 
 #endif /* NEXMON_LIBARGP_CONFIG_H */

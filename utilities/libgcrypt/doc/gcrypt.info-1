@@ -1,6 +1,6 @@
 This is gcrypt.info, produced by makeinfo version 6.8 from gcrypt.texi.
 
-This manual is for Libgcrypt version 1.12.3 and was last updated 25
+This manual is for Libgcrypt version 1.12.4 and was last updated 25
 August 2026.  Libgcrypt is GNU's library of cryptographic building
 blocks.
 
@@ -25,7 +25,7 @@ File: gcrypt.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The Libgcrypt Library
 *********************
 
-This manual is for Libgcrypt version 1.12.3 and was last updated 25
+This manual is for Libgcrypt version 1.12.4 and was last updated 25
 August 2026.  Libgcrypt is GNU's library of cryptographic building
 blocks.
 

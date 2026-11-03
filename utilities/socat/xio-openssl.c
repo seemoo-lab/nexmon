@@ -253,7 +253,6 @@ static int
 					   addr_openssl */
 {
    struct single *xfd = &xxfd->stream;
-   int rw = (xioflags&XIO_ACCMODE);
    struct opt *opts0 = NULL;
    const char *hostname, *portname = NULL;
    int pf = PF_UNSPEC;
@@ -1078,14 +1077,16 @@ int
 	 }
 	 Error("DH_new() failed");
       } else {
-	 dh->p = BN_bin2bn(dh2048_p, sizeof(dh2048_p), NULL);
-	 dh->g = BN_bin2bn(dh2048_g, sizeof(dh2048_g), NULL);
-	 if ((dh->p == NULL) || (dh->g == NULL)) {
+         BIGNUM *p = BN_bin2bn(dh2048_p, sizeof(dh2048_p), NULL);
+         BIGNUM *g = BN_bin2bn(dh2048_g, sizeof(dh2048_g), NULL);
+         if ((p == NULL) || (g == NULL) || !DH_set0_pqg(dh, p, NULL, g)) {
+            if (p) BN_free(p);
+            if (g) BN_free(g);
 	    while (err = ERR_get_error()) {
-	       Warn1("BN_bin2bn(): %s",
+	       Warn1("BN_bin2bn() / DH_set0_pqg(): %s",
 		     ERR_error_string(err, NULL));
 	    }
-	    Error("BN_bin2bn() failed");
+	    Error("BN_bin2bn() / DH_set0_pqg() failed");
 	 } else {
 	    if (sycSSL_CTX_set_tmp_dh(*ctx, dh) <= 0) {
 	       while (err = ERR_get_error()) {
