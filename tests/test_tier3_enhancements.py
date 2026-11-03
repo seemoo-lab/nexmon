@@ -287,6 +287,27 @@ class TestTier3DriversAndFirmware(unittest.TestCase):
                 f"BRCMF_FW_CLM_DEF(43456) missing in {drv_ver}/sdio.c",
             )
 
+    def test_cypress_sae_ext_and_extsae_firmware_capability_matching(self):
+        """RPi commit 1b6022469e9c & 66f909308a7c: Detect external SAE and Cypress 'extsae' alias."""
+        sae_drv_versions = ("5.15", "6.1", "6.2", "6.6", "6.18", "7.2", "7.3", "7.4")
+        for drv_ver in sae_drv_versions:
+            feat_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/feature.c"
+            feat_h = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/feature.h"
+            cfg_c = ROOT / f"patches/driver/brcmfmac_{drv_ver}.y-nexmon/cfg80211.c"
+
+            # 1. feature.h defines SAE_EXT
+            self.assertIn("BRCMF_FEAT_DEF(SAE_EXT)", feat_h.read_text(errors="replace"))
+
+            # 2. feature.c maps sae_ext and extsae
+            fc_text = feat_c.read_text(errors="replace")
+            self.assertIn('{ BRCMF_FEAT_SAE_EXT, "sae_ext" },', fc_text)
+            self.assertIn('{ BRCMF_FEAT_SAE_EXT, "extsae" },', fc_text)
+
+            # 3. cfg80211.c sets NL80211_FEATURE_SAE and handles EXTSAE with PSK offload
+            cfg_text = cfg_c.read_text(errors="replace")
+            self.assertIn("wiphy->features |= NL80211_FEATURE_SAE;", cfg_text)
+            self.assertIn("using EXTSAE with PSK offload", cfg_text)
+
     def test_fast_channel_hopping_infrastructure(self):
         """Fast non-blocking sub-2ms channel hopping ioctl and driver/firmware wiring."""
         # Check ioctl definitions
