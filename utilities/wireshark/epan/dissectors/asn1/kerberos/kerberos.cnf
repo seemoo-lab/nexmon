@@ -2,6 +2,11 @@
 # kerberos conformation file
 # Copyright 2008 Anders Broman
 
+#.MODULE_IMPORT
+PKIX1Explicit88 pkix1explicit
+
+#.INCLUDE ../pkix1explicit/pkix1explicit_exp.cnf
+
 #.EXPORTS
 ChangePasswdData
 Applications ONLY_ENUM
@@ -243,6 +248,12 @@ KrbFastArmorTypes PROT_PREFIX UPPER_CASE
   case KERBEROS_PA_ETYPE_INFO2:
     offset=dissect_ber_octet_string_wcb(false, actx, sub_tree, tvb, offset,hf_index, dissect_kerberos_ETYPE_INFO2);
     break;
+  case KERBEROS_TD_CMS_DIGEST_ALGORITHMS:
+    offset=dissect_ber_octet_string_wcb(false, actx, sub_tree, tvb, offset,hf_index, dissect_kerberos_TD_CMS_DIGEST_ALGORITHMS_DATA);
+    break;
+  case KERBEROS_TD_CERT_DIGEST_ALGORITHMS:
+    offset=dissect_ber_octet_string_wcb(false, actx, sub_tree, tvb, offset,hf_index, dissect_kerberos_TD_CERT_DIGEST_ALGORITHMS_DATA);
+    break;
   case KERBEROS_PA_PW_SALT:
     offset=dissect_ber_octet_string_wcb(false, actx, sub_tree, tvb, offset,hf_index, dissect_krb5_PW_SALT);
     break;
@@ -438,6 +449,7 @@ EncryptionKey/keytype STRINGS = VALS(kerberos_ENCTYPE_vals)
 
 %(DEFAULT_BODY)s
 
+  /* XXX - Expert info if this length > KRB_MAX_KEY_LENGTH? */
   private_data->key.keylength = tvb_reported_length(out_tvb);
   private_data->key.keyvalue = tvb_get_ptr(out_tvb, 0, private_data->key.keylength);
   private_data->key_tree = tree;
@@ -656,12 +668,12 @@ EncryptionKey/keytype STRINGS = VALS(kerberos_ENCTYPE_vals)
     break;
   }
 
-#.FN_BODY PA-SPAKE VAL_PTR=&(private_data->padata_type)
-  kerberos_private_data_t* private_data = kerberos_get_private_data(actx);
+#.FN_BODY PA-SPAKE VAL_PTR=&choice
+  int choice;
 %(DEFAULT_BODY)s
 #.FN_FTR PA-SPAKE
-  if(tree){
+  if(tree && choice != -1){
     proto_item_append_text(tree, " %s",
-      val_to_str(actx->pinfo->pool, private_data->padata_type, kerberos_PA_SPAKE_vals,
+      val_to_str(actx->pinfo->pool, (uint32_t)choice, kerberos_PA_SPAKE_vals,
       "Unknown:%d"));
   }

@@ -13,13 +13,26 @@
 #include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_EXTCAP
 
+#ifdef __APPLE__
+// Needed for memset_s on macOS
+#define __STDC_WANT_LIB_EXT1__ 1
+#endif
+
 #include "ssh-base.h"
 
 #include <extcap/extcap-base.h>
 #include <string.h>
+#include <fcntl.h>
 #include <libssh/callbacks.h>
 #include <ws_attributes.h>
+#include <wsutil/file_util.h>
 #include <wsutil/wslog.h>
+
+#include <wsutil/socket.h>
+
+#ifdef _WIN32
+#include <wsutil/win32-utils.h>
+#endif
 
 /*
  * The unreleased 0.11.0 version of libssh has the ability to
@@ -60,6 +73,8 @@
 	"hmac-sha1-etm@openssh.com,hmac-sha1"
 #endif
 
+#define SSH_READ_BLOCK_SIZE 256
+
 static void extcap_log(int priority, const char *function, const char *buffer, void *userdata _U_)
 {
 	enum ws_log_level level = LOG_LEVEL_DEBUG;
@@ -83,10 +98,26 @@ static void extcap_log(int priority, const char *function, const char *buffer, v
 	 * After the following commit libssh only uses LOG_LEVEL_WARN for
 	 * serious issues:
 	 * https://gitlab.com/libssh/libssh-mirror/-/commit/657d9143d121dfff74f5a63f734d0096c7f37194
+	 *
+	 * In 0.11.4 libssh added a common "ssh_strict_fopen" function that
+	 * is used to open various configuration files. Unfortunately, it
+	 * issues SSH_LOG_WARN (aka RARE) level logs for any errors, including
+	 * a file not existing. Some files, like known_hosts, are optional
+	 * and so it's harmless if they're missing. This was fixed in 0.12.1[1],
+	 * but before then we downgrade just the WARN level log messages from
+	 * ssh_strict_open. Since we only downgrade messages from one function,
+	 * and all the logs in that function are low level in 0.12.1 and later,
+	 * we can lower them even more than the WARN mesages pre 0.11.0, which
+	 * were changed to a wider variety of levels upstream. We don't lower
+	 * all the way to NOISY because the same change added a WARN in the
+	 * parent function for problems opening files recursively included by
+	 * a main config file. Also see #21051.
+	 *
+	 * 1 - https://gitlab.com/libssh/libssh-mirror/-/commit/a7fd80795e21b8c894b54409496ea6b569f7f4a3
 	 */
 #if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
 		level = LOG_LEVEL_INFO;
-#elif LIBSSH_VERSION_INT < SSH_VERSION_INT(0,12,1)
+#elif LIBSSH_VERSION_INT < SSH_VERSION_INT(0,13,0)
 		if (strncmp(function, "ssh_strict_fopen", strlen("ssh_strict_fopen")) == 0) {
 			level = LOG_LEVEL_DEBUG;
 		} else {
@@ -97,16 +128,138 @@ static void extcap_log(int priority, const char *function, const char *buffer, v
 #endif
 		break;
 	}
-	/* We set the libssh log level to specifically ask for this, so don't
-	 * both checking the log level a second time.
-	 */
-	ws_log_write_always_full("libssh", level, NULL, 0, function, "%s", buffer);
+	/* We might have altered the level above, so we have to check the level. */
+	ws_log_full("libssh", level, NULL, 0, function, "%s", buffer);
+}
+
+void ssh_base_list_config(unsigned *count)
+{
+	unsigned inc = *count;
+
+        // Server tab
+	printf("arg {number=%u}{call=--remote-host}{display=Remote SSH server address}"
+		"{type=string}{tooltip=The remote SSH host. It can be both "
+		"an IP address or a hostname}{required=true}{group=Server}\n", inc++);
+	printf("arg {number=%u}{call=--remote-port}{display=Remote SSH server port}"
+		"{type=unsigned}{default=22}{tooltip=The remote SSH host port (1-65535)}"
+		"{range=1,65535}{group=Server}\n", inc++);
+
+	// Authentication tab
+	printf("arg {number=%u}{call=--remote-username}{display=Remote SSH server username}"
+		"{type=string}{tooltip=The remote SSH username. If not provided, "
+		"the current user will be used}{group=Authentication}\n", inc++);
+	printf("arg {number=%u}{call=--remote-password}{display=Remote SSH server password}"
+		"{type=password}{tooltip=The SSH password, used when other methods (SSH agent "
+		"or key files) are unavailable.}{group=Authentication}\n", inc++);
+	printf("arg {number=%u}{call=--sshkey}{display=Path to SSH private key}"
+		"{type=fileselect}{tooltip=The path on the local filesystem of the private SSH key (OpenSSH format)}"
+		"{mustexist=true}{group=Authentication}\n", inc++);
+	printf("arg {number=%u}{call=--sshkey-passphrase}{display=SSH key passphrase}"
+		"{type=password}{tooltip=Passphrase to unlock the SSH private key}{group=Authentication}\n",
+		inc++);
+	printf("arg {number=%u}{call=--proxycommand}{display=ProxyCommand}"
+		"{type=string}{tooltip=The command to use as proxy for the SSH connection}"
+		"{group=Authentication}\n", inc++);
+	printf("arg {number=%u}{call=--update-known-hosts}{display=Update known hosts}"
+		"{type=boolflag}{tooltip=Update user known hosts file if host key is unknown}{group=Authentication}"
+		"\n", inc++);
+	printf("arg {number=%u}{call=--ssh-sha1}{display=Support SHA-1 keys (deprecated)}"
+		"{type=boolflag}{tooltip=Support keys and key exchange algorithms using SHA-1 (deprecated)}{group=Authentication}"
+		"\n", inc++);
+	*count = inc;
+}
+
+void ssh_base_add_help_options(extcap_parameters *extcap_conf)
+{
+	extcap_help_add_option(extcap_conf, "--remote-host <host>", "the remote SSH host");
+	extcap_help_add_option(extcap_conf, "--remote-port <port>", "the remote SSH port");
+	extcap_help_add_option(extcap_conf, "--remote-username <username>", "the remote SSH username");
+	extcap_help_add_option(extcap_conf, "--remote-password <password>", "the remote SSH password. If not specified, ssh-agent and ssh-key are used");
+	extcap_help_add_option(extcap_conf, "--sshkey <private key path>", "the path of the SSH key (OpenSSH format)");
+	extcap_help_add_option(extcap_conf, "--sshkey-passphrase <private key passphrase>", "the passphrase to unlock private SSH key");
+	extcap_help_add_option(extcap_conf, "--proxycommand <proxy command>", "the command to use as proxy for the SSH connection");
+	extcap_help_add_option(extcap_conf, "--ssh-sha1", "support keys and key exchange using SHA-1 (deprecated)");
+	extcap_help_add_option(extcap_conf, "--update-known-hosts", "update user known hosts file if host key unknown");
 }
 
 void add_libssh_info(extcap_parameters * extcap_conf)
 {
 	extcap_base_set_compiled_with(extcap_conf, "libssh version %s", SSH_STRINGIFY(LIBSSH_VERSION));
 	extcap_base_set_running_with(extcap_conf, "libssh version %s", ssh_version(0));
+}
+
+static bool
+verify_ssh_hostkey(ssh_session sshs, const ssh_params_t *ssh_params, char** err_info)
+{
+	ssh_key srv_pubkey = NULL;
+	unsigned char *hash = NULL;
+	char *fingerprint = NULL;
+	size_t hlen;
+	int rc;
+
+#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,12,2)
+	/* If GSS-API key exchange was used, the server identity was already
+	 * verified via the MIC. Servers in that scenario often don't send
+	 * their host key, or change it frequently, so libssh recommends
+	 * not performing verification here. */
+	if (ssh_session_kex_is_gss(sshs)) {
+		return true;
+	}
+#endif
+
+	if (ssh_get_server_publickey(sshs, &srv_pubkey) != SSH_OK) {
+		return false;
+	}
+
+	rc = ssh_get_publickey_hash(srv_pubkey, SSH_PUBLICKEY_HASH_SHA256, &hash, &hlen);
+	ssh_key_free(srv_pubkey);
+
+	if (rc != SSH_OK) {
+		return false;
+	}
+	/* We require libssh 0.8.5, so we have ssh_session_is_known_server() */
+	int state = ssh_session_is_known_server(sshs);
+
+	switch (state) {
+	case SSH_KNOWN_HOSTS_OK:
+		ssh_clean_pubkey_hash(&hash);
+		return true;
+	case SSH_KNOWN_HOSTS_CHANGED:
+		fingerprint = ssh_get_fingerprint_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
+		*err_info = ws_strdup_printf("SSH host key verification failed: server host key changed to %s", fingerprint);
+		ssh_string_free_char(fingerprint);
+		break;
+	case SSH_KNOWN_HOSTS_OTHER:
+		*err_info = g_strdup("SSH host key verification failed: host key type differs from known_hosts");
+		break;
+	case SSH_KNOWN_HOSTS_NOT_FOUND:
+		// No known hosts file available. libssh can create one.
+	case SSH_KNOWN_HOSTS_UNKNOWN:
+		fingerprint = ssh_get_fingerprint_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
+		if (ssh_params->update_known_hosts) {
+			if (ssh_session_update_known_hosts(sshs) == SSH_OK) {
+				ws_log(LOG_DOMAIN_CAPCHILD, LOG_LEVEL_MESSAGE,
+					"Added %s to user known_hosts with key %s",
+					ssh_params->host, fingerprint);
+				ssh_string_free_char(fingerprint);
+				ssh_clean_pubkey_hash(&hash);
+				return true;
+			} else {
+				*err_info = ws_strdup_printf("Adding SSH host key %s to known_hosts failed: %s", fingerprint, ssh_get_error(sshs));
+			}
+		} else {
+			*err_info = ws_strdup_printf("SSH host key verification failed: server is not in known_hosts. Rerun with the \"update-known-hosts\" option to add %s to the user known_hosts files with key %s", ssh_params->host, fingerprint);
+		}
+		ssh_string_free_char(fingerprint);
+		break;
+	case SSH_KNOWN_HOSTS_ERROR:
+	default:
+		*err_info = ws_strdup_printf("SSH host key verification failed: %s", ssh_get_error(sshs));
+		break;
+	}
+
+	ssh_clean_pubkey_hash(&hash);
+	return false;
 }
 
 ssh_session create_ssh_connection(const ssh_params_t* ssh_params, char** err_info)
@@ -234,6 +387,12 @@ ssh_session create_ssh_connection(const ssh_params_t* ssh_params, char** err_inf
 		goto failure;
 	}
 
+	/* Verify the server identity before sending authentication material. */
+	if (!verify_ssh_hostkey(sshs, ssh_params, err_info)) {
+		ssh_disconnect(sshs);
+		goto failure;
+	}
+
 	/* If a public key path has been provided, try to authenticate using it */
 	if (ssh_params->sshkey_path) {
 		ssh_key pkey = ssh_key_new();
@@ -325,9 +484,136 @@ int ssh_channel_printf(ssh_channel channel, const char* fmt, ...)
 	return ret;
 }
 
+static socket_handle_t pipe_fds[2] = {INVALID_SOCKET, INVALID_SOCKET};
+
+static void graceful_shutdown_cb(void)
+{
+	if (send(pipe_fds[1], "q", 1, 0) == SOCKET_ERROR) {
+		ws_warning("failed to write to socket");
+	}
+}
+
+bool ssh_base_setup_graceful_shutdown(extcap_parameters *extcap_conf _U_)
+{
+	if (ws_socketpair(SOCK_STREAM, pipe_fds) < 0) {
+		ws_warning("socketpair failed");
+		pipe_fds[0] = INVALID_SOCKET;
+		return false;
+	}
+#ifdef _WIN32
+	unsigned long non_blocking = 1;
+	if (SOCKET_ERROR == ioctlsocket(pipe_fds[0], FIONBIO, &non_blocking)) {
+		ws_info("Failure setting socket to non-blocking: %s", win32strerror(WSAGetLastError()));
+	}
+#else
+	if (-1 == fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK)) {
+		ws_info("Failure setting socket to non-blocking: %s", g_strerror(errno));
+	}
+#endif
+	return extcap_base_register_graceful_shutdown_cb(extcap_conf, graceful_shutdown_cb);
+}
+
+int ssh_async_loop_read(ssh_session sshs, ssh_channel channel, FILE* fp)
+{
+	int nbytes;
+	int ret = EXIT_SUCCESS;
+	char buffer[SSH_READ_BLOCK_SIZE];
+
+	/* read from stdin until data are available */
+	while (!extcap_end_application && ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {
+		struct timeval timeout;
+		ssh_channel in_channels[2], out_channels[2];
+		fd_set fds;
+		socket_t maxfd;
+
+		timeout.tv_sec = 30;
+		timeout.tv_usec = 0;
+		in_channels[0] = channel;
+		in_channels[1] = NULL;
+		FD_ZERO(&fds);
+		FD_SET(ssh_get_fd(sshs), &fds);
+		maxfd = ssh_get_fd(sshs) + 1;
+
+		if (pipe_fds[0] != INVALID_SOCKET) {
+			FD_SET(pipe_fds[0], &fds);
+			maxfd = MAX(maxfd, pipe_fds[0] + 1);
+		}
+
+		switch (ssh_select(in_channels, out_channels, maxfd, &fds, &timeout)) {
+		case SSH_EINTR:
+			ws_debug("got a signal, try again");
+			continue;
+		case SSH_ERROR:
+			ws_warning("Error from select");
+			goto end;
+		case SSH_OK:
+		default:
+			break;
+		}
+
+		if (out_channels[0] != NULL) {
+			nbytes = ssh_channel_read_nonblocking(channel, buffer, SSH_READ_BLOCK_SIZE, 0);
+			switch(nbytes) {
+			case SSH_AGAIN:
+				break;
+			case SSH_EOF:
+				goto read_stderr;
+			case SSH_ERROR:
+				ws_warning("Error reading from channel");
+				goto end;
+			default:
+				if (fwrite(buffer, 1, nbytes, fp) != (unsigned)nbytes) {
+					ws_warning("Error writing to fifo");
+					ret = EXIT_FAILURE;
+					goto end;
+				}
+				fflush(fp);
+			}
+		}
+
+		if (pipe_fds[0] != INVALID_SOCKET && FD_ISSET(pipe_fds[0], &fds)) {
+			char buf[1];
+			if (recv(pipe_fds[0], buf, 1, 0) == SOCKET_ERROR) {
+				/* We don't really care if cleaning the pipe
+				 * fails because we're quitting anyway. */
+			}
+			extcap_end_application = true;
+			goto end;
+		}
+	}
+
+read_stderr:
+	/* read loop finished... maybe something wrong happened. Read from stderr */
+	while (!extcap_end_application && ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {
+		nbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 1);
+		if (nbytes < 0) {
+			ws_warning("Error reading from channel");
+			goto end;
+		}
+		if (fwrite(buffer, 1, nbytes, stderr) != (unsigned)nbytes) {
+			ws_warning("Error writing to stderr");
+			break;
+		}
+	}
+
+end:
+	if (ssh_channel_send_eof(channel) != SSH_OK) {
+		ws_warning("Error sending EOF in ssh channel");
+		ret = EXIT_FAILURE;
+	}
+	return ret;
+}
+
 void ssh_cleanup(ssh_session* sshs, ssh_channel* channel)
 {
+	if (INVALID_SOCKET != pipe_fds[0]) {
+		closesocket(pipe_fds[0]);
+	}
+	if (INVALID_SOCKET != pipe_fds[1]) {
+		closesocket(pipe_fds[1]);
+	}
 	if (*channel) {
+		ssh_channel_request_send_signal(*channel, "HUP");
 		ssh_channel_send_eof(*channel);
 		ssh_channel_close(*channel);
 		ssh_channel_free(*channel);
@@ -346,10 +632,29 @@ ssh_params_t* ssh_params_new(void)
 	return g_new0(ssh_params_t, 1);
 }
 
+#if HAVE_MEMSET_EXPLICIT
+# define ZERO_FILL_STRING(str) if (str) memset_explicit(str, 0, strlen(str))
+#elif _WIN32
+# define ZERO_FILL_STRING(str) if (str) SecureZeroMemory(str, strlen(str))
+#elif HAVE_EXPLICIT_BZERO
+# define ZERO_FILL_STRING(str) if (str) explicit_bzero(str, strlen(str))
+#elif HAVE_MEMSET_S
+# define ZERO_FILL_STRING(str) if (str) (void) memset_s(str, strlen(str), 0, strlen(str))
+#else // Something that will probably be optimized away.
+# define ZERO_FILL_STRING(str) if (str) memset(str, 0, strlen(str))
+#endif
+
 void ssh_params_free(ssh_params_t* ssh_params)
 {
-	if (!ssh_params)
+	if (!ssh_params) {
 		return;
+	}
+	ZERO_FILL_STRING(ssh_params->host);
+	ZERO_FILL_STRING(ssh_params->username);
+	ZERO_FILL_STRING(ssh_params->password);
+	ZERO_FILL_STRING(ssh_params->sshkey_path);
+	ZERO_FILL_STRING(ssh_params->sshkey_passphrase);
+	ZERO_FILL_STRING(ssh_params->proxycommand);
 	g_free(ssh_params->host);
 	g_free(ssh_params->username);
 	g_free(ssh_params->password);

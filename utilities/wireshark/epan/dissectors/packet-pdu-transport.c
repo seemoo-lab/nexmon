@@ -1,4 +1,4 @@
-/* packet-pdu_transport.c
+/* packet-pdu-transport.c
  * PDU Transport dissector for FDN and others.
  * By <lars.voelker@technica-engineering.de>
  * Copyright 2020-2025 Dr. Lars Völker
@@ -57,7 +57,6 @@ static dissector_handle_t pdu_transport_handle_tcp;
 
 static dissector_table_t subdissector_table;
 
-#define PDU_TRANSPORT_NAME "PDU Transport"
 #define PDU_TRANSPORT_HDR_LEN 8
 
 /* header field */
@@ -253,7 +252,7 @@ post_update_pdu_transport_ext_cfg_cb(void) {
 }
 
 static void
-lookup_extended_config(packet_info *pinfo _U_, int *size_of_id, int *size_of_len, uint32_t *default_id) {
+lookup_extended_config(packet_info *pinfo _U_, unsigned *size_of_id, unsigned *size_of_len, uint32_t *default_id) {
     /* Set backward compatible defaults, in case we find no entry */
     *size_of_id = 4;
     *size_of_len = 4;
@@ -310,12 +309,12 @@ dissect_pdu_transport(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     }
 
     col_set_str(pinfo->cinfo, COL_INFO, "PDU");
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, PDU_TRANSPORT_NAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "PDU Transport");
     proto_item *ti_top = proto_tree_add_item(tree, proto_pdu_transport, tvb, 0, -1, ENC_NA);
     proto_tree *pdu_transport_tree = proto_item_add_subtree(ti_top, ett_pdu_transport);
 
-    int size_of_id_field;
-    int size_of_len_field;
+    unsigned size_of_id_field;
+    unsigned size_of_len_field;
     uint32_t default_id;
 
     lookup_extended_config(pinfo, &size_of_id_field, &size_of_len_field, &default_id);
@@ -375,12 +374,11 @@ dissect_pdu_transport(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     tvbuff_t *subtvb = NULL;
     if ((int)length <= tmp) {
         proto_tree_add_item(pdu_transport_tree, hf_pdu_transport_payload, tvb, offset, length, ENC_NA);
-        subtvb = tvb_new_subset_length_caplen(tvb, offset, length, length);
     } else {
         proto_tree_add_item(pdu_transport_tree, hf_pdu_transport_payload, tvb, offset, tmp, ENC_NA);
-        subtvb = tvb_new_subset_length_caplen(tvb, offset, tmp, length);
         expert_add_info(pinfo, ti_top, &ei_pdu_transport_message_truncated);
     }
+    subtvb = tvb_new_subset_length(tvb, offset, length);
     if (subtvb != NULL) {
         pdu_transport_info_t pdu_t_info;
         pdu_t_info.id = pdu_id;
@@ -454,9 +452,9 @@ proto_register_pdu_transport(void) {
 
     static decode_as_t pdu_transport_da = { "pdu_transport", "pdu_transport.id", 1, 0, &pdu_transport_da_values,
                                             NULL, NULL, decode_as_default_populate_list,
-                                            decode_as_default_reset, decode_as_default_change, NULL };
+                                            decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
-    proto_pdu_transport = proto_register_protocol("PDU Transport Protocol", PDU_TRANSPORT_NAME, "pdu_transport");
+    proto_pdu_transport = proto_register_protocol("PDU Transport Protocol", "PDU Transport", "pdu_transport");
 
     proto_register_field_array(proto_pdu_transport, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));

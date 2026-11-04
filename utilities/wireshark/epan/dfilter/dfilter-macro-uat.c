@@ -71,7 +71,7 @@ static void* macro_uat_copy(void* dest, const void* orig, size_t len _U_) {
 		/*
 		 * The contents of the m->parts array contains pointers
 		 * into various sections of m->priv.  Since it's
-		 * an argv style array of ponters, this array is
+		 * an argv style array of pointers, this array is
 		 * actually one larger than the number of parts
 		 * to hold the final NULL terminator.
 		 *
@@ -148,19 +148,19 @@ static bool macro_name_chk(void *mp, const char *in_name, unsigned name_len,
 UAT_CSTRING_CB_DEF(macro,name,dfilter_macro_t)
 UAT_CSTRING_CB_DEF(macro,text,dfilter_macro_t)
 
-void convert_old_uat_file(void)
+void convert_old_uat_file(const char* app_env_var_prefix)
 {
 	uat_t *dfilter_macro_uat = NULL;
 	char *err = NULL;
 
 	/* Check if we need to convert an old dfilter_macro configuration file. */
-	char *new_path = get_persconffile_path(DMACROS_FILE_NAME, true);
+	char *new_path = get_persconffile_path(DMACROS_FILE_NAME, true, app_env_var_prefix);
 	if (file_exists(new_path)) {
 		/* Already converted. */
 		g_free(new_path);
 		return;
 	}
-	char *old_path = get_persconffile_path(DFILTER_MACRO_FILENAME, true);
+	char *old_path = get_persconffile_path(DFILTER_MACRO_FILENAME, true, app_env_var_prefix);
 	if (!file_exists(old_path)) {
 		/* Nothing to do.*/
 		g_free(new_path);
@@ -192,10 +192,10 @@ void convert_old_uat_file(void)
 				    NULL,
 				    uat_fields);
 
-	if (uat_load(dfilter_macro_uat, old_path, &err)) {
+	if (uat_load(dfilter_macro_uat, old_path, app_env_var_prefix, &err)) {
 		if (num_macros > 0) {
 			// We expect the new list to be empty.
-			filter_list_t *list = ws_filter_list_read(DMACROS_LIST);
+			filter_list_t *list = ws_filter_list_read(DMACROS_LIST, app_env_var_prefix);
 			for (unsigned i = 0; i < num_macros; i++) {
 				if (macros[i].usable) {
 					// Add only if it is a new entry
@@ -206,7 +206,7 @@ void convert_old_uat_file(void)
 					}
 				}
 			}
-			ws_filter_list_write(list);
+			ws_filter_list_write(list, app_env_var_prefix);
 			ws_filter_list_free(list);
 		}
 	}

@@ -20,9 +20,9 @@
 #include <epan/packet_info.h>
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
+#include <epan/credentials.h>
 
 #include <wsutil/cmdarg_err.h>
-#include <ui/tap-credentials.h>
 
 void register_tap_listener_credentials(void);
 

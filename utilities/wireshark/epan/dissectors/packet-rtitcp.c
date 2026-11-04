@@ -496,8 +496,7 @@ static uint16_t dissect_control_message(proto_tree *rtitcp_tree, tvbuff_t *tvb, 
     offset += 2;
 
     /* Take the length in bytes of the attributes list */
-    attributes_list_length = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
-    proto_tree_add_item(rtitcp_message, hf_rtitcp_attributes_list_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(rtitcp_message, hf_rtitcp_attributes_list_length, tvb, offset, 2, ENC_BIG_ENDIAN, &attributes_list_length);
     offset += 2;
 
     /* We expect now the RTI TCP Control Magic Cookie */
@@ -698,16 +697,21 @@ static int dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
     if (tvb_get_ntohl(tvb, offset) == RTPS_MAGIC_NUMBER) {
 
         /* IMPORTANT NOTE: We assume always one RTPS message per RTITCP message */
-        /* If the TCP layer has provided us with garbage at the end of the buffer,
-           process only the length specified by rtitcp_msg_length */
-        if (tvb_len > (uint32_t)(rtitcp_msg_length + header_length)) {
-            tvb_set_reported_length(tvb, (rtitcp_msg_length + header_length));
-        }
 
         /* When we encapsulate RTPS, packet length is given by the 30 less
            significant bits of the first four bytes */
         rtitcp_rtps_msg_length = tvb_get_uint32(tvb, 0, ENC_BIG_ENDIAN);
         rtitcp_rtps_msg_length = rtitcp_rtps_msg_length % NUMBER_2E30;
+
+        /* If the TCP layer has provided us with garbage at the end of the buffer,
+           process only the length specified by rtitcp_rtps_msg_length */
+        if (tvb_len > rtitcp_rtps_msg_length + header_length) {
+            tvb_set_reported_length(tvb, rtitcp_rtps_msg_length + header_length);
+        }
+
+        /* Update the tree item length with the correct 30-bit length */
+        proto_item_set_len(ti, rtitcp_rtps_msg_length + header_length);
+
         /* Add RTI TCP Data Message subtree and print header */
         is_data = true;
         rtitcp_message = print_header(rtitcp_tree, rtitcp_message, tvb, offset_header,
@@ -718,7 +722,7 @@ static int dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
 
         /* Take the payload and call the registered sub-dissectors. So far, RTPS */
         next_tvb = tvb_new_subset_remaining(tvb, offset);
-        dissector_try_heuristic(heur_subdissector_list, next_tvb, pinfo, tree, &hdtbl_entry, NULL);
+        (void) dissector_try_heuristic(heur_subdissector_list, next_tvb, pinfo, tree, &hdtbl_entry, NULL);
         return tvb_captured_length(tvb);
 
     } else {
@@ -728,21 +732,32 @@ static int dissect_rtitcp_common(tvbuff_t *tvb, packet_info *pinfo,
 
 static unsigned get_rtitcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
         int offset, void * data _U_) {
-    uint16_t plen;
+    uint32_t plen;
     uint16_t header_length = 8;
+
     /*
-    * Get the length of the RTITCP packet.
+    * Check for optional CRC after the 8-byte header.
     */
-    plen = tvb_get_uint16(tvb, offset+2, ENC_BIG_ENDIAN);
-    /*
-    * That length doesn't include the header field itself; add that in.
-    */
-    if (tvb_get_ntohl(tvb, offset+8) == RTITCP_CRC_MAGIC_NUMBER)
+    if (tvb_bytes_exist(tvb, offset+8, 4) &&
+        tvb_get_ntohl(tvb, offset+8) == RTITCP_CRC_MAGIC_NUMBER)
         header_length += 8;
-    /* We don't expect plen to be greater than 0xfff8 since adding the header
-     * exceeds the size */
-    if (plen >= 0xfff8)
-        return 1;
+
+    /*
+    * Determine PDU length. For RTPS data messages the length is encoded
+    * in the 30 least-significant bits of the first four bytes. For control
+    * messages it is a 16-bit field at bytes 2-3.  Distinguish the two by
+    * checking for the RTPS magic number right after the RTITCP header.
+    */
+    if (tvb_bytes_exist(tvb, offset + header_length, 4) &&
+        tvb_get_ntohl(tvb, offset + header_length) == RTPS_MAGIC_NUMBER) {
+        plen = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN) % NUMBER_2E30;
+    } else {
+        plen = tvb_get_uint16(tvb, offset+2, ENC_BIG_ENDIAN);
+        /* We don't expect plen to be greater than 0xfff8 since adding the
+         * header exceeds the size */
+        if (plen >= 0xfff8)
+            return 1;
+    }
 
     return plen + header_length;
 }
@@ -966,6 +981,7 @@ void
 proto_reg_handoff_rtitcp(void)
 {
     heur_dissector_add("tcp", dissect_rtitcp_heur, "RTI TCP Layer" , "rtitcp", proto_rtitcp, HEURISTIC_ENABLE);
+    heur_dissector_add("tls", dissect_rtitcp_heur, "RTI TCP over TLS", "rtitcp_tls", proto_rtitcp, HEURISTIC_ENABLE);
 }
 
 /*

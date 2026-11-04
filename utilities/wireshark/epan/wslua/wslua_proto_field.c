@@ -1569,14 +1569,31 @@ WSLUA_ATTRIBUTE_INTEGER_GETTER(ProtoField,mask);
 WSLUA_ATTRIBUTE_NAMED_STRING_GETTER(ProtoField,description,blob);
 
 WSLUA_METAMETHOD ProtoField__tostring(lua_State* L) {
-    /* Returns a string with info about a protofield (for debugging purposes). */
+    /* Returns a short label of the form
+       `ProtoField: <abbrev> type=<type> base=<base> name="<name>"`
+       and appends `mask=0x<mask>` when a non-zero mask is set. The
+       previous form leaked the raw value-string pointer (`%p`) and
+       dumped the whole description blob; both are now reachable
+       via the `description`/`vs` attributes for callers that need
+       them. The internal `hfid` is an implementation detail and is
+       exposed via the `hfid` attribute instead of the label. */
     ProtoField f = checkProtoField(L,1);
-    char* s = ws_strdup_printf("ProtoField(%i): %s %s %s %s %p %.16" PRIu64 "x %s",
-                                         f->hfid,f->name,f->abbrev,
-                                         ftenum_to_string(f->type),
-                                         base_to_string(f->base),
-                                         f->vs,f->mask,f->blob);
-    lua_pushstring(L,s);
+    char *s;
+    if (f->mask) {
+        s = ws_strdup_printf(
+            "ProtoField: %s type=%s base=%s name=\"%s\" mask=0x%" PRIx64,
+            f->abbrev,
+            ftenum_to_string(f->type), base_to_string(f->base),
+            f->name,
+            f->mask);
+    } else {
+        s = ws_strdup_printf(
+            "ProtoField: %s type=%s base=%s name=\"%s\"",
+            f->abbrev,
+            ftenum_to_string(f->type), base_to_string(f->base),
+            f->name);
+    }
+    lua_pushstring(L, s);
     g_free(s);
     return 1;
 }

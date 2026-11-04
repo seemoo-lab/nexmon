@@ -48,7 +48,7 @@ testlib.test(OTHER,"Proto.__call", not pcall(callFunc,Proto,"bar",nil))
 
 local dns = Proto("mydns","MyDNS Protocol")
 
-testlib.test(OTHER,"Proto.__tostring", tostring(dns) == "Proto: MYDNS")
+testlib.test(OTHER,"Proto.__tostring", tostring(dns) == 'Proto: mydns description="MyDNS Protocol"')
 
 ----------------------------------------
 -- multiple ways to do the same thing: create a protocol field (but not register it yet)

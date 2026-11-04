@@ -10,6 +10,7 @@
 #include <ui/qt/widgets/copy_from_profile_button.h>
 #include <ui/qt/models/profile_model.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 
 #include <QDir>
 #include <QFileInfo>
@@ -38,7 +39,11 @@ void CopyFromProfileButton::setFilename(QString filename)
     if (filename.length() <= 0)
         return;
 
-    ProfileModel model(this);
+    //Use the model object to pull the profile information
+    ProfileModel model;
+    ProfileSortModel sortModel;
+    sortModel.setSourceModel(&model);
+    sortModel.sort(0, Qt::DescendingOrder);
 
     QList<QAction *> global;
     QList<QAction *> user;
@@ -48,19 +53,32 @@ void CopyFromProfileButton::setFilename(QString filename)
         global << pa;
 
     if (! buttonMenu_)
-        buttonMenu_ = new QMenu();
+        buttonMenu_ = new QMenu(this);
 
     if (buttonMenu_->actions().count() > 0)
         buttonMenu_->clear();
 
-    for (int cnt = 0; cnt < model.rowCount(); cnt++)
+    const ProfileItem* currentProfile = model.getCurrentProfile();
+
+    //Use the raw profile information from the model
+    //(for performance and simpler looking code)
+    for (int i = 0; i < sortModel.rowCount(); ++i)
     {
-        QModelIndex idx = model.index(cnt, ProfileModel::COL_NAME);
-        QString profilePath = idx.data(ProfileModel::DATA_PATH).toString();
-        if (! idx.isValid() || profilePath.isEmpty())
+        //Go through the proxy model to get the profile information in the right order
+        QModelIndex proxyIndex = sortModel.index(i, 0);
+        QModelIndex sourceIndex = sortModel.mapToSource(proxyIndex);
+        const ProfileItem* profile = model.getProfile(sourceIndex.row());
+        if (profile == NULL)
+            continue;   //Sanity check
+
+        QString profilePath = profile->getProfilePath();
+        if (profilePath.isEmpty())
             continue;
 
-        if (! idx.data(ProfileModel::DATA_PATH_IS_NOT_DESCRIPTION).toBool() || idx.data(ProfileModel::DATA_IS_SELECTED).toBool())
+        //Ignore current profile
+        if ((currentProfile != NULL) &&
+            (profile->getName().compare(currentProfile->getName()) == 0) &&
+            profile->isGlobal() == currentProfile->isGlobal())
             continue;
 
         QDir profileDir(profilePath);
@@ -74,18 +92,22 @@ void CopyFromProfileButton::setFilename(QString filename)
         if (! config_file_exists_with_entries(fi.absoluteFilePath().toUtf8().constData(), '#'))
             continue;
 
-        QString name = idx.data().toString();
+        QFont profileFont;
+        QString name = profile->getName();
         pa = new QAction(name, this);
-        if (idx.data(ProfileModel::DATA_IS_DEFAULT).toBool())
+        if (profile->isDefault())
             buttonMenu_->addAction(pa);
-        else if (idx.data(ProfileModel::DATA_IS_GLOBAL).toBool())
+        else if (profile->isGlobal())
+        {
             global << pa;
+            profileFont.setItalic(true);
+        }
         else
             user << pa;
 
-        pa->setFont(idx.data(Qt::FontRole).value<QFont>());
+        pa->setFont(profileFont);
         pa->setProperty("profile_name", name);
-        pa->setProperty("profile_is_global", idx.data(ProfileModel::DATA_IS_GLOBAL));
+        pa->setProperty("profile_is_global", profile->isGlobal());
         pa->setProperty("profile_filename", fi.absoluteFilePath());
     }
 
@@ -110,7 +132,7 @@ QAction * CopyFromProfileButton::systemDefault(QString filename)
 {
     QAction * data = Q_NULLPTR;
 
-    QDir dataDir(get_datafile_dir());
+    QDir dataDir(get_datafile_dir(application_configuration_environment_prefix()));
     QString path = dataDir.filePath(filename);
     if (QFile::exists(path))
     {

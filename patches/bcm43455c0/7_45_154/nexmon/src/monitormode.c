@@ -71,7 +71,19 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 
 static void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+    if (!p || p->len <= PLCP_HDR_LEN)
+        return;
+
+    void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+    if ((p->data + PLCP_HDR_LEN) - head < sizeof(struct nexmon_radiotap_header))
+    {
+        printf("%s: no space for header\n", __FUNCTION__);
+        return;
+    }
+
     skb_pull(p, PLCP_HDR_LEN);
+
     struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) skb_push(p, sizeof(struct nexmon_radiotap_header));
 
     memset(frame, 0, sizeof(struct nexmon_radiotap_header));
@@ -86,8 +98,15 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
         | (1<<IEEE80211_RADIOTAP_CHANNEL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTNOISE);
+    static uint32_t fw_tsf_high = 0;
+    static uint32_t fw_last_mactime = 0;
+
+    if (fw_last_mactime >= 0x80000000 && sts->mactime < 0x80000000)
+        fw_tsf_high++;
+    fw_last_mactime = sts->mactime;
+
     frame->tsf.tsf_l = sts->mactime;
-    frame->tsf.tsf_h = 0;
+    frame->tsf.tsf_h = fw_tsf_high;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
 
@@ -114,32 +133,36 @@ void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     unsigned char monitor = wl->wlc->monitor & 0xFF;
 
+    if (monitor & MONITOR_DROP_FRM) {
+        if (monitor & MONITOR_LOG_ONLY)
+            printf("frame received (dropped)\n");
+        return;
+    }
+
     if (monitor & MONITOR_STS) {
+        void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+
+        if (p->data - head < sizeof(struct wl_rxsts))
+        {
+            printf("%s: no space for header\n", __FUNCTION__);
+            return;
+        }
+
         skb_push(p, sizeof(struct wl_rxsts));
         memcpy(p->data, sts, sizeof(struct wl_rxsts));
         p->fieldE |= 0x80u;
         wl_sendup_multiif(wl, p);
-    }
-
-    if (monitor & MONITOR_RADIOTAP) {
+    } else if (monitor & MONITOR_RADIOTAP) {
         wl_monitor_radiotap(wl, sts, p);
-    }
-
-    if (monitor & MONITOR_IEEE80211) {
+    } else if (monitor & MONITOR_IEEE80211) {
+        if (!p || p->len <= PLCP_HDR_LEN)
+            return;
         skb_pull(p, PLCP_HDR_LEN);
         p->fieldE |= 0x80u;
         wl_sendup_multiif(wl, p);
-    }
-
-    if (monitor & MONITOR_LOG_ONLY) {
+    } else if (monitor & MONITOR_LOG_ONLY) {
         printf("frame received\n");
-    }
-
-    if (monitor & MONITOR_DROP_FRM) {
-        ;
-    }
-
-    if (monitor & MONITOR_IPV4_UDP) {
+    } else if (monitor & MONITOR_IPV4_UDP) {
         printf("MONITOR over udp is not supported!\n");
     }
 }

@@ -387,9 +387,8 @@ dissect_wsmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                         hf_wsmp_WAVEid, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    wsmlength = tvb_get_ntohs( tvb, offset);
-    proto_tree_add_item(wsmp_tree,
-                        hf_wsmp_wsmlength, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(wsmp_tree,
+                                   hf_wsmp_wsmlength, tvb, offset, 2, ENC_BIG_ENDIAN, &wsmlength);
     offset += 2;
 
     if (elemenId == WSMP_S)

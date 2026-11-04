@@ -21,10 +21,7 @@
  * One day, if C++ library is allowed, we can create a protobuf-helper.cpp file, that invoking official protobuf C++ library directly,
  * to replace protobuf-helper.c. The packet-protobuf.c can keep unchanged.
  */
-
-#ifndef __PROTOBUF_HELPER_H__
-#define __PROTOBUF_HELPER_H__
-
+#pragma once
 #include <wsutil/value_string.h>
 
 #ifdef __cplusplus
@@ -55,7 +52,10 @@ extern "C" {
 
 #define PROTOBUF_MAX_FIELD_TYPE 18
 
+/** @brief Value string array for protobuf field types */
 VALUE_STRING_ENUM(protobuf_field_type);
+
+/** @brief Value string array for protobuf field types */
 VALUE_STRING_ARRAY_GLOBAL_DCL(protobuf_field_type);
 
 /* like google::protobuf::DescriptorPool of protobuf cpp library */
@@ -82,183 +82,451 @@ void
 pbw_reinit_DescriptorPool(PbwDescriptorPool** pool, const char** directories, pbw_report_error_cb_t error_cb);
 
 /* load a proto file, return 0 if success */
+/**
+ * @brief Loads a Protocol Buffers file into the descriptor pool.
+ *
+ * @param pool The descriptor pool to load the file into.
+ * @param filename The path to the Protocol Buffers file to load.
+ * @return int 0 on success, non-zero on failure.
+ */
 int
 pbw_load_proto_file(PbwDescriptorPool* pool, const char* filename);
 
 /* like DescriptorPool::FindMethodByName */
+/**
+ * @brief Finds a method descriptor by name in a descriptor pool.
+ *
+ * @param pool The descriptor pool to search within.
+ * @param name The name of the method descriptor to find.
+ * @return const PbwMethodDescriptor* A pointer to the found method descriptor, or NULL if not found.
+ */
 const PbwMethodDescriptor*
 pbw_DescriptorPool_FindMethodByName(const PbwDescriptorPool* pool, const char* name);
 
 /* like MethodDescriptor::name() */
+/**
+ * @brief Get the name of a Protocol Buffers method descriptor.
+ *
+ * @param method Pointer to the PbwMethodDescriptor structure.
+ * @return const char* The name of the method descriptor.
+ */
 const char*
 pbw_MethodDescriptor_name(const PbwMethodDescriptor* method);
 
 /* like MethodDescriptor::full_name() */
+/**
+ * @brief Get the full name of a method descriptor.
+ *
+ * @param method The method descriptor to query.
+ * @return const PbwDescriptor* The full name of the method.
+ */
 const char*
 pbw_MethodDescriptor_full_name(const PbwMethodDescriptor* method);
 
 /* like MethodDescriptor::input_type() */
+/**
+ * @brief Retrieves the input type descriptor for a method.
+ *
+ * @param method Pointer to the PbwMethodDescriptor object.
+ * @return const PbwDescriptor* Pointer to the input type descriptor, or NULL if not found.
+ */
 const PbwDescriptor*
 pbw_MethodDescriptor_input_type(const PbwMethodDescriptor* method);
 
 /* like MethodDescriptor::output_type() */
+/**
+ * @brief Retrieves the output type of a method descriptor.
+ *
+ * @param method The method descriptor to query.
+ * @return const PbwDescriptor* A pointer to the output descriptor of the method.
+ */
 const PbwDescriptor*
 pbw_MethodDescriptor_output_type(const PbwMethodDescriptor* method);
 
 /* like DescriptorPool::FindMessageTypeByName() */
+/**
+ * @brief Finds a message type by its name in a descriptor pool.
+ *
+ * @param pool The descriptor pool to search within.
+ * @param name The name of the message type to find.
+ * @return const PbwDescriptor* A pointer to the found message type, or NULL if not found.
+ */
 const PbwDescriptor*
 pbw_DescriptorPool_FindMessageTypeByName(const PbwDescriptorPool* pool, const char* name);
 
 /* like Descriptor::name() */
+/**
+ * @brief Retrieves the name of a Protocol Buffers descriptor.
+ *
+ * @param message Pointer to the PbwDescriptor structure.
+ * @return const char* The full name of the descriptor.
+ */
 const char*
 pbw_Descriptor_name(const PbwDescriptor* message);
 
 /* like Descriptor::full_name() */
+/**
+ * @brief Get the full name of a Protocol Buffers descriptor.
+ *
+ * @param message Pointer to the PbwDescriptor structure.
+ * @return const char* The full name of the descriptor.
+ */
 const char*
 pbw_Descriptor_full_name(const PbwDescriptor* message);
 
 /* like Descriptor::field_count() */
+/**
+ * @brief Get the count of fields in a Protocol Buffers descriptor.
+ *
+ * @param message Pointer to the Protocol Buffers descriptor.
+ * @return int The number of fields in the descriptor.
+ */
 int
 pbw_Descriptor_field_count(const PbwDescriptor* message);
 
 /* like Descriptor::field() */
+/**
+ * @brief Retrieves a field descriptor by index from a message descriptor.
+ *
+ * @param message The message descriptor to search within.
+ * @param field_index The index of the field descriptor to retrieve.
+ * @return const PbwFieldDescriptor* A pointer to the retrieved field descriptor, or NULL if not found.
+ */
 const PbwFieldDescriptor*
 pbw_Descriptor_field(const PbwDescriptor* message, int field_index);
 
 /* like Descriptor::FindFieldByNumber() */
+/**
+ * @brief Finds a field descriptor by its number in a message descriptor.
+ *
+ * @param message The message descriptor to search within.
+ * @param number The field number to find.
+ * @return const PbwFieldDescriptor* A pointer to the found field descriptor, or NULL if not found.
+ */
 const PbwFieldDescriptor*
 pbw_Descriptor_FindFieldByNumber(const PbwDescriptor* message, int number);
 
 /* like Descriptor::FindFieldByName() */
+/**
+ * @brief Finds a field descriptor by name in a message descriptor.
+ *
+ * @param message The message descriptor to search within.
+ * @param name The name of the field to find.
+ * @return const PbwFieldDescriptor* A pointer to the found field descriptor, or NULL if not found.
+ */
 const PbwFieldDescriptor*
 pbw_Descriptor_FindFieldByName(const PbwDescriptor* message, const char* name);
 
 /* like FieldDescriptor::full_name() */
+/**
+ * @brief Get the full name of a field descriptor.
+ *
+ * @param field The field descriptor to query.
+ * @return const char* The full name of the field.
+ */
 const char*
 pbw_FieldDescriptor_full_name(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::name() */
+/**
+ * @brief Retrieves the name of a Protocol Buffers field descriptor.
+ *
+ * @param field Pointer to the PbwFieldDescriptor structure.
+ * @return The name of the field as a string.
+ */
 const char*
 pbw_FieldDescriptor_name(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::number() */
+/**
+ * @brief Retrieves the number associated with a Protocol Buffers field descriptor.
+ *
+ * @param field Pointer to the Protocol Buffers field descriptor.
+ * @return The number of the field descriptor.
+ */
 int
 pbw_FieldDescriptor_number(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::type() */
+/**
+ * @brief Get the type of a Protocol Buffers field descriptor.
+ *
+ * @param field Pointer to the Protocol Buffers field descriptor.
+ * @return The type of the field descriptor.
+ */
 int
 pbw_FieldDescriptor_type(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::is_repeated() */
+/**
+ * @brief Check if a field descriptor is repeated.
+ *
+ * @param field The field descriptor to check.
+ * @return int Returns non-zero if the field is repeated, zero otherwise.
+ */
 int
 pbw_FieldDescriptor_is_repeated(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::is_packed() */
+/**
+ * @brief Checks if the given field descriptor is packed.
+ *
+ * @param field The field descriptor to check.
+ * @return true if the field is packed, false otherwise.
+ */
 int
 pbw_FieldDescriptor_is_packed(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::typeName() */
+/**
+ * @brief Retrieves the type name for a given field type.
+ *
+ * @param scope The memory allocator scope.
+ * @param field_type The field type to retrieve the type name for.
+ * @return const char* The type name of the field type.
+ */
 const char*
 pbw_FieldDescriptor_typeName(wmem_allocator_t* scope, int field_type);
 
 /* like FieldDescriptor::message_type() */
+/**
+ * @brief Retrieves the message type associated with a Protocol Buffers field descriptor.
+ *
+ * @param field Pointer to the PbwFieldDescriptor structure.
+ * @return const PbwDescriptor* Pointer to the message type descriptor, or NULL if not applicable.
+ */
 const PbwDescriptor*
 pbw_FieldDescriptor_message_type(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::enum_type() */
+/**
+ * @brief Get the enum type of a field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return const PbwEnumDescriptor* The enum type of the field, or NULL if not an enum field.
+ */
 const PbwEnumDescriptor*
 pbw_FieldDescriptor_enum_type(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::is_required() */
+/**
+ * @brief Check if a field descriptor is required.
+ *
+ * @param field The field descriptor to check.
+ * @return true if the field is required, false otherwise.
+ */
 bool
 pbw_FieldDescriptor_is_required(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::has_default_value().
  * Does this field have an explicitly-declared default value? */
+/**
+ * @brief Check if a field descriptor has a default value.
+ *
+ * @param field The field descriptor to check.
+ * @return int 1 if the field has a default value, 0 otherwise.
+ */
 bool
 pbw_FieldDescriptor_has_default_value(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_int32() */
+/**
+ * @brief Retrieves the default value for an int32 field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return int32_t The default value of the field.
+ */
 int32_t
 pbw_FieldDescriptor_default_value_int32(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_int64() */
+/**
+ * @brief Retrieves the default value for a field descriptor as an int64.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return int64_t The default value of the field.
+ */
 int64_t
 pbw_FieldDescriptor_default_value_int64(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_uint32() */
+/**
+ * @brief Retrieves the default value for a uint32 field descriptor.
+ *
+ * @param field Pointer to the PbwFieldDescriptor structure.
+ * @return The default value as a uint32_t.
+ */
 uint32_t
 pbw_FieldDescriptor_default_value_uint32(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_uint64() */
+/**
+ * @brief Get the default value for a uint64 field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return uint64_t The default value of the field.
+ */
 uint64_t
 pbw_FieldDescriptor_default_value_uint64(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_float() */
+/**
+ * @brief Retrieves the default value of a float field descriptor.
+ *
+ * @param field Pointer to the PbwFieldDescriptor structure.
+ * @return The default value as a float.
+ */
 float
 pbw_FieldDescriptor_default_value_float(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_double() */
+/**
+ * @brief Retrieves the default value of a double field descriptor.
+ *
+ * @param field The PbwFieldDescriptor for which to retrieve the default value.
+ * @return The default value as a double.
+ */
 double
 pbw_FieldDescriptor_default_value_double(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_bool() */
+/**
+ * @brief Get the default value of a boolean field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return bool The default value of the field.
+ */
 bool
 pbw_FieldDescriptor_default_value_bool(const PbwFieldDescriptor* field);
 
 /* like FieldDescriptor::default_value_string() */
+/**
+ * @brief Get the default value string of a protobuf field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @param size Pointer to an integer where the length of the default value string will be stored.
+ * @return const char* The default value string, or NULL if not applicable.
+ */
 const char*
 pbw_FieldDescriptor_default_value_string(const PbwFieldDescriptor* field, int* size);
 
 /* like FieldDescriptor::default_value_enum() */
+/**
+ * @brief Get the default value of an enum field descriptor.
+ *
+ * @param field The PbwFieldDescriptor to query.
+ * @return const PbwEnumValueDescriptor* The default value as an enum value descriptor.
+ */
 const PbwEnumValueDescriptor*
 pbw_FieldDescriptor_default_value_enum(const PbwFieldDescriptor* field);
 
 /* like EnumDescriptor::name() */
+/**
+ * @brief Get the name of an enum descriptor.
+ *
+ * @param anEnum The enum descriptor to get the name from.
+ * @return const char* The name of the enum descriptor.
+ */
 const char*
 pbw_EnumDescriptor_name(const PbwEnumDescriptor* anEnum);
 
 /* like EnumDescriptor::full_name() */
+/**
+ * @brief Get the full name of an enum descriptor.
+ *
+ * @param anEnum Pointer to the PbwEnumDescriptor structure.
+ * @return const char* The full name of the enum descriptor.
+ */
 const char*
 pbw_EnumDescriptor_full_name(const PbwEnumDescriptor* anEnum);
 
 /* like EnumDescriptor::value_count() */
+/**
+ * @brief Get the count of values in an enum descriptor.
+ *
+ * @param anEnum The enum descriptor to query.
+ * @return The number of values in the enum descriptor.
+ */
 int
 pbw_EnumDescriptor_value_count(const PbwEnumDescriptor* anEnum);
 
 /* like EnumDescriptor::value() */
+/**
+ * @brief Retrieves a PbwEnumValueDescriptor by its index.
+ *
+ * @param anEnum The PbwEnumDescriptor to search within.
+ * @param value_index The index of the value descriptor to retrieve.
+ * @return const PbwEnumValueDescriptor* A pointer to the retrieved value descriptor, or NULL if not found.
+ */
 const PbwEnumValueDescriptor*
 pbw_EnumDescriptor_value(const PbwEnumDescriptor* anEnum, int value_index);
 
 /* like EnumDescriptor::FindValueByNumber() */
+/**
+ * @brief Finds an enum value descriptor by its number.
+ *
+ * @param anEnum The enum descriptor to search within.
+ * @param number The number of the enum value to find.
+ * @return const PbwEnumValueDescriptor* A pointer to the found enum value descriptor, or NULL if not found.
+ */
 const PbwEnumValueDescriptor*
 pbw_EnumDescriptor_FindValueByNumber(const PbwEnumDescriptor* anEnum, int number);
 
 /* like EnumDescriptor::FindValueByName() */
+/**
+ * @brief Finds a value descriptor by name in an enum descriptor.
+ *
+ * @param anEnum The enum descriptor to search within.
+ * @param name The name of the value descriptor to find.
+ * @return const PbwEnumValueDescriptor* A pointer to the found value descriptor, or NULL if not found.
+ */
 const PbwEnumValueDescriptor*
 pbw_EnumDescriptor_FindValueByName(const PbwEnumDescriptor* anEnum, const char* name);
 
 /* like EnumValueDescriptor::name() */
+/**
+ * @brief Get the name of an EnumValueDescriptor.
+ *
+ * @param enumValue Pointer to the EnumValueDescriptor.
+ * @return const char* The name of the EnumValueDescriptor.
+ */
 const char*
 pbw_EnumValueDescriptor_name(const PbwEnumValueDescriptor* enumValue);
 
 /* like EnumValueDescriptor::full_name() */
+/**
+ * @brief Get the full name of an enum value descriptor.
+ *
+ * @param enumValue The enum value descriptor to query.
+ * @return const char* The full name of the enum value descriptor.
+ */
 const char*
 pbw_EnumValueDescriptor_full_name(const PbwEnumValueDescriptor* enumValue);
 
 /* like EnumValueDescriptor::number() */
+/**
+ * @brief Get the number associated with a Protocol Buffers enum value descriptor.
+ *
+ * @param enumValue Pointer to the Protocol Buffers enum value descriptor.
+ * @return The number associated with the enum value descriptor.
+ */
 int
 pbw_EnumValueDescriptor_number(const PbwEnumValueDescriptor* enumValue);
 
 /* visit all messages of this pool */
+/**
+ * @brief Iterates over all messages in a descriptor pool and applies a callback function to each.
+ *
+ * @param pool The descriptor pool containing the messages.
+ * @param cb Callback function to be applied to each message, taking a PbwDescriptor pointer and user data as arguments.
+ * @param userdata User data to be passed to the callback function.
+ */
 void
 pbw_foreach_message(const PbwDescriptorPool* pool, void (*cb)(const PbwDescriptor* message, void* userdata), void* userdata);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __PROTOBUF_HELPER_H__ */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

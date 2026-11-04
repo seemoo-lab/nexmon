@@ -90,6 +90,16 @@
         <file>stock_icons/16x16/x-colorize-packets.png</file>
         <file>stock_icons/16x16/x-colorize-packets@2x.png</file>
         <file>stock_icons/16x16/x-hide-ro.png</file>
+        <file>stock_icons/16x16/x-lua-debug-continue.template.png</file>
+        <file>stock_icons/16x16/x-lua-debug-continue.template@2x.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-in.template.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-in.template@2x.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-out.template.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-out.template@2x.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-over.template.png</file>
+        <file>stock_icons/16x16/x-lua-debug-step-over.template@2x.png</file>
+        <file>stock_icons/16x16/x-lua-debug-run-to-line.template.png</file>
+        <file>stock_icons/16x16/x-lua-debug-run-to-line.template@2x.png</file>
         <file>stock_icons/16x16/x-reset-layout_1.png</file>
         <file>stock_icons/16x16/x-reset-layout_1@2x.png</file>
         <file>stock_icons/16x16/x-reset-layout_2.png</file>
@@ -108,6 +118,8 @@
         <file>stock_icons/16x16/x-resize-columns@2x.png</file>
         <file>stock_icons/16x16/x-stay-last.png</file>
         <file>stock_icons/16x16/x-stay-last@2x.png</file>
+        <file>stock_icons/16x16/aggregation.png</file>
+        <file>stock_icons/16x16/aggregation@2x.png</file>
         <file>stock_icons/16x16/zoom-in.template.png</file>
         <file>stock_icons/16x16/zoom-in.template@2x.png</file>
         <file>stock_icons/16x16/zoom-original.template.png</file>
@@ -147,6 +159,16 @@
         <file>stock_icons/24x24/x-colorize-packets.png</file>
         <file>stock_icons/24x24/x-colorize-packets@2x.png</file>
         <file>stock_icons/24x24/x-hide-ro.png</file>
+        <file>stock_icons/24x24/x-lua-debug-continue.template.png</file>
+        <file>stock_icons/24x24/x-lua-debug-continue.template@2x.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-in.template.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-in.template@2x.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-out.template.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-out.template@2x.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-over.template.png</file>
+        <file>stock_icons/24x24/x-lua-debug-step-over.template@2x.png</file>
+        <file>stock_icons/24x24/x-lua-debug-run-to-line.template.png</file>
+        <file>stock_icons/24x24/x-lua-debug-run-to-line.template@2x.png</file>
         <file>stock_icons/24x24/x-reset-layout_1.png</file>
         <file>stock_icons/24x24/x-reset-layout_1@2x.png</file>
         <file>stock_icons/24x24/x-reset-layout_2.png</file>
@@ -163,6 +185,8 @@
         <file>stock_icons/24x24/x-resize-columns@2x.png</file>
         <file>stock_icons/24x24/x-stay-last.png</file>
         <file>stock_icons/24x24/x-stay-last@2x.png</file>
+        <file>stock_icons/24x24/aggregation.png</file>
+        <file>stock_icons/24x24/aggregation@2x.png</file>
         <file>stock_icons/24x24/zoom-in.template.png</file>
         <file>stock_icons/24x24/zoom-in.template@2x.png</file>
         <file>stock_icons/24x24/zoom-original.template.png</file>

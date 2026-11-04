@@ -50,9 +50,9 @@ void proto_reg_handoff_pdcp_nr(void);
 
 
 /* Initialize the protocol and registered fields. */
-int proto_pdcp_nr;
+static int proto_pdcp_nr;
 
-extern int proto_rlc_nr;
+static int proto_rlc_nr;
 
 /* Configuration (info known outside of PDU) */
 static int hf_pdcp_nr_configuration;
@@ -76,6 +76,7 @@ static int hf_pdcp_nr_large_cid_present;
 
 /* PDCP header fields */
 static int hf_pdcp_nr_control_plane_reserved;
+static int hf_pdcp_nr_reserved1;
 static int hf_pdcp_nr_reserved3;
 static int hf_pdcp_nr_seq_num_12;
 static int hf_pdcp_nr_reserved5;
@@ -87,8 +88,11 @@ static int hf_pdcp_nr_user_plane_data;
 static int hf_pdcp_nr_control_pdu_type;
 static int hf_pdcp_nr_fmc;
 static int hf_pdcp_nr_reserved4;
+static int hf_pdcp_nr_reserved3_2nd_nibble;
 static int hf_pdcp_nr_bitmap;
 static int hf_pdcp_nr_bitmap_byte;
+static int hf_pdcp_nr_fdc;
+static int hf_pdcp_nr_fe;
 
 /* Sequence Analysis */
 static int hf_pdcp_nr_sequence_analysis;
@@ -494,9 +498,13 @@ static const value_string rohc_profile_vals[] = {
     { 0,   NULL }
 };
 
+/* Table 6.3.8-1: PDU type */
 static const value_string control_pdu_type_vals[] = {
     { 0,   "PDCP status report" },
     { 1,   "Interspersed ROHC feedback packet" },
+    { 2,   "EHC feedback" },
+    { 3,   "UDC feedback" },
+    { 4,   "PDCP SN gap report" },
     { 0,   NULL }
 };
 
@@ -514,6 +522,12 @@ static const value_string ciphering_algorithm_vals[] = {
     { nea2,         "NEA2 (AES)" },
     { nea3,         "NEA3 (ZUC)" },
     { nea_disabled, "Ciphering disabled" },
+    { 0,   NULL }
+};
+
+static const value_string fe_vals[] = {
+    { 0,   "No Error" },
+    { 1,   "Checksum Error Notification" },
     { 0,   NULL }
 };
 
@@ -590,6 +604,16 @@ void set_pdcp_nr_proto_data(packet_info *pinfo, pdcp_nr_info *p_pdcp_nr_info)
     p_add_proto_data(wmem_file_scope(), pinfo, proto_pdcp_nr, 0, p_pdcp_nr_info);
 }
 
+
+static void add_reserved_field(proto_tree *tree, int hf, tvbuff_t *tvb, int offset, int len)
+{
+    uint32_t reserved;
+    proto_item *res_ti = proto_tree_add_item_ret_uint(tree, hf, tvb, offset, len, ENC_BIG_ENDIAN, &reserved);
+    if (reserved != 0) {
+        expert_add_info_format(NULL, res_ti, &ei_pdcp_nr_reserved_bits_not_zero,
+                               "reserved field saw value of 0x%x", reserved);
+    }
+}
 
 
 /**************************************************/
@@ -1289,8 +1313,8 @@ static void write_pdu_label_and_info(proto_item *pdu_ti,
 
 
 /* Show in the tree the config info attached to this frame, as generated fields */
-static void show_pdcp_config(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
-                             pdcp_nr_info *p_pdcp_info)
+static proto_item* show_pdcp_config(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
+                                    pdcp_nr_info *p_pdcp_info)
 {
     proto_item *ti;
     proto_tree *configuration_tree;
@@ -1428,8 +1452,55 @@ static void show_pdcp_config(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree
     col_append_fstr(pinfo->cinfo, COL_INFO, " %s: ",
                     val_to_str_const(p_pdcp_info->plane, pdcp_plane_vals, "Unknown"));
 
+    return configuration_ti;
 }
 
+/* Show in the tree the security info attached to this frame, as generated fields */
+static proto_tree* show_pdcp_security(packet_info *pinfo, tvbuff_t *tvb, proto_tree *pdcp_tree,
+                               pdcp_nr_security_info_t *pdu_security)
+{
+    proto_tree *security_tree = NULL;
+    proto_item *security_ti, *ti;
+
+    if (pdu_security != NULL) {
+        /* Create subtree */
+        security_ti = proto_tree_add_string_format(pdcp_tree,
+                                                   hf_pdcp_nr_security,
+                                                   tvb, 0, 0,
+                                                   "", "UE Security");
+        security_tree = proto_item_add_subtree(security_ti, ett_pdcp_security);
+        proto_item_set_generated(security_ti);
+
+        /* Setup frame */
+        if (pdu_security->algorithm_configuration_frame &&
+            pinfo->num > pdu_security->algorithm_configuration_frame) {
+            /* Must be set, and be seen before this frame */
+            /* XXX - Should we add it if it is this frame? The link isn't
+             * useful, but it probably doesn't hurt. */
+            ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_setup_frame,
+                                     tvb, 0, 0, pdu_security->algorithm_configuration_frame);
+            proto_item_set_generated(ti);
+        }
+
+        /* Ciphering - does not apply to the SecurityModeCommand itself */
+        /* XXX - Should we try to clarify (Expert Info Chat or some such)
+         * because this is a little confusing? */
+        ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_ciphering_algorithm,
+                                 tvb, 0, 0, pdu_security->ciphering);
+        proto_item_set_generated(ti);
+
+        /* Integrity - *does* apply to the SecurityModeCommand itself */
+        ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_integrity_algorithm,
+                                 tvb, 0, 0, pdu_security->integrity);
+        proto_item_set_generated(ti);
+
+        /* Show algorithms in security root */
+        proto_item_append_text(security_ti, " (ciphering=%s, integrity=%s)",
+                               val_to_str_const(pdu_security->ciphering, ciphering_algorithm_vals, "Unknown"),
+                               val_to_str_const(pdu_security->integrity, integrity_algorithm_vals, "Unknown"));
+    }
+    return security_tree;
+}
 
 /* Look for an RRC dissector for signalling data (using Bearer type and direction) */
 static dissector_handle_t lookup_rrc_dissector_handle(struct pdcp_nr_info  *p_pdcp_info, uint32_t data_length)
@@ -1708,8 +1779,8 @@ static tvbuff_t *decipher_payload(tvbuff_t *tvb, packet_info *pinfo, int *offset
 }
 
 /* Try to calculate digest to compare with that found in frame. */
-static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings, packet_info *pinfo, proto_tree *security_tree, tvbuff_t *header_tvb _U_,
-                                tvbuff_t *tvb _U_, int offset _U_, unsigned sdap_length _U_, bool *calculated)
+static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings, packet_info *pinfo, proto_tree *security_tree, tvbuff_t *header_tvb,
+                                tvbuff_t *tvb, int offset, unsigned sdap_length, bool *calculated)
 {
     *calculated = false;
 
@@ -1729,6 +1800,23 @@ static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings,
         return 0;
     }
 
+    /* XXX - Should we just add sdap_length to offset (here or before
+     * calling this?) The SDAP bytes don't seem to be consistently removed.
+     * XXX - We could calculate the digest if the *reported* length is long
+     * enough for a digest, but the *captured* length is only long enough
+     * for everything except the digest. We would then need to add the
+     * digest with PROTO_CHECKSUM_GENERATED later; as it is, we'll just
+     * throw an exception there later so it's not worth doing yet. */
+    unsigned message_length = tvb_captured_length_remaining(tvb, offset);
+    /* Can't calculate if there's not room for a digest */
+    if (message_length < 4 + sdap_length) {
+        return 0;
+    }
+    /* Remove the digest from the length. */
+    message_length -= 4;
+
+    unsigned header_length = tvb_reported_length(header_tvb);
+
     switch (pdu_security_settings->integrity) {
 
 #ifdef HAVE_SNOW3G
@@ -1736,8 +1824,6 @@ static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings,
             {
                 /* SNOW3G */
                 uint8_t *mac;
-                unsigned header_length = tvb_reported_length(header_tvb);
-                int message_length = tvb_captured_length_remaining(tvb, offset) - 4;
                 uint8_t *message_data = (uint8_t *)wmem_alloc0(pinfo->pool, header_length+message_length-sdap_length+4);
 
                 /* TS 33.401 B.2.2 */
@@ -1771,8 +1857,6 @@ static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings,
                 /* AES */
                 gcry_mac_hd_t mac_hd;
                 int gcrypt_err;
-                unsigned header_length;
-                int message_length;
                 uint8_t *message_data;
                 uint8_t mac[4];
                 size_t read_digest_length = 4;
@@ -1793,8 +1877,6 @@ static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings,
                 /* TS 33.501 D.4.3 defers to TS 33.401 B.2.3 */
 
                 /* Extract the encrypted data into a buffer */
-                header_length = tvb_reported_length(header_tvb);
-                message_length = tvb_captured_length_remaining(tvb, offset) - 4;
                 message_data = (uint8_t *)wmem_alloc0(pinfo->pool, 8+header_length+message_length-sdap_length);
                 message_data[0] = (pdu_security_settings->count & 0xff000000) >> 24;
                 message_data[1] = (pdu_security_settings->count & 0x00ff0000) >> 16;
@@ -1839,8 +1921,6 @@ static uint32_t calculate_digest(pdu_security_settings_t *pdu_security_settings,
             {
                 /* ZUC */
                 uint32_t mac;
-                unsigned header_length = tvb_reported_length(header_tvb);
-                int message_length = tvb_captured_length_remaining(tvb, offset) - 4;
                 uint8_t *message_data = (uint8_t *)wmem_alloc0(pinfo->pool, header_length+message_length-sdap_length+4);
 
                 /* Data is header bytes */
@@ -1909,7 +1989,7 @@ static bool dissect_pdcp_nr_heur(tvbuff_t *tvb, packet_info *pinfo,
        - tag for data
        - at least one byte of PDCP PDU payload.
       However, let attempted dissection show if there are any tags at all. */
-    int min_length = (int)(strlen(PDCP_NR_START_STRING) + 3); /* signature */
+    unsigned min_length = (unsigned)(strlen(PDCP_NR_START_STRING) + 3); /* signature */
 
     if (tvb_captured_length_remaining(tvb, offset) < min_length) {
         return false;
@@ -2052,7 +2132,7 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     pdcp_nr_security_info_t *current_security = NULL;   /* current security for this UE */
     pdcp_nr_security_info_t *pdu_security;              /* security in place for this PDU */
     proto_tree *security_tree = NULL;
-    proto_item *security_ti;
+    proto_item *configuration_ti = NULL;
     tvbuff_t *payload_tvb;
     pdu_security_settings_t  pdu_security_settings;
     bool payload_deciphered = false;
@@ -2128,7 +2208,7 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     /*****************************************************/
     /* Show configuration (attached packet) info in tree */
     if (pdcp_tree) {
-        show_pdcp_config(pinfo, tvb, pdcp_tree, p_pdcp_info);
+        configuration_ti = show_pdcp_config(pinfo, tvb, pdcp_tree, p_pdcp_info);
     }
 
     /* Show ROHC mode */
@@ -2177,43 +2257,11 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     pdu_security = (pdcp_nr_security_info_t*)wmem_map_lookup(pdcp_security_result_hash,
                                                              get_ueid_frame_hash_key(p_pdcp_info->ueid, pinfo->num, false));
     if (pdu_security != NULL) {
-        /* Create subtree */
-        security_ti = proto_tree_add_string_format(pdcp_tree,
-                                                   hf_pdcp_nr_security,
-                                                   tvb, 0, 0,
-                                                   "", "UE Security");
-        security_tree = proto_item_add_subtree(security_ti, ett_pdcp_security);
-        proto_item_set_generated(security_ti);
-
-        /* Setup frame */
-        if (pdu_security->algorithm_configuration_frame &&
-            pinfo->num > pdu_security->algorithm_configuration_frame) {
-            /* Must be set, and be seen before this frame */
-            ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_setup_frame,
-                                     tvb, 0, 0, pdu_security->algorithm_configuration_frame);
-            proto_item_set_generated(ti);
-        }
-
-        /* Ciphering */
-        ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_ciphering_algorithm,
-                                 tvb, 0, 0, pdu_security->ciphering);
-        proto_item_set_generated(ti);
-
-        /* Integrity */
-        ti = proto_tree_add_uint(security_tree, hf_pdcp_nr_security_integrity_algorithm,
-                                 tvb, 0, 0, pdu_security->integrity);
-        proto_item_set_generated(ti);
-
-        /* Show algorithms in security root */
-        proto_item_append_text(security_ti, " (ciphering=%s, integrity=%s)",
-                               val_to_str_const(pdu_security->ciphering, ciphering_algorithm_vals, "Unknown"),
-                               val_to_str_const(pdu_security->integrity, integrity_algorithm_vals, "Unknown"));
+        show_pdcp_security(pinfo, tvb, pdcp_tree, pdu_security);
 
         pdu_security_settings.ciphering = pdu_security->ciphering;
         pdu_security_settings.integrity = pdu_security->integrity;
     }
-
-
 
     /***********************************/
     /* Handle PDCP header              */
@@ -2221,7 +2269,6 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     uint32_t seqnum = 0;
     bool seqnum_set = false;
 
-    uint8_t first_byte = tvb_get_uint8(tvb, offset);
 
     /*****************************/
     /* Signalling plane messages */
@@ -2229,13 +2276,7 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         if (p_pdcp_info->seqnum_length != 0) {
             /* Always 12 bits SN */
             /* Verify 4 reserved bits are 0 */
-            uint8_t reserved = (first_byte & 0xf0) >> 4;
-            ti = proto_tree_add_item(pdcp_tree, hf_pdcp_nr_control_plane_reserved,
-                                     tvb, offset, 1, ENC_BIG_ENDIAN);
-            if (reserved != 0) {
-                expert_add_info_format(pinfo, ti, &ei_pdcp_nr_reserved_bits_not_zero,
-                                       "PDCP signalling header reserved bits not zero");
-            }
+            add_reserved_field(pdcp_tree, hf_pdcp_nr_control_plane_reserved, tvb, offset, 1);
 
             /* 12-bit sequence number */
             proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_seq_num_12, tvb, offset, 2, ENC_BIG_ENDIAN, &seqnum);
@@ -2261,20 +2302,12 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         if (is_user_plane) {
             /*****************************/
             /* User-plane Data           */
-            uint32_t reserved_value;
 
             /* Number of sequence number bits depends upon config */
             switch (p_pdcp_info->seqnum_length) {
             case PDCP_NR_SN_LENGTH_12_BITS:
                 /* 3 reserved bits */
-                ti = proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_reserved3, tvb, offset, 1, ENC_BIG_ENDIAN, &reserved_value);
-
-                /* Complain if not 0 */
-                if (reserved_value != 0) {
-                    expert_add_info_format(pinfo, ti, &ei_pdcp_nr_reserved_bits_not_zero,
-                                           "Reserved bits have value 0x%x - should be 0x0",
-                                           reserved_value);
-                }
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved3, tvb, offset, 1);
 
                 /* 12-bit sequence number */
                 proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_seq_num_12, tvb, offset, 2, ENC_BIG_ENDIAN, &seqnum);
@@ -2283,14 +2316,7 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 break;
             case PDCP_NR_SN_LENGTH_18_BITS:
                 /* 5 reserved bits */
-                ti = proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_reserved5, tvb, offset, 1, ENC_BIG_ENDIAN, &reserved_value);
-
-                /* Complain if not 0 */
-                if (reserved_value != 0) {
-                    expert_add_info_format(pinfo, ti, &ei_pdcp_nr_reserved_bits_not_zero,
-                                           "Reserved bits have value 0x%x - should be 0x0",
-                                           reserved_value);
-                }
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved5, tvb, offset, 1);
 
                 /* 18-bit sequence number */
                 proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_seq_num_18, tvb, offset, 3, ENC_BIG_ENDIAN, &seqnum);
@@ -2310,18 +2336,19 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             uint32_t control_pdu_type;
             proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_control_pdu_type, tvb, offset, 1, ENC_BIG_ENDIAN, &control_pdu_type);
 
+            uint32_t reserved_value;
+            unsigned   i, j, l;
+            uint32_t len, bit_offset;
+            proto_tree *bitmap_tree;
+            proto_item *bitmap_ti = NULL;
+            char   *buff = NULL;
+#define BUFF_SIZE 89
+
             switch (control_pdu_type) {
             case 0:    /* PDCP status report */
             {
                 uint32_t fmc;
                 unsigned   not_received = 0;
-                unsigned   i, j, l;
-                uint32_t len, bit_offset;
-                proto_tree *bitmap_tree;
-                proto_item *bitmap_ti = NULL;
-                char   *buff = NULL;
-#define BUFF_SIZE 89
-                uint32_t reserved_value;
 
                 /* 4 bits reserved */
                 ti = proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_reserved4, tvb, offset, 1, ENC_BIG_ENDIAN, &reserved_value);
@@ -2338,13 +2365,13 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_fmc, tvb, offset, 4, ENC_BIG_ENDIAN, &fmc);
                 offset += 4;
 
-
                 /* Bitmap tree */
                 if (tvb_reported_length_remaining(tvb, offset) > 0) {
                     bitmap_ti = proto_tree_add_item(pdcp_tree, hf_pdcp_nr_bitmap, tvb,
                                                     offset, -1, ENC_NA);
                     bitmap_tree = proto_item_add_subtree(bitmap_ti, ett_pdcp_report_bitmap);
 
+                    /* Allocate buffer */
                     buff = (char *)wmem_alloc(pinfo->pool, BUFF_SIZE);
                     len = tvb_reported_length_remaining(tvb, offset);
                     bit_offset = offset<<3;
@@ -2352,13 +2379,16 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                     /* For each byte... */
                     for (i=0; i<len; i++) {
                         uint8_t bits = tvb_get_bits8(tvb, bit_offset, 8);
+                        /* For each bit in this byte */
                         for (l=0, j=0; l<8; l++) {
                             if ((bits << l) & 0x80) {
+                                /* Set, so write COUNT into buffer */
                                 if (bitmap_tree) {
                                     /* TODO: better to do mod and show as SN instead? */
                                     j += snprintf(&buff[j], BUFF_SIZE-j, "%10u,", (unsigned)(fmc+(8*i)+l+1));
                                 }
                             } else {
+                                /* Not set, so write spaces instead */
                                 if (bitmap_tree) {
                                     j += (unsigned)g_strlcpy(&buff[j], "          ,", BUFF_SIZE-j);
                                 }
@@ -2366,6 +2396,7 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                             }
                         }
                         if (bitmap_tree) {
+                            /* Add this byte of data decorated with corresponding buffer */
                             proto_tree_add_uint_format(bitmap_tree, hf_pdcp_nr_bitmap_byte, tvb, bit_offset/8, 1, bits, "%s", buff);
                         }
                         bit_offset += 8;
@@ -2380,9 +2411,94 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
             }
                 return 1;
 
-            case 1:     /* ROHC Feedback */
+            case 1:     /* Interspersed ROHC Feedback */
+                /* 4 bits reserved */
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved4, tvb, offset, 1);
                 offset++;
-                break;  /* Drop-through to dissect feedback */
+
+                /* TODO: Interspersed ROHC feedback (variable length).  Could call dissect_rohc_feedback_data() using p_pdcp_info->rohc? */
+                break;
+
+            case 2:     /* EHC feedback */
+                /* 4 bits reserved */
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved4, tvb, offset, 1);
+                offset++;
+
+                /* EHC feedback */
+                /* Reserved (1 bit) */
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved1, tvb, offset, 1);
+                /* CID (7 or 15 bits, depending upon configuration - p_pdcp_info->rohc.cid_inclusion_info, p_pdcp_info->rohc.large_cid_present) */
+                return 1;
+
+            case 3:     /* UDC feedback */
+                /* FE (1 bit) */
+                proto_tree_add_item(pdcp_tree, hf_pdcp_nr_fe, tvb, offset, 1, ENC_BIG_ENDIAN);
+
+                /* 3 bits reserved */
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved3_2nd_nibble, tvb, offset, 1);
+                offset++;
+                return 1;
+
+            case 4:     /* PDCP SN gap report */
+            {
+                /* 4 bits reserved */
+                add_reserved_field(pdcp_tree, hf_pdcp_nr_reserved4, tvb, offset, 1);
+                offset++;
+
+                /* FDC (First Discarded COUNT) */
+                uint32_t fdc;
+                proto_tree_add_item_ret_uint(pdcp_tree, hf_pdcp_nr_fdc, tvb, offset, 4, ENC_BIG_ENDIAN, &fdc);
+                offset += 4;
+
+                uint32_t discarded = 0;
+
+                /* Discard Bitmap (optional, variable sized) */
+                /* Bitmap tree */
+                if (tvb_reported_length_remaining(tvb, offset) > 0) {
+                    bitmap_ti = proto_tree_add_item(pdcp_tree, hf_pdcp_nr_bitmap, tvb,
+                                                    offset, -1, ENC_NA);
+                    bitmap_tree = proto_item_add_subtree(bitmap_ti, ett_pdcp_report_bitmap);
+
+                    /* Allocate buffer */
+                    buff = (char *)wmem_alloc(pinfo->pool, BUFF_SIZE);
+                    len = tvb_reported_length_remaining(tvb, offset);
+                    bit_offset = offset<<3;
+
+                    /* For each byte... */
+                    for (i=0; i<len; i++) {
+                        uint8_t bits = tvb_get_bits8(tvb, bit_offset, 8);
+                        /* For each bit in this byte */
+                        for (l=0, j=0; l<8; l++) {
+                            if ((bits << l) & 0x80) {
+                                /* Set, so write COUNT into buffer */
+                                if (bitmap_tree) {
+                                    /* TODO: better to do mod and show as SN instead? */
+                                    j += snprintf(&buff[j], BUFF_SIZE-j, "%10u,", (unsigned)(fdc+(8*i)+l+1));
+                                }
+                            } else {
+                                /* Not set, so write spaces instead */
+                                if (bitmap_tree) {
+                                    j += (unsigned)g_strlcpy(&buff[j], "          ,", BUFF_SIZE-j);
+                                }
+                                discarded++;
+                            }
+                        }
+                        if (bitmap_tree) {
+                            /* Add this byte of data decorated with corresponding buffer */
+                            proto_tree_add_uint_format(bitmap_tree, hf_pdcp_nr_bitmap_byte, tvb, bit_offset/8, 1, bits, "%s", buff);
+                        }
+                        bit_offset += 8;
+                    }
+                }
+
+                if (bitmap_ti != NULL) {
+                    proto_item_append_text(bitmap_ti, " (%u SNs discarded)", discarded);
+                }
+                write_pdu_label_and_info(root_ti, pinfo, " Discard Bitmap (fdc=%u) discarded=%u",
+                                         fdc, discarded);
+
+                return 1;
+            }
             }
         }
     }
@@ -2469,16 +2585,9 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     }
 
     proto_item *mac_ti = NULL;
-    uint32_t calculated_digest = 0;
-    bool digest_was_calculated = false;
 
-    /* Try to calculate digest so we can check it */
-    if (global_pdcp_check_integrity && p_pdcp_info->maci_present) {
-        calculated_digest = calculate_digest(&pdu_security_settings, pinfo, security_tree,
-                                             tvb_new_subset_length(tvb, 0, header_length),
-                                             payload_tvb,
-                                             offset, sdap_length, &digest_was_calculated);
-    }
+    /* Save the payload offset so we can calculate the digest later */
+    int payload_offset = offset;
 
     if (p_pdcp_info->plane == NR_SIGNALING_PLANE) {
         /* Compute payload length (no MAC on common control Bearers) */
@@ -2633,8 +2742,51 @@ static int dissect_pdcp_nr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         }
     }
 
+    /* 3GPP TS 38.323 5.9 Integrity protection and verification
+     * "NOTE 1: As the RRC message which activates the integrity protection
+     * function is itself integrity protected with the configuration included
+     * in this RRC message, this message needs first be decoded by RRC before
+     * the integrity protection verification could be performed for the PDU in
+     * which the message was received."
+     *
+     * 3GPP TS 38.331 5.3.4.3 Reception of the SecurityModeCommand by the UE
+     * "integrity protection shall be applied to all subsequent messages
+     * received and sent by the UE, including the SecurityModeComplete message;
+     * ... ciphering shall be applied to all subsequent messages received and
+     * sent by the UE, except for the SecurityModeComplete message which is sent
+     * unciphered;"
+     *
+     * So if we didn't already have the security settings, check again now
+     * if the payload is a RRC SecurityModeCommand and integrity protection
+     * is present. Luckily the message that tells you the cipher isn't ciphered
+     * itself. This makes a difference on the first pass.
+     */
+    if (pdu_security == NULL) {
+        pdu_security = (pdcp_nr_security_info_t*)wmem_map_lookup(pdcp_security_result_hash,
+                                                                 get_ueid_frame_hash_key(p_pdcp_info->ueid, pinfo->num, false));
+        if (pdu_security != NULL) {
+            security_tree = show_pdcp_security(pinfo, tvb, pdcp_tree, pdu_security);
+            proto_tree_move_item(pdcp_tree, configuration_ti, proto_tree_get_parent(security_tree));
+
+            //pdu_security_settings.ciphering = pdu_security->ciphering;
+            pdu_security_settings.integrity = pdu_security->integrity;
+        }
+    }
+
     /* MAC */
     if (p_pdcp_info->maci_present) {
+        uint32_t calculated_digest = 0;
+        bool digest_was_calculated = false;
+
+        /* Try to calculate digest so we can check it */
+        if (global_pdcp_check_integrity) {
+            calculated_digest = calculate_digest(&pdu_security_settings, pinfo, security_tree,
+                                                 tvb_new_subset_length(tvb, 0, header_length),
+                                                 payload_tvb, payload_offset,
+                                                 payload_deciphered ? 0 : sdap_length,
+                                                 &digest_was_calculated);
+        }
+
         /* Last 4 bytes are MAC */
         int mac_offset = tvb_reported_length(payload_tvb)-4;
         uint32_t mac;
@@ -2779,6 +2931,12 @@ void proto_register_pdcp_nr(void)
               NULL, HFILL
             }
         },
+        { &hf_pdcp_nr_reserved1,
+            { "Reserved",
+              "pdcp-nr.reserved1", FT_UINT8, BASE_HEX, NULL, 0x80,
+              "1 reserved bit", HFILL
+            }
+        },
         { &hf_pdcp_nr_reserved3,
             { "Reserved",
               "pdcp-nr.reserved3", FT_UINT8, BASE_HEX, NULL, 0x70,
@@ -2845,6 +3003,12 @@ void proto_register_pdcp_nr(void)
               "4 reserved bits", HFILL
             }
         },
+        { &hf_pdcp_nr_reserved3_2nd_nibble,
+            { "Reserved",
+              "pdcp-nr.reserved3", FT_UINT8, BASE_HEX, NULL, 0x07,
+              "3 reserved bits", HFILL
+            }
+        },
         { &hf_pdcp_nr_bitmap,
             { "Bitmap",
               "pdcp-nr.bitmap", FT_NONE, BASE_NONE, NULL, 0x0,
@@ -2855,6 +3019,18 @@ void proto_register_pdcp_nr(void)
             { "Bitmap byte",
               "pdcp-nr.bitmap.byte", FT_UINT8, BASE_HEX, NULL, 0x0,
               NULL, HFILL
+            }
+        },
+        { &hf_pdcp_nr_fdc,
+            { "FDC",
+              "pdcp-nr.fdc", FT_UINT32, BASE_DEC, NULL, 0x0,
+              "First discarded Count", HFILL
+            }
+        },
+        { &hf_pdcp_nr_fe,
+            { "FE",
+              "pdcp-nr.fe", FT_UINT8, BASE_DEC, VALS(fe_vals), 0x08,
+              "Whether checksum error detected", HFILL
             }
         },
 
@@ -3207,6 +3383,8 @@ void proto_reg_handoff_pdcp_nr(void)
     nr_rrc_bcch_dl_sch     = find_dissector_add_dependency("nr-rrc.bcch.dl.sch", proto_pdcp_nr);
     nr_rrc_ul_dcch         = find_dissector_add_dependency("nr-rrc.ul.dcch", proto_pdcp_nr);
     nr_rrc_dl_dcch         = find_dissector_add_dependency("nr-rrc.dl.dcch", proto_pdcp_nr);
+
+    proto_rlc_nr = proto_get_id_by_filter_name("rlc-nr");
 }
 
 /*

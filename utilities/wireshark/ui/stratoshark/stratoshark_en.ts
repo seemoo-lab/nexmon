@@ -3415,7 +3415,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>IOGraphDialog</name>
+    <name>StratosharkIOGraphDialog</name>
     <message>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
@@ -5918,7 +5918,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>MainStatusBar</name>
+    <name>StratosharkMainStatusBar</name>
     <message>
         <source>Ready to load or capture</source>
         <translation type="unfinished"></translation>
@@ -13422,7 +13422,7 @@ For example, use 1 hour to have a new file created every hour on the hour.</sour
     </message>
 </context>
 <context>
-    <name>WelcomePage</name>
+    <name>StratosharkWelcomePage</name>
     <message>
         <source>Form</source>
         <translation type="unfinished"></translation>

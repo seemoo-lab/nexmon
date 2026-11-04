@@ -18,9 +18,6 @@
 #endif /* !_WIN32 */
 
 #include <snf.h>
-#if SNF_VERSION_API >= 0x0003
-#define SNF_HAVE_INJECT_API
-#endif
 
 #include "pcap-int.h"
 #include "pcap-snf.h"
@@ -31,9 +28,7 @@
 struct pcap_snf {
 	snf_handle_t snf_handle; /* opaque device handle */
 	snf_ring_t   snf_ring;   /* opaque device ring handle */
-#ifdef SNF_HAVE_INJECT_API
 	snf_inject_t snf_inj;    /* inject handle, if inject is used */
-#endif
 	int          snf_timeout;
 	int          snf_boardnum;
 };
@@ -55,7 +50,7 @@ snf_pcap_stats(pcap_t *p, struct pcap_stat *ps)
 	if ((rc = snf_ring_getstats(snfps->snf_ring, &stats))) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 		    rc, "snf_get_stats");
-		return -1;
+		return PCAP_ERROR;
 	}
 	ps->ps_recv = stats.ring_pkt_recv + stats.ring_pkt_overflow;
 	ps->ps_drop = stats.ring_pkt_overflow;
@@ -68,10 +63,8 @@ snf_platform_cleanup(pcap_t *p)
 {
 	struct pcap_snf *ps = p->priv;
 
-#ifdef SNF_HAVE_INJECT_API
 	if (ps->snf_inj)
 		snf_inject_close(ps->snf_inj);
-#endif
 	snf_ring_close(ps->snf_ring);
 	snf_close(ps->snf_handle);
 	pcapint_cleanup_live_common(p);
@@ -109,7 +102,7 @@ snf_timestamp_to_timeval(const int64_t ts_nanosec, const int tstamp_precision)
 {
 	struct timeval tv;
 	long tv_nsec;
-        const static struct timeval zero_timeval;
+	static const struct timeval zero_timeval;
 
         if (ts_nanosec == 0)
                 return zero_timeval;
@@ -131,12 +124,9 @@ snf_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 {
 	struct pcap_snf *ps = p->priv;
 	struct pcap_pkthdr hdr;
-	int i, flags, err, caplen, n;
+	int err, caplen, n;
 	struct snf_recv_req req;
-	int nonblock, timeout;
-
-	if (!p)
-		return -1;
+	int timeout;
 
 	/*
 	 * This can conceivably process more than INT_MAX packets,
@@ -162,7 +152,7 @@ snf_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		if (p->break_loop) {
 			if (n == 0) {
 				p->break_loop = 0;
-				return (-2);
+				return PCAP_ERROR_BREAK;
 			} else {
 				return (n);
 			}
@@ -180,8 +170,8 @@ snf_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			}
 			else {
 				pcapint_fmt_errmsg_for_errno(p->errbuf,
-				    PCAP_ERRBUF_SIZE, err, "snf_read");
-				return -1;
+				    PCAP_ERRBUF_SIZE, err, "%s", __func__);
+				return PCAP_ERROR;
 			}
 		}
 
@@ -217,9 +207,8 @@ snf_read(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 }
 
 static int
-snf_inject(pcap_t *p, const void *buf _U_, int size _U_)
+snf_inject(pcap_t *p, const void *buf, int size)
 {
-#ifdef SNF_HAVE_INJECT_API
 	struct pcap_snf *ps = p->priv;
 	int rc;
 	if (ps->snf_inj == NULL) {
@@ -227,7 +216,7 @@ snf_inject(pcap_t *p, const void *buf _U_, int size _U_)
 		if (rc) {
 			pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 			    rc, "snf_inject_open");
-			return (-1);
+			return PCAP_ERROR;
 		}
 	}
 
@@ -238,28 +227,17 @@ snf_inject(pcap_t *p, const void *buf _U_, int size _U_)
 	else {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 		    rc, "snf_inject_send");
-		return (-1);
+		return PCAP_ERROR;
 	}
-#else
-	pcapint_strlcpy(p->errbuf, "Sending packets isn't supported with this snf version",
-	    PCAP_ERRBUF_SIZE);
-	return (-1);
-#endif
 }
 
 static int
 snf_activate(pcap_t* p)
 {
 	struct pcap_snf *ps = p->priv;
-	char *device = p->opt.device;
 	const char *nr = NULL;
 	int err;
 	int flags = -1, ring_id = -1;
-
-	if (device == NULL) {
-		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "device is NULL");
-		return -1;
-	}
 
 	/* In Libpcap, we set pshared by default if NUM_RINGS is set to > 1.
 	 * Since libpcap isn't thread-safe */
@@ -286,7 +264,7 @@ snf_activate(pcap_t* p)
 	if (err != 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 		    err, "snf_open failed");
-		return -1;
+		return PCAP_ERROR;
 	}
 
 	if ((nr = getenv("SNF_PCAP_RING_ID")) && *nr) {
@@ -296,7 +274,7 @@ snf_activate(pcap_t* p)
 	if (err != 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 		    err, "snf_ring_open_id(ring=%d) failed", ring_id);
-		return -1;
+		return PCAP_ERROR;
 	}
 
 	/*
@@ -319,7 +297,7 @@ snf_activate(pcap_t* p)
 	if (err != 0) {
 		pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 		    err, "snf_start failed");
-		return -1;
+		return PCAP_ERROR;
 	}
 
 	/*
@@ -338,9 +316,7 @@ snf_activate(pcap_t* p)
 	p->setnonblock_op = snf_setnonblock;
 	p->stats_op = snf_pcap_stats;
 	p->cleanup_op = snf_platform_cleanup;
-#ifdef SNF_HAVE_INJECT_API
 	ps->snf_inj = NULL;
-#endif
 	return 0;
 }
 
@@ -355,28 +331,28 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 	struct snf_ifaddrs *ifaddrs, *ifa;
 	char name[MAX_DESC_LENGTH];
 	char desc[MAX_DESC_LENGTH];
-	int ret, allports = 0, merge = 0;
+	int allports = 0, merge = 0;
 	const char *nr = NULL;
 
 	if (snf_init(SNF_VERSION_API)) {
-		(void)snprintf(errbuf, PCAP_ERRBUF_SIZE,
-		    "snf_getifaddrs: snf_init failed");
-		return (-1);
+		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "snf_init");
+		return PCAP_ERROR;
 	}
 
 	if (snf_getifaddrs(&ifaddrs) || ifaddrs == NULL)
 	{
 		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "snf_getifaddrs");
-		return (-1);
+		return PCAP_ERROR;
 	}
 	if ((nr = getenv("SNF_FLAGS")) && *nr) {
 		errno = 0;
 		merge = strtol(nr, NULL, 0);
 		if (errno) {
 			(void)snprintf(errbuf, PCAP_ERRBUF_SIZE,
-				"snf_getifaddrs: SNF_FLAGS is not a valid number");
-			return (-1);
+				"%s: SNF_FLAGS is not a valid number", __func__);
+			return PCAP_ERROR;
 		}
 		merge = merge & SNF_F_AGGREGATE_PORTMASK;
 	}
@@ -386,7 +362,7 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 		 * Myricom SNF adapter ports may appear as regular
 		 * network interfaces, which would already have been
 		 * added to the list of adapters by pcapint_platform_finddevs()
-		 * if this isn't an SNF-only version of libpcap.
+		 * regardless of whether this build is SNF-only or not.
 		 *
 		 * Our create routine intercepts pcap_create() calls for
 		 * those interfaces and arranges that they will be
@@ -406,15 +382,13 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 		 * Generate the description string.  If port aggregation
 		 * is set, use 2^{port number} as the unit number,
 		 * rather than {port number}.
-		 *
-		 * XXX - do entries in this list have IP addresses for
-		 * the port?  If so, should we add them to the
-		 * entry for the device, if they're not already in the
-		 * list of IP addresses for the device?
 		 */
-		(void)snprintf(desc,MAX_DESC_LENGTH,"Myricom %ssnf%d",
-			merge ? "Merge Bitmask Port " : "",
-			merge ? 1 << ifa->snf_ifa_portnum : ifa->snf_ifa_portnum);
+		(void)snprintf(desc, MAX_DESC_LENGTH,
+		    "Myricom %ssnf%u, Rx rings: %u, Tx handles: %u",
+		    merge ? "Merge Bitmask Port " : "",
+		    merge ? 1U << ifa->snf_ifa_portnum : ifa->snf_ifa_portnum,
+		    ifa->snf_ifa_maxrings,
+		    ifa->snf_ifa_maxinject);
 		/*
 		 * Add the port to the bitmask.
 		 */
@@ -428,6 +402,14 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 		if (dev != NULL) {
 			/*
 			 * Yes.  Update its description.
+			 *
+			 * This is the expected and the most likely result.
+			 * In this case the device's .flags already has the
+			 * PCAP_IF_UP and PCAP_IF_RUNNING bits mapped from the
+			 * regular network interface flags, as well as the
+			 * PCAP_IF_CONNECTION_STATUS bits mapped from the
+			 * current struct snf_ifaddrs; .addresses has already
+			 * been populated.
 			 */
 			char *desc_str;
 
@@ -435,8 +417,8 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 			if (desc_str == NULL) {
 				pcapint_fmt_errmsg_for_errno(errbuf,
 				    PCAP_ERRBUF_SIZE, errno,
-				    "snf_findalldevs strdup");
-				return -1;
+				    "%s strdup", __func__);
+				return PCAP_ERROR;
 			}
 			free(dev->description);
 			dev->description = desc_str;
@@ -444,21 +426,25 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 			/*
 			 * No.  Add an entry for it.
 			 *
-			 * XXX - is there a notion of "up" or "running",
-			 * and can we determine whether something's
-			 * plugged into the adapter and set
-			 * PCAP_IF_CONNECTION_STATUS_CONNECTED or
-			 * PCAP_IF_CONNECTION_STATUS_DISCONNECTED?
+			 * Possibly a race condition.  In this case the device
+			 * will still work, but will not have addresses, also
+			 * snf_ifaddrs includes the operational (i.e. link
+			 * detect), but not the administrative state of the
+			 * port.
 			 */
-			dev = pcapint_add_dev(devlistp, ifa->snf_ifa_name, 0, desc,
+			const bpf_u_int32 flags =
+			    ifa->snf_ifa_link_state == SNF_LINK_UP ?
+			    PCAP_IF_CONNECTION_STATUS_CONNECTED :
+			    PCAP_IF_CONNECTION_STATUS_DISCONNECTED;
+			dev = pcapint_add_dev(devlistp, ifa->snf_ifa_name, flags, desc,
 			    errbuf);
 			if (dev == NULL)
-				return -1;
+				return PCAP_ERROR;
 #ifdef _WIN32
 			/*
 			 * On Windows, fill in IP# from device name
 			 */
-                        ret = inet_pton(AF_INET, dev->name, &addr.sin_addr);
+			int ret = inet_pton(AF_INET, dev->name, &addr.sin_addr);
                         if (ret == 1) {
 				/*
 				 * Successful conversion of device name
@@ -467,17 +453,17 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 				addr.sin_family = AF_INET;
 				if (pcapint_add_addr_to_dev(dev, &addr, sizeof(addr),
 				    NULL, 0, NULL, 0, NULL, 0, errbuf) == -1)
-					return -1;
+					return PCAP_ERROR;
                         } else if (ret == -1) {
 				/*
 				 * Error.
 				 */
 				pcapint_fmt_errmsg_for_errno(errbuf,
 				    PCAP_ERRBUF_SIZE, errno,
-				    "sinf_findalldevs inet_pton");
-                                return -1;
+				    "%s inet_pton", __func__);
+                                return PCAP_ERROR;
                         }
-#endif _WIN32
+#endif // _WIN32
 		}
 	}
 	snf_freeifaddrs(ifaddrs);
@@ -503,7 +489,7 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 		if (pcapint_add_dev(devlistp, name,
 		    PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE, desc,
 		    errbuf) == NULL)
-			return (-1);
+			return PCAP_ERROR;
 		/*
 		 * XXX - should we give it a list of addresses with all
 		 * the addresses for all the ports?
@@ -513,42 +499,103 @@ snf_findalldevs(pcap_if_list_t *devlistp, char *errbuf)
 	return 0;
 }
 
+/*
+ * If an SNF device exists for the given regular network interface name, copy
+ * its struct snf_ifaddrs to the provided pointer if the pointer is not NULL.
+ *
+ * Return:
+ * 0 if such SNF device does not exist
+ * 1 if such SNF device exists
+ * PCAP_ERROR on an SNF API error
+ */
+static int
+snf_device_exists(const char *device, struct snf_ifaddrs *out, char *errbuf)
+{
+	if (snf_init(SNF_VERSION_API)) {
+		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "snf_init");
+		return PCAP_ERROR;
+	}
+	struct snf_ifaddrs *ifaddrs;
+	if (snf_getifaddrs(&ifaddrs) || ifaddrs == NULL) {
+		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "snf_getifaddrs");
+		return PCAP_ERROR;
+	}
+	int ret = 0;
+	for (struct snf_ifaddrs *ifa = ifaddrs; ifa; ifa = ifa->snf_ifa_next)
+		if (! strcmp(device, ifa->snf_ifa_name)) {
+			ret = 1;
+			if (out)
+				*out = *ifa;
+			break;
+		}
+	snf_freeifaddrs(ifaddrs);
+	return ret;
+}
+
+/*
+ * If an SNF device exists for the given regular network interface name,
+ * replace the PCAP_IF_CONNECTION_STATUS part of the provided flags with the
+ * link state from the SNF API.
+ *
+ * The matter is, for a regular network interface that is administratively
+ * down the operational (link) state appears -- at least on Linux -- down and
+ * an attempt to capture on the interface would fail with ENETDOWN.  The SNF
+ * API works differently: regardless of the administrative state it allows to
+ * use an SNF device and reports the same link state as the device's "link up"
+ * LED.
+ *
+ * Return:
+ * 0 if such SNF device does not exist
+ * 1 if such SNF device exists
+ * PCAP_ERROR on an SNF API error
+ */
+int
+snf_get_if_flags(const char *device, bpf_u_int32 *flags, char *errbuf)
+{
+	struct snf_ifaddrs ifa;
+	int exists = snf_device_exists(device, &ifa, errbuf);
+	if (exists <= 0)
+		return exists;
+
+	*flags &= ~PCAP_IF_CONNECTION_STATUS;
+	switch (ifa.snf_ifa_link_state) {
+	case SNF_LINK_UP:
+		*flags |= PCAP_IF_CONNECTION_STATUS_CONNECTED;
+		break;
+	case SNF_LINK_DOWN:
+		*flags |= PCAP_IF_CONNECTION_STATUS_DISCONNECTED;
+		break;
+	default:
+		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+		    "invalid snf_ifa_link_state value %u",
+		    ifa.snf_ifa_link_state);
+		return PCAP_ERROR;
+	}
+	return 1;
+}
+
 pcap_t *
 snf_create(const char *device, char *ebuf, int *is_ours)
 {
 	pcap_t *p;
 	int boardnum = -1;
-	struct snf_ifaddrs *ifaddrs, *ifa;
-	size_t devlen;
+	struct snf_ifaddrs ifa;
 	struct pcap_snf *ps;
-
-	if (snf_init(SNF_VERSION_API)) {
-		/* Can't initialize the API, so no SNF devices */
-		*is_ours = 0;
-		return NULL;
-	}
 
 	/*
 	 * Match a given interface name to our list of interface names, from
 	 * which we can obtain the intended board number
 	 */
-	if (snf_getifaddrs(&ifaddrs) || ifaddrs == NULL) {
-		/* Can't get SNF addresses */
+	int exists = snf_device_exists(device, &ifa, ebuf);
+	if (exists < 0) {
+		/* Can't use the API, so no SNF devices */
 		*is_ours = 0;
 		return NULL;
 	}
-	devlen = strlen(device) + 1;
-	ifa = ifaddrs;
-	while (ifa) {
-		if (strncmp(device, ifa->snf_ifa_name, devlen) == 0) {
-			boardnum = ifa->snf_ifa_boardnum;
-			break;
-		}
-		ifa = ifa->snf_ifa_next;
-	}
-	snf_freeifaddrs(ifaddrs);
 
-	if (ifa == NULL) {
+	if (! exists) {
 		/*
 		 * If we can't find the device by name, support the name "snfX"
 		 * and "snf10gX" where X is the board number.
@@ -597,17 +644,30 @@ snf_create(const char *device, char *ebuf, int *is_ours)
 /*
  * There are no regular interfaces, just SNF interfaces.
  */
+static int
+can_be_bound(const char *name)
+{
+	char dummy[PCAP_ERRBUF_SIZE];
+	return snf_device_exists(name, NULL, dummy) == 1;
+}
+
+/*
+ * Even though this is an SNF-only build, use the regular "findalldevs" code
+ * for device enumeration, but pick only network interfaces that correspond to
+ * SNF devices.  Use SNF-specific interpretation of device flags.
+ */
 int
 pcapint_platform_finddevs(pcap_if_list_t *devlistp, char *errbuf)
 {
-	return (0);
+	return pcapint_findalldevs_interfaces(devlistp, errbuf, can_be_bound,
+	    snf_get_if_flags);
 }
 
 /*
  * Attempts to open a regular interface fail.
  */
 pcap_t *
-pcapint_create_interface(const char *device, char *errbuf)
+pcapint_create_interface(const char *device _U_, char *errbuf)
 {
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, PCAP_ENODEV_MESSAGE, "SNF");
 	return NULL;

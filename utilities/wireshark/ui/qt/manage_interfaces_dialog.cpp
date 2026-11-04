@@ -24,11 +24,11 @@
 #include "capture/capture-pcap-util.h"
 #include "ui/recent.h"
 #include "wsutil/filesystem.h"
+#include "app/application_flavor.h"
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
 #endif
-#include "ui/iface_lists.h"
 #include "ui/preference_utils.h"
 #include "ui/ws_ui_util.h"
 #include <wsutil/utf8_entities.h>
@@ -36,6 +36,8 @@
 #include <ui/qt/utils/qt_ui_utils.h>
 
 #include "main_application.h"
+#include <ui/qt/main_window.h>
+#include <ui/qt/manager/interface_list_manager.h>
 
 #include <QDebug>
 
@@ -104,6 +106,7 @@ void ManageInterfacesDialog::addRemote(const QVariantMap&& remoteHostMap)
 
     GList* rlist = get_remote_interface_list(global_remote_opts.remote_host_opts.remote_host,
         global_remote_opts.remote_host_opts.remote_port,
+        application_flavor_is_wireshark(),
         global_remote_opts.remote_host_opts.auth_type,
         global_remote_opts.remote_host_opts.auth_username,
         global_remote_opts.remote_host_opts.auth_password,
@@ -139,7 +142,7 @@ void ManageInterfacesDialog::populateExistingRemotes()
     const char* cfile = REMOTE_HOSTS_FILE;
 
     /* Try personal config file first */
-    QString fileName = gchar_free_to_qstring(get_persconffile_path(cfile, true));
+    QString fileName = gchar_free_to_qstring(get_persconffile_path(cfile, true, application_configuration_environment_prefix()));
 
     if (fileName.isEmpty() || !QFileInfo::exists(fileName)) {
         return;
@@ -170,12 +173,12 @@ ManageInterfacesDialog::ManageInterfacesDialog(QWidget *parent) :
     loadGeometry();
     setAttribute(Qt::WA_DeleteOnClose, true);
 
-    ui->addPipe->setStockIcon("list-add");
-    ui->delPipe->setStockIcon("list-remove");
-    ui->addRemote->setStockIcon("list-add");
-    ui->delRemote->setStockIcon("list-remove");
+    ui->addPipe->setIconByName("list-add");
+    ui->delPipe->setIconByName("list-remove");
+    ui->addRemote->setIconByName("list-add");
+    ui->delRemote->setIconByName("list-remove");
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     ui->addPipe->setAttribute(Qt::WA_MacSmallSize, true);
     ui->delPipe->setAttribute(Qt::WA_MacSmallSize, true);
     ui->addRemote->setAttribute(Qt::WA_MacSmallSize, true);
@@ -237,7 +240,6 @@ ManageInterfacesDialog::ManageInterfacesDialog(QWidget *parent) :
 #endif
 
     connect(ui->tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateWidgets()));
-    connect(this, SIGNAL(ifsChanged()), parent, SIGNAL(ifsChanged()));
 
 #ifdef HAVE_PCAP_REMOTE
     connect(this, SIGNAL(remoteAdded(GList*, remote_options*)), this, SLOT(addRemoteInterfaces(GList*, remote_options*)));
@@ -260,8 +262,9 @@ ManageInterfacesDialog::~ManageInterfacesDialog()
         remoteAccepted();
 #endif
         prefs_main_write();
-        mainApp->refreshLocalInterfaces();
-        emit ifsChanged();
+        MainWindow *mainWindow = mainApp->mainWindow();
+        if (mainWindow && mainWindow->interfaceListManager())
+            mainWindow->interfaceListManager()->requestRefresh();
     }
 
     delete ui;
@@ -355,7 +358,7 @@ void ManageInterfacesDialog::remoteSelectionChanged(QTreeWidgetItem*, int)
     updateWidgets();
 }
 
-void ManageInterfacesDialog::updateRemoteInterfaceList(GList* rlist, remote_options* roptions)
+void ManageInterfacesDialog::updateRemoteInterfaceList(capture_options* capture_opts, GList* rlist, remote_options* roptions)
 {
     GList *if_entry, *lt_entry;
     if_info_t *if_info;
@@ -379,7 +382,7 @@ void ManageInterfacesDialog::updateRemoteInterfaceList(GList* rlist, remote_opti
     // Most of this is copied from scan_local_interfaces_filtered, but
     // some of it doesn't make sense for remote interfaces (yet?) - we
     // can't, for example, control monitor mode.
-    num_interfaces = global_capture_opts.all_ifaces->len;
+    num_interfaces = capture_opts->all_ifaces->len;
     for (if_entry = g_list_first(rlist); if_entry != NULL; if_entry = gxx_list_next(if_entry)) {
         auth_str = NULL;
         if_info = gxx_list_data(if_info_t *, if_entry);
@@ -387,7 +390,7 @@ void ManageInterfacesDialog::updateRemoteInterfaceList(GList* rlist, remote_opti
         add_interface_to_remote_list(if_info);
 #endif
         for (i = 0; i < num_interfaces; i++) {
-            device = g_array_index(global_capture_opts.all_ifaces, interface_t, i);
+            device = g_array_index(capture_opts->all_ifaces, interface_t, i);
             if (device.hidden)
                 continue;
             if (strcmp(device.name, if_info->name) == 0) {
@@ -428,18 +431,18 @@ void ManageInterfacesDialog::updateRemoteInterfaceList(GList* rlist, remote_opti
             device.display_name = g_strdup(if_string);
         }
         if ((device.buffer = capture_dev_user_buffersize_find(if_string)) == -1) {
-            device.buffer = global_capture_opts.default_options.buffer_size;
+            device.buffer = capture_opts->default_options.buffer_size;
         }
         if (!capture_dev_user_pmode_find(if_string, &device.pmode)) {
-            device.pmode = global_capture_opts.default_options.promisc_mode;
+            device.pmode = capture_opts->default_options.promisc_mode;
         }
         if (!capture_dev_user_snaplen_find(if_string, &device.has_snaplen,
                                            &device.snaplen)) {
-            device.has_snaplen = global_capture_opts.default_options.has_snaplen;
-            device.snaplen = global_capture_opts.default_options.snaplen;
+            device.has_snaplen = capture_opts->default_options.has_snaplen;
+            device.snaplen = capture_opts->default_options.snaplen;
         }
-        device.cfilter = g_strdup(global_capture_opts.default_options.cfilter);
-        device.timestamp_type = g_strdup(global_capture_opts.default_options.timestamp_type);
+        device.cfilter = g_strdup(capture_opts->default_options.cfilter);
+        device.timestamp_type = g_strdup(capture_opts->default_options.timestamp_type);
         monitor_mode = prefs_capture_device_monitor_mode(if_string);
         if (roptions->remote_host_opts.auth_type == CAPTURE_AUTH_PWD) {
             auth_str = ws_strdup_printf("%s:%s", roptions->remote_host_opts.auth_username,
@@ -528,15 +531,15 @@ void ManageInterfacesDialog::updateRemoteInterfaceList(GList* rlist, remote_opti
         device.remote_opts.sampling_param = roptions->sampling_param;
 #endif
         device.selected = true;
-        global_capture_opts.num_selected++;
-        g_array_append_val(global_capture_opts.all_ifaces, device);
+        capture_opts->num_selected++;
+        g_array_append_val(capture_opts->all_ifaces, device);
         g_string_free(ip_str, TRUE);
     } /*for*/
 }
 
 void ManageInterfacesDialog::addRemoteInterfaces(GList* rlist, remote_options *roptions)
 {
-    updateRemoteInterfaceList(rlist, roptions);
+    updateRemoteInterfaceList(&global_capture_opts, rlist, roptions);
     showRemoteInterfaces();
 }
 
@@ -566,7 +569,7 @@ void ManageInterfacesDialog::remoteAccepted()
 
     const char* cfile = REMOTE_HOSTS_FILE;
     /* Try personal config file first */
-    QString fileName = gchar_free_to_qstring(get_persconffile_path(cfile, true));
+    QString fileName = gchar_free_to_qstring(get_persconffile_path(cfile, true, application_configuration_environment_prefix()));
 
     if (fileName.isEmpty()) {
         return;

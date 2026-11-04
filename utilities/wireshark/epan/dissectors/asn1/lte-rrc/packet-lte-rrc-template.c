@@ -1,9 +1,9 @@
 /* packet-lte-rrc-template.c
  * Routines for Evolved Universal Terrestrial Radio Access (E-UTRA);
  * Radio Resource Control (RRC) protocol specification
- * (3GPP TS 36.331 V18.6.0 Release 18) packet dissection
+ * (3GPP TS 36.331 V19.3.0 Release 19) packet dissection
  * Copyright 2008, Vincent Helfre
- * Copyright 2009-2025, Pascal Quantin
+ * Copyright 2009-2026, Pascal Quantin
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
@@ -44,10 +44,6 @@
 #include "packet-nr-rrc.h"
 #include "packet-lte-rrc.h"
 
-#define PNAME  "LTE Radio Resource Control (RRC) protocol"
-#define PSNAME "LTE RRC"
-#define PFNAME "lte_rrc"
-
 void proto_register_lte_rrc(void);
 void proto_reg_handoff_lte_rrc(void);
 
@@ -74,9 +70,9 @@ static wmem_tree_t *lte_rrc_dcch_segment_id_tree;
 static bool lte_rrc_nas_in_root_tree;
 static bool lte_rrc_reassemble_dcch_segments;
 
-extern int proto_mac_lte;
-extern int proto_rlc_lte;
-extern int proto_pdcp_lte;
+static int proto_mac_lte;
+static int proto_rlc_lte;
+static int proto_pdcp_lte;
 
 
 /* Include constants */
@@ -3068,7 +3064,8 @@ static void
 dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree *tree, packet_info *pinfo, uint8_t dataCodingScheme)
 {
   uint32_t offset;
-  uint8_t nb_of_pages, length, *str;
+  uint8_t nb_of_pages, length;
+  const char *str;
   proto_item *ti;
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
@@ -3085,7 +3082,7 @@ dissect_lte_rrc_warningMessageSegment(tvbuff_t *warning_msg_seg_tvb, proto_tree 
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_seg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dataCodingScheme, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
-      str = tvb_get_string_enc(pinfo->pool, cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
+      str = (char*)tvb_get_string_enc(pinfo->pool, cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
       proto_tree_add_string_format(tree, hf_lte_rrc_warningMessageSegment_decoded_page, warning_msg_seg_tvb, offset, 83,
                                    str, "Decoded Page %u: %s", i+1, str);
     }
@@ -4634,7 +4631,7 @@ void proto_register_lte_rrc(void) {
   module_t *lte_rrc_module;
 
   /* Register protocol */
-  proto_lte_rrc = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_lte_rrc = proto_register_protocol("LTE Radio Resource Control (RRC) protocol", "LTE RRC", "lte_rrc");
 
   /* These entry points will first create an lte_rrc root node */
   lte_rrc_dl_ccch_handle = register_dissector("lte_rrc.dl_ccch", dissect_lte_rrc_DL_CCCH, proto_lte_rrc);
@@ -4712,6 +4709,11 @@ proto_reg_handoff_lte_rrc(void)
   gsm_rlcmac_dl_handle = find_dissector("gsm_rlcmac_dl");
   nr_rrc_reconf_handle = find_dissector("nr-rrc.rrc_reconf");
   lte_rrc_conn_reconf_handle = find_dissector("lte-rrc.rrc_conn_reconf");
+
+  proto_mac_lte = proto_get_id_by_filter_name("mac-lte");
+  proto_rlc_lte = proto_get_id_by_filter_name("rlc-lte");
+  proto_pdcp_lte = proto_get_id_by_filter_name("pdcp-lte");
+
 }
 
 

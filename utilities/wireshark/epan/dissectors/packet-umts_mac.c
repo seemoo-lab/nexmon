@@ -24,9 +24,9 @@
 void proto_register_umts_mac(void);
 void proto_reg_handoff_umts_mac(void);
 
-int proto_umts_mac;
-extern int proto_fp;
-extern int proto_umts_rlc;
+static int proto_umts_mac;
+static int proto_fp;
+static int proto_umts_rlc;
 
 /* dissector fields */
 static int hf_mac_fach_fdd_tctf;
@@ -370,7 +370,7 @@ static int dissect_mac_fdd_rach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     fpinf  = (fp_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_fp, 0);
     rlcinf = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
     if (!macinf || !fpinf) {
-        proto_tree_add_expert(rach_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(rach_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return 1;
     }
 
@@ -430,7 +430,7 @@ static int dissect_mac_fdd_rach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
             break;
         default:
             proto_item_append_text(ti, " (Unknown RACH TCTF)");
-            expert_add_info_format(pinfo, NULL, &ei_mac_rach_tctf_unknown, "Unknown RACH TCTF");
+            expert_add_info(pinfo, NULL, &ei_mac_rach_tctf_unknown);
     }
     return tvb_captured_length(tvb);
 }
@@ -468,7 +468,7 @@ static int dissect_mac_fdd_fach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     rlcinf = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
 
     if (!macinf || !fpinf) {
-        proto_tree_add_expert(fach_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(fach_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return 1;
     }
 
@@ -591,7 +591,7 @@ static int dissect_mac_fdd_dch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
     rlcinf = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
 
     if (!macinf || !fpinf) {
-        proto_tree_add_expert(dch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(dch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return 1;
     }
     pos = fpinf->cur_tb;
@@ -790,7 +790,7 @@ static tvbuff_t * add_to_tree(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         unsigned counter = 0;
         new_tvb = tvb_new_child_real_data(tvb, sdu->data, sdu->length, sdu->length);
         add_new_data_source(pinfo, new_tvb, "Reassembled MAC-is SDU");
-        proto_tree_add_expert(tree, pinfo, &ei_mac_macis_sdu_reassembled, new_tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_mac_macis_sdu_reassembled, new_tvb, 0);
 
         while (f) {
             proto_tree_add_uint_format_value(tree, hf_mac_is_fraglink, new_tvb,
@@ -803,16 +803,16 @@ static tvbuff_t * add_to_tree(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         }
         return new_tvb;
     } else {
-        new_tvb = tvb_new_subset_length_caplen(tvb, offset, maclength, -1);
+        new_tvb = tvb_new_subset_length(tvb, offset, maclength);
         switch (type) {
             case MAC_IS_HEAD:
-                proto_tree_add_expert(tree, pinfo, &ei_mac_macis_sdu_first, new_tvb, 0, -1);
+                proto_tree_add_expert_remaining(tree, pinfo, &ei_mac_macis_sdu_first, new_tvb, 0);
                 break;
             case MAC_IS_MIDDLE:
-                proto_tree_add_expert(tree, pinfo, &ei_mac_macis_sdu_middle, new_tvb, 0, -1);
+                proto_tree_add_expert_remaining(tree, pinfo, &ei_mac_macis_sdu_middle, new_tvb, 0);
                 break;
             case MAC_IS_TAIL:
-                proto_tree_add_expert(tree, pinfo, &ei_mac_macis_sdu_last, new_tvb, 0, -1);
+                proto_tree_add_expert_remaining(tree, pinfo, &ei_mac_macis_sdu_last, new_tvb, 0);
                 break;
         }
         proto_tree_add_uint(tree, hf_mac_is_reasmin, new_tvb, 0, 0, sdu->frame_num);
@@ -915,7 +915,7 @@ static tvbuff_t * mac_is_add_fragment(tvbuff_t * tvb _U_, packet_info *pinfo, pr
         /* If our SDU is not fragmented. */
         } else {
             DISSECTOR_ASSERT((sdu_no == 0) ? (ss&1) == 0 : ((sdu_no == no_sdus-1) ? (ss&2) == 0 : true));
-            return tvb_new_subset_length_caplen(tvb, offset, maclength, -1);
+            return tvb_new_subset_length(tvb, offset, maclength);
         }
     /* If clicking on a packet. */
     } else {
@@ -941,8 +941,8 @@ static tvbuff_t * mac_is_add_fragment(tvbuff_t * tvb _U_, packet_info *pinfo, pr
                 return add_to_tree(tvb, pinfo, tree, sdu, offset, maclength, MAC_IS_HEAD);
             }
         } else {
-            new_tvb = tvb_new_subset_length_caplen(tvb, offset, maclength, -1);
-            proto_tree_add_expert(tree, pinfo, &ei_mac_macis_sdu_complete, new_tvb, 0, -1);
+            new_tvb = tvb_new_subset_length(tvb, offset, maclength);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_mac_macis_sdu_complete, new_tvb, 0);
             proto_tree_add_item(tree, hf_mac_edch_type2_sdu_data, new_tvb, 0, -1, ENC_NA);
             return new_tvb;
         }
@@ -1034,8 +1034,7 @@ static int dissect_mac_fdd_edch_type2(tvbuff_t *tvb, packet_info *pinfo, proto_t
     macis_pdu_tree = proto_item_add_subtree(pi, ett_mac_edch_type2);
 
     /* SS */
-    ss = (tvb_get_uint8(tvb, offset) & 0xc0) >> 6;
-    proto_tree_add_item(macis_pdu_tree, hf_mac_edch_type2_ss, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(macis_pdu_tree, hf_mac_edch_type2_ss, tvb, offset, 1, ENC_BIG_ENDIAN, &ss);
 
     ss_interpretation(tvb, macis_pdu_tree, ss, mac_is_info->number_of_mac_is_sdus, offset);
 
@@ -1100,7 +1099,7 @@ static int dissect_mac_fdd_edch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
     macinf = (umts_mac_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_mac, 0);
     if (!macinf|| !fpinf) {
-        proto_tree_add_expert(edch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(edch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return 1;
     }
 
@@ -1178,7 +1177,7 @@ static void dissect_mac_fdd_hsdsch_common(tvbuff_t *tvb, packet_info *pinfo, pro
     macinf = (umts_mac_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_mac);
 
     if (!macinf) {
-        proto_tree_add_expert(hsdsch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(hsdsch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return;
     }
     pos = fpinf->cur_tb;
@@ -1238,7 +1237,7 @@ static int dissect_mac_fdd_hsdsch(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     bitoffs = fpinf->hsdsch_entity == ehs ? 0 : 4;   /*No MAC-d header for type 2*/
 
     if (!macinf) {
-        proto_tree_add_expert(hsdsch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(hsdsch_tree, pinfo, &ei_mac_per_frame_info_missing, tvb, 0);
         return 1;
     }
     if (macinf->ctmux[pos]) {   /*The 4'st bits are padding*/
@@ -1574,6 +1573,9 @@ proto_register_umts_mac(void)
 void
 proto_reg_handoff_umts_mac(void)
 {
+    proto_fp = proto_get_id_by_filter_name("fp");
+    proto_umts_rlc = proto_get_id_by_filter_name("rlc");
+
     rlc_pcch_handle    = find_dissector_add_dependency("rlc.pcch", proto_umts_mac);
     rlc_ccch_handle    = find_dissector_add_dependency("rlc.ccch", proto_umts_mac);
     rlc_ctch_handle    = find_dissector_add_dependency("rlc.ctch", proto_umts_mac);

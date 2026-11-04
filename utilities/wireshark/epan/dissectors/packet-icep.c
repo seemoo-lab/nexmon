@@ -22,11 +22,12 @@
   1) p. 586 Chapter 23.2 of "The ICE Protocol"
      "Data is always encoded using little-endian byte order for numeric types."
   2) Information about Ice can be found here: http://www.zeroc.com
+     https://docs.zeroc.com/ice/latest/cpp/ice-protocol
+
 */
 
-#define WS_LOG_DOMAIN "packet-icep"
-
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-icep"
 #include <wireshark.h>
 
 #include <epan/packet.h>
@@ -219,9 +220,9 @@ static void dissect_ice_string(packet_info *pinfo, proto_tree *tree, proto_item 
     if ( Size != 0 ) {
         proto_tree_add_item_ret_string(tree, hf_icep, tvb, offset, Size, ENC_ASCII, pinfo->pool, &s);
     } else {
-        s = wmem_strdup(pinfo->pool, "(empty)");
+        s = (const uint8_t*)wmem_strdup(pinfo->pool, "(empty)");
         /* display the 0x00 Size byte when click on a empty ice_string */
-        proto_tree_add_string(tree, hf_icep, tvb, offset - 1, 1, s);
+        proto_tree_add_string(tree, hf_icep, tvb, offset - 1, 1, (const char*)s);
     }
 
     if ( dest != NULL )
@@ -457,7 +458,7 @@ static void dissect_ice_params(packet_info *pinfo, proto_tree *tree, proto_item 
     }
 
     /* get the size */
-    size = tvb_get_letohl(tvb, offset);
+    size = tvb_get_letohil(tvb, offset);
 
     ws_debug("params.size --> %d", size);
 
@@ -767,7 +768,7 @@ static void dissect_icep_batch_request(tvbuff_t *tvb, uint32_t offset,
 
     if ( num_reqs == 0 ) {
 
-        proto_tree_add_expert(icep_tree, pinfo, &ei_icep_empty_batch, tvb, offset, -1);
+        proto_tree_add_expert_remaining(icep_tree, pinfo, &ei_icep_empty_batch, tvb, offset);
         col_append_str(pinfo->cinfo, COL_INFO, " (empty batch requests sequence)");
 
         return;
@@ -890,7 +891,13 @@ static void dissect_icep_reply(tvbuff_t *tvb, uint32_t offset,
 static unsigned get_icep_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                               int offset, void *data _U_)
 {
-    return tvb_get_letohl(tvb, offset + 10);
+    unsigned pdu_len = tvb_get_letohl(tvb, offset + 10);
+    /* This protocol explicitly uses signed integers even for inherently
+     * unsigned values. Negative values are considered invalid. */
+    if (pdu_len > INT32_MAX) {
+        pdu_len = tvb_reported_length_remaining(tvb, offset);
+    }
+    return pdu_len;
 }
 
 static int dissect_icep_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -912,6 +919,7 @@ static int dissect_icep_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_item *ti, *msg_item = NULL;
     proto_tree *icep_tree;
     uint32_t offset = 0;
+    int32_t message_type, message_size;
 
     /* Make entries in Protocol column and Info column on summary display */
 
@@ -929,46 +937,47 @@ static int dissect_icep_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     ti = proto_tree_add_item(tree, proto_icep, tvb, 0, -1, ENC_NA);
     icep_tree = proto_item_add_subtree(ti, ett_icep);
 
-    if (icep_tree) {
-        /* add items to the subtree */
+    /* add items to the subtree */
 
-        /* message header */
+    /* message header */
 
-        proto_tree_add_item(icep_tree, hf_icep_magic_number, tvb, offset, 4, ENC_ASCII);
-        offset += 4;
+    proto_tree_add_item(icep_tree, hf_icep_magic_number, tvb, offset, 4, ENC_ASCII);
+    offset += 4;
 
-        proto_tree_add_item(icep_tree, hf_icep_protocol_major,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    proto_tree_add_item(icep_tree, hf_icep_protocol_major,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
 
-        proto_tree_add_item(icep_tree, hf_icep_protocol_minor,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    proto_tree_add_item(icep_tree, hf_icep_protocol_minor,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
 
-        proto_tree_add_item(icep_tree, hf_icep_encoding_major,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    proto_tree_add_item(icep_tree, hf_icep_encoding_major,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
 
-        proto_tree_add_item(icep_tree, hf_icep_encoding_minor,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    proto_tree_add_item(icep_tree, hf_icep_encoding_minor,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
 
-        msg_item = proto_tree_add_item(icep_tree, hf_icep_message_type,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    msg_item = proto_tree_add_item_ret_int(icep_tree, hf_icep_message_type,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN, &message_type);
+    offset++;
 
-        proto_tree_add_item(icep_tree, hf_icep_compression_status,
-                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        offset++;
+    proto_tree_add_item(icep_tree, hf_icep_compression_status,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
 
-        proto_tree_add_item(icep_tree, hf_icep_message_size,
-                    tvb, offset, 4, ENC_LITTLE_ENDIAN);
-        offset += 4;
-    } else {
-        offset += ICEP_HEADER_SIZE;
+    ti = proto_tree_add_item_ret_int(icep_tree, hf_icep_message_size,
+                tvb, offset, 4, ENC_LITTLE_ENDIAN, &message_size);
+    if (message_size < 0) {
+        // XXX - Treat as Continuation Data (especially on TCP)?
+        expert_add_info(pinfo, ti, &ei_icep_length);
+        return tvb_captured_length(tvb);
     }
+    offset += 4;
 
-    switch(tvb_get_uint8(tvb, 8)) {
+    switch(message_type) {
     case 0x0:
         ws_debug("request message body: parsing %d bytes",
             tvb_captured_length_remaining(tvb, offset));
@@ -989,20 +998,20 @@ static int dissect_icep_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             /* messages already dissected */
         break;
     default:
-        expert_add_info_format(pinfo, msg_item, &ei_icep_message_type, "Unknown Message Type: 0x%02x", tvb_get_uint8(tvb, 8));
+        expert_add_info_format(pinfo, msg_item, &ei_icep_message_type, "Unknown Message Type: 0x%02x", message_type);
         break;
     }
     return tvb_captured_length(tvb);
 }
 
 /* entry point */
-static gboolean dissect_icep_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+static int dissect_icep_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     ws_debug("triggered");
 
     if ( tvb_memeql(tvb, 0, icep_magic, 4) == -1 ) {
         /* Not a ICEP packet. */
-        return FALSE;
+        return 0;
     }
 
     /* start dissecting */
@@ -1010,16 +1019,16 @@ static gboolean dissect_icep_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     tcp_dissect_pdus(tvb, pinfo, tree, true, ICEP_HEADER_SIZE,
         get_icep_pdu_len, dissect_icep_pdu, data);
 
-    return TRUE;
+    return tvb_captured_length(tvb);
 }
 
 static bool
 dissect_icep_tcp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    return (bool)dissect_icep_tcp(tvb, pinfo, tree, data) > 0;
+    return dissect_icep_tcp(tvb, pinfo, tree, data);
 }
 
-static gboolean dissect_icep_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+static int dissect_icep_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     ws_debug("triggered");
 
@@ -1036,7 +1045,7 @@ static gboolean dissect_icep_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 static bool
 dissect_icep_udp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    return (bool)dissect_icep_udp(tvb, pinfo, tree, data) > 0;
+    return dissect_icep_udp(tvb, pinfo, tree, data);
 }
 
 /* Register the protocol with Wireshark */

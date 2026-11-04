@@ -58,7 +58,7 @@ pcap_read_haiku(pcap_t* handle, int maxPackets _U_, pcap_handler callback,
 {
 	// Receive a single packet
 
-	u_char* buffer = (u_char*)handle->buffer;
+	u_char* buffer = handle->buffer;
 	ssize_t bytesReceived;
 	do {
 		if (handle->break_loop) {
@@ -136,6 +136,7 @@ drop:
 
 
 static int
+PCAP_WARN_UNUSED_RESULT
 dgram_socket(const int af, char *errbuf)
 {
 	int ret = socket(af, SOCK_DGRAM, 0);
@@ -149,6 +150,7 @@ dgram_socket(const int af, char *errbuf)
 
 
 static int
+PCAP_WARN_UNUSED_RESULT
 ioctl_ifreq(const int fd, const unsigned long op, const char *name,
              struct ifreq *ifreq, char *errbuf)
 {
@@ -162,6 +164,7 @@ ioctl_ifreq(const int fd, const unsigned long op, const char *name,
 
 
 static int
+PCAP_WARN_UNUSED_RESULT
 get_promisc(pcap_t *handle)
 {
 	struct pcap_haiku *handlep = (struct pcap_haiku *)handle->priv;
@@ -372,6 +375,7 @@ error:
 
 
 static int
+PCAP_WARN_UNUSED_RESULT
 validate_ifname(const char *device, char *errbuf)
 {
 	if (strlen(device) >= IF_NAMESIZE) {

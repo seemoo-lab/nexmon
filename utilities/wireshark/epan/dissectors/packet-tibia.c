@@ -128,7 +128,7 @@ struct rsakey {
 
     gcry_sexp_t privkey;
 };
-GHashTable *rsakeys;
+static GHashTable *rsakeys;
 
 struct rsakeys_assoc {
     char *ipaddr;
@@ -157,7 +157,7 @@ struct xteakeys_assoc {
 
     char *key;
 };
-GHashTable *xteakeys;
+static GHashTable *xteakeys;
 
 static void *xteakeys_copy_cb(void *, const void *, size_t);
 static void xteakeys_free_cb(void *);
@@ -811,7 +811,7 @@ static value_string_ext from_gameserv_packet_types_ext = VALUE_STRING_EXT_INIT(f
 static const unit_name_string mb_unit = {"MB", NULL};
 
 static int
-dissect_loginserv_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, int len, packet_info *pinfo, proto_tree *tree, bool first_fragment )
+dissect_loginserv_packet(struct tibia_convo *convo, tvbuff_t *tvb, unsigned offset, unsigned len, packet_info *pinfo, proto_tree *tree, bool first_fragment )
 {
     ptvcursor_t *ptvc = ptvcursor_new(pinfo->pool, tree, tvb, offset);
 
@@ -966,7 +966,7 @@ dissect_coord(ptvcursor_t *ptvc, bool with_stackpos)
 
 
 static int
-dissect_gameserv_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, int len, packet_info *pinfo, proto_tree *tree, bool first_fragment)
+dissect_gameserv_packet(struct tibia_convo *convo, tvbuff_t *tvb, unsigned offset, unsigned len, packet_info *pinfo, proto_tree *tree, bool first_fragment)
 {
     ptvcursor_t *ptvc = ptvcursor_new(pinfo->pool, tree, tvb, offset);
 
@@ -1169,7 +1169,7 @@ dissect_gameserv_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, in
 }
 
 static int
-dissect_client_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, int len, packet_info *pinfo, proto_tree *tree, bool first_fragment)
+dissect_client_packet(struct tibia_convo *convo, tvbuff_t *tvb, unsigned offset, unsigned len, packet_info *pinfo, proto_tree *tree, bool first_fragment)
 {
     ptvcursor_t *ptvc = ptvcursor_new(pinfo->pool, tree, tvb, offset);
 
@@ -1219,10 +1219,10 @@ dissect_client_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, int 
 }
 
 static int
-dissect_game_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, bool is_xtea_encrypted, bool first_fragment)
+dissect_game_packet(struct tibia_convo *convo, tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree *tree, bool is_xtea_encrypted, bool first_fragment)
 {
     proto_item *ti = NULL;
-    int len = tvb_captured_length_remaining(tvb, offset);
+    unsigned len = tvb_captured_length_remaining(tvb, offset);
 
     if (show_acc_info) {
         if (convo->has.session_key) {
@@ -1255,7 +1255,7 @@ dissect_game_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, packet
                 proto_item_set_generated(ti);
             }
 
-            int end = offset + len;
+            unsigned end = offset + len;
 
             if (len % 8 != 0)
                 return -1;
@@ -1277,8 +1277,7 @@ dissect_game_packet(struct tibia_convo *convo, tvbuff_t *tvb, int offset, packet
         }
     }
     if (convo->has.xtea) {
-        len = tvb_get_letohs(tvb, offset);
-        ti = proto_tree_add_item(tree, hf_tibia_payload_len, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        ti = proto_tree_add_item_ret_uint(tree, hf_tibia_payload_len, tvb, offset, 2, ENC_LITTLE_ENDIAN, &len);
         offset += 2;
         if (len > tvb_captured_length_remaining(tvb, offset)) {
             expert_add_info(pinfo, ti, &ei_xtea_len_toobig);
@@ -1472,7 +1471,7 @@ dissect_tibia(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *fragmen
         offset += 1;
     }
 
-    int len;
+    unsigned len;
     if (convo->has.session_key && !convo->loginserv_is_peer) {
         /* OTServs I tested against use "$acc\n$pacc" as session key */
         if (convo->session_key) {
@@ -2598,11 +2597,7 @@ proto_register_tibia(void)
         },
     };
 
-    proto_tibia = proto_register_protocol (
-            "Tibia Protocol", /* name */
-            "Tibia",          /* short name */
-            "tibia"           /* abbrev */
-            );
+    proto_tibia = proto_register_protocol ("Tibia Protocol", "Tibia", "tibia");
     proto_register_field_array(proto_tibia, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     tibia_handle = register_dissector("tibia", dissect_tibia_tcp, proto_tibia);

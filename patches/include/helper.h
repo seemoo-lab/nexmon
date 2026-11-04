@@ -53,31 +53,31 @@ get_intioctl(struct wlc_info *wlc, uint32 cmd);
 
 #define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
 
-inline uint16
+static inline uint16
 htons(uint16 a)
 {
     return (a & 0xff00) >> 8 | (a & 0xff) << 8;
 }
 
-inline uint32
+static inline uint32
 htonl(uint32 a)
 {
 	return (a & 0xff000000) >> 24 | (a & 0xff0000) >> 8 | (a & 0xff00) << 8 | (a & 0xff) << 24;
 }
 
-inline uint16
+static inline uint16
 ntohs(uint16 a)
 {
 	return htons(a);
 }
 
-inline uint32
+static inline uint32
 ntohl(uint32 a)
 {
 	return htonl(a);
 }
 
-inline void *
+static inline void *
 get_stack_ptr() {
     void *stack = 0x0;
     __asm("mov %0, sp" : "=r" (stack));

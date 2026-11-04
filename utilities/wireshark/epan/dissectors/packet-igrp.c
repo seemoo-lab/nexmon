@@ -20,9 +20,10 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/to_str.h>
-#include <epan/ipproto.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
+
 
 void proto_register_igrp(void);
 void proto_reg_handoff_igrp(void);
@@ -90,7 +91,7 @@ static int dissect_igrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
     igrp_tree = proto_item_add_subtree(ti, ett_igrp);
 
-    version = (ver_and_opcode&0xf0)>>4 ; /* version is the fist half of the byte */
+    version = (ver_and_opcode&0xf0)>>4 ; /* version is the first half of the byte */
     opcode = ver_and_opcode&0x0f ;       /* opcode is the last half of the byte */
 
     ti = proto_tree_add_item(igrp_tree, hf_igrp_version, tvb, 0, 1, ENC_BIG_ENDIAN);
@@ -118,7 +119,7 @@ static int dissect_igrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
     ti = proto_tree_add_item(igrp_tree, hf_igrp_interior_routes, tvb, 4, 2, ENC_BIG_ENDIAN);
     for( ; ninterior>0 ; ninterior-- ) {
       igrp_vektor_tree =  proto_item_add_subtree(ti,ett_igrp_vektor);
-      next_tvb = tvb_new_subset_length_caplen(tvb, offset, IGRP_ENTRY_LENGTH, -1);
+      next_tvb = tvb_new_subset_length(tvb, offset, IGRP_ENTRY_LENGTH);
       dissect_vektor_igrp (pinfo,next_tvb,igrp_vektor_tree,network);
       offset+=IGRP_ENTRY_LENGTH;
     }
@@ -126,7 +127,7 @@ static int dissect_igrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
     ti = proto_tree_add_item(igrp_tree, hf_igrp_system_routes, tvb, 6, 2, ENC_BIG_ENDIAN);
     for( ; nsystem>0 ; nsystem-- ) {
       igrp_vektor_tree =  proto_item_add_subtree(ti,ett_igrp_vektor);
-      next_tvb = tvb_new_subset_length_caplen(tvb, offset, IGRP_ENTRY_LENGTH, -1);
+      next_tvb = tvb_new_subset_length(tvb, offset, IGRP_ENTRY_LENGTH);
       dissect_vektor_igrp (pinfo,next_tvb,igrp_vektor_tree,0);
       offset+=IGRP_ENTRY_LENGTH;
     }
@@ -134,7 +135,7 @@ static int dissect_igrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
     ti = proto_tree_add_item(igrp_tree, hf_igrp_exterior_routes, tvb, 8, 2, ENC_BIG_ENDIAN);
     for( ; nexterior>0 ; nexterior-- ) {
       igrp_vektor_tree =  proto_item_add_subtree(ti,ett_igrp_vektor);
-      next_tvb = tvb_new_subset_length_caplen(tvb, offset, IGRP_ENTRY_LENGTH, -1);
+      next_tvb = tvb_new_subset_length(tvb, offset, IGRP_ENTRY_LENGTH);
       dissect_vektor_igrp (pinfo,next_tvb,igrp_vektor_tree,0);
       offset+=IGRP_ENTRY_LENGTH;
     }
@@ -247,7 +248,7 @@ void proto_register_igrp(void)
 void
 proto_reg_handoff_igrp(void)
 {
-  dissector_add_uint("ip.proto", IP_PROTO_IGRP, igrp_handle);
+  dissector_add_uint("ip.proto", IP_PROTO_IGP, igrp_handle);
 }
 
 /*    IGRP Packet structure:

@@ -11,7 +11,6 @@
  */
 
 #include "config.h"
-
 #define WS_LOG_DOMAIN  LOG_DOMAIN_MMDB
 
 #include <glib.h>
@@ -515,8 +514,12 @@ static void mmdb_resolve_start(void) {
     /* Make sure that these close if we spawn a dumpcap process
      * (capturing or capture stats/sparklines.)
      */
-    fcntl(g_io_channel_unix_get_fd(mmdbr_pipe.stdin_io), F_SETFD, FD_CLOEXEC);
-    fcntl(g_io_channel_unix_get_fd(mmdbr_pipe.stdout_io), F_SETFD, FD_CLOEXEC);
+    if (-1 == fcntl(g_io_channel_unix_get_fd(mmdbr_pipe.stdin_io), F_SETFD, FD_CLOEXEC)) {
+        ws_info("Failure setting CLOEXEC on mmdbr_pipe stdin: %s", g_strerror(errno));
+    }
+    if (-1 == fcntl(g_io_channel_unix_get_fd(mmdbr_pipe.stdout_io), F_SETFD, FD_CLOEXEC)) {
+        ws_info("Failure setting CLOEXEC on mmdbr_pipe stdout: %s", g_strerror(errno));
+    };
 #endif
 
     write_mmdbr_stdin_thread = g_thread_new("write_mmdbr_stdin_worker", write_mmdbr_stdin_worker, NULL);

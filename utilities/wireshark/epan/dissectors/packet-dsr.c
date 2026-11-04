@@ -14,8 +14,8 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
 #include <epan/addr_resolv.h>
+#include <epan/iana-info.h>
 
 /* Please refer to rfc4728 for DSR protocol specifications */
 
@@ -175,8 +175,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     ti_main = proto_tree_add_item(tree, proto_dsr, tvb, 0, -1, ENC_NA);
     dsr_tree = proto_item_add_subtree(ti_main, ett_dsr);
 
-    proto_tree_add_item(dsr_tree, hf_dsr_nexthdr, tvb, offset, 1, ENC_BIG_ENDIAN); /* Next header */
-    nexthdr = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint(dsr_tree, hf_dsr_nexthdr, tvb, offset, 1, ENC_BIG_ENDIAN, &nexthdr); /* Next header */
     offset += 1;
 
     proto_tree_add_item(dsr_tree, hf_dsr_flowstate, tvb, offset, 1, ENC_BIG_ENDIAN); /* Flowstate */
@@ -207,13 +206,11 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_opt_rreq_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN); /* Opt rreq id */
-                                opt_id = tvb_get_ntohs(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_opt_rreq_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN, &opt_id); /* Opt rreq id */
                                 col_append_fstr(pinfo->cinfo, COL_INFO, " (id=0x%x)", opt_id);
                                 offset_in_option += 2;
 
@@ -237,8 +234,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
@@ -263,13 +259,11 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_opt_err_type, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt err type */
-                                opt_err_type = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_opt_err_type, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_err_type); /* Opt err type */
                                 offset_in_option += 1;
 
                                 proto_tree_add_bits_item(opt_tree, hf_dsr_opt_err_reserved, tvb, offset_in_option*8, 4, ENC_BIG_ENDIAN); /*Opt err reserved */
@@ -313,13 +307,11 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_opt_ack_req_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN); /* Opt ack req id */
-                                opt_id = tvb_get_ntohs(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_opt_ack_req_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN, &opt_id); /* Opt ack req id */
                                 col_append_fstr(pinfo->cinfo, COL_INFO, " (id=0x%x)", opt_id);
                                 offset_in_option += 2;
 
@@ -335,14 +327,12 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option, 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
 
-                                proto_tree_add_item(opt_tree, hf_dsr_opt_ack_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN); /* Opt ack id */
-                                opt_id = tvb_get_ntohs(tvb, offset_in_option);
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_opt_ack_id, tvb, offset_in_option, 2, ENC_BIG_ENDIAN, &opt_id); /* Opt ack id */
                                 col_append_fstr(pinfo->cinfo, COL_INFO, " (id=0x%x)", opt_id);
                                 offset_in_option += 2;
 
@@ -359,8 +349,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option );
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
@@ -389,8 +378,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option , 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option  += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option , 1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option );
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option , 1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 /*offset_in_option += 1;
                                 offset_in_option += opt_len;*/
@@ -409,8 +397,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option );
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 
@@ -424,8 +411,7 @@ dissect_dsr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                 proto_tree_add_item(opt_tree, hf_dsr_opttype, tvb, offset_in_option, 1, ENC_BIG_ENDIAN); /* Opt type */
                                 offset_in_option += 1;
 
-                                proto_tree_add_item(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN); /* Opt len */
-                                opt_len = tvb_get_uint8(tvb, offset_in_option );
+                                proto_tree_add_item_ret_uint(opt_tree, hf_dsr_optlen, tvb, offset_in_option,  1, ENC_BIG_ENDIAN, &opt_len); /* Opt len */
                                 proto_item_set_len(ti, opt_len+2);
                                 offset_in_option += 1;
 

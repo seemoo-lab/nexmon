@@ -66,10 +66,9 @@ The stream content is displayed in the same sequence as it appeared on the
 network. Non-printable characters are replaced by dots.
 Traffic from the client to the server is colored red, while traffic
 from the server to the client is
-colored blue. These colors can be changed by opening menu:Edit[Preferences] and
-under menu:Appearance[Font and Colors], selecting different colors for the
-btn:[Sample "Follow Stream" client text] and btn:[Sample "Follow Stream" server text]
-options.
+colored blue. These colors are defined by the active theme, which you can
+select by opening menu:Edit[Preferences] and choosing a theme under
+menu:Appearance[Theme and Font].
 
 
 
@@ -274,7 +273,7 @@ menu:EBCDIC[]:: For the big-iron freaks out there.
 menu:Hex Dump[]:: This allows you to see all the data. This will require a lot of
   screen space and is best used with binary protocols.
 
-menu:HTML[]:: This allows you to see all the data formatted as a HTML document.
+menu:HTML[]:: This allows you to see all the data formatted as an HTML document.
   The HTML supported is what’s supported by the Qt QTextEdit class.
 
 menu:Image[]:: This will try to convert the bytes into an image.
@@ -519,7 +518,7 @@ image::images/ws-tcp-analysis.png[{screenshot-attrs}]
 TCP Analysis flags are added to the TCP protocol tree under “SEQ/ACK
 analysis”. Each flag is described below. Terms such as “next expected
 sequence number” and “next expected acknowledgment number” refer to
-the following”:
+the following:
 
 // tcp_analyze_seq_info->nextseq
 Next expected sequence number:: The last-seen sequence number plus
@@ -563,7 +562,7 @@ Set when all of the following are true:
 * This is not a keepalive packet.
 * In the forward direction, the segment size is greater than zero or the SYN or FIN is set.
 * The next expected sequence number is greater than the current sequence number.
-* We have at least two duplicate ACKs in the reverse direction.
+* We have at least two duplicate ACKs in the reverse direction, or more than 2 MSS have been jumped over
 * The current sequence number equals the next expected acknowledgment number.
 * We saw the last acknowledgment less than 20ms ago.
 
@@ -659,7 +658,7 @@ reverse direction.
 [discrete]
 ==== TCP Window Update
 
-Set when the all of the following are true:
+Set when all of the following are true:
 
 * The segment size is zero.
 * The window size is non-zero and not equal to the last-seen window size, and there is no valid SACK data.
@@ -691,6 +690,7 @@ reverse direction was zero.
 If the single data byte from a Zero Window Probe is dropped by the receiver (not
 ACKed), then a subsequent segment should not be flagged as retransmission if all
 of the following conditions are true for that segment:
+
 * The segment size is larger than one.
 * The next expected sequence number is one less than the current sequence number.
 
@@ -712,12 +712,30 @@ Supersedes “TCP Dup ACK”.
 
 // TCP_A_AMBIGUOUS_INTERPRETATIONS
 [discrete]
-==== TCP Ambiguous Interpretations
+==== TCP Ambiguous Interpretations and the Classification Dilemma
 
 Some captures are quite difficult to analyze automatically, particularly when the
 time frame may cover both Fast Retransmission and Out-Of-Order packets. A TCP
-preference allows to switch the precedence of these two interpretations at the
-protocol level.
+preference (Fast Retransmission supersedes Out-of-Order interpretation) allows to
+switch the precedence of these two interpretations at the protocol level.
+
+In addition, interpretations may be different whether the capture was
+performed server side, client side or anywhere in the middle. While the historical
+classification algorithm is comparing new packets to almost previous, adjacent
+Duplicate ACKs, the “Enable Distal Disambiguation Algorithm” TCP preference allows
+a more neutral interpretation if the iRTT is known
+(the 3WHS is present in the capture).
+In this case, the time interval between a missing packet is compared to its
+supposed retransmission and if it's between 0,8 and 2,4 it will be considered as
+a Fast Retransmission if enough Duplicate ACKs were seen. In other cases (not so
+many Duplicate ACKs seen), packets are considered as a Retransmission (RTO) if
+the time is over the 2,4 ratio. Otherwise, they are Out-of-Order ones.
+
+[NOTE]
+====
+While RFC 6675 is taken into account in Wireshark's implementation of Duplicate
+ACKs, RFC 5827 and 8985 aren't for now.
+====
 
 // TCP_A_CONVERSATION_COMPLETENESS
 [discrete]
@@ -755,7 +773,7 @@ The fields "tcp.stream.client.contiguity_count" and
 of a conversation.
 Any number other than 1 says that either there is no TCP segment at all (0), or that
 some data is missing (2+). We are only counting the 100 first discontinuities as in
-most of cases it's enough to conclude the capture cannot be used for data extraction
+most cases it's enough to conclude the capture cannot be used for data extraction
 or there was a serious capture issue.
 
 [#ChAdvTimestamps]
@@ -875,7 +893,7 @@ used as it is slightly incorrect (up to 0.9 seconds difference to UTC). The UTC
 base time equals to 0 (based at Greenwich, England) and all time zones have an
 offset to UTC between -12 to +14 hours!
 
-For example: If you live in Berlin, you are in a time zone one hour earlier than
+For example: If you live in Berlin, you are in a time zone one hour later than
 UTC, so you are in time zone “+1” (time difference in hours compared to UTC).
 If it’s 3 o’clock in Berlin it’s 2 o’clock in UTC “at the same moment”.
 
@@ -1047,7 +1065,7 @@ multiple tabs in the “Packet Bytes” pane appear.
 You will find the reassembled data in the last packet of the chunk.
 ====
 
-For example, in a _HTTP_ GET response, the requested data (e.g., an HTML page) is
+For example, in an _HTTP_ GET response, the requested data (e.g., an HTML page) is
 returned. Wireshark will show the hex dump of the data in a new tab
 “Uncompressed entity body” in the “Packet Bytes” pane.
 
@@ -1084,7 +1102,7 @@ HTTP messages could be shown as “Continuation” and TLS records could be show
 capturing while a TCP connection was already started or when TCP segments
 are lost or delivered out-of-order.
 
-To reassemble of out-of-order TCP segments, the TCP protocol preference
+To reassemble out-of-order TCP segments, the TCP protocol preference
 “Reassemble out-of-order segments” (currently disabled by default) must be
 enabled in addition to the previous preference.
 If all packets are received in-order, this preference will not have any effect.
@@ -1106,7 +1124,7 @@ same PDU. Caveats:
 // See test/suite_dissection.py (case_dissect_tcp.check_tcp_out_of_order)
 * If the new and missing segments are in fact part of different PDUs,
   then processing is currently delayed until no more segments are missing, even
-  if the begin of the missing segments completed a PDU. For example, assume six
+  if the beginning of the missing segments completed a PDU. For example, assume six
   segments forming two PDUs `ABC` and `DEF`. When received as `ABECDF`, an
   application can start processing the first PDU after receiving `ABEC`.
   Wireshark however requires the missing segment `D` to be received as well.
@@ -1218,6 +1236,12 @@ Since Wireshark doesn’t wait for DNS responses, the host name for a given addr
 You can adjust name resolution behavior in the Name Resolution section in the <<ChCustPreferencesSection,Preferences Dialog>>.
 You can control resolution itself by adding a __hosts__ file to your <<ChAppFilesConfigurationSection,personal configuration directory>>.
 You can also edit your system __hosts__ file, but that isn’t generally recommended.
+
+Another option is to group addresses by their subnet. For instance a common
+private network is 192.168.0.0/16. Adding this to the __subnets__ file allows
+Wireshark to show an unknown host in this address range to be part of this
+network, e.g. "private:18.145". A similar file exists for IPv6 subnets.
+See <<ChAppFilesConfigurationSection>> for more details.
 
 ==== TCP/UDP Port Name Resolution (Transport Layer)
 

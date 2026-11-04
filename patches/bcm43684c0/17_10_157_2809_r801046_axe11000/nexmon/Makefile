@@ -1,4 +1,4 @@
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
 include ../version.mk
 include $(FW_PATH)/definitions.mk
 
@@ -151,7 +151,7 @@ gen/d11ucode_btcxmu129_1.bin: $(FW_PATH)/d11ucode_btcxmu129_1.bin
 
 gen/d11ucode_btcxmu129_1_compressed.bin: gen/d11ucode_btcxmu129_1.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucode_btcxmu129_1_compressed.c: gen/d11ucode_btcxmu129_1_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -164,7 +164,7 @@ gen/d11ucode_btcxmu129_2.bin: $(FW_PATH)/d11ucode_btcxmu129_2.bin
 
 gen/d11ucode_btcxmu129_2_compressed.bin: gen/d11ucode_btcxmu129_2.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucode_btcxmu129_2_compressed.c: gen/d11ucode_btcxmu129_2_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -177,7 +177,7 @@ gen/d11ucode_mu129_1.bin: $(FW_PATH)/d11ucode_mu129_1.bin
 
 gen/d11ucode_mu129_1_compressed.bin: gen/d11ucode_mu129_1.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucode_mu129_1_compressed.c: gen/d11ucode_mu129_1_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -190,7 +190,7 @@ gen/d11ucode_mu129_2.bin: $(FW_PATH)/d11ucode_mu129_2.bin
 
 gen/d11ucode_mu129_2_compressed.bin: gen/d11ucode_mu129_2.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucode_mu129_2_compressed.c: gen/d11ucode_mu129_2_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -203,7 +203,7 @@ gen/d11ucode_mu129.bin: $(FW_PATH)/d11ucode_mu129.bin
 
 gen/d11ucode_mu129_compressed.bin: gen/d11ucode_mu129.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucode_mu129_compressed.c: gen/d11ucode_mu129_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -216,7 +216,7 @@ gen/d11ucodex_btcxmu129_1.bin: $(FW_PATH)/d11ucodex_btcxmu129_1.bin
 
 gen/d11ucodex_btcxmu129_1_compressed.bin: gen/d11ucodex_btcxmu129_1.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucodex_btcxmu129_1_compressed.c: gen/d11ucodex_btcxmu129_1_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -229,7 +229,7 @@ gen/d11ucodex_btcxmu129_2.bin: $(FW_PATH)/d11ucodex_btcxmu129_2.bin
 
 gen/d11ucodex_btcxmu129_2_compressed.bin: gen/d11ucodex_btcxmu129_2.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucodex_btcxmu129_2_compressed.c: gen/d11ucodex_btcxmu129_2_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -242,7 +242,7 @@ gen/d11ucodex_mu129_1.bin: $(FW_PATH)/d11ucodex_mu129_1.bin
 
 gen/d11ucodex_mu129_1_compressed.bin: gen/d11ucodex_mu129_1.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucodex_mu129_1_compressed.c: gen/d11ucodex_mu129_1_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -255,7 +255,7 @@ gen/d11ucodex_mu129_2.bin: $(FW_PATH)/d11ucodex_mu129_2.bin
 
 gen/d11ucodex_mu129_2_compressed.bin: gen/d11ucodex_mu129_2.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucodex_mu129_2_compressed.c: gen/d11ucodex_mu129_2_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
@@ -268,7 +268,7 @@ gen/d11ucodex_mu129.bin: $(FW_PATH)/d11ucodex_mu129.bin
 
 gen/d11ucodex_mu129_compressed.bin: gen/d11ucodex_mu129.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/d11ucodex_mu129_compressed.c: gen/d11ucodex_mu129_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

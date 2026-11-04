@@ -8,19 +8,19 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __IP_OPTS_H__
-#define __IP_OPTS_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 /** @file
  */
 
+/**
+ * @brief Describes how the length of a protocol option field is determined.
+ */
 typedef enum {
-  OPT_LEN_NO_LENGTH,                /**< option has no data, hence no length */
-  OPT_LEN_FIXED_LENGTH,             /**< option always has the same length */
-  OPT_LEN_VARIABLE_LENGTH           /**< option is variable-length - optlen is minimum */
+    OPT_LEN_NO_LENGTH,       /**< Option carries no data and has no length field */
+    OPT_LEN_FIXED_LENGTH,    /**< Option always has the same fixed length */
+    OPT_LEN_VARIABLE_LENGTH  /**< Option is variable-length; optlen specifies the minimum valid length */
 } opt_len_type;
 
 
@@ -41,5 +41,3 @@ WS_DLL_PUBLIC value_string_ext qs_rate_vals_ext;
 
 WS_DLL_PUBLIC const value_string ipopt_type_class_vals[];
 WS_DLL_PUBLIC const value_string ipopt_type_number_vals[];
-
-#endif

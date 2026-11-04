@@ -1109,13 +1109,11 @@ dissect_dsmcc_dii_compat_desc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     proto_tree *compat_tree;
     proto_tree *desc_sub_tree;
 
-    len = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(tree, hf_compat_desc_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_compat_desc_length, tvb, offset, 2, ENC_BIG_ENDIAN, &len);
     offset += 2;
 
     if (0 < len) {
-        count = tvb_get_ntohs(tvb, offset);
-        proto_tree_add_item(tree, hf_compat_desc_count, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(tree, hf_compat_desc_count, tvb, offset, 2, ENC_BIG_ENDIAN, &count);
         offset += 2;
 
         for (i = 0; i < count; i++) {
@@ -1181,8 +1179,7 @@ dissect_dsmcc_dii(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_tree_add_item(tree, hf_dsmcc_dii_t_c_download_scenario, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
     offset += dissect_dsmcc_dii_compat_desc(tvb, pinfo, tree, offset);
-    proto_tree_add_item(tree, hf_dsmcc_dii_number_of_modules, tvb, offset, 2, ENC_BIG_ENDIAN);
-    modules = tvb_get_ntohs(tvb, offset);
+    proto_tree_add_item_ret_uint16(tree, hf_dsmcc_dii_number_of_modules, tvb, offset, 2, ENC_BIG_ENDIAN, &modules);
     offset += 2;
 
     for (i = 0; i < modules; i++ ) {
@@ -1351,8 +1348,7 @@ dissect_dsmcc_un_session_resources(
         sub_sub_sub_tree = proto_tree_add_subtree(sub_sub_tree, tvb, offset, 14, ett_dsmcc_heading, NULL, "Header");
         proto_tree_add_item(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_request_id, tvb, offset, 2, ENC_NA);
         offset += 2;
-        proto_tree_add_item(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_descriptor_type, tvb, offset, 2, ENC_BIG_ENDIAN);
-        resource_type = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_descriptor_type, tvb, offset, 2, ENC_BIG_ENDIAN, &resource_type);
         offset += 2;
         proto_tree_add_bitmask_with_flags(sub_sub_sub_tree, tvb, offset, hf_dsmcc_un_sess_rsrc_number, ett_dsmcc_rsrc_number, bf_rsrc_number, ENC_BIG_ENDIAN, BMT_NO_APPEND);
         offset += 2;
@@ -1362,8 +1358,7 @@ dissect_dsmcc_un_session_resources(
         offset += 1;
         proto_tree_add_item(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_status, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
-        proto_tree_add_item(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_desc_data_fields_length, tvb, offset, 2, ENC_BIG_ENDIAN);
-        data_fields_length = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_desc_data_fields_length, tvb, offset, 2, ENC_BIG_ENDIAN, &data_fields_length);
         offset += 2;
         proto_tree_add_item(sub_sub_sub_tree, hf_dsmcc_un_sess_rsrc_data_field_count, tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;

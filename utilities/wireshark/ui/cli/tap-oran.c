@@ -30,29 +30,51 @@ enum {
     SECTIONS_COLUMN,
     SECTION_IDS_COLUMN,
     EXTENSIONS_COLUMN,
+    BEAMS_COLUMN,
     HIGHEST_SLOT_COLUMN,
     MISSING_SNS_COLUMN,
-    NUM_PRBS,
-    NUM_PRBS_ZERO,
-    NUM_RES,
-    NUM_RES_ZERO,
+    NUM_PRBS_COLUMN,
+    NUM_PRBS_ZERO_COLUMN,
+    NUM_RES_COLUMN,
+    NUM_RES_ZERO_COLUMN,
+    COMP_METH_COLUMN,
+    COMP_WIDTH_COLUMN,
     NUM_FLOW_COLUMNS
 };
 
-static const char *flow_titles[] = { " Plane",
+/* Global stats */
+static uint32_t largest_ul_delay_in_us = 0;
+static uint32_t ul_configured_max = 0;
+static uint32_t ul_within_configured_max = 0;
+static uint32_t ul_above_configured_max = 0;
+
+#define MAX_BEAMS_IN_CAPTURE 256U
+static uint16_t num_dl_beams;
+static uint16_t dl_beams[MAX_BEAMS_IN_CAPTURE];
+static uint16_t num_ul_beams;
+static uint16_t ul_beams[MAX_BEAMS_IN_CAPTURE];
+
+/* Assuming that it is unlikely we have > 255 radio frames.. */
+static int      first_radio_frame = -1;
+static int      last_radio_frame = -1;
+
+static const char *flow_titles[] = { " Plane ",
                                      "eAxC ID ",
                                      "Direction  ",
                                      "Frames ",
                                      "Largest PDU  ",
-                                     "Section Types                ",
-                                     "Section IDs        ",
-                                     "Extensions",
+                                     "Section Types                 ",
+                                     "Section IDs	  ",
+                                     "Extensions                                            ",
+                                     "Beams",
                                      "Highest Slot",
                                      "Missing SNs   ",
                                      "PRBs",
                                      "Zero-PRBs      ",
                                      "REs ",
-                                     "Zero-REs"
+                                     "Zero-REs     ",
+                                     "Comp. Meth",
+                                     "Comp. Width"
                                    };
 
 /* Stats for one Flow */
@@ -70,6 +92,9 @@ typedef struct oran_row_data {
     uint32_t      num_res_zero;
 
     bool          section_ids_present[4096];  /* sectionId is 12 bits */
+
+    uint32_t      compression_methods;
+    uint32_t      compression_width;
 } oran_row_data;
 
 /* Top-level struct for ORAN FH statistics */
@@ -116,6 +141,23 @@ oran_stat_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_,
         return TAP_PACKET_DONT_REDRAW;
     }
 
+    /* Update global stats */
+    if (si->ul_delay_in_us > largest_ul_delay_in_us) {
+        largest_ul_delay_in_us = si->ul_delay_in_us;
+    }
+    ul_configured_max = si->ul_delay_configured_max;
+    if (si->ul_delay_in_us > si->ul_delay_configured_max) {
+        ul_above_configured_max++;
+    }
+    else if (si->ul_delay_in_us > 0) {
+        ul_within_configured_max++;
+    }
+
+    if (first_radio_frame == -1) {
+        first_radio_frame = (int)si->frame;
+    }
+    last_radio_frame = (int)si->frame;
+
     bool row_found = false;
     /* Look among existing rows for this flow */
     for (tmp = hs->flow_list; tmp != NULL; tmp = tmp->next) {
@@ -137,6 +179,10 @@ oran_stat_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_,
         /* Set key fields */
         row->base_info.userplane = si->userplane;
         row->base_info.eaxc = si->eaxc;
+        row->base_info.eaxc_du_port_id = si->eaxc_du_port_id;
+        row->base_info.eaxc_bandsector_id = si->eaxc_bandsector_id;
+        row->base_info.eaxc_cc_id = si->eaxc_cc_id;
+        row->base_info.eaxc_ru_port_id = si->eaxc_ru_port_id;
         row->base_info.uplink = si->uplink;
         /* Add to list */
         hs->flow_list = g_list_prepend(hs->flow_list, row);
@@ -179,10 +225,60 @@ oran_stat_packet(void *phs, packet_info *pinfo _U_, epan_dissect_t *edt _U_,
     row->num_prbs_zero += si->num_prbs_zero;
     row->num_res_zero += si->num_res_zero;
 
+    /* Compression settings */
+    row->compression_width = MAX(row->compression_width, si->compression_width);
+    row->compression_methods |= si->compression_methods;
+
+    /* Count beams */
+
+    /* Copy these values from tap info.. */
+    /* ..into row */
+    for (uint16_t b = 0; b < si->num_beams; b++) {
+        bool need_to_add = true;
+        for (uint16_t n=0; n < row->base_info.num_beams; n++) {
+            if (si->beams[b] == row->base_info.beams[n]) {
+                /* Already have it, nothing to do */
+                need_to_add = false;
+                break;
+            }
+            if (row->base_info.num_beams == MAX_BEAMS_IN_FRAME) {
+                need_to_add = false;
+                break;
+            }
+        }
+        if (need_to_add) {
+            /* Have room and wasn't found, so add */
+            row->base_info.beams[row->base_info.num_beams++] = si->beams[b];
+        }
+    }
+
+    /* ..globally (by direction) */
+    uint16_t *num_beams = (si->uplink) ? &num_ul_beams : &num_dl_beams;
+    uint16_t *beams = (si->uplink) ? ul_beams : dl_beams;
+
+    for (uint16_t b = 0; b < si->num_beams; b++) {
+        bool need_to_add = true;
+        for (uint16_t n=0; n < *num_beams; n++) {
+            if (si->beams[b] == beams[n]) {
+                /* Already have it, nothing to do */
+                need_to_add = false;
+                break;
+            }
+            if (*num_beams == MAX_BEAMS_IN_CAPTURE) {
+                need_to_add = false;
+                break;
+            }
+        }
+        if (need_to_add) {
+            /* Have room and wasn't found, so add */
+            beams[(*num_beams)++] = si->beams[b];
+        }
+    }
+
     return TAP_PACKET_REDRAW;
 }
 
-static int compare_flows(gpointer a, gpointer b)
+static int compare_flows(void *a, void *b)
 {
     oran_row_data *flow_a = (oran_row_data*)a;
     oran_row_data *flow_b = (oran_row_data*)b;
@@ -215,6 +311,16 @@ static int compare_flows(gpointer a, gpointer b)
     return 0;
 }
 
+/* Truncate a column to required width.  TODO: could show .. to indicate more? */
+static void truncate_column(wmem_strbuf_t *strbuf, uint32_t width)
+{
+    wmem_strbuf_truncate(strbuf, width);
+    if ((strbuf->len > 0) && (strbuf->str[strbuf->len] == ' ')) {
+        wmem_strbuf_truncate(strbuf, strbuf->len-1);
+    }
+}
+
+
 /* Output the accumulated stats */
 static void
 oran_stat_draw(void *phs)
@@ -225,7 +331,7 @@ oran_stat_draw(void *phs)
     oran_stat_t *hs = (oran_stat_t*)phs;
     GList *tmp = NULL;
 
-    /* TODO: sort rows by eAxC (ascending), Plane (control first), direction (DL first) */
+    /* Sort rows by eAxC (ascending), Plane (control first), direction (DL first) */
     hs->flow_list = g_list_sort(hs->flow_list, (GCompareFunc)compare_flows);
 
     /* Show column titles */
@@ -233,75 +339,122 @@ oran_stat_draw(void *phs)
         printf("%s  ", flow_titles[i]);
     }
     /* Divider before rows */
-    printf("\n============================================================================================================================================================================================\n");
+    printf("\n=============================================================================================================================================================================================================================================================================\n");
 
     /* Write a row for each flow */
     for (tmp = hs->flow_list; tmp; tmp=tmp->next) {
 
         oran_row_data *row = (oran_row_data*)tmp->data;
-        char sections[32];
-        int sections_offset = 0;
-        sections[0] = '\0';
 
-        char extensions[17];
-        int extensions_offset = 0;
-        extensions[0] = '-';
-        extensions[1] = '\0';
+        wmem_strbuf_t *eaxcid_strbuf = wmem_strbuf_create(NULL);
+        wmem_strbuf_append_printf(eaxcid_strbuf, "%x:%x:%x:%x",
+                                  row->base_info.eaxc_du_port_id, row->base_info.eaxc_bandsector_id,
+                                  row->base_info.eaxc_cc_id, row->base_info.eaxc_ru_port_id);
 
-        char section_ids[28];
-        int section_ids_offset = 0;
-        section_ids[0] = '-';
-        section_ids[1] = '\0';
+        wmem_strbuf_t *sectiontypes_strbuf = wmem_strbuf_create(NULL);
+        wmem_strbuf_t *extensions_strbuf = wmem_strbuf_create(NULL);
+        wmem_strbuf_t *sectionids_strbuf = wmem_strbuf_create(NULL);
+        wmem_strbuf_t *beams_strbuf = wmem_strbuf_create(NULL);
+
 
         /* Some fields only apply to c-plane */
         if (!row->base_info.userplane) {
             /* Note which sections are used */
-            for (unsigned int s=0; s < SEC_C_MAX_INDEX && (extensions_offset < 17-3); s++) {
+            for (unsigned int s=0; s < SEC_C_MAX_INDEX; s++) {
                 if (row->base_info.section_types[s]) {
-                    sections_offset += snprintf(sections+sections_offset, 17-sections_offset-1, "%u ", s);
+                    wmem_strbuf_append_printf(sectiontypes_strbuf, " %u", s);
                 }
             }
+            truncate_column(sectiontypes_strbuf, 17);
 
             /* Note which extensions are used */
-            for (unsigned int e=1; e <= HIGHEST_EXTTYPE && (extensions_offset < 17-3); e++) {
+            for (unsigned int e=1; e <= HIGHEST_EXTTYPE; e++) {
                 if (row->base_info.extensions[e]) {
-                    extensions_offset += snprintf(extensions+extensions_offset, 17-extensions_offset-1, "%u ", e);
+                    wmem_strbuf_append_printf(extensions_strbuf, " %u", e);
                 }
             }
+            truncate_column(extensions_strbuf, 17);
         }
 
-        /* Section IDs */
-        for (unsigned id=0; (id < 4096) && (section_ids_offset < 28-1); id++) {
+
+        for (unsigned id=0; id<4096; id++) {
             if (row->section_ids_present[id]) {
-                section_ids_offset += snprintf(section_ids+section_ids_offset, 28-section_ids_offset-1, "%u ", id);
+                wmem_strbuf_append_printf(sectionids_strbuf, " %u", id);
             }
         }
+        truncate_column(sectionids_strbuf, 28);
 
-        /* Print this row */
-        printf("%6s %8u %11s %9u %13u %17s %28s %18s %13u %12u",
+
+        /* Beams. Only showing for CP.  */
+        if (!row->base_info.userplane) {
+            for (int b=0; b < MIN(row->base_info.num_beams, MAX_BEAMS_IN_FRAME); b++) {
+                wmem_strbuf_append_printf(beams_strbuf, " %u", row->base_info.beams[b]);
+            }
+        }
+        truncate_column(beams_strbuf, 50);
+
+
+        /* Print this row. */
+        printf("%6s	%8s %11s %9u %13u %17s %28s %18s %50s %13u %12u",
                (row->base_info.userplane) ? "U" : "C",
-               row->base_info.eaxc,
+               wmem_strbuf_get_str(eaxcid_strbuf),
                (row->base_info.uplink) ? "UL" : "DL",
                row->num_frames,
                row->largest_pdu,
-               sections,
-               section_ids,
-               extensions,
+               wmem_strbuf_get_str(sectiontypes_strbuf),
+               wmem_strbuf_get_str(sectionids_strbuf),
+               wmem_strbuf_get_str(extensions_strbuf),
+               wmem_strbuf_get_str(beams_strbuf),
                row->highest_slot,
-               row->missing_sns);
+               row->missing_sns
+               );
+
+        wmem_free(NULL, eaxcid_strbuf);
+        wmem_free(NULL, sectiontypes_strbuf);
+        wmem_free(NULL, sectionids_strbuf);
+        wmem_free(NULL, extensions_strbuf);
+        wmem_free(NULL, beams_strbuf);
 
         if (row->base_info.userplane) {
             /* U-Plane only */
-            printf(" %8u %10u %10u %10u\n",
+            const char* comp_names[] = { "None", "BFP", "Block Scaling",
+                                         "uLaw", "ModCompr",
+                                         "BFP+SelRE", "ModComp+SelRE"};
+
+            /* Looking for first/only match */
+            const char *method = "none";
+            for (int c=0; c <=6; c++) {
+                if ((1 << c) & row->compression_methods) {
+                    method = comp_names[c];
+                    break;
+                }
+            }
+
+            printf(" %8u %10u %10u %10u %16s %12u\n",
                    row->num_prbs,
                    row->num_prbs_zero,
                    row->num_res,
-                   row->num_res_zero);
+                   row->num_res_zero,
+                   method,
+                   row->compression_width);
         }
         else {
             printf("\n");
         }
     }
+
+    /* Now show global stats */
+    printf("\n First radio frame    Last radio frame\n");
+    printf("=======================================\n");
+    printf("%18u %19u\n", first_radio_frame, last_radio_frame);
+
+    printf("\n Configured Max UL delay    UL Frames within limit    UL frames after limit    Largest UL delay\n");
+    printf("================================================================================================\n");
+    printf("%24u %25u %24u %19u\n", ul_configured_max, ul_within_configured_max, ul_above_configured_max, largest_ul_delay_in_us);
+
+    printf("\n Unique DL beams      Unique UL beams\n");
+    printf("======================================\n");
+    printf("%16u %20u\n", num_dl_beams, num_ul_beams);
 }
 
 /* Create a new ORAN stats struct */

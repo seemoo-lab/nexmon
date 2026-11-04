@@ -185,14 +185,14 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
 LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/$(TARGET_ARCH_ABI)/libssl.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
 LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/$(TARGET_ARCH_ABI)/libcrypto.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)
 
 

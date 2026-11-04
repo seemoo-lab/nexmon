@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include <epan/tvbuff.h>
+#include <wsutil/ws_padding_to.h>
 #include "proto.h"
 
 /* Copy of glib function modified for base64uri */
@@ -146,6 +147,7 @@ static unsigned char*
 g_base64uri_decode(const char* text,
     size_t* out_len)
 {
+    const char pad[4] = "===";
     unsigned char* ret;
     size_t input_length;
     int state = 0;
@@ -154,13 +156,30 @@ g_base64uri_decode(const char* text,
     g_return_val_if_fail(text != NULL, NULL);
     g_return_val_if_fail(out_len != NULL, NULL);
 
+    /* XXX - We could just pass in the length instead of calling strlen,
+     * which would allow using tvb_get_ptr. */
     input_length = strlen(text);
+
+    /* In base64url padding is optional.
+     * https://www.rfc-editor.org/info/rfc4648/#section-5
+     * https://www.rfc-editor.org/info/rfc4648/#section-3.2
+     *
+     * https://www.rfc-editor.org/info/rfc4648/#section-4
+     */
 
     /* We can use a smaller limit here, since we know the saved state is 0,
        +1 used to avoid calling g_malloc0(0), and hence returning NULL */
-    ret = (unsigned char * )g_malloc0((input_length / 4) * 3 + 1);
+    /* Add an additional 1 to ensure there's enough space for the padding
+     * omitted case. (g_base64_decode_step mentions adding + 3 in the
+     * case of non-zero state, but that's only if the extra bytes added
+     * in are not all '='.) */
+    ret = (unsigned char * )g_malloc0((input_length / 4) * 3 + 2);
 
     *out_len = g_base64uri_decode_step(text, input_length, ret, &state, &save);
+
+    input_length = WS_PADDING_TO_4(input_length);
+    if (input_length)
+        *out_len += g_base64uri_decode_step(pad, input_length, &ret[*out_len], &state, &save);
 
     return ret;
 }
@@ -168,30 +187,12 @@ g_base64uri_decode(const char* text,
 tvbuff_t *
 base64_to_tvb(tvbuff_t *parent, const char *base64)
 {
-  tvbuff_t *tvb;
-  char *data;
-  size_t len;
-
-  data = g_base64_decode(base64, &len);
-  tvb = tvb_new_child_real_data(parent, (const uint8_t *)data, (int)len, (int)len);
-
-  tvb_set_free_cb(tvb, g_free);
-
-  return tvb;
-}
-
-tvbuff_t*
-base64_tvb_to_new_tvb(tvbuff_t* parent, int offset, int length)
-{
-    tvbuff_t* tvb;
-    char* data, *tmp;
+    tvbuff_t *tvb;
+    uint8_t *data;
     size_t len;
 
-    tmp = tvb_get_string_enc(NULL, parent, offset, length, ENC_ASCII);
-    data = g_base64_decode(tmp, &len);
-    wmem_free(NULL, tmp);
-
-    tvb = tvb_new_child_real_data(parent, (const uint8_t*)data, (int)len, (int)len);
+    data = g_base64_decode(base64, &len);
+    tvb = tvb_new_child_real_data(parent, data, (unsigned)len, (unsigned)len);
 
     tvb_set_free_cb(tvb, g_free);
 
@@ -199,17 +200,53 @@ base64_tvb_to_new_tvb(tvbuff_t* parent, int offset, int length)
 }
 
 tvbuff_t*
-base64uri_tvb_to_new_tvb(tvbuff_t* parent, int offset, int length)
+base64_tvb_to_new_tvb(tvbuff_t* parent, unsigned offset, unsigned length)
 {
     tvbuff_t* tvb;
-    char* data, *tmp;
-    size_t len = 0;
+    uint8_t* data, *tmp;
+    size_t len;
 
+    /* g_base64_decode only requires NULL termination, not a valid UTF-8
+     * or ASCII string (it silently skips over invalid bytes, we don't
+     * check that either). So tvb_get_raw_bytes_as_string() would work,
+     * but we would need to check the length before allocating the buffer
+     * to avoid a memory leak (or push a CLEANUP function on exception).
+     *
+     * We could also implement our own function that took a length and
+     * didn't require NULL termination. We could also do that by simply
+     * calling g_base64_decode_step() directly.
+     */
     tmp = tvb_get_string_enc(NULL, parent, offset, length, ENC_ASCII);
-    data = g_base64uri_decode(tmp, &len);
+    data = g_base64_decode((const char*)tmp, &len);
     wmem_free(NULL, tmp);
 
-    tvb = tvb_new_child_real_data(parent, (const uint8_t*)data, (int)len, (int)len);
+    tvb = tvb_new_child_real_data(parent, data, (unsigned)len, (unsigned)len);
+
+    tvb_set_free_cb(tvb, g_free);
+
+    return tvb;
+}
+
+tvbuff_t*
+base64uri_tvb_to_new_tvb(tvbuff_t* parent, unsigned offset, unsigned length)
+{
+    tvbuff_t* tvb;
+    uint8_t* data, *tmp;
+    size_t len = 0;
+
+#if 0
+    size_t expected_output_len;
+    expected_output_length = (input_length / 4) * 3;
+    /* Note that input_length % 4 == 1 represents bad input and _should_
+     * never happen. Perhaps we should just consider it a failure. */
+    experted_output_length += ((input_length % 4) + 1) / 2;
+#endif
+
+    tmp = tvb_get_string_enc(NULL, parent, offset, length, ENC_ASCII);
+    data = g_base64uri_decode((const char*)tmp, &len);
+    wmem_free(NULL, tmp);
+
+    tvb = tvb_new_child_real_data(parent, data, (unsigned)len, (unsigned)len);
 
     tvb_set_free_cb(tvb, g_free);
 

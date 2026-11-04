@@ -37,7 +37,7 @@ AddressEditorFrame::AddressEditorFrame(QWidget *parent) :
     ui->setupUi(this);
     ui->addressComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     foreach (QWidget *w, findChildren<QWidget *>()) {
         w->setAttribute(Qt::WA_MacSmallSize, true);
     }
@@ -109,7 +109,7 @@ void AddressEditorFrame::editAddresses(CaptureFile &cf, int column)
         return;
     }
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
     if (!cf_read_record(cap_file_, cap_file_->current_frame, &rec)) {
         wtap_rec_cleanup(&rec);
         on_buttonBox_rejected();
@@ -276,7 +276,7 @@ void AddressEditorFrame::on_buttonBox_rejected()
 
 bool AddressEditorFrame::isAddressColumn(epan_column_info *cinfo, int column)
 {
-    if (!cinfo || column < 0 || column >= cinfo->num_cols) return false;
+    if (!cinfo || column < 0 || (unsigned)column >= cinfo->num_cols) return false;
 
     if (((cinfo->columns[column].col_fmt == COL_DEF_SRC) ||
          (cinfo->columns[column].col_fmt == COL_RES_SRC) ||

@@ -5,12 +5,11 @@
 #
 
 "bin/Qt6Core.dll" "Qt6Core.dll"
-"bin/Qt6Core5Compat.dll" "Qt6Core5Compat.dll"
 "bin/Qt6Gui.dll" "Qt6Gui.dll"
 "bin/Qt6Multimedia.dll" "Qt6Multimedia.dll"
 "bin/Qt6Network.dll" "Qt6Network.dll"
 "bin/Qt6PrintSupport.dll" "Qt6PrintSupport.dll"
-#"bin/Qt6Svg.dll" "Qt6Svg.dll"
+"bin/Qt6Svg.dll" "Qt6Svg.dll"
 "bin/Qt6Widgets.dll" "Qt6Widgets.dll"
 #"bin/opengl32sw.dll" "opengl32sw.dll"
 #"bin/D3Dcompiler_47.dll" "D3Dcompiler_47.dll"
@@ -19,7 +18,7 @@
 "lib/qt6/plugins/imageformats/qgif.dll" "imageformats/qgif.dll"
 "lib/qt6/plugins/imageformats/qico.dll" "imageformats/qico.dll"
 "lib/qt6/plugins/imageformats/qjpeg.dll" "imageformats/qjpeg.dll"
-#"lib/qt6/plugins/imageformats/qsvg.dll" "imageformats/qsvg.dll"
+"lib/qt6/plugins/imageformats/qsvg.dll" "imageformats/qsvg.dll"
 #"lib/qt6/plugins/multimedia/ffmpegmediaplugin.dll" "multimedia/ffmpegmediaplugin.dll"
 "lib/qt6/plugins/multimedia/windowsmediaplugin.dll" "multimedia/windowsmediaplugin.dll"
 "lib/qt6/plugins/networkinformation/qnetworklistmanager.dll" "networkinformation/qnetworklistmanager.dll"

@@ -1663,7 +1663,7 @@ dissect_tecmp_entry_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 static void
 dissect_tecmp_status_config_vendor_data(tvbuff_t *tvb, packet_info *pinfo _U_, proto_item *ti_root, uint8_t device_type _U_, uint8_t vendor_id) {
     proto_tree *tree = NULL;
-    int offset = 0;
+    unsigned offset = 0;
     unsigned data_length = 0;
 
     proto_item_append_text(ti_root, " (%s)", val_to_str(pinfo->pool, vendor_id, tecmp_vendor_ids, "(Unknown Vendor: %d)"));
@@ -1680,7 +1680,7 @@ dissect_tecmp_status_config_vendor_data(tvbuff_t *tvb, packet_info *pinfo _U_, p
         proto_tree_add_item_ret_uint(tree, hf_tecmp_payload_status_cfg_vendor_technica_segment_length, tvb, offset + 12, 2, ENC_BIG_ENDIAN, &data_length);
 
         offset += 14;
-        if (tvb_captured_length_remaining(tvb, offset) >= (int)data_length) {
+        if (tvb_captured_length_remaining(tvb, offset) >= data_length) {
             proto_tree_add_item(tree, hf_tecmp_payload_status_cfg_vendor_technica_segment_data, tvb, offset, data_length, ENC_NA);
         } else {
             proto_tree_add_item(tree, hf_tecmp_payload_status_cfg_vendor_technica_segment_data, tvb, offset,
@@ -1696,7 +1696,7 @@ dissect_tecmp_status_bus_vendor_data(tvbuff_t *tvb, packet_info *pinfo _U_, prot
                                      uint8_t entry_number, uint8_t device_type, uint8_t vendor_id) {
     proto_tree *tree = NULL;
     proto_item *ti = NULL;
-    int offset = 0;
+    unsigned offset = 0;
     int bytes_remaining = 0;
     unsigned tmp = 0;
 
@@ -1848,7 +1848,7 @@ static void
 dissect_tecmp_status_device_vendor_data(tvbuff_t *tvb, packet_info *pinfo _U_, proto_item *ti_root, uint8_t device_type _U_, uint8_t vendor_id, uint64_t timestamp_ns) {
     proto_tree *tree = NULL;
     proto_item *ti = NULL;
-    int offset = 0;
+    unsigned offset = 0;
     unsigned tmp = 0;
     uint64_t tmp64 = 0;
     nstime_t timestamp;
@@ -1862,13 +1862,13 @@ dissect_tecmp_status_device_vendor_data(tvbuff_t *tvb, packet_info *pinfo _U_, p
         proto_tree_add_item(tree, hf_tecmp_payload_status_dev_vendor_technica_res, tvb, offset, 1, ENC_NA);
         offset += 1;
         tmp = tvb_get_uint24(tvb, offset, ENC_BIG_ENDIAN);
-        proto_tree_add_string_format(tree, hf_tecmp_payload_status_dev_vendor_technica_sw, tvb, offset, 3, NULL,
-                                     "Software Version: v%d.%d.%d", (tmp&0x00ff0000)>>16, (tmp&0x0000ff00)>>8, tmp&0x000000ff);
+        proto_tree_add_string_format_value(tree, hf_tecmp_payload_status_dev_vendor_technica_sw, tvb, offset, 3, NULL,
+                                     "v%d.%d.%d", (tmp&0x00ff0000)>>16, (tmp&0x0000ff00)>>8, tmp&0x000000ff);
         offset += 3;
 
         tmp = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
-        proto_tree_add_string_format(tree, hf_tecmp_payload_status_dev_vendor_technica_hw, tvb, offset, 2, NULL,
-                                     "Hardware Version: v%d.%x", (tmp & 0x0000ff00) >> 8, tmp & 0x000000ff);
+        proto_tree_add_string_format_value(tree, hf_tecmp_payload_status_dev_vendor_technica_hw, tvb, offset, 2, NULL,
+                                     "v%d.%x", (tmp & 0x0000ff00) >> 8, tmp & 0x000000ff);
         offset += 2;
 
         ti = proto_tree_add_item(tree, hf_tecmp_payload_status_dev_vendor_technica_buffer_fill_level, tvb, offset, 1, ENC_NA);
@@ -2369,9 +2369,9 @@ dissect_tecmp_log_or_replay_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
                 lin_set_source_and_destination_columns(pinfo, &lin_info);
 
-                if (length2 > 0 && tvb_captured_length_remaining(sub_tvb, offset2) < (int)(length2 + 1)) {
+                if (length2 > 0 && tvb_captured_length_remaining(sub_tvb, offset2) < (length2 + 1)) {
                     expert_add_info(pinfo, ti, &ei_tecmp_payload_length_mismatch);
-                    length2 = MAX(0, MIN((int)length2, tvb_captured_length_remaining(sub_tvb, offset2) - 1));
+                    length2 = MIN(length2, tvb_captured_length_remaining(sub_tvb, offset2 + 1));
                 }
 
                 if (length2 > 0) {
@@ -2380,7 +2380,7 @@ dissect_tecmp_log_or_replay_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
 
                     dissect_lin_message(payload_tvb, pinfo, tree, &lin_info);
-                    offset2 += (int)length2;
+                    offset2 += length2;
                     proto_tree_add_item(tecmp_tree, hf_tecmp_payload_data_checksum_8bit, sub_tvb, offset2, 1, ENC_NA);
                 }
 
@@ -2400,9 +2400,9 @@ dissect_tecmp_log_or_replay_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                                                   &length2);
                 offset2 += 5;
 
-                if (tvb_captured_length_remaining(sub_tvb, offset2) < (int)length2) {
+                if (tvb_captured_length_remaining(sub_tvb, offset2) < length2) {
                     expert_add_info(pinfo, ti, &ei_tecmp_payload_length_mismatch);
-                    length2 = MAX(0, MIN((int)length2, tvb_captured_length_remaining(sub_tvb, offset2)));
+                    length2 = MIN(length2, tvb_captured_length_remaining(sub_tvb, offset2));
                 }
 
                 if (length2 > 0) {
@@ -2461,9 +2461,9 @@ dissect_tecmp_log_or_replay_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
                 flexray_set_source_and_destination_columns(pinfo, &fr_info);
 
-                if (tvb_captured_length_remaining(sub_tvb, offset2) < (int)length2) {
+                if (tvb_captured_length_remaining(sub_tvb, offset2) < length2) {
                     expert_add_info(pinfo, ti, &ei_tecmp_payload_length_mismatch);
-                    length2 = MAX(0, MIN((int)length2, tvb_captured_length_remaining(sub_tvb, offset2)));
+                    length2 = tvb_captured_length_remaining(sub_tvb, offset2);
                 }
 
                 if (length2 > 0) {
@@ -2744,16 +2744,20 @@ dissect_tecmp_log_or_replay_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree
                 length2 = length;
 
                 if (data_type == TECMP_DATA_TYPE_ETH_10BASE_T1S) {
-                    uint64_t ns = tvb_get_uint64(sub_tvb, offset2, ENC_BIG_ENDIAN);
+                    uint64_t ns;
+                    int64_t ns_delta;
 
-                    nstime_t timestamp;
-                    timestamp.secs = (time_t)(ns / 1000000000);
-                    timestamp.nsecs = (int)(ns % 1000000000);
-                    proto_tree_add_time(tecmp_tree, hf_tecmp_payload_data_beacon_timestamp, sub_tvb, offset2, 8, &timestamp);
-                    ti = proto_tree_add_uint64(tecmp_tree, hf_tecmp_payload_data_beacon_timestamp_ns, sub_tvb, offset2, 8, ns);
+                    proto_tree_add_item(tecmp_tree, hf_tecmp_payload_data_beacon_timestamp, sub_tvb, offset2, 8, ENC_TIME_NSECS|ENC_BIG_ENDIAN);
+                    ti = proto_tree_add_item_ret_uint64(tecmp_tree, hf_tecmp_payload_data_beacon_timestamp_ns, sub_tvb, offset2, 8, ENC_BIG_ENDIAN, &ns);
                     proto_item_set_hidden(ti);
 
-                    ti = proto_tree_add_int64(tecmp_tree, hf_tecmp_payload_data_beacon_to_timestamp_ns, sub_tvb, offset2, 8, (int64_t)timestamp_ns - (int64_t)ns);
+                    if (ckd_sub(&ns_delta, timestamp_ns, ns)) {
+                        /* This indicates that the beacon timestamp must be past
+                         * 2262-04-12, which is unlikely. We could add an expert
+                         * warning that the delta overflowed, but the delta item
+                         * is hidden anyway. So we'll just ignore it. */
+                    }
+                    ti = proto_tree_add_int64(tecmp_tree, hf_tecmp_payload_data_beacon_to_timestamp_ns, sub_tvb, offset2, 8, ns_delta);
                     proto_item_set_generated(ti);
                     proto_item_set_hidden(ti);
 
@@ -3186,10 +3190,10 @@ proto_register_tecmp_payload(void) {
         { &hf_tecmp_payload_status_dev_vendor_technica_temperature_silicon, { "Temperature Silicon", "tecmp.payload.status_dev.vendor_technica.temperature_silicon", FT_INT8, BASE_DEC | BASE_UNIT_STRING, UNS(&units_degree_celsius), 0x0, NULL, HFILL } },
         { &hf_tecmp_payload_status_dev_vendor_technica_lifecycle_counter,   { "Lifecycle Counter [hours]", "tecmp.payload.status_dev.vendor_technica.lifecycle_counter", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_tecmp_payload_status_dev_vendor_technica_error_flags,         { "Error Flags", "tecmp.payload.status_dev.vendor_technica.error_flags", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
-        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port1,   { "Port 1 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port1_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x01, NULL, HFILL } },
-        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port2,   { "Port 2 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port2_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x02, NULL, HFILL } },
-        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port3,   { "Port 3 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port3_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x04, NULL, HFILL } },
-        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port4,   { "Port 4 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port4_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x08, NULL, HFILL } },
+        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port1,   { "Port 1 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port1_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x0001, NULL, HFILL } },
+        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port2,   { "Port 2 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port2_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x0002, NULL, HFILL } },
+        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port3,   { "Port 3 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port3_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x0004, NULL, HFILL } },
+        { &hf_tecmp_payload_status_dev_vendor_technica_error_flags_port4,   { "Port 4 Initialization Error", "tecmp.payload.status_dev.vendor_technica.error_flags.port4_init_error", FT_BOOLEAN, 16, TFS(&tfs_yes_no), 0x0008, NULL, HFILL } },
         { &hf_tecmp_payload_status_dev_vendor_technica_sfpa_tx_frames,      { "SFP+ A TX Frames", "tecmp.payload.status_dev.vendor_technica.sfpa_tx_frames", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_tecmp_payload_status_dev_vendor_technica_sfpb_tx_frames,      { "SFP+ B TX Frames", "tecmp.payload.status_dev.vendor_technica.sfpb_tx_frames", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_tecmp_payload_status_dev_vendor_technica_sfpc_tx_frames,      { "SFP+ C TX Frames", "tecmp.payload.status_dev.vendor_technica.sfpc_tx_frames", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },

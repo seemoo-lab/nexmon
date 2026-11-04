@@ -12,7 +12,6 @@
 
 /*  Include Files */
 #include "config.h"
-
 #define WS_LOG_DOMAIN "zcl"
 
 #include <wireshark.h>
@@ -24,7 +23,7 @@
 #include <epan/uat.h>
 #include <epan/proto_data.h>
 
-/* We require libgcrpyt in order to decrypt ZigBee packets. Without it the best
+/* We require libgcrypt in order to decrypt ZigBee packets. Without it the best
  * we can do is parse the security header and give up.
  */
 #include <wsutil/wsgcrypt.h>
@@ -41,7 +40,7 @@ void proto_reg_handoff_zbee_security(void);
 /* Helper Functions */
 static void        zbee_sec_key_hash(uint8_t *, uint8_t, uint8_t *);
 static void        zbee_sec_make_nonce (zbee_security_packet *, uint8_t *);
-static bool        zbee_sec_decrypt_payload(zbee_security_packet *, const char *, const char, uint8_t *,
+static bool        zbee_sec_decrypt_payload(zbee_security_packet *, const uint8_t *, const unsigned, uint8_t *,
         unsigned, unsigned, uint8_t *);
 static bool        zbee_security_parse_key(const char *, uint8_t *, bool);
 
@@ -457,7 +456,7 @@ dissect_zbee_secure(tvbuff_t *tvb, packet_info *pinfo, proto_tree* tree, unsigne
 
     zbee_security_packet    packet;
     unsigned        mic_len;
-    int             payload_len;
+    unsigned        payload_len;
     tvbuff_t       *payload_tvb;
 
     proto_item         *ti;
@@ -828,7 +827,7 @@ dissect_zbee_secure(tvbuff_t *tvb, packet_info *pinfo, proto_tree* tree, unsigne
  *---------------------------------------------------------------
  */
 static bool
-zbee_sec_decrypt_payload(zbee_security_packet *packet, const char *enc_buffer, const char offset, uint8_t *dec_buffer,
+zbee_sec_decrypt_payload(zbee_security_packet *packet, const uint8_t *enc_buffer, const unsigned offset, uint8_t *dec_buffer,
         unsigned payload_len, unsigned mic_len, uint8_t *key)
 {
     uint8_t nonce[ZBEE_SEC_CONST_NONCE_LEN];
@@ -934,11 +933,11 @@ zbee_sec_make_nonce(zbee_security_packet *packet, uint8_t *nonce)
  *---------------------------------------------------------------
  */
 bool
-zbee_sec_ccm_decrypt(const char     *key,   /* Input */
-                    const char      *nonce, /* Input */
-                    const char      *a,     /* Input */
-                    const char      *c,     /* Input */
-                    char            *m,     /* Output */
+zbee_sec_ccm_decrypt(const uint8_t  *key,   /* Input */
+                    const uint8_t   *nonce, /* Input */
+                    const uint8_t   *a,     /* Input */
+                    const uint8_t   *c,     /* Input */
+                    uint8_t         *m,     /* Output */
                     unsigned        l_a,    /* sizeof(a) */
                     unsigned        l_m,    /* sizeof(m) */
                     unsigned        M)      /* sizeof(c) - sizeof(m) = sizeof(MIC) */

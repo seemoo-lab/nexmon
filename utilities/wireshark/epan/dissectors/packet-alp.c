@@ -184,7 +184,7 @@ static int hf_alp_lmt_plp_mc_context_id;
 static int hf_alp_junk;
 
 static int
-dissect_alp_mpegts(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, proto_tree *alp_tree)
+dissect_alp_mpegts(tvbuff_t *tvb, unsigned offset, packet_info *pinfo, proto_tree *tree, proto_tree *alp_tree)
 {
     uint8_t header0 = tvb_get_uint8(tvb, offset);
     uint8_t ahf = header0 & ALP_MPEGTS_AHF_MASK;
@@ -217,7 +217,7 @@ dissect_alp_mpegts(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tr
         offset++;
     }
 
-    while (dnp--) {
+    while (dnp != 0) {
         unsigned char *ts_frame = (unsigned char*)wmem_alloc(pinfo->pool, 188);
 
         ts_frame[0] = 0x47;
@@ -229,6 +229,7 @@ dissect_alp_mpegts(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tr
 
         tvbuff_t *ts_frame_tvb = tvb_new_child_real_data(tvb, ts_frame, 188, 188);
         call_dissector(ts_handle, ts_frame_tvb, pinfo, tree);
+        dnp--;
     }
 
     unsigned char *ts_frame = (unsigned char*)wmem_alloc(pinfo->pool, 188);
@@ -261,8 +262,8 @@ dissect_alp_mpegts(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tr
         call_dissector(ts_handle, ts_frame_tvb, pinfo, tree);
     }
 
-    if (offset < (int)tvb_captured_length(tvb)) {
-        int junk_length = tvb_captured_length(tvb) - offset;
+    if (offset < tvb_captured_length(tvb)) {
+        unsigned junk_length = tvb_captured_length(tvb) - offset;
         proto_tree_add_bytes_format(alp_tree, hf_alp_junk, tvb, offset, -1, NULL, "Junk at end (%u byte%s)", junk_length, (junk_length == 1) ? "" : "s");
     }
 
@@ -278,7 +279,7 @@ dissect_alp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     proto_item *ti = proto_tree_add_item(tree, proto_alp, tvb, 0, -1, ENC_NA);
     proto_tree *alp_tree = proto_item_add_subtree(ti, ett_alp);
 
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t packet_type = tvb_get_uint8(tvb, offset) >> 5;
     proto_tree_add_item(alp_tree, hf_alp_packet_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 
@@ -444,7 +445,7 @@ dissect_alp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
             offset++;
 
             for(uint8_t i = 0; i < lmt_numplp; i++) {
-                /* Fist pass. Calculate PLP entry length */
+                /* First pass. Calculate PLP entry length */
                 int lmt_plp_length = 2;
                 uint8_t lmt_mc_nummc = tvb_get_uint8(tvb, offset + 1);
                 int plp_mc_len = 0;
@@ -533,8 +534,8 @@ dissect_alp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
         }
     }
 
-    if (offset < (int)tvb_captured_length(tvb)) {
-        int junk_length = tvb_captured_length(tvb) - offset;
+    if (offset < tvb_captured_length(tvb)) {
+        unsigned junk_length = tvb_captured_length(tvb) - offset;
         proto_tree_add_bytes_format(alp_tree, hf_alp_junk, tvb, offset, -1, NULL, "Junk at end (%u byte%s)", junk_length, (junk_length == 1) ? "" : "s");
     }
 

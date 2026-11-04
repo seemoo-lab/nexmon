@@ -47,8 +47,6 @@
 
 #include <epan/packet.h>
 #include <epan/addr_resolv.h>
-#include <epan/dccpservicecodes.h>
-#include <epan/ipproto.h>
 #include <epan/in_cksum.h>
 #include <epan/prefs.h>
 #include <epan/follow.h>
@@ -58,10 +56,12 @@
 #include <epan/conversation_filter.h>
 #include <epan/tap.h>
 #include <epan/unit_strings.h>
+#include <epan/proto_data.h>
 
 #include <wsutil/str_util.h>
 
 #include "packet-dccp.h"
+#include <epan/iana-info.h>
 
 /*
  * Some definitions and the dissect_options() logic have been taken
@@ -323,11 +323,6 @@ decode_dccp_ports(tvbuff_t *tvb, int offset, packet_info *pinfo,
     heur_dtbl_entry_t *hdtbl_entry;
 
     next_tvb = tvb_new_subset_remaining(tvb, offset);
-
-    /* If the user has a "Follow DCCP Stream" window loading, pass a pointer
-       to the payload tvb through the tap system. */
-    if (have_tap_listener(dccp_follow_tap))
-        tap_queue_packet(dccp_follow_tap, pinfo, next_tvb);
 
     /*
      * determine if this packet is part of a conversation and call dissector
@@ -598,25 +593,16 @@ dccp_build_filter(packet_info *pinfo, void *user_data _U_)
 
 static char *dccp_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, unsigned *stream, unsigned *sub_stream _U_)
 {
-    conversation_t *conv;
-    struct dccp_analysis *dccpd;
+    uint8_t max_layer_num = proto_get_layer_num(pinfo, proto_dccp);
 
-    /* XXX: Since DCCP doesn't use the endpoint API, we can only look
-     * up using the current pinfo addresses and ports. We don't want
-     * to create a new conversation or stream.
-     * Eventually the endpoint API should support storing multiple
-     * endpoints and DCCP should be changed to use the endpoint API.
-     */
-    if (((pinfo->net_src.type == AT_IPv4 && pinfo->net_dst.type == AT_IPv4) ||
-        (pinfo->net_src.type == AT_IPv6 && pinfo->net_dst.type == AT_IPv6))
-        && (pinfo->ptype == PT_DCCP) &&
-        (conv=find_conversation(pinfo->num, &pinfo->net_src, &pinfo->net_dst, CONVERSATION_DCCP, pinfo->srcport, pinfo->destport, 0)) != NULL)
-    {
-        /* DCCP over IPv4/6 */
-        dccpd = get_dccp_conversation_data(conv, pinfo);
-        *stream = dccpd->stream;
-        return ws_strdup_printf("dccp.stream eq %u", dccpd->stream);
-    }
+    for (uint8_t curr_layer_num = max_layer_num; curr_layer_num; --curr_layer_num) {
+        *stream = GPOINTER_TO_UINT(p_get_proto_data(pinfo->pool, pinfo, hf_dccp_stream, curr_layer_num));
+        if (*stream) {
+            --*stream;
+            return ws_strdup_printf("dcp.stream eq %u", *stream);
+        }
+     }
+
 
     return NULL;
 }
@@ -1163,6 +1149,7 @@ dissect_dccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     dccpd = get_dccp_conversation_data(conv, pinfo);
     item = proto_tree_add_uint(dccp_tree, hf_dccp_stream, tvb, offset, 0, dccpd->stream);
     proto_item_set_generated(item);
+    p_add_proto_data(pinfo->pool, pinfo, hf_dccp_stream, pinfo->curr_proto_layer_num, GUINT_TO_POINTER(dccpd->stream + 1));
 
     /* Copy the stream index into the header as well to make it available
     * to tap listeners.
@@ -1597,8 +1584,25 @@ dissect_dccp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     tap_queue_packet(dccp_tap, pinfo, dccph);
 
     /* call sub-dissectors */
-    if (!pinfo->flags.in_error_pkt || tvb_reported_length_remaining(tvb, offset) > 0)
+    if (!pinfo->flags.in_error_pkt || tvb_reported_length_remaining(tvb, offset) > 0) {
+        /* If the user has a "Follow DCCP Stream" window loading, pass a pointer
+           to the payload tvb through the tap system. */
+        if (have_tap_listener(dccp_follow_tap)) {
+            follow_stream_tap_data_t *follow_data = wmem_new(pinfo->pool, follow_stream_tap_data_t);
+            follow_data->tvb = tvb_new_subset_remaining(tvb, offset);
+            follow_data->stream_id = dccph->stream;
+            follow_data->substream_id = SUBSTREAM_UNUSED;
+            copy_address_shallow(&follow_data->src, &dccph->ip_src);
+            copy_address_shallow(&follow_data->dst, &dccph->ip_dst);
+            follow_data->ptype = PT_DCCP;
+            follow_data->srcport = dccph->sport;
+            follow_data->destport = dccph->dport;
+
+            tap_queue_packet(dccp_follow_tap, pinfo, follow_data);
+        }
+
         decode_dccp_ports(tvb, offset, pinfo, tree, dccph->sport, dccph->dport);
+    }
 
     return tvb_reported_length(tvb);
 }
@@ -1990,7 +1994,7 @@ proto_register_dccp(void)
     register_conversation_table(proto_dccp, false, dccpip_conversation_packet, dccpip_endpoint_packet);
     register_conversation_filter("dccp", "DCCP", dccp_filter_valid, dccp_build_filter, NULL);
     register_follow_stream(proto_dccp, "dccp_follow", dccp_follow_conv_filter, dccp_follow_index_filter, dccp_follow_address_filter,
-                           dccp_port_to_display, follow_tvb_tap_listener, get_dccp_stream_count, NULL);
+                           dccp_port_to_display, follow_stream_tap_listener, get_dccp_stream_count, NULL);
 
     register_init_routine(dccp_init);
 

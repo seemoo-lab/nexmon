@@ -26,15 +26,6 @@
 #include "packet-per.h"
 #include "packet-lpp.h"
 
-#define PNAME  "LTE Positioning Protocol Extensions (LLPe)"
-#define PSNAME "LPPe"
-#define PFNAME "lppe"
-
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
 void proto_register_lppe(void);
 void proto_reg_handoff_lppe(void);
 
@@ -2340,8 +2331,8 @@ static int ett_lppe_T_srnMeasurements;
 
 
 
-static int
-dissect_lppe_OMA_LPPe_LPPeCompatibilityLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LPPeCompatibilityLevel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -2350,8 +2341,8 @@ dissect_lppe_OMA_LPPe_LPPeCompatibilityLevel(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_lppe_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -2365,8 +2356,8 @@ static const per_sequence_t OMA_LPPe_LPPeVersion_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LPPeVersion(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LPPeVersion(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LPPeVersion, OMA_LPPe_LPPeVersion_sequence);
 
@@ -2381,8 +2372,8 @@ static const value_string lppe_OMA_LPPe_LPPeMode_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_LPPeMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LPPeMode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -2394,8 +2385,8 @@ static const per_sequence_t OMA_LPPe_IP_Address_RequestCapabilities_sequence[] =
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_IP_Address_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_IP_Address_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_IP_Address_RequestCapabilities, OMA_LPPe_IP_Address_RequestCapabilities_sequence);
 
@@ -2404,8 +2395,8 @@ dissect_lppe_OMA_LPPe_IP_Address_RequestCapabilities(tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_lppe_INTEGER_1_1024(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_1024(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1024U, NULL, false);
 
@@ -2414,8 +2405,8 @@ dissect_lppe_INTEGER_1_1024(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_65535(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -2424,8 +2415,8 @@ dissect_lppe_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_OMA_LPPe_CharArray(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CharArray(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
                                                       1, 31, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-", 64,
                                                       NULL);
@@ -2440,8 +2431,8 @@ static const per_sequence_t OMA_LPPe_NonStandard_VendorOrOperatorID_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_NonStandard_VendorOrOperatorID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_NonStandard_VendorOrOperatorID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_NonStandard_VendorOrOperatorID, OMA_LPPe_NonStandard_VendorOrOperatorID_sequence);
 
@@ -2461,8 +2452,8 @@ static const per_choice_t OMA_LPPe_VendorOrOperatorID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_VendorOrOperatorID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_VendorOrOperatorID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_VendorOrOperatorID, OMA_LPPe_VendorOrOperatorID_choice,
                                  NULL);
@@ -2475,8 +2466,8 @@ static const per_sequence_t OMA_LPPe_VendorOrOperatorIDList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_VendorOrOperatorIDList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_VendorOrOperatorID },
 };
 
-static int
-dissect_lppe_OMA_LPPe_VendorOrOperatorIDList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_VendorOrOperatorIDList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_VendorOrOperatorIDList, OMA_LPPe_VendorOrOperatorIDList_sequence_of,
                                                   1, maxVendorOrOperatorIDList, false);
@@ -2490,8 +2481,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerSupportReq_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerSupportReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerSupportReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerSupportReq, OMA_LPPe_AssistanceContainerSupportReq_sequence);
 
@@ -2504,8 +2495,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerSupportReq_sequ
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerSupportReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerSupportReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainerSupportReq, OMA_LPPe_LocationInformationContainerSupportReq_sequence);
 
@@ -2517,8 +2508,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocationChange_RequestCapabilities_
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocationChange_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocationChange_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeLocationChange_RequestCapabilities, OMA_LPPe_RelativeLocationChange_RequestCapabilities_sequence);
 
@@ -2530,8 +2521,8 @@ static const per_sequence_t OMA_LPPe_HighAccuracyFormatCapabilitiesReq_sequence[
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HighAccuracyFormatCapabilitiesReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HighAccuracyFormatCapabilitiesReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HighAccuracyFormatCapabilitiesReq, OMA_LPPe_HighAccuracyFormatCapabilitiesReq_sequence);
 
@@ -2543,8 +2534,8 @@ static const per_sequence_t OMA_LPPe_SegmentedAssistanceData_ReqCapabilities_seq
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedAssistanceData_ReqCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedAssistanceData_ReqCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedAssistanceData_ReqCapabilities, OMA_LPPe_SegmentedAssistanceData_ReqCapabilities_sequence);
 
@@ -2556,8 +2547,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_128_OF_OMA_LPPe_VendorOrOperatorID_s
   { &hf_lppe_referencePointProviderSupportListReq_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_VendorOrOperatorID },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_VendorOrOperatorID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_VendorOrOperatorID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_VendorOrOperatorID, SEQUENCE_SIZE_1_128_OF_OMA_LPPe_VendorOrOperatorID_sequence_of,
                                                   1, 128, false);
@@ -2571,8 +2562,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointCapabilitiesReq_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointCapabilitiesReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointCapabilitiesReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointCapabilitiesReq, OMA_LPPe_ReferencePointCapabilitiesReq_sequence);
 
@@ -2584,8 +2575,8 @@ static const per_sequence_t OMA_LPPe_ScheduledLocation_RequestCapabilities_seque
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ScheduledLocation_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ScheduledLocation_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ScheduledLocation_RequestCapabilities, OMA_LPPe_ScheduledLocation_RequestCapabilities_sequence);
 
@@ -2597,8 +2588,8 @@ static const per_sequence_t OMA_LPPe_AccessCapabilitiesReq_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AccessCapabilitiesReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AccessCapabilitiesReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AccessCapabilitiesReq, OMA_LPPe_AccessCapabilitiesReq_sequence);
 
@@ -2610,8 +2601,8 @@ static const per_sequence_t OMA_LPPe_SegmentedLocationInformation_ReqCapabilitie
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedLocationInformation_ReqCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedLocationInformation_ReqCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedLocationInformation_ReqCapabilities, OMA_LPPe_SegmentedLocationInformation_ReqCapabilities_sequence);
 
@@ -2633,8 +2624,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsRequestCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsRequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsRequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsRequestCapabilities, OMA_LPPe_CommonIEsRequestCapabilities_sequence);
 
@@ -2643,8 +2634,8 @@ dissect_lppe_OMA_LPPe_CommonIEsRequestCapabilities(tvbuff_t *tvb _U_, int offset
 
 
 
-static int
-dissect_lppe_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_NULL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_null(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -2658,8 +2649,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_RequestCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_RequestCapabilities, OMA_LPPe_AGNSS_RequestCapabilities_sequence);
 
@@ -2671,8 +2662,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_RequestCapabilities, OMA_LPPe_OTDOA_RequestCapabilities_sequence);
 
@@ -2684,8 +2675,8 @@ static const per_sequence_t OMA_LPPe_EOTD_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_RequestCapabilities, OMA_LPPe_EOTD_RequestCapabilities_sequence);
 
@@ -2697,8 +2688,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_RequestCapabilities_sequence[] =
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_RequestCapabilities, OMA_LPPe_OTDOA_UTRA_RequestCapabilities_sequence);
 
@@ -2710,8 +2701,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_RequestCapabilities, OMA_LPPe_ECID_LTE_RequestCapabilities_sequence);
 
@@ -2723,8 +2714,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_RequestCapabilities, OMA_LPPe_ECID_GSM_RequestCapabilities_sequence);
 
@@ -2736,8 +2727,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_RequestCapabilities_sequence[] = 
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_RequestCapabilities, OMA_LPPe_ECID_UTRA_RequestCapabilities_sequence);
 
@@ -2749,8 +2740,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_RequestCapabilities, OMA_LPPe_WLAN_AP_RequestCapabilities_sequence);
 
@@ -2762,8 +2753,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_RequestCapabilities_sequence[] =
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_RequestCapabilities, OMA_LPPe_ECID_WiMax_RequestCapabilities_sequence);
 
@@ -2775,8 +2766,8 @@ static const per_sequence_t OMA_LPPe_Sensor_RequestCapabilities_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_RequestCapabilities, OMA_LPPe_Sensor_RequestCapabilities_sequence);
 
@@ -2794,8 +2785,8 @@ static const value_string lppe_T_srnTechnologies_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_srnTechnologies(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnTechnologies(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      5, NULL, true, 0, NULL);
 
@@ -2808,8 +2799,8 @@ static const per_sequence_t OMA_LPPe_SRN_Technologies_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_Technologies(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_Technologies(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_Technologies, OMA_LPPe_SRN_Technologies_sequence);
 
@@ -2818,8 +2809,8 @@ dissect_lppe_OMA_LPPe_SRN_Technologies(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_lppe_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        NO_BOUND, NO_BOUND, false, NULL);
 
@@ -2833,8 +2824,8 @@ static const per_sequence_t T_srnVendorInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_srnVendorInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnVendorInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_srnVendorInformation, T_srnVendorInformation_sequence);
 
@@ -2848,8 +2839,8 @@ static const per_sequence_t OMA_LPPe_SRN_Category_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_Category(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_Category(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_Category, OMA_LPPe_SRN_Category_sequence);
 
@@ -2861,8 +2852,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_Category_sequence
   { &hf_lppe_categoryList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_Category },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_Category(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_Category(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_Category, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_Category_sequence_of,
                                                   1, 16, false);
@@ -2876,8 +2867,8 @@ static const per_sequence_t OMA_LPPe_SRN_RequestCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_RequestCapabilities, OMA_LPPe_SRN_RequestCapabilities_sequence);
 
@@ -2901,8 +2892,8 @@ static const per_sequence_t OMA_LPPe_RequestCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RequestCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RequestCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RequestCapabilities, OMA_LPPe_RequestCapabilities_sequence);
 
@@ -2917,8 +2908,8 @@ static int * const T_iP_Address_support_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_iP_Address_support(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_iP_Address_support(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_iP_Address_support_bits, 3, NULL, NULL);
 
@@ -2931,8 +2922,8 @@ static const per_sequence_t OMA_LPPe_IP_Address_Capabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_IP_Address_Capabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_IP_Address_Capabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_IP_Address_Capabilities, OMA_LPPe_IP_Address_Capabilities_sequence);
 
@@ -2945,8 +2936,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerID, OMA_LPPe_AssistanceContainerID_sequence);
 
@@ -2958,8 +2949,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AssistanceContainerList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AssistanceContainerID },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AssistanceContainerList, OMA_LPPe_AssistanceContainerList_sequence_of,
                                                   1, maxAssistanceContainerList, false);
@@ -2974,8 +2965,8 @@ static const per_sequence_t OMA_LPPe_VendorOrOperatorAssistanceContainerList_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceContainerList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceContainerList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_VendorOrOperatorAssistanceContainerList, OMA_LPPe_VendorOrOperatorAssistanceContainerList_sequence);
 
@@ -2987,8 +2978,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerSupport_sequence_of[1] =
   { &hf_lppe_OMA_LPPe_AssistanceContainerSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceContainerList },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AssistanceContainerSupport, OMA_LPPe_AssistanceContainerSupport_sequence_of,
                                                   1, maxVendorOrOperatorIDList, false);
@@ -3002,8 +2993,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerID_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainerID, OMA_LPPe_LocationInformationContainerID_sequence);
 
@@ -3015,8 +3006,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerList_sequence_o
   { &hf_lppe_OMA_LPPe_LocationInformationContainerList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_LocationInformationContainerID },
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_LocationInformationContainerList, OMA_LPPe_LocationInformationContainerList_sequence_of,
                                                   1, maxLocationInformationContainerList, false);
@@ -3031,8 +3022,8 @@ static const per_sequence_t OMA_LPPe_VendorOrOperatorLocationInformationContaine
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_VendorOrOperatorLocationInformationContainerList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_VendorOrOperatorLocationInformationContainerList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_VendorOrOperatorLocationInformationContainerList, OMA_LPPe_VendorOrOperatorLocationInformationContainerList_sequence);
 
@@ -3044,8 +3035,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerSupport_sequenc
   { &hf_lppe_OMA_LPPe_LocationInformationContainerSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_VendorOrOperatorLocationInformationContainerList },
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_LocationInformationContainerSupport, OMA_LPPe_LocationInformationContainerSupport_sequence_of,
                                                   1, maxVendorOrOperatorIDList, false);
@@ -3055,8 +3046,8 @@ dissect_lppe_OMA_LPPe_LocationInformationContainerSupport(tvbuff_t *tvb _U_, int
 
 
 
-static int
-dissect_lppe_INTEGER_1_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_5(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 5U, NULL, false);
 
@@ -3069,8 +3060,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocationChange_Capabilities_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocationChange_Capabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocationChange_Capabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeLocationChange_Capabilities, OMA_LPPe_RelativeLocationChange_Capabilities_sequence);
 
@@ -3085,8 +3076,8 @@ static int * const OMA_LPPe_HighAccuracyFormatCapabilities_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_OMA_LPPe_HighAccuracyFormatCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HighAccuracyFormatCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, OMA_LPPe_HighAccuracyFormatCapabilities_bits, 3, NULL, NULL);
 
@@ -3095,8 +3086,8 @@ dissect_lppe_OMA_LPPe_HighAccuracyFormatCapabilities(tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_lppe_INTEGER_2_4096(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_2_4096(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             2U, 4096U, NULL, false);
 
@@ -3105,8 +3096,8 @@ dissect_lppe_INTEGER_2_4096(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_1_5000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_5000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 5000U, NULL, false);
 
@@ -3122,8 +3113,8 @@ static const per_sequence_t OMA_LPPe_SegmentedAssistanceData_ProvideCapabs_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedAssistanceData_ProvideCapabs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedAssistanceData_ProvideCapabs(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedAssistanceData_ProvideCapabs, OMA_LPPe_SegmentedAssistanceData_ProvideCapabs_sequence);
 
@@ -3138,8 +3129,8 @@ static int * const T_relativeLocationReportingSupport_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_relativeLocationReportingSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_relativeLocationReportingSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_relativeLocationReportingSupport_bits, 3, NULL, NULL);
 
@@ -3152,8 +3143,8 @@ static const per_sequence_t T_mapDataSupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_mapDataSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mapDataSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_mapDataSupport, T_mapDataSupport_sequence);
 
@@ -3167,8 +3158,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointProviderSupportElement_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointProviderSupportElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointProviderSupportElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointProviderSupportElement, OMA_LPPe_ReferencePointProviderSupportElement_sequence);
 
@@ -3180,8 +3171,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_128_OF_OMA_LPPe_ReferencePointProvid
   { &hf_lppe_referencePointProviderSupportList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ReferencePointProviderSupportElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_ReferencePointProviderSupportElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_ReferencePointProviderSupportElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_128_OF_OMA_LPPe_ReferencePointProviderSupportElement, SEQUENCE_SIZE_1_128_OF_OMA_LPPe_ReferencePointProviderSupportElement_sequence_of,
                                                   1, 128, false);
@@ -3196,8 +3187,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointCapabilities, OMA_LPPe_ReferencePointCapabilities_sequence);
 
@@ -3212,8 +3203,8 @@ static const value_string lppe_T_networkTimeReference_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_networkTimeReference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_networkTimeReference(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -3228,8 +3219,8 @@ static const per_sequence_t OMA_LPPe_ScheduledLocation_Capabilities_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ScheduledLocation_Capabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ScheduledLocation_Capabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ScheduledLocation_Capabilities, OMA_LPPe_ScheduledLocation_Capabilities_sequence);
 
@@ -3246,8 +3237,8 @@ static int * const OMA_LPPe_FixedAccessTypes_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_OMA_LPPe_FixedAccessTypes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_FixedAccessTypes(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, OMA_LPPe_FixedAccessTypes_bits, 5, NULL, NULL);
 
@@ -3266,8 +3257,8 @@ static int * const OMA_LPPe_WirelessAccessTypes_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_OMA_LPPe_WirelessAccessTypes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WirelessAccessTypes(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, OMA_LPPe_WirelessAccessTypes_bits, 7, NULL, NULL);
 
@@ -3282,8 +3273,8 @@ static const per_sequence_t OMA_LPPe_AccessCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AccessCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AccessCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AccessCapabilities, OMA_LPPe_AccessCapabilities_sequence);
 
@@ -3299,8 +3290,8 @@ static const per_sequence_t OMA_LPPe_SegmentedLocationInformation_ProvideCapabs_
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedLocationInformation_ProvideCapabs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedLocationInformation_ProvideCapabs(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedLocationInformation_ProvideCapabs, OMA_LPPe_SegmentedLocationInformation_ProvideCapabs_sequence);
 
@@ -3322,8 +3313,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsProvideCapabilities, OMA_LPPe_CommonIEsProvideCapabilities_sequence);
 
@@ -3338,8 +3329,8 @@ static int * const T_ionoModel_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ionoModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionoModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ionoModel_bits, 3, NULL, NULL);
 
@@ -3352,8 +3343,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_IonosphericModelSupport_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_IonosphericModelSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_IonosphericModelSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_IonosphericModelSupport, OMA_LPPe_AGNSS_IonosphericModelSupport_sequence);
 
@@ -3367,8 +3358,8 @@ static int * const T_tropoModel_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_tropoModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tropoModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_tropoModel_bits, 2, NULL, NULL);
 
@@ -3377,8 +3368,8 @@ dissect_lppe_T_tropoModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BOOLEAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -3391,8 +3382,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TroposphereModelSupport_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TroposphereModelSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TroposphereModelSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TroposphereModelSupport, OMA_LPPe_AGNSS_TroposphereModelSupport_sequence);
 
@@ -3404,8 +3395,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AltitudeAssistanceSupport_sequence[] 
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceSupport, OMA_LPPe_AGNSS_AltitudeAssistanceSupport_sequence);
 
@@ -3417,8 +3408,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_SolarRadiationSupport_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_SolarRadiationSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_SolarRadiationSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_SolarRadiationSupport, OMA_LPPe_AGNSS_SolarRadiationSupport_sequence);
 
@@ -3432,8 +3423,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPsupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPsupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPsupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPsupport, OMA_LPPe_AGNSS_CCPsupport_sequence);
 
@@ -3450,8 +3441,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CommonAssistanceDataSupport_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataSupport, OMA_LPPe_AGNSS_CommonAssistanceDataSupport_sequence);
 
@@ -3463,8 +3454,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_MechanicsSupport_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_MechanicsSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_MechanicsSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_MechanicsSupport, OMA_LPPe_AGNSS_MechanicsSupport_sequence);
 
@@ -3476,8 +3467,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBsupport_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBsupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBsupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_DCBsupport, OMA_LPPe_AGNSS_DCBsupport_sequence);
 
@@ -3489,8 +3480,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSuppo
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSupport, OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSupport_sequence);
 
@@ -3499,8 +3490,8 @@ dissect_lppe_OMA_LPPe_AGNSS_NavModelAccuracyModelDegradationSupport(tvbuff_t *tv
 
 
 
-static int
-dissect_lppe_INTEGER_1_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_8(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 8U, NULL, false);
 
@@ -3512,8 +3503,8 @@ static const per_sequence_t T_navModelSupport_sequence_of[1] = {
   { &hf_lppe_navModelSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_1_8 },
 };
 
-static int
-dissect_lppe_T_navModelSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_navModelSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_navModelSupport, T_navModelSupport_sequence_of,
                                                   1, 8, false);
@@ -3527,8 +3518,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelSupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModelSupport, OMA_LPPe_AGNSS_NavModelSupport_sequence);
 
@@ -3546,8 +3537,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistDataSupportElement_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataSupportElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataSupportElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_GenericAssistDataSupportElement, OMA_LPPe_AGNSS_GenericAssistDataSupportElement_sequence);
 
@@ -3559,8 +3550,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistanceDataSupport_sequence
   { &hf_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataSupportElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataSupport, OMA_LPPe_AGNSS_GenericAssistanceDataSupport_sequence_of,
                                                   1, 16, false);
@@ -3575,8 +3566,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AssistanceDataSupportList_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AssistanceDataSupportList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AssistanceDataSupportList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_AssistanceDataSupportList, OMA_LPPe_AGNSS_AssistanceDataSupportList_sequence);
 
@@ -3590,8 +3581,8 @@ static int * const T_ionosphereMeasurementSupport_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ionosphereMeasurementSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionosphereMeasurementSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ionosphereMeasurementSupport_bits, 2, NULL, NULL);
 
@@ -3606,8 +3597,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_EnvironmentObservationSupportList_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_EnvironmentObservationSupportList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_EnvironmentObservationSupportList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_EnvironmentObservationSupportList, OMA_LPPe_AGNSS_EnvironmentObservationSupportList_sequence);
 
@@ -3621,8 +3612,8 @@ static int * const T_modeSupport_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_modeSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      2, 2, false, T_modeSupport_bits, 2, NULL, NULL);
 
@@ -3636,8 +3627,8 @@ static int * const T_haGNSSantennaInformationSupport_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_haGNSSantennaInformationSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_haGNSSantennaInformationSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      8, 8, false, T_haGNSSantennaInformationSupport_bits, 2, NULL, NULL);
 
@@ -3651,8 +3642,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_HAgnssPerGNSSsupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport, OMA_LPPe_AGNSS_HAgnssPerGNSSsupport_sequence);
 
@@ -3664,8 +3655,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_HAgnssPerGNSSsup
   { &hf_lppe_haGNSSperGNSSsupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_HAgnssPerGNSSsupport_sequence_of,
                                                   1, 8, false);
@@ -3682,8 +3673,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_HAgnssSupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_HAgnssSupport, OMA_LPPe_AGNSS_HAgnssSupport_sequence);
 
@@ -3698,8 +3689,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_ProvideCapabilities, OMA_LPPe_AGNSS_ProvideCapabilities_sequence);
 
@@ -3711,8 +3702,8 @@ static const per_sequence_t T_eNodeB_AD_sup_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_T_eNodeB_AD_sup(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_eNodeB_AD_sup(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_eNodeB_AD_sup, T_eNodeB_AD_sup_sequence);
 
@@ -3724,8 +3715,8 @@ static const per_sequence_t T_home_eNodeB_AD_sup_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_T_home_eNodeB_AD_sup(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_home_eNodeB_AD_sup(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_home_eNodeB_AD_sup, T_home_eNodeB_AD_sup_sequence);
 
@@ -3739,8 +3730,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_ProvideCapabilities, OMA_LPPe_OTDOA_ProvideCapabilities_sequence);
 
@@ -3754,8 +3745,8 @@ static int * const T_eotdSupport_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_eotdSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_eotdSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      NO_BOUND, NO_BOUND, false, T_eotdSupport_bits, 2, NULL, NULL);
 
@@ -3768,8 +3759,8 @@ static const per_sequence_t OMA_LPPe_EOTD_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_ProvideCapabilities, OMA_LPPe_EOTD_ProvideCapabilities_sequence);
 
@@ -3784,8 +3775,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_ProvideCapabilities_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_ProvideCapabilities, OMA_LPPe_OTDOA_UTRA_ProvideCapabilities_sequence);
 
@@ -3802,8 +3793,8 @@ static int * const T_ecid_lte_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_lte_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_lte_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ecid_lte_MeasSupported_bits, 5, NULL, NULL);
 
@@ -3824,8 +3815,8 @@ static int * const T_ecid_lte_eNodeB_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_lte_eNodeB_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_lte_eNodeB_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_lte_eNodeB_ADSupported_bits, 9, NULL, NULL);
 
@@ -3845,8 +3836,8 @@ static int * const T_ecid_utra_HeNB_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_utra_HeNB_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_utra_HeNB_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_utra_HeNB_ADSupported_bits, 8, NULL, NULL);
 
@@ -3861,8 +3852,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_ProvideCapabilities, OMA_LPPe_ECID_LTE_ProvideCapabilities_sequence);
 
@@ -3879,8 +3870,8 @@ static int * const T_ecid_gsm_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_gsm_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_gsm_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ecid_gsm_MeasSupported_bits, 5, NULL, NULL);
 
@@ -3900,8 +3891,8 @@ static int * const T_ecid_gsm_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_gsm_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_gsm_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_gsm_ADSupported_bits, 8, NULL, NULL);
 
@@ -3915,8 +3906,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_ProvideCapabilities, OMA_LPPe_ECID_GSM_ProvideCapabilities_sequence);
 
@@ -3938,8 +3929,8 @@ static int * const T_ecid_utra_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_utra_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_utra_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_utra_MeasSupported_bits, 10, NULL, NULL);
 
@@ -3959,8 +3950,8 @@ static int * const T_ecid_utra_nodeB_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_utra_nodeB_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_utra_nodeB_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_utra_nodeB_ADSupported_bits, 8, NULL, NULL);
 
@@ -3979,8 +3970,8 @@ static int * const T_ecid_utra_HNB_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_utra_HNB_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_utra_HNB_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_utra_HNB_ADSupported_bits, 7, NULL, NULL);
 
@@ -3995,8 +3986,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_ProvideCapabilities_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_ProvideCapabilities, OMA_LPPe_ECID_UTRA_ProvideCapabilities_sequence);
 
@@ -4024,8 +4015,8 @@ static int * const T_wlan_ecid_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_wlan_ecid_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_wlan_ecid_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_wlan_ecid_MeasSupported_bits, 16, NULL, NULL);
 
@@ -4043,8 +4034,8 @@ static int * const OMA_LPPe_WLAN_AP_Type_List_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Type_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Type_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, OMA_LPPe_WLAN_AP_Type_List_bits, 6, NULL, NULL);
 
@@ -4053,8 +4044,8 @@ dissect_lppe_OMA_LPPe_WLAN_AP_Type_List(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      48, 48, false, NULL, 0, NULL, NULL);
 
@@ -4067,8 +4058,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_ID, OMA_LPPe_WLAN_AP_ID_sequence);
 
@@ -4082,8 +4073,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_Capability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Capability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Capability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_Capability, OMA_LPPe_WLAN_AP_Capability_sequence);
 
@@ -4102,8 +4093,8 @@ static int * const T_wlan_ap_ADSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_wlan_ap_ADSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_wlan_ap_ADSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_wlan_ap_ADSupported_bits, 7, NULL, NULL);
 
@@ -4117,8 +4108,8 @@ static int * const T_additional_wlan_ecid_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_additional_wlan_ecid_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_additional_wlan_ecid_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_additional_wlan_ecid_MeasSupported_bits, 2, NULL, NULL);
 
@@ -4135,8 +4126,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_ProvideCapabilities, OMA_LPPe_WLAN_AP_ProvideCapabilities_sequence);
 
@@ -4161,8 +4152,8 @@ static int * const T_ecid_wimax_MeasSupported_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ecid_wimax_MeasSupported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ecid_wimax_MeasSupported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_ecid_wimax_MeasSupported_bits, 13, NULL, NULL);
 
@@ -4175,8 +4166,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_ProvideCapabilities_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_ProvideCapabilities, OMA_LPPe_ECID_WiMax_ProvideCapabilities_sequence);
 
@@ -4192,8 +4183,8 @@ static const per_sequence_t OMA_LPPe_Sensor_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_ProvideCapabilities, OMA_LPPe_Sensor_ProvideCapabilities_sequence);
 
@@ -4207,8 +4198,8 @@ static int * const T_srnMeasurements_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_srnMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_srnMeasurements_bits, 2, NULL, NULL);
 
@@ -4221,8 +4212,8 @@ static const per_sequence_t OMA_LPPe_SRN_MeasurementMask_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_MeasurementMask(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_MeasurementMask(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_MeasurementMask, OMA_LPPe_SRN_MeasurementMask_sequence);
 
@@ -4236,8 +4227,8 @@ static int * const T_supportedAssistanceData_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_supportedAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_supportedAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_supportedAssistanceData_bits, 2, NULL, NULL);
 
@@ -4253,8 +4244,8 @@ static const per_sequence_t OMA_LPPe_SRN_ProvideCapabilitiesElement_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ProvideCapabilitiesElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ProvideCapabilitiesElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ProvideCapabilitiesElement, OMA_LPPe_SRN_ProvideCapabilitiesElement_sequence);
 
@@ -4266,8 +4257,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ProvideCapabiliti
   { &hf_lppe_capabilitiesPerSRNCategory_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_ProvideCapabilitiesElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ProvideCapabilitiesElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ProvideCapabilitiesElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ProvideCapabilitiesElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ProvideCapabilitiesElement_sequence_of,
                                                   1, 16, false);
@@ -4281,8 +4272,8 @@ static const per_sequence_t OMA_LPPe_SRN_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ProvideCapabilities, OMA_LPPe_SRN_ProvideCapabilities_sequence);
 
@@ -4306,8 +4297,8 @@ static const per_sequence_t OMA_LPPe_ProvideCapabilities_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ProvideCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ProvideCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ProvideCapabilities, OMA_LPPe_ProvideCapabilities_sequence);
 
@@ -4321,8 +4312,8 @@ static const per_sequence_t OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier_se
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier, OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier_sequence);
 
@@ -4331,8 +4322,8 @@ dissect_lppe_OMA_LPPe_VendorOrOperatorAssistanceDataIdentifier(tvbuff_t *tvb _U_
 
 
 
-static int
-dissect_lppe_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_4294967295(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -4345,8 +4336,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainer_DataSerialNumber_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainer_DataSerialNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainer_DataSerialNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainer_DataSerialNumber, OMA_LPPe_AssistanceContainer_DataSerialNumber_sequence);
 
@@ -4361,8 +4352,8 @@ static const value_string lppe_T_checkLatest_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_checkLatest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_checkLatest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -4376,8 +4367,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerCheckOrUpdateReq_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerCheckOrUpdateReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerCheckOrUpdateReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerCheckOrUpdateReq, OMA_LPPe_AssistanceContainerCheckOrUpdateReq_sequence);
 
@@ -4386,8 +4377,8 @@ dissect_lppe_OMA_LPPe_AssistanceContainerCheckOrUpdateReq(tvbuff_t *tvb _U_, int
 
 
 
-static int
-dissect_lppe_INTEGER_0_2881(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_2881(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 2881U, NULL, false);
 
@@ -4396,8 +4387,8 @@ dissect_lppe_INTEGER_0_2881(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_1_2881(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_2881(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 2881U, NULL, false);
 
@@ -4412,8 +4403,8 @@ static const per_sequence_t OMA_LPPe_ValidityPeriod_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ValidityPeriod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ValidityPeriod(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ValidityPeriod, OMA_LPPe_ValidityPeriod_sequence);
 
@@ -4430,8 +4421,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerRequest, OMA_LPPe_AssistanceContainerRequest_sequence);
 
@@ -4443,8 +4434,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerRequestList_sequence_of[
   { &hf_lppe_OMA_LPPe_AssistanceContainerRequestList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AssistanceContainerRequest },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerRequestList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerRequestList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AssistanceContainerRequestList, OMA_LPPe_AssistanceContainerRequestList_sequence_of,
                                                   1, maxAssistanceContainerList, false);
@@ -4454,8 +4445,8 @@ dissect_lppe_OMA_LPPe_AssistanceContainerRequestList(tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        4, 4, false, NULL);
 
@@ -4471,8 +4462,8 @@ static const value_string lppe_TypeOfADRequest_vals[] = {
 };
 
 
-static int
-dissect_lppe_TypeOfADRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_TypeOfADRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -4486,8 +4477,8 @@ static const per_sequence_t OMA_LPPe_RequestPeriodicADwithUpdate_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RequestPeriodicADwithUpdate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RequestPeriodicADwithUpdate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RequestPeriodicADwithUpdate, OMA_LPPe_RequestPeriodicADwithUpdate_sequence);
 
@@ -4502,8 +4493,8 @@ static const value_string lppe_T_segmentedADpreference_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_segmentedADpreference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_segmentedADpreference(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -4518,8 +4509,8 @@ static const per_sequence_t OMA_LPPe_Session_ID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Session_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Session_ID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Session_ID, OMA_LPPe_Session_ID_sequence);
 
@@ -4528,8 +4519,8 @@ dissect_lppe_OMA_LPPe_Session_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_lppe_INTEGER_1_4096(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_4096(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 4096U, NULL, false);
 
@@ -4543,8 +4534,8 @@ static const per_sequence_t OMA_LPPe_SegmentedADResume_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedADResume(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedADResume(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedADResume, OMA_LPPe_SegmentedADResume_sequence);
 
@@ -4558,8 +4549,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointAssistanceReqElement_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointAssistanceReqElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointAssistanceReqElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointAssistanceReqElement, OMA_LPPe_ReferencePointAssistanceReqElement_sequence);
 
@@ -4571,8 +4562,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_ReferencePointAssista
   { &hf_lppe_referencePointReq_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ReferencePointAssistanceReqElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_ReferencePointAssistanceReqElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_ReferencePointAssistanceReqElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_ReferencePointAssistanceReqElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_ReferencePointAssistanceReqElement_sequence_of,
                                                   1, 16, false);
@@ -4586,8 +4577,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointAssistanceReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointAssistanceReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointAssistanceReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointAssistanceReq, OMA_LPPe_ReferencePointAssistanceReq_sequence);
 
@@ -4605,8 +4596,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsRequestAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsRequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsRequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsRequestAssistanceData, OMA_LPPe_CommonIEsRequestAssistanceData_sequence);
 
@@ -4620,8 +4611,8 @@ static int * const T_ionoreq_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ionoreq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionoreq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ionoreq_bits, 2, NULL, NULL);
 
@@ -4630,8 +4621,8 @@ dissect_lppe_T_ionoreq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_lppe_INTEGER_1_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_63(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 63U, NULL, false);
 
@@ -4640,8 +4631,8 @@ dissect_lppe_INTEGER_1_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_INTEGER_1_89(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_89(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 89U, NULL, false);
 
@@ -4655,8 +4646,8 @@ static const per_sequence_t OMA_LPPe_Duration_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Duration(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Duration(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Duration, OMA_LPPe_Duration_sequence);
 
@@ -4671,8 +4662,8 @@ static const per_sequence_t T_staticModels_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_staticModels_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_staticModels_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_staticModels_01, T_staticModels_01_sequence);
 
@@ -4681,8 +4672,8 @@ dissect_lppe_T_staticModels_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_INTEGER_1_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 64U, NULL, false);
 
@@ -4696,8 +4687,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersR
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersRequest, OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersRequest_sequence);
 
@@ -4710,8 +4701,8 @@ static const per_sequence_t T_periodicModels_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_periodicModels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_periodicModels(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_periodicModels, T_periodicModels_sequence);
 
@@ -4731,8 +4722,8 @@ static const per_choice_t OMA_LPPe_AGNSS_IonosphericModelReq_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_IonosphericModelReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_IonosphericModelReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_IonosphericModelReq, OMA_LPPe_AGNSS_IonosphericModelReq_choice,
                                  NULL);
@@ -4747,8 +4738,8 @@ static int * const T_troposphereModelReq_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_troposphereModelReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_troposphereModelReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_troposphereModelReq_bits, 2, NULL, NULL);
 
@@ -4764,8 +4755,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TroposphereModelReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TroposphereModelReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TroposphereModelReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TroposphereModelReq, OMA_LPPe_AGNSS_TroposphereModelReq_sequence);
 
@@ -4779,8 +4770,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AltitudeAssistanceReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceReq, OMA_LPPe_AGNSS_AltitudeAssistanceReq_sequence);
 
@@ -4792,8 +4783,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_SolarRadiationReq_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_SolarRadiationReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_SolarRadiationReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_SolarRadiationReq, OMA_LPPe_AGNSS_SolarRadiationReq_sequence);
 
@@ -4802,8 +4793,8 @@ dissect_lppe_OMA_LPPe_AGNSS_SolarRadiationReq(tvbuff_t *tvb _U_, int offset _U_,
 
 
 
-static int
-dissect_lppe_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             INT32_MIN, 2147483647U, NULL, false);
 
@@ -4812,8 +4803,8 @@ dissect_lppe_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_INTEGER_0_179(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_179(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 179U, NULL, false);
 
@@ -4822,8 +4813,8 @@ dissect_lppe_INTEGER_0_179(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_0_99(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_99(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 99U, NULL, false);
 
@@ -4832,8 +4823,8 @@ dissect_lppe_INTEGER_0_99(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_INTEGER_M64000_1280000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M64000_1280000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -64000, 1280000U, NULL, false);
 
@@ -4856,8 +4847,8 @@ static const per_sequence_t OMA_LPPe_HighAccuracy3Dposition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HighAccuracy3Dposition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HighAccuracy3Dposition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HighAccuracy3Dposition, OMA_LPPe_HighAccuracy3Dposition_sequence);
 
@@ -4874,8 +4865,8 @@ static const value_string lppe_OMA_LPPe_AGNSS_QoR_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_QoR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_QoR(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -4889,8 +4880,8 @@ static const per_sequence_t T_posBasedReferenceStationRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_posBasedReferenceStationRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_posBasedReferenceStationRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_posBasedReferenceStationRequest, T_posBasedReferenceStationRequest_sequence);
 
@@ -4903,8 +4894,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPreferenceStationID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPreferenceStationID, OMA_LPPe_AGNSS_CCPreferenceStationID_sequence);
 
@@ -4916,8 +4907,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_ReferenceStationIDlist_sequence_of[1]
   { &hf_lppe_OMA_LPPe_AGNSS_ReferenceStationIDlist_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationID },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_ReferenceStationIDlist(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_ReferenceStationIDlist(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_ReferenceStationIDlist, OMA_LPPe_AGNSS_ReferenceStationIDlist_sequence_of,
                                                   1, maxReferenceStations, false);
@@ -4940,8 +4931,8 @@ static const per_choice_t T_refStation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_refStation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_refStation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_refStation, T_refStation_choice,
                                  NULL);
@@ -4957,8 +4948,8 @@ static const per_sequence_t T_ccpCommonRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_ccpCommonRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ccpCommonRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_ccpCommonRequest, T_ccpCommonRequest_sequence);
 
@@ -4973,8 +4964,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPrequestControlParameters_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPrequestControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPrequestControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPrequestControlParameters, OMA_LPPe_AGNSS_CCPrequestControlParameters_sequence);
 
@@ -4991,8 +4982,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CommonAssistanceDataReq_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CommonAssistanceDataReq, OMA_LPPe_AGNSS_CommonAssistanceDataReq_sequence);
 
@@ -5004,8 +4995,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WaIonoSurfaceRequest_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WaIonoSurfaceRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WaIonoSurfaceRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_WaIonoSurfaceRequest, OMA_LPPe_AGNSS_WaIonoSurfaceRequest_sequence);
 
@@ -5021,8 +5012,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_MechanicsReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_MechanicsReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_MechanicsReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_MechanicsReq, OMA_LPPe_AGNSS_MechanicsReq_sequence);
 
@@ -5038,8 +5029,8 @@ static const value_string lppe_T_pd_02_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_pd_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_pd_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -5053,8 +5044,8 @@ static const per_sequence_t T_reference_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_reference_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_reference_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_reference_01, T_reference_01_sequence);
 
@@ -5067,8 +5058,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBreq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBreq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBreq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_DCBreq, OMA_LPPe_AGNSS_DCBreq_sequence);
 
@@ -5080,8 +5071,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelDegradationModelReq_sequence[
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelReq, OMA_LPPe_AGNSS_NavModelDegradationModelReq_sequence);
 
@@ -5094,8 +5085,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPassistGenericReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPassistGenericReq, OMA_LPPe_AGNSS_CCPassistGenericReq_sequence);
 
@@ -5107,8 +5098,8 @@ static const per_sequence_t T_navModelID_PrefList_sequence_of[1] = {
   { &hf_lppe_navModelID_PrefList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_1_8 },
 };
 
-static int
-dissect_lppe_T_navModelID_PrefList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_navModelID_PrefList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_navModelID_PrefList, T_navModelID_PrefList_sequence_of,
                                                   1, 8, false);
@@ -5122,8 +5113,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavigationModelReq_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavigationModelReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavigationModelReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavigationModelReq, OMA_LPPe_AGNSS_NavigationModelReq_sequence);
 
@@ -5142,8 +5133,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistDataReqElement_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataReqElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataReqElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_GenericAssistDataReqElement, OMA_LPPe_AGNSS_GenericAssistDataReqElement_sequence);
 
@@ -5155,8 +5146,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistanceDataReq_sequence_of[
   { &hf_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataReq_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataReqElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_GenericAssistanceDataReq, OMA_LPPe_AGNSS_GenericAssistanceDataReq_sequence_of,
                                                   1, 16, false);
@@ -5171,8 +5162,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_RequestAssistanceData, OMA_LPPe_AGNSS_RequestAssistanceData_sequence);
 
@@ -5181,8 +5172,8 @@ dissect_lppe_OMA_LPPe_AGNSS_RequestAssistanceData(tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_lppe_INTEGER_0_503(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_503(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 503U, NULL, false);
 
@@ -5198,8 +5189,8 @@ static const per_sequence_t T_lteCell_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_lteCell(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_lteCell(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_lteCell, T_lteCell_sequence);
 
@@ -5213,8 +5204,8 @@ static int * const T_requestedCells_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedCells(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedCells(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_requestedCells_bits, 2, NULL, NULL);
 
@@ -5228,8 +5219,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_RequestAssistanceData, OMA_LPPe_OTDOA_RequestAssistanceData_sequence);
 
@@ -5243,8 +5234,8 @@ static int * const T_eotdAssistanceReq_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_eotdAssistanceReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_eotdAssistanceReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      NO_BOUND, NO_BOUND, false, T_eotdAssistanceReq_bits, 2, NULL, NULL);
 
@@ -5257,8 +5248,8 @@ static const per_sequence_t OMA_LPPe_EOTD_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_RequestAssistanceData, OMA_LPPe_EOTD_RequestAssistanceData_sequence);
 
@@ -5272,8 +5263,8 @@ static int * const T_otdoaUtraAssistanceReq_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_otdoaUtraAssistanceReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_otdoaUtraAssistanceReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_otdoaUtraAssistanceReq_bits, 2, NULL, NULL);
 
@@ -5286,8 +5277,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_RequestAssistanceData_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_RequestAssistanceData, OMA_LPPe_OTDOA_UTRA_RequestAssistanceData_sequence);
 
@@ -5308,8 +5299,8 @@ static int * const T_eNBrequestedAD_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_eNBrequestedAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_eNBrequestedAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_eNBrequestedAD_bits, 9, NULL, NULL);
 
@@ -5329,8 +5320,8 @@ static int * const T_heNBrequestedAD_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_heNBrequestedAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_heNBrequestedAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_heNBrequestedAD_bits, 8, NULL, NULL);
 
@@ -5344,8 +5335,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_RequestAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_RequestAssistanceData, OMA_LPPe_ECID_LTE_RequestAssistanceData_sequence);
 
@@ -5365,8 +5356,8 @@ static int * const T_requestedAD_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_requestedAD_bits, 8, NULL, NULL);
 
@@ -5379,8 +5370,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_RequestAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_RequestAssistanceData, OMA_LPPe_ECID_GSM_RequestAssistanceData_sequence);
 
@@ -5400,8 +5391,8 @@ static int * const T_nBrequestedAD_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_nBrequestedAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_nBrequestedAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_nBrequestedAD_bits, 8, NULL, NULL);
 
@@ -5420,8 +5411,8 @@ static int * const T_hNBrequestedAD_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_hNBrequestedAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_hNBrequestedAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_hNBrequestedAD_bits, 7, NULL, NULL);
 
@@ -5435,8 +5426,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_RequestAssistanceData_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_RequestAssistanceData, OMA_LPPe_ECID_UTRA_RequestAssistanceData_sequence);
 
@@ -5455,8 +5446,8 @@ static int * const T_requestedAD_01_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedAD_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedAD_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_requestedAD_01_bits, 7, NULL, NULL);
 
@@ -5470,8 +5461,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_RequestAssistanceData_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_RequestAssistanceData, OMA_LPPe_WLAN_AP_RequestAssistanceData_sequence);
 
@@ -5483,8 +5474,8 @@ static const per_sequence_t OMA_LPPe_PressureSensorAD_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_PressureSensorAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_PressureSensorAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_PressureSensorAD, OMA_LPPe_PressureSensorAD_sequence);
 
@@ -5497,8 +5488,8 @@ static const per_sequence_t OMA_LPPe_Sensor_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_RequestAssistanceData, OMA_LPPe_Sensor_RequestAssistanceData_sequence);
 
@@ -5513,8 +5504,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupUniqueID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupUniqueID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupUniqueID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroupUniqueID, OMA_LPPe_SRN_SRNgroupUniqueID_sequence);
 
@@ -5526,8 +5517,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_256_OF_OMA_LPPe_SRN_SRNgroupUniqueID
   { &hf_lppe_groupList_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNgroupUniqueID },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_256_OF_OMA_LPPe_SRN_SRNgroupUniqueID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_256_OF_OMA_LPPe_SRN_SRNgroupUniqueID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_256_OF_OMA_LPPe_SRN_SRNgroupUniqueID, SEQUENCE_SIZE_1_256_OF_OMA_LPPe_SRN_SRNgroupUniqueID_sequence_of,
                                                   1, 256, false);
@@ -5542,8 +5533,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNProvideList_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNProvideList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNProvideList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNProvideList, OMA_LPPe_SRN_SRNProvideList_sequence);
 
@@ -5557,8 +5548,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroupRequest, OMA_LPPe_SRN_SRNgroupRequest_sequence);
 
@@ -5567,8 +5558,8 @@ dissect_lppe_OMA_LPPe_SRN_SRNgroupRequest(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      8, 8, false, NULL, 0, NULL, NULL);
 
@@ -5582,8 +5573,8 @@ static const per_sequence_t T_nfc_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_nfc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_nfc(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_nfc, T_nfc_sequence);
 
@@ -5592,8 +5583,8 @@ dissect_lppe_T_nfc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      12, 12, false, NULL, 0, NULL, NULL);
 
@@ -5602,8 +5593,8 @@ dissect_lppe_BIT_STRING_SIZE_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_1_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_1_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 16, false, NULL);
 
@@ -5612,8 +5603,8 @@ dissect_lppe_OCTET_STRING_SIZE_1_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_1_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_1_18(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 18, false, NULL);
 
@@ -5628,8 +5619,8 @@ static const per_sequence_t T_mobileCode_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_mobileCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mobileCode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_mobileCode, T_mobileCode_sequence);
 
@@ -5653,8 +5644,8 @@ static const per_choice_t T_srn_id_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_srn_id(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srn_id(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_srn_id, T_srn_id_choice,
                                  NULL);
@@ -5668,8 +5659,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNid_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNid(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNid, OMA_LPPe_SRN_SRNid_sequence);
 
@@ -5681,8 +5672,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNid_sequence_
   { &hf_lppe_inTheGroup_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNid },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNid(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNid, SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNid_sequence_of,
                                                   1, 1024, false);
@@ -5698,8 +5689,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupUpdateRequestElement_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequestElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequestElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequestElement, OMA_LPPe_SRN_SRNgroupUpdateRequestElement_sequence);
 
@@ -5711,8 +5702,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupUpdateRequest_sequence_of[1] = 
   { &hf_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequest_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequestElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_SRN_SRNgroupUpdateRequest, OMA_LPPe_SRN_SRNgroupUpdateRequest_sequence_of,
                                                   1, 64, false);
@@ -5733,8 +5724,8 @@ static const per_choice_t T_srnGroup_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_srnGroup_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnGroup_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_srnGroup_01, T_srnGroup_01_choice,
                                  NULL);
@@ -5749,8 +5740,8 @@ static const per_sequence_t T_antennaPatternID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_antennaPatternID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_antennaPatternID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_antennaPatternID, T_antennaPatternID_sequence);
 
@@ -5763,8 +5754,8 @@ static const per_sequence_t OMA_LPPe_SRN_AntennaPatternRequestElement_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_AntennaPatternRequestElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_AntennaPatternRequestElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_AntennaPatternRequestElement, OMA_LPPe_SRN_AntennaPatternRequestElement_sequence);
 
@@ -5776,8 +5767,8 @@ static const per_sequence_t OMA_LPPe_SRN_AntennaPatternRequest_sequence_of[1] = 
   { &hf_lppe_OMA_LPPe_SRN_AntennaPatternRequest_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_AntennaPatternRequestElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_AntennaPatternRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_AntennaPatternRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_SRN_AntennaPatternRequest, OMA_LPPe_SRN_AntennaPatternRequest_sequence_of,
                                                   1, 8, false);
@@ -5792,8 +5783,8 @@ static const per_sequence_t OMA_LPPe_SRN_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_RequestAssistanceData, OMA_LPPe_SRN_RequestAssistanceData_sequence);
 
@@ -5816,8 +5807,8 @@ static const per_sequence_t OMA_LPPe_RequestAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RequestAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RequestAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RequestAssistanceData, OMA_LPPe_RequestAssistanceData_sequence);
 
@@ -5839,8 +5830,8 @@ static const value_string lppe_T_checkOrUpdateOrError_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_checkOrUpdateOrError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_checkOrUpdateOrError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      9, NULL, true, 0, NULL);
 
@@ -5849,8 +5840,8 @@ dissect_lppe_T_checkOrUpdateOrError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_lppe_INTEGER_0_5000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_5000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 5000U, NULL, false);
 
@@ -5859,8 +5850,8 @@ dissect_lppe_INTEGER_0_5000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_1_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -5869,8 +5860,8 @@ dissect_lppe_INTEGER_1_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_2_9180(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_2_9180(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             2U, 9180U, NULL, false);
 
@@ -5879,8 +5870,8 @@ dissect_lppe_INTEGER_2_9180(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_0_4589(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_4589(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4589U, NULL, false);
 
@@ -5889,8 +5880,8 @@ dissect_lppe_INTEGER_0_4589(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_0_9179(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_9179(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 9179U, NULL, false);
 
@@ -5902,8 +5893,8 @@ static const per_sequence_t OMA_LPPe_RleList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_RleList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_255 },
 };
 
-static int
-dissect_lppe_OMA_LPPe_RleList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RleList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_RleList, OMA_LPPe_RleList_sequence_of,
                                                   1, 65535, false);
@@ -5921,8 +5912,8 @@ static const per_sequence_t OMA_LPPe_ValidityArea_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ValidityArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ValidityArea(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ValidityArea, OMA_LPPe_ValidityArea_sequence);
 
@@ -5938,8 +5929,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerData, OMA_LPPe_AssistanceContainerData_sequence);
 
@@ -5959,8 +5950,8 @@ static const per_choice_t T_dataResult_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_dataResult(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_dataResult(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_dataResult, T_dataResult_choice,
                                  NULL);
@@ -5979,8 +5970,8 @@ static const value_string lppe_T_serverError_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_serverError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_serverError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      5, NULL, true, 0, NULL);
 
@@ -5993,8 +5984,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerProvideError_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerProvideError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerProvideError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerProvideError, OMA_LPPe_AssistanceContainerProvideError_sequence);
 
@@ -6010,8 +6001,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerProvide_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AssistanceContainerProvide, OMA_LPPe_AssistanceContainerProvide_sequence);
 
@@ -6023,8 +6014,8 @@ static const per_sequence_t OMA_LPPe_AssistanceContainerProvideList_sequence_of[
   { &hf_lppe_OMA_LPPe_AssistanceContainerProvideList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AssistanceContainerProvide },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AssistanceContainerProvideList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AssistanceContainerProvideList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AssistanceContainerProvideList, OMA_LPPe_AssistanceContainerProvideList_sequence_of,
                                                   1, maxAssistanceContainerList, false);
@@ -6042,8 +6033,8 @@ static const value_string lppe_OMA_LPPe_TypeOfADProvide_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_TypeOfADProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_TypeOfADProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -6057,8 +6048,8 @@ static const per_sequence_t OMA_LPPe_ProvidePeriodicADwithUpdate_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ProvidePeriodicADwithUpdate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ProvidePeriodicADwithUpdate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ProvidePeriodicADwithUpdate, OMA_LPPe_ProvidePeriodicADwithUpdate_sequence);
 
@@ -6072,8 +6063,8 @@ static const per_sequence_t OMA_LPPe_SegmentedADTransfer_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedADTransfer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedADTransfer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedADTransfer, OMA_LPPe_SegmentedADTransfer_sequence);
 
@@ -6088,8 +6079,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointUniqueID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointUniqueID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointUniqueID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointUniqueID, OMA_LPPe_ReferencePointUniqueID_sequence);
 
@@ -6111,8 +6102,8 @@ static const per_choice_t T_referencePointGeographicLocation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_referencePointGeographicLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_referencePointGeographicLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_referencePointGeographicLocation, T_referencePointGeographicLocation_choice,
                                  NULL);
@@ -6122,8 +6113,8 @@ dissect_lppe_T_referencePointGeographicLocation(tvbuff_t *tvb _U_, int offset _U
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        2, 2, false, NULL);
 
@@ -6132,8 +6123,8 @@ dissect_lppe_OCTET_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_lppe_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_511(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 511U, NULL, false);
 
@@ -6142,8 +6133,8 @@ dissect_lppe_INTEGER_0_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_1_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_1_256(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 256, false, NULL);
 
@@ -6157,8 +6148,8 @@ static const per_sequence_t OMA_LPPe_CivicAddressElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicAddressElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicAddressElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicAddressElement, OMA_LPPe_CivicAddressElement_sequence);
 
@@ -6170,8 +6161,8 @@ static const per_sequence_t OMA_LPPe_CivicAddressElementList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_CivicAddressElementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_CivicAddressElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicAddressElementList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicAddressElementList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_CivicAddressElementList, OMA_LPPe_CivicAddressElementList_sequence_of,
                                                   1, 128, false);
@@ -6186,8 +6177,8 @@ static const per_sequence_t OMA_LPPe_CivicLocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicLocation, OMA_LPPe_CivicLocation_sequence);
 
@@ -6196,8 +6187,8 @@ dissect_lppe_OMA_LPPe_CivicLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_lppe_INTEGER_M20_235(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M20_235(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -20, 235U, NULL, false);
 
@@ -6213,8 +6204,8 @@ static const value_string lppe_T_units_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_units(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_units(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -6231,8 +6222,8 @@ static const value_string lppe_T_arc_second_units_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_arc_second_units(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_arc_second_units(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -6241,8 +6232,8 @@ dissect_lppe_T_arc_second_units(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_M524288_524287(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M524288_524287(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -524288, 524287U, NULL, false);
 
@@ -6251,8 +6242,8 @@ dissect_lppe_INTEGER_M524288_524287(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_lppe_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M32768_32767(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -32768, 32767U, NULL, false);
 
@@ -6261,8 +6252,8 @@ dissect_lppe_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_127(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -6276,8 +6267,8 @@ static const per_sequence_t OMA_LPPe_GeodeticUncertaintyAndConfidence_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_GeodeticUncertaintyAndConfidence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_GeodeticUncertaintyAndConfidence(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_GeodeticUncertaintyAndConfidence, OMA_LPPe_GeodeticUncertaintyAndConfidence_sequence);
 
@@ -6291,8 +6282,8 @@ static const per_sequence_t OMA_LPPe_GeodeticRelativeAltitude_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_GeodeticRelativeAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_GeodeticRelativeAltitude(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_GeodeticRelativeAltitude, OMA_LPPe_GeodeticRelativeAltitude_sequence);
 
@@ -6301,8 +6292,8 @@ dissect_lppe_OMA_LPPe_GeodeticRelativeAltitude(tvbuff_t *tvb _U_, int offset _U_
 
 
 
-static int
-dissect_lppe_INTEGER_M255_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M255_256(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -255, 256U, NULL, false);
 
@@ -6316,8 +6307,8 @@ static const per_sequence_t OMA_LPPe_CivicUncertaintyAndConfidence_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicUncertaintyAndConfidence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicUncertaintyAndConfidence(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicUncertaintyAndConfidence, OMA_LPPe_CivicUncertaintyAndConfidence_sequence);
 
@@ -6331,8 +6322,8 @@ static const per_sequence_t OMA_LPPe_CivicRelativeAltitude_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicRelativeAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicRelativeAltitude(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicRelativeAltitude, OMA_LPPe_CivicRelativeAltitude_sequence);
 
@@ -6346,8 +6337,8 @@ static const per_sequence_t OMA_LPPe_RelativeAltitude_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeAltitude(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeAltitude, OMA_LPPe_RelativeAltitude_sequence);
 
@@ -6362,8 +6353,8 @@ static const per_sequence_t T_ellipse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_ellipse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ellipse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_ellipse, T_ellipse_sequence);
 
@@ -6383,8 +6374,8 @@ static const per_choice_t T_uncShape_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_uncShape(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_uncShape(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_uncShape, T_uncShape_choice,
                                  NULL);
@@ -6399,8 +6390,8 @@ static const per_sequence_t OMA_LPPe_HorizontalUncertaintyAndConfidence_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HorizontalUncertaintyAndConfidence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HorizontalUncertaintyAndConfidence(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HorizontalUncertaintyAndConfidence, OMA_LPPe_HorizontalUncertaintyAndConfidence_sequence);
 
@@ -6418,8 +6409,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeLocation, OMA_LPPe_RelativeLocation_sequence);
 
@@ -6433,8 +6424,8 @@ static const per_sequence_t OMA_LPPe_ReferencePointRelationship_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePointRelationship(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePointRelationship(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePointRelationship, OMA_LPPe_ReferencePointRelationship_sequence);
 
@@ -6446,8 +6437,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelation
   { &hf_lppe_relatedReferencePoints_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ReferencePointRelationship },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelationship(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelationship(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelationship, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelationship_sequence_of,
                                                   1, 8, false);
@@ -6457,8 +6448,8 @@ dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointRelationship(tvbuff_t *
 
 
 
-static int
-dissect_lppe_OMA_LPPe_Uri(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Uri(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,
                                                       NO_BOUND, NO_BOUND, false, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:/?#[]@!$&'()*+,;=-._~%", 85,
                                                       NULL);
@@ -6469,8 +6460,8 @@ dissect_lppe_OMA_LPPe_Uri(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_1_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_1_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 64, false, NULL);
 
@@ -6485,8 +6476,8 @@ static const per_sequence_t OMA_LPPe_MapDataReference_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_MapDataReference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_MapDataReference(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_MapDataReference, OMA_LPPe_MapDataReference_sequence);
 
@@ -6506,8 +6497,8 @@ static const per_choice_t T_mapDataUrl_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_mapDataUrl_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mapDataUrl_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_mapDataUrl_choice, T_mapDataUrl_choice_choice,
                                  NULL);
@@ -6528,8 +6519,8 @@ static const per_choice_t T_mapProvider_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_mapProvider(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mapProvider(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_mapProvider, T_mapProvider_choice,
                                  NULL);
@@ -6539,8 +6530,8 @@ dissect_lppe_T_mapProvider(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_VisibleString_SIZE_1_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_VisibleString_SIZE_1_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_VisibleString(tvb, offset, actx, tree, hf_index,
                                           1, 64, false,
                                           NULL);
@@ -6565,8 +6556,8 @@ static const per_choice_t T_mapAssociation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_mapAssociation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mapAssociation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_mapAssociation, T_mapAssociation_choice,
                                  NULL);
@@ -6576,8 +6567,8 @@ dissect_lppe_T_mapAssociation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_lppe_INTEGER_0_359(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_359(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 359U, NULL, false);
 
@@ -6593,8 +6584,8 @@ static const per_sequence_t OMA_LPPe_MapDataReferenceElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_MapDataReferenceElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_MapDataReferenceElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_MapDataReferenceElement, OMA_LPPe_MapDataReferenceElement_sequence);
 
@@ -6606,8 +6597,8 @@ static const per_sequence_t OMA_LPPe_MapDataInformation_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_MapDataInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_MapDataReferenceElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_MapDataInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_MapDataInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_MapDataInformation, OMA_LPPe_MapDataInformation_sequence_of,
                                                   1, 16, false);
@@ -6626,8 +6617,8 @@ static const per_sequence_t OMA_LPPe_ReferencePoint_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ReferencePoint(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ReferencePoint(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ReferencePoint, OMA_LPPe_ReferencePoint_sequence);
 
@@ -6643,8 +6634,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsProvideAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsProvideAssistanceData, OMA_LPPe_CommonIEsProvideAssistanceData_sequence);
 
@@ -6653,8 +6644,8 @@ dissect_lppe_OMA_LPPe_CommonIEsProvideAssistanceData(tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_lppe_INTEGER_M128_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M128_127(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -128, 127U, NULL, false);
 
@@ -6675,8 +6666,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalKlobucharModel_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalKlobucharModel, OMA_LPPe_AGNSS_LocalKlobucharModel_sequence);
 
@@ -6688,8 +6679,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalKlobucharMo
   { &hf_lppe_klobucharModel_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModel },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalKlobucharModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalKlobucharModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalKlobucharModel, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalKlobucharModel_sequence_of,
                                                   1, 8, false);
@@ -6704,8 +6695,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalKlobucharModelElement_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelElement, OMA_LPPe_AGNSS_LocalKlobucharModelElement_sequence);
 
@@ -6717,8 +6708,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalKlobucharModelList_sequence_of[1
   { &hf_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_LocalKlobucharModelList, OMA_LPPe_AGNSS_LocalKlobucharModelList_sequence_of,
                                                   1, 16, false);
@@ -6739,8 +6730,8 @@ static const value_string lppe_OMA_LPPe_AGNSS_NoaaScales_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NoaaScales(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NoaaScales(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      7, NULL, true, 0, NULL);
 
@@ -6758,8 +6749,8 @@ static const per_choice_t T_ionoIndex_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_ionoIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionoIndex(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_ionoIndex, T_ionoIndex_choice,
                                  NULL);
@@ -6774,8 +6765,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_RleIonoElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_RleIonoElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_RleIonoElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_RleIonoElement, OMA_LPPe_AGNSS_RleIonoElement_sequence);
 
@@ -6787,8 +6778,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_RleListIono_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_RleListIono_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_RleIonoElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_RleListIono(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_RleListIono(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_RleListIono, OMA_LPPe_AGNSS_RleListIono_sequence_of,
                                                   1, 65535, false);
@@ -6803,8 +6794,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_StormElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_StormElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_StormElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_StormElement, OMA_LPPe_AGNSS_StormElement_sequence);
 
@@ -6816,8 +6807,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_StormList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_StormList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_StormElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_StormList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_StormList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_StormList, OMA_LPPe_AGNSS_StormList_sequence_of,
                                                   1, 16, false);
@@ -6832,8 +6823,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_IonoStormIndication_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_IonoStormIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_IonoStormIndication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_IonoStormIndication, OMA_LPPe_AGNSS_IonoStormIndication_sequence);
 
@@ -6847,8 +6838,8 @@ static const per_sequence_t T_staticModels_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_staticModels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_staticModels(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_staticModels, T_staticModels_sequence);
 
@@ -6864,8 +6855,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersP
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersProvide, OMA_LPPe_AGNSS_WideAreaIonoSurfaceControlParametersProvide_sequence);
 
@@ -6878,8 +6869,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WideAreaIonoSurfaceCommon_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceCommon(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceCommon(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfaceCommon, OMA_LPPe_AGNSS_WideAreaIonoSurfaceCommon_sequence);
 
@@ -6899,8 +6890,8 @@ static const per_choice_t T_waIono_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_waIono(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_waIono(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_waIono, T_waIono_choice,
                                  NULL);
@@ -6921,8 +6912,8 @@ static const per_choice_t OMA_LPPe_AGNSS_IonosphericModel_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_IonosphericModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_IonosphericModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_IonosphericModel, OMA_LPPe_AGNSS_IonosphericModel_choice,
                                  NULL);
@@ -6932,8 +6923,8 @@ dissect_lppe_OMA_LPPe_AGNSS_IonosphericModel(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_lppe_INTEGER_M1000_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M1000_8192(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1000, 8192U, NULL, false);
 
@@ -6942,8 +6933,8 @@ dissect_lppe_INTEGER_M1000_8192(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_4095(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4095U, NULL, false);
 
@@ -6952,8 +6943,8 @@ dissect_lppe_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_M8192_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M8192_8191(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -8192, 8191U, NULL, false);
 
@@ -6962,8 +6953,8 @@ dissect_lppe_INTEGER_M8192_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_16383(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 16383U, NULL, false);
 
@@ -6981,8 +6972,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_MappingFunctionParameters_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_MappingFunctionParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_MappingFunctionParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_MappingFunctionParameters, OMA_LPPe_AGNSS_MappingFunctionParameters_sequence);
 
@@ -7002,8 +6993,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement_sequ
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement, OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement_sequence);
 
@@ -7015,8 +7006,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalTroposphere
   { &hf_lppe_delayList_item , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalTroposphereDelayTimeElement_sequence_of,
                                                   1, 8, false);
@@ -7033,8 +7024,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement_sequ
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement, OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement_sequence);
 
@@ -7046,8 +7037,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalTroposphereDelayList_sequence_of
   { &hf_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayAreaElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayList, OMA_LPPe_AGNSS_LocalTroposphereDelayList_sequence_of,
                                                   1, 8, false);
@@ -7057,8 +7048,8 @@ dissect_lppe_OMA_LPPe_AGNSS_LocalTroposphereDelayList(tvbuff_t *tvb _U_, int off
 
 
 
-static int
-dissect_lppe_INTEGER_M1024_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M1024_1023(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1024, 1023U, NULL, false);
 
@@ -7067,8 +7058,8 @@ dissect_lppe_INTEGER_M1024_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_M64_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M64_63(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -64, 63U, NULL, false);
 
@@ -7077,8 +7068,8 @@ dissect_lppe_INTEGER_M64_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_M16_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M16_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -16, 16U, NULL, false);
 
@@ -7087,8 +7078,8 @@ dissect_lppe_INTEGER_M16_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_M8_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M8_7(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -8, 7U, NULL, false);
 
@@ -7110,8 +7101,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement, OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement_sequence);
 
@@ -7123,8 +7114,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalSurfacePara
   { &hf_lppe_parameterList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_LocalSurfaceParametersTimeElement_sequence_of,
                                                   1, 8, false);
@@ -7141,8 +7132,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement, OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement_sequence);
 
@@ -7154,8 +7145,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalSurfaceParametersList_sequence_o
   { &hf_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersAreaElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_LocalSurfaceParametersList, OMA_LPPe_AGNSS_LocalSurfaceParametersList_sequence_of,
                                                   1, 8, false);
@@ -7170,8 +7161,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TroposphereModel_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TroposphereModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TroposphereModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TroposphereModel, OMA_LPPe_AGNSS_TroposphereModel_sequence);
 
@@ -7188,8 +7179,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_PressureAssistanceElement_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_PressureAssistanceElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_PressureAssistanceElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_PressureAssistanceElement, OMA_LPPe_AGNSS_PressureAssistanceElement_sequence);
 
@@ -7201,8 +7192,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_PressureAssista
   { &hf_lppe_pressureAssistanceList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_PressureAssistanceElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_PressureAssistanceElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_PressureAssistanceElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_PressureAssistanceElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_PressureAssistanceElement_sequence_of,
                                                   1, 16, false);
@@ -7219,8 +7210,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement, OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement_sequence);
 
@@ -7232,8 +7223,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AltitudeAssistanceList_sequence_of[1]
   { &hf_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceAreaElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceList, OMA_LPPe_AGNSS_AltitudeAssistanceList_sequence_of,
                                                   1, 8, false);
@@ -7243,8 +7234,8 @@ dissect_lppe_OMA_LPPe_AGNSS_AltitudeAssistanceList(tvbuff_t *tvb _U_, int offset
 
 
 
-static int
-dissect_lppe_INTEGER_1000_2000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1000_2000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1000U, 2000U, NULL, false);
 
@@ -7257,8 +7248,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_SolarRadiation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_SolarRadiation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_SolarRadiation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_SolarRadiation, OMA_LPPe_AGNSS_SolarRadiation_sequence);
 
@@ -7271,8 +7262,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPprovideCommonParameters_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPprovideCommonParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPprovideCommonParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPprovideCommonParameters, OMA_LPPe_AGNSS_CCPprovideCommonParameters_sequence);
 
@@ -7286,8 +7277,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPsignalSupport_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPsignalSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPsignalSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPsignalSupport, OMA_LPPe_AGNSS_CCPsignalSupport_sequence);
 
@@ -7299,8 +7290,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPsignalSupport
   { &hf_lppe_signalSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPsignalSupport },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPsignalSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPsignalSupport(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPsignalSupport, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPsignalSupport_sequence_of,
                                                   1, 8, false);
@@ -7315,8 +7306,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPsupportArea_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPsupportArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPsupportArea(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPsupportArea, OMA_LPPe_AGNSS_CCPsupportArea_sequence);
 
@@ -7336,8 +7327,8 @@ static const per_choice_t T_antennaDescription_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_antennaDescription(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_antennaDescription(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_antennaDescription, T_antennaDescription_choice,
                                  NULL);
@@ -7353,8 +7344,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_AntennaDescription_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_AntennaDescription(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_AntennaDescription(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_AntennaDescription, OMA_LPPe_AGNSS_AntennaDescription_sequence);
 
@@ -7369,8 +7360,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPreferenceStationElement_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPreferenceStationElement, OMA_LPPe_AGNSS_CCPreferenceStationElement_sequence);
 
@@ -7382,8 +7373,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPreferenceStationList_sequence_of[1
   { &hf_lppe_OMA_LPPe_AGNSS_CCPreferenceStationList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPreferenceStationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_CCPreferenceStationList, OMA_LPPe_AGNSS_CCPreferenceStationList_sequence_of,
                                                   0, maxReferenceStations, false);
@@ -7401,8 +7392,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPprovideControlParameters_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPprovideControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPprovideControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPprovideControlParameters, OMA_LPPe_AGNSS_CCPprovideControlParameters_sequence);
 
@@ -7422,8 +7413,8 @@ static const per_choice_t OMA_LPPe_AGNSS_CCPassistCommonProvide_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPassistCommonProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPassistCommonProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_CCPassistCommonProvide, OMA_LPPe_AGNSS_CCPassistCommonProvide_choice,
                                  NULL);
@@ -7441,8 +7432,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CommonAssistData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CommonAssistData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CommonAssistData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CommonAssistData, OMA_LPPe_AGNSS_CommonAssistData_sequence);
 
@@ -7451,8 +7442,8 @@ dissect_lppe_OMA_LPPe_AGNSS_CommonAssistData(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_lppe_INTEGER_0_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_8191(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 8191U, NULL, false);
 
@@ -7461,8 +7452,8 @@ dissect_lppe_INTEGER_0_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_M4096_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M4096_4095(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -4096, 4095U, NULL, false);
 
@@ -7481,8 +7472,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement, OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement_sequence);
 
@@ -7494,8 +7485,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist_sequence
   { &hf_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVelement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist, OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist_sequence_of,
                                                   1, 64, false);
@@ -7505,8 +7496,8 @@ dissect_lppe_OMA_LPPe_AGNSS_WideAreaIonoSurfacePerSVlist(tvbuff_t *tvb _U_, int 
 
 
 
-static int
-dissect_lppe_INTEGER_1_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_4095(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 4095U, NULL, false);
 
@@ -7515,8 +7506,8 @@ dissect_lppe_INTEGER_1_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_1_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_511(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 511U, NULL, false);
 
@@ -7525,8 +7516,8 @@ dissect_lppe_INTEGER_1_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_M30000_30000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M30000_30000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -30000, 30000U, NULL, false);
 
@@ -7541,8 +7532,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_PCOelement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_PCOelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_PCOelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_PCOelement, OMA_LPPe_AGNSS_PCOelement_sequence);
 
@@ -7564,8 +7555,8 @@ static const value_string lppe_OMA_LPPe_AGNSS_SVtype_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_SVtype(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_SVtype(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      9, NULL, true, 0, NULL);
 
@@ -7574,8 +7565,8 @@ dissect_lppe_OMA_LPPe_AGNSS_SVtype(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_INTEGER_0_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1000U, NULL, false);
 
@@ -7589,8 +7580,8 @@ static const per_sequence_t T_svInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_svInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_svInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_svInfo, T_svInfo_sequence);
 
@@ -7607,8 +7598,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_MechanicsElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_MechanicsElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_MechanicsElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_MechanicsElement, OMA_LPPe_AGNSS_MechanicsElement_sequence);
 
@@ -7620,8 +7611,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_MechanicsForAllSVs_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_MechanicsForAllSVs_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_MechanicsElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_MechanicsForAllSVs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_MechanicsForAllSVs(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_MechanicsForAllSVs, OMA_LPPe_AGNSS_MechanicsForAllSVs_sequence_of,
                                                   1, 64, false);
@@ -7638,8 +7629,8 @@ static const value_string lppe_T_pd_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_pd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_pd(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -7653,8 +7644,8 @@ static const per_sequence_t T_reference_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_reference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_reference(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_reference, T_reference_sequence);
 
@@ -7670,8 +7661,8 @@ static const value_string lppe_T_pd_01_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_pd_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_pd_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -7686,8 +7677,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBelement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_DCBelement, OMA_LPPe_AGNSS_DCBelement_sequence);
 
@@ -7699,8 +7690,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBlist_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_DCBlist_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_DCBelement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBlist(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBlist(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_DCBlist, OMA_LPPe_AGNSS_DCBlist_sequence_of,
                                                   1, 16, false);
@@ -7716,8 +7707,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBlistElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBlistElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBlistElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_DCBlistElement, OMA_LPPe_AGNSS_DCBlistElement_sequence);
 
@@ -7729,8 +7720,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_DCBsForAllSVs_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_DCBsForAllSVs_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_DCBlistElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_DCBsForAllSVs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_DCBsForAllSVs(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_DCBsForAllSVs, OMA_LPPe_AGNSS_DCBsForAllSVs_sequence_of,
                                                   1, 64, false);
@@ -7740,8 +7731,8 @@ dissect_lppe_OMA_LPPe_AGNSS_DCBsForAllSVs(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_31(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 31U, NULL, false);
 
@@ -7750,8 +7741,8 @@ dissect_lppe_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_7(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 7U, NULL, false);
 
@@ -7765,8 +7756,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_ClockModelDegradationModel_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_ClockModelDegradationModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_ClockModelDegradationModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_ClockModelDegradationModel, OMA_LPPe_AGNSS_ClockModelDegradationModel_sequence);
 
@@ -7780,8 +7771,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_OrbitModelDegradationModel_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_OrbitModelDegradationModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_OrbitModelDegradationModel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_OrbitModelDegradationModel, OMA_LPPe_AGNSS_OrbitModelDegradationModel_sequence);
 
@@ -7796,8 +7787,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelDegradationModelElement_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelElement, OMA_LPPe_AGNSS_NavModelDegradationModelElement_sequence);
 
@@ -7809,8 +7800,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelDegradationModelList_sequence
   { &hf_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelList, OMA_LPPe_AGNSS_NavModelDegradationModelList_sequence_of,
                                                   1, 64, false);
@@ -7820,8 +7811,8 @@ dissect_lppe_OMA_LPPe_AGNSS_NavModelDegradationModelList(tvbuff_t *tvb _U_, int 
 
 
 
-static int
-dissect_lppe_INTEGER_0_14989622(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_14989622(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 14989622U, NULL, false);
 
@@ -7830,8 +7821,8 @@ dissect_lppe_INTEGER_0_14989622(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_63(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 63U, NULL, false);
 
@@ -7851,8 +7842,8 @@ static const per_choice_t OMA_LPPe_AGNSS_CodePhaseError_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CodePhaseError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CodePhaseError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_CodePhaseError, OMA_LPPe_AGNSS_CodePhaseError_choice,
                                  NULL);
@@ -7872,8 +7863,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPperSVelement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPperSVelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPperSVelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPperSVelement, OMA_LPPe_AGNSS_CCPperSVelement_sequence);
 
@@ -7885,8 +7876,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_CCPperSVelement
   { &hf_lppe_ccpPerSVlist_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPperSVelement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_CCPperSVelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_CCPperSVelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_CCPperSVelement, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_CCPperSVelement_sequence_of,
                                                   1, 64, false);
@@ -7901,8 +7892,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPperSignalElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPperSignalElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPperSignalElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPperSignalElement, OMA_LPPe_AGNSS_CCPperSignalElement_sequence);
 
@@ -7914,8 +7905,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPperSignalElem
   { &hf_lppe_ccpPerSignalList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPperSignalElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPperSignalElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPperSignalElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPperSignalElement, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_AGNSS_CCPperSignalElement_sequence_of,
                                                   1, 8, false);
@@ -7930,8 +7921,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPassistGenericProvideElement_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvideElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvideElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvideElement, OMA_LPPe_AGNSS_CCPassistGenericProvideElement_sequence);
 
@@ -7943,8 +7934,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_CCPassistGenericProvide_sequence_of[1
   { &hf_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvide_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvideElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvide, OMA_LPPe_AGNSS_CCPassistGenericProvide_sequence_of,
                                                   1, maxReferenceStations, false);
@@ -7954,8 +7945,8 @@ dissect_lppe_OMA_LPPe_AGNSS_CCPassistGenericProvide(tvbuff_t *tvb _U_, int offse
 
 
 
-static int
-dissect_lppe_INTEGER_1_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_30(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 30U, NULL, false);
 
@@ -7969,8 +7960,8 @@ static const per_sequence_t T_fixedInterval_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fixedInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fixedInterval(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fixedInterval, T_fixedInterval_sequence);
 
@@ -7979,8 +7970,8 @@ dissect_lppe_T_fixedInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_INTEGER_M100000000_100000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M100000000_100000000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -100000000, 100000000U, NULL, false);
 
@@ -7989,8 +7980,8 @@ dissect_lppe_INTEGER_M100000000_100000000(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_INTEGER_M1000000000_1000000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M1000000000_1000000000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1000000000, 1000000000U, NULL, false);
 
@@ -7999,8 +7990,8 @@ dissect_lppe_INTEGER_M1000000000_1000000000(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_INTEGER_1_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_100(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 100U, NULL, false);
 
@@ -8014,8 +8005,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModel_BigNumber_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModel_BigNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModel_BigNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModel_BigNumber, OMA_LPPe_AGNSS_NavModel_BigNumber_sequence);
 
@@ -8029,8 +8020,8 @@ static const per_sequence_t T_bases_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_bases(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_bases(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_bases, T_bases_sequence);
 
@@ -8045,8 +8036,8 @@ static const value_string lppe_T_referencedTo_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_referencedTo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_referencedTo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -8055,8 +8046,8 @@ dissect_lppe_T_referencedTo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_0_1000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1000000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1000000U, NULL, false);
 
@@ -8065,8 +8056,8 @@ dissect_lppe_INTEGER_0_1000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_INTEGER_0_10000000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_10000000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 10000000U, NULL, false);
 
@@ -8088,8 +8079,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModel_STDmatrix_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModel_STDmatrix(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModel_STDmatrix(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModel_STDmatrix, OMA_LPPe_AGNSS_NavModel_STDmatrix_sequence);
 
@@ -8106,8 +8097,8 @@ static const per_sequence_t T_rateRecord_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_rateRecord(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_rateRecord(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_rateRecord, T_rateRecord_sequence);
 
@@ -8126,8 +8117,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModel_PVTelement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModel_PVTelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModel_PVTelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModel_PVTelement, OMA_LPPe_AGNSS_NavModel_PVTelement_sequence);
 
@@ -8139,8 +8130,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_NavModel_PVTele
   { &hf_lppe_svIdList_item  , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_NavModel_PVTelement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_NavModel_PVTelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_NavModel_PVTelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_NavModel_PVTelement, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_AGNSS_NavModel_PVTelement_sequence_of,
                                                   1, 64, false);
@@ -8155,8 +8146,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement, OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement_sequence);
 
@@ -8168,8 +8159,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_97_OF_OMA_LPPe_AGNSS_NavModel_Coordi
   { &hf_lppe_pointList_item , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_97_OF_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_97_OF_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_97_OF_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement, SEQUENCE_SIZE_1_97_OF_OMA_LPPe_AGNSS_NavModel_CoordinateBasedElement_sequence_of,
                                                   1, 97, false);
@@ -8186,8 +8177,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModel_CoordinateBased_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBased(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBased(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModel_CoordinateBased, OMA_LPPe_AGNSS_NavModel_CoordinateBased_sequence);
 
@@ -8200,8 +8191,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_NavModelList_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_NavModelList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_NavModelList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_NavModelList, OMA_LPPe_AGNSS_NavModelList_sequence);
 
@@ -8220,8 +8211,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistDataElement_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_GenericAssistDataElement, OMA_LPPe_AGNSS_GenericAssistDataElement_sequence);
 
@@ -8233,8 +8224,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_GenericAssistData_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_GenericAssistData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_GenericAssistDataElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_GenericAssistData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_GenericAssistData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_GenericAssistData, OMA_LPPe_AGNSS_GenericAssistData_sequence_of,
                                                   1, 16, false);
@@ -8252,8 +8243,8 @@ static const value_string lppe_T_waIonoErrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_waIonoErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_waIonoErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -8275,8 +8266,8 @@ static const value_string lppe_T_ccpErrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_ccpErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ccpErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      9, NULL, true, 0, NULL);
 
@@ -8290,8 +8281,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocationServerErrorCauses_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocationServerErrorCauses, OMA_LPPe_AGNSS_LocationServerErrorCauses_sequence);
 
@@ -8306,8 +8297,8 @@ static const value_string lppe_T_highAccuracyErrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_highAccuracyErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_highAccuracyErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -8323,8 +8314,8 @@ static const value_string lppe_T_ionosphereMeasurementErrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_ionosphereMeasurementErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionosphereMeasurementErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -8340,8 +8331,8 @@ static const value_string lppe_T_environmentObservationErrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_environmentObservationErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_environmentObservationErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -8362,8 +8353,8 @@ static const value_string lppe_T_haGNSSerrorCauses_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_haGNSSerrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_haGNSSerrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, true, 0, NULL);
 
@@ -8379,8 +8370,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TargetDeviceErrorCauses_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TargetDeviceErrorCauses, OMA_LPPe_AGNSS_TargetDeviceErrorCauses_sequence);
 
@@ -8400,8 +8391,8 @@ static const per_choice_t OMA_LPPe_AGNSS_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_Error, OMA_LPPe_AGNSS_Error_choice,
                                  NULL);
@@ -8417,8 +8408,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_ProvideAssistanceData, OMA_LPPe_AGNSS_ProvideAssistanceData_sequence);
 
@@ -8427,8 +8418,8 @@ dissect_lppe_OMA_LPPe_AGNSS_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      10, 10, false, NULL, 0, NULL, NULL);
 
@@ -8445,8 +8436,8 @@ static const value_string lppe_T_resolution_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_resolution(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_resolution(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -8460,8 +8451,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_RTDquality_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_RTDquality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_RTDquality(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_RTDquality, OMA_LPPe_OTDOA_RTDquality_sequence);
 
@@ -8475,8 +8466,8 @@ static const per_sequence_t T_cellLocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_cellLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cellLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_cellLocation, T_cellLocation_sequence);
 
@@ -8489,8 +8480,8 @@ static const per_sequence_t T_femtoCellInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_femtoCellInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_femtoCellInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_femtoCellInfo, T_femtoCellInfo_sequence);
 
@@ -8506,8 +8497,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_PositionCalculationInfoRef_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_PositionCalculationInfoRef(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_PositionCalculationInfoRef(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_PositionCalculationInfoRef, OMA_LPPe_OTDOA_PositionCalculationInfoRef_sequence);
 
@@ -8521,8 +8512,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_ReferenceCellInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_ReferenceCellInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_ReferenceCellInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_ReferenceCellInfo, OMA_LPPe_OTDOA_ReferenceCellInfo_sequence);
 
@@ -8531,8 +8522,8 @@ dissect_lppe_OMA_LPPe_OTDOA_ReferenceCellInfo(tvbuff_t *tvb _U_, int offset _U_,
 
 
 
-static int
-dissect_lppe_INTEGER_0_10229(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_10229(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 10229U, NULL, false);
 
@@ -8541,8 +8532,8 @@ dissect_lppe_INTEGER_0_10229(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_INTEGER_0_99999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_99999(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 99999U, NULL, false);
 
@@ -8551,8 +8542,8 @@ dissect_lppe_INTEGER_0_99999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_INTEGER_M100_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M100_100(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -100, 100U, NULL, false);
 
@@ -8568,8 +8559,8 @@ static const per_sequence_t T_rtdInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_rtdInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_rtdInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_rtdInfo, T_rtdInfo_sequence);
 
@@ -8583,8 +8574,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_CellData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_CellData, OMA_LPPe_OTDOA_CellData_sequence);
 
@@ -8596,8 +8587,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_OTDOA_C
   { &hf_lppe_otdoa_eNB_CellDataList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_CellData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_OTDOA_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_OTDOA_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_OTDOA_CellData, SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_OTDOA_CellData_sequence_of,
                                                   1, maxLTEMacroCells, false);
@@ -8612,8 +8603,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB, OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB_sequence);
 
@@ -8625,8 +8616,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_OTDOA_Neighbo
   { &hf_lppe_neighbourCellInfoList_eNB_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB, SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_eNB_sequence_of,
                                                   1, maxLTEeNBs, false);
@@ -8642,8 +8633,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB, OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB_sequence);
 
@@ -8655,8 +8646,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_OTDOA_Neighb
   { &hf_lppe_neighbourCellInfoList_HeNB_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB, SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_OTDOA_NeighbourCellInfoElement_HeNB_sequence_of,
                                                   1, maxLTEHeNBs, false);
@@ -8671,8 +8662,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_NeighbourFreqCellInfoList_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_NeighbourFreqCellInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_NeighbourFreqCellInfoList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_NeighbourFreqCellInfoList, OMA_LPPe_OTDOA_NeighbourFreqCellInfoList_sequence);
 
@@ -8684,8 +8675,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_NeighbourCellInfoList_sequence_of[1] 
   { &hf_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_NeighbourFreqCellInfoList },
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_OTDOA_NeighbourCellInfoList, OMA_LPPe_OTDOA_NeighbourCellInfoList_sequence_of,
                                                   1, maxFreqLayers, false);
@@ -8702,8 +8693,8 @@ static const value_string lppe_T_cause_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -8716,8 +8707,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_LocationServerErrorCauses_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_LocationServerErrorCauses, OMA_LPPe_OTDOA_LocationServerErrorCauses_sequence);
 
@@ -8733,8 +8724,8 @@ static const value_string lppe_T_cause_01_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -8747,8 +8738,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_TargetDeviceErrorCauses_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_TargetDeviceErrorCauses, OMA_LPPe_OTDOA_TargetDeviceErrorCauses_sequence);
 
@@ -8768,8 +8759,8 @@ static const per_choice_t OMA_LPPe_OTDOA_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_OTDOA_Error, OMA_LPPe_OTDOA_Error_choice,
                                  NULL);
@@ -8785,8 +8776,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_ProvideAssistanceData, OMA_LPPe_OTDOA_ProvideAssistanceData_sequence);
 
@@ -8795,8 +8786,8 @@ dissect_lppe_OMA_LPPe_OTDOA_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_lppe_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1023(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1023U, NULL, false);
 
@@ -8810,8 +8801,8 @@ static const per_sequence_t OMA_LPPe_CellNonUniqueIDGERAN_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CellNonUniqueIDGERAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CellNonUniqueIDGERAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CellNonUniqueIDGERAN, OMA_LPPe_CellNonUniqueIDGERAN_sequence);
 
@@ -8826,8 +8817,8 @@ static const value_string lppe_OMA_LPPe_EOTD_TimeSlotScheme_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_TimeSlotScheme(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_TimeSlotScheme(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -8847,8 +8838,8 @@ static const per_choice_t T_btsPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_btsPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_btsPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_btsPosition, T_btsPosition_choice,
                                  NULL);
@@ -8864,8 +8855,8 @@ static const per_sequence_t OMA_LPPe_EOTD_ReferenceBTSForAssistance_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ReferenceBTSForAssistance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ReferenceBTSForAssistance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_ReferenceBTSForAssistance, OMA_LPPe_EOTD_ReferenceBTSForAssistance_sequence);
 
@@ -8874,8 +8865,8 @@ dissect_lppe_OMA_LPPe_EOTD_ReferenceBTSForAssistance(tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MultiFrameOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MultiFrameOffset(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 51U, NULL, false);
 
@@ -8884,8 +8875,8 @@ dissect_lppe_OMA_LPPe_EOTD_MultiFrameOffset(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RoughRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RoughRTD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1250U, NULL, false);
 
@@ -8894,8 +8885,8 @@ dissect_lppe_OMA_LPPe_EOTD_RoughRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_lppe_INTEGER_0_1250(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1250(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1250U, NULL, false);
 
@@ -8909,8 +8900,8 @@ static const per_sequence_t OMA_LPPe_EOTD_ExpectedOTD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ExpectedOTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ExpectedOTD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_ExpectedOTD, OMA_LPPe_EOTD_ExpectedOTD_sequence);
 
@@ -8919,8 +8910,8 @@ dissect_lppe_OMA_LPPe_EOTD_ExpectedOTD(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_FineRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_FineRTD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -8929,8 +8920,8 @@ dissect_lppe_OMA_LPPe_EOTD_FineRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RelDistance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RelDistance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -200000, 200000U, NULL, false);
 
@@ -8939,8 +8930,8 @@ dissect_lppe_OMA_LPPe_EOTD_RelDistance(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RelativeAlt(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RelativeAlt(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -4000, 4000U, NULL, false);
 
@@ -8955,8 +8946,8 @@ static const per_sequence_t OMA_LPPe_EOTD_relativePos_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_relativePos(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_relativePos(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_relativePos, OMA_LPPe_EOTD_relativePos_sequence);
 
@@ -8970,8 +8961,8 @@ static const per_sequence_t OMA_LPPe_EOTD_CalcAssistanceBTS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_CalcAssistanceBTS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_CalcAssistanceBTS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_CalcAssistanceBTS, OMA_LPPe_EOTD_CalcAssistanceBTS_sequence);
 
@@ -8989,8 +8980,8 @@ static const per_sequence_t OMA_LPPe_EOTD_MsrAssistBTS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MsrAssistBTS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MsrAssistBTS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_MsrAssistBTS, OMA_LPPe_EOTD_MsrAssistBTS_sequence);
 
@@ -9002,8 +8993,8 @@ static const per_sequence_t OMA_LPPe_EOTD_MsrAssistDataList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_EOTD_MsrAssistDataList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_EOTD_MsrAssistBTS },
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MsrAssistDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MsrAssistDataList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_EOTD_MsrAssistDataList, OMA_LPPe_EOTD_MsrAssistDataList_sequence_of,
                                                   1, 15, false);
@@ -9022,8 +9013,8 @@ static const per_sequence_t OMA_LPPe_EOTD_AssistBTSData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_AssistBTSData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_AssistBTSData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_AssistBTSData, OMA_LPPe_EOTD_AssistBTSData_sequence);
 
@@ -9043,8 +9034,8 @@ static const per_choice_t OMA_LPPe_EOTD_SystemInfoAssistBTS_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_SystemInfoAssistBTS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_SystemInfoAssistBTS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_EOTD_SystemInfoAssistBTS, OMA_LPPe_EOTD_SystemInfoAssistBTS_choice,
                                  NULL);
@@ -9057,8 +9048,8 @@ static const per_sequence_t OMA_LPPe_EOTD_SystemInfoAssistDataList_sequence_of[1
   { &hf_lppe_OMA_LPPe_EOTD_SystemInfoAssistDataList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_EOTD_SystemInfoAssistBTS },
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_SystemInfoAssistDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_SystemInfoAssistDataList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_EOTD_SystemInfoAssistDataList, OMA_LPPe_EOTD_SystemInfoAssistDataList_sequence_of,
                                                   1, 32, false);
@@ -9075,8 +9066,8 @@ static const value_string lppe_T_cause_02_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -9089,8 +9080,8 @@ static const per_sequence_t OMA_LPPe_EOTD_LocationServerErrorCauses_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_LocationServerErrorCauses, OMA_LPPe_EOTD_LocationServerErrorCauses_sequence);
 
@@ -9110,8 +9101,8 @@ static const value_string lppe_T_cause_03_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      7, NULL, true, 0, NULL);
 
@@ -9124,8 +9115,8 @@ static const per_sequence_t OMA_LPPe_EOTD_TargetDeviceErrorCauses_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_TargetDeviceErrorCauses, OMA_LPPe_EOTD_TargetDeviceErrorCauses_sequence);
 
@@ -9145,8 +9136,8 @@ static const per_choice_t OMA_LPPe_EOTD_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_EOTD_Error, OMA_LPPe_EOTD_Error_choice,
                                  NULL);
@@ -9163,8 +9154,8 @@ static const per_sequence_t OMA_LPPe_EOTD_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_ProvideAssistanceData, OMA_LPPe_EOTD_ProvideAssistanceData_sequence);
 
@@ -9173,8 +9164,8 @@ dissect_lppe_OMA_LPPe_EOTD_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_PrimaryScramblingCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_PrimaryScramblingCode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 511U, NULL, false);
 
@@ -9187,8 +9178,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_PrimaryCPICH_Info_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_PrimaryCPICH_Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_PrimaryCPICH_Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_PrimaryCPICH_Info, OMA_LPPe_OTDOA_UTRA_PrimaryCPICH_Info_sequence);
 
@@ -9201,8 +9192,8 @@ static const per_sequence_t T_fdd_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd, T_fdd_sequence);
 
@@ -9217,8 +9208,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_BurstType_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_BurstType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_BurstType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -9227,8 +9218,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_BurstType(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_MidambleShiftLong(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_MidambleShiftLong(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -9237,8 +9228,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_MidambleShiftLong(tvbuff_t *tvb _U_, int offset
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeSlotNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeSlotNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 14U, NULL, false);
 
@@ -9247,8 +9238,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeSlotNumber(tvbuff_t *tvb _U_, int offset _U
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_CellParametersID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_CellParametersID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -9264,8 +9255,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_CellAndChannelIdentity_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_CellAndChannelIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_CellAndChannelIdentity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_CellAndChannelIdentity, OMA_LPPe_OTDOA_UTRA_CellAndChannelIdentity_sequence);
 
@@ -9278,8 +9269,8 @@ static const per_sequence_t T_tdd_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd, T_tdd_sequence);
 
@@ -9299,8 +9290,8 @@ static const per_choice_t T_modeSpecificInfo_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo, T_modeSpecificInfo_choice,
                                  NULL);
@@ -9315,8 +9306,8 @@ static const per_sequence_t OMA_LPPe_UTRA_FrequencyInfoFDD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_UTRA_FrequencyInfoFDD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_UTRA_FrequencyInfoFDD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_UTRA_FrequencyInfoFDD, OMA_LPPe_UTRA_FrequencyInfoFDD_sequence);
 
@@ -9329,8 +9320,8 @@ static const per_sequence_t OMA_LPPe_UTRA_FrequencyInfoTDD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_UTRA_FrequencyInfoTDD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_UTRA_FrequencyInfoTDD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_UTRA_FrequencyInfoTDD, OMA_LPPe_UTRA_FrequencyInfoTDD_sequence);
 
@@ -9350,8 +9341,8 @@ static const per_choice_t OMA_LPPe_UTRA_ModeSpecificInfo_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_UTRA_ModeSpecificInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_UTRA_ModeSpecificInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_UTRA_ModeSpecificInfo, OMA_LPPe_UTRA_ModeSpecificInfo_choice,
                                  NULL);
@@ -9365,8 +9356,8 @@ static const per_sequence_t OMA_LPPe_UTRA_FrequencyInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_UTRA_FrequencyInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_UTRA_FrequencyInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_UTRA_FrequencyInfo, OMA_LPPe_UTRA_FrequencyInfo_sequence);
 
@@ -9386,8 +9377,8 @@ static const per_choice_t T_cellPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_cellPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cellPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_cellPosition, T_cellPosition_choice,
                                  NULL);
@@ -9397,8 +9388,8 @@ dissect_lppe_T_cellPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_0_32766(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_32766(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 32766U, NULL, false);
 
@@ -9407,8 +9398,8 @@ dissect_lppe_INTEGER_0_32766(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_INTEGER_0_70274(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_70274(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 70274U, NULL, false);
 
@@ -9423,8 +9414,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_RefPosAssist_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_RefPosAssist(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_RefPosAssist(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_RefPosAssist, OMA_LPPe_OTDOA_UTRA_RefPosAssist_sequence);
 
@@ -9445,8 +9436,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -9461,8 +9452,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_IP_Length_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Length(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Length(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -9471,8 +9462,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Length(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_lppe_INTEGER_0_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_9(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 9U, NULL, false);
 
@@ -9481,8 +9472,8 @@ dissect_lppe_INTEGER_0_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_lppe_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -9491,8 +9482,8 @@ dissect_lppe_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_INTEGER_10_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_10_25(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             10U, 25U, NULL, false);
 
@@ -9501,8 +9492,8 @@ dissect_lppe_INTEGER_10_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_1_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 16U, NULL, false);
 
@@ -9517,8 +9508,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_BurstModeParameters_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_BurstModeParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_BurstModeParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_BurstModeParameters, OMA_LPPe_OTDOA_UTRA_BurstModeParameters_sequence);
 
@@ -9535,8 +9526,8 @@ static const per_sequence_t T_fdd_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_02, T_fdd_02_sequence);
 
@@ -9554,8 +9545,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing_TDD_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing_TDD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing_TDD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      5, NULL, false, 0, NULL);
 
@@ -9564,8 +9555,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_Spacing_TDD(tvbuff_t *tvb _U_, int offset _U
 
 
 
-static int
-dissect_lppe_INTEGER_0_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_14(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 14U, NULL, false);
 
@@ -9574,8 +9565,8 @@ dissect_lppe_INTEGER_0_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_PCCPCH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_IP_PCCPCH(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -9591,8 +9582,8 @@ static const per_sequence_t T_tdd_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_02, T_tdd_02_sequence);
 
@@ -9612,8 +9603,8 @@ static const per_choice_t T_modeSpecificInfo_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo_02, T_modeSpecificInfo_02_choice,
                                  NULL);
@@ -9627,8 +9618,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_IPDL_Parameters_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_IPDL_Parameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_IPDL_Parameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_IPDL_Parameters, OMA_LPPe_OTDOA_UTRA_IPDL_Parameters_sequence);
 
@@ -9645,8 +9636,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_ReferenceCellInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_ReferenceCellInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_ReferenceCellInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_ReferenceCellInfo, OMA_LPPe_OTDOA_UTRA_ReferenceCellInfo_sequence);
 
@@ -9659,8 +9650,8 @@ static const per_sequence_t T_fdd_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_01, T_fdd_01_sequence);
 
@@ -9673,8 +9664,8 @@ static const per_sequence_t T_tdd_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_01, T_tdd_01_sequence);
 
@@ -9694,8 +9685,8 @@ static const per_choice_t T_modeSpecificInfo_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo_01, T_modeSpecificInfo_01_choice,
                                  NULL);
@@ -9705,8 +9696,8 @@ dissect_lppe_T_modeSpecificInfo_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_INTEGER_0_38399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_38399(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 38399U, NULL, false);
 
@@ -9720,8 +9711,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_SFN_SFN_RelTimeDifference1_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_RelTimeDifference1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_RelTimeDifference1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_RelTimeDifference1, OMA_LPPe_OTDOA_UTRA_SFN_SFN_RelTimeDifference1_sequence);
 
@@ -9735,8 +9726,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_SFN_OffsetValidity_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_OffsetValidity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_OffsetValidity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      1, NULL, false, 0, NULL);
 
@@ -9778,8 +9769,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_Drift_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_Drift(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_Drift(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      29, NULL, true, 0, NULL);
 
@@ -9800,8 +9791,8 @@ static const value_string lppe_OMA_LPPe_OTDOA_UTRA_SearchWindowSize_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_SearchWindowSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_SearchWindowSize(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, true, 0, NULL);
 
@@ -9810,8 +9801,8 @@ dissect_lppe_OMA_LPPe_OTDOA_UTRA_SearchWindowSize(tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_lppe_INTEGER_M20000_20000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M20000_20000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -20000, 20000U, NULL, false);
 
@@ -9820,8 +9811,8 @@ dissect_lppe_INTEGER_M20000_20000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_INTEGER_M4000_4000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M4000_4000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -4000, 4000U, NULL, false);
 
@@ -9830,8 +9821,8 @@ dissect_lppe_INTEGER_M4000_4000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_fineSFN_SFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_fineSFN_SFN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -9849,8 +9840,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_PositioningAssistance_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_PositioningAssistance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_PositioningAssistance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_PositioningAssistance, OMA_LPPe_OTDOA_UTRA_PositioningAssistance_sequence);
 
@@ -9870,8 +9861,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_NeighborCellInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellInfo, OMA_LPPe_OTDOA_UTRA_NeighborCellInfo_sequence);
 
@@ -9883,8 +9874,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_NeighborCellList_sequence_of[1] 
   { &hf_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellInfo },
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_OTDOA_UTRA_NeighborCellList, OMA_LPPe_OTDOA_UTRA_NeighborCellList_sequence_of,
                                                   1, utra_maxCellMeas, false);
@@ -9901,8 +9892,8 @@ static const value_string lppe_T_cause_04_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -9915,8 +9906,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_LocationServerErrorCauses_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_LocationServerErrorCauses, OMA_LPPe_OTDOA_UTRA_LocationServerErrorCauses_sequence);
 
@@ -9936,8 +9927,8 @@ static const value_string lppe_T_cause_05_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      7, NULL, true, 0, NULL);
 
@@ -9950,8 +9941,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_TargetDeviceErrorCauses_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_TargetDeviceErrorCauses, OMA_LPPe_OTDOA_UTRA_TargetDeviceErrorCauses_sequence);
 
@@ -9971,8 +9962,8 @@ static const per_choice_t OMA_LPPe_OTDOA_UTRA_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_OTDOA_UTRA_Error, OMA_LPPe_OTDOA_UTRA_Error_choice,
                                  NULL);
@@ -9988,8 +9979,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_ProvideAssistanceData_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_ProvideAssistanceData, OMA_LPPe_OTDOA_UTRA_ProvideAssistanceData_sequence);
 
@@ -10001,8 +9992,8 @@ static const per_sequence_t T_mcc_sequence_of[1] = {
   { &hf_lppe_mcc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mcc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mcc(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mcc, T_mcc_sequence_of,
                                                   3, 3, false);
@@ -10015,8 +10006,8 @@ static const per_sequence_t T_mnc_sequence_of[1] = {
   { &hf_lppe_mnc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mnc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mnc(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mnc, T_mnc_sequence_of,
                                                   2, 3, false);
@@ -10031,8 +10022,8 @@ static const per_sequence_t T_plmn_Identity_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_plmn_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_plmn_Identity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_plmn_Identity, T_plmn_Identity_sequence);
 
@@ -10041,8 +10032,8 @@ dissect_lppe_T_plmn_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      28, 28, false, NULL, 0, NULL, NULL);
 
@@ -10051,8 +10042,8 @@ dissect_lppe_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_INTEGER_M127_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M127_128(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -127, 128U, NULL, false);
 
@@ -10068,8 +10059,8 @@ static const value_string lppe_T_antennaPortConfig_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_antennaPortConfig(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_antennaPortConfig(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10078,8 +10069,8 @@ dissect_lppe_T_antennaPortConfig(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_lppe_INTEGER_1_360(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_360(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 360U, NULL, false);
 
@@ -10088,8 +10079,8 @@ dissect_lppe_INTEGER_1_360(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_0_360(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_360(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 360U, NULL, false);
 
@@ -10098,8 +10089,8 @@ dissect_lppe_INTEGER_0_360(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_0_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_100(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 100U, NULL, false);
 
@@ -10121,8 +10112,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_CellData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_CellData, OMA_LPPe_ECID_LTE_CellData_sequence);
 
@@ -10134,8 +10125,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_ECID_LT
   { &hf_lppe_ecid_lte_eNodeB_CellData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_LTE_CellData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_ECID_LTE_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_ECID_LTE_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_ECID_LTE_CellData, SEQUENCE_SIZE_1_maxLTEMacroCells_OF_OMA_LPPe_ECID_LTE_CellData_sequence_of,
                                                   1, maxLTEMacroCells, false);
@@ -10150,8 +10141,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_eNodeBData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_eNodeBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_eNodeBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_eNodeBData, OMA_LPPe_ECID_LTE_eNodeBData_sequence);
 
@@ -10163,8 +10154,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_ECID_LTE_eNod
   { &hf_lppe_ecid_lte_eNodeB_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_LTE_eNodeBData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_ECID_LTE_eNodeBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_ECID_LTE_eNodeBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_ECID_LTE_eNodeBData, SEQUENCE_SIZE_1_maxLTEeNBs_OF_OMA_LPPe_ECID_LTE_eNodeBData_sequence_of,
                                                   1, maxLTEeNBs, false);
@@ -10180,8 +10171,8 @@ static const value_string lppe_T_areaType_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_areaType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_areaType(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -10196,8 +10187,8 @@ static const value_string lppe_T_referenceLocation_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_referenceLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_referenceLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -10212,8 +10203,8 @@ static const per_sequence_t T_refPointAndArea_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_refPointAndArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_refPointAndArea(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_refPointAndArea, T_refPointAndArea_sequence);
 
@@ -10229,8 +10220,8 @@ static const value_string lppe_T_type_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10245,8 +10236,8 @@ static const per_sequence_t OMA_LPPe_WLANFemtoCoverageAreaElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLANFemtoCoverageAreaElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLANFemtoCoverageAreaElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLANFemtoCoverageAreaElement, OMA_LPPe_WLANFemtoCoverageAreaElement_sequence);
 
@@ -10258,8 +10249,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_WLANFemtoCoverageArea
   { &hf_lppe_componentList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_WLANFemtoCoverageAreaElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_WLANFemtoCoverageAreaElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_WLANFemtoCoverageAreaElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_WLANFemtoCoverageAreaElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_WLANFemtoCoverageAreaElement_sequence_of,
                                                   1, 16, false);
@@ -10276,8 +10267,8 @@ static const per_sequence_t OMA_LPPe_WLANFemtoCoverageArea_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLANFemtoCoverageArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLANFemtoCoverageArea(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLANFemtoCoverageArea, OMA_LPPe_WLANFemtoCoverageArea_sequence);
 
@@ -10293,8 +10284,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_HeNBData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_HeNBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_HeNBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_HeNBData, OMA_LPPe_ECID_LTE_HeNBData_sequence);
 
@@ -10306,8 +10297,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_ECID_LTE_HeN
   { &hf_lppe_ecid_lte_HeNB_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_LTE_HeNBData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_ECID_LTE_HeNBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_ECID_LTE_HeNBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_ECID_LTE_HeNBData, SEQUENCE_SIZE_1_maxLTEHeNBs_OF_OMA_LPPe_ECID_LTE_HeNBData_sequence_of,
                                                   1, maxLTEHeNBs, false);
@@ -10325,8 +10316,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_NetworkData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_NetworkData, OMA_LPPe_ECID_LTE_NetworkData_sequence);
 
@@ -10338,8 +10329,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTENetworks_OF_OMA_LPPe_ECID_LTE_
   { &hf_lppe_ecid_LTE_NetworkData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_LTE_NetworkData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTENetworks_OF_OMA_LPPe_ECID_LTE_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTENetworks_OF_OMA_LPPe_ECID_LTE_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTENetworks_OF_OMA_LPPe_ECID_LTE_NetworkData, SEQUENCE_SIZE_1_maxLTENetworks_OF_OMA_LPPe_ECID_LTE_NetworkData_sequence_of,
                                                   1, maxLTENetworks, false);
@@ -10356,8 +10347,8 @@ static const value_string lppe_T_cause_06_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10387,8 +10378,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_LocationServerErrorCauses_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_LocationServerErrorCauses, OMA_LPPe_ECID_LTE_LocationServerErrorCauses_sequence);
 
@@ -10404,8 +10395,8 @@ static const value_string lppe_T_cause_07_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10423,8 +10414,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_TargetDeviceErrorCauses_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_TargetDeviceErrorCauses, OMA_LPPe_ECID_LTE_TargetDeviceErrorCauses_sequence);
 
@@ -10444,8 +10435,8 @@ static const per_choice_t OMA_LPPe_ECID_LTE_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_ECID_LTE_Error, OMA_LPPe_ECID_LTE_Error_choice,
                                  NULL);
@@ -10460,8 +10451,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_ProvideAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_ProvideAssistanceData, OMA_LPPe_ECID_LTE_ProvideAssistanceData_sequence);
 
@@ -10473,8 +10464,8 @@ static const per_sequence_t T_mcc_01_sequence_of[1] = {
   { &hf_lppe_mcc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mcc_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mcc_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mcc_01, T_mcc_01_sequence_of,
                                                   3, 3, false);
@@ -10487,8 +10478,8 @@ static const per_sequence_t T_mnc_01_sequence_of[1] = {
   { &hf_lppe_mnc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mnc_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mnc_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mnc_01, T_mnc_01_sequence_of,
                                                   2, 3, false);
@@ -10503,8 +10494,8 @@ static const per_sequence_t T_plmn_Identity_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_plmn_Identity_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_plmn_Identity_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_plmn_Identity_01, T_plmn_Identity_01_sequence);
 
@@ -10513,8 +10504,8 @@ dissect_lppe_T_plmn_Identity_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      16, 16, false, NULL, 0, NULL, NULL);
 
@@ -10528,8 +10519,8 @@ static const per_sequence_t OMA_LPPe_CellLocalIdGERAN_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CellLocalIdGERAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CellLocalIdGERAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CellLocalIdGERAN, OMA_LPPe_CellLocalIdGERAN_sequence);
 
@@ -10548,8 +10539,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_CellData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_CellData, OMA_LPPe_ECID_GSM_CellData_sequence);
 
@@ -10561,8 +10552,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxGSMCells_OF_OMA_LPPe_ECID_GSM_Cel
   { &hf_lppe_ecid_gsm_CellData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_GSM_CellData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxGSMCells_OF_OMA_LPPe_ECID_GSM_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxGSMCells_OF_OMA_LPPe_ECID_GSM_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxGSMCells_OF_OMA_LPPe_ECID_GSM_CellData, SEQUENCE_SIZE_1_maxGSMCells_OF_OMA_LPPe_ECID_GSM_CellData_sequence_of,
                                                   1, maxGSMCells, false);
@@ -10577,8 +10568,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_BaseStationData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_BaseStationData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_BaseStationData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_BaseStationData, OMA_LPPe_ECID_GSM_BaseStationData_sequence);
 
@@ -10590,8 +10581,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxGSMBaseStations_OF_OMA_LPPe_ECID_
   { &hf_lppe_base_station_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_GSM_BaseStationData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxGSMBaseStations_OF_OMA_LPPe_ECID_GSM_BaseStationData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxGSMBaseStations_OF_OMA_LPPe_ECID_GSM_BaseStationData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxGSMBaseStations_OF_OMA_LPPe_ECID_GSM_BaseStationData, SEQUENCE_SIZE_1_maxGSMBaseStations_OF_OMA_LPPe_ECID_GSM_BaseStationData_sequence_of,
                                                   1, maxGSMBaseStations, false);
@@ -10607,8 +10598,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_NetworkData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_NetworkData, OMA_LPPe_ECID_GSM_NetworkData_sequence);
 
@@ -10620,8 +10611,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxGSMNetworks_OF_OMA_LPPe_ECID_GSM_
   { &hf_lppe_ecid_gsm_NetworkData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_GSM_NetworkData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxGSMNetworks_OF_OMA_LPPe_ECID_GSM_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxGSMNetworks_OF_OMA_LPPe_ECID_GSM_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxGSMNetworks_OF_OMA_LPPe_ECID_GSM_NetworkData, SEQUENCE_SIZE_1_maxGSMNetworks_OF_OMA_LPPe_ECID_GSM_NetworkData_sequence_of,
                                                   1, maxGSMNetworks, false);
@@ -10638,8 +10629,8 @@ static const value_string lppe_T_cause_08_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10660,8 +10651,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_LocationServerErrorCauses_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_LocationServerErrorCauses, OMA_LPPe_ECID_GSM_LocationServerErrorCauses_sequence);
 
@@ -10677,8 +10668,8 @@ static const value_string lppe_T_cause_09_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -10696,8 +10687,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_TargetDeviceErrorCauses_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_TargetDeviceErrorCauses, OMA_LPPe_ECID_GSM_TargetDeviceErrorCauses_sequence);
 
@@ -10717,8 +10708,8 @@ static const per_choice_t OMA_LPPe_ECID_GSM_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_ECID_GSM_Error, OMA_LPPe_ECID_GSM_Error_choice,
                                  NULL);
@@ -10733,8 +10724,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_ProvideAssistanceData_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_ProvideAssistanceData, OMA_LPPe_ECID_GSM_ProvideAssistanceData_sequence);
 
@@ -10746,8 +10737,8 @@ static const per_sequence_t T_mcc_02_sequence_of[1] = {
   { &hf_lppe_mcc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mcc_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mcc_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mcc_02, T_mcc_02_sequence_of,
                                                   3, 3, false);
@@ -10760,8 +10751,8 @@ static const per_sequence_t T_mnc_02_sequence_of[1] = {
   { &hf_lppe_mnc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mnc_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mnc_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mnc_02, T_mnc_02_sequence_of,
                                                   2, 3, false);
@@ -10776,8 +10767,8 @@ static const per_sequence_t T_plmn_Identity_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_plmn_Identity_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_plmn_Identity_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_plmn_Identity_02, T_plmn_Identity_02_sequence);
 
@@ -10786,8 +10777,8 @@ dissect_lppe_T_plmn_Identity_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      32, 32, false, NULL, 0, NULL, NULL);
 
@@ -10802,8 +10793,8 @@ static const per_sequence_t T_fdd_05_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_05, T_fdd_05_sequence);
 
@@ -10818,8 +10809,8 @@ static const per_sequence_t T_tdd_05_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_05, T_tdd_05_sequence);
 
@@ -10839,8 +10830,8 @@ static const per_choice_t T_modeSpecificInfo_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo_04, T_modeSpecificInfo_04_choice,
                                  NULL);
@@ -10859,8 +10850,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_CellData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_CellData, OMA_LPPe_ECID_UTRA_CellData_sequence);
 
@@ -10872,8 +10863,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxUTRAMacroCells_OF_OMA_LPPe_ECID_U
   { &hf_lppe_ecid_utra_nodeB_CellData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_CellData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxUTRAMacroCells_OF_OMA_LPPe_ECID_UTRA_CellData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxUTRAMacroCells_OF_OMA_LPPe_ECID_UTRA_CellData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxUTRAMacroCells_OF_OMA_LPPe_ECID_UTRA_CellData, SEQUENCE_SIZE_1_maxUTRAMacroCells_OF_OMA_LPPe_ECID_UTRA_CellData_sequence_of,
                                                   1, maxUTRAMacroCells, false);
@@ -10888,8 +10879,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_NodeBData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_NodeBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_NodeBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_NodeBData, OMA_LPPe_ECID_UTRA_NodeBData_sequence);
 
@@ -10901,8 +10892,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxUTRAnodeBs_OF_OMA_LPPe_ECID_UTRA_
   { &hf_lppe_ecid_utra_nodeB_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_NodeBData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxUTRAnodeBs_OF_OMA_LPPe_ECID_UTRA_NodeBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxUTRAnodeBs_OF_OMA_LPPe_ECID_UTRA_NodeBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxUTRAnodeBs_OF_OMA_LPPe_ECID_UTRA_NodeBData, SEQUENCE_SIZE_1_maxUTRAnodeBs_OF_OMA_LPPe_ECID_UTRA_NodeBData_sequence_of,
                                                   1, maxUTRAnodeBs, false);
@@ -10919,8 +10910,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_HNBData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_HNBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_HNBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_HNBData, OMA_LPPe_ECID_UTRA_HNBData_sequence);
 
@@ -10932,8 +10923,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxUTRAHNBs_OF_OMA_LPPe_ECID_UTRA_HN
   { &hf_lppe_ecid_utra_HNB_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_HNBData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxUTRAHNBs_OF_OMA_LPPe_ECID_UTRA_HNBData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxUTRAHNBs_OF_OMA_LPPe_ECID_UTRA_HNBData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxUTRAHNBs_OF_OMA_LPPe_ECID_UTRA_HNBData, SEQUENCE_SIZE_1_maxUTRAHNBs_OF_OMA_LPPe_ECID_UTRA_HNBData_sequence_of,
                                                   1, maxUTRAHNBs, false);
@@ -10951,8 +10942,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_NetworkData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_NetworkData, OMA_LPPe_ECID_UTRA_NetworkData_sequence);
 
@@ -10964,8 +10955,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxUTRANetworks_OF_OMA_LPPe_ECID_UTR
   { &hf_lppe_ecid_UTRA_NetworkData_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_NetworkData },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxUTRANetworks_OF_OMA_LPPe_ECID_UTRA_NetworkData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxUTRANetworks_OF_OMA_LPPe_ECID_UTRA_NetworkData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxUTRANetworks_OF_OMA_LPPe_ECID_UTRA_NetworkData, SEQUENCE_SIZE_1_maxUTRANetworks_OF_OMA_LPPe_ECID_UTRA_NetworkData_sequence_of,
                                                   1, maxUTRANetworks, false);
@@ -10982,8 +10973,8 @@ static const value_string lppe_T_cause_10_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -11011,8 +11002,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_LocationServerErrorCauses_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_LocationServerErrorCauses, OMA_LPPe_ECID_UTRA_LocationServerErrorCauses_sequence);
 
@@ -11028,8 +11019,8 @@ static const value_string lppe_T_cause_11_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -11052,8 +11043,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_TargetDeviceErrorCauses_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_TargetDeviceErrorCauses, OMA_LPPe_ECID_UTRA_TargetDeviceErrorCauses_sequence);
 
@@ -11073,8 +11064,8 @@ static const per_choice_t OMA_LPPe_ECID_UTRA_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_ECID_UTRA_Error, OMA_LPPe_ECID_UTRA_Error_choice,
                                  NULL);
@@ -11089,8 +11080,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_ProvideAssistanceData_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_ProvideAssistanceData, OMA_LPPe_ECID_UTRA_ProvideAssistanceData_sequence);
 
@@ -11102,8 +11093,8 @@ static const per_sequence_t T_mcc_03_sequence_of[1] = {
   { &hf_lppe_mcc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mcc_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mcc_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mcc_03, T_mcc_03_sequence_of,
                                                   3, 3, false);
@@ -11116,8 +11107,8 @@ static const per_sequence_t T_mnc_03_sequence_of[1] = {
   { &hf_lppe_mnc_item       , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_INTEGER_0_9 },
 };
 
-static int
-dissect_lppe_T_mnc_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_mnc_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_T_mnc_03, T_mnc_03_sequence_of,
                                                   2, 3, false);
@@ -11132,8 +11123,8 @@ static const per_sequence_t T_plmn_Identity_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_plmn_Identity_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_plmn_Identity_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_plmn_Identity_03, T_plmn_Identity_03_sequence);
 
@@ -11161,8 +11152,8 @@ static const per_sequence_t Supported_Channels_11a_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_Supported_Channels_11a(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_Supported_Channels_11a(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_Supported_Channels_11a, Supported_Channels_11a_sequence);
 
@@ -11188,8 +11179,8 @@ static const per_sequence_t Supported_Channels_11bg_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_Supported_Channels_11bg(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_Supported_Channels_11bg(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_Supported_Channels_11bg, Supported_Channels_11bg_sequence);
 
@@ -11208,8 +11199,8 @@ static const value_string lppe_OMA_LPPe_WLAN_AP_Type_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 2, NULL);
 
@@ -11225,8 +11216,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_Type_Data_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Type_Data(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Type_Data(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_Type_Data, OMA_LPPe_WLAN_AP_Type_Data_sequence);
 
@@ -11238,8 +11229,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxWLANTypes_OF_OMA_LPPe_WLAN_AP_Typ
   { &hf_lppe_wlan_ap_Type_Data_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_WLAN_AP_Type_Data },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxWLANTypes_OF_OMA_LPPe_WLAN_AP_Type_Data(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxWLANTypes_OF_OMA_LPPe_WLAN_AP_Type_Data(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxWLANTypes_OF_OMA_LPPe_WLAN_AP_Type_Data, SEQUENCE_SIZE_1_maxWLANTypes_OF_OMA_LPPe_WLAN_AP_Type_Data_sequence_of,
                                                   1, maxWLANTypes, false);
@@ -11257,8 +11248,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_Data_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Data(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Data(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_Data, OMA_LPPe_WLAN_AP_Data_sequence);
 
@@ -11270,8 +11261,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxWLANAPs_OF_OMA_LPPe_WLAN_AP_Data_
   { &hf_lppe_wlan_ap_list_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_WLAN_AP_Data },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxWLANAPs_OF_OMA_LPPe_WLAN_AP_Data(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxWLANAPs_OF_OMA_LPPe_WLAN_AP_Data(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxWLANAPs_OF_OMA_LPPe_WLAN_AP_Data, SEQUENCE_SIZE_1_maxWLANAPs_OF_OMA_LPPe_WLAN_AP_Data_sequence_of,
                                                   1, maxWLANAPs, false);
@@ -11289,8 +11280,8 @@ static const per_sequence_t OMA_LPPe_WLAN_DataSet_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_DataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_DataSet(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_DataSet, OMA_LPPe_WLAN_DataSet_sequence);
 
@@ -11302,8 +11293,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxWLANDataSets_OF_OMA_LPPe_WLAN_Dat
   { &hf_lppe_wlan_DataSet_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_WLAN_DataSet },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxWLANDataSets_OF_OMA_LPPe_WLAN_DataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxWLANDataSets_OF_OMA_LPPe_WLAN_DataSet(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxWLANDataSets_OF_OMA_LPPe_WLAN_DataSet, SEQUENCE_SIZE_1_maxWLANDataSets_OF_OMA_LPPe_WLAN_DataSet_sequence_of,
                                                   1, maxWLANDataSets, false);
@@ -11320,8 +11311,8 @@ static const value_string lppe_T_cause_12_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -11346,8 +11337,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_LocationServerErrorCauses_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_LocationServerErrorCauses, OMA_LPPe_WLAN_AP_LocationServerErrorCauses_sequence);
 
@@ -11363,8 +11354,8 @@ static const value_string lppe_T_cause_13_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_13(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -11395,8 +11386,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_TargetDeviceErrorCauses_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_TargetDeviceErrorCauses, OMA_LPPe_WLAN_AP_TargetDeviceErrorCauses_sequence);
 
@@ -11416,8 +11407,8 @@ static const per_choice_t OMA_LPPe_WLAN_AP_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_WLAN_AP_Error, OMA_LPPe_WLAN_AP_Error_choice,
                                  NULL);
@@ -11432,8 +11423,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_ProvideAssistanceData_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_ProvideAssistanceData, OMA_LPPe_WLAN_AP_ProvideAssistanceData_sequence);
 
@@ -11442,8 +11433,8 @@ dissect_lppe_OMA_LPPe_WLAN_AP_ProvideAssistanceData(tvbuff_t *tvb _U_, int offse
 
 
 
-static int
-dissect_lppe_INTEGER_M20000_10000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M20000_10000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -20000, 10000U, NULL, false);
 
@@ -11457,8 +11448,8 @@ static const per_sequence_t T_period_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_period(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_period(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_period, T_period_sequence);
 
@@ -11467,8 +11458,8 @@ dissect_lppe_T_period(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_lppe_INTEGER_1_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_128(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 128U, NULL, false);
 
@@ -11483,8 +11474,8 @@ static const per_sequence_t OMA_LPPe_PressureValidityArea_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_PressureValidityArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_PressureValidityArea(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_PressureValidityArea, OMA_LPPe_PressureValidityArea_sequence);
 
@@ -11499,8 +11490,8 @@ static const per_sequence_t T_area_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_area(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_area(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_area, T_area_sequence);
 
@@ -11515,8 +11506,8 @@ static const per_sequence_t OMA_LPPe_AtmosphericPressureAD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AtmosphericPressureAD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AtmosphericPressureAD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AtmosphericPressureAD, OMA_LPPe_AtmosphericPressureAD_sequence);
 
@@ -11529,8 +11520,8 @@ static const per_sequence_t OMA_LPPe_Sensor_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_ProvideAssistanceData, OMA_LPPe_Sensor_ProvideAssistanceData_sequence);
 
@@ -11539,8 +11530,8 @@ dissect_lppe_OMA_LPPe_Sensor_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset
 
 
 
-static int
-dissect_lppe_INTEGER_M300_500(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M300_500(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -300, 500U, NULL, false);
 
@@ -11554,8 +11545,8 @@ static const per_sequence_t T_srnAntennaInfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_srnAntennaInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnAntennaInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_srnAntennaInfo, T_srnAntennaInfo_sequence);
 
@@ -11570,8 +11561,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNtype_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNtype(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNtype(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNtype, OMA_LPPe_SRN_SRNtype_sequence);
 
@@ -11580,8 +11571,8 @@ dissect_lppe_OMA_LPPe_SRN_SRNtype(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_INTEGER_0_180(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_180(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 180U, NULL, false);
 
@@ -11596,8 +11587,8 @@ static const per_sequence_t T_eulerAngles_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_eulerAngles(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_eulerAngles(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_eulerAngles, T_eulerAngles_sequence);
 
@@ -11615,8 +11606,8 @@ static const per_choice_t OMA_LPPe_Orientation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Orientation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Orientation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_Orientation, OMA_LPPe_Orientation_choice,
                                  NULL);
@@ -11633,8 +11624,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNinfo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNinfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNinfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNinfo, OMA_LPPe_SRN_SRNinfo_sequence);
 
@@ -11646,8 +11637,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNinfo_sequenc
   { &hf_lppe_srnsInGroupList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNinfo },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNinfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNinfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNinfo, SEQUENCE_SIZE_1_1024_OF_OMA_LPPe_SRN_SRNinfo_sequence_of,
                                                   1, 1024, false);
@@ -11665,8 +11656,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroup_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroup(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroup(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroup, OMA_LPPe_SRN_SRNgroup_sequence);
 
@@ -11678,8 +11669,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_SRNgroup_sequence
   { &hf_lppe_groupList_item , ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNgroup },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_SRNgroup(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_SRNgroup(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_SRNgroup, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_SRNgroup_sequence_of,
                                                   1, 64, false);
@@ -11695,8 +11686,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupList_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroupList, OMA_LPPe_SRN_SRNgroupList_sequence);
 
@@ -11712,8 +11703,8 @@ static const value_string lppe_T_targetDataValidity_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_targetDataValidity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_targetDataValidity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -11728,8 +11719,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupUpdateResponseElement_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponseElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponseElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponseElement, OMA_LPPe_SRN_SRNgroupUpdateResponseElement_sequence);
 
@@ -11741,8 +11732,8 @@ static const per_sequence_t OMA_LPPe_SRN_SRNgroupUpdateResponse_sequence_of[1] =
   { &hf_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponse_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponseElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_SRN_SRNgroupUpdateResponse, OMA_LPPe_SRN_SRNgroupUpdateResponse_sequence_of,
                                                   1, 8, false);
@@ -11763,8 +11754,8 @@ static const per_choice_t T_srnGroup_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_srnGroup(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnGroup(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_srnGroup, T_srnGroup_choice,
                                  NULL);
@@ -11779,8 +11770,8 @@ static const per_sequence_t T_identification_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_identification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_identification(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_identification, T_identification_sequence);
 
@@ -11789,8 +11780,8 @@ dissect_lppe_T_identification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_lppe_INTEGER_1_200(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_200(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 200U, NULL, false);
 
@@ -11799,8 +11790,8 @@ dissect_lppe_INTEGER_1_200(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_1_150(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_150(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 150U, NULL, false);
 
@@ -11814,8 +11805,8 @@ static const per_sequence_t T_evenGrid_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_evenGrid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_evenGrid(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_evenGrid, T_evenGrid_sequence);
 
@@ -11824,8 +11815,8 @@ dissect_lppe_T_evenGrid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_lppe_INTEGER_1_maxChannels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_maxChannels(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, maxChannels, NULL, false);
 
@@ -11834,8 +11825,8 @@ dissect_lppe_INTEGER_1_maxChannels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_INTEGER_0_900(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_900(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 900U, NULL, false);
 
@@ -11844,8 +11835,8 @@ dissect_lppe_INTEGER_0_900(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_0_3599(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_3599(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 3599U, NULL, false);
 
@@ -11854,8 +11845,8 @@ dissect_lppe_INTEGER_0_3599(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_M1800_1799(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M1800_1799(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1800, 1799U, NULL, false);
 
@@ -11869,8 +11860,8 @@ static const per_sequence_t OMA_LPPe_ComplexNumber_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ComplexNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ComplexNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ComplexNumber, OMA_LPPe_ComplexNumber_sequence);
 
@@ -11884,8 +11875,8 @@ static const per_sequence_t OMA_LPPe_SRN_ResponseInAzimuth_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ResponseInAzimuth(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ResponseInAzimuth(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ResponseInAzimuth, OMA_LPPe_SRN_ResponseInAzimuth_sequence);
 
@@ -11897,8 +11888,8 @@ static const per_sequence_t SEQUENCE_SIZE_18_3601_OF_OMA_LPPe_SRN_ResponseInAzim
   { &hf_lppe_responseInAzimuth_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_ResponseInAzimuth },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_18_3601_OF_OMA_LPPe_SRN_ResponseInAzimuth(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_18_3601_OF_OMA_LPPe_SRN_ResponseInAzimuth(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_18_3601_OF_OMA_LPPe_SRN_ResponseInAzimuth, SEQUENCE_SIZE_18_3601_OF_OMA_LPPe_SRN_ResponseInAzimuth_sequence_of,
                                                   18, 3601, false);
@@ -11913,8 +11904,8 @@ static const per_sequence_t OMA_LPPe_SRN_ResponseInElevation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ResponseInElevation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ResponseInElevation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ResponseInElevation, OMA_LPPe_SRN_ResponseInElevation_sequence);
 
@@ -11926,8 +11917,8 @@ static const per_sequence_t SEQUENCE_SIZE_7_901_OF_OMA_LPPe_SRN_ResponseInElevat
   { &hf_lppe_responseInElevation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_ResponseInElevation },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_7_901_OF_OMA_LPPe_SRN_ResponseInElevation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_7_901_OF_OMA_LPPe_SRN_ResponseInElevation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_7_901_OF_OMA_LPPe_SRN_ResponseInElevation, SEQUENCE_SIZE_7_901_OF_OMA_LPPe_SRN_ResponseInElevation_sequence_of,
                                                   7, 901, false);
@@ -11942,8 +11933,8 @@ static const per_sequence_t OMA_LPPe_SRN_ChannelResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ChannelResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ChannelResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ChannelResponse, OMA_LPPe_SRN_ChannelResponse_sequence);
 
@@ -11955,8 +11946,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxChannels_OF_OMA_LPPe_SRN_ChannelR
   { &hf_lppe_patternList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_ChannelResponse },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxChannels_OF_OMA_LPPe_SRN_ChannelResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxChannels_OF_OMA_LPPe_SRN_ChannelResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxChannels_OF_OMA_LPPe_SRN_ChannelResponse, SEQUENCE_SIZE_1_maxChannels_OF_OMA_LPPe_SRN_ChannelResponse_sequence_of,
                                                   1, maxChannels, false);
@@ -11971,8 +11962,8 @@ static const per_sequence_t OMA_LPPe_SRN_AntennaPatternForChannels_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_AntennaPatternForChannels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_AntennaPatternForChannels(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_AntennaPatternForChannels, OMA_LPPe_SRN_AntennaPatternForChannels_sequence);
 
@@ -11992,8 +11983,8 @@ static const per_choice_t T_antennaData_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_antennaData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_antennaData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_antennaData, T_antennaData_choice,
                                  NULL);
@@ -12008,8 +11999,8 @@ static const per_sequence_t OMA_LPPe_SRN_AntennaPatternElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_AntennaPatternElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_AntennaPatternElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_AntennaPatternElement, OMA_LPPe_SRN_AntennaPatternElement_sequence);
 
@@ -12021,8 +12012,8 @@ static const per_sequence_t OMA_LPPe_SRN_AntennaPattern_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_SRN_AntennaPattern_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_AntennaPatternElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_AntennaPattern(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_AntennaPattern(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_SRN_AntennaPattern, OMA_LPPe_SRN_AntennaPattern_sequence_of,
                                                   1, 8, false);
@@ -12040,8 +12031,8 @@ static const value_string lppe_T_groupErrors_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_groupErrors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_groupErrors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -12062,8 +12053,8 @@ static const value_string lppe_T_groupUpdateErrors_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_groupUpdateErrors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_groupUpdateErrors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, true, 0, NULL);
 
@@ -12079,8 +12070,8 @@ static const value_string lppe_T_srnAntennaErrors_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_srnAntennaErrors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnAntennaErrors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -12095,8 +12086,8 @@ static const per_sequence_t OMA_LPPe_SRN_LocationServerErrorCauses_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_LocationServerErrorCauses, OMA_LPPe_SRN_LocationServerErrorCauses_sequence);
 
@@ -12113,8 +12104,8 @@ static const value_string lppe_T_srnErrors_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_srnErrors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_srnErrors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -12132,8 +12123,8 @@ static const per_sequence_t OMA_LPPe_SRN_TargetDeviceError_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_TargetDeviceError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_TargetDeviceError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_TargetDeviceError, OMA_LPPe_SRN_TargetDeviceError_sequence);
 
@@ -12145,8 +12136,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_TargetDeviceError
   { &hf_lppe_srnErrorsPerCategory_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_TargetDeviceError },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_TargetDeviceError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_TargetDeviceError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_TargetDeviceError, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_TargetDeviceError_sequence_of,
                                                   1, 16, false);
@@ -12160,8 +12151,8 @@ static const per_sequence_t OMA_LPPe_SRN_TargetDeviceErrorCauses_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_TargetDeviceErrorCauses, OMA_LPPe_SRN_TargetDeviceErrorCauses_sequence);
 
@@ -12181,8 +12172,8 @@ static const per_choice_t OMA_LPPe_SRN_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_SRN_Error, OMA_LPPe_SRN_Error_choice,
                                  NULL);
@@ -12198,8 +12189,8 @@ static const per_sequence_t OMA_LPPe_SRN_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ProvideAssistanceData, OMA_LPPe_SRN_ProvideAssistanceData_sequence);
 
@@ -12222,8 +12213,8 @@ static const per_sequence_t OMA_LPPe_ProvideAssistanceData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ProvideAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ProvideAssistanceData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ProvideAssistanceData, OMA_LPPe_ProvideAssistanceData_sequence);
 
@@ -12235,8 +12226,8 @@ static const per_sequence_t OMA_LPPe_IP_Address_Request_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_IP_Address_Request(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_IP_Address_Request(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_IP_Address_Request, OMA_LPPe_IP_Address_Request_sequence);
 
@@ -12250,8 +12241,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerRequestItem_seq
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerRequestItem(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerRequestItem(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainerRequestItem, OMA_LPPe_LocationInformationContainerRequestItem_sequence);
 
@@ -12263,8 +12254,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerRequestList_seq
   { &hf_lppe_OMA_LPPe_LocationInformationContainerRequestList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_LocationInformationContainerRequestItem },
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerRequestList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerRequestList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_LocationInformationContainerRequestList, OMA_LPPe_LocationInformationContainerRequestList_sequence_of,
                                                   1, maxLocationInformationContainerDataList, false);
@@ -12279,8 +12270,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerRequest_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainerRequest, OMA_LPPe_LocationInformationContainerRequest_sequence);
 
@@ -12296,8 +12287,8 @@ static const value_string lppe_OMA_LPPe_TypeOfLocInfoRequest_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_TypeOfLocInfoRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_TypeOfLocInfoRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -12311,8 +12302,8 @@ static const per_sequence_t OMA_LPPe_RequestPeriodicLocInfoWithUpdate_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RequestPeriodicLocInfoWithUpdate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RequestPeriodicLocInfoWithUpdate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RequestPeriodicLocInfoWithUpdate, OMA_LPPe_RequestPeriodicLocInfoWithUpdate_sequence);
 
@@ -12325,8 +12316,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocationChange_Request_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocationChange_Request(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocationChange_Request(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeLocationChange_Request, OMA_LPPe_RelativeLocationChange_Request_sequence);
 
@@ -12342,8 +12333,8 @@ static const value_string lppe_T_typeOfRequest_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_typeOfRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_typeOfRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -12355,8 +12346,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointUniqueID
   { &hf_lppe_referencePointReq_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ReferencePointUniqueID },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointUniqueID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointUniqueID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointUniqueID, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_ReferencePointUniqueID_sequence_of,
                                                   1, 8, false);
@@ -12371,8 +12362,8 @@ static const per_sequence_t OMA_LPPe_LocalPositionRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocalPositionRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocalPositionRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocalPositionRequest, OMA_LPPe_LocalPositionRequest_sequence);
 
@@ -12388,8 +12379,8 @@ static const per_sequence_t OMA_LPPe_ScheduledLocation_Request_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ScheduledLocation_Request(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ScheduledLocation_Request(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ScheduledLocation_Request, OMA_LPPe_ScheduledLocation_Request_sequence);
 
@@ -12401,8 +12392,8 @@ static const per_sequence_t OMA_LPPe_AccessTypeRequest_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AccessTypeRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AccessTypeRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AccessTypeRequest, OMA_LPPe_AccessTypeRequest_sequence);
 
@@ -12417,8 +12408,8 @@ static const value_string lppe_T_segmentedLIpreference_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_segmentedLIpreference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_segmentedLIpreference(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -12427,8 +12418,8 @@ dissect_lppe_T_segmentedLIpreference(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_lppe_INTEGER_1_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_1_256(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 256U, NULL, false);
 
@@ -12442,8 +12433,8 @@ static const per_sequence_t OMA_LPPe_SegmentedLIResume_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedLIResume(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedLIResume(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedLIResume, OMA_LPPe_SegmentedLIResume_sequence);
 
@@ -12457,8 +12448,8 @@ static const value_string lppe_T_format_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_format(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_format(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      1, NULL, true, 0, NULL);
 
@@ -12471,8 +12462,8 @@ static const per_sequence_t OMA_LPPe_CivicLocation_Request_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicLocation_Request(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicLocation_Request(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicLocation_Request, OMA_LPPe_CivicLocation_Request_sequence);
 
@@ -12494,8 +12485,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsRequestLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsRequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsRequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsRequestLocationInformation, OMA_LPPe_CommonIEsRequestLocationInformation_sequence);
 
@@ -12510,8 +12501,8 @@ static const value_string lppe_T_antennaInformationReq_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_antennaInformationReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_antennaInformationReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -12525,8 +12516,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_HAgnssSignalReqElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssSignalReqElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssSignalReqElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_HAgnssSignalReqElement, OMA_LPPe_AGNSS_HAgnssSignalReqElement_sequence);
 
@@ -12538,8 +12529,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssSignalReq
   { &hf_lppe_signalReqList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_HAgnssSignalReqElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssSignalReqElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssSignalReqElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssSignalReqElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssSignalReqElement_sequence_of,
                                                   1, 16, false);
@@ -12557,8 +12548,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_HAgnssRequestControlParameters_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssRequestControlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssRequestControlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_HAgnssRequestControlParameters, OMA_LPPe_AGNSS_HAgnssRequestControlParameters_sequence);
 
@@ -12573,8 +12564,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_PositioningInstructions_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_PositioningInstructions(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_PositioningInstructions(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_PositioningInstructions, OMA_LPPe_AGNSS_PositioningInstructions_sequence);
 
@@ -12588,8 +12579,8 @@ static int * const T_ionosphereMeasurementsReq_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_ionosphereMeasurementsReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ionosphereMeasurementsReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_ionosphereMeasurementsReq_bits, 2, NULL, NULL);
 
@@ -12601,8 +12592,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalSurfaceMeasurementReq_sequence[]
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurementReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurementReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurementReq, OMA_LPPe_AGNSS_LocalSurfaceMeasurementReq_sequence);
 
@@ -12617,8 +12608,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_RequestLocationInformation_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_RequestLocationInformation, OMA_LPPe_AGNSS_RequestLocationInformation_sequence);
 
@@ -12631,8 +12622,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_RequestLocationInformation_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_RequestLocationInformation, OMA_LPPe_OTDOA_RequestLocationInformation_sequence);
 
@@ -12644,8 +12635,8 @@ static const per_sequence_t OMA_LPPe_EOTD_RequestLocationInformation_sequence[] 
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_RequestLocationInformation, OMA_LPPe_EOTD_RequestLocationInformation_sequence);
 
@@ -12657,8 +12648,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_RequestLocationInformation_seque
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_RequestLocationInformation, OMA_LPPe_OTDOA_UTRA_RequestLocationInformation_sequence);
 
@@ -12675,8 +12666,8 @@ static int * const T_requestedMeasurements_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_requestedMeasurements_bits, 5, NULL, NULL);
 
@@ -12689,8 +12680,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_RequestLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_RequestLocationInformation, OMA_LPPe_ECID_LTE_RequestLocationInformation_sequence);
 
@@ -12707,8 +12698,8 @@ static int * const T_requestedMeasurements_01_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedMeasurements_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedMeasurements_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 8, false, T_requestedMeasurements_01_bits, 5, NULL, NULL);
 
@@ -12721,8 +12712,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_RequestLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_RequestLocationInformation, OMA_LPPe_ECID_GSM_RequestLocationInformation_sequence);
 
@@ -12744,8 +12735,8 @@ static int * const T_requestedMeasurements_02_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedMeasurements_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedMeasurements_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_requestedMeasurements_02_bits, 10, NULL, NULL);
 
@@ -12758,8 +12749,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_RequestLocationInformation_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_RequestLocationInformation, OMA_LPPe_ECID_UTRA_RequestLocationInformation_sequence);
 
@@ -12787,8 +12778,8 @@ static int * const T_requestedMeasurements_03_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedMeasurements_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedMeasurements_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_requestedMeasurements_03_bits, 16, NULL, NULL);
 
@@ -12802,8 +12793,8 @@ static int * const T_additionalRequestedMeasurements_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_additionalRequestedMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_additionalRequestedMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_additionalRequestedMeasurements_bits, 2, NULL, NULL);
 
@@ -12817,8 +12808,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_RequestLocationInformation_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_RequestLocationInformation, OMA_LPPe_WLAN_AP_RequestLocationInformation_sequence);
 
@@ -12843,8 +12834,8 @@ static int * const T_requestedMeasurements_04_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_requestedMeasurements_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_requestedMeasurements_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_requestedMeasurements_04_bits, 13, NULL, NULL);
 
@@ -12857,8 +12848,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_RequestLocationInformation_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_RequestLocationInformation, OMA_LPPe_ECID_WiMax_RequestLocationInformation_sequence);
 
@@ -12871,8 +12862,8 @@ static const per_sequence_t OMA_LPPe_Sensor_MotionStateRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_MotionStateRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_MotionStateRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_MotionStateRequest, OMA_LPPe_Sensor_MotionStateRequest_sequence);
 
@@ -12884,8 +12875,8 @@ static const per_sequence_t OMA_LPPe_AtmosphericPressureRequest_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AtmosphericPressureRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AtmosphericPressureRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AtmosphericPressureRequest, OMA_LPPe_AtmosphericPressureRequest_sequence);
 
@@ -12899,8 +12890,8 @@ static const per_sequence_t OMA_LPPe_Sensor_RequestLocationInformation_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_RequestLocationInformation, OMA_LPPe_Sensor_RequestLocationInformation_sequence);
 
@@ -12916,8 +12907,8 @@ static const value_string lppe_T_multipleMeasurements_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_multipleMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_multipleMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -12933,8 +12924,8 @@ static const per_sequence_t OMA_LPPe_SRN_ReqLocInfo_Category_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ReqLocInfo_Category(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ReqLocInfo_Category(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ReqLocInfo_Category, OMA_LPPe_SRN_ReqLocInfo_Category_sequence);
 
@@ -12946,8 +12937,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ReqLocInfo_Catego
   { &hf_lppe_requestInfo_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_ReqLocInfo_Category },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ReqLocInfo_Category(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ReqLocInfo_Category(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ReqLocInfo_Category, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_SRN_ReqLocInfo_Category_sequence_of,
                                                   1, 16, false);
@@ -12961,8 +12952,8 @@ static const per_sequence_t OMA_LPPe_SRN_RequestLocationInformation_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_RequestLocationInformation, OMA_LPPe_SRN_RequestLocationInformation_sequence);
 
@@ -12986,8 +12977,8 @@ static const per_sequence_t OMA_LPPe_RequestLocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RequestLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RequestLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RequestLocationInformation, OMA_LPPe_RequestLocationInformation_sequence);
 
@@ -13001,8 +12992,8 @@ static const per_sequence_t OMA_LPPe_LocalPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocalPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocalPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocalPosition, OMA_LPPe_LocalPosition_sequence);
 
@@ -13028,8 +13019,8 @@ static const per_sequence_t OMA_LPPe_HighAccuracy3Dvelocity_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HighAccuracy3Dvelocity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HighAccuracy3Dvelocity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HighAccuracy3Dvelocity, OMA_LPPe_HighAccuracy3Dvelocity_sequence);
 
@@ -13038,8 +13029,8 @@ dissect_lppe_OMA_LPPe_HighAccuracy3Dvelocity(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_128(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      128, 128, false, NULL, 0, NULL, NULL);
 
@@ -13059,8 +13050,8 @@ static const per_choice_t T_local_IP_Address_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_local_IP_Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_local_IP_Address(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_local_IP_Address, T_local_IP_Address_choice,
                                  NULL);
@@ -13084,8 +13075,8 @@ static const value_string lppe_OMA_LPPe_Bearer_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_Bearer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Bearer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      9, NULL, true, 1, NULL);
 
@@ -13100,8 +13091,8 @@ static const per_sequence_t OMA_LPPe_IP_Address_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_IP_Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_IP_Address(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_IP_Address, OMA_LPPe_IP_Address_sequence);
 
@@ -13113,8 +13104,8 @@ static const per_sequence_t OMA_LPPe_IP_Address_List_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_IP_Address_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_IP_Address },
 };
 
-static int
-dissect_lppe_OMA_LPPe_IP_Address_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_IP_Address_List(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_IP_Address_List, OMA_LPPe_IP_Address_List_sequence_of,
                                                   1, maxIPAddress, false);
@@ -13129,8 +13120,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerData_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainerData, OMA_LPPe_LocationInformationContainerData_sequence);
 
@@ -13142,8 +13133,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainerDataList_sequen
   { &hf_lppe_OMA_LPPe_LocationInformationContainerDataList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_LocationInformationContainerData },
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainerDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainerDataList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_LocationInformationContainerDataList, OMA_LPPe_LocationInformationContainerDataList_sequence_of,
                                                   1, maxLocationInformationContainerDataList, false);
@@ -13158,8 +13149,8 @@ static const per_sequence_t OMA_LPPe_LocationInformationContainer_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationInformationContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationInformationContainer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationInformationContainer, OMA_LPPe_LocationInformationContainer_sequence);
 
@@ -13176,8 +13167,8 @@ static const value_string lppe_OMA_LPPe_TypeOfLocInfoProvide_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_TypeOfLocInfoProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_TypeOfLocInfoProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -13191,8 +13182,8 @@ static const per_sequence_t OMA_LPPe_ProvidePeriodicLocInfowithUpdate_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ProvidePeriodicLocInfowithUpdate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ProvidePeriodicLocInfowithUpdate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ProvidePeriodicLocInfowithUpdate, OMA_LPPe_ProvidePeriodicLocInfowithUpdate_sequence);
 
@@ -13207,8 +13198,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocationChange_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocationChange(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocationChange(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_RelativeLocationChange, OMA_LPPe_RelativeLocationChange_sequence);
 
@@ -13220,8 +13211,8 @@ static const per_sequence_t OMA_LPPe_RelativeLocationChangeList_sequence_of[1] =
   { &hf_lppe_OMA_LPPe_RelativeLocationChangeList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_RelativeLocationChange },
 };
 
-static int
-dissect_lppe_OMA_LPPe_RelativeLocationChangeList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_RelativeLocationChangeList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_RelativeLocationChangeList, OMA_LPPe_RelativeLocationChangeList_sequence_of,
                                                   1, maxRelativeLocation, false);
@@ -13241,8 +13232,8 @@ static const value_string lppe_T_disposition_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_disposition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_disposition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      6, NULL, true, 0, NULL);
 
@@ -13251,8 +13242,8 @@ dissect_lppe_T_disposition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_M512_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M512_511(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -512, 511U, NULL, false);
 
@@ -13261,8 +13252,8 @@ dissect_lppe_INTEGER_M512_511(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_lppe_INTEGER_0_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_2047(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 2047U, NULL, false);
 
@@ -13276,8 +13267,8 @@ static const per_sequence_t T_actualWindow_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_actualWindow(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_actualWindow(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_actualWindow, T_actualWindow_sequence);
 
@@ -13291,8 +13282,8 @@ static const per_sequence_t OMA_LPPe_ScheduledLocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ScheduledLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ScheduledLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ScheduledLocation, OMA_LPPe_ScheduledLocation_sequence);
 
@@ -13307,8 +13298,8 @@ static const per_sequence_t OMA_LPPe_AccessTypes_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AccessTypes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AccessTypes(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AccessTypes, OMA_LPPe_AccessTypes_sequence);
 
@@ -13322,8 +13313,8 @@ static const per_sequence_t OMA_LPPe_SegmentedLITransfer_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SegmentedLITransfer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SegmentedLITransfer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SegmentedLITransfer, OMA_LPPe_SegmentedLITransfer_sequence);
 
@@ -13332,8 +13323,8 @@ dissect_lppe_OMA_LPPe_SegmentedLITransfer(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_INTEGER_0_1024(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1024(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1024U, NULL, false);
 
@@ -13355,8 +13346,8 @@ static const per_choice_t OMA_LPPe_TimeStamp_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_TimeStamp(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_TimeStamp(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_TimeStamp, OMA_LPPe_TimeStamp_choice,
                                  NULL);
@@ -13386,8 +13377,8 @@ static const per_sequence_t OMA_LPPe_LocationSource_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_LocationSource(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_LocationSource(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_LocationSource, OMA_LPPe_LocationSource_sequence);
 
@@ -13396,8 +13387,8 @@ dissect_lppe_OMA_LPPe_LocationSource(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_lppe_T_civicLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_civicLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   tvbuff_t *xml_tvb = NULL;
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        NO_BOUND, NO_BOUND, false, &xml_tvb);
@@ -13416,8 +13407,8 @@ static const per_sequence_t OMA_LPPe_CivicLocation_pidf_lo_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CivicLocation_pidf_lo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CivicLocation_pidf_lo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CivicLocation_pidf_lo, OMA_LPPe_CivicLocation_pidf_lo_sequence);
 
@@ -13442,8 +13433,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsProvideLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsProvideLocationInformation, OMA_LPPe_CommonIEsProvideLocationInformation_sequence);
 
@@ -13458,8 +13449,8 @@ static const per_sequence_t T_controlParameters_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_controlParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_controlParameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_controlParameters, T_controlParameters_sequence);
 
@@ -13473,8 +13464,8 @@ static const per_sequence_t T_localPressure_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_localPressure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_localPressure(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_localPressure, T_localPressure_sequence);
 
@@ -13491,8 +13482,8 @@ static const value_string lppe_T_multipathDetection_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_multipathDetection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_multipathDetection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, true, 0, NULL);
 
@@ -13501,8 +13492,8 @@ dissect_lppe_T_multipathDetection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_INTEGER_0_536870911(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_536870911(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 536870911U, NULL, false);
 
@@ -13523,8 +13514,8 @@ static const per_sequence_t OMA_LPPe_HAgnssPerSVelement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HAgnssPerSVelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HAgnssPerSVelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HAgnssPerSVelement, OMA_LPPe_HAgnssPerSVelement_sequence);
 
@@ -13536,8 +13527,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_HAgnssPerSVelement_se
   { &hf_lppe_haGNSSperSVlist_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_HAgnssPerSVelement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_HAgnssPerSVelement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_HAgnssPerSVelement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_HAgnssPerSVelement, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_HAgnssPerSVelement_sequence_of,
                                                   1, 64, false);
@@ -13552,8 +13543,8 @@ static const per_sequence_t OMA_LPPe_HAgnssPerSignalElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_HAgnssPerSignalElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_HAgnssPerSignalElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_HAgnssPerSignalElement, OMA_LPPe_HAgnssPerSignalElement_sequence);
 
@@ -13565,8 +13556,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_8_OF_OMA_LPPe_HAgnssPerSignalElement
   { &hf_lppe_haGNSSperSignalList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_HAgnssPerSignalElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_HAgnssPerSignalElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_HAgnssPerSignalElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_8_OF_OMA_LPPe_HAgnssPerSignalElement, SEQUENCE_SIZE_1_8_OF_OMA_LPPe_HAgnssPerSignalElement_sequence_of,
                                                   1, 8, false);
@@ -13581,8 +13572,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_HAgnssMeasurementElement_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssMeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssMeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_HAgnssMeasurementElement, OMA_LPPe_AGNSS_HAgnssMeasurementElement_sequence);
 
@@ -13594,8 +13585,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssMeasureme
   { &hf_lppe_signalMeasurements_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_HAgnssMeasurementElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssMeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssMeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssMeasurementElement, SEQUENCE_SIZE_1_16_OF_OMA_LPPe_AGNSS_HAgnssMeasurementElement_sequence_of,
                                                   1, 16, false);
@@ -13613,8 +13604,8 @@ static const per_sequence_t T_measurements_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_measurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_measurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_measurements, T_measurements_sequence);
 
@@ -13634,8 +13625,8 @@ static const per_choice_t OMA_LPPe_AGNSS_HAgnssProvide_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_HAgnssProvide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_HAgnssProvide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_AGNSS_HAgnssProvide, OMA_LPPe_AGNSS_HAgnssProvide_choice,
                                  NULL);
@@ -13645,8 +13636,8 @@ dissect_lppe_OMA_LPPe_AGNSS_HAgnssProvide(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_INTEGER_0_90(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_90(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 90U, NULL, false);
 
@@ -13662,8 +13653,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TECPerSVElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TECPerSVElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TECPerSVElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TECPerSVElement, OMA_LPPe_AGNSS_TECPerSVElement_sequence);
 
@@ -13675,8 +13666,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TECPerSV_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_AGNSS_TECPerSV_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_AGNSS_TECPerSVElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TECPerSV(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TECPerSV(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_AGNSS_TECPerSV, OMA_LPPe_AGNSS_TECPerSV_sequence_of,
                                                   1, 64, false);
@@ -13691,8 +13682,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_TECAtZenith_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_TECAtZenith(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_TECAtZenith(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_TECAtZenith, OMA_LPPe_AGNSS_TECAtZenith_sequence);
 
@@ -13708,8 +13699,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_IonosphereMeasurements_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_IonosphereMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_IonosphereMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_IonosphereMeasurements, OMA_LPPe_AGNSS_IonosphereMeasurements_sequence);
 
@@ -13723,8 +13714,8 @@ static const per_sequence_t T_temperatureMeasurement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_temperatureMeasurement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_temperatureMeasurement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_temperatureMeasurement, T_temperatureMeasurement_sequence);
 
@@ -13741,8 +13732,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_LocalSurfaceMeasurements_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_LocalSurfaceMeasurements, OMA_LPPe_AGNSS_LocalSurfaceMeasurements_sequence);
 
@@ -13759,8 +13750,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_ProvideLocationInformation_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_ProvideLocationInformation, OMA_LPPe_AGNSS_ProvideLocationInformation_sequence);
 
@@ -13775,8 +13766,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_LocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_LocationInformation, OMA_LPPe_OTDOA_LocationInformation_sequence);
 
@@ -13790,8 +13781,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_ProvideLocationInformation_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_ProvideLocationInformation, OMA_LPPe_OTDOA_ProvideLocationInformation_sequence);
 
@@ -13800,8 +13791,8 @@ dissect_lppe_OMA_LPPe_OTDOA_ProvideLocationInformation(tvbuff_t *tvb _U_, int of
 
 
 
-static int
-dissect_lppe_INTEGER_0_42431(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_42431(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 42431U, NULL, false);
 
@@ -13810,8 +13801,8 @@ dissect_lppe_INTEGER_0_42431(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ModuloTimeSlot(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ModuloTimeSlot(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 3U, NULL, false);
 
@@ -13820,8 +13811,8 @@ dissect_lppe_OMA_LPPe_EOTD_ModuloTimeSlot(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_5(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      5, 5, false, NULL, 0, NULL, NULL);
 
@@ -13830,8 +13821,8 @@ dissect_lppe_BIT_STRING_SIZE_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      3, 3, false, NULL, 0, NULL, NULL);
 
@@ -13845,8 +13836,8 @@ static const per_sequence_t OMA_LPPe_EOTD_TOA_MeasurementsOfRef_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_TOA_MeasurementsOfRef(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_TOA_MeasurementsOfRef(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_TOA_MeasurementsOfRef, OMA_LPPe_EOTD_TOA_MeasurementsOfRef_sequence);
 
@@ -13855,8 +13846,8 @@ dissect_lppe_OMA_LPPe_EOTD_TOA_MeasurementsOfRef(tvbuff_t *tvb _U_, int offset _
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      2, 2, false, NULL, 0, NULL, NULL);
 
@@ -13865,8 +13856,8 @@ dissect_lppe_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_INTEGER_0_960(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_960(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 960U, NULL, false);
 
@@ -13875,8 +13866,8 @@ dissect_lppe_INTEGER_0_960(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_CellID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_CellID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -13885,8 +13876,8 @@ dissect_lppe_OMA_LPPe_EOTD_CellID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_BCCHCarrier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_BCCHCarrier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1023U, NULL, false);
 
@@ -13900,8 +13891,8 @@ static const per_sequence_t OMA_LPPe_EOTD_MultiFrameCarrier_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MultiFrameCarrier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MultiFrameCarrier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_MultiFrameCarrier, OMA_LPPe_EOTD_MultiFrameCarrier_sequence);
 
@@ -13910,8 +13901,8 @@ dissect_lppe_OMA_LPPe_EOTD_MultiFrameCarrier(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_RequestIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_RequestIndex(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 16U, NULL, false);
 
@@ -13920,8 +13911,8 @@ dissect_lppe_OMA_LPPe_EOTD_RequestIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_SystemInfoIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_SystemInfoIndex(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 32U, NULL, false);
 
@@ -13949,8 +13940,8 @@ static const per_choice_t OMA_LPPe_EOTD_NeighborIdentity_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_NeighborIdentity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_NeighborIdentity(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_EOTD_NeighborIdentity, OMA_LPPe_EOTD_NeighborIdentity_choice,
                                  NULL);
@@ -13965,8 +13956,8 @@ static const per_sequence_t OMA_LPPe_EOTD_EOTDQuality_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_EOTDQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_EOTDQuality(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_EOTDQuality, OMA_LPPe_EOTD_EOTDQuality_sequence);
 
@@ -13975,8 +13966,8 @@ dissect_lppe_OMA_LPPe_EOTD_EOTDQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_OTDValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_OTDValue(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 39999U, NULL, false);
 
@@ -13992,8 +13983,8 @@ static const per_sequence_t OMA_LPPe_EOTD_MeasurementWithID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MeasurementWithID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MeasurementWithID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_MeasurementWithID, OMA_LPPe_EOTD_MeasurementWithID_sequence);
 
@@ -14005,8 +13996,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_15_OF_OMA_LPPe_EOTD_MeasurementWithI
   { &hf_lppe_otd_FirstSetMsrs_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_EOTD_MeasurementWithID },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_15_OF_OMA_LPPe_EOTD_MeasurementWithID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_15_OF_OMA_LPPe_EOTD_MeasurementWithID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_15_OF_OMA_LPPe_EOTD_MeasurementWithID, SEQUENCE_SIZE_1_15_OF_OMA_LPPe_EOTD_MeasurementWithID_sequence_of,
                                                   1, 15, false);
@@ -14025,8 +14016,8 @@ static const per_sequence_t OMA_LPPe_EOTD_MsrElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_MsrElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_MsrElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_MsrElement, OMA_LPPe_EOTD_MsrElement_sequence);
 
@@ -14040,8 +14031,8 @@ static const per_sequence_t OMA_LPPe_EOTD_ProvideLocationInformation_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_EOTD_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_EOTD_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_EOTD_ProvideLocationInformation, OMA_LPPe_EOTD_ProvideLocationInformation_sequence);
 
@@ -14050,8 +14041,8 @@ dissect_lppe_OMA_LPPe_EOTD_ProvideLocationInformation(tvbuff_t *tvb _U_, int off
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeDifferenceType2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeDifferenceType2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 8191U, NULL, false);
 
@@ -14066,8 +14057,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_Quality_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_Quality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_Quality(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_Quality, OMA_LPPe_OTDOA_UTRA_Quality_sequence);
 
@@ -14080,8 +14071,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_NeighborQuality_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborQuality(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_NeighborQuality, OMA_LPPe_OTDOA_UTRA_NeighborQuality_sequence);
 
@@ -14095,8 +14086,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_UE_RX_TX_TimeDifferenceType2Info
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_UE_RX_TX_TimeDifferenceType2Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_UE_RX_TX_TimeDifferenceType2Info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_UE_RX_TX_TimeDifferenceType2Info, OMA_LPPe_OTDOA_UTRA_UE_RX_TX_TimeDifferenceType2Info_sequence);
 
@@ -14110,8 +14101,8 @@ static const per_sequence_t T_fdd_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_03, T_fdd_03_sequence);
 
@@ -14124,8 +14115,8 @@ static const per_sequence_t T_tdd_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_03, T_tdd_03_sequence);
 
@@ -14145,8 +14136,8 @@ static const per_choice_t T_modeSpecificInfoMeas_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfoMeas(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfoMeas(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfoMeas, T_modeSpecificInfoMeas_choice,
                                  NULL);
@@ -14161,8 +14152,8 @@ static const per_sequence_t T_fdd_04_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_04, T_fdd_04_sequence);
 
@@ -14176,8 +14167,8 @@ static const per_sequence_t T_tdd_04_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_04, T_tdd_04_sequence);
 
@@ -14197,8 +14188,8 @@ static const per_choice_t T_modeSpecificInfo_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo_03, T_modeSpecificInfo_03_choice,
                                  NULL);
@@ -14208,8 +14199,8 @@ dissect_lppe_T_modeSpecificInfo_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_ObsTimeDifference2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_SFN_SFN_ObsTimeDifference2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -14224,8 +14215,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_Neighbor_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_Neighbor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_Neighbor(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_Neighbor, OMA_LPPe_OTDOA_UTRA_Neighbor_sequence);
 
@@ -14237,8 +14228,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_NeighborList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_OTDOA_UTRA_NeighborList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_OTDOA_UTRA_Neighbor },
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_NeighborList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_OTDOA_UTRA_NeighborList, OMA_LPPe_OTDOA_UTRA_NeighborList_sequence_of,
                                                   1, utra_maxCellMeas, false);
@@ -14254,8 +14245,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_Measurement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_Measurement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_Measurement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_Measurement, OMA_LPPe_OTDOA_UTRA_Measurement_sequence);
 
@@ -14275,8 +14266,8 @@ static const per_choice_t T_nonUniqueCellID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_nonUniqueCellID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_nonUniqueCellID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_nonUniqueCellID, T_nonUniqueCellID_choice,
                                  NULL);
@@ -14293,8 +14284,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_TimeStampData_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeStampData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_TimeStampData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_TimeStampData, OMA_LPPe_OTDOA_UTRA_TimeStampData_sequence);
 
@@ -14309,8 +14300,8 @@ static const per_sequence_t OMA_LPPe_OTDOA_UTRA_ProvideLocationInformation_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_OTDOA_UTRA_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_OTDOA_UTRA_ProvideLocationInformation, OMA_LPPe_OTDOA_UTRA_ProvideLocationInformation_sequence);
 
@@ -14323,8 +14314,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_LocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_LocationInformation, OMA_LPPe_ECID_LTE_LocationInformation_sequence);
 
@@ -14339,8 +14330,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_LocationInformationList_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_LocationInformationList, OMA_LPPe_ECID_LTE_LocationInformationList_sequence);
 
@@ -14352,8 +14343,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxLTEECIDSize_OF_OMA_LPPe_ECID_LTE_
   { &hf_lppe_ecid_LTE_CombinedLocationInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_LTE_LocationInformationList },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxLTEECIDSize_OF_OMA_LPPe_ECID_LTE_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxLTEECIDSize_OF_OMA_LPPe_ECID_LTE_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxLTEECIDSize_OF_OMA_LPPe_ECID_LTE_LocationInformationList, SEQUENCE_SIZE_1_maxLTEECIDSize_OF_OMA_LPPe_ECID_LTE_LocationInformationList_sequence_of,
                                                   1, maxLTEECIDSize, false);
@@ -14368,8 +14359,8 @@ static const per_sequence_t OMA_LPPe_ECID_LTE_ProvideLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_LTE_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_LTE_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_LTE_ProvideLocationInformation, OMA_LPPe_ECID_LTE_ProvideLocationInformation_sequence);
 
@@ -14384,8 +14375,8 @@ static const per_sequence_t OMA_LPPe_NMR_GERAN_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_NMR_GERAN_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_NMR_GERAN_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_NMR_GERAN_item, OMA_LPPe_NMR_GERAN_item_sequence);
 
@@ -14397,8 +14388,8 @@ static const per_sequence_t OMA_LPPe_NMR_GERAN_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_NMR_GERAN_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_NMR_GERAN_item },
 };
 
-static int
-dissect_lppe_OMA_LPPe_NMR_GERAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_NMR_GERAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_NMR_GERAN, OMA_LPPe_NMR_GERAN_sequence_of,
                                                   1, 15, false);
@@ -14415,8 +14406,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_LocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_LocationInformation, OMA_LPPe_ECID_GSM_LocationInformation_sequence);
 
@@ -14431,8 +14422,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_LocationInformationList_sequence[]
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_LocationInformationList, OMA_LPPe_ECID_GSM_LocationInformationList_sequence);
 
@@ -14444,8 +14435,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxGSMECIDSize_OF_OMA_LPPe_ECID_GSM_
   { &hf_lppe_ecid_GSM_CombinedLocationInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_GSM_LocationInformationList },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxGSMECIDSize_OF_OMA_LPPe_ECID_GSM_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxGSMECIDSize_OF_OMA_LPPe_ECID_GSM_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxGSMECIDSize_OF_OMA_LPPe_ECID_GSM_LocationInformationList, SEQUENCE_SIZE_1_maxGSMECIDSize_OF_OMA_LPPe_ECID_GSM_LocationInformationList_sequence_of,
                                                   1, maxGSMECIDSize, false);
@@ -14460,8 +14451,8 @@ static const per_sequence_t OMA_LPPe_ECID_GSM_ProvideLocationInformation_sequenc
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_GSM_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_GSM_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_GSM_ProvideLocationInformation, OMA_LPPe_ECID_GSM_ProvideLocationInformation_sequence);
 
@@ -14470,8 +14461,8 @@ dissect_lppe_OMA_LPPe_ECID_GSM_ProvideLocationInformation(tvbuff_t *tvb _U_, int
 
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CarrierRSSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CarrierRSSI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -14480,8 +14471,8 @@ dissect_lppe_OMA_LPPe_ECID_UTRA_CarrierRSSI(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_Ec_N0(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 63U, NULL, false);
 
@@ -14490,8 +14481,8 @@ dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_Ec_N0(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_RSCP(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -14500,8 +14491,8 @@ dissect_lppe_OMA_LPPe_ECID_UTRA_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, as
 
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_Pathloss(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_Pathloss(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             46U, 173U, NULL, false);
 
@@ -14517,8 +14508,8 @@ static const per_sequence_t T_fdd_06_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_fdd_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_fdd_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_fdd_06, T_fdd_06_sequence);
 
@@ -14527,8 +14518,8 @@ dissect_lppe_T_fdd_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_PrimaryCCPCH_RSCP(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -14543,8 +14534,8 @@ static const per_sequence_t T_tdd_06_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_tdd_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_tdd_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_tdd_06, T_tdd_06_sequence);
 
@@ -14564,8 +14555,8 @@ static const per_choice_t T_modeSpecificInfo_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_T_modeSpecificInfo_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_modeSpecificInfo_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_T_modeSpecificInfo_05, T_modeSpecificInfo_05_choice,
                                  NULL);
@@ -14580,8 +14571,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_CellMeasuredResults_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResults(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResults(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResults, OMA_LPPe_ECID_UTRA_CellMeasuredResults_sequence);
 
@@ -14593,8 +14584,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_CellMeasuredResultsList_sequence_
   { &hf_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResultsList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResults },
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResultsList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_ECID_UTRA_CellMeasuredResultsList, OMA_LPPe_ECID_UTRA_CellMeasuredResultsList_sequence_of,
                                                   1, utra_maxCellMeas, false);
@@ -14610,8 +14601,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_MeasuredResults_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_MeasuredResults(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_MeasuredResults(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_MeasuredResults, OMA_LPPe_ECID_UTRA_MeasuredResults_sequence);
 
@@ -14623,8 +14614,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_MeasuredResultsList_sequence_of[1
   { &hf_lppe_OMA_LPPe_ECID_UTRA_MeasuredResultsList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_MeasuredResults },
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_MeasuredResultsList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_ECID_UTRA_MeasuredResultsList, OMA_LPPe_ECID_UTRA_MeasuredResultsList_sequence_of,
                                                   1, maxFreq, false);
@@ -14641,8 +14632,8 @@ static const value_string lppe_OMA_LPPe_ECID_UTRA_TAResolution_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_TAResolution(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_TAResolution(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -14658,8 +14649,8 @@ static const value_string lppe_OMA_LPPe_ECID_UTRA_ChipRate_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_ChipRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_ChipRate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -14674,8 +14665,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_UTRATimingAdvance_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_UTRATimingAdvance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_UTRATimingAdvance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_UTRATimingAdvance, OMA_LPPe_ECID_UTRA_UTRATimingAdvance_sequence);
 
@@ -14693,8 +14684,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_LocationInformation_sequence[] = 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_LocationInformation, OMA_LPPe_ECID_UTRA_LocationInformation_sequence);
 
@@ -14709,8 +14700,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_LocationInformationList_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_LocationInformationList, OMA_LPPe_ECID_UTRA_LocationInformationList_sequence);
 
@@ -14722,8 +14713,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxECIDUTRASize_OF_OMA_LPPe_ECID_UTR
   { &hf_lppe_ecid_UTRA_CombinedLocationInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_UTRA_LocationInformationList },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxECIDUTRASize_OF_OMA_LPPe_ECID_UTRA_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxECIDUTRASize_OF_OMA_LPPe_ECID_UTRA_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxECIDUTRASize_OF_OMA_LPPe_ECID_UTRA_LocationInformationList, SEQUENCE_SIZE_1_maxECIDUTRASize_OF_OMA_LPPe_ECID_UTRA_LocationInformationList_sequence_of,
                                                   1, maxECIDUTRASize, false);
@@ -14738,8 +14729,8 @@ static const per_sequence_t OMA_LPPe_ECID_UTRA_ProvideLocationInformation_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_UTRA_ProvideLocationInformation, OMA_LPPe_ECID_UTRA_ProvideLocationInformation_sequence);
 
@@ -14748,8 +14739,8 @@ dissect_lppe_OMA_LPPe_ECID_UTRA_ProvideLocationInformation(tvbuff_t *tvb _U_, in
 
 
 
-static int
-dissect_lppe_OCTET_STRING_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OCTET_STRING_SIZE_1_32(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        1, 32, false, NULL);
 
@@ -14772,8 +14763,8 @@ static const value_string lppe_OMA_LPPe_WLAN_AP_PHY_Type_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_PHY_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_PHY_Type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      10, NULL, true, 0, NULL);
 
@@ -14782,8 +14773,8 @@ dissect_lppe_OMA_LPPe_WLAN_AP_PHY_Type(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_lppe_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_256(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 256U, NULL, false);
 
@@ -14792,8 +14783,8 @@ dissect_lppe_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_0_16777215(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_16777215(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 16777215U, NULL, false);
 
@@ -14811,8 +14802,8 @@ static const value_string lppe_OMA_LPPe_WLAN_RTDUnits_vals[] = {
 };
 
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_RTDUnits(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_RTDUnits(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      5, NULL, true, 0, NULL);
 
@@ -14827,8 +14818,8 @@ static const per_sequence_t OMA_LPPe_WLAN_RTD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_RTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_RTD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_RTD, OMA_LPPe_WLAN_RTD_sequence);
 
@@ -14837,8 +14828,8 @@ dissect_lppe_OMA_LPPe_WLAN_RTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      6, 6, false, NULL, 0, NULL, NULL);
 
@@ -14847,8 +14838,8 @@ dissect_lppe_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      34, 34, false, NULL, 0, NULL, NULL);
 
@@ -14857,8 +14848,8 @@ dissect_lppe_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      4, 4, false, NULL, 0, NULL, NULL);
 
@@ -14867,8 +14858,8 @@ dissect_lppe_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      30, 30, false, NULL, 0, NULL, NULL);
 
@@ -14888,8 +14879,8 @@ static const per_sequence_t OMA_LPPe_WLAN_LocationDataLCI_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_LocationDataLCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_LocationDataLCI(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_LocationDataLCI, OMA_LPPe_WLAN_LocationDataLCI_sequence);
 
@@ -14902,8 +14893,8 @@ static const per_sequence_t OMA_LPPe_WLAN_ReportedLocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_ReportedLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_ReportedLocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_ReportedLocation, OMA_LPPe_WLAN_ReportedLocation_sequence);
 
@@ -14912,8 +14903,8 @@ dissect_lppe_OMA_LPPe_WLAN_ReportedLocation(tvbuff_t *tvb _U_, int offset _U_, a
 
 
 
-static int
-dissect_lppe_INTEGER_0_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1U, NULL, false);
 
@@ -14946,8 +14937,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_LocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_LocationInformation, OMA_LPPe_WLAN_AP_LocationInformation_sequence);
 
@@ -14962,8 +14953,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_LocationInformationList_sequence[] 
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_LocationInformationList, OMA_LPPe_WLAN_AP_LocationInformationList_sequence);
 
@@ -14975,8 +14966,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxWLANAPSize_OF_OMA_LPPe_WLAN_AP_Lo
   { &hf_lppe_wlan_AP_CombinedLocationInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_WLAN_AP_LocationInformationList },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxWLANAPSize_OF_OMA_LPPe_WLAN_AP_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxWLANAPSize_OF_OMA_LPPe_WLAN_AP_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxWLANAPSize_OF_OMA_LPPe_WLAN_AP_LocationInformationList, SEQUENCE_SIZE_1_maxWLANAPSize_OF_OMA_LPPe_WLAN_AP_LocationInformationList_sequence_of,
                                                   1, maxWLANAPSize, false);
@@ -14991,8 +14982,8 @@ static const per_sequence_t OMA_LPPe_WLAN_AP_ProvideLocationInformation_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_WLAN_AP_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_WLAN_AP_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_WLAN_AP_ProvideLocationInformation, OMA_LPPe_WLAN_AP_ProvideLocationInformation_sequence);
 
@@ -15001,8 +14992,8 @@ dissect_lppe_OMA_LPPe_WLAN_AP_ProvideLocationInformation(tvbuff_t *tvb _U_, int 
 
 
 
-static int
-dissect_lppe_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      24, 24, false, NULL, 0, NULL, NULL);
 
@@ -15016,8 +15007,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_WimaxBsID_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxBsID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxBsID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_WimaxBsID, OMA_LPPe_ECID_WiMax_WimaxBsID_sequence);
 
@@ -15031,8 +15022,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_WimaxRTD_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxRTD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxRTD(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_WimaxRTD, OMA_LPPe_ECID_WiMax_WimaxRTD_sequence);
 
@@ -15053,8 +15044,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_WimaxNMR_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxNMR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxNMR(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_WimaxNMR, OMA_LPPe_ECID_WiMax_WimaxNMR_sequence);
 
@@ -15066,8 +15057,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_WimaxNMRList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_ECID_WiMax_WimaxNMRList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxNMR },
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxNMRList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_WimaxNMRList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_ECID_WiMax_WimaxNMRList, OMA_LPPe_ECID_WiMax_WimaxNMRList_sequence_of,
                                                   1, maxWimaxBSMeas, false);
@@ -15083,8 +15074,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_LocationInformation_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_LocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_LocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_LocationInformation, OMA_LPPe_ECID_WiMax_LocationInformation_sequence);
 
@@ -15099,8 +15090,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_LocationInformationList_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_LocationInformationList, OMA_LPPe_ECID_WiMax_LocationInformationList_sequence);
 
@@ -15112,8 +15103,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_maxWiMaxECIDSize_OF_OMA_LPPe_ECID_Wi
   { &hf_lppe_ecid_wimax_CombinedLocationInformation_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_ECID_WiMax_LocationInformationList },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_maxWiMaxECIDSize_OF_OMA_LPPe_ECID_WiMax_LocationInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_maxWiMaxECIDSize_OF_OMA_LPPe_ECID_WiMax_LocationInformationList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_maxWiMaxECIDSize_OF_OMA_LPPe_ECID_WiMax_LocationInformationList, SEQUENCE_SIZE_1_maxWiMaxECIDSize_OF_OMA_LPPe_ECID_WiMax_LocationInformationList_sequence_of,
                                                   1, maxWiMaxECIDSize, false);
@@ -15128,8 +15119,8 @@ static const value_string lppe_T_cause_14_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_14(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      1, NULL, true, 0, NULL);
 
@@ -15142,8 +15133,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_LocationServerErrorCauses_sequen
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_LocationServerErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_LocationServerErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_LocationServerErrorCauses, OMA_LPPe_ECID_WiMax_LocationServerErrorCauses_sequence);
 
@@ -15159,8 +15150,8 @@ static const value_string lppe_T_cause_15_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_cause_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_cause_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -15186,8 +15177,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_TargetDeviceErrorCauses_sequence
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_TargetDeviceErrorCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_TargetDeviceErrorCauses, OMA_LPPe_ECID_WiMax_TargetDeviceErrorCauses_sequence);
 
@@ -15207,8 +15198,8 @@ static const per_choice_t OMA_LPPe_ECID_WiMax_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_ECID_WiMax_Error, OMA_LPPe_ECID_WiMax_Error_choice,
                                  NULL);
@@ -15223,8 +15214,8 @@ static const per_sequence_t OMA_LPPe_ECID_WiMax_ProvideLocationInformation_seque
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ECID_WiMax_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ECID_WiMax_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ECID_WiMax_ProvideLocationInformation, OMA_LPPe_ECID_WiMax_ProvideLocationInformation_sequence);
 
@@ -15247,8 +15238,8 @@ static const value_string lppe_T_primaryMotionState_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_primaryMotionState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_primaryMotionState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      10, NULL, true, 0, NULL);
 
@@ -15269,8 +15260,8 @@ static int * const T_secondaryMotionState_bits[] = {
   NULL
 };
 
-static int
-dissect_lppe_T_secondaryMotionState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_secondaryMotionState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      1, 16, false, T_secondaryMotionState_bits, 9, NULL, NULL);
 
@@ -15285,8 +15276,8 @@ static const per_sequence_t OMA_LPPe_Sensor_MotionStateElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_MotionStateElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_MotionStateElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_MotionStateElement, OMA_LPPe_Sensor_MotionStateElement_sequence);
 
@@ -15298,8 +15289,8 @@ static const per_sequence_t OMA_LPPe_Sensor_MotionStateList_sequence_of[1] = {
   { &hf_lppe_OMA_LPPe_Sensor_MotionStateList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_Sensor_MotionStateElement },
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_MotionStateList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_MotionStateList(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_OMA_LPPe_Sensor_MotionStateList, OMA_LPPe_Sensor_MotionStateList_sequence_of,
                                                   1, 8, false);
@@ -15315,8 +15306,8 @@ static const value_string lppe_T_motionStateError_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_motionStateError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_motionStateError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -15331,8 +15322,8 @@ static const value_string lppe_T_secondaryMotionStateError_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_secondaryMotionStateError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_secondaryMotionStateError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -15347,8 +15338,8 @@ static const value_string lppe_T_atmosphericPressureError_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_atmosphericPressureError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_atmosphericPressureError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, true, 0, NULL);
 
@@ -15363,8 +15354,8 @@ static const per_sequence_t OMA_LPPe_Sensor_TargetError_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_TargetError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_TargetError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_TargetError, OMA_LPPe_Sensor_TargetError_sequence);
 
@@ -15382,8 +15373,8 @@ static const per_choice_t OMA_LPPe_Sensor_Error_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_Sensor_Error, OMA_LPPe_Sensor_Error_choice,
                                  NULL);
@@ -15393,8 +15384,8 @@ dissect_lppe_OMA_LPPe_Sensor_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_lppe_INTEGER_30000_115000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_30000_115000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             30000U, 115000U, NULL, false);
 
@@ -15403,8 +15394,8 @@ dissect_lppe_INTEGER_30000_115000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_lppe_INTEGER_M5000_5000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M5000_5000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -5000, 5000U, NULL, false);
 
@@ -15418,8 +15409,8 @@ static const per_sequence_t T_uncertainty_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_uncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_uncertainty(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_uncertainty, T_uncertainty_sequence);
 
@@ -15428,8 +15419,8 @@ dissect_lppe_T_uncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_INTEGER_M100_150(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_M100_150(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -100, 150U, NULL, false);
 
@@ -15445,8 +15436,8 @@ static const per_sequence_t OMA_LPPe_PressureMeasurement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_PressureMeasurement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_PressureMeasurement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_PressureMeasurement, OMA_LPPe_PressureMeasurement_sequence);
 
@@ -15455,8 +15446,8 @@ dissect_lppe_OMA_LPPe_PressureMeasurement(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_lppe_INTEGER_0_2000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_0_2000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 2000U, NULL, false);
 
@@ -15465,8 +15456,8 @@ dissect_lppe_INTEGER_0_2000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_lppe_INTEGER_5_40(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_INTEGER_5_40(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             5U, 40U, NULL, false);
 
@@ -15481,8 +15472,8 @@ static const per_sequence_t PressureStats_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_PressureStats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_PressureStats(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_PressureStats, PressureStats_sequence);
 
@@ -15491,8 +15482,8 @@ dissect_lppe_PressureStats(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_lppe_UTCTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_UTCTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_VisibleString(tvb, offset, actx, tree, hf_index,
                                         NO_BOUND, NO_BOUND, false,
                                         NULL);
@@ -15511,8 +15502,8 @@ static const per_sequence_t CalibrationPoints_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_CalibrationPoints_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_CalibrationPoints_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_CalibrationPoints_item, CalibrationPoints_item_sequence);
 
@@ -15524,8 +15515,8 @@ static const per_sequence_t CalibrationPoints_sequence_of[1] = {
   { &hf_lppe_CalibrationPoints_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_CalibrationPoints_item },
 };
 
-static int
-dissect_lppe_CalibrationPoints(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_CalibrationPoints(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_CalibrationPoints, CalibrationPoints_sequence_of,
                                                   1, 10, false);
@@ -15541,8 +15532,8 @@ static const per_sequence_t OMA_LPPe_AtmosphericPressure_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AtmosphericPressure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AtmosphericPressure(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AtmosphericPressure, OMA_LPPe_AtmosphericPressure_sequence);
 
@@ -15557,8 +15548,8 @@ static const per_sequence_t OMA_LPPe_Sensor_ProvideLocationInformation_sequence[
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Sensor_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Sensor_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Sensor_ProvideLocationInformation, OMA_LPPe_Sensor_ProvideLocationInformation_sequence);
 
@@ -15573,8 +15564,8 @@ static const per_sequence_t OMA_LPPe_SRN_srnMeasurementElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_srnMeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_srnMeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_srnMeasurementElement, OMA_LPPe_SRN_srnMeasurementElement_sequence);
 
@@ -15586,8 +15577,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_srnMeasurementEle
   { &hf_lppe_measurementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_srnMeasurementElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_srnMeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_srnMeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_srnMeasurementElement, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_srnMeasurementElement_sequence_of,
                                                   1, 64, false);
@@ -15604,8 +15595,8 @@ static const per_sequence_t OMA_LPPe_SRN_MeasurementElement_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_MeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_MeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_MeasurementElement, OMA_LPPe_SRN_MeasurementElement_sequence);
 
@@ -15617,8 +15608,8 @@ static const per_sequence_t SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_MeasurementElemen
   { &hf_lppe_srnMeasurementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_lppe_OMA_LPPe_SRN_MeasurementElement },
 };
 
-static int
-dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_MeasurementElement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_MeasurementElement(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_lppe_SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_MeasurementElement, SEQUENCE_SIZE_1_64_OF_OMA_LPPe_SRN_MeasurementElement_sequence_of,
                                                   1, 64, false);
@@ -15633,8 +15624,8 @@ static const per_sequence_t OMA_LPPe_SRN_ProvideLocationInformation_sequence[] =
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_SRN_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_SRN_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_SRN_ProvideLocationInformation, OMA_LPPe_SRN_ProvideLocationInformation_sequence);
 
@@ -15658,8 +15649,8 @@ static const per_sequence_t OMA_LPPe_ProvideLocationInformation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_ProvideLocationInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_ProvideLocationInformation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_ProvideLocationInformation, OMA_LPPe_ProvideLocationInformation_sequence);
 
@@ -15671,8 +15662,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsError_sequence[] = {
   { NULL, ASN1_EXTENSION_ROOT, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsError(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsError, OMA_LPPe_CommonIEsError_sequence);
 
@@ -15685,8 +15676,8 @@ static const per_sequence_t OMA_LPPe_Error_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Error(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Error(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Error, OMA_LPPe_Error_sequence);
 
@@ -15705,8 +15696,8 @@ static const value_string lppe_T_abortCause_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_abortCause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_abortCause(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      6, NULL, true, 0, NULL);
 
@@ -15720,8 +15711,8 @@ static const per_sequence_t OMA_LPPe_CommonIEsAbort_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_CommonIEsAbort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_CommonIEsAbort(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_CommonIEsAbort, OMA_LPPe_CommonIEsAbort_sequence);
 
@@ -15737,8 +15728,8 @@ static const value_string lppe_T_ccpAbort_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_ccpAbort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_ccpAbort(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -15754,8 +15745,8 @@ static const value_string lppe_T_waIonoAbort_vals[] = {
 };
 
 
-static int
-dissect_lppe_T_waIonoAbort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_waIonoAbort(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      3, NULL, true, 0, NULL);
 
@@ -15769,8 +15760,8 @@ static const per_sequence_t T_targetDeviceAbortCauses_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_T_targetDeviceAbortCauses(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_T_targetDeviceAbortCauses(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_T_targetDeviceAbortCauses, T_targetDeviceAbortCauses_sequence);
 
@@ -15783,8 +15774,8 @@ static const per_sequence_t OMA_LPPe_AGNSS_Abort_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_AGNSS_Abort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_AGNSS_Abort(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_AGNSS_Abort, OMA_LPPe_AGNSS_Abort_sequence);
 
@@ -15798,8 +15789,8 @@ static const per_sequence_t OMA_LPPe_Abort_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_Abort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_Abort(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_lppe_OMA_LPPe_Abort, OMA_LPPe_Abort_sequence);
 
@@ -15831,8 +15822,8 @@ static const per_choice_t OMA_LPPe_MessageExtensionBody_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_MessageExtensionBody(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_MessageExtensionBody(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_lppe_OMA_LPPe_MessageExtensionBody, OMA_LPPe_MessageExtensionBody_choice,
                                  NULL);
@@ -15849,8 +15840,8 @@ static const per_sequence_t OMA_LPPe_MessageExtension_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_lppe_OMA_LPPe_MessageExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_lppe_OMA_LPPe_MessageExtension(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
 
   proto_tree_add_item(tree, proto_lppe, tvb, 0, -1, ENC_NA);
 
@@ -15865,7 +15856,7 @@ dissect_lppe_OMA_LPPe_MessageExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 /*--- PDUs ---*/
 
 static int dissect_OMA_LPPe_MessageExtension_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_lppe_OMA_LPPe_MessageExtension(tvb, offset, &asn1_ctx, tree, hf_lppe_OMA_LPPe_MessageExtension_PDU);
@@ -23000,7 +22991,7 @@ void proto_register_lppe(void) {
 
 
   /* Register protocol */
-  proto_lppe = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_lppe = proto_register_protocol("LTE Positioning Protocol Extensions (LLPe)", "LPPe", "lppe");
   register_dissector("lppe", dissect_OMA_LPPe_MessageExtension_PDU, proto_lppe);
 
   /* Register fields and subtrees */

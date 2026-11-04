@@ -104,9 +104,6 @@
      */
     #define PCAP_API_DEF
   #endif
-#elif defined(MSDOS)
-  /* XXX - does this need special treatment? */
-  #define PCAP_API_DEF
 #else /* UN*X */
   #ifdef pcap_EXPORTS
     /*
@@ -142,7 +139,7 @@
      */
     #define PCAP_API_DEF
   #endif
-#endif /* _WIN32/MSDOS/UN*X */
+#endif /* _WIN32/UN*X */
 
 #define PCAP_API	PCAP_API_DEF extern
 
@@ -205,7 +202,7 @@
  * However, macOS Sonoma provides stub versions of those routine,
  * which return an error.  This means that we need a separate
  * availability indicator macro for those routines, so that
- * progras built on macOS Sonoma that attempt to use weak
+ * programs built on macOS Sonoma that attempt to use weak
  * importing and availability tests to use those routines
  * if they're available will get those routines weakly imported,
  * so that if they're run on releases prior to Sonoma, they
@@ -263,7 +260,7 @@
     || PCAP_IS_AT_LEAST_GNUC_VERSION(2,5) \
     || PCAP_IS_AT_LEAST_SUNC_VERSION(5,9) \
     || PCAP_IS_AT_LEAST_XL_C_VERSION(7,0) \
-    || PCAP_IS_AT_LEAST_HP_C_VERSION(6,10) \
+    || PCAP_IS_AT_LEAST_HP_C_CXX_VERSION(6,10) \
     || __TINYC__
   /*
    * Compiler with support for __attribute((noreturn)), or GCC 2.5 and
@@ -294,7 +291,7 @@
 #if __has_attribute(__format__) \
     || PCAP_IS_AT_LEAST_GNUC_VERSION(2,3) \
     || PCAP_IS_AT_LEAST_XL_C_VERSION(7,0) \
-    || PCAP_IS_AT_LEAST_HP_C_VERSION(6,10)
+    || PCAP_IS_AT_LEAST_HP_C_CXX_VERSION(6,10)
   /*
    * Compiler with support for it, or GCC 2.3 and later, or some compiler
    * asserting compatibility with GCC 2.3 and later, or IBM XL C 7.0
@@ -304,6 +301,41 @@
   #define PCAP_PRINTFLIKE(x,y) __attribute__((__format__(__printf__,x,y)))
 #else
   #define PCAP_PRINTFLIKE(x,y)
+#endif
+
+/*
+ * PCAP_NONNULL(...), after a function declaration, means "the arguments
+ * whose ordinal numbers are listed are pointer arguments that must be
+ * non-null".
+ */
+#if __has_attribute(nonnull) \
+    || PCAP_IS_AT_LEAST_GNUC_VERSION(3,3) \
+    || PCAP_IS_AT_LEAST_XL_C_VERSION(10,1)
+  /*
+   * Compiler with support for it, or GCC 3.3 and later, or some compiler
+   * asserting compatibility with GCC 3.3 and later, or IBM XL C 10.1
+   * and later (do any earlier versions of XL C support this?).
+   */
+  #define PCAP_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
+#else
+  #define PCAP_NONNULL(...)
+#endif
+
+/*
+ * PCAP_WARN_UNUSED_RESULT(...), after a function declaration, means
+ * "the return value of this function should always be used".
+ */
+#if __has_attribute(warn_unused_result) \
+    || PCAP_IS_AT_LEAST_GNUC_VERSION(3,4) \
+    || PCAP_IS_AT_LEAST_XL_C_VERSION(10,1)
+  /*
+   * Compiler with support for it, or GCC 3.4 and later, or some compiler
+   * asserting compatibility with GCC 3.4 and later, or IBM XL C 10.1
+   * and later (do any earlier versions of XL C support this?).
+   */
+  #define PCAP_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+  #define PCAP_WARN_UNUSED_RESULT
 #endif
 
 /*

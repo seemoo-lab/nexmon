@@ -80,7 +80,8 @@ bt_monitor_findalldevs(pcap_if_list_t *devlistp, char *err_str)
      * for the "any" device.
      */
     if (pcapint_add_dev(devlistp, INTERFACE_NAME,
-                PCAP_IF_WIRELESS|PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE,
+                PCAP_IF_WIRELESS |
+                PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE,
                 "Bluetooth Linux Monitor", err_str) == NULL)
     {
         ret = PCAP_ERROR;
@@ -101,7 +102,7 @@ bt_monitor_read(pcap_t *handle, int max_packets _U_, pcap_handler callback, u_ch
     u_char *pktd;
     struct hci_mon_hdr hdr;
 
-    pktd = (u_char *)handle->buffer + BT_CONTROL_SIZE;
+    pktd = handle->buffer + BT_CONTROL_SIZE;
     bthdr = (pcap_bluetooth_linux_monitor_header*)(void *)pktd;
 
     iv[0].iov_base = &hdr;
@@ -183,7 +184,7 @@ static int
 bt_monitor_activate(pcap_t* handle)
 {
     struct sockaddr_hci addr;
-    int err = PCAP_ERROR;
+    int err;
     int opt;
 
     if (handle->opt.rfmon) {
@@ -225,6 +226,7 @@ bt_monitor_activate(pcap_t* handle)
     if (!handle->buffer) {
         pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
             errno, "Can't allocate dump buffer");
+        err = PCAP_ERROR;
         goto close_fail;
     }
 
@@ -234,8 +236,15 @@ bt_monitor_activate(pcap_t* handle)
     addr.hci_channel = HCI_CHANNEL_MONITOR;
 
     if (bind(handle->fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-        pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
-            errno, "Can't attach to interface");
+        if (errno == EPERM) {
+            snprintf(handle->errbuf, PCAP_ERRBUF_SIZE,
+                "Can't attach to interface - CAP_NET_RAW may be required");
+            err = PCAP_ERROR_PERM_DENIED;
+        } else {
+            pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
+                errno, "Can't attach to interface");
+            err = PCAP_ERROR;
+        }
         goto close_fail;
     }
 
@@ -243,6 +252,7 @@ bt_monitor_activate(pcap_t* handle)
     if (setsockopt(handle->fd, SOL_SOCKET, SO_TIMESTAMP, &opt, sizeof(opt)) < 0) {
         pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
             errno, "Can't enable time stamp");
+        err = PCAP_ERROR;
         goto close_fail;
     }
 
@@ -259,13 +269,8 @@ pcap_t *
 bt_monitor_create(const char *device, char *ebuf, int *is_ours)
 {
     pcap_t      *p;
-    const char  *cp;
 
-    cp = strrchr(device, '/');
-    if (cp == NULL)
-        cp = device;
-
-    if (strcmp(cp, INTERFACE_NAME) != 0) {
+    if (strcmp(device, INTERFACE_NAME) != 0) {
         *is_ours = 0;
         return NULL;
     }

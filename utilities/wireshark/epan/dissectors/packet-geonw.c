@@ -322,8 +322,8 @@ static int
 dissect_btpa(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     heur_dtbl_entry_t *hdtbl_entry;
-    int low_port, high_port;
-    int dst_port, src_port;
+    uint32_t low_port, high_port;
+    uint32_t dst_port, src_port;
     proto_item *hidden_item;
     struct btpaheader *btpah;
 
@@ -1249,7 +1249,7 @@ dissect_sec_intx(tvbuff_t *tvb, int *offset, packet_info *pinfo, proto_tree *tre
     ti = proto_tree_add_item(tree, hf_sgeonw_intx, tvb, start, (*offset) - start, ENC_NA);
     subtree = proto_item_add_subtree(ti, ett_sgeonw_intx);
     proto_tree_add_bits_item(subtree, hf_sgeonw_var_len_det, tvb, start << 3, (*offset) - start, ENC_NA);
-    if ((hf != hf_sgeonw_app_id) || ((*offset) - start) > 4) {
+    if ((hf != hf_sgeonw_app_id) && ((*offset) - start) > 4) {
         proto_tree_add_uint64_bits_format_value(subtree, hf, tvb, (start << 3) + (*offset) - start,
             (((*offset) - start) << 3) - ((*offset) - start), tmp_val, ENC_BIG_ENDIAN, "%" PRIu64, tmp_val);
     }
@@ -2141,7 +2141,7 @@ dissect_geonw_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     uint32_t header_type;
     uint32_t rhl;
     uint32_t tmp_val;
-    int offset = 0;
+    unsigned offset = 0;
     proto_item *ti;
     proto_item *top_item;
     proto_item* rhl_ti = NULL;
@@ -2860,7 +2860,7 @@ proto_register_btpa(void)
     static build_valid_func btpa_da_both_values[2] = {btpa_src_value, btpa_dst_value};
     static decode_as_value_t btpa_da_values[3] = {{btpa_src_prompt, 1, btpa_da_src_values}, {btpa_dst_prompt, 1, btpa_da_dst_values}, {btpa_both_prompt, 2, btpa_da_both_values}};
     static decode_as_t btpa_da = {"btpa", "btpa.port", 3, 2, btpa_da_values, "BTP-A", "port(s) as",
-                                 decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                 decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     register_decode_as(&btpa_da);
 
@@ -2911,7 +2911,7 @@ proto_register_btpb(void)
     static build_valid_func btpb_da_build_value[1] = {btpb_dst_value};
     static decode_as_value_t btpb_da_values = {btpb_dst_prompt, 1, btpb_da_build_value};
     static decode_as_t btpb_da = {"btpb", "btpb.port", 1, 0, &btpb_da_values, NULL, NULL,
-                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     register_decode_as(&btpb_da);
 
@@ -3698,6 +3698,11 @@ proto_reg_handoff_geonw(void)
     dissector_add_uint("ieee1609dot2.psid", psid_geonetworking_management_communications, sgeonw_handle_);
     dissector_add_uint("ieee1609dot2.psid", psid_traffic_light_control_status_service, sgeonw_handle_);
     dissector_add_uint("ieee1609dot2.psid", psid_collective_perception_service, sgeonw_handle_);
+    dissector_add_uint("ieee1609dot2.psid", psid_avm_service, sgeonw_handle_);
+    dissector_add_uint("ieee1609dot2.psid", psid_vru_awareness_basic_service, sgeonw_handle_);
+    dissector_add_uint("ieee1609dot2.psid", psid_imz_basic_service, sgeonw_handle_);
+    dissector_add_uint("ieee1609dot2.psid", psid_mr_service, sgeonw_handle_);
+    dissector_add_uint("ieee1609dot2.psid", psid_poi_service, sgeonw_handle_);
 
 }
 

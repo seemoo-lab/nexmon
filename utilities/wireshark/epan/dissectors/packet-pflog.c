@@ -565,23 +565,19 @@ dissect_old_pflog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
   ti = proto_tree_add_item(tree, proto_old_pflog, tvb, 0, -1, ENC_NA);
   pflog_tree = proto_item_add_subtree(ti, ett_pflog);
 
-  proto_tree_add_item(pflog_tree, hf_old_pflog_af, tvb, offset, 4, ENC_BIG_ENDIAN);
-
-  af = tvb_get_ntohl(tvb, offset);
+  proto_tree_add_item_ret_uint(pflog_tree, hf_old_pflog_af, tvb, offset, 4, ENC_BIG_ENDIAN, &af);
   offset +=4;
 
   proto_tree_add_item_ret_string(pflog_tree, hf_old_pflog_ifname, tvb, offset, 16, ENC_ASCII|ENC_NA, pinfo->pool, &ifname);
   offset +=16;
 
-  proto_tree_add_item(pflog_tree, hf_old_pflog_rnr, tvb, offset, 2, ENC_BIG_ENDIAN);
-  rnr = tvb_get_ntohs(tvb, offset);
+  proto_tree_add_item_ret_uint16(pflog_tree, hf_old_pflog_rnr, tvb, offset, 2, ENC_BIG_ENDIAN, &rnr);
   offset +=2;
 
   proto_tree_add_item(pflog_tree, hf_old_pflog_reason, tvb, offset, 2, ENC_BIG_ENDIAN);
   offset +=2;
 
-  proto_tree_add_item(pflog_tree, hf_old_pflog_action, tvb, offset, 2, ENC_BIG_ENDIAN);
-  action = tvb_get_ntohs(tvb, offset);
+  proto_tree_add_item_ret_uint16(pflog_tree, hf_old_pflog_action, tvb, offset, 2, ENC_BIG_ENDIAN, &action);
   offset +=2;
 
   proto_tree_add_item(pflog_tree, hf_old_pflog_dir, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -631,7 +627,7 @@ proto_register_old_pflog(void)
       { "Interface", "pflog.ifname", FT_STRING, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
     { &hf_old_pflog_rnr,
-      { "Rule Number", "pflog.rnr", FT_INT16, BASE_DEC, NULL, 0x0,
+      { "Rule Number", "pflog.rnr", FT_UINT16, BASE_DEC, NULL, 0x0,
         "Last matched firewall rule number", HFILL }},
     { &hf_old_pflog_reason,
       { "Reason", "pflog.reason", FT_UINT16, BASE_DEC, VALS(pflog_reason_vals), 0x0,

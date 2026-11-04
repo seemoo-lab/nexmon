@@ -31,16 +31,15 @@
 #define TVB_Z_MAX_BUFSIZ 1048576 * 10
 
 tvbuff_t *
-tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
+tvb_uncompress_zlib(tvbuff_t *tvb, const unsigned offset, unsigned comprlen)
 {
 	int        err;
 	/* bytes_out is an unsigned because tvb_new_real_data does not accept
 	 * more than an unsigned. */
 	unsigned   bytes_out      = 0;
 	uint8_t   *compr;
-	uint8_t   *uncompr        = NULL;
 	tvbuff_t  *uncompr_tvb    = NULL;
-	zlib_streamp  strm;
+	zlib_stream strm          = {0};
 	Bytef     *strmbuf;
 	unsigned   inits_done     = 0;
 	int        wbits          = MAX_WBITS;
@@ -72,73 +71,54 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 
 	next = compr;
 
-	strm            = g_new0(zlib_stream, 1);
-	strm->next_in   = next;
-	strm->avail_in  = comprlen;
+	strm.next_in   = next;
+	strm.avail_in  = comprlen;
 
-	strmbuf         = (Bytef *)g_malloc0(bufsiz);
-	strm->next_out  = strmbuf;
-	strm->avail_out = bufsiz;
+	strmbuf         = (Bytef *)g_malloc(bufsiz);
 
-	err = ZLIB_PREFIX(inflateInit2)(strm, wbits);
+	err = ZLIB_PREFIX(inflateInit2)(&strm, wbits);
 	inits_done = 1;
 	if (err != Z_OK) {
-		ZLIB_PREFIX(inflateEnd)(strm);
-		g_free(strm);
-		wmem_free(NULL, compr);
-		g_free(strmbuf);
-		return NULL;
+		ZLIB_PREFIX(inflateEnd)(&strm);
+		goto exit_err;
 	}
 
 	while (1) {
-		memset(strmbuf, '\0', bufsiz);
-		strm->next_out  = strmbuf;
-		strm->avail_out = bufsiz;
+		strm.next_out  = &strmbuf[bytes_out];
+		strm.avail_out = bufsiz;
 
-		err = ZLIB_PREFIX(inflate)(strm, Z_SYNC_FLUSH);
+		err = ZLIB_PREFIX(inflate)(&strm, Z_SYNC_FLUSH);
 
 		if (err == Z_OK || err == Z_STREAM_END) {
-			unsigned bytes_pass = bufsiz - strm->avail_out;
+			unsigned bytes_pass = bufsiz - strm.avail_out;
 
 			// This is an unsigned long, but won't overflow even
 			// on platforms where that is 32-bit, because bufsize
 			// is clamped, if we break when it reaches INT_MAX.
-			if (strm->total_out > INT_MAX) {
+			if (strm.total_out > INT_MAX) {
 				// Qt uses signed ints in various classes, so
 				// the GUI can't really handle anything
 				ws_debug("overflow, returning what we have");
-				ZLIB_PREFIX(inflateEnd)(strm);
-				g_free(strm);
-				g_free(strmbuf);
+				ZLIB_PREFIX(inflateEnd)(&strm);
 				break;
 			}
 
+			/* Use this for a workaround for bug #6480
+			 * (https://gitlab.com/wireshark/wireshark/-/issues/6480)
+			 * When a zero length payload was compressed into 20 bytes
+			 * bytes we want to return a tvb with 0 length instead
+			 * of NULL. */
 			++inflate_passes;
 
-			if (uncompr == NULL) {
-				/*
-				 * This is ugly workaround for bug #6480
-				 * (https://gitlab.com/wireshark/wireshark/-/issues/6480)
-				 *
-				 * g_memdup2(..., 0) returns NULL (g_malloc(0) also)
-				 * when uncompr is NULL logic below doesn't create tvb
-				 * which is later interpreted as decompression failed.
-				 */
-				uncompr = (uint8_t *)((bytes_pass || err != Z_STREAM_END) ?
-						g_memdup2(strmbuf, bytes_pass) :
-						g_strdup(""));
-			} else {
-				uncompr = (uint8_t *)g_realloc(uncompr, bytes_out + bytes_pass);
-				memcpy(uncompr + bytes_out, strmbuf, bytes_pass);
+			bytes_out += bytes_pass;
+			ws_assert(bytes_out == strm.total_out);
+
+			if (strm.avail_out == 0) {
+				strmbuf = (uint8_t*)g_realloc(strmbuf, bytes_out + bufsiz);
 			}
 
-			bytes_out += bytes_pass;
-			ws_assert(bytes_out == strm->total_out);
-
 			if (err == Z_STREAM_END) {
-				ZLIB_PREFIX(inflateEnd)(strm);
-				g_free(strm);
-				g_free(strmbuf);
+				ZLIB_PREFIX(inflateEnd)(&strm);
 				break;
 			}
 		} else if (err == Z_BUF_ERROR) {
@@ -147,19 +127,16 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			 * to decompress this fully, so return what we've done
 			 * so far, if any.
 			 */
-			ZLIB_PREFIX(inflateEnd)(strm);
-			g_free(strm);
-			g_free(strmbuf);
+			ZLIB_PREFIX(inflateEnd)(&strm);
 
-			if (uncompr != NULL) {
+			if (inflate_passes) {
 				break;
 			} else {
-				wmem_free(NULL, compr);
-				return NULL;
+				goto exit_err;
 			}
 
 		} else if (err == Z_DATA_ERROR && inits_done == 1
-			&& uncompr == NULL && comprlen >= 2 &&
+			&& inflate_passes == 0 && comprlen >= 2 &&
 			(*compr  == 0x1f) && (*(compr + 1) == 0x8b)) {
 			/*
 			 * inflate() is supposed to handle both gzip and deflate
@@ -182,11 +159,8 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			   need at least Z_DEFLATED, 1 byte flags, 4
 			   bytes MTIME, 1 byte XFL, 1 byte OS */
 			if (comprlen < 10 || *c != Z_DEFLATED) {
-				ZLIB_PREFIX(inflateEnd)(strm);
-				g_free(strm);
-				wmem_free(NULL, compr);
-				g_free(strmbuf);
-				return NULL;
+				ZLIB_PREFIX(inflateEnd)(&strm);
+				goto exit_err;
 			}
 
 			c++;
@@ -207,11 +181,11 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 				   after the first byte. */
 				uint16_t xsize = 0;
 
-				if (c-compr < comprlen) {
+				if ((unsigned)(c-compr) < comprlen) {
 					xsize += *c;
 					c++;
 				}
-				if (c-compr < comprlen) {
+				if ((unsigned)(c-compr) < comprlen) {
 					xsize += *c << 8;
 					c++;
 				}
@@ -222,7 +196,7 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			if (flags & (1 << 3)) {
 				/* A null terminated filename */
 
-				while ((c - compr) < comprlen && *c != '\0') {
+				while ((unsigned)(c - compr) < comprlen && *c != '\0') {
 					c++;
 				}
 
@@ -232,7 +206,7 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			if (flags & (1 << 4)) {
 				/* A null terminated comment */
 
-				while ((c - compr) < comprlen && *c != '\0') {
+				while ((unsigned)(c - compr) < comprlen && *c != '\0') {
 					c++;
 				}
 
@@ -240,25 +214,25 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			}
 
 
-			if (c - compr > comprlen) {
-				ZLIB_PREFIX(inflateEnd)(strm);
-				g_free(strm);
-				wmem_free(NULL, compr);
-				g_free(strmbuf);
-				return NULL;
+			if ((unsigned)(c - compr) > comprlen) {
+				ZLIB_PREFIX(inflateEnd)(&strm);
+				goto exit_err;
 			}
 			/* Drop gzip header */
-			comprlen -= (int) (c - compr);
+			comprlen -= (unsigned)(c - compr);
 			next = c;
 
-			ZLIB_PREFIX(inflateReset)(strm);
-			strm->next_in   = next;
-			strm->avail_in  = comprlen;
+			ZLIB_PREFIX(inflateReset)(&strm);
+			strm.next_in   = next;
+			strm.avail_in  = comprlen;
 
-			ZLIB_PREFIX(inflateEnd)(strm);
-			ZLIB_PREFIX(inflateInit2)(strm, wbits);
+			ZLIB_PREFIX(inflateEnd)(&strm);
+			err = ZLIB_PREFIX(inflateInit2)(&strm, wbits);
 			inits_done++;
-		} else if (err == Z_DATA_ERROR && uncompr == NULL &&
+			if (err != Z_OK) {
+				goto exit_err;
+			}
+		} else if (err == Z_DATA_ERROR && inflate_passes == 0 &&
 			inits_done <= 3) {
 
 			/*
@@ -270,36 +244,27 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 			 */
 			wbits = -MAX_WBITS;
 
-			ZLIB_PREFIX(inflateReset)(strm);
+			ZLIB_PREFIX(inflateReset)(&strm);
 
-			strm->next_in   = next;
-			strm->avail_in  = comprlen;
+			strm.next_in   = next;
+			strm.avail_in  = comprlen;
 
-			ZLIB_PREFIX(inflateEnd)(strm);
-			memset(strmbuf, '\0', bufsiz);
-			strm->next_out  = strmbuf;
-			strm->avail_out = bufsiz;
+			ZLIB_PREFIX(inflateEnd)(&strm);
+			strm.next_out  = strmbuf;
+			strm.avail_out = bufsiz;
 
-			err = ZLIB_PREFIX(inflateInit2)(strm, wbits);
+			err = ZLIB_PREFIX(inflateInit2)(&strm, wbits);
 
 			inits_done++;
 
 			if (err != Z_OK) {
-				g_free(strm);
-				g_free(strmbuf);
-				wmem_free(NULL, compr);
-				g_free(uncompr);
-
-				return NULL;
+				goto exit_err;
 			}
 		} else {
-			ZLIB_PREFIX(inflateEnd)(strm);
-			g_free(strm);
-			g_free(strmbuf);
+			ZLIB_PREFIX(inflateEnd)(&strm);
 
-			if (uncompr == NULL) {
-				wmem_free(NULL, compr);
-				return NULL;
+			if (!inflate_passes) {
+				goto exit_err;
 			}
 
 			break;
@@ -309,40 +274,35 @@ tvb_uncompress_zlib(tvbuff_t *tvb, const int offset, int comprlen)
 	ws_debug("inflate() total passes: %u\n", inflate_passes);
 	ws_debug("bytes  in: %u\nbytes out: %u\n\n", bytes_in, bytes_out);
 
-	if (uncompr != NULL) {
-		uncompr_tvb = tvb_new_real_data(uncompr, bytes_out, bytes_out);
+	if (inflate_passes) {
+		/* g_realloc(..., 0) is well-defined, returns NULL. */
+		strmbuf = (uint8_t*)g_realloc(strmbuf, bytes_out);
+		uncompr_tvb = tvb_new_real_data(strmbuf, bytes_out, bytes_out);
 		tvb_set_free_cb(uncompr_tvb, g_free);
+		wmem_free(NULL, compr);
+		return uncompr_tvb;
 	}
+
+exit_err:
 	wmem_free(NULL, compr);
-	return uncompr_tvb;
+	g_free(strmbuf);
+	return NULL;
 }
 #else /* USE_ZLIB_OR_ZLIBNG */
 tvbuff_t *
-tvb_uncompress_zlib(tvbuff_t *tvb _U_, const int offset _U_, int comprlen _U_)
+tvb_uncompress_zlib(tvbuff_t *tvb _U_, const unsigned offset _U_, unsigned comprlen _U_)
 {
 	return NULL;
 }
 #endif /* USE_ZLIB_OR_ZLIBNG */
 
 tvbuff_t *
-tvb_child_uncompress_zlib(tvbuff_t *parent, tvbuff_t *tvb, const int offset, int comprlen)
+tvb_child_uncompress_zlib(tvbuff_t *parent, tvbuff_t *tvb, const unsigned offset, unsigned comprlen)
 {
 	tvbuff_t *new_tvb = tvb_uncompress_zlib(tvb, offset, comprlen);
 	if (new_tvb)
 		tvb_set_child_real_data_tvbuff (parent, new_tvb);
 	return new_tvb;
-}
-
-tvbuff_t *
-tvb_uncompress(tvbuff_t *tvb, const int offset, int comprlen)
-{
-	return tvb_uncompress_zlib(tvb, offset, comprlen);
-}
-
-tvbuff_t *
-tvb_child_uncompress(tvbuff_t *parent, tvbuff_t *tvb, const int offset, int comprlen)
-{
-	return tvb_child_uncompress_zlib(parent, tvb, offset, comprlen);
 }
 
 /*

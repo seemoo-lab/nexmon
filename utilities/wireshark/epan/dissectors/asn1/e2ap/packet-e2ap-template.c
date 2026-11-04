@@ -17,7 +17,6 @@
 #include <epan/strutil.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
-#include <epan/sctpppids.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
 #include <epan/conversation.h>
@@ -30,10 +29,7 @@
 #include "packet-e2ap.h"
 #include "packet-per.h"
 #include "packet-ntp.h"
-
-#define PNAME  "E2 Application Protocol"
-#define PSNAME "E2AP"
-#define PFNAME "e2ap"
+#include "packet-sctp.h"
 
 /* Dissector will use SCTP PPID 70, 71 or 72 or SCTP port 37464. */
 #define SCTP_PORT_E2AP 37464
@@ -80,7 +76,7 @@ static expert_field ei_e2ap_ran_function_max_dissectors_registered;
 
 
 /* Forward declarations */
-static int dissect_e2ap_RANfunction_Name(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_e2ap_RANfunction_Name(tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 
 static int dissect_E2SM_KPM_EventTriggerDefinition_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -120,8 +116,8 @@ enum {
 
 static void set_stats_message_type(packet_info *pinfo, int type);
 
-static const uint8_t *st_str_packets        = "Total Packets";
-static const uint8_t *st_str_packet_types   = "E2AP Packet Types";
+static const char * const st_str_packets      = "Total Packets";
+static const char * const st_str_packet_types = "E2AP Packet Types";
 
 static int st_node_packets = -1;
 static int st_node_packet_types = -1;
@@ -197,18 +193,6 @@ static const value_string mtype_names[] = {
     { 0,  NULL }
 };
 
-static proto_tree *top_tree;
-
-static void set_message_label(asn1_ctx_t *actx, int type)
-{
-  const char *label = val_to_str_const(type, mtype_names, "Unknown");
-  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, label);
-  proto_item_append_text(top_tree, " (%s)", label);
-}
-
-
-
-
 /* Temporary private info to remember while dissecting frame */
 struct e2ap_private_data {
   uint32_t procedure_code;
@@ -221,6 +205,7 @@ struct e2ap_private_data {
   uint8_t gnb_id_bytes[MAX_GNB_ID_BYTES];
   dissector_handle_t component_configuration_dissector;
   struct e2ap_tap_t *stats_tap;
+  proto_tree *top_tree;
 };
 
 /* Lookup temporary private info */
@@ -235,10 +220,18 @@ e2ap_get_private_data(packet_info *pinfo)
   return e2ap_data;
 }
 
+static void set_message_label(asn1_ctx_t *actx, int type)
+{
+  struct e2ap_private_data *priv_data = e2ap_get_private_data(actx->pinfo);
+  const char *label = val_to_str_const(type, mtype_names, "Unknown");
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, label);
+  proto_item_append_text(priv_data->top_tree, " (%s)", label);
+}
+
 /****************************************************************************************************************/
 /* These are the strings that we look for at the beginning of RAN Function Description to identify RAN Function */
 /* Static table mapping from string -> ran_function */
-static const char* g_ran_function_name_table[MAX_RANFUNCTIONS] =
+static const char* const g_ran_function_name_table[MAX_RANFUNCTIONS] =
 {
     "ORAN-E2SM-KPM",
     "ORAN-E2SM-RC",
@@ -251,11 +244,11 @@ static const char* g_ran_function_name_table[MAX_RANFUNCTIONS] =
 
 /* Per-conversation mapping: ranFunctionId -> ran_function+dissector */
 typedef struct {
-    uint32_t                 setup_frame;
-    uint32_t                 ran_function_id;
-    ran_function_t           ran_function;
-    char                     oid[MAX_OID_LEN];       // i.e., OID from setupRequest
-    ran_function_dissector_t *dissector;
+    uint32_t                       setup_frame;
+    uint32_t                       ran_function_id;
+    ran_function_t                 ran_function;
+    char                           oid[MAX_OID_LEN];       // i.e., OID from setupRequest
+    const ran_function_dissector_t *dissector;
 } ran_function_id_mapping_t;
 
 typedef struct  {
@@ -299,16 +292,16 @@ static gnb_ran_functions_t s_gnb_ran_functions_table;
 
 /* Table of available dissectors for each RAN function */
 typedef struct {
-    uint32_t                 num_available_dissectors;
+    uint32_t                        num_available_dissectors;
 #define MAX_DISSECTORS_PER_RAN_FUNCTION 8
-    ran_function_dissector_t* ran_function_dissectors[MAX_DISSECTORS_PER_RAN_FUNCTION];
+    const ran_function_dissector_t* ran_function_dissectors[MAX_DISSECTORS_PER_RAN_FUNCTION];
 } ran_function_available_dissectors_t;
 
 /* Available dissectors should be set here */
 static ran_function_available_dissectors_t g_ran_functions_available_dissectors[MAX_RANFUNCTIONS];
 
 /* Will be called from outside this file by separate dissectors */
-void register_e2ap_ran_function_dissector(ran_function_t ran_function, ran_function_dissector_t *dissector)
+void register_e2ap_ran_function_dissector(ran_function_t ran_function, const ran_function_dissector_t *dissector)
 {
     if ((ran_function >= MIN_RANFUNCTIONS) && (ran_function < MAX_RANFUNCTIONS)) {
         ran_function_available_dissectors_t *available_dissectors = &g_ran_functions_available_dissectors[ran_function];
@@ -368,8 +361,8 @@ void e2ap_store_ran_function_mapping(packet_info *pinfo, proto_tree *tree, tvbuf
 
     uint32_t ran_function_id = e2ap_data->ran_function_id;
 
-    ran_function_t           ran_function = MAX_RANFUNCTIONS;  /* i.e. invalid */
-    ran_function_dissector_t *ran_function_dissector = NULL;
+    ran_function_t                 ran_function = MAX_RANFUNCTIONS;  /* i.e. invalid */
+    const ran_function_dissector_t *ran_function_dissector = NULL;
 
     /* Check known RAN function names */
     for (int n=MIN_RANFUNCTIONS; n < MAX_RANFUNCTIONS; n++) {
@@ -411,7 +404,7 @@ void e2ap_store_ran_function_mapping(packet_info *pinfo, proto_tree *tree, tvbuf
 
         bool found = false;
         for (unsigned n=0; n<s_gnb_ran_functions_table.num_gnbs; n++) {
-            if ((s_gnb_ran_functions_table.gnb[n].id_len = id_len) &&
+            if ((s_gnb_ran_functions_table.gnb[n].id_len == id_len) &&
                 (memcmp(s_gnb_ran_functions_table.gnb[n].id_value, id_value, id_len) == 0)) {
                 /* Already have an entry for this gnb. */
                 found = true;
@@ -434,7 +427,7 @@ void e2ap_store_ran_function_mapping(packet_info *pinfo, proto_tree *tree, tvbuf
 }
 
 /* Look for Service Model function pointers, based on current RANFunctionID from frame */
-static ran_function_dissector_t* lookup_ranfunction_dissector(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb)
+static const ran_function_dissector_t* lookup_ranfunction_dissector(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb)
 {
     /* Get ranFunctionID from this frame */
     struct e2ap_private_data *e2ap_data = e2ap_get_private_data(pinfo);
@@ -602,7 +595,7 @@ void e2ap_update_ran_function_mapping(packet_info *pinfo, proto_tree *tree, tvbu
     for (unsigned n=0; n < table->num_entries; n++) {
         if (e2ap_data->ran_function_id == table->entries[n].ran_function_id) {
             ran_function = table->entries[n].ran_function;
-            g_strlcpy(table->entries[n].oid, oid, MAX_OID_LEN);
+            (void) g_strlcpy(table->entries[n].oid, oid, MAX_OID_LEN);
         }
     }
 
@@ -647,7 +640,7 @@ static void update_conversation_from_gnb_id(asn1_ctx_t *actx)
         uint8_t *id_value = &e2ap_data->gnb_id_bytes[0];
 
         for (unsigned n=0; n<s_gnb_ran_functions_table.num_gnbs; n++) {
-            if ((s_gnb_ran_functions_table.gnb[n].id_len = id_len) &&
+            if ((s_gnb_ran_functions_table.gnb[n].id_len == id_len) &&
                 (memcmp(s_gnb_ran_functions_table.gnb[n].id_value, id_value, id_len) == 0)) {
 
                 /* Have an entry for this gnb.  Set direct pointer to existing data (used by original conversation). */
@@ -790,7 +783,7 @@ dissect_e2ap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   priv_data->stats_tap = tap_info;
 
   /* Store top-level tree */
-  top_tree = e2ap_tree;
+  priv_data->top_tree = e2ap_tree;
 
   /* create the e2ap protocol tree */
   e2ap_item = proto_tree_add_item(tree, proto_e2ap, tvb, 0, -1, ENC_NA);
@@ -805,7 +798,7 @@ dissect_e2ap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 static void e2ap_init_protocol(void)
 {
-  s_gnb_ran_functions_table.num_gnbs = 0;
+  memset(&s_gnb_ran_functions_table, 0, sizeof(s_gnb_ran_functions_table));
 }
 
 
@@ -864,7 +857,7 @@ proto_reg_handoff_e2ap(void)
   /*********************************************************/
   /* Register 'built-in' dissectors (i.e., from asn1/e2ap) */
 
-  static ran_function_dissector_t kpm_v3 =
+  static const ran_function_dissector_t kpm_v3 =
   { "ORAN-E2SM-KPM", "1.3.6.1.4.1.53148.1.3.2.2", 3, 0,
     {  dissect_E2SM_KPM_RANfunction_Description_PDU,
 
@@ -883,7 +876,7 @@ proto_reg_handoff_e2ap(void)
      }
   };
 
-  static ran_function_dissector_t rc_v1 =
+  static const ran_function_dissector_t rc_v1 =
   { "ORAN-E2SM-RC",  "1.3.6.1.4.1.53148.1.1.2.3", 1, 3,
     {  dissect_E2SM_RC_RANFunctionDefinition_PDU,
 
@@ -903,7 +896,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ni_v1 =
+  static const ran_function_dissector_t ni_v1 =
   { "ORAN-E2SM-NI",  "1.3.6.1.4.1.53148.1.1.2.1", 1, 0,
     {  dissect_E2SM_NI_RANfunction_Description_PDU,
 
@@ -922,7 +915,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ccc_v1 =
+  static const ran_function_dissector_t ccc_v1 =
   { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.1.2.4", 1, 0,
     /* See table 5.1 */
     {  dissect_E2SM_NI_JSON_PDU,
@@ -942,7 +935,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ccc_v2 =
+  static const ran_function_dissector_t ccc_v2 =
   { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.2.2.4", 2, 0,
     /* See table 5.1 */
     {  dissect_E2SM_NI_JSON_PDU,
@@ -962,7 +955,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ccc_v3 =
+  static const ran_function_dissector_t ccc_v3 =
   { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.3.2.4", 3, 0,
     /* See table 5.1 */
     {  dissect_E2SM_NI_JSON_PDU,
@@ -982,7 +975,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ccc_v4 =
+  static const ran_function_dissector_t ccc_v4 =
   { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.4.2.4", 4, 0,
     /* See table 5.1 */
     {  dissect_E2SM_NI_JSON_PDU,
@@ -1002,7 +995,7 @@ proto_reg_handoff_e2ap(void)
     }
   };
 
-  static ran_function_dissector_t ccc_v5 =
+  static const ran_function_dissector_t ccc_v5 =
   { "{", /*"ORAN-E2SM-CCC",*/  "1.3.6.1.4.1.53148.1.5.2.4", 5, 0,
     /* See table 5.1 */
     {  dissect_E2SM_NI_JSON_PDU,
@@ -1025,7 +1018,7 @@ proto_reg_handoff_e2ap(void)
 
   /* Register available dissectors.
    * Registering one version of each RAN Function here - others will need to be
-   * registered in sepparate dissectors (e.g. kpm_v2) */
+   * registered in separate dissectors (e.g. kpm_v2) */
   register_e2ap_ran_function_dissector(KPM_RANFUNCTIONS, &kpm_v3);
   register_e2ap_ran_function_dissector(RC_RANFUNCTIONS,  &rc_v1);
   register_e2ap_ran_function_dissector(NI_RANFUNCTIONS,  &ni_v1);
@@ -1099,7 +1092,7 @@ void proto_register_e2ap(void) {
   expert_module_t* expert_e2ap;
 
   /* Register protocol */
-  proto_e2ap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_e2ap = proto_register_protocol("E2 Application Protocol", "E2AP", "e2ap");
   /* Register fields and subtrees */
   proto_register_field_array(proto_e2ap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

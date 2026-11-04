@@ -32,16 +32,7 @@
 #include "packet-s1ap.h"
 #include "packet-rtp.h"
 
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
 #define SCCP_SSN_RANAP 142
-
-#define PNAME  "Radio Access Network Application Part"
-#define PSNAME "RANAP"
-#define PFNAME "ranap"
 
 /* Highest Ranap_ProcedureCode_value, use in heuristics */
 #define RANAP_MAX_PC  49 /* id_RerouteNASRequest =  49 */
@@ -147,7 +138,7 @@ static dissector_handle_t ranap_handle;
  * SuccessfulOutcome
  * UnsuccessfulOutcome
  * Outcome
- * As a workarond a value is added to the IE:id in the .cnf file.
+ * As a workaround a value is added to the IE:id in the .cnf file.
  * Example:
  * ResetResourceList                N rnsap.ies IMSG||id-IuSigConIdList  # no spaces are allowed in value as a space is delimiter
  * PDU type is stored in a global variable and can is used in the IE decoding section.
@@ -164,7 +155,7 @@ static dissector_handle_t ranap_handle;
 #define SOUT (2U<<16)
 #define SPECIAL (4U<<16)
 
-int pdu_type; /* 0 means wildcard */
+static int pdu_type; /* 0 means wildcard */
 
 /* Dissector tables */
 static dissector_table_t ranap_ies_dissector_table;
@@ -186,8 +177,8 @@ static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, pro
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *);
 static int dissect_OutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *);
 
-static int dissect_ranap_SourceRNC_ToTargetRNC_TransparentContainer(tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
-static int dissect_ranap_TargetRNC_ToSourceRNC_TransparentContainer(tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static unsigned dissect_ranap_SourceRNC_ToTargetRNC_TransparentContainer(tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static unsigned dissect_ranap_TargetRNC_ToSourceRNC_TransparentContainer(tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
 
 
 #include "packet-ranap-fn.c"
@@ -323,7 +314,7 @@ dissect_sccp_ranap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
   /* Is it a ranap packet?
    *
    * 4th octet should be the length of the rest of the message.
-   * 3th octed is the Criticality field
+   * 3th octet is the Criticality field
    * 2nd octet is the message-type e Z[0, 28]
    * 1st octet is the PDU type (with the extension bit)
    * (obviously there must be at least four octets)
@@ -339,8 +330,8 @@ dissect_sccp_ranap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
   temp = tvb_get_uint8(tvb, PDU_TYPE_OFFSET);
   if (temp & 0x1F) {
-    /* PDU Type byte is not 0x00 (initiatingMessage), 0x20 (succesfulOutcome),
-       0x40 (unsuccesfulOutcome) or 0x60 (outcome), ignore extension bit (0x80) */
+    /* PDU Type byte is not 0x00 (initiatingMessage), 0x20 (successfulOutcome),
+       0x40 (unsuccessfulOutcome) or 0x60 (outcome), ignore extension bit (0x80) */
     return false;
   }
 
@@ -418,7 +409,7 @@ void proto_register_ranap(void) {
 
 
   /* Register protocol */
-  proto_ranap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_ranap = proto_register_protocol("Radio Access Network Application Part", "RANAP", "ranap");
   /* Register fields and subtrees */
   proto_register_field_array(proto_ranap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

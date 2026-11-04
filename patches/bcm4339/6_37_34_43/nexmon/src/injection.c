@@ -71,6 +71,14 @@ get_unaligned_le32(void *p) {
     return ((uint8 *) p)[0] | ((uint8 *) p)[1] << 8 | ((uint8 *) p)[2] << 16 | ((uint8 *) p)[3] << 24;
 }
 
+static inline int
+rtap_len_of(struct sk_buff *p)
+{
+    unsigned char *d = (unsigned char *) p->data;
+
+    return d[2] | (d[3] << 8);
+}
+
 void *
 inject_frame(struct wlc_info *wlc, struct sk_buff *p)
 {
@@ -86,7 +94,14 @@ inject_frame(struct wlc_info *wlc, struct sk_buff *p)
     struct ieee80211_radiotap_header *rtap_header;
 
     // parse radiotap header
-    rtap_len = *((char *)(p->data + 2));
+    rtap_len = rtap_len_of(p);
+
+    if (rtap_len < (int) sizeof(struct ieee80211_radiotap_header) ||
+        rtap_len >= (int) p->len) {
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
+
     rtap_header = (struct ieee80211_radiotap_header *) p->data;
     
     int ret = ieee80211_radiotap_iterator_init(&iterator, rtap_header, rtap_len, &rtap_vendor_namespaces);
@@ -208,8 +223,16 @@ handle_sdio_xmit_request_hook(void *sdio_hw, struct sk_buff *p)
         // remove bdc header
         skb_pull(p, 4);
 
-        // check if in monitor mode and if first two bytes in the frame correspond to a radiotap header, if true, inject frame
-        return inject_frame(wlc, p);
+        int rtap_len = rtap_len_of(p);
+
+        if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
+            rtap_len < (int) p->len) {
+            // check if in monitor mode and if first two bytes in the frame correspond to a radiotap header, if true, inject frame
+            return inject_frame(wlc, p);
+        }
+
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
     } else {
         // otherwise, handle frame normally
         return handle_sdio_xmit_request_ram(sdio_hw, p);

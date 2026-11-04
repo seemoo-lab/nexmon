@@ -4,7 +4,11 @@
 typedef unsigned char           byte;
 typedef unsigned short          word;
 typedef unsigned int            dword;
+#if !defined(__bool_true_false_are_defined) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
+#ifndef bool
 typedef unsigned char           bool;
+#endif
+#endif
 typedef signed char             int8_t;
 typedef unsigned char           uint8_t;
 typedef signed short int        int16_t;

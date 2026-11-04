@@ -21,10 +21,6 @@
 
 #include "packet-darwin-droptap-msg.h"
 
-#define PNAME  "Apple Darwin"
-#define PSNAME "Darwin"
-#define PFNAME "darwin"
-
 void proto_register_darwin(void);
 void proto_reg_handoff_darwin(void);
 
@@ -417,7 +413,7 @@ dissect_darwin_data(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* d
     struct darwin_md* darwin = (struct darwin_md*)p_get_proto_data(wmem_file_scope(), pinfo, proto_darwin, 0);
     proto_item* ti;
 
-    /* Reqiure darwin data */
+    /* Require darwin data */
     if (darwin == NULL)
         return 0;
 
@@ -431,6 +427,9 @@ dissect_darwin_data(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* d
 
         proc_id = epan_get_process_id(pinfo->epan, darwin->dpib_id, section_number);
         proc_name = epan_get_process_name(pinfo->epan, darwin->dpib_id, section_number);
+        col_add_fstr(pinfo->cinfo, COL_PROCESS_ID, "%u", proc_id);
+        if (proc_name)
+            col_add_str(pinfo->cinfo, COL_PROCESS_NAME, proc_name);
 
         /* If the effective dpib id is not present, or is equal to the primary dpib id,
          * set the eproc_id to proc_id.
@@ -445,45 +444,45 @@ dissect_darwin_data(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* d
             eproc_name = epan_get_process_name(pinfo->epan, darwin->effective_dpib_id, section_number);
         }
 
+        proto_item* proc_info_item;
+        proto_tree* proc_info_tree;
+
+        proc_info_item = proto_tree_add_item(tree, hf_process_info, tvb, 0, 0, ENC_NA);
+        proc_info_tree = proto_item_add_subtree(proc_info_item, ett_proc_info);
+        PROTO_ITEM_SET_GENERATED(proc_info_item);
         if (proc_name) {
-            proto_item* proc_info_item;
-            proto_tree* proc_info_tree;
-
-            if (proc_id == eproc_id) {
-                proc_info_item = proto_tree_add_item(tree, hf_process_info, tvb, 0, 0, ENC_NA);
-                proc_info_tree = proto_item_add_subtree(proc_info_item, ett_proc_info);
-                PROTO_ITEM_SET_GENERATED(proc_info_item);
-                proto_item_append_text(proc_info_item, ": %s(%u)", proc_name, proc_id);
-                ti = proto_tree_add_uint(proc_info_tree, hf_process_info_pid, tvb, 0, 0, proc_id);
-                PROTO_ITEM_SET_GENERATED(ti);
-                ti = proto_tree_add_string(proc_info_tree, hf_process_info_pname, tvb, 0, 0, proc_name);
-                PROTO_ITEM_SET_GENERATED(ti);
-            }
-            else {
-                proc_info_item = proto_tree_add_item(tree, hf_process_info, tvb, 0, 0, ENC_NA);
-                proc_info_tree = proto_item_add_subtree(proc_info_item, ett_proc_info);
-                PROTO_ITEM_SET_GENERATED(proc_info_item);
-                proto_item_append_text(proc_info_item, ": %s(%u) [%s(%u)]", proc_name, proc_id, eproc_name, eproc_id);
-                ti = proto_tree_add_uint(proc_info_tree, hf_process_info_pid, tvb, 0, 0, proc_id);
-                PROTO_ITEM_SET_GENERATED(ti);
-                ti = proto_tree_add_string(proc_info_tree, hf_process_info_pname, tvb, 0, 0, proc_name);
-                PROTO_ITEM_SET_GENERATED(ti);
-            }
-
+            proto_item_append_text(proc_info_item, ": %s(%u)", proc_name, proc_id);
             proto_item_append_text(tree, " proc: %s(%u)", proc_name, proc_id);
         }
         else {
+            proto_item_append_text(proc_info_item, ": %u", proc_id);
             proto_item_append_text(tree, " pid: %u", proc_id);
+        }
+        ti = proto_tree_add_uint(proc_info_tree, hf_process_info_pid, tvb, 0, 0, proc_id);
+        PROTO_ITEM_SET_GENERATED(ti);
+        if (proc_name) {
+            ti = proto_tree_add_string(proc_info_tree, hf_process_info_pname, tvb, 0, 0, proc_name);
+            PROTO_ITEM_SET_GENERATED(ti);
         }
 
         /* This extra scrutiny is to ensure that the effective process id
          * is _actually_ different from the primary process id.
          */
-        if ((proc_id != eproc_id) && (eproc_name != NULL)) {
+        if (proc_id != eproc_id) {
+            if (eproc_name) {
+                proto_item_append_text(proc_info_item, " [%s(%u)]", eproc_name, eproc_id);
                 proto_item_append_text(tree, " [%s(%u)]", eproc_name, eproc_id);
-        }
-        else {
-            proto_item_append_text(tree, " [%u]", eproc_id);
+            }
+            else {
+                proto_item_append_text(proc_info_item, " [%u]", eproc_id);
+                proto_item_append_text(tree, " [%u]", eproc_id);
+            }
+            ti = proto_tree_add_uint(proc_info_tree, hf_process_info_epid, tvb, 0, 0, eproc_id);
+            PROTO_ITEM_SET_GENERATED(ti);
+            if (eproc_name) {
+                ti = proto_tree_add_string(proc_info_tree, hf_process_info_epname, tvb, 0, 0, eproc_name);
+                PROTO_ITEM_SET_GENERATED(ti);
+            }
         }
     }
 
@@ -583,12 +582,11 @@ dissect_darwin_data(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* d
             first_metadata_item = false;
         }
         if (darwin->present_opts & PINFO_DARWIN_MD_HAS_COMP_GENCNT) {
-            ti = proto_tree_add_uint(dmd_tree, hf_darwin_metadata_trace_tag, tvb, 0, 0, darwin->trace_tag);
+            ti = proto_tree_add_uint(dmd_tree, hf_darwin_metadata_comp_gencnt, tvb, 0, 0, darwin->comp_gencnt);
             PROTO_ITEM_SET_GENERATED(ti);
             proto_item_append_text(dmd_item, "%sgencnt=%u",
                 first_metadata_item ? " " : "; ",
                 darwin->comp_gencnt);
-            first_metadata_item = false;
         }
     }
 
@@ -615,7 +613,7 @@ void
 proto_register_darwin(void)
 {
     /* Register the protocol name and description */
-    proto_darwin = proto_register_protocol(PNAME, PSNAME, PFNAME);
+    proto_darwin = proto_register_protocol("Apple Darwin", "Darwin", "darwin");
 
     register_dissector("darwin", dissect_darwin_data, proto_darwin);
 }
@@ -732,6 +730,7 @@ proto_reg_handoff_darwin(void)
         &ett_proc_info_eproc,
         &ett_darwin_metadata,
         &ett_darwin_metadata_flags,
+        &ett_darwin_metadata_dropped
     };
 
     populate_drop_reason_details();

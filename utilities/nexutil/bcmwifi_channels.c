@@ -28,6 +28,8 @@
 #else
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #endif /* BCMDRIVER */
 
@@ -508,71 +510,145 @@ read_uint(const char **p, unsigned int *num)
 chanspec_t
 wf_chspec_aton(const char *a)
 {
-	chanspec_t chspec;
-	chanspec_band_t chspec_band;
-	chanspec_subband_t chspec_sb;
-	chanspec_bw_t chspec_bw;
-	uint bw;
-	uint num, pri_ch;
+	chanspec_t chspec = INVCHANSPEC;
+	chanspec_band_t chspec_band = 0;
+	chanspec_subband_t chspec_sb = 0;
+	chanspec_bw_t chspec_bw = WL_CHANSPEC_BW_20;
+	uint bw = 20;
+	uint num = 0, pri_ch = 0;
 	char c, sb_ul = '\0';
+	bool band_specified = FALSE;
+	bool is_psc = FALSE;
+	bool explicit_psc_idx = FALSE;
 
-	bw = 20;
-	chspec_sb = 0;
+	if (!a)
+		return 0;
 
-	/* parse channel num or band */
+	/* Skip leading whitespace */
+	while (*a == ' ' || *a == '\t')
+		a++;
+	if (*a == '\0')
+		return 0;
+
+	/* Check for Preferred Scanning Channel (PSC) prefix */
+	if (strncasecmp(a, "psc", 3) == 0) {
+		a += 3;
+		is_psc = TRUE;
+		band_specified = TRUE;
+		chspec_band = WL_CHANSPEC_BAND_6G;
+		while (*a == '/' || *a == '-' || *a == '_' || *a == ':' || *a == ' ' || *a == '\t')
+			a++;
+		if (*a == '#' || strncasecmp(a, "idx", 3) == 0) {
+			explicit_psc_idx = TRUE;
+			if (*a == '#')
+				a++;
+			else
+				a += 3;
+			while (*a == '/' || *a == '-' || *a == '_' || *a == ':' || *a == ' ' || *a == '\t')
+				a++;
+		}
+	} else if ((a[0] == '2' || a[0] == '5' || a[0] == '6') &&
+	           (bcm_tolower((int)a[1]) == 'g')) {
+		char b = a[0];
+		a += 2;
+		if (bcm_tolower((int)a[0]) == 'h' && bcm_tolower((int)a[1]) == 'z')
+			a += 2;
+		band_specified = TRUE;
+		if (b == '2')
+			chspec_band = WL_CHANSPEC_BAND_2G;
+		else if (b == '5')
+			chspec_band = WL_CHANSPEC_BAND_5G;
+		else
+			chspec_band = WL_CHANSPEC_BAND_6G;
+
+		while (*a == '/' || *a == '-' || *a == '_' || *a == ':' || *a == ' ' || *a == '\t')
+			a++;
+
+		if (strncasecmp(a, "psc", 3) == 0) {
+			a += 3;
+			is_psc = TRUE;
+			while (*a == '/' || *a == '-' || *a == '_' || *a == ':' || *a == ' ' || *a == '\t')
+				a++;
+			if (*a == '#' || strncasecmp(a, "idx", 3) == 0) {
+				explicit_psc_idx = TRUE;
+				if (*a == '#')
+					a++;
+				else
+					a += 3;
+				while (*a == '/' || *a == '-' || *a == '_' || *a == ':' || *a == ' ' || *a == '\t')
+					a++;
+			}
+		}
+	}
+
+	/* Read channel number */
 	if (!read_uint(&a, &num))
 		return 0;
 
-	/* if we are looking at a 'g', then the first number was a band */
-	c = bcm_tolower((int)a[0]);
-	if (c == 'g') {
-		a++; /* consume the char */
-
-		/* band must be "2", "5", or "6" */
-		if (num == 2)
-			chspec_band = WL_CHANSPEC_BAND_2G;
-		else if (num == 5)
-			chspec_band = WL_CHANSPEC_BAND_5G;
-		else if (num == 6)
-			chspec_band = WL_CHANSPEC_BAND_6G;
-		else
+	if (is_psc) {
+		/* IEEE 802.11ax 6 GHz PSC: channel center freq ch_a = 5 + 16 * (n - 1), n = 1..15
+		 * Valid channels: 5, 21, 37, 53, 69, 85, 101, 117, 133, 149, 165, 181, 197, 213, 229.
+		 */
+		if (explicit_psc_idx) {
+			if (num < 1 || num > 15)
+				return 0;
+			pri_ch = 5 + (num - 1) * 16;
+		} else if (WF_IS_6G_PSC_CHAN(num) && num <= CH_MAX_6G_CHANNEL) {
+			pri_ch = num;
+		} else if (num >= 1 && num <= 15) {
+			pri_ch = 5 + (num - 1) * 16;
+		} else {
 			return 0;
-
-		/* read the channel number */
-		if (!read_uint(&a, &pri_ch))
-			return 0;
-
-		c = bcm_tolower((int)a[0]);
-	} else {
-		/* first number is channel, use default for band */
+		}
+	} else if (band_specified) {
 		pri_ch = num;
-		chspec_band = WL_CHANNEL_2G5G_BAND(pri_ch);
+	} else {
+		pri_ch = num;
+		if (pri_ch <= CH_MAX_2G_CHANNEL) {
+			chspec_band = WL_CHANSPEC_BAND_2G;
+		} else if (pri_ch <= CH_MAX_5G_CHANNEL) {
+			chspec_band = WL_CHANSPEC_BAND_5G;
+		} else if (pri_ch <= CH_MAX_6G_CHANNEL) {
+			chspec_band = WL_CHANSPEC_BAND_6G;
+		} else {
+			return 0;
+		}
 	}
 
+	while (*a == ' ' || *a == '\t')
+		a++;
+
+	c = bcm_tolower((int)a[0]);
 	if (c == '\0') {
-		/* default BW of 20MHz */
 		chspec_bw = WL_CHANSPEC_BW_20;
 		goto done_read;
 	}
 
-	a ++; /* consume the 'u','l', or '/' */
-
-	/* check 'u'/'l' */
 	if (c == 'u' || c == 'l') {
+		a++;
 		sb_ul = c;
 		chspec_bw = WL_CHANSPEC_BW_40;
 		goto done_read;
 	}
 
-	/* next letter must be '/' */
-	if (c != '/')
+	if (c == '/' || c == '-' || c == '_' || c == ':') {
+		a++;
+		while (*a == ' ' || *a == '\t')
+			a++;
+	} else {
 		return 0;
+	}
 
-	/* read bandwidth */
 	if (!read_uint(&a, &bw))
 		return 0;
 
-	/* convert to chspec value */
+	/* Consume optional MHz / M suffix */
+	if (bcm_tolower((int)a[0]) == 'm') {
+		a++;
+		if (bcm_tolower((int)a[0]) == 'h' && bcm_tolower((int)a[1]) == 'z')
+			a += 2;
+	}
+
 	if (bw == 20) {
 		chspec_bw = WL_CHANSPEC_BW_20;
 	} else if (bw == 40) {
@@ -587,91 +663,143 @@ wf_chspec_aton(const char *a)
 		return 0;
 	}
 
-	/* So far we have <band>g<chan>/<bw>
-	 * Can now be followed by u/l if bw = 40
-	 */
+	while (*a == ' ' || *a == '\t')
+		a++;
 	c = bcm_tolower((int)a[0]);
 
-	/* if we have a 2g/40 channel, we should have a l/u spec now */
 	if (chspec_band == WL_CHANSPEC_BAND_2G && bw == 40) {
 		if (c == 'u' || c == 'l') {
-			a ++; /* consume the u/l char */
+			a++;
 			sb_ul = c;
 			goto done_read;
 		}
 	}
-	/* if we have a 6g/320 channel, we could have a -1/-2 spec now */
+
 	if (chspec_band == WL_CHANSPEC_BAND_6G && bw == 320) {
-		if (c == '-') {
-			a ++; /* consume the '-' char */
+		if (c == '-' || c == '/' || c == '_') {
+			a++;
 			c = bcm_tolower((int)a[0]);
 			if (c == '1' || c == '2') {
-				a ++; /* consume the 1/2 char */
-				sb_ul = c; /* reuse sb_ul */
+				a++;
+				sb_ul = c;
 				goto done_read;
 			}
+		} else if (c == '1' || c == '2') {
+			a++;
+			sb_ul = c;
+			goto done_read;
 		} else if (c == 'o') {
-			/* 'silent' util option for compatibility with mobility util */
-			a ++; /* consume the 'o' char */
+			a++;
 			sb_ul = c;
 			goto done_read;
 		}
 	}
 
 done_read:
-	/* skip trailing white space */
-	while (a[0] == ' ') {
-		a ++;
-	}
+	while (*a == ' ' || *a == '\t')
+		a++;
 
-	/* must be end of string */
-	if (a[0] != '\0')
+	if (*a != '\0')
 		return 0;
 
-	/* Now have all the chanspec string parts read;
-	 * chspec_band, pri_ch, chspec_bw, sb_ul.
-	 * chspec_band and chspec_bw are chanspec values.
-	 * Need to convert pri_ch, and sb_ul into
-	 * a center channel and sideband.
-	 */
-
-	/* if a sb u/l string was given, use it */
 	if (sb_ul != '\0') {
-		if ((sb_ul == 'l') || (sb_ul == 'u')) {
+		if (sb_ul == 'l' || sb_ul == 'u') {
 			if (sb_ul == 'l') {
 				chspec_sb = WL_CHANSPEC_CTL_SB_LLL;
 			} else if (sb_ul == 'u') {
 				chspec_sb = WL_CHANSPEC_CTL_SB_LLU;
 			}
 			chspec = wf_create_40MHz_chspec_primary_sb(pri_ch, chspec_sb, chspec_band);
-		} else if (chspec_band == WL_CHANSPEC_BAND_6G) {
-			chspec = wf_create_320MHz_chspec(pri_ch,
-				(sb_ul == '1') ? WF_SCHEME_320_1 :
-				(sb_ul == '2' || sb_ul == 'o') ? WF_SCHEME_320_2 :
-				WF_SCHEME_AUTO, chspec_band);
+		} else if (chspec_band == WL_CHANSPEC_BAND_6G && chspec_bw == WL_CHANSPEC_BW_320) {
+			wf_bw320_scheme_t scheme = (sb_ul == '1') ? WF_SCHEME_320_1 :
+				(sb_ul == '2' || sb_ul == 'o') ? WF_SCHEME_320_2 : WF_SCHEME_AUTO;
+			if (!wf_valid_20MHz_chan(pri_ch, chspec_band) &&
+			    wf_valid_320MHz_center_chan(pri_ch, chspec_band)) {
+				uint center_ch = pri_ch;
+				pri_ch = center_ch - center_chan_to_edge(WL_CHANSPEC_BW_320);
+				if (scheme == WF_SCHEME_AUTO)
+					scheme = wl_get_320MHz_scheme((uint8)center_ch);
+			}
+			chspec = wf_create_320MHz_chspec(pri_ch, scheme, chspec_band);
 		} else {
 			chspec = INVCHANSPEC;
 		}
 	} else if (chspec_bw == WL_CHANSPEC_BW_20) {
-		/* if the bw is 20, only need the primary channel and band */
 		chspec = wf_create_20MHz_chspec(pri_ch, chspec_band);
 	} else if (chspec_bw == WL_CHANSPEC_BW_320) {
-		/* no band scheme given, so default to lower possibility */
-		chspec = wf_create_320MHz_chspec(pri_ch, WF_SCHEME_AUTO, chspec_band);
+		wf_bw320_scheme_t scheme = WF_SCHEME_AUTO;
+		if (!wf_valid_20MHz_chan(pri_ch, chspec_band) &&
+		    wf_valid_320MHz_center_chan(pri_ch, chspec_band)) {
+			uint center_ch = pri_ch;
+			pri_ch = center_ch - center_chan_to_edge(WL_CHANSPEC_BW_320);
+			scheme = wl_get_320MHz_scheme((uint8)center_ch);
+		}
+		chspec = wf_create_320MHz_chspec(pri_ch, scheme, chspec_band);
 	} else {
-		/* If the bw is 40/80/160/320 (and not 40MHz 2G), the channels are
-		 * non-overlapping in 5G or 6G bands. Each primary channel is contained
-		 * in only one higher bandwidth channel. The wf_create_chspec_from_primary()
-		 * will create the chanspec. 2G 40MHz is handled just above, assuming a {u,l}
-		 * sub-band spec was given.
-		 */
+		const uint requested = pri_ch;
+
+		if (!wf_valid_20MHz_chan(pri_ch, chspec_band)) {
+			if (chspec_bw == WL_CHANSPEC_BW_40 && wf_valid_40MHz_center_chan(pri_ch, chspec_band)) {
+				pri_ch = pri_ch - center_chan_to_edge(WL_CHANSPEC_BW_40);
+			} else if (chspec_bw == WL_CHANSPEC_BW_80 && wf_valid_80MHz_center_chan(pri_ch, chspec_band)) {
+				pri_ch = pri_ch - center_chan_to_edge(WL_CHANSPEC_BW_80);
+			} else if (chspec_bw == WL_CHANSPEC_BW_160 && wf_valid_160MHz_center_chan(pri_ch, chspec_band)) {
+				pri_ch = pri_ch - center_chan_to_edge(WL_CHANSPEC_BW_160);
+			}
+		}
 		chspec = wf_create_chspec_from_primary(pri_ch, chspec_bw, chspec_band);
+
+		/* A number that is also a valid 20MHz channel is normally read as the
+		 * primary. That is wrong for the legacy JP channels: 38 and 46 are
+		 * simultaneously valid 40MHz centers, and no 40MHz block has either
+		 * in its primary set, so "38/40" and "46/40" were rejected outright
+		 * while "58/80" and friends worked. When the primary reading yields
+		 * nothing usable, retry the original number as a center. Gated on
+		 * bw >= 40 so a bare JP channel such as "38" still resolves as a
+		 * 20MHz primary, and 34/42 stay rejected since they are not centers.
+		 */
+		if (wf_chspec_malformed(chspec) && chspec_bw != WL_CHANSPEC_BW_20) {
+			if ((chspec_bw == WL_CHANSPEC_BW_40 &&
+			     wf_valid_40MHz_center_chan(requested, chspec_band)) ||
+			    (chspec_bw == WL_CHANSPEC_BW_80 &&
+			     wf_valid_80MHz_center_chan(requested, chspec_band)) ||
+			    (chspec_bw == WL_CHANSPEC_BW_160 &&
+			     wf_valid_160MHz_center_chan(requested, chspec_band))) {
+				chspec = wf_create_chspec_from_primary(
+					channel_low_edge(requested, chspec_bw),
+					chspec_bw, chspec_band);
+			}
+		}
 	}
 
 	if (wf_chspec_malformed(chspec))
 		return 0;
 
 	return chspec;
+}
+
+/**
+ * Check if the chanspec primary 20MHz channel is a 6GHz Preferred Scanning Channel (PSC).
+ *
+ * @param   chspec  chanspec to inspect
+ *
+ * @return  TRUE if 6GHz band and primary 20MHz channel is a PSC channel, FALSE otherwise.
+ */
+bool
+wf_chspec_is_6g_psc(chanspec_t chspec)
+{
+	uint8 pri_ch;
+
+	if (!CHSPEC_IS6G(chspec) || wf_chspec_malformed(chspec)) {
+		return FALSE;
+	}
+
+	pri_ch = wf_chspec_primary20_chan(chspec);
+	if (pri_ch == INVCHANNEL) {
+		return FALSE;
+	}
+
+	return WF_IS_6G_PSC_CHAN(pri_ch);
 }
 
 /**
@@ -1744,7 +1872,7 @@ wf_channel2chspec(uint pri_ch, uint bw, uint wl_chanspec_band)
 			break;
 		case WL_CHANSPEC_BAND_6G:
 			center_ch = wf_6g_80m_chans;
-			num_ch = ARRAYSIZE(wf_6g_40m_chans);
+			num_ch = ARRAYSIZE(wf_6g_80m_chans);
 			break;
 		}
 	} else if (bw == WL_CHANSPEC_BW_160) {

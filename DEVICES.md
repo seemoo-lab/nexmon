@@ -82,11 +82,36 @@
 - Samsung S7
 - Samsung S7 Edge
 
+## BCM43430 / BCM43438
+(43430a0 / 43430a1) 802.11bgn 1x1 + BT 4.1
+
+- Raspberry Pi 3 Model B (BCM43430A1)
+- Raspberry Pi Zero W / Zero 2 W (BCM43430A1 / BCM43436)
+
 ## BCM43455
 (43455c0) 802.11abgn+ac MIMO 1x1 + BT 4.1
 
+- Raspberry Pi 3 Model B+
+- Raspberry Pi 4 Model B
+- Raspberry Pi 400
+- Raspberry Pi 5 Model B
+- Raspberry Pi 500
+- Compute Module 4 (CM4)
+- Compute Module 5 (CM5)
 - Huawei P9
 - LG G5
+
+## BCM4378
+802.11ax MIMO 2x2 + BT 5.0 (Apple Silicon)
+
+- Apple Mac mini (M1 / M2)
+- Apple MacBook Air (M1 / M2)
+- Apple MacBook Pro (M1 / M2)
+
+## BCM4390 / BCM4398
+Wi-Fi 7 (802.11be) 2x2 + BT 5.4
+
+- Google Pixel 9 / Pixel 9 Pro (BCM4390B1)
 
 ```bash
 dmesg | grep -i dhd  # Broadcom chip

@@ -19,7 +19,9 @@
 #include <epan/packet.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
+#include "wimax_compact_dlmap_ie_decoder.h"
 #include "wimax_compact_ulmap_ie_decoder.h"
+#include "wimax-int.h"
 
 /* MASKs */
 #define MSB_NIBBLE_MASK      0xF0
@@ -29,16 +31,6 @@
 #define CID_TYPE_RCID11      1
 #define CID_TYPE_RCID7       2
 #define CID_TYPE_RCID3       3
-
-/* Global Variables */
-extern unsigned cid_type;
-extern unsigned band_amc_subchannel_type;
-extern unsigned max_logical_bands;
-extern unsigned num_of_broadcast_symbols;
-extern unsigned num_of_dl_band_amc_symbols;
-extern unsigned num_of_ul_band_amc_symbols;
-extern unsigned harq_mode;
-extern int   proto_wimax;
 
 /* forward reference */
 unsigned wimax_cdma_allocation_ie_decoder(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset, unsigned nibble_offset);
@@ -1006,10 +998,8 @@ static unsigned wimax_compact_ulmap_rcid_ie_decoder(proto_tree *tree, packet_inf
 			length = 4;
 		}
 		else
-		{	/* Get the prefix bit */
-			prefix = (tvb_get_uint8(tvb, offset) & 0x08);
-			/* display the prefix */
-			proto_tree_add_item(tree, hf_rcid_ie_prefix, tvb, offset, 2, ENC_BIG_ENDIAN);
+		{	/* Prefix bit */
+			proto_tree_add_item_ret_uint(tree, hf_rcid_ie_prefix, tvb, offset, 2, ENC_BIG_ENDIAN, &prefix);
 			if(prefix || (cid_type == CID_TYPE_RCID11))
 			{	/* display the CID11 */
 				proto_tree_add_item(tree, hf_rcid_ie_cid11_2, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -1635,7 +1625,7 @@ void wimax_proto_register_wimax_compact_ulmap_ie(void)
 		},
 		{
 			&hf_culmap_uiuc_num_of_subchannels_7_1,
-			{"Number Of Subchannels", "wmx.compact_ulmap.uiuc_num_of_subchannels", FT_UINT32, BASE_DEC, NULL, 0x000003F80, NULL, HFILL}
+			{"Number Of Subchannels", "wmx.compact_ulmap.uiuc_num_of_subchannels", FT_UINT32, BASE_DEC, NULL, 0x00003F80, NULL, HFILL}
 		},
 		{
 			&hf_culmap_uiuc_ranging_method_1,
@@ -2004,11 +1994,11 @@ void wimax_proto_register_wimax_compact_ulmap_ie(void)
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_cid_1,
-			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_1, NULL, HFILL }
+			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_1, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_uiuc_1,
-			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_1, NULL, HFILL }
+			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_1, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_repetition_1,
@@ -2016,11 +2006,11 @@ void wimax_proto_register_wimax_compact_ulmap_ie(void)
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_cid_2,
-			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_2, NULL, HFILL }
+			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_2, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_uiuc_2,
-			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_2, NULL, HFILL }
+			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_2, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_repetition_2,
@@ -2028,11 +2018,11 @@ void wimax_proto_register_wimax_compact_ulmap_ie(void)
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_cid_3,
-			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_3, NULL, HFILL }
+			{"CID", "wmx.extended_uiuc_ie.mini_subchannel_alloc.cid", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_CID_MASK_3, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_uiuc_3,
-			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT24, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_2, NULL, HFILL }
+			{"UIUC", "wmx.extended_uiuc_ie.mini_subchannel_alloc.uiuc", FT_UINT32, BASE_HEX, NULL, MINI_SUBCHANNEL_UIUC_MASK_2, NULL, HFILL }
 		},
 		{
 			&hf_extended_uiuc_ie_mini_subchannel_alloc_repetition_3,

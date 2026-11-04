@@ -24,6 +24,7 @@ static dissector_handle_t kdsp_handle;
 #define KDSP_PORT 2502 /* Not IANA registered */
 #define FRAME_HEADER_LEN 12
 
+#define CMD_NULL   0
 #define HELLO      1
 #define STRING     2
 #define CAPPACKET  3
@@ -172,6 +173,7 @@ static int hf_kdsp_cpt_dc_flag_usec;
 static int hf_kdsp_cpt_dc_flag_dlt;
 static int hf_kdsp_cpt_uuid;
 static int hf_kdsp_cpt_packet_len;
+static int hf_kdsp_cpt_tv;
 static int hf_kdsp_cpt_tv_sec;
 static int hf_kdsp_cpt_tv_usec;
 static int hf_kdsp_cpt_dlt;
@@ -223,6 +225,7 @@ static int hf_kdsp_report_hop_tm_usec;
 static int ett_kdsp_pdu;
 static int ett_cpt_bitmap;
 static int ett_cpt_data_content_bitmap;
+static int ett_cpt_tv;
 static int ett_ch_bitmap;
 static int ett_ch_data;
 static int ett_sub_fcs;
@@ -270,12 +273,13 @@ dissect_kdsp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
   col_add_fstr(pinfo->cinfo, COL_INFO, "Command %s; ", str_command);
   col_set_fence(pinfo->cinfo, COL_INFO);
 
-  proto_tree_add_item(kdsp_tree, hf_kdsp_length, tvb, offset, 4, ENC_BIG_ENDIAN);
-  length = tvb_get_ntohl(tvb, offset);
+  proto_tree_add_item_ret_uint(kdsp_tree, hf_kdsp_length, tvb, offset, 4, ENC_BIG_ENDIAN, &length);
   offset += 4;
 
   switch(command)
   {
+  case CMD_NULL:
+    break;
   case HELLO:
     proto_tree_add_item(kdsp_tree, hf_kdsp_version,  tvb, offset, 4, ENC_BIG_ENDIAN);
     offset +=4;
@@ -362,8 +366,7 @@ dissect_kdsp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
       sub_item = proto_tree_add_item(kdsp_tree, hf_kdsp_cpt_data_hdr, tvb, offset, 44, ENC_NA);
       sub_tree = proto_item_add_subtree(sub_item, ett_sub_cpt);
 
-      data_len_item = proto_tree_add_item(sub_tree, hf_kdsp_cpt_data_hdr_len,        tvb, offset, 2, ENC_BIG_ENDIAN);
-      data_hdr_len = tvb_get_ntohs(tvb, offset);
+      data_len_item = proto_tree_add_item_ret_uint16(sub_tree, hf_kdsp_cpt_data_hdr_len, tvb, offset, 2, ENC_BIG_ENDIAN, &data_hdr_len);
       offset += 2;
 
       subsub_item = proto_tree_add_item(sub_tree, hf_kdsp_cpt_data_content_bitmap, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -396,12 +399,26 @@ dissect_kdsp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
         reported_payload_len = tvb_get_ntohs(tvb, offset);
         offset += 2;
       }
+      switch (cptbitmap & (DATA_TVSEC_FLAG | DATA_TVUSEC_FLAG)) {
+      case DATA_TVSEC_FLAG | DATA_TVUSEC_FLAG:
+        subsub_item = proto_tree_add_item(sub_tree, hf_kdsp_cpt_tv,         tvb, offset, 16, ENC_TIME_SECS_USECS|ENC_BIG_ENDIAN);
+        break;
+      case DATA_TVSEC_FLAG:
+        subsub_item = proto_tree_add_item(sub_tree, hf_kdsp_cpt_tv,         tvb, offset, 8, ENC_TIME_SECS|ENC_BIG_ENDIAN);
+        break;
+      case DATA_TVUSEC_FLAG:
+        subsub_item = proto_tree_add_item(sub_tree, hf_kdsp_cpt_tv,         tvb, offset, 8, ENC_TIME_USECS|ENC_BIG_ENDIAN);
+        break;
+      default:
+        break;
+      }
+      subsub_tree = proto_item_add_subtree(subsub_item, ett_cpt_tv);
       if (cptbitmap & DATA_TVSEC_FLAG) {
-        proto_tree_add_item(sub_tree, hf_kdsp_cpt_tv_sec,     tvb, offset, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(subsub_tree, hf_kdsp_cpt_tv_sec,  tvb, offset, 8, ENC_BIG_ENDIAN);
         offset += 8;
       }
       if (cptbitmap & DATA_TVUSEC_FLAG) {
-        proto_tree_add_item(sub_tree, hf_kdsp_cpt_tv_usec,    tvb, offset, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item(subsub_tree, hf_kdsp_cpt_tv_usec, tvb, offset, 8, ENC_BIG_ENDIAN);
         offset += 8;
       }
       if (cptbitmap & DATA_DLT_FLAG) {
@@ -411,7 +428,7 @@ dissect_kdsp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
       }
       payload_len = (length + FRAME_HEADER_LEN) - offset;
       if (cptbitmap & DATA_PACKLEN_FLAG) {
-        payload_tvb = tvb_new_subset_length_caplen(tvb, offset, payload_len, reported_payload_len);
+        payload_tvb = tvb_new_subset_length(tvb, offset, reported_payload_len);
         if (cptbitmap & DATA_DLT_FLAG) {
           dissector_try_uint(subdissector_dlt_table, datalink_type, payload_tvb, pinfo, tree);
 
@@ -565,13 +582,13 @@ proto_register_kdsp(void)
     },
     { &hf_kdsp_server_version,
       { "Server Version", "kdsp.server.version",
-        FT_STRING, BASE_NONE,
+        FT_STRINGZTRUNC, BASE_NONE,
         NULL, 0x0,
         NULL, HFILL }
     },
     { &hf_kdsp_hostname,
       { "Hostname", "kdsp.hostname",
-        FT_STRING, BASE_NONE,
+        FT_STRINGZTRUNC, BASE_NONE,
         NULL, 0x0,
         NULL, HFILL }
     },
@@ -824,6 +841,12 @@ proto_register_kdsp(void)
     { &hf_kdsp_cpt_packet_len,
       { "Packet Length", "kdsp.cpt.pkt_len",
         FT_UINT16, BASE_DEC,
+        NULL, 0x0,
+        NULL, HFILL }
+    },
+    { &hf_kdsp_cpt_tv,
+      { "Packet Timeval", "kdsp.cpt.tv",
+        FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL,
         NULL, 0x0,
         NULL, HFILL }
     },
@@ -1099,6 +1122,7 @@ proto_register_kdsp(void)
     &ett_kdsp_pdu,
     &ett_cpt_bitmap,
     &ett_cpt_data_content_bitmap,
+    &ett_cpt_tv,
     &ett_ch_bitmap,
     &ett_ch_data,
     &ett_sub_fcs,

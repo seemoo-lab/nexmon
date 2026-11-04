@@ -195,7 +195,7 @@ void register_k12text(void);
 
 %}
 start_timestamp \053[\055]{9}\053[\055]{15,100}\053[\055]{10,100}\053
-oneormoredigits [0-9]+:
+oneortwodigits [0-9]{1,2}:
 twodigits [0-9][0-9]
 colon :
 comma ,
@@ -217,7 +217,7 @@ hdlc HDLC
 <MAGIC>. { if (++ yyextra->junk_chars > MAX_JUNK) { yyextra->is_k12text = false;  yyterminate(); } }
 
 <NEXT_FRAME>{start_timestamp} {BEGIN(HOURS); }
-<HOURS>{oneormoredigits} { SET_HOURS(yytext); BEGIN(MINUTES); }
+<HOURS>{oneortwodigits} { SET_HOURS(yytext); BEGIN(MINUTES); }
 <MINUTES>{twodigits} { SET_MINUTES(yytext); BEGIN(M2S);}
 <M2S>{colon} { BEGIN(SECONDS);}
 <SECONDS>{twodigits} { SET_SECONDS(yytext); BEGIN(S2M); }
@@ -480,12 +480,9 @@ static const struct { int e; const char* s; } encaps[] = {
 static bool
 k12text_dump(wtap_dumper *wdh, const wtap_rec *rec,
 	     int *err, char **err_info _U_) {
-#define K12BUF_SIZE 196808
 	const uint8_t *pd;
-	char *buf;
-	size_t left = K12BUF_SIZE;
-	size_t wl;
-	char *p;
+	GString *buf;
+	char timestr[10] = "XX:XX:XX,";
 	const char* str_enc;
 	unsigned i;
 	unsigned ns;
@@ -514,39 +511,31 @@ k12text_dump(wtap_dumper *wdh, const wtap_rec *rec,
 		return false;
 	}
 
-	buf = (char *)g_malloc(K12BUF_SIZE);
-	p = buf;
+	/* This is bounded by the length check above. */
+	buf = g_string_sized_new(3 * rec->rec_header.packet_header.caplen + 80);
 
+	buf = g_string_append(buf, "+---------+---------------+----------+\r\n");
 	ms = rec->ts.nsecs / 1000000;
 	ns = (rec->ts.nsecs - (1000000*ms))/1000;
 
 	tmp = gmtime(&rec->ts.secs);
-	if (tmp == NULL)
-		snprintf(p, 90, "+---------+---------------+----------+\r\nXX:XX:XX,");
-	else
-		strftime(p, 90, "+---------+---------------+----------+\r\n%H:%M:%S,", tmp);
-	wl = strlen(p);
-	p += wl;
-	left -= wl;
+	if (tmp)
+		strftime(timestr, sizeof(timestr), "%H:%M:%S,", tmp);
+	g_string_append(buf, timestr);
 
-	wl = snprintf(p, left, "%.3d,%.3d   %s\r\n|0   |", ms, ns, str_enc);
-	p += wl;
-	left -= wl;
+	g_string_append_printf(buf, "%.3d,%.3d   %s\r\n|0   |", ms, ns, str_enc);
 
 	pd = ws_buffer_start_ptr(&rec->data);
 
-	for(i = 0; i < rec->rec_header.packet_header.caplen && left > 2; i++) {
-		wl = snprintf(p, left, "%.2x|", pd[i]);
-		p += wl;
-		left -= wl;
+	for(i = 0; i < rec->rec_header.packet_header.caplen; i++) {
+		g_string_append_printf(buf, "%.2x|", pd[i]);
 	}
 
-	wl = snprintf(p, left, "\r\n\r\n");
-	left -= wl;
+	g_string_append(buf, "\r\n\r\n");
 
-	ret = wtap_dump_file_write(wdh, buf, K12BUF_SIZE - left, err);
+	ret = wtap_dump_file_write(wdh, buf->str, buf->len, err);
 
-	g_free(buf);
+	g_string_free(buf, TRUE);
 	return ret;
 }
 

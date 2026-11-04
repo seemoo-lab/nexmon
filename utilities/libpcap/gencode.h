@@ -160,22 +160,10 @@
 #define A_OAM		28	/* OAM cells : F4 only */
 #define A_OAMF4		29	/* OAM F4 cells: Segment + End-to-end */
 #define A_LANE		30	/* LANE traffic */
-#define A_LLC		31	/* LLC-encapsulated traffic */
-
-/* Based on Q.2931 signalling protocol */
-#define A_SETUP		41	/* Setup message */
-#define A_CALLPROCEED	42	/* Call proceeding message */
-#define A_CONNECT	43	/* Connect message */
-#define A_CONNECTACK	44	/* Connect Ack message */
-#define A_RELEASE	45	/* Release message */
-#define A_RELEASE_DONE	46	/* Release message */
 
 /* ATM field types */
 #define A_VPI		51
 #define A_VCI		52
-#define A_PROTOTYPE	53
-#define A_MSGTYPE	54
-#define A_CALLREFTYPE	55
 
 #define A_CONNECTMSG	70	/* returns Q.2931 signalling messages for
 				   establishing and destroying switched
@@ -287,12 +275,18 @@ struct block {
 	atomset out_use;
 	int oval;		/* value ID for value tested in branch stmt */
 	bpf_u_int32 val[N_ATOMS];
+	enum {
+		IS_UNCERTAIN = 0, // must be the default
+		IS_TRUE,
+		IS_FALSE,
+	} meaning;
 };
 
 /*
  * A value of 0 for val[i] means the value is unknown.
  */
 #define VAL_UNKNOWN	0
+#define IS_KNOWN(block, atom) ((block)->val[(atom)] != VAL_UNKNOWN)
 
 struct arth {
 	struct block *b;	/* protocol checks */
@@ -317,19 +311,51 @@ struct arth *gen_loadlen(compiler_state_t *);
 struct arth *gen_neg(compiler_state_t *, struct arth *);
 struct arth *gen_arth(compiler_state_t *, int, struct arth *, struct arth *);
 
-void gen_and(struct block *, struct block *);
-void gen_or(struct block *, struct block *);
-void gen_not(struct block *);
+/*
+ * For a very long time gen_and() and gen_or() used to be void functions that
+ * combined two blocks and always stored the result in the second block.  Now
+ * these functions return the result, which can be either of the blocks,
+ * intact, if one of the blocks is a Boolean constant.  Thus any invocation
+ * that discards the result of these two functions is almost certainly a bug.
+ *
+ * Note that invoking these functions in the following style can produce
+ * slightly different (therefore not trivially testable) filter programs in
+ * different builds of libpcap:
+ *
+ * return gen_and(gen_atm_vpi(cstate, 0), gen_atm_vci(cstate, 1));
+ *
+ * Specifically, the memory register numbers can be different because a C
+ * compiler can (and indeed does) evaluate the nested function calls in any
+ * order, and many such functions explicitly or implicitly allocate memory
+ * registers.  The simplest way to avoid this problem is not to have more
+ * than one function-call argument:
+ *
+ * b = gen_atm_vpi(cstate, 0);
+ * return gen_and(b, gen_atm_vci(cstate, 1));
+ *
+ * or even:
+ *
+ * b0 = gen_atm_vpi(cstate, 0);
+ * b1 = gen_atm_vci(cstate, 1);
+ * return gen_and(b0, b1);
+ */
+struct block *gen_and(struct block *, struct block *)
+    PCAP_WARN_UNUSED_RESULT;
+struct block *gen_or(struct block *, struct block *)
+    PCAP_WARN_UNUSED_RESULT;
+/*
+ * gen_not() always returns its only argument, so the style of invocation is a
+ * matter of preference.
+ */
+struct block *gen_not(struct block *);
 
 struct block *gen_scode(compiler_state_t *, const char *, struct qual);
 struct block *gen_ecode(compiler_state_t *, const char *, struct qual);
 struct block *gen_acode(compiler_state_t *, const char *, struct qual);
 struct block *gen_mcode(compiler_state_t *, const char *, const char *,
     bpf_u_int32, struct qual);
-#ifdef INET6
 struct block *gen_mcode6(compiler_state_t *, const char *, bpf_u_int32,
     struct qual);
-#endif
 struct block *gen_ncode(compiler_state_t *, const char *, bpf_u_int32,
     struct qual);
 struct block *gen_proto_abbrev(compiler_state_t *, int);
@@ -341,7 +367,7 @@ struct block *gen_byteop(compiler_state_t *, int, int, bpf_u_int32);
 struct block *gen_broadcast(compiler_state_t *, int);
 struct block *gen_multicast(compiler_state_t *, int);
 struct block *gen_ifindex(compiler_state_t *, int);
-struct block *gen_inbound(compiler_state_t *, int);
+struct block *gen_inbound_outbound(compiler_state_t *, const int);
 
 struct block *gen_llc(compiler_state_t *);
 struct block *gen_llc_i(compiler_state_t *);
@@ -357,6 +383,7 @@ struct block *gen_pppoed(compiler_state_t *);
 struct block *gen_pppoes(compiler_state_t *, bpf_u_int32, int);
 
 struct block *gen_geneve(compiler_state_t *, bpf_u_int32, int);
+struct block *gen_vxlan(compiler_state_t *, bpf_u_int32, int);
 
 struct block *gen_atmfield_code(compiler_state_t *, int, bpf_u_int32,
     int, int);

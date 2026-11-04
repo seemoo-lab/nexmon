@@ -11,8 +11,12 @@
 # This creates $NDK/toolchains/llvm/prebuilt/linux-aarch64 as a symlink farm:
 # native LLVM host binaries where the distro provides them, falling back to the
 # x86_64 originals (still via qemu) for anything it does not. Everything else --
-# sysroot, target runtime libraries, headers -- is shared with the x86_64 tree,
-# so no NDK file is modified and removing the directory fully reverts this.
+# sysroot, target runtime libraries, headers -- is shared with the x86_64 tree.
+#
+# On NDK r30 final it also applies one small in-place edit to
+# build/tools/ndk_bin_common.sh (backed up as .nexmon-orig) so ndk-build stops
+# aborting on an aarch64 host; see the patch step below. Removing the
+# linux-aarch64 directory and restoring that backup fully reverts this.
 #
 # Point ndk-build at it by exporting HOST_ARCH=aarch64 (see init.mk: HOST_TAG64
 # is derived from HOST_ARCH, and TOOLCHAIN_ROOT from HOST_TAG64).
@@ -38,9 +42,8 @@ NDK_CLANG_MAJOR=$(basename "$(ls -d "$SRC"/lib/clang/* | sort -V | tail -n 1)")
 
 LLVM="${2:-}"
 if [ -z "$LLVM" ]; then
-    for p in "/usr/lib/llvm-$NDK_CLANG_MAJOR"; do
-        [ -x "$p/bin/clang" ] && LLVM="$p" && break
-    done
+    p="/usr/lib/llvm-$NDK_CLANG_MAJOR"
+    [ -x "$p/bin/clang" ] && LLVM="$p"
 fi
 if [ -z "$LLVM" ] || [ ! -x "$LLVM/bin/clang" ]; then
     echo "ERROR: no native clang $NDK_CLANG_MAJOR found (expected /usr/lib/llvm-$NDK_CLANG_MAJOR)." >&2
@@ -61,8 +64,26 @@ mkdir -p "$DST/bin"
 for entry in "$SRC"/*; do
     name=$(basename "$entry")
     [ "$name" = bin ] && continue
+    [ "$name" = python3 ] && continue
     ln -s "$entry" "$DST/$name"
 done
+
+# Set up a native python3 toolchain directory to avoid emulating x86_64 python3
+if [ -d "$SRC/python3" ]; then
+    mkdir -p "$DST/python3/bin"
+    for entry in "$SRC/python3"/*; do
+        subname=$(basename "$entry")
+        [ "$subname" = bin ] && continue
+        ln -s "$entry" "$DST/python3/$subname"
+    done
+    if command -v python3 >/dev/null 2>&1; then
+        ln -s "$(command -v python3)" "$DST/python3/bin/python3"
+        ln -s "$(command -v python3)" "$DST/python3/bin/python3.11"
+    else
+        ln -s "$SRC/python3/bin/python3" "$DST/python3/bin/python3"
+        ln -s "$SRC/python3/bin/python3.11" "$DST/python3/bin/python3.11"
+    fi
+fi
 
 # A distro host clang standing in for the NDK's clang has two Android-hostile
 # defaults: it links libgcc (which NDK r23+ no longer ships, so ld.lld fails
@@ -136,6 +157,25 @@ for entry in "$SRC"/bin/*; do
 done
 
 echo "binaries   : $native native, $emulated left emulated"
+
+# r30 final regression: build/tools/ndk_bin_common.sh (sourced by ndk-build
+# before it ever reaches the "$GNUMAKE ... HOST_ARCH=" line we rely on) no
+# longer recognises an "aarch64" host -- the r30 beta mapped arm64|aarch64 on
+# Linux to x86_64, but the final drops the alias, so uname -m == aarch64 now
+# hits the catch-all and "exit 1"s with "Unknown host CPU architecture:
+# aarch64", killing every ndk-build here. Teach it the linux-aarch64 host tag
+# this farm provides. Idempotent; a .nexmon-orig backup makes it revertible.
+BIN_COMMON="$NDK/build/tools/ndk_bin_common.sh"
+if [ -f "$BIN_COMMON" ] && ! grep -q 'aarch64) HOST_ARCH=aarch64' "$BIN_COMMON"; then
+    if grep -qE '^\s*arm64\) HOST_ARCH=arm64;;' "$BIN_COMMON"; then
+        [ -f "$BIN_COMMON.nexmon-orig" ] || cp "$BIN_COMMON" "$BIN_COMMON.nexmon-orig"
+        sed -i 's/^\(\s*arm64) HOST_ARCH=arm64;;\)/\1\n  aarch64) HOST_ARCH=aarch64;;/' "$BIN_COMMON"
+        echo "host CPU   : patched ndk_bin_common.sh to accept aarch64 (linux-aarch64 tag)"
+    else
+        echo "WARNING: $BIN_COMMON has an unexpected HOST_ARCH block; not patched." >&2
+        echo "         ndk-build may abort with 'Unknown host CPU architecture: aarch64'." >&2
+    fi
+fi
 
 # ndk-build looks for its own make at $NDK/prebuilt/$HOST_TAG/bin/make and falls
 # back to the system one; give it a native tree so it stops emulating make too.

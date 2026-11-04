@@ -15,6 +15,7 @@
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN "beep"
 
 #include <stdlib.h>
 #include <epan/packet.h>
@@ -23,9 +24,6 @@
 #include <epan/expert.h>
 #include <epan/exceptions.h>
 #include <epan/proto_data.h>
-#if defined(DEBUG_BEEP_HASH)
-#include <epan/ws_printf.h>
-#endif
 
 #define TCP_PORT_BEEP 10288 /* Don't think this is IANA registered */
 
@@ -157,10 +155,7 @@ beep_equal(const void *v, const void *w)
   const struct beep_request_key *v1 = (const struct beep_request_key *)v;
   const struct beep_request_key *v2 = (const struct beep_request_key *)w;
 
-#if defined(DEBUG_BEEP_HASH)
-  ws_debug_printf("Comparing %08X\n      and %08X\n",
-         v1->conversation, v2->conversation);
-#endif
+  ws_debug("Comparing %08X\n      and %08X\n", v1->conversation, v2->conversation);
 
   if (v1->conversation == v2->conversation)
     return 1;
@@ -177,9 +172,7 @@ beep_hash(const void *v)
 
   val = key->conversation;
 
-#if defined(DEBUG_BEEP_HASH)
-  ws_debug_printf("BEEP Hash calculated as %u\n", val);
-#endif
+  ws_debug("BEEP Hash calculated as %u\n", val);
 
   return val;
 
@@ -230,19 +223,9 @@ static void dissect_beep_status(tvbuff_t *tvb, int offset,
 }
 #endif
 
-static int num_len(tvbuff_t *tvb, int offset)
-{
-  unsigned int i = 0;
-
-  while (g_ascii_isdigit(tvb_get_uint8(tvb, offset + i))) i++;
-
-  return i;
-
-}
-
 /*
  * We check for a terminator. This can be CRLF, which will be recorded
- * as a terminator, or CR or LF by itself, which will be redorded as
+ * as a terminator, or CR or LF by itself, which will be recorded as
  * an incorrect terminator ... We build the tree at this point
  * However, we depend on the variable beep_strict_term
  */
@@ -359,16 +342,18 @@ dissect_beep_mime_header(tvbuff_t *tvb, packet_info *pinfo, int offset,
 }
 
 static int
-dissect_beep_int(tvbuff_t *tvb, packet_info *pinfo, int offset,
+dissect_beep_int(tvbuff_t *tvb, packet_info *pinfo _U_, unsigned offset,
                     proto_tree *tree, int hf, unsigned *val, int *hfa[])
 {
   proto_item  *hidden_item;
-  unsigned ival, ind = 0;
-  unsigned int len = num_len(tvb, offset);
+  unsigned endoff, len, ind = 0;
+  uint32_t ival;
 
   /* XXX - Should check for conversion errors and, for values except for
    * seqno, values outside the range. */
-  ival = (unsigned)strtoul((char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII), NULL, 10);
+  /* XXX - Add a _remaining convenience function? */
+  tvb_get_string_uint(tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_STR_DEC, &ival, &endoff);
+  len = endoff - offset;
   proto_tree_add_uint(tree, hf, tvb, offset, len, ival);
 
   while (hfa[ind]) {
@@ -555,7 +540,7 @@ dissect_beep_tree(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
     if (tvb_reported_length_remaining(tvb, offset) > 0) { /* Dissect what is left as payload */
 
-      int pl_size = MIN((int)size, tvb_reported_length_remaining(tvb, offset));
+      int pl_size = MIN(size, tvb_reported_length_remaining(tvb, offset));
 
       /* Except, check the payload length, and only dissect that much */
 
@@ -635,7 +620,7 @@ dissect_beep_tree(tvbuff_t *tvb, int offset, packet_info *pinfo,
     proto_tree *tr = NULL;
 
     if (tree) {
-      tr = proto_tree_add_subtree(tree, tvb, offset, MIN(5, MAX(0, tvb_reported_length_remaining(tvb, offset))),
+      tr = proto_tree_add_subtree(tree, tvb, offset, MIN(5, tvb_reported_length_remaining(tvb, offset)),
                                     ett_trailer, NULL, "Trailer");
 
       proto_tree_add_item(hdr, hf_beep_cmd, tvb, offset, 3, ENC_ASCII);
@@ -666,7 +651,7 @@ dissect_beep_tree(tvbuff_t *tvb, int offset, packet_info *pinfo,
 
     if (request_val) {
 
-      pl_size = MIN(request_val->size, tvb_reported_length_remaining(tvb, offset));
+      pl_size = MIN(request_val->size, (int)tvb_reported_length_remaining(tvb, offset));
 
       if (pl_size == 0) { /* The whole of the rest must be payload */
 
@@ -675,7 +660,7 @@ dissect_beep_tree(tvbuff_t *tvb, int offset, packet_info *pinfo,
       }
 
     } else if (beep_frame_data) {
-      pl_size = MIN(beep_frame_data->pl_size, tvb_reported_length_remaining(tvb, offset));
+      pl_size = MIN(beep_frame_data->pl_size, (int)tvb_reported_length_remaining(tvb, offset));
     } else { /* Just in case */
       pl_size = tvb_reported_length_remaining(tvb, offset);
     }
@@ -823,10 +808,10 @@ dissect_beep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     int pl_left = beep_frame_data->pl_left;
 
-    pl_left = MIN(pl_left, MAX(0, tvb_reported_length_remaining(tvb, offset)));
+    pl_left = MIN(pl_left, MAX(0, (int)tvb_reported_length_remaining(tvb, offset)));
 
     /* Add the payload bit, only if we have a tree */
-    if (tree && (pl_left > 0)) {
+    if (tree) {
       proto_tree_add_item(tree, hf_beep_payload, tvb, offset, pl_left, ENC_ASCII);
     }
     offset += pl_left;

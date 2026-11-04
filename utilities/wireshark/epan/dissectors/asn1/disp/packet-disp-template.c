@@ -1,5 +1,5 @@
 /* packet-disp.c
- * Routines for X.525 (X.500 Directory Shadow Asbtract Service) and X.519 DISP packet dissection
+ * Routines for X.525 (X.500 Directory Shadow Abstract Service) and X.519 DISP packet dissection
  * Graeme Lunt 2005
  *
  * Wireshark - Network traffic analyzer
@@ -34,13 +34,6 @@
 #include "packet-dsp.h"
 #include "packet-disp.h"
 
-
-/* we don't have a separate dissector for X519 -
-   and most of DISP is defined in X525 */
-#define PNAME  "X.519 Directory Information Shadowing Protocol"
-#define PSNAME "DISP"
-#define PFNAME "disp"
-
 void proto_register_disp(void);
 void proto_reg_handoff_disp(void);
 
@@ -68,12 +61,12 @@ static dissector_handle_t disp_handle;
 static int
 dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data)
 {
-	int offset = 0;
-	int old_offset;
+    unsigned offset = 0;
+    unsigned old_offset;
 	proto_item *item;
 	proto_tree *tree;
 	struct SESSION_DATA_STRUCTURE* session;
-	int (*disp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
+	unsigned (*disp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
 	const char *disp_op_name;
 	asn1_ctx_t asn1_ctx;
 
@@ -120,7 +113,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	    disp_op_name = "Coordinate-Shadow-Update-Argument";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_disp_unsupported_opcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_disp_unsupported_opcode, tvb, offset,
 	        "Unsupported DISP opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
@@ -140,7 +133,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	    disp_op_name = "Coordinate-Shadow-Update-Result";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_disp_unsupported_opcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_disp_unsupported_opcode, tvb, offset,
 	        "Unsupported DISP opcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
@@ -152,13 +145,13 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	    disp_op_name = "Shadow-Error";
 	    break;
 	  default:
-	    proto_tree_add_expert_format(tree, pinfo, &ei_disp_unsupported_errcode, tvb, offset, -1,
+	    proto_tree_add_expert_format_remaining(tree, pinfo, &ei_disp_unsupported_errcode, tvb, offset,
 	            "Unsupported DISP errcode (%d)", session->ros_op & ROS_OP_OPCODE_MASK);
 	    break;
 	  }
 	  break;
 	default:
-	  proto_tree_add_expert(tree, pinfo, &ei_disp_unsupported_pdu, tvb, offset, -1);
+	  proto_tree_add_expert_remaining(tree, pinfo, &ei_disp_unsupported_pdu, tvb, offset);
 	  return tvb_captured_length(tvb);
 	}
 
@@ -169,7 +162,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	    old_offset=offset;
 	    offset=(*disp_dissector)(false, tvb, offset, &asn1_ctx, tree, -1);
 	    if(offset == old_offset){
-	      proto_tree_add_expert(tree, pinfo, &ei_disp_zero_pdu, tvb, offset, -1);
+	      proto_tree_add_expert_remaining(tree, pinfo, &ei_disp_zero_pdu, tvb, offset);
 	      break;
 	    }
 	  }
@@ -205,7 +198,7 @@ void proto_register_disp(void) {
   expert_module_t* expert_disp;
 
   /* Register protocol */
-  proto_disp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_disp = proto_register_protocol("X.519 Directory Information Shadowing Protocol", "DISP", "disp");
   disp_handle = register_dissector("disp", dissect_disp, proto_disp);
 
   /* Register fields and subtrees */

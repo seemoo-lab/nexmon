@@ -26,13 +26,10 @@ DIAG_OFF_CLANG(comma)
 
 #include "lua.h"
 #include "lauxlib.h"
+#include "lpcre2_f.h"
 #include "../common.h"
 
 #include <wslua/wslua.h>
-
-extern int Lpcre2_get_flags (lua_State *L);
-extern int Lpcre2_config (lua_State *L);
-extern flag_pair pcre2_error_flags[];
 
 /* These 2 settings may be redefined from the command-line or the makefile.
  * They should be kept in sync between themselves and with the target name.
@@ -98,7 +95,7 @@ static void do_named_subpatterns (lua_State *L, TPcre2 *ud, const char *text);
 #define INDEX_CHARTABLES_META  1      /* chartables type's metatable */
 #define INDEX_CHARTABLES_LINK  2      /* link chartables to compiled regex */
 
-const char chartables_typename[] = "chartables";
+static const char chartables_typename[] = "chartables";
 
 /*  Functions
  ******************************************************************************
@@ -230,7 +227,7 @@ static int compile_regex (lua_State *L, const TArgComp *argC, TPcre2 **pud) {
 
   if (argC->locale) {
     char old_locale[256];
-    g_strlcpy (old_locale, setlocale (LC_CTYPE, NULL), sizeof(old_locale));  /* store the locale */
+    (void) g_strlcpy (old_locale, setlocale (LC_CTYPE, NULL), sizeof(old_locale));  /* store the locale */
     if (NULL == setlocale (LC_CTYPE, argC->locale))   /* set new locale */
       return luaL_error (L, "cannot set locale");
     ud->tables = pcre2_maketables (NULL); /* make tables with new locale */ //### argument NULL
@@ -277,11 +274,11 @@ static void do_named_subpatterns (lua_State *L, TPcre2 *ud, const char *text) {
   PCRE2_SPTR tabptr;
 
   /* do named subpatterns - NJG */
-  pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMECOUNT, &namecount);
+  (void) pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMECOUNT, &namecount);
   if (namecount <= 0)
     return;
-  pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMETABLE, &name_table);
-  pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMEENTRYSIZE, &name_entry_size);
+  (void) pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMETABLE, &name_table);
+  (void) pcre2_pattern_info (ud->pr, PCRE2_INFO_NAMEENTRYSIZE, &name_entry_size);
   tabptr = name_table;
   for (i = 0; i < namecount; i++) {
     int n = (tabptr[0] << 8) | tabptr[1]; /* number of the capturing parenthesis */

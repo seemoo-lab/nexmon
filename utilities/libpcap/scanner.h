@@ -52,8 +52,8 @@ typedef enum {
 	STOULEN_ERROR
 } stoulen_ret;
 
-stoulen_ret stoulen(const char *string, size_t stringlen, bpf_u_int32 *val,
-    compiler_state_t *cstate);
+stoulen_ret stoulen(const char *, const size_t, bpf_u_int32 *,
+    compiler_state_t *);
 
 #line 59 "scanner.h"
 
@@ -761,7 +761,7 @@ extern int yylex \
 #undef yyTABLES_NAME
 #endif
 
-#line 482 "scanner.l"
+#line 471 "scanner.l"
 
 
 #line 768 "scanner.h"

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 #  b43 firmware assembly code beautifier
 #
@@ -23,19 +23,19 @@ from libb43 import *
 
 
 def usage():
-	print "b43 firmware assembly code beautifier"
-	print ""
-	print "Copyright (C) 2008 Michael Buesch <m@bues.ch>"
-	print "Licensed under the GNU/GPL version 3"
-	print ""
-	print "Usage: b43-beautifier [OPTIONS]"
-	print ""
-	print "-h|--help            Print this help text"
-	print "-a|--asmfile [FILE]  Assembly code source file"
-	print "-d|--defs [DIR]      Directory containing the defs files"
-	print ""
-	print "The options  -d  and  -a  are essential."
-	print "The \"include\" directory can be used for --defs"
+	print("b43 firmware assembly code beautifier")
+	print("")
+	print("Copyright (C) 2008 Michael Buesch <m@bues.ch>")
+	print("Licensed under the GNU/GPL version 3")
+	print("")
+	print("Usage: b43-beautifier [OPTIONS]")
+	print("")
+	print("-h|--help            Print this help text")
+	print("-a|--asmfile [FILE]  Assembly code source file")
+	print("-d|--defs [DIR]      Directory containing the defs files")
+	print("")
+	print("The options  -d  and  -a  are essential.")
+	print("The \"include\" directory can be used for --defs")
 
 def parseArgs():
 	global opt_asmfile
@@ -62,19 +62,20 @@ def parseArgs():
 			opt_defsfiles = v
 
 	if not opt_asmfile:
-		print "Must provide --asmfile"
+		print("Must provide --asmfile")
 		sys.exit(1)
 	if not opt_defsfiles:
-		print "Must provide --defs"
+		print("Must provide --defs")
 		sys.exit(1)
 
 def main():
 	parseArgs()
 
 	try:
-		asm = file(opt_asmfile).read()
-	except IOError, e:
-		print "Could not read asmfile %s: %s" % (e.filename, e.strerror)
+		with open(opt_asmfile, "r", encoding="utf-8", errors="ignore") as f:
+			asm = f.read()
+	except IOError as e:
+		print("Could not read asmfile %s: %s" % (e.filename, e.strerror))
 		return 1
 	try:
 		b = B43Beautifier(asm, opt_defsfiles)
@@ -85,4 +86,3 @@ def main():
 
 if __name__ == "__main__":
 	sys.exit(main())
-

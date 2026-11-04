@@ -22,9 +22,6 @@
 
 #include "ws_symbol_export.h"
 
-void proto_reg_handoff_camel(void);
-void proto_register_camel(void);
-
 /* Defines for the camel taps */
 #define	camel_MAX_NUM_OPR_CODES	256
 
@@ -34,7 +31,7 @@ WS_DLL_PUBLIC const value_string camel_opr_code_strings[];
 /** @file
 */
 #define NB_CAMELSRT_CATEGORY 9+1 /**< Number of type of message */
-/* for example TC_BEGIN with InitalDP, and TC_CONT with RequestReportBCSMEvent
+/* for example TC_BEGIN with InitialDP, and TC_CONT with RequestReportBCSMEvent
    is a category, we want to measure the delay between the two messages */
 
 #define CAMELSRT_SESSION 1
@@ -119,7 +116,5 @@ void camelsrt_call_matching(tvbuff_t *tvb,
 			    packet_info * pinfo _U_,
 			    proto_tree *tree,
 			    struct camelsrt_info_t * p_camel_info);
-
-WS_DLL_PUBLIC bool gcamel_StatSRT;
 
 #endif  /* PACKET_camel_H */

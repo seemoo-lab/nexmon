@@ -28,7 +28,7 @@ def get_compressors():
         # https://github.com/amadvance/advancecomp
         'advdef': { 'args': ['--recompress', '--shrink-insane', PNG_FILE_ARG] },
         # https://pmt.sourceforge.io/pngcrush/
-        'pngcrush': { 'args': ['-q', '-ow', '-brute', '-reduce', '-noforce', PNG_FILE_ARG, 'pngcrush.$$$$.png'] },
+        'pngcrush': { 'args': ['-q', '-ow', '-brute', '-reduce', '-noforce', PNG_FILE_ARG, f'{PNG_FILE_ARG}.pngcrush'] },
         # https://github.com/fhanau/Efficient-Compression-Tool
         'ect': { 'args': ['-5', '--mt-deflate', '--mt-file', '-strip', PNG_FILE_ARG]}
     }
@@ -50,7 +50,7 @@ def compress_png(png_file, compressors):
         try:
             compress_proc = subprocess.run([compressor] + args)
         except Exception:
-            print('{} returned {}:'.format(compressor, compress_proc.returncode))
+            print(f'{compressor} returned {compress_proc.returncode}:')
 
 
 def main():
@@ -74,13 +74,13 @@ def main():
     if args.list:
         for compressor in compressors:
             path = compressors[compressor].get('path', 'Not found')
-            print('{}: {}'.format(compressor, path))
+            print(f'{compressor}: {path}')
         sys.exit(0)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
         for png_file in args.png_files:
-            print('Compressing {}'.format(png_file))
+            print(f'Compressing {png_file}')
             futures.append(executor.submit(compress_png, png_file, compressors))
         concurrent.futures.wait(futures)
 

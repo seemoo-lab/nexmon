@@ -87,8 +87,8 @@ static bool http2_decompress_body;
 /* Track 3GPP session over 5G Service Based Interfaces */
 static bool http2_3gpp_session = false;
 
-/* Relation between referenceid -> imsi */
-static wmem_map_t* http2_referenceid_imsi;
+/* Relation between notifyuri -> imsi */
+static wmem_map_t* http2_notifyuri_imsi;
 
 /* Relation between location -> imsi */
 static wmem_map_t* http2_location_imsi;
@@ -108,6 +108,10 @@ static int http_eo_tap;
 static dissector_table_t streaming_content_type_dissector_table;
 
 static dissector_table_t stream_id_content_type_dissector_table;
+
+static GRegex *g_regex_imsi = NULL;
+static GRegex *g_regex_referenceid = NULL;
+static GRegex *g_regex_location = NULL;
 
 #ifdef HAVE_NGHTTP2
 /* The type of reassembly mode contains:
@@ -294,6 +298,7 @@ typedef struct http2_follow_tap_data {
 typedef struct http2_adjust_window {
     int32_t windowSizeDiff;
     uint32_t flow_index;
+    bool overflow;
 } http2_adjust_window_t;
 
 #ifdef HAVE_NGHTTP2
@@ -331,15 +336,14 @@ struct HTTP2Tap {
 static int http2_tap;
 static int http2_follow_tap;
 
-static const uint8_t* st_str_http2 = "HTTP2";
-static const uint8_t* st_str_http2_type = "Type";
+static const char* st_str_http2 = "HTTP2";
+static const char* st_str_http2_type = "Type";
 
 static int st_node_http2 = -1;
 static int st_node_http2_type = -1;
 
 #define PROTO_DATA_KEY_HEADER 0
-#define PROTO_DATA_KEY_WINDOW_SIZE_CONNECTION_BEFORE 1
-#define PROTO_DATA_KEY_WINDOW_SIZE_STREAM_BEFORE 2
+#define PROTO_DATA_KEY_WINDOW_SIZES_BEFORE 1
 
 /* Packet Header */
 static int proto_http2;
@@ -537,6 +541,7 @@ static expert_field ei_http2_header_size;
 static expert_field ei_http2_header_lines;
 static expert_field ei_http2_body_decompression_failed;
 static expert_field ei_http2_reassembly_error;
+static expert_field ei_http2_window_size;
 
 static int ett_http2;
 static int ett_http2_header;
@@ -1205,6 +1210,43 @@ get_fake_header_value(packet_info* pinfo, const char* name, bool the_other_direc
 
     return NULL;
 }
+
+static GRegex *
+get_regex_imsi(void)
+{
+    if (g_regex_imsi == NULL) {
+        g_regex_imsi = g_regex_new(
+            ".*imsi-([0-9]{5,15}).*",
+            G_REGEX_CASELESS | G_REGEX_FIRSTLINE,
+            0,
+            NULL);
+    }
+
+    return g_regex_imsi;
+}
+
+static GRegex *
+get_regex_referenceid(void)
+{
+    if (g_regex_referenceid == NULL) {
+        g_regex_referenceid = g_regex_new (
+            ".*\\/(referenceid|chargingdata|sm-contexts|sm-policies|pdu-sessions)\\/([A-Za-z0-9\\-.]+).*",
+            G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
+    }
+    return g_regex_referenceid;
+}
+
+static GRegex *
+get_regex_location(void)
+{
+    if (g_regex_location == NULL) {
+        g_regex_location = g_regex_new (
+            ".*\\/(chargingdata|sm-contexts|sm-policies|pdu-sessions)\\/([A-Za-z0-9\\-.]+).*",
+            G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
+    }
+    return g_regex_location;
+}
+
 #endif
 
 static void
@@ -1217,6 +1259,23 @@ http2_init_protocol(void)
 static void
 http2_cleanup_protocol(void) {
     g_hash_table_destroy(streamid_hash);
+}
+
+static void
+http2_shutdown(void)
+{
+    if (g_regex_imsi != NULL) {
+        g_regex_unref(g_regex_imsi);
+        g_regex_imsi = NULL;
+    }
+    if (g_regex_referenceid != NULL) {
+        g_regex_unref(g_regex_referenceid);
+        g_regex_referenceid = NULL;
+    }
+    if (g_regex_location != NULL) {
+        g_regex_unref(g_regex_location);
+        g_regex_location = NULL;
+    }
 }
 
 static dissector_handle_t http2_handle;
@@ -1540,24 +1599,24 @@ http2_set_stream_imsi(packet_info *pinfo, char* imsi)
         return;
     }
 
-    stream_info->imsi = imsi;
+    stream_info->imsi = wmem_strdup(wmem_file_scope(), imsi);
 }
 
-void http2_add_referenceid_imsi(char* referenceid, const char* imsi)
+void http2_add_notifyuri_imsi(char* notifyuri, const char* imsi)
 {
     if(http2_3gpp_session) {
-        wmem_map_insert(http2_referenceid_imsi,
-                        wmem_strdup(wmem_file_scope(), referenceid),
+        wmem_map_insert(http2_notifyuri_imsi,
+                        wmem_strdup(wmem_file_scope(), notifyuri),
                         wmem_strdup(wmem_file_scope(), imsi));
     }
 }
 
-char*
-http2_get_imsi_from_referenceid(const char* referenceid)
+static char*
+http2_get_imsi_from_notifyuri(const char* notifyuri)
 {
     char *imsi = NULL;
     if(http2_3gpp_session) {
-        imsi = (char *)wmem_map_lookup(http2_referenceid_imsi, referenceid);
+        imsi = (char *)wmem_map_lookup(http2_notifyuri_imsi,notifyuri);
     }
     return imsi;
 }
@@ -1572,7 +1631,7 @@ http2_add_location_imsi(char* location, const char* imsi)
     }
 }
 
-static char*
+char*
 http2_get_imsi_from_location(const char* location)
 {
     char *imsi = NULL;
@@ -1608,13 +1667,13 @@ http2_get_stream_imsi(packet_info *pinfo)
     if(stream_info->imsi && (strcmp(stream_info->imsi, "") != 0)) {
         imsi = stream_info->imsi;
     }
-    else if (stream_info->referenceid && (strcmp(stream_info->referenceid, "") != 0)) {
-        imsi = http2_get_imsi_from_referenceid(stream_info->referenceid);
 
-        /* Will try to look up match between path referenceid and location ID */
-        if(!imsi) {
-           imsi = http2_get_imsi_from_location(stream_info->referenceid);
-        }
+    if(!imsi && stream_info->referenceid && (strcmp(stream_info->referenceid, "") != 0)) {
+        imsi = http2_get_imsi_from_location(stream_info->referenceid);
+    }
+
+    if(!imsi && stream_info->path && (strcmp(stream_info->path, "") != 0)) {
+        imsi = http2_get_imsi_from_notifyuri(stream_info->path);
     }
     return imsi;
 }
@@ -1655,13 +1714,13 @@ http2_set_stream_imsi(packet_info *pinfo _U_, char* imsi _U_)
     return;
 }
 
-void http2_add_referenceid_imsi(char* referenceid _U_, const char* imsi _U_)
+void http2_add_notifyuri_imsi(char* notifyuri _U_, const char* imsi _U_)
 {
     return;
 }
 
 char*
-http2_get_imsi_from_referenceid(const char* referenceid _U_)
+http2_get_imsi_from_notifyuri(const char* notifyuri _U_)
 {
     return NULL;
 }
@@ -2143,10 +2202,10 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
         if(http2_3gpp_session) {
             /* 3GPP Supi look up */
             /* If no Supi found the try look in referenceId mapping */
+            GRegex* regex_imsi = get_regex_imsi();
+            GRegex* regex_referenceid = get_regex_referenceid();
             GMatchInfo *match_info_imsi;
             GMatchInfo *match_info_referenceid;
-            static GRegex *regex_imsi = NULL;
-            static GRegex *regex_referenceid = NULL;
             char *matched_imsi = NULL;
             char *matched_referenceid = NULL;
 
@@ -2157,16 +2216,6 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
             * We are interested in IMSI and will be formatted as follows:
             *   Pattern: '^imsi-[0-9]{5,15}$'
             */
-            if (regex_imsi == NULL) {
-                regex_imsi = g_regex_new (
-                    ".*imsi-([0-9]{5,15}).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
-            if (regex_referenceid == NULL) {
-                regex_referenceid = g_regex_new (
-                    ".*\\/(referenceid|chargingdata|sm-contexts|sm-policies|pdu-sessions)\\/([A-Za-z0-9\\-.]+).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
 
             g_regex_match(regex_imsi, stream_info->path, 0, &match_info_imsi);
             g_regex_match(regex_referenceid, stream_info->path, 0, &match_info_referenceid);
@@ -2174,16 +2223,18 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
             if (g_match_info_matches(match_info_imsi)) {
                 matched_imsi = g_match_info_fetch(match_info_imsi, 1); //will be empty string if imsi is not in supi
                 if (matched_imsi && (strcmp(matched_imsi, "") != 0)) {
-                    stream_info->imsi = matched_imsi;
+                    stream_info->imsi = wmem_strdup(wmem_file_scope(), matched_imsi);
                 }
+                g_free(matched_imsi);
             } else if (g_match_info_matches(match_info_referenceid)) {
                 matched_referenceid = g_match_info_fetch(match_info_referenceid, 2); //will be empty string if referenceid is not found
                 if (matched_referenceid && (strcmp(matched_referenceid, "") != 0)) {
-                    stream_info->referenceid = matched_referenceid;
+                    stream_info->referenceid = wmem_strdup(wmem_file_scope(), matched_referenceid);
                 }
+                g_free(matched_referenceid);
             }
-            g_regex_unref(regex_imsi);
-            g_regex_unref(regex_referenceid);
+            g_match_info_free(match_info_imsi);
+            g_match_info_free(match_info_referenceid);
         }
     }
 
@@ -2192,15 +2243,9 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
 
         if(http2_3gpp_session && stream_info->imsi) {
             /* Try lookup location mapping */
+            GRegex* regex_location = get_regex_location();
             GMatchInfo *match_info_location;
-            static GRegex *regex_location = NULL;
             char *matched_location = NULL;
-
-            if (regex_location == NULL) {
-                regex_location = g_regex_new (
-                    ".*\\/(chargingdata|sm-policies|pdu-sessions)\\/([A-Za-z0-9\\-.]+).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
 
             g_regex_match(regex_location, stream_info->location, 0, &match_info_location);
 
@@ -2209,8 +2254,9 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
                 if (matched_location && (strcmp(matched_location, "") != 0)) {
                     http2_add_location_imsi(matched_location, stream_info->imsi);
                 }
+                g_free(matched_location);
             }
-            g_regex_unref(regex_location);
+            g_match_info_free(match_info_location);
         }
     }
 
@@ -2220,10 +2266,10 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
         if(http2_3gpp_session) {
             /* 3GPP Supi look up */
             /* If no Supi found the try look in referenceId mapping */
+            GRegex* regex_imsi = get_regex_imsi();
+            GRegex* regex_referenceid = get_regex_referenceid();
             GMatchInfo *match_info_imsi;
             GMatchInfo *match_info_referenceid;
-            static GRegex *regex_imsi = NULL;
-            static GRegex *regex_referenceid = NULL;
             char *matched_imsi = NULL;
             char *matched_referenceid = NULL;
 
@@ -2234,33 +2280,24 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
             * We are interested in IMSI and will be formatted as follows:
             *   Pattern: '^imsi-[0-9]{5,15}$'
             */
-            if (regex_imsi == NULL) {
-                regex_imsi = g_regex_new (
-                    ".*imsi-([0-9]{5,15}).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
-            if (regex_referenceid == NULL) {
-                regex_referenceid = g_regex_new (
-                    ".*\\/(referenceid|chargingdata|sm-contexts|sm-policies|pdu-sessions)\\/([A-Za-z0-9\\-.]+).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
-
             g_regex_match(regex_imsi, status, 0, &match_info_imsi);
             g_regex_match(regex_referenceid, status, 0, &match_info_referenceid);
 
             if (g_match_info_matches(match_info_imsi)) {
                 matched_imsi = g_match_info_fetch(match_info_imsi, 1); //will be empty string if imsi is not in supi
                 if (matched_imsi && (strcmp(matched_imsi, "") != 0)) {
-                    stream_info->imsi = matched_imsi;
+                    stream_info->imsi = wmem_strdup(wmem_file_scope(), matched_imsi);
                 }
+                g_free(matched_imsi);
             } else if (g_match_info_matches(match_info_referenceid)) {
                 matched_referenceid = g_match_info_fetch(match_info_referenceid, 2); //will be empty string if referenceid is not found
                 if (matched_referenceid && (strcmp(matched_referenceid, "") != 0)) {
-                    stream_info->referenceid = matched_referenceid;
+                    stream_info->referenceid = wmem_strdup(wmem_file_scope(), matched_referenceid);
                 }
+                g_free(matched_referenceid);
             }
-            g_regex_unref(regex_imsi);
-            g_regex_unref(regex_referenceid);
+            g_match_info_free(match_info_imsi);
+            g_match_info_free(match_info_referenceid);
         }
     }
 
@@ -2269,8 +2306,8 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
 
         if(http2_3gpp_session) {
             /* 3GPP Supi look up */
+            GRegex* regex_imsi = get_regex_imsi();
             GMatchInfo *match_info_imsi;
-            static GRegex *regex_imsi = NULL;
             char *matched_imsi = NULL;
 
             /* 3GPP TS 29.571
@@ -2280,21 +2317,17 @@ populate_http_header_tracking(tvbuff_t *tvb, packet_info *pinfo, http2_session_t
             * We are interested in IMSI and will be formatted as follows:
             *   Pattern: '^imsi-[0-9]{5,15}$'
             */
-            if (regex_imsi == NULL) {
-                regex_imsi = g_regex_new (
-                    ".*imsi-([0-9]{5,15}).*",
-                    G_REGEX_CASELESS | G_REGEX_FIRSTLINE, 0, NULL);
-            }
 
             g_regex_match(regex_imsi, correlation_info, 0, &match_info_imsi);
 
             if (g_match_info_matches(match_info_imsi)) {
                 matched_imsi = g_match_info_fetch(match_info_imsi, 1); //will be empty string if imsi is not in supi
                 if (matched_imsi && (strcmp(matched_imsi, "") != 0)) {
-                    stream_info->imsi = matched_imsi;
+                    stream_info->imsi = wmem_strdup(wmem_file_scope(), matched_imsi);
                 }
+                g_free(matched_imsi);
             }
-            g_regex_unref(regex_imsi);
+            g_match_info_free(match_info_imsi);
         }
     }
 
@@ -2417,13 +2450,13 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
     proto_item *header, *ti, *ti_named_field;
     uint32_t header_name_length;
     uint32_t header_value_length;
-    const uint8_t *header_name;
-    const uint8_t *header_value;
-    int hoffset = 0;
+    const char *header_name;
+    const char *header_value;
+    unsigned hoffset = 0;
     nghttp2_hd_inflater *hd_inflater;
     tvbuff_t *header_tvb = NULL;
     int rv;
-    int header_len = 0;
+    unsigned header_len = 0;
     int final;
     uint32_t flow_index;
     http2_header_data_t *header_data;
@@ -2521,11 +2554,11 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
                    to get length in 4 bytes, we have to copy it to
                    uint32_t. */
                 len = (uint32_t)nv.namelen;
-                phtonu32(&http2_header_pstr[0], len);
+                phtonu32((uint8_t*)&http2_header_pstr[0], len);
                 memcpy(&http2_header_pstr[4], nv.name, nv.namelen);
 
                 len = (uint32_t)nv.valuelen;
-                phtonu32(&http2_header_pstr[4 + nv.namelen], len);
+                phtonu32((uint8_t*)&http2_header_pstr[4 + nv.namelen], len);
                 memcpy(&http2_header_pstr[4 + nv.namelen + 4], nv.value, nv.valuelen);
 
                 cached_pstr = (char *)wmem_map_lookup(http2_hdrcache_map, http2_header_pstr);
@@ -2600,7 +2633,7 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
         header_len += in->table.data.datalen;
 
         /* Now setup the tvb buffer to have the new data */
-        next_tvb = tvb_new_child_real_data(tvb, in->table.data.data, in->table.data.datalen, in->table.data.datalen);
+        next_tvb = tvb_new_child_real_data(tvb, (uint8_t*)in->table.data.data, in->table.data.datalen, in->table.data.datalen);
         if (!header_tvb) {
             header_tvb = tvb_new_composite();
         }
@@ -2661,7 +2694,7 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
         hoffset += 4;
 
         /* Add header name. */
-        proto_tree_add_item_ret_string(header_tree, hf_http2_header_name, header_tvb, hoffset, header_name_length, ENC_ASCII|ENC_NA, pinfo->pool, &header_name);
+        proto_tree_add_item_ret_string(header_tree, hf_http2_header_name, header_tvb, hoffset, header_name_length, ENC_ASCII|ENC_NA, pinfo->pool, (const uint8_t**)&header_name);
         hoffset += header_name_length;
 
         /* header value length */
@@ -2669,14 +2702,14 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
         hoffset += 4;
 
         /* Add header value. */
-        proto_tree_add_item_ret_string(header_tree, hf_http2_header_value, header_tvb, hoffset, header_value_length, ENC_ASCII|ENC_NA, pinfo->pool, &header_value);
+        proto_tree_add_item_ret_string(header_tree, hf_http2_header_value, header_tvb, hoffset, header_value_length, ENC_ASCII|ENC_NA, pinfo->pool, (const uint8_t**)&header_value);
         // check if field is http2 header https://tools.ietf.org/html/rfc7541#appendix-A
         ti_named_field = try_add_named_header_field(header_tree, header_tvb, hoffset, header_value_length, header_name, header_value);
 
         /* Add header unescaped. */
         header_unescaped = g_uri_unescape_string(header_value, NULL);
         if (header_unescaped != NULL) {
-            char *header_unescaped_valid = ws_utf8_make_valid(pinfo->pool, header_unescaped, strlen(header_unescaped));
+            char *header_unescaped_valid = (char*)ws_utf8_make_valid(pinfo->pool, (uint8_t*)header_unescaped, strlen(header_unescaped));
             ti = proto_tree_add_string(header_tree, hf_http2_header_unescaped, header_tvb, hoffset, header_value_length, header_unescaped_valid);
             proto_item_set_generated(ti);
             g_free(header_unescaped);
@@ -2742,7 +2775,7 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
 
         wmem_strbuf_append(headers_buf, "\n");
         follow_data->tvb = tvb_new_child_real_data(header_tvb,
-            wmem_strbuf_get_str(headers_buf), (unsigned)wmem_strbuf_get_len(headers_buf),
+            (const uint8_t*)wmem_strbuf_get_str(headers_buf), (unsigned)wmem_strbuf_get_len(headers_buf),
             (int)wmem_strbuf_get_len(headers_buf));
         follow_data->stream_id = h2session->current_stream_id;
 
@@ -2751,7 +2784,7 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, unsigned offset, p
 }
 
 /* If the initial/first HEADERS frame (containing ":method" or ":status" header) of this direction is not received
- * (normally because of starting capturing after a long-lived HTTP2 stream like gRPC streaming call has been establied),
+ * (normally because of starting capturing after a long-lived HTTP2 stream like gRPC streaming call has been established),
  * we initialize the information in direction of the stream with the fake headers of wireshark http2 preferences.
  * In an other situation, some http2 headers are unable to be parse in current HEADERS frame because previous HEADERS
  * frames were not captured that causing HPACK index table not completed. Fake headers can also be used in this situation.
@@ -2848,19 +2881,16 @@ try_init_stream_with_fake_headers(tvbuff_t* tvb, packet_info* pinfo, http2_sessi
 }
 
 static void
-dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvbuff_t *tvb, proto_tree *http2_tree, http2_stream_info_t *stream_info) {
+dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvbuff_t *tvb, packet_info *pinfo, proto_tree *http2_tree, http2_stream_info_t *stream_info) {
     /* Add Associate IMSI */
     if (http2_3gpp_session) {
+        char *imsi = NULL;
         if(stream_info->imsi && (strcmp(stream_info->imsi, "") != 0)) {
-            add_assoc_imsi_item(tvb, http2_tree, stream_info->imsi);
-        } else if (stream_info->referenceid && (strcmp(stream_info->referenceid, "") != 0)) {
-            char *imsi = NULL;
-            if((imsi = http2_get_imsi_from_referenceid(stream_info->referenceid))) {
-                add_assoc_imsi_item(tvb, http2_tree, imsi);
-            /* Will try to look up match between path referenceid and location ID */
-            } else if((imsi = http2_get_imsi_from_location(stream_info->referenceid))) {
-                add_assoc_imsi_item(tvb, http2_tree, imsi);
-            }
+            add_assoc_imsi_item(tvb, pinfo, http2_tree, stream_info->imsi);
+        } else if (stream_info->referenceid && (strcmp(stream_info->referenceid, "") != 0) && (imsi = http2_get_imsi_from_location(stream_info->referenceid))) {
+            add_assoc_imsi_item(tvb, pinfo, http2_tree, imsi);
+        } else if (stream_info->path && (strcmp(stream_info->path, "") != 0) && (imsi = http2_get_imsi_from_notifyuri(stream_info->path))) {
+            add_assoc_imsi_item(tvb, pinfo, http2_tree, imsi);
         }
     }
 }
@@ -3132,8 +3162,7 @@ dissect_frame_prio(tvbuff_t *tvb, proto_tree *http2_tree, unsigned offset, uint8
         proto_tree_add_item(http2_tree, hf_http2_excl_dependency, tvb, offset, 4, ENC_BIG_ENDIAN);
         proto_tree_add_item(http2_tree, hf_http2_stream_dependency, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
-        proto_tree_add_item(http2_tree, hf_http2_weight, tvb, offset, 1, ENC_BIG_ENDIAN);
-        weight = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(http2_tree, hf_http2_weight, tvb, offset, 1, ENC_BIG_ENDIAN, &weight);
         /* 6.2: Weight:  An 8-bit weight for the stream; Add one to the value to obtain a weight between 1 and 256 */
         ti = proto_tree_add_uint(http2_tree, hf_http2_weight_real, tvb, offset, 1, weight+1);
         proto_item_set_generated(ti);
@@ -3205,7 +3234,7 @@ get_body_uncompression_info(packet_info *pinfo, http2_session_t* h2session)
 /* Try to dissect reassembled http2.data.data according to content_type. */
 static void
 dissect_body_data(proto_tree *tree, packet_info *pinfo, http2_session_t* h2session, tvbuff_t *tvb,
-                  const int start, int length, const unsigned encoding, bool streaming_mode)
+                  const unsigned start, unsigned length, const unsigned encoding, bool streaming_mode)
 {
     http2_data_stream_body_info_t *body_info = get_data_stream_body_info(pinfo, h2session);
     http2_stream_info_t *stream_info = get_stream_info(pinfo, h2session, false);
@@ -3252,13 +3281,15 @@ dissect_body_data(proto_tree *tree, packet_info *pinfo, http2_session_t* h2sessi
             /* Try heuristics */
             /* Check for possible boundary string */
             if (tvb_strneql(data_tvb, 0, "--", 2) == 0) {
-                int next_offset;
-                int boundary_len = tvb_find_line_end(data_tvb, 0, -1, &next_offset, true);
+                unsigned next_offset;
+                unsigned boundary_len;
+                tvb_find_line_end_remaining(data_tvb, 0, &boundary_len , &next_offset);
                 if ((boundary_len > 4) && (boundary_len < 70)){
                     boundary_len = boundary_len - 2; /* ignore ending CRLF*/
                     /* We have a potential boundary string */
-                    uint8_t *boundary = tvb_get_string_enc(pinfo->pool, data_tvb, 2, boundary_len, ENC_ASCII | ENC_NA);
-                    if (tvb_strneql(data_tvb, (length - 4) - boundary_len, boundary, boundary_len) == 0) {
+                    const char *boundary = (char*)tvb_get_string_enc(pinfo->pool, data_tvb, 2, boundary_len, ENC_ASCII | ENC_NA);
+                    /* Check for cases where close-delimiter is followed by CRLF or not */
+                    if ((tvb_strneql(data_tvb, (length - 4) - boundary_len, boundary, boundary_len) == 0) || (tvb_strneql(data_tvb, (length - 2) - boundary_len, boundary, boundary_len) == 0)) {
                         /* We have multipart/mixed */
                         /* Populate the content type so we can dissect the body later */
                         body_info->content_type = wmem_strndup(wmem_file_scope(), "multipart/mixed", 15);
@@ -3286,7 +3317,7 @@ dissect_body_data(proto_tree *tree, packet_info *pinfo, http2_session_t* h2sessi
              *  %x0D                ; Carriage return
              * )
              */
-            int offset = 0;
+            unsigned offset = 0;
             offset = tvb_skip_wsp(data_tvb, 0, length);
             uint8_t oct = tvb_get_uint8(data_tvb, offset);
             if ((oct == 0x5b) || (oct == 0x7b)) {
@@ -3316,7 +3347,7 @@ dissect_http2_data_full_body(tvbuff_t *tvb, packet_info *pinfo, http2_session_t*
         return;
     }
 
-    int datalen = tvb_reported_length(tvb);
+    unsigned datalen = tvb_reported_length(tvb);
 
     enum body_uncompression uncompression = get_body_uncompression_info(pinfo, h2session);
     if (uncompression != BODY_UNCOMPRESSION_NONE) {
@@ -3596,7 +3627,7 @@ check_reassembly_completion_status(tvbuff_t* tvb, packet_info* pinfo, proto_tree
  * tell how many more bytes it will need, it should set pinfo->desegment_len to additional bytes required for parsing
  * message head or just DESEGMENT_ONE_MORE_SEGMENT. It will then be called again as soon as more data becomes available.
  * Please refer to comments of the declaration of reassemble_streaming_data_and_call_subdissector() function in
- * 'epan/reassemble.h' for more requirments about subdissectors.
+ * 'epan/reassemble.h' for more requirements about subdissectors.
  */
 static void
 reassemble_http2_data_according_to_subdissector(tvbuff_t* tvb, packet_info* pinfo, http2_session_t* http2_session,
@@ -3712,7 +3743,7 @@ get_real_header_value(packet_info* pinfo, const char* name, bool the_other_direc
                 value_len = pntohu32(data + 4 + name_len);
                 if (4 + name_len + 4 + value_len == hdr->table.data.datalen) {
                     /* return value */
-                    return get_ascii_string(pinfo->pool, data + 4 + name_len + 4, value_len);
+                    return (const char*)get_ascii_string(pinfo->pool, (uint8_t*)(data + 4 + name_len + 4), value_len);
                 }
                 else {
                     return NULL; /* unexpected error */
@@ -3752,43 +3783,101 @@ http2_get_header_value(packet_info *pinfo _U_, const char* name _U_, bool the_ot
 }
 #endif
 
+typedef struct {
+    int32_t connection_window_size;
+    int32_t stream_window_size;
+} packet_window_sizes;
+
+typedef struct {
+    wmem_array_t* sizes;
+    unsigned index;
+} packet_window_state;
+
 /* Increment or decrement the accumulated connection and/or stream window
  * sizes based on the flow direction, stream ID and increaseWindow parameter.
  * In other words, if increaseWindow is true, then we're processing a
- * WINDOW_UPDATE frame; otherwise, we're processing a DATA frame.
+ * WINDOW_UPDATE frame; otherwise, we're processing a DATA frame. (Window
+ * size changes from a SETTINGS frame are handled in adjust_existing_window.)
  */
 static void
-adjust_window_size(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_session, proto_tree *http2_tree, int32_t adjustment, bool increaseWindow)
+adjust_window_size(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_session, proto_tree *http2_tree, uint32_t adjustment, bool increaseWindow)
 {
+    proto_item *ti;
     uint32_t flow_index = select_http2_flow_index(pinfo, http2_session);
-    int32_t finalAdjustment = ((increaseWindow ? 1 : -1) * adjustment);
+    /* This SHOULD NOT overflow because the adjustment value is a 31-bit
+     * unsigned integer. */
+    int32_t finalAdjustment = ((increaseWindow ? 1 : -1) * (int32_t)adjustment);
 
     if (increaseWindow) {
         /* The WINDOW_UPDATE comes in for the other direction */
         flow_index ^= 1;
     }
 
+    /* "The sender MUST NOT send a flow-controlled frame with a length that
+     * exceeds the space available in either of the flow-control windows...
+     * A sender MUST NOT allow a flow-control window to exceed 2^31-1 octets."
+     * https://datatracker.ietf.org/doc/html/rfc9113#section-6.9.1
+     * "A sender MUST track the negative flow-control window [from a SETTINGS
+     * frame with SETTINGS_INITIAL_WINDOW_SIZE] and MUST NOT send new
+     * flow-controlled frames until.. the flow-control window... become[s]
+     * positive."
+     * https://datatracker.ietf.org/doc/html/rfc9113#section-6.9.2
+     */
+
+    /* There may be multiple passes, so we must use proto_data to keep state. */
+    packet_window_state* window_state = p_get_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZES_BEFORE);
+    if (!window_state) {
+        window_state = wmem_new0(wmem_file_scope(), packet_window_state);
+        window_state->sizes = wmem_array_new(wmem_file_scope(), sizeof(packet_window_sizes));
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZES_BEFORE, window_state);
+    }
+    if (PINFO_FD_VISITED(pinfo)) {
+        unsigned max = wmem_array_get_count(window_state->sizes);
+        if (max == 0) {
+            return;
+        }
+        if (window_state->index == max) {
+            window_state->index = 0;
+        }
+    } else {
+        static const packet_window_sizes empty = {0};
+        wmem_array_append(window_state->sizes, &empty, 1);
+    }
+    packet_window_sizes* window_sizes_before = wmem_array_index(window_state->sizes, window_state->index);
+    window_state->index++;
+
     /* Always decrease the connection window after sending data,
      * but only increase the connection window for a WINDOW_UPDATE on stream 0 (the connection). */
     if (!increaseWindow || http2_session->current_stream_id == 0) {
-        int32_t* window_size_connection_before = p_get_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZE_CONNECTION_BEFORE);
         int32_t window_size_connection_after;
+        bool window_size_overflow = false;
 
-        if (!window_size_connection_before) {
-            /* There may be multiple passes, so we must use proto_data to keep state */
-            window_size_connection_before = wmem_new0(wmem_file_scope(), int32_t);
-            (*window_size_connection_before) = http2_session->current_connection_window_size[flow_index];
-            http2_session->current_connection_window_size[flow_index] += finalAdjustment;
-            p_add_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZE_CONNECTION_BEFORE, window_size_connection_before);
+        if (!PINFO_FD_VISITED(pinfo)) {
+            window_sizes_before->connection_window_size = http2_session->current_connection_window_size[flow_index];
+            if (ckd_add(&http2_session->current_connection_window_size[flow_index], http2_session->current_connection_window_size[flow_index], finalAdjustment)) {
+                /* Overflow in the negative direction is unlikely, but check. */
+                http2_session->current_connection_window_size[flow_index] = increaseWindow ? INT32_MAX : INT32_MIN;
+            }
         }
 
         proto_item_set_generated(proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_connection_before,
-                                                    tvb, 0, 0, (*window_size_connection_before)));
+                                                    tvb, 0, 0, window_sizes_before->connection_window_size));
 
-        window_size_connection_after = (*window_size_connection_before) + finalAdjustment;
+        if (ckd_add(&window_size_connection_after, window_sizes_before->connection_window_size, finalAdjustment)) {
+            window_size_connection_after = increaseWindow ? INT32_MAX : INT32_MIN;
+            window_size_overflow = true;
+        }
 
-        proto_item_set_generated(proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_connection_after,
-                                                    tvb, 0, 0, window_size_connection_after));
+        ti = proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_connection_after,
+                                                    tvb, 0, 0, window_size_connection_after);
+
+        proto_item_set_generated(ti);
+
+        if (window_size_overflow) {
+            expert_add_info(pinfo, ti, &ei_http2_window_size);
+        } else if (window_size_connection_after < 0) {
+            expert_add_info_format(pinfo, ti, &ei_http2_window_size, "Flow-controlled frame received with length that exceeds the calculated connection window size");
+        }
     }
 
 #ifdef HAVE_NGHTTP2
@@ -3796,24 +3885,33 @@ adjust_window_size(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_ses
      * but only increase the stream window for a WINDOW_UPDATE on stream > 0 (not the connection). */
     if (!increaseWindow || http2_session->current_stream_id > 0) {
         http2_stream_info_t *http2_stream_info = get_stream_info(pinfo, http2_session, increaseWindow);
-        int32_t* window_size_stream_before = p_get_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZE_STREAM_BEFORE);
         int32_t window_size_stream_after;
+        bool window_size_overflow = false;
 
-        if (!window_size_stream_before) {
-            /* There may be multiple passes, so we must use proto_data to keep state */
-            window_size_stream_before = wmem_new0(wmem_file_scope(), int32_t);
-            (*window_size_stream_before) = http2_stream_info->oneway_stream_info[flow_index].current_window_size;
-            http2_stream_info->oneway_stream_info[flow_index].current_window_size += finalAdjustment;
-            p_add_proto_data(wmem_file_scope(), pinfo, proto_http2, PROTO_DATA_KEY_WINDOW_SIZE_STREAM_BEFORE, window_size_stream_before);
+        if (!PINFO_FD_VISITED(pinfo)) {
+            window_sizes_before->stream_window_size = http2_stream_info->oneway_stream_info[flow_index].current_window_size;
+            if (ckd_add(&http2_stream_info->oneway_stream_info[flow_index].current_window_size, http2_stream_info->oneway_stream_info[flow_index].current_window_size, finalAdjustment)) {
+                http2_session->current_connection_window_size[flow_index] = increaseWindow ? INT32_MAX : INT32_MIN;
+            }
         }
 
         proto_item_set_generated(proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_stream_before, tvb, 0, 0,
-                                                    (*window_size_stream_before)));
+                                                    window_sizes_before->stream_window_size));
 
-        window_size_stream_after = (*window_size_stream_before) + finalAdjustment;
+        if (ckd_add(&window_size_stream_after, window_sizes_before->stream_window_size, finalAdjustment)) {
+            window_size_stream_after = increaseWindow ? INT32_MAX : INT32_MIN;
+            window_size_overflow = true;
+        }
 
-        proto_item_set_generated(proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_stream_after, tvb, 0, 0,
-                                                    window_size_stream_after));
+        ti = proto_tree_add_int(http2_tree, hf_http2_calculated_window_size_stream_after, tvb, 0, 0,
+                                                    window_size_stream_after);
+
+        proto_item_set_generated(ti);
+        if (window_size_overflow) {
+            expert_add_info(pinfo, ti, &ei_http2_window_size);
+        } else if (window_size_stream_after < 0) {
+            expert_add_info_format(pinfo, ti, &ei_http2_window_size, "Flow-controlled frame received with length that exceeds the calculated stream window size");
+        }
     }
 #endif
 }
@@ -3827,7 +3925,7 @@ dissect_http2_data(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_ses
     int datalen;
 
     offset = dissect_frame_padding(tvb, &padding, http2_tree, offset, flags);
-    datalen = tvb_reported_length_remaining(tvb, offset) - padding;
+    datalen = tvb_reported_length_remaining(tvb, offset + padding);
 
     dissect_http2_data_body(tvb_new_subset_length(tvb, offset, datalen), pinfo, http2_session, http2_tree, 0, flags, datalen);
 
@@ -3838,7 +3936,7 @@ dissect_http2_data(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_ses
         offset += padding;
     }
 
-    adjust_window_size(tvb, pinfo, http2_session, http2_tree, (int32_t)datalen, false);
+    adjust_window_size(tvb, pinfo, http2_session, http2_tree, (uint32_t)datalen, false);
 
     return offset;
 }
@@ -3973,11 +4071,21 @@ dissect_http2_rst_stream(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *http
 
 #ifdef HAVE_NGHTTP2
 static void
-adjust_existing_window(void *key _U_, void *value, void *userData _U_)
+adjust_existing_window(void *key _U_, void *value, void *userData)
 {
     http2_stream_info_t *stream_info = (http2_stream_info_t *)value;
     http2_adjust_window_t *adjustWindow = (http2_adjust_window_t *)userData;
-    stream_info->oneway_stream_info[adjustWindow->flow_index].current_window_size += adjustWindow->windowSizeDiff;
+    /* "A change to SETTINGS_INITIAL_WINDOW_SIZE can cause the available space
+     * in a flow-control window to become negative," so do not add an expert
+     * info here for becoming negative, but do later if a flow-controlled frame
+     * is sent before the calculated window becomes positive.
+     * https://datatracker.ietf.org/doc/html/rfc9113#section-6.9.2
+     *
+     * This can overflow in extremely unusual situations.
+     */
+    if (ckd_add(&stream_info->oneway_stream_info[adjustWindow->flow_index].current_window_size, stream_info->oneway_stream_info[adjustWindow->flow_index].current_window_size, adjustWindow->windowSizeDiff)) {
+        adjustWindow->overflow = true;
+    }
 }
 #endif
 
@@ -4035,8 +4143,20 @@ dissect_http2_settings(tvbuff_t* tvb, packet_info* pinfo _U_, http2_session_t* h
             case HTTP2_SETTINGS_INITIAL_WINDOW_SIZE:
                 {
                     uint32_t newInitialWindowSize;
+                    proto_item *ti;
 
-                    proto_tree_add_item_ret_uint(settings_tree, hf_http2_settings_initial_window_size, tvb, offset, 4, ENC_BIG_ENDIAN, &newInitialWindowSize);
+                    ti = proto_tree_add_item_ret_uint(settings_tree, hf_http2_settings_initial_window_size, tvb, offset, 4, ENC_BIG_ENDIAN, &newInitialWindowSize);
+                    if (newInitialWindowSize > INT32_MAX) {
+                        /* The value here explicitly is 32-bits and can exceed
+                         * the maximum value (which is a connection error),
+                         * unlike the WINDOW UPDATE frame where it is a 31-bit
+                         * value with a reserved bit and bitmask.
+                         * https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_INITIAL_WINDOW_SIZE
+                         */
+                        expert_add_info_format(pinfo, ti, &ei_http2_window_size, "Initial window size exceeds maximum size (" G_STRINGIFY(INT32_MAX) ")");
+                        /* Prevent windowSizeDiff from overflowing. */
+                        newInitialWindowSize = INT32_MAX;
+                    }
 
                     if (h2session) {
                         uint32_t flow_index = select_http2_flow_index(pinfo, h2session);
@@ -4064,8 +4184,12 @@ dissect_http2_settings(tvbuff_t* tvb, packet_info* pinfo _U_, http2_session_t* h
 
                                 userData.windowSizeDiff = windowSizeDiff;
                                 userData.flow_index = flow_index;
+                                userData.overflow = false;
 
                                 wmem_map_foreach(h2session->per_stream_info, adjust_existing_window, &userData);
+                                if (userData.overflow) {
+                                    expert_add_info(pinfo, ti, &ei_http2_window_size);
+                                }
                             }
                         }
 #endif
@@ -4188,7 +4312,7 @@ dissect_http2_push_promise(tvbuff_t *tvb, packet_info *pinfo _U_, http2_session_
     }
 
     /* Add Associate IMSI */
-    dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvb, http2_tree, stream_info);
+    dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvb, pinfo, http2_tree, stream_info);
 #endif
 
     offset += headlen;
@@ -4241,12 +4365,20 @@ dissect_http2_goaway(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *http2_tr
 
 /* Window Update */
 static int
-dissect_http2_window_update(tvbuff_t *tvb, packet_info *pinfo _U_, http2_session_t* http2_session, proto_tree *http2_tree, unsigned offset, uint8_t flags _U_)
+dissect_http2_window_update(tvbuff_t *tvb, packet_info *pinfo, http2_session_t* http2_session, proto_tree *http2_tree, unsigned offset, uint8_t flags _U_)
 {
-    int32_t wsi;
+    uint32_t wsi;
+    proto_item *ti;
 
     proto_tree_add_item(http2_tree, hf_http2_window_update_r, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item_ret_uint(http2_tree, hf_http2_window_update_window_size_increment, tvb, offset, 4, ENC_BIG_ENDIAN, &wsi);
+    ti = proto_tree_add_item_ret_uint(http2_tree, hf_http2_window_update_window_size_increment, tvb, offset, 4, ENC_BIG_ENDIAN, &wsi);
+    if (wsi == 0) {
+        /* "A receiver MUST treat the receipt of a WINDOW_UPDATE frame with a
+         * flow-control window increment of 0 as a stream error of type
+         * PROTOCOL_ERROR."
+         * https://datatracker.ietf.org/doc/html/rfc9113#section-6.9 */
+        expert_add_info_format(pinfo, ti, &ei_http2_window_size, "Window increment value of 0");
+    }
     offset += 4;
 
     adjust_window_size(tvb, pinfo, http2_session, http2_tree, wsi, true);
@@ -4435,8 +4567,7 @@ dissect_http2_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     proto_tree_add_item_ret_uint(http2_tree, hf_http2_length, tvb, offset, 3, ENC_BIG_ENDIAN, &length);
     offset += 3;
 
-    proto_tree_add_item(http2_tree, hf_http2_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    type = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint8(http2_tree, hf_http2_type, tvb, offset, 1, ENC_BIG_ENDIAN, &type);
 
     int type_idx;
     const char *type_str = try_val_to_str_idx(type, http2_type_vals, &type_idx);
@@ -4450,8 +4581,7 @@ dissect_http2_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     offset += 1;
 
     proto_tree_add_item(http2_tree, hf_http2_r, tvb, offset, 4, ENC_BIG_ENDIAN);
-    proto_tree_add_item(http2_tree, hf_http2_streamid, tvb, offset, 4, ENC_BIG_ENDIAN);
-    streamid = tvb_get_ntohl(tvb, offset) & MASK_HTTP2_STREAMID;
+    proto_tree_add_item_ret_uint(http2_tree, hf_http2_streamid, tvb, offset, 4, ENC_BIG_ENDIAN, &streamid);
     proto_item_append_text(ti, ": %s, Stream ID: %u, Length %u", type_str, streamid, length);
     offset += 4;
 
@@ -4558,7 +4688,7 @@ dissect_http2_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     http2_stream_info_t *stream_info = get_stream_info_for_id(pinfo, http2_session, false, streamid);
 
     /* Add Associate IMSI */
-    dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvb, http2_tree, stream_info);
+    dissect_http2_add_assoc_imsi_to_tracked_3gpp_session(tvb, pinfo, http2_tree, stream_info);
 #endif
 
     tap_queue_packet(http2_tap, pinfo, http2_stats);
@@ -5270,6 +5400,10 @@ proto_register_http2(void)
         { &ei_http2_reassembly_error,
           { "http2.reassembly_error", PI_UNDECODED, PI_WARN,
             "Reassembly failed", EXPFILL }
+        },
+        { &ei_http2_window_size,
+          { "http2.window_size_exceeded", PI_PROTOCOL, PI_WARN,
+            "Calculated window size exceeded maximum size (" G_STRINGIFY(INT32_MAX) ")", EXPFILL }
         }
     };
 
@@ -5368,7 +5502,17 @@ proto_register_http2(void)
         " within the same stream",
         &http2_3gpp_session);
 
-    http2_referenceid_imsi = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), wmem_str_hash, g_str_equal);
+#if defined(HAVE_ZLIB) || defined(HAVE_ZLIBNG) || defined(HAVE_BROTLI) || defined(HAVE_ZSTD)
+    prefs_register_bool_preference(http2_module, "decompress_body",
+        "Uncompress entity bodies",
+        "Whether to uncompress entity bodies that are compressed "
+        "using \"Content-Encoding: \"",
+        &http2_decompress_body);
+#else
+    prefs_register_obsolete_preference(http2_module, "decompress_body");
+#endif
+
+    http2_notifyuri_imsi = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), wmem_str_hash, g_str_equal);
     http2_location_imsi = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), wmem_str_hash, g_str_equal);
 
     /* Fill hash table with static headers */
@@ -5378,12 +5522,13 @@ proto_register_http2(void)
     static build_valid_func http2_current_stream_values[1] = { http2_current_stream_id_value };
     static decode_as_value_t http2_da_stream_id_values[1] = { {http2_streamid_prompt, 1, http2_current_stream_values} };
     static decode_as_t http2_da_stream_id = { "http2", "http2.streamid", 1, 0, http2_da_stream_id_values, "HTTP2", "Stream ID as",
-                                       decode_as_http2_populate_list, decode_as_default_reset, decode_as_default_change, NULL };
+                                       decode_as_http2_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
     register_decode_as(&http2_da_stream_id);
 #endif
 
     register_init_routine(&http2_init_protocol);
     register_cleanup_routine(&http2_cleanup_protocol);
+    register_shutdown_routine(&http2_shutdown);
 
     http2_handle = register_dissector("http2", dissect_http2, proto_http2);
 

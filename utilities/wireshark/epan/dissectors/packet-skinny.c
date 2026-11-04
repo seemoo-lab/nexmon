@@ -22,7 +22,7 @@
 
 /*
  * Generated automatically Using (from wireshark base directory):
- *   cog.py -D xmlfile=tools/SkinnyProtocolOptimized.xml -d -c -o epan/dissectors/packet-skinny.c epan/dissectors/packet-skinny.c.in
+ *   cog.py -D xmlfile=tools/dissector_generators/SkinnyProtocolOptimized.xml -d -c -o epan/dissectors/packet-skinny.c epan/dissectors/packet-skinny.c.in
  */
 
 /* c-basic-offset: 2; tab-width: 8; indent-tabs-mode: nil
@@ -2219,7 +2219,7 @@ static skinny_info_t pi_arr[MAX_SKINNY_MESSAGES_IN_PACKET];
 static int pi_current;
 static skinny_info_t *si;
 
-dissector_handle_t skinny_handle;
+static dissector_handle_t skinny_handle;
 
 /* Get the length of a single SKINNY PDU */
 static unsigned
@@ -2255,7 +2255,7 @@ dissect_skinny_xml(ptvcursor_t *cursor, int hfindex, packet_info *pinfo, uint32_
 
   item = proto_tree_add_item(tree, hf_skinny_xmlData, tvb, offset, length, ENC_ASCII);
   subtree = proto_item_add_subtree(item, 0);
-  next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, -1);
+  next_tvb = tvb_new_subset_length(tvb, offset, length);
   if (xml_handle != NULL) {
     call_dissector(xml_handle, next_tvb, pinfo, subtree);
   }

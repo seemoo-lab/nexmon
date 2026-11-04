@@ -62,11 +62,11 @@
 #include <epan/packet.h>
 #include <epan/tfs.h>
 #include <epan/capture_dissectors.h>
-#include <epan/ipproto.h>
 #include <epan/in_cksum.h>
 #include <epan/expert.h>
 #include <epan/addr_resolv.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 
 #include <wsutil/ws_roundup.h>
 #include <wsutil/ws_padding_to.h>
@@ -78,6 +78,9 @@ void proto_reg_handoff_ospf(void);
 
 static dissector_handle_t ospf_handle;
 static capture_dissector_handle_t ospf_cap_handle;
+
+/* Preferences */
+static bool ospf_v3_expect_at = false;
 
 #define OSPF_VERSION_2 2
 #define OSPF_VERSION_3 3
@@ -1411,7 +1414,7 @@ static void dissect_ospf_ls_req(tvbuff_t*, packet_info*, int, proto_tree*, uint8
 static void dissect_ospf_ls_upd(tvbuff_t*, packet_info*, int, proto_tree*, uint8_t, uint16_t, uint8_t);
 static void dissect_ospf_ls_ack(tvbuff_t*, packet_info*, int, proto_tree*, uint8_t, uint16_t, uint8_t);
 static int dissect_ospf_authentication_trailer(tvbuff_t*, int, proto_tree*);
-static void dissect_ospf_lls_data_block(tvbuff_t*, packet_info*, int, proto_tree*, uint8_t);
+static int dissect_ospf_lls_data_block(tvbuff_t*, packet_info*, int, proto_tree*, uint8_t);
 
 /* dissect_ospf_v[23]lsa returns the offset of the next LSA
  * if disassemble_body is set to false (e.g. in LSA ACK
@@ -1504,7 +1507,7 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     uint8_t packet_type;
     uint16_t ospflen;
     vec_t cksum_vec[4];
-    int cksum_vec_len;
+    int cksum_vec_len, has_at_block;
     uint32_t phdr[2];
     uint16_t cksum, computed_cksum;
     unsigned length, reported_length;
@@ -1514,6 +1517,7 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     uint8_t instance_id;
     uint32_t areaid;
     uint8_t address_family = OSPF_AF_6;
+    int offset;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "OSPF");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -1557,14 +1561,12 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_tree_add_item(ospf_header_tree, hf_ospf_header_src_router, tvb, 4, 4, ENC_BIG_ENDIAN);
 
 
-    ti = proto_tree_add_item(ospf_header_tree, hf_ospf_header_area_id, tvb, 8, 4, ENC_BIG_ENDIAN);
-    areaid = tvb_get_ntohl(tvb,8);
+    ti = proto_tree_add_item_ret_ipv4(ospf_header_tree, hf_ospf_header_area_id, tvb, 8, 4, ENC_BIG_ENDIAN, &areaid);
     if(areaid == 0){
         proto_item_append_text(ti, " (Backbone)");
     }
 
-    ti_sum = proto_tree_add_item(ospf_header_tree, hf_ospf_header_checksum, tvb, 12, 2, ENC_BIG_ENDIAN);
-    cksum = tvb_get_ntohs(tvb, 12);
+    ti_sum = proto_tree_add_item_ret_uint16(ospf_header_tree, hf_ospf_header_checksum, tvb, 12, 2, ENC_BIG_ENDIAN, &cksum);
     if(cksum == 0){
         proto_item_append_text(ti_sum, " (None)");
     }
@@ -1608,7 +1610,7 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
             SET_CKSUM_VEC_PTR(cksum_vec[0], (const uint8_t *)pinfo->src.data, pinfo->src.len);
             SET_CKSUM_VEC_PTR(cksum_vec[1], (const uint8_t *)pinfo->dst.data, pinfo->dst.len);
             phdr[0] = g_htonl(ospflen);
-            phdr[1] = g_htonl(IP_PROTO_OSPF);
+            phdr[1] = g_htonl(IP_PROTO_OSPFIGP);
             SET_CKSUM_VEC_PTR(cksum_vec[2], (const uint8_t *)&phdr, 8);
             SET_CKSUM_VEC_TVB(cksum_vec[3], tvb, 0, reported_length);
             cksum_vec_len = 4;
@@ -1660,8 +1662,7 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     case OSPF_VERSION_2:
         /* Authentication and multi-instance is only valid for OSPFv2 */
         proto_tree_add_item(ospf_header_tree, hf_ospf_header_instance_id, tvb, 14, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(ospf_header_tree, hf_ospf_header_auth_type, tvb, 15, 1, ENC_BIG_ENDIAN);
-        auth_type = tvb_get_uint8(tvb, 15);
+        proto_tree_add_item_ret_uint8(ospf_header_tree, hf_ospf_header_auth_type, tvb, 15, 1, ENC_BIG_ENDIAN, &auth_type);
         switch (auth_type) {
         case OSPF_AUTH_NONE:
             proto_tree_add_item(ospf_header_tree, hf_ospf_header_auth_data_none, tvb, 16, 8, ENC_NA);
@@ -1696,8 +1697,7 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     case OSPF_VERSION_3:
         /* Instance ID and "reserved" is OSPFv3-only */
-        proto_tree_add_item(ospf_header_tree, hf_ospf_v3_header_instance_id, tvb, 14, 1, ENC_BIG_ENDIAN);
-        instance_id = tvb_get_uint8(tvb, 14);
+        proto_tree_add_item_ret_uint8(ospf_header_tree, hf_ospf_v3_header_instance_id, tvb, 14, 1, ENC_BIG_ENDIAN, &instance_id);
         /* By default set address_family to OSPF_AF_6 */
         address_family = OSPF_AF_6;
         if(instance_id > 65 && instance_id < 128) {
@@ -1750,15 +1750,30 @@ dissect_ospf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         break;
     }
 
-    /* take care of the LLS data block */
+    offset = ospflen + crypto_len;
+
+    /* Take care of the LLS data block (RFC 5613)
+     * This block can only be present in Hello and DB Description packets.
+     */
     if (ospf_has_lls_block(tvb, ospf_header_length, packet_type, version)) {
-        dissect_ospf_lls_data_block(tvb, pinfo, ospflen + crypto_len, ospf_tree,
+        offset = dissect_ospf_lls_data_block(tvb, pinfo, offset, ospf_tree,
                                     version);
     }
 
-    /* take care of the AT (Authentication Trailer) data block */
-    if (ospf_has_at_block(tvb, ospf_header_length, packet_type, version)) {
-        dissect_ospf_authentication_trailer(tvb, ospflen + crypto_len, ospf_tree);
+    /* Take care of the AT (Authentication Trailer) data block (RFC 7166)
+     * This block can be present in all OSPFv3 packets, but is is only indicated by flags
+     * in Hello and DB Description packets. Because Wireshark does not have a neighbor state DB,
+     * we expect the AT based on a protocol preference if the indicating flags are not present.
+     */
+    has_at_block = ospf_has_at_block(tvb, ospf_header_length, packet_type, version);
+    if (
+        has_at_block || (
+            !has_at_block &&
+            ospf_v3_expect_at &&
+            tvb_reported_length_remaining(tvb, offset)
+        )
+    ) {
+        dissect_ospf_authentication_trailer(tvb, offset, ospf_tree);
     }
 
     return tvb_captured_length(tvb);
@@ -1911,7 +1926,7 @@ dissect_ospfv3_lls_tlv(tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 
-static void
+static int
 dissect_ospf_lls_data_block(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree,
                             uint8_t version)
 {
@@ -1924,7 +1939,7 @@ dissect_ospf_lls_data_block(tvbuff_t *tvb, packet_info *pinfo, int offset, proto
     if (length_remaining < 4) {
         proto_tree_add_expert_format(tree, pinfo, &ei_ospf_lsa_bad_length,
             tvb, offset, length_remaining, "LLS option bit set but data block missing");
-        return;
+        return offset;
     }
 
     ospf_lls_len = tvb_get_ntohs(tvb, offset + 2) * 4;
@@ -1942,6 +1957,8 @@ dissect_ospf_lls_data_block(tvbuff_t *tvb, packet_info *pinfo, int offset, proto
         else
             offset = dissect_ospfv3_lls_tlv (tvb, offset, ospf_lls_data_block_tree);
     }
+
+    return offset;
 }
 
 static int
@@ -2670,8 +2687,7 @@ dissect_ospf_lsa_mpls(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree 
                             proto_tree_add_item(sstlv_tree, hf_ospf_mpls_bandwidth_type, tvb, sstlv_offset, 2, ENC_BIG_ENDIAN);
                             proto_tree_add_item(sstlv_tree, hf_ospf_mpls_length, tvb, sstlv_offset + 2, 2, ENC_BIG_ENDIAN);
                             proto_tree_add_item(sstlv_tree, hf_ospf_mpls_pri, tvb, sstlv_offset + 4, 1, ENC_NA);
-                            action = ((tvb_get_uint8(tvb, sstlv_offset + 8) & 0xF0 )  >> 4);
-                            proto_tree_add_item(sstlv_tree, hf_ospf_mpls_action, tvb, sstlv_offset + 8, 1, ENC_NA);
+                            proto_tree_add_item_ret_uint8(sstlv_tree, hf_ospf_mpls_action, tvb, sstlv_offset + 8, 1, ENC_NA, &action);
                             proto_tree_add_item(sstlv_tree, hf_ospf_mpls_num_labels, tvb, sstlv_offset + 8, 2, ENC_BIG_ENDIAN);
                             proto_tree_add_item(sstlv_tree, hf_ospf_mpls_length, tvb, sstlv_offset + 10, 2, ENC_BIG_ENDIAN);
                             bitmap_length = tvb_get_ntohs(tvb, sstlv_offset + 10);
@@ -2700,8 +2716,7 @@ dissect_ospf_lsa_mpls(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree 
                         proto_tree_add_item(sstlv_tree, hf_ospf_mpls_bandwidth_type, tvb, sstlv_offset, 2, ENC_BIG_ENDIAN);
                         proto_tree_add_item(sstlv_tree, hf_ospf_mpls_length, tvb, sstlv_offset + 2, 2, ENC_BIG_ENDIAN);
                         proto_tree_add_item(sstlv_tree, hf_ospf_mpls_pri, tvb, sstlv_offset + 4, 1, ENC_NA);
-                        action = ((tvb_get_uint8(tvb, sstlv_offset + 8) & 0xF0 )  >> 4);
-                        proto_tree_add_item(sstlv_tree, hf_ospf_mpls_action, tvb, sstlv_offset + 8, 1, ENC_NA);
+                        proto_tree_add_item_ret_uint8(sstlv_tree, hf_ospf_mpls_action, tvb, sstlv_offset + 8, 1, ENC_NA, &action);
                         proto_tree_add_item(sstlv_tree, hf_ospf_mpls_num_labels, tvb, sstlv_offset+8, 2, ENC_BIG_ENDIAN);
                         proto_tree_add_item(sstlv_tree, hf_ospf_mpls_length, tvb, sstlv_offset + 10, 2, ENC_BIG_ENDIAN);
                         bitmap_length = tvb_get_ntohs(tvb, sstlv_offset + 10);
@@ -2828,8 +2843,7 @@ dissect_ospf_lsa_mpls(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree 
                                                "Reserved field should be 0");
                     }
                     proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_delay_min, tvb, stlv_offset+5, 3, ENC_BIG_ENDIAN);
-                    ti = proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+8, 1, ENC_NA);
-                    reserved = tvb_get_uint8(tvb, stlv_offset+8);
+                    ti = proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+8, 1, ENC_NA, &reserved);
                     if (reserved != 0) {
                         expert_add_info(pinfo, ti, &ei_ospf_header_reserved);
                     }
@@ -2844,8 +2858,7 @@ dissect_ospf_lsa_mpls(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree 
                     proto_tree_add_uint_format_value(stlv_tree, hf_ospf_tlv_type, tvb, stlv_offset, 2,
                                         stlv_type, "%u: %s", stlv_type, stlv_name);
                     proto_tree_add_item(stlv_tree, hf_ospf_tlv_length, tvb, stlv_offset+2, 2, ENC_BIG_ENDIAN);
-                    ti = proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+4, 1, ENC_NA);
-                    reserved = tvb_get_uint8(tvb, stlv_offset+4);
+                    ti = proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+4, 1, ENC_NA, &reserved);
                     if (reserved != 0) {
                         expert_add_info(pinfo, ti, &ei_ospf_header_reserved);
                     }
@@ -3032,8 +3045,7 @@ static void dissect_ospf_lsa_grace_tlv (tvbuff_t *tvb, packet_info *pinfo, int o
 
         if(tlv_type == GRACE_TLV_PERIOD)
         {
-            grace_period = tvb_get_ntohl(tvb, offset + 4);
-            proto_tree_add_item(tlv_tree, hf_ospf_grace_period, tvb, offset + 4, tlv_length, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(tlv_tree, hf_ospf_grace_period, tvb, offset + 4, tlv_length, ENC_BIG_ENDIAN, &grace_period);
             proto_item_set_text(tree_item, "Grace Period: %u seconds", grace_period);
         }
         else if(tlv_type == GRACE_TLV_REASON)
@@ -3445,8 +3457,7 @@ dissect_ospf_lsa_ext_prefix(tvbuff_t *tvb, packet_info *pinfo, int offset, proto
                                                      ett_ospf_lsa_epfx_tlv, &ti_tree, "%s TLV", tlv_name);
             proto_tree_add_item(tlv_tree, hf_ospf_ls_epfx_tlv, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(tlv_tree, hf_ospf_tlv_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
-            route_type = tvb_get_uint8(tvb, offset + 4);
-            proto_tree_add_item(tlv_tree, hf_ospf_ls_epfx_route_type, tvb, offset + 4, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint8(tlv_tree, hf_ospf_ls_epfx_route_type, tvb, offset + 4, 1, ENC_BIG_ENDIAN, &route_type);
             proto_tree_add_item_ret_uint(tlv_tree, hf_ospf_prefix_length, tvb, offset + 5, 1, ENC_BIG_ENDIAN, &prefix_length);
             proto_tree_add_item(tlv_tree, hf_ospf_ls_epfx_af, tvb, offset + 6, 1, ENC_BIG_ENDIAN);
             proto_tree_add_bitmask(tlv_tree, tvb, offset + 7, hf_ospf_ls_epfx_flags, ett_ospf_lsa_epfx_flags, bf_ospf_epfx_flags, ENC_BIG_ENDIAN);
@@ -3638,13 +3649,11 @@ dissect_ospf_lsa_app_link_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, int 
             }
             delay_min = tvb_get_uint24(tvb, stlv_offset + 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_delay_min, tvb, stlv_offset+1, 3, ENC_BIG_ENDIAN);
-            ti = proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+4, 1, ENC_NA);
-            reserved = tvb_get_uint8(tvb, stlv_offset+4);
+            ti = proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset+4, 1, ENC_NA, &reserved);
             if (reserved != 0) {
                 expert_add_info(pinfo, ti, &ei_ospf_header_reserved);
             }
-            delay_max = tvb_get_uint24(tvb, stlv_offset + 5, ENC_BIG_ENDIAN);
-            proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_delay_max, tvb, stlv_offset+5, 3, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_link_delay_max, tvb, stlv_offset+5, 3, ENC_BIG_ENDIAN, &delay_max);
             if (ti_tree) {
                 proto_item_append_text(ti_tree, "  (Min/Max Delay: %u/%u usec)", delay_min, delay_max);
             }
@@ -3652,13 +3661,11 @@ dissect_ospf_lsa_app_link_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, int 
 
         case SR_STLV_UNIDIR_DELAY_VARIATION:
             /* 14: Unidirectional Delay Variation (rfc7471) */
-            ti = proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset, 1, ENC_NA);
-            reserved = tvb_get_uint8(tvb, stlv_offset);
+            ti = proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_link_reserved, tvb, stlv_offset, 1, ENC_NA, &reserved);
             if (reserved != 0) {
                 expert_add_info(pinfo, ti, &ei_ospf_header_reserved);
             }
-            delay = tvb_get_uint24(tvb, stlv_offset + 1, ENC_BIG_ENDIAN);
-            proto_tree_add_item(stlv_tree, hf_ospf_ls_unidir_delay_variation, tvb, stlv_offset + 1, 3, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_unidir_delay_variation, tvb, stlv_offset + 1, 3, ENC_BIG_ENDIAN, &delay);
             if (ti_tree) {
                 proto_item_append_text(ti_tree, "  (Variation: %u usec)", delay);
             }
@@ -3666,8 +3673,7 @@ dissect_ospf_lsa_app_link_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, int 
 
         case SR_STLV_ADMIN_GROUP:
             /* 19: Administrative Group (rfc3630) */
-            admin_group = tvb_get_uint32(tvb, stlv_offset, ENC_BIG_ENDIAN);
-            proto_tree_add_item(stlv_tree, hf_ospf_ls_admin_group, tvb, stlv_offset, 4, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_admin_group, tvb, stlv_offset, 4, ENC_BIG_ENDIAN, &admin_group);
             if (ti_tree) {
                 proto_item_append_text(ti_tree, "  (Admin Group: 0x%08x)", admin_group);
             }
@@ -3680,8 +3686,7 @@ dissect_ospf_lsa_app_link_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, int 
 
         case SR_STLV_TE_METRIC:
             /* 22: TE Metric (rfc3630) */
-            te_metric = tvb_get_uint32(tvb, stlv_offset, ENC_BIG_ENDIAN);
-            proto_tree_add_item(stlv_tree, hf_ospf_ls_mpls_te_metric, tvb, stlv_offset, 4, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint(stlv_tree, hf_ospf_ls_mpls_te_metric, tvb, stlv_offset, 4, ENC_BIG_ENDIAN, &te_metric);
             if (ti_tree) {
                 proto_item_append_text(ti_tree, "  (TE Metric: %u)", te_metric);
             }
@@ -3852,10 +3857,8 @@ dissect_ospf_lsa_ext_link(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_t
                     /* Application-Specific Link Attributes Sub-TLV (rfc9492) */
                     local_length = stlv_length;
                     local_offset = stlv_offset + 4;
-                    proto_tree_add_item(stlv_tree, hf_ospf_ls_app_sabm_length, tvb, local_offset, 1, ENC_NA);
-                    sabm_length = tvb_get_uint8(tvb, local_offset);
-                    proto_tree_add_item(stlv_tree, hf_ospf_ls_app_udabm_length, tvb, local_offset + 1, 1, ENC_NA);
-                    udabm_length = tvb_get_uint8(tvb, local_offset + 1);
+                    proto_tree_add_item_ret_uint8(stlv_tree, hf_ospf_ls_app_sabm_length, tvb, local_offset, 1, ENC_NA, &sabm_length);
+                    proto_tree_add_item_ret_uint8(stlv_tree, hf_ospf_ls_app_udabm_length, tvb, local_offset + 1, 1, ENC_NA, &udabm_length);
                     reserved = tvb_get_uint16(tvb, local_offset + 2, ENC_BIG_ENDIAN);
                     ti = proto_tree_add_item(stlv_tree, hf_ospf_header_reserved, tvb, local_offset + 2, 2, ENC_NA);
                     if (reserved != 0) {
@@ -4834,7 +4837,7 @@ proto_register_ospf(void)
          { "Auth Crypt Data Length", "ospf.auth.crypt.data_length", FT_UINT8, BASE_DEC, NULL, 0x0,
            NULL, HFILL }},
         {&hf_ospf_header_auth_crypt_seq_nbr,
-         { "Auth Crypt Sequence Number", "ospf.auth.crypt.seq_nbr", FT_UINT32, BASE_DEC, NULL, 0x0,
+         { "Auth Crypt Sequence Number", "ospf.auth.crypt.seq_nbr", FT_UINT32, BASE_HEX, NULL, 0x0,
            NULL, HFILL }},
         {&hf_ospf_header_auth_crypt_data,
          { "Auth Crypt Data", "ospf.auth.crypt.data", FT_BYTES, BASE_NONE, NULL, 0x0,
@@ -5383,7 +5386,7 @@ proto_register_ospf(void)
         {&hf_ospf_ls_epfx_stlv,
          { "TLV Type", "ospf.tlv.extpfx.subtlv_type", FT_UINT16, BASE_DEC, VALS(ext_pfx_stlv_type_vals), 0x0, NULL, HFILL }},
         {&hf_ospf_ls_epfx_route_type,
-         { "Route Type", "ospf.tlv.extpfx.routetype", FT_UINT16, BASE_DEC, VALS(ext_pfx_tlv_route_vals), 0x0, NULL, HFILL }},
+         { "Route Type", "ospf.tlv.extpfx.routetype", FT_UINT8, BASE_DEC, VALS(ext_pfx_tlv_route_vals), 0x0, NULL, HFILL }},
         {&hf_ospf_ls_epfx_af,
          { "Address Family", "ospf.tlv.extpfx.af", FT_UINT8, BASE_DEC, VALS(ext_pfx_tlv_af_vals), 0x0, NULL, HFILL }},
 
@@ -5693,7 +5696,7 @@ proto_register_ospf(void)
       { &hf_ospf_ls_mpls_bc, { "BC", "ospf.mpls.bc", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_ospf_mpls_minimum_lsp_bandwidth, { "Minimum LSP bandwidth", "ospf.mpls.minimum_lsp_bandwidth", FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_ospf_mpls_sonet_sdh, { "SONET/SDH", "ospf.mpls.sonet.sdh", FT_BOOLEAN, BASE_NONE, TFS(&tfs_arbitrary_standard), 0x0, NULL, HFILL }},
-      { &hf_ospf_oif_signal_type, { "Signal Type", "ospf.oif.signal_type", FT_UINT8, BASE_DEC|BASE_EXT_STRING, VALS_EXT_PTR(&gmpls_sonet_signal_type_str_ext), 0x0, NULL, HFILL }},
+      { &hf_ospf_oif_signal_type, { "Signal Type", "ospf.oif.signal_type", FT_UINT8, BASE_DEC|BASE_EXT_STRING, &gmpls_sonet_signal_type_str_ext, 0x0, NULL, HFILL }},
       { &hf_ospf_tlv_value, { "TLV Value", "ospf.tlv_value", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_ospf_oif_node_id, { "Node ID", "ospf.oif.node_id", FT_IPv4, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_ospf_pad_bytes, { "Pad Bytes", "ospf.pad_bytes", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
@@ -5798,6 +5801,7 @@ proto_register_ospf(void)
     };
 
     expert_module_t* expert_ospf;
+    module_t *module_ospf;
 
     proto_ospf = proto_register_protocol("Open Shortest Path First",
                                          "OSPF", "ospf");
@@ -5805,15 +5809,24 @@ proto_register_ospf(void)
     ospf_cap_handle = register_capture_dissector("ospf", capture_ospf, proto_ospf);
     proto_register_field_array(proto_ospf, ospff_info, array_length(ospff_info));
     proto_register_subtree_array(ett, array_length(ett));
+
     expert_ospf = expert_register_protocol(proto_ospf);
     expert_register_field_array(expert_ospf, ei, array_length(ei));
+
+    module_ospf = prefs_register_protocol(proto_ospf, NULL);
+    prefs_register_bool_preference(module_ospf, "ospfv3_expect_at",
+        "Expect OSPFv3 Authentication Trailer",
+        "The Authentication Trailer is indicated by flags only in OSPFv3 Hello "
+        "and DB Description packets. When this option is enabled, remaining "
+        "bytes at the end of a packet are expected to be an Authentication Trailer.",
+        &ospf_v3_expect_at);
 }
 
 void
 proto_reg_handoff_ospf(void)
 {
-    dissector_add_uint("ip.proto", IP_PROTO_OSPF, ospf_handle);
-    capture_dissector_add_uint("ip.proto", IP_PROTO_OSPF, ospf_cap_handle);
+    dissector_add_uint("ip.proto", IP_PROTO_OSPFIGP, ospf_handle);
+    capture_dissector_add_uint("ip.proto", IP_PROTO_OSPFIGP, ospf_cap_handle);
 }
 
 /*

@@ -16,6 +16,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/strutil.h>
+#include <epan/tfs.h>
 
 #include "packet-tcp.h"
 #include "packet-bt-utp.h"
@@ -88,8 +89,8 @@ static const value_string bittorrent_messages[] = {
    { BITT_FAST_EX_REJECT_REQUEST,       "Reject Request" },
    { BITT_FAST_EX_ALLOWED_FAST,         "Allowed Fast" },
    { BITTORRENT_MESSAGE_EXTENDED,       "Extended" },
-   { AZUREUS_MESSAGE_KEEP_ALIVE,        "Keepalive" },
    { AZUREUS_MESSAGE_HANDSHAKE,         "Azureus Handshake" },
+   { AZUREUS_MESSAGE_KEEP_ALIVE,        "Keepalive" },
    { AZUREUS_MESSAGE_BT_HANDSHAKE,      "Azureus BitTorrent Handshake" },
    { AZUREUS_MESSAGE_PEER_EXCHANGE,     "Azureus Peer Exchange" },
    { AZUREUS_MESSAGE_JPC_HELLO,         "Azureus PeerCache Hello" },
@@ -144,6 +145,13 @@ static int proto_bittorrent;
 static int hf_bittorrent_prot_name_len;
 static int hf_bittorrent_prot_name;
 static int hf_bittorrent_reserved;
+static int hf_bittorrent_extension_azureus_messaging;
+static int hf_bittorrent_extension_ltep;
+static int hf_bittorrent_extension_merkle_torrent;
+static int hf_bittorrent_extension_hybrid_upgrade;
+static int hf_bittorrent_extension_fast;
+static int hf_bittorrent_extension_dht;
+static int hf_bittorrent_extension_unassigned;
 static int hf_bittorrent_sha1_hash;
 static int hf_bittorrent_peer_id;
 static int hf_bittorrent_msg;
@@ -169,6 +177,7 @@ static int hf_bittorrent_continuous_data;
 static int hf_bittorrent_version;
 
 static int ett_bittorrent;
+static int ett_bittorrent_extensions;
 static int ett_bittorrent_msg;
 static int ett_peer_id;
 
@@ -181,7 +190,7 @@ struct client_information {
    const char *name;      /* NULL means array entry terminates the array */
 };
 
-static struct client_information peer_id[] = {
+static const struct client_information peer_id[] = {
    {"-AG",  4, "Ares"},
    {"-A~",  4, "Ares"},
    {"-AR",  4, "Arctic"},
@@ -465,7 +474,7 @@ dissect_bittorrent_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
             for ( i=0 ; amp_messages[i].name ; i++ ) {
                if (strlen(amp_messages[i].name)==typelen &&
-                   tvb_memeql(tvb, offset + BITTORRENT_HEADER_LENGTH + 4,
+                   tvb_strneql(tvb, offset + BITTORRENT_HEADER_LENGTH + 4,
                               amp_messages[i].name, (int)strlen(amp_messages[i].name))==0) {
 
                   prio = tvb_get_uint8(tvb, offset + BITTORRENT_HEADER_LENGTH + 4 + typelen);
@@ -540,12 +549,9 @@ dissect_bittorrent_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    case BITTORRENT_MESSAGE_REQUEST:
    case BITTORRENT_MESSAGE_CANCEL:
    case BITT_FAST_EX_REJECT_REQUEST:
-      piece_index = tvb_get_ntohl(tvb, offset);
-      proto_tree_add_uint(mtree, hf_bittorrent_piece_index, tvb, offset, 4, piece_index); offset += 4;
-      piece_begin = tvb_get_ntohl(tvb, offset);
-      proto_tree_add_uint(mtree, hf_bittorrent_piece_begin, tvb, offset, 4, piece_begin); offset += 4;
-      piece_length = tvb_get_ntohl(tvb, offset);
-      proto_tree_add_uint(mtree, hf_bittorrent_piece_length, tvb, offset, 4, piece_length);
+      proto_tree_add_item_ret_uint(mtree, hf_bittorrent_piece_index, tvb, offset, 4, ENC_BIG_ENDIAN, &piece_index); offset += 4;
+      proto_tree_add_item_ret_uint(mtree, hf_bittorrent_piece_begin, tvb, offset, 4, ENC_BIG_ENDIAN, &piece_begin); offset += 4;
+      proto_tree_add_item_ret_uint(mtree, hf_bittorrent_piece_length, tvb, offset, 4, ENC_BIG_ENDIAN, &piece_length);
       proto_item_append_text(ti, ", Piece (Idx:0x%x,Begin:0x%x,Len:0x%x)", piece_index, piece_begin, piece_length);
 
       col_append_fstr(pinfo->cinfo, COL_INFO, ", Piece (Idx:0x%x,Begin:0x%x,Len:0x%x)", piece_index, piece_begin, piece_length);
@@ -572,8 +578,7 @@ dissect_bittorrent_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    case BITTORRENT_MESSAGE_HAVE:
    case BITT_FAST_EX_SUGGEST_PIECE:
    case BITT_FAST_EX_ALLOWED_FAST:
-      piece_index = tvb_get_ntohl(tvb, offset);
-      proto_tree_add_item(mtree, hf_bittorrent_piece_index, tvb, offset, 4, ENC_BIG_ENDIAN);
+      proto_tree_add_item_ret_uint(mtree, hf_bittorrent_piece_index, tvb, offset, 4, ENC_BIG_ENDIAN, &piece_index);
       proto_item_append_text(ti, ", Piece (Idx:0x%x)", piece_index);
 
       col_append_fstr(pinfo->cinfo, COL_INFO, ", Piece (Idx:0x%x)", piece_index);
@@ -636,7 +641,20 @@ dissect_bittorrent_welcome (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
    proto_tree_add_item(tree, hf_bittorrent_prot_name_len, tvb, offset, 1, ENC_BIG_ENDIAN); offset+=1;
    proto_tree_add_item(tree, hf_bittorrent_prot_name, tvb, offset, 19, ENC_ASCII); offset += 19;
-   proto_tree_add_item(tree, hf_bittorrent_reserved, tvb, offset, 8, ENC_NA); offset += 8;
+
+   static int * const extensions[] = {
+      &hf_bittorrent_extension_azureus_messaging,
+      &hf_bittorrent_extension_ltep,
+      &hf_bittorrent_extension_merkle_torrent,
+      &hf_bittorrent_extension_hybrid_upgrade,
+      &hf_bittorrent_extension_fast,
+      &hf_bittorrent_extension_dht,
+      &hf_bittorrent_extension_unassigned,
+      NULL
+   };
+   proto_tree_add_bitmask_with_flags(tree, tvb, offset, hf_bittorrent_reserved,
+      ett_bittorrent_extensions, extensions, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
+   offset += 8;
 
    proto_tree_add_item(tree, hf_bittorrent_sha1_hash, tvb, offset, 20, ENC_NA);
    offset += 20;
@@ -646,10 +664,10 @@ dissect_bittorrent_welcome (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
       for(i = 0; peer_id[i].name != NULL; ++i)
       {
          if(tvb_memeql(tvb, offset, (const uint8_t*)peer_id[i].id, (int)strlen(peer_id[i].id)) == 0) {
-            version = tvb_get_string_enc(pinfo->pool, tvb, offset + (int)strlen(peer_id[i].id),
+            version = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + (int)strlen(peer_id[i].id),
                                      peer_id[i].ver_len, ENC_ASCII);
             proto_tree_add_string_format(tree, hf_bittorrent_version, tvb, offset, 20, version, "Client is %s v%s",
-                                peer_id[i].name, format_text(pinfo->pool, (unsigned char*)version, peer_id[i].ver_len));
+                                peer_id[i].name, format_text(pinfo->pool, version, peer_id[i].ver_len));
             break;
          }
       }
@@ -735,7 +753,28 @@ proto_register_bittorrent(void)
         { "Protocol Name", "bittorrent.protocol.name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_bittorrent_reserved,
-        { "Reserved Extension Bytes", "bittorrent.reserved", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
+        { "Reserved Extension Bytes", "bittorrent.reserved", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_azureus_messaging,
+        { "Azureus messaging", "bittorrent.extension.azureus_messaging", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x8000000000000000, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_ltep,
+        { "Libtorrent Extension Protocol", "bittorrent.extension.ltep", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x0000000000100000, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_merkle_torrent,
+        { "Merkle torrent", "bittorrent.extension.merkle_torrent", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x0000000000080000, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_hybrid_upgrade,
+        { "Hybrid torrent upgrade", "bittorrent.extension.hybrid_upgrade", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x0000000000000010, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_fast,
+        { "Fast", "bittorrent.extension.fast", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x0000000000000004, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_dht,
+        { "DHT", "bittorrent.extension.dht", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x0000000000000001, NULL, HFILL }
+      },
+      { &hf_bittorrent_extension_unassigned,
+        { "Unassigned", "bittorrent.extension.unassigned", FT_BOOLEAN, 64, TFS(&tfs_set_notset), 0x7fffffffffe7ffea, NULL, HFILL }
       },
       { &hf_bittorrent_sha1_hash,
         { "SHA1 Hash of info dictionary", "bittorrent.info_hash", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
@@ -750,7 +789,7 @@ proto_register_bittorrent(void)
         { "Message Length", "bittorrent.msg.length", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_bittorrent_msg_type,
-        { "Message Type", "bittorrent.msg.type", FT_UINT8, BASE_DEC, VALS(bittorrent_messages), 0x0, NULL, HFILL }
+        { "Message Type", "bittorrent.msg.type", FT_UINT16, BASE_DEC, VALS(bittorrent_messages), 0x0, NULL, HFILL }
       },
       { &hf_azureus_msg,
         { "Azureus Message", "bittorrent.azureus_msg", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
@@ -810,6 +849,7 @@ proto_register_bittorrent(void)
 
    static int *ett[] = {
       &ett_bittorrent,
+      &ett_bittorrent_extensions,
       &ett_bittorrent_msg,
       &ett_peer_id,
    };

@@ -21,6 +21,14 @@
 #include <tdh.h>
 #include <stdlib.h>
 
+/**
+ * @brief Writes an NDISCAP event to a dump file.
+ *
+ * This function processes an event record and writes it to a dump file with the specified timestamp.
+ *
+ * @param ev Pointer to the EVENT_RECORD structure containing the event data.
+ * @param timestamp The timestamp for when the event occurred.
+ */
 extern void etw_dump_write_ndiscap_event(PEVENT_RECORD ev, ULARGE_INTEGER timestamp);
 
 #endif

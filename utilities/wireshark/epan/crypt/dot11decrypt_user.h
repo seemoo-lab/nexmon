@@ -50,7 +50,7 @@
 #define	DOT11DECRYPT_WPA_PASSPHRASE_MAX_LEN	63	/* null-terminated string, the actual length of the storage is 64	*/
 #define	DOT11DECRYPT_WPA_SSID_MIN_LEN			0
 #define	DOT11DECRYPT_WPA_SSID_MAX_LEN			32
-#define	DOT11DECRYPT_WPA_PMK_MAX_LEN				48
+#define	DOT11DECRYPT_WPA_PMK_MAX_LEN				64
 #define	DOT11DECRYPT_WPA_PWD_PSK_LEN				32
 #define	DOT11DECRYPT_TK_MAX_LEN					32
 #define DOT11DECRYPT_MSK_MIN_LEN				64
@@ -74,6 +74,9 @@
 typedef struct {
     GByteArray *key;
     GByteArray *ssid;
+    bool        tk_mld;
+    uint8_t     ap_mld_mac[6];
+    uint8_t     sta_mld_mac[6];
     unsigned    bits;
     unsigned    type;
 } decryption_key_t;
@@ -93,6 +96,8 @@ typedef struct _DOT11DECRYPT_KEY_ITEM {
 	uint8_t KeyType;
 
 	/**
+	 * @brief Union representing key data for various 802.11 decryption algorithms.
+	 *
 	 * Key data.
 	 * This field can be used for the following decryptographic
 	 * algorithms: WEP-40, with a key of 40 bits (10 hex-digits);
@@ -108,6 +113,9 @@ typedef struct _DOT11DECRYPT_KEY_ITEM {
 	 * defined in 802.11i (2004) and 802.1X (2004).
 	 */
 	union DOT11DECRYPT_KEY_ITEMDATA {
+		/**
+		 * @brief WEP key data structure.
+		 */
 		struct DOT11DECRYPT_KEY_ITEMDATA_WEP {
 			/**
 			 * The binary value of the WEP key.
@@ -141,46 +149,57 @@ typedef struct _DOT11DECRYPT_KEY_ITEM {
 			uint8_t PtkLen;
 			uint8_t Akm;
 			uint8_t Cipher;
-			uint16_t DhGroup;
 		} Wpa;
 
 	} KeyData;
 
+	/**
+	 * @brief Holds a Temporal Key (TK) and optional MLD MAC addresses for per-link decryption.
+	 */
 	struct DOT11DECRYPT_KEY_ITEMDATA_TK {
-		uint8_t Tk[DOT11DECRYPT_TK_MAX_LEN];
-		uint8_t Len;
+		uint8_t Tk[DOT11DECRYPT_TK_MAX_LEN]; /**< Raw temporal key bytes used for unicast frame decryption */
+		uint8_t Len;                          /**< Length in bytes of the valid portion of @p Tk */
+		bool    mld;                          /**< True if this TK is associated with an MLO connection and the MLD MAC fields are valid */
+		uint8_t ap_mld_mac[6];               /**< Multi-Link Device MAC address of the AP; valid only when @p mld is true */
+		uint8_t sta_mld_mac[6];              /**< Multi-Link Device MAC address of the station; valid only when @p mld is true */
 	} Tk;
 
+	/**
+	 * @brief Holds a Master Session Key (MSK) used as the basis for further key derivation.
+	 */
 	struct DOT11DECRYPT_KEY_ITEMDATA_MSK {
-		uint8_t Msk[DOT11DECRYPT_MSK_MAX_LEN];
-		uint8_t Len;
+		uint8_t Msk[DOT11DECRYPT_MSK_MAX_LEN]; /**< Raw master session key bytes */
+		uint8_t Len;                            /**< Length in bytes of the valid portion of @p Msk */
 	} Msk;
 
-        struct DOT11DECRYPT_KEY_ITEMDATA_PWD {
-                /**
-                 * The octet string value of the passphrase.
-                 * (The passphrase is technically an opaque octet string, even
-                 * if recommended to be ASCII printable. It could (unlikely)
-                 * even include internal NULs, which a Wireshark user could
-                 * enter into the UAT percent-encoded.)
-                 */
-                char Passphrase[DOT11DECRYPT_WPA_PASSPHRASE_MAX_LEN];
-                /**
-                 *The length of the passphrase
-                 */
-                size_t PassphraseLen;
-                /**
-                 * The value of the SSID (up to
-                 * DOT11DECRYPT_WPA_SSID_MAX_LEN octets).
-                 * @note
-                 * A zero-length SSID indicates broadcast.
-                 */
-                char Ssid[DOT11DECRYPT_WPA_SSID_MAX_LEN];
-                /**
-                 *The length of the SSID
-                 */
-                size_t SsidLen;
-        } UserPwd;
+	/**
+	 * @brief Holds a plaintext password and optional SSID for WPA/WPA2 decryption.
+	 */
+	struct DOT11DECRYPT_KEY_ITEMDATA_PWD {
+			/**
+			 * The octet string value of the passphrase.
+			 * (The passphrase is technically an opaque octet string, even
+			 * if recommended to be ASCII printable. It could (unlikely)
+			 * even include internal NULs, which a Wireshark user could
+			 * enter into the UAT percent-encoded.)
+			 */
+			char Passphrase[DOT11DECRYPT_WPA_PASSPHRASE_MAX_LEN];
+			/**
+			 *The length of the passphrase
+				*/
+			size_t PassphraseLen;
+			/**
+			 * The value of the SSID (up to
+			 * DOT11DECRYPT_WPA_SSID_MAX_LEN octets).
+			 * @note
+			 * A zero-length SSID indicates broadcast.
+			 */
+			char Ssid[DOT11DECRYPT_WPA_SSID_MAX_LEN];
+			/**
+			 *The length of the SSID
+				*/
+			size_t SsidLen;
+	} UserPwd;
 } DOT11DECRYPT_KEY_ITEM, *PDOT11DECRYPT_KEY_ITEM;
 
 /**

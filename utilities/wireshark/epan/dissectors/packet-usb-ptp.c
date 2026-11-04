@@ -235,7 +235,7 @@ usb_ptp_add_uint_string(packet_info* pinfo, proto_tree *tree, int hf, tvbuff_t *
     /* First byte is the number of characters in UCS-2, including the terminating NULL */
     length = tvb_get_uint8(tvb, offset) * 2;
     offset += 1;
-    str = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_LITTLE_ENDIAN | ENC_UCS_2);
+    str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_LITTLE_ENDIAN | ENC_UCS_2);
     proto_tree_add_string(tree, hf, tvb, offset, length, str);
     offset += length;
 
@@ -479,7 +479,7 @@ dissect_usb_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void
     uint16_t ptp_code;
     uint32_t ptp_tid;
     /*uint32_t ptp_length _U_;*/
-    int offset = 0;
+    unsigned offset = 0;
     const char *ptp_code_desc = "";
     const char *col_class = "?";
     usb_ptp_conv_info_t *usb_ptp_conv_info;

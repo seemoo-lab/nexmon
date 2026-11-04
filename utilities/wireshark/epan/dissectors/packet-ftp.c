@@ -29,7 +29,7 @@
 
 #include <tap.h>
 #include <epan/export_object.h>
-#include <ui/tap-credentials.h>
+#include <epan/credentials.h>
 
 #include "packet-tls.h"
 #include "packet-tls-utils.h"
@@ -182,10 +182,10 @@ typedef struct _ftp_eo_t {
    table's row number, so we can append data from later FTP packets
    to the entries.
  */
-GHashTable *command_packet_to_eo_row;
+static GHashTable *command_packet_to_eo_row;
 
 /* Track which row number in the export object table we're up to */
-uint32_t eo_row_count;
+static uint32_t eo_row_count;
 
 /**
  * This is the callback passed to register_export_object()
@@ -968,7 +968,7 @@ static void process_pwd_success(ftp_conversation_t *conv, tvbuff_t *tvb,
                                 proto_item *pi)
 {
     wmem_strbuf_t *output;
-    const char *line = tvb_get_ptr(tvb, offset, linelen);
+    const char *line = (const char*)tvb_get_ptr(tvb, offset, linelen);
     bool outputStarted = false;
 
     /* Line must start with quotes */
@@ -1035,17 +1035,16 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     proto_tree     *ftp_tree;
     proto_tree     *reqresp_tree;
     proto_item     *ti, *hidden_item;
-    int             offset            = 0;
+    unsigned        offset            = 0;
     uint32_t        code;
-    char            code_str[4];
     bool            is_port_request   = false;
     bool            is_eprt_request   = false;
     bool            is_pasv_response  = false;
     bool            is_epasv_response = false;
-    int             next_offset;
-    int             next_token;
-    int             linelen;
-    int             tokenlen          = 0;
+    unsigned        next_offset;
+    unsigned        next_token;
+    unsigned        linelen;
+    unsigned        tokenlen          = 0;
     uint32_t        pasv_ip;
     uint32_t        pasv_offset;
     uint32_t        ftp_ip;
@@ -1079,10 +1078,6 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     /*
      * Find the end of the first line.
-     *
-     * Note that "tvb_find_line_end()" will return a value that is
-     * not longer than what's in the buffer, so the "tvb_get_ptr()"
-     * call won't throw an exception.
      */
     /*
      * Both request and reply arguments can be pathnames, which according
@@ -1103,7 +1098,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
      * that ftp commands end with \r\n and requiring that <CR> be padded
      * with a <NUL> that is then stripped away upon receipt, similar to Telnet.
      */
-    linelen = tvb_find_line_end(tvb, 0, -1, &next_offset, false);
+    tvb_find_line_end_remaining(tvb, 0, &linelen , &next_offset);
 
     /*
      * Put the first line from the buffer into the summary
@@ -1136,13 +1131,11 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
          * and the pathname.  Implementations MUST assume <SP> characters
          * following the initial <SP> as part of the pathname."
          *
-         * tvb_get_token_len() does not skip trailing spaces, which is
+         * tvb_get_token_len_length() does not skip trailing spaces, which is
          * what we want. (get_token_len() _does_ skip extra spaces.)
          */
-        tokenlen = tvb_get_token_len(tvb, 0, linelen, &next_token, false);
-        if (tokenlen != 0) {
-            proto_tree_add_item(reqresp_tree, hf_ftp_request_command,
-                    tvb, 0, tokenlen, ENC_UTF_8);
+        if (tvb_get_token_len_length(tvb, 0, linelen, &tokenlen, &next_token)) {
+            proto_tree_add_item(reqresp_tree, hf_ftp_request_command, tvb, 0, tokenlen, ENC_UTF_8);
             if (tvb_strneql(tvb, 0, "PORT", tokenlen) == 0)
                 is_port_request = true;
             /*
@@ -1152,7 +1145,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                 is_eprt_request = true;
             else if (tvb_strneql(tvb, 0, "USER", tokenlen) == 0) {
                 if (p_ftp_conv && !p_ftp_conv->username && linelen - tokenlen > 1) {
-                    p_ftp_conv->username = tvb_get_string_enc(wmem_file_scope(), tvb, tokenlen + 1, linelen - tokenlen - 1, ENC_UTF_8);
+                    p_ftp_conv->username = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, tokenlen + 1, linelen - tokenlen - 1, ENC_UTF_8);
                     p_ftp_conv->username_pkt_num = pinfo->num;
                 }
             } else if (tvb_strneql(tvb, 0, "PASS", tokenlen) == 0) {
@@ -1172,7 +1165,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         /* If there is an ftp data conversation that doesn't have a
            command yet, attempt to update here */
         if (p_ftp_conv) {
-            p_ftp_conv->last_command = tvb_get_string_enc(wmem_file_scope(), tvb, 0, linelen, ENC_UTF_8);
+            p_ftp_conv->last_command = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, 0, linelen, ENC_UTF_8);
             p_ftp_conv->last_command_frame = pinfo->num;
 
             if ( (linelen == 8) && ! tvb_strneql(tvb, 0, "AUTH TLS", 8) )
@@ -1190,7 +1183,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                   cmd_resp_is_data(p_ftp_conv->last_command))) {
 
                 /* Store command and frame where it happened */
-                p_ftp_conv->current_data_conv->command = tvb_get_string_enc(wmem_file_scope(), tvb, 0, linelen, ENC_UTF_8);
+                p_ftp_conv->current_data_conv->command = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, 0, linelen, ENC_UTF_8);
                 p_ftp_conv->current_data_conv->command_frame = pinfo->num;
 
                 /* Add to table so ftp-data response can be shown with this frame on later passes */
@@ -1220,8 +1213,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
              * One-line reply, or first or last line
              * of a multi-line reply.
              */
-            tvb_get_raw_bytes_as_string(tvb, 0, code_str, sizeof code_str);
-            code_valid = ws_strtou32(code_str, NULL, &code);
+            code_valid = tvb_get_string_uint(tvb, 0, 3, ENC_STR_DEC, &code, NULL);
 
             pi = proto_tree_add_uint(reqresp_tree,
                     hf_ftp_response_code, tvb, 0, 3, code);
@@ -1477,7 +1469,7 @@ dissect_ftp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         /*
          * Find the end of the line.
          */
-        tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+        tvb_find_line_end_remaining(tvb, offset, NULL, &next_offset);
 
         /*
          * Put this line.
@@ -1572,7 +1564,7 @@ static int
 dissect_ftpdata(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     proto_item *data_ti, *ti;
-    int         data_length = tvb_captured_length(tvb);
+    unsigned    data_length = tvb_captured_length(tvb);
     bool        is_text = true;
     int         check_chars, i;
     conversation_t *p_conv;

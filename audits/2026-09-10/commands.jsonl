@@ -1,0 +1,116 @@
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 146, "seconds": 2.557}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.01}
+{"name": "raw-channel-100", "args": ["iw", "dev", "mon0", "set", "channel", "100"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.004}
+{"name": "channel-1", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.007}
+{"name": "channel-info-1", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.003}
+{"name": "capture-ch1", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch1.pcap"], "rc": 124, "seconds": 8.038}
+{"name": "channel-6", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.011}
+{"name": "channel-info-6", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.005}
+{"name": "capture-ch6", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch6.pcap"], "rc": 124, "seconds": 8.042}
+{"name": "channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "channel-info-11", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.005}
+{"name": "capture-ch11", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch11.pcap"], "rc": 124, "seconds": 8.029}
+{"name": "channel-13", "args": ["iw", "dev", "mon0", "set", "channel", "13"], "rc": 0, "seconds": 0.003}
+{"name": "channel-info-13", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.006}
+{"name": "capture-ch13", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch13.pcap"], "rc": 124, "seconds": 8.034}
+{"name": "channel-36", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.009}
+{"name": "channel-info-36", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.004}
+{"name": "capture-ch36", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch36.pcap"], "rc": 124, "seconds": 8.027}
+{"name": "channel-40", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.005}
+{"name": "channel-info-40", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.004}
+{"name": "capture-ch40", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch40.pcap"], "rc": 124, "seconds": 8.025}
+{"name": "channel-44", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.006}
+{"name": "channel-info-44", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.004}
+{"name": "capture-ch44", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch44.pcap"], "rc": 124, "seconds": 8.025}
+{"name": "channel-48", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.008}
+{"name": "channel-info-48", "args": ["iw", "dev", "mon0", "info"], "rc": 0, "seconds": 0.004}
+{"name": "capture-ch48", "args": ["timeout", "-s", "INT", "8", "tcpdump", "-i", "mon0", "-Q", "in", "-nn", "-s", "256", "-U", "-w", "/root/nexmon/audits/2026-09-10/capture-ch48.pcap"], "rc": 124, "seconds": 8.024}
+{"name": "hop-0", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.015}
+{"name": "hop-1", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.005}
+{"name": "hop-2", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "hop-3", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.008}
+{"name": "hop-4", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.006}
+{"name": "hop-5", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.006}
+{"name": "hop-6", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.006}
+{"name": "hop-7", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.009}
+{"name": "hop-8", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.006}
+{"name": "hop-9", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.007}
+{"name": "hop-10", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.006}
+{"name": "hop-11", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.006}
+{"name": "hop-12", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.007}
+{"name": "hop-13", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.006}
+{"name": "hop-14", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.009}
+{"name": "hop-15", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.007}
+{"name": "hop-16", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "hop-17", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.009}
+{"name": "hop-18", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.008}
+{"name": "hop-19", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.006}
+{"name": "hop-20", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.006}
+{"name": "hop-21", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.009}
+{"name": "hop-22", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.007}
+{"name": "hop-23", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "hop-24", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.017}
+{"name": "hop-25", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.006}
+{"name": "hop-26", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.006}
+{"name": "hop-27", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.006}
+{"name": "hop-28", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.017}
+{"name": "hop-29", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.006}
+{"name": "hop-30", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "hop-31", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.021}
+{"name": "hop-32", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.017}
+{"name": "hop-33", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.007}
+{"name": "hop-34", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.007}
+{"name": "hop-35", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.011}
+{"name": "hop-36", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.023}
+{"name": "hop-37", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.008}
+{"name": "hop-38", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.01}
+{"name": "hop-39", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.008}
+{"name": "hop-40", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.017}
+{"name": "hop-41", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.012}
+{"name": "hop-42", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.01}
+{"name": "hop-43", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.007}
+{"name": "hop-44", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.013}
+{"name": "hop-45", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.013}
+{"name": "hop-46", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.008}
+{"name": "hop-47", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.008}
+{"name": "hop-48", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.007}
+{"name": "hop-49", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.012}
+{"name": "hop-50", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.009}
+{"name": "hop-51", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.009}
+{"name": "hop-52", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.011}
+{"name": "hop-53", "args": ["iw", "dev", "mon0", "set", "channel", "40"], "rc": 0, "seconds": 0.009}
+{"name": "hop-54", "args": ["iw", "dev", "mon0", "set", "channel", "44"], "rc": 0, "seconds": 0.01}
+{"name": "hop-55", "args": ["iw", "dev", "mon0", "set", "channel", "48"], "rc": 0, "seconds": 0.011}
+{"name": "hop-56", "args": ["iw", "dev", "mon0", "set", "channel", "1"], "rc": 0, "seconds": 0.012}
+{"name": "hop-57", "args": ["iw", "dev", "mon0", "set", "channel", "6"], "rc": 0, "seconds": 0.007}
+{"name": "hop-58", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.006}
+{"name": "hop-59", "args": ["iw", "dev", "mon0", "set", "channel", "36"], "rc": 0, "seconds": 0.013}
+{"name": "hopping-mode", "args": ["/root/nexmon/utilities/nexutil/nexutil", "-I", "mon0", "-m"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.003}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 0, "seconds": 0.015}
+{"name": "raw-channel-11", "args": ["iw", "dev", "mon0", "set", "channel", "11"], "rc": 237, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.009}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 240, "seconds": 0.002}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["iw", "dev", "wlan0", "set", "channel", "11"], "rc": 240, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.004}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.005}
+{"name": "raw-channel-11", "args": ["nexutil", "-Iwlan0", "-s30", "-i", "-v11"], "rc": 0, "seconds": 0.008}

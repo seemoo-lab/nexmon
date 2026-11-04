@@ -64,8 +64,8 @@ typedef struct remunk_remqueryinterface_call_s {
 } remunk_remqueryinterface_call_t;
 
 
-static int
-dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, unsigned offset,
                                       packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     e_guid_t     ipid;
@@ -101,7 +101,7 @@ dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, int offset,
         call = NULL;
     }
 
-    for (u32ItemIdx = 0; u32ArraySize--; u32ItemIdx++) {
+    for (u32ItemIdx = 0; u32ArraySize != 0; u32ItemIdx++, u32ArraySize--) {
         offset = dissect_dcom_append_UUID(tvb, offset,  pinfo, tree, di, drep,
                                           hf_dcom_iid, u32ItemIdx+1, &iid);
         if(call != NULL) {
@@ -113,8 +113,8 @@ dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, int offset,
 }
 
 
-static int
-dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, unsigned offset,
                                       packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     uint32_t     u32Pointer;
@@ -140,7 +140,7 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
                                             &u32ArraySize);
 
     u32ItemIdx = 1;
-    while (u32ArraySize--) {
+    while (u32ArraySize != 0) {
         /* add subtree */
         sub_item = proto_tree_add_item(tree, hf_remunk_qiresult, tvb, offset, 0, ENC_NA);
         sub_tree = proto_item_add_subtree(sub_item, ett_remunk_rqi_result);
@@ -183,6 +183,7 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
                         val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"),
                         u32ItemIdx);
         u32ItemIdx++;
+        u32ArraySize--;
     }
 
     /* HRESULT of call */
@@ -197,8 +198,8 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
 }
 
 
-static int
-dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
+static unsigned
+dissect_remunk_remrelease_rqst(tvbuff_t *tvb, unsigned offset,
                                packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     uint32_t     u32Pointer;
@@ -230,7 +231,7 @@ dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
 
 
     u32ItemIdx = 1;
-    while (u32IntRefs--) {
+    while (u32IntRefs != 0) {
         /* add subtree */
         sub_item = proto_tree_add_item(tree, hf_remunk_reminterfaceref, tvb, offset, 0, ENC_NA);
         sub_tree = proto_item_add_subtree(sub_item, ett_remunk_reminterfaceref);
@@ -264,6 +265,7 @@ dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
         col_append_fstr(pinfo->cinfo, COL_INFO, pszFormat, u32PublicRefs, u32PrivateRefs);
 
         u32ItemIdx++;
+        u32IntRefs--;
     }
 
     return offset;
@@ -345,7 +347,7 @@ proto_reg_handoff_remunk (void)
 {
 
     /* Register the IPID */
-    guids_add_uuid(&ipid_remunk, "IPID-IRemUnknown");
+    guids_add_guid(&ipid_remunk, "IPID-IRemUnknown");
 
     /* Register the interfaces */
     dcerpc_init_uuid(proto_remunk, ett_remunk,

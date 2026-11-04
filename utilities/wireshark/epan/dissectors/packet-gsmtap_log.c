@@ -1,4 +1,4 @@
-/* packet-gsmtap-log.c
+/* packet-gsmtap_log.c
  * Routines for GSMTAP logging packets
  *
  * (C) 2016 by Harald Welte <laforge@gnumonks.org>
@@ -49,7 +49,7 @@ dissect_gsmtap_log(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void * d
 {
 	proto_item *ti;
 	proto_tree *log_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	int log_str_len;
 	unsigned log_pid, log_level, log_src_line;
 	const char *log_str;

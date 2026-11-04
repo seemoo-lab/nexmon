@@ -16,6 +16,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import argparse
+import os
+import os.path
 import re
 import subprocess
 
@@ -34,7 +36,7 @@ def get_git_authors():
     #  4321	Navin R. Johnson <nrjohnson@example.com>
     '''
     GIT_LINE_REGEX = r"^\s*\d+\s+([^<]*)\s*<([^>]*)>"
-    cmd = "git --no-pager shortlog --email --summary HEAD".split(' ')
+    cmd = ["git", "--no-pager", "shortlog", "--email", "--summary", "HEAD"]
     # check_output is used for Python 3.4 compatibility
     git_cmd_output = subprocess.check_output(cmd, universal_newlines=True, encoding='utf-8')
 
@@ -71,12 +73,7 @@ def extract_contributors(authors_content):
         elif state == "s_in_bracket":
             if re.search(r'([^\}]*)\}', line):
                 state = ""
-        elif re.search('<', line):
-            if contributor_match:
-                name = contributor_match.group(1)
-                email = contributor_match.group(3)
-                contributors.append((name, email))
-        elif re.search(r"(e-mail address removed at contributor's request)", line):
+        elif re.search('<', line) or re.search(r"(e-mail address removed at contributor's request)", line):
             if contributor_match:
                 name = contributor_match.group(1)
                 email = contributor_match.group(3)
@@ -103,13 +100,13 @@ def generate_git_contributors_text(contributors_emails, git_authors_emails):
 
         ntab = 3
         if len(name) >= 8*ntab:
-            line = "{name} <{email}>".format(name=name, email=email)
+            line = f"{name} <{email}>"
         else:
             ntab -= len(name)/8
             if len(name) % 8:
                 ntab += 1
             tabs = '\t'*int(ntab)
-            line = "{name}{tabs}<{email}>".format(name=name, tabs=tabs, email=email)
+            line = f"{name}{tabs}<{email}>"
 
         emails_addresses_seen.add(email.lower())
         output_lines += [line]
@@ -119,8 +116,8 @@ def generate_git_contributors_text(contributors_emails, git_authors_emails):
 # Read authors file until we find gitlog entries, then stop
 def read_authors(parsed_args):
     lines = []
-    with open(parsed_args.authors[0], 'r', encoding='utf-8') as fh:
-        for line in fh.readlines():
+    with open(parsed_args.authors, 'r', encoding='utf-8') as fh:
+        for line in fh:
             if '= From git log =' in line:
                 break
             lines.append(line)
@@ -128,8 +125,9 @@ def read_authors(parsed_args):
 
 
 def main():
+    authors_file = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'AUTHORS'))
     parser = argparse.ArgumentParser(description="Generate the AUTHORS file combining existing AUTHORS file with git commit log.")
-    parser.add_argument("authors", metavar='authors', nargs=1, help="path to AUTHORS file")
+    parser.add_argument("authors", metavar='authors', nargs='?', default=authors_file, help="path to AUTHORS file")
     parsed_args = parser.parse_args()
 
     author_content = read_authors(parsed_args)
@@ -145,7 +143,7 @@ def main():
     git_contributor_header = '= From git log =\n\n'
     output = author_content + git_contributor_header + git_contributors_text + '\n'
 
-    with open(parsed_args.authors[0], 'w', encoding='utf-8') as fh:
+    with open(parsed_args.authors, 'w', encoding='utf-8') as fh:
         fh.write(output)
 
 

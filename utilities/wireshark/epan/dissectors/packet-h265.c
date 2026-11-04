@@ -496,6 +496,8 @@ static const value_string h265_type_values[] = {
 	{ 63,  "UNSPEC63 - Unspecified" },
 	{ 0, NULL }
 };
+static value_string_ext h265_type_values_ext = VALUE_STRING_EXT_INIT(h265_type_values);
+
 
 static const value_string h265_type_summary_values[] = {
 	{ 0,   "TRAIL_N" },
@@ -564,6 +566,7 @@ static const value_string h265_type_summary_values[] = {
 	{ 63,  "UNSPEC63" },
 	{ 0, NULL }
 };
+static value_string_ext h265_type_summary_values_ext = VALUE_STRING_EXT_INIT(h265_type_summary_values);
 
 /* A.3 Profiles */
 static const value_string h265_profile_idc_values[] = {
@@ -697,34 +700,34 @@ static const value_string h265_pic_type_vals[] = {
 
 static int
 dissect_h265(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_);
-static int
-dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int offset, bool profilePresentFlag, int vps_max_sub_layers_minus1);
-static int
-dissect_h265_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1);
-static int
-dissect_h265_scaling_list_data(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_st_ref_pic_set(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset, int stRpsIdx, int num_short_term_ref_pic_sets, int32_t NumDeltaPocs[H265_MAX_NUM_SHORT_TERM_REF_PIC_SETS]);
-static int
-dissect_h265_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset, uint8_t sps_max_sub_layers_minus1);
-static int
-dissect_h265_sps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_sps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_sps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_sps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset, unsigned chroma_format_idc, unsigned bit_depth_luma_minus8, unsigned bit_depth_chroma_minus8);
-static int
-dissect_h265_pps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset, unsigned transform_skip_enabled_flag);
-static int
-dissect_h265_pps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_pps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_pps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset);
-static int
-dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset, uint8_t nal_unit_type);
+static unsigned
+dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned offset, bool profilePresentFlag, int vps_max_sub_layers_minus1);
+static unsigned
+dissect_h265_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1);
+static unsigned
+dissect_h265_scaling_list_data(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_st_ref_pic_set(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset, int stRpsIdx, int num_short_term_ref_pic_sets, int32_t NumDeltaPocs[H265_MAX_NUM_SHORT_TERM_REF_PIC_SETS]);
+static unsigned
+dissect_h265_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned bit_offset, uint8_t sps_max_sub_layers_minus1);
+static unsigned
+dissect_h265_sps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_sps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_sps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_sps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset, unsigned chroma_format_idc, unsigned bit_depth_luma_minus8, unsigned bit_depth_chroma_minus8);
+static unsigned
+dissect_h265_pps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset, unsigned transform_skip_enabled_flag);
+static unsigned
+dissect_h265_pps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_pps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_pps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset);
+static unsigned
+dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset, uint8_t nal_unit_type);
 
 #if 0
 /* byte_aligned( ) is specified as follows.
@@ -734,7 +737,7 @@ dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, in
 * - Otherwise, the return value of byte_aligned( ) is equal to false.
 */
 static bool
-h265_byte_aligned(int bit_offset)
+h265_byte_aligned(unsigned bit_offset)
 {
 	if (bit_offset & 0x3)
 		return false;
@@ -749,7 +752,7 @@ h265_byte_aligned(int bit_offset)
 * - Otherwise, the return value of more_data_in_payload( ) is equal to true.
 */
 static bool
-h265_more_data_in_payload(int bit_start, int bit_offset, int payloadSize)
+h265_more_data_in_payload(int bit_start, unsigned bit_offset, int payloadSize)
 {
 	if (h265_byte_aligned(bit_offset) && bit_start + 8 * payloadSize == bit_offset)
 		return false;
@@ -765,7 +768,7 @@ h265_more_data_in_payload(int bit_start, int bit_offset, int payloadSize)
 * is equal to false.
 */
 static bool
-h265_payload_extension_present(tvbuff_t* tvb, int bit_start, int bit_offset, int payloadSize)
+h265_payload_extension_present(tvbuff_t* tvb, int bit_start, unsigned bit_offset, int payloadSize)
 {
 	if (bit_start + 8 * payloadSize > bit_offset && tvb_get_bits8(tvb, bit_offset, 1))
 		return true;
@@ -784,18 +787,18 @@ h265_payload_extension_present(tvbuff_t* tvb, int bit_start, int bit_offset, int
 #define cVALS(x) (const value_string*)(x)
 
 static uint32_t
-dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, packet_info *pinfo, int *start_bit_offset, h265_golomb_descriptors descriptor)
+dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, packet_info *pinfo, unsigned *start_bit_offset, h265_golomb_descriptors descriptor)
 /*(tvbuff_t *tvb, int *start_bit_offset) */
 {
 	proto_item *ti;
 
-	int      leading_zero_bits, bit_offset, start_offset;
+	unsigned leading_zero_bits, bit_offset, start_offset, length;
 	uint32_t codenum, mask, value, tmp;
 	int32_t  se_value = 0;
 	int      b;
 	char    *str;
 	int      bit;
-	int      i;
+	unsigned i;
 	bool overflow = false;
 	header_field_info *hf_field = NULL;
 
@@ -850,89 +853,6 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 		bit_offset++;
 	}
 
-	/* XXX: This could be handled in the general case and reduce code
-	 * duplication.  */
-	if (leading_zero_bits == 0) {
-		codenum = 0;
-		*start_bit_offset = bit_offset;
-		for (; bit % 8; bit++) {
-			if (bit && (!(bit % 4))) {
-				(void) g_strlcat(str, " ", 256);
-			}
-			(void) g_strlcat(str, ".", 256);
-		}
-		if (hf_field) {
-			(void) g_strlcat(str, " = ", 256);
-			(void) g_strlcat(str, hf_field->name, 256);
-			switch (descriptor) {
-			case H265_SE_V:
-				/* if the syntax element is coded as se(v),
-				* the value of the syntax element is derived by invoking the
-				* mapping process for signed Exp-Golomb codes as specified in
-				* subclause 9.1.1 with codeNum as the input.
-				*/
-				if (hf_field->type == FT_INT32) {
-					if (hf_field->strings) {
-						proto_tree_add_int_format(tree, hf_index, tvb, start_offset, 1, codenum,
-							"%s: %s (%d)",
-							str,
-							val_to_str_const(codenum, cVALS(hf_field->strings), "Unknown "),
-							codenum);
-					}
-					else {
-						switch (hf_field->display) {
-						case BASE_DEC:
-							proto_tree_add_int_format(tree, hf_index, tvb, start_offset, 1, codenum,
-								"%s: %d",
-								str,
-								codenum);
-							break;
-						default:
-							DISSECTOR_ASSERT_NOT_REACHED();
-							break;
-						}
-					}
-				}
-				return codenum;
-			default:
-				break;
-			}
-			if (hf_field->type == FT_UINT32) {
-				if (hf_field->strings) {
-					proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
-						"%s: %s (%u)",
-						str,
-						val_to_str_const(codenum, cVALS(hf_field->strings), "Unknown "),
-						codenum);
-				}
-				else {
-					switch (hf_field->display) {
-					case BASE_DEC:
-						proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
-							"%s: %u",
-							str,
-							codenum);
-						break;
-					case BASE_HEX:
-						proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
-							"%s: 0x%x",
-							str,
-							codenum);
-						break;
-					default:
-						DISSECTOR_ASSERT_NOT_REACHED();
-						break;
-					}
-				}
-			}
-			else {
-				/* Only allow uint32_t */
-				DISSECTOR_ASSERT_NOT_REACHED();
-			}
-		}
-		return codenum;
-	}
-
 	/*
 	Syntax elements coded as ue(v), me(v), or se(v) are Exp-Golomb-coded. Syntax elements coded as te(v) are truncated
 	Exp-Golomb-coded. The parsing process for these syntax elements begins with reading the bits starting at the current
@@ -979,6 +899,11 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 			}
 		}
 		mask = 1U << 31;
+        } else if (leading_zero_bits == 0) {
+                codenum = 0;
+		if (descriptor == H265_SE_V) {
+                    se_value = 0;
+                }
 	} else { /* Non-overflow general case */
 		if (leading_zero_bits > 16)
 			value = tvb_get_bits32(tvb, bit_offset, leading_zero_bits, ENC_BIG_ENDIAN);
@@ -1009,16 +934,17 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 	}
 
 	bit_offset = bit_offset + leading_zero_bits;
+        length = ((bit_offset + 7) >> 3) - start_offset;
 
 	if (overflow) {
 		*start_bit_offset = bit_offset;
 		/* We will probably get a BoundsError later in the packet. */
 		if (descriptor == H265_SE_V) {
-			ti = proto_tree_add_int_format_value(tree, hf_index, tvb, start_offset, (bit_offset >> 3) - start_offset + 1, codenum, "Invalid value (%d leading zero bits), clamped to %" PRId32, leading_zero_bits, se_value);
+			ti = proto_tree_add_int_format_value(tree, hf_index, tvb, start_offset, length, codenum, "Invalid value (%d leading zero bits), clamped to %" PRId32, leading_zero_bits, se_value);
 			expert_add_info(NULL, ti, &ei_h265_oversized_exp_golomb_code);
 			return se_value;
 		} else {
-			ti = proto_tree_add_uint_format_value(tree, hf_index, tvb, start_offset, (bit_offset >> 3) - start_offset + 1, codenum, "Invalid value (%d leading zero bits), clamped to %" PRIu32, leading_zero_bits, codenum);
+			ti = proto_tree_add_uint_format_value(tree, hf_index, tvb, start_offset, length, codenum, "Invalid value (%d leading zero bits), clamped to %" PRIu32, leading_zero_bits, codenum);
 			expert_add_info(NULL, ti, &ei_h265_oversized_exp_golomb_code);
 			return codenum;
 		}
@@ -1066,7 +992,7 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 		}
 		if (hf_field->type == FT_UINT32) {
 			if (hf_field->strings) {
-				proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
+				proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, length, codenum,
 					"%s: %s (%u)",
 					str,
 					val_to_str_const(codenum, cVALS(hf_field->strings), "Unknown "),
@@ -1075,13 +1001,13 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 			else {
 				switch (hf_field->display) {
 				case BASE_DEC:
-					proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
+					proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, length, codenum,
 						"%s: %u",
 						str,
 						codenum);
 					break;
 				case BASE_HEX:
-					proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, 1, codenum,
+					proto_tree_add_uint_format(tree, hf_index, tvb, start_offset, length, codenum,
 						"%s: 0x%x",
 						str,
 						codenum);
@@ -1094,7 +1020,7 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 		}
 		else if (hf_field->type == FT_INT32) {
 			if (hf_field->strings) {
-				proto_tree_add_int_format(tree, hf_index, tvb, start_offset, 1, codenum,
+				proto_tree_add_int_format(tree, hf_index, tvb, start_offset, length, codenum,
 					"%s: %s (%d)",
 					str,
 					val_to_str_const(codenum, cVALS(hf_field->strings), "Unknown "),
@@ -1103,7 +1029,7 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 			else {
 				switch (hf_field->display) {
 				case BASE_DEC:
-					proto_tree_add_int_format(tree, hf_index, tvb, start_offset, 1, codenum,
+					proto_tree_add_int_format(tree, hf_index, tvb, start_offset, length, codenum,
 						"%s: %d",
 						str,
 						se_value);
@@ -1128,12 +1054,12 @@ dissect_h265_exp_golomb_code(proto_tree *tree, int hf_index, tvbuff_t *tvb, pack
 
 
 static bool
-more_rbsp_data(proto_tree *tree _U_, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset)
+more_rbsp_data(proto_tree *tree _U_, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset)
 {
-	int    offset;
-	int    remaining_length;
-	int    last_one_bit;
-	uint8_t b = 0;
+	unsigned offset;
+	unsigned remaining_length;
+	unsigned last_one_bit;
+	uint8_t  b = 0;
 
 	/* XXX might not be the best way of doing things but:
 	* Serch from the end of the tvb for the first '1' bit
@@ -1163,8 +1089,8 @@ more_rbsp_data(proto_tree *tree _U_, tvbuff_t *tvb, packet_info *pinfo _U_, int 
 }
 
 /* 7.3.2.11 RBSP trailing bits syntax */
-static int
-dissect_h265_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset)
+static unsigned
+dissect_h265_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset)
 {
 	int remaining_bits = 0;
 
@@ -1181,10 +1107,10 @@ dissect_h265_rbsp_trailing_bits(proto_tree *tree, tvbuff_t *tvb, packet_info *pi
 
 /* Ref 7.3.2.1 Video parameter set RBSP syntax */
 static void
-dissect_h265_video_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_video_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
 	//proto_item *level_item;
-	int         bit_offset;
+	unsigned    bit_offset;
 	proto_tree *profile_tier_level_tree, *hrd_parameters_tree;
 
 	bit_offset = offset << 3;
@@ -1285,11 +1211,11 @@ dissect_h265_video_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_in
 }
 
 static void
-dissect_h265_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
-	int         bit_offset;
+	unsigned    bit_offset;
 	uint8_t		sps_max_sub_layers_minus1, sps_extension_4bits = 0;
-	uint32_t		num_short_term_ref_pic_sets, num_long_term_ref_pics_sps, log2_max_pic_order_cnt_lsb_minus4, bit_depth_luma_minus8, bit_depth_chroma_minus8;
+	uint32_t	num_short_term_ref_pic_sets, num_long_term_ref_pics_sps, log2_max_pic_order_cnt_lsb_minus4, bit_depth_luma_minus8, bit_depth_chroma_minus8;
 	bool	sps_sub_layer_ordering_info_present_flag = 0, scaling_list_enabled_flag = 0, sps_scaling_list_data_present_flag = 0,
 		pcm_enabled_flag = 0, long_term_ref_pics_present_flag = 0, vui_parameters_present_flag = 0, sps_extension_present_flag = 0,
 		sps_range_extension_flag = 0, sps_multilayer_extension_flag = 0, sps_3d_extension_flag = 0, sps_scc_extension_flag = 0;
@@ -1473,9 +1399,9 @@ dissect_h265_seq_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
 
 /* Ref 7.3.2.3 Picture parameter set RBSP syntax */
 static void
-dissect_h265_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
-	int bit_offset;
+	unsigned bit_offset;
 	unsigned num_tile_columns_minus1, num_tile_rows_minus1, i;
 	bool cu_qp_delta_enabled_flag, tiles_enabled_flag, uniform_spacing_flag;
 	bool deblocking_filter_control_present_flag, pps_deblocking_filter_disabled_flag;
@@ -1651,12 +1577,12 @@ dissect_h265_pic_parameter_set_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info
 
 /* Ref 7.3.2.4 Supplemental enhancement information RBSP syntax */
 static void
-dissect_h265_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset, uint8_t nal_unit_type)
+dissect_h265_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset, uint8_t nal_unit_type)
 {
 	proto_tree *sei_rbsp_tree;
 	sei_rbsp_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_h265_sei_rbsp, NULL, "Supplemental enhancement information RBSP");
 
-	int bit_offset;
+	unsigned bit_offset;
 
 	bit_offset = offset << 3;
 
@@ -1670,9 +1596,9 @@ dissect_h265_sei_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int o
 
 /* Ref 7.3.2.5 Access unit delimiter RBSP syntax */
 static void
-dissect_h265_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
-	int bit_offset = offset << 3;
+	unsigned bit_offset = offset << 3;
 
 	proto_tree *access_unit_delimiter_rbsp_tree;
 	access_unit_delimiter_rbsp_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_h265_access_unit_delimiter_rbsp, NULL, "Access unit delimiter RBSP");
@@ -1687,34 +1613,34 @@ dissect_h265_access_unit_delimiter_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_
 
 /* Ref 7.3.2.6 End of sequence RBSP syntax*/
 static void
-dissect_h265_end_of_seq_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_end_of_seq_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
 	proto_tree *end_of_seq_rbsp_tree;
 	end_of_seq_rbsp_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_h265_end_of_seq_rbsp, NULL, "End of sequence RBSP");
-	proto_tree_add_expert(end_of_seq_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset, -1);
+	proto_tree_add_expert_remaining(end_of_seq_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset);
 }
 
 /* Ref  7.3.2.7 End of bitstream RBSP syntax*/
 static void
-dissect_h265_end_of_bitstream_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_end_of_bitstream_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
 	proto_tree *end_of_bitstream_rbsp_tree;
 	end_of_bitstream_rbsp_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_h265_end_of_bitstream_rbsp, NULL, "End of bitstream RBSP");
-	proto_tree_add_expert(end_of_bitstream_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset, -1);
+	proto_tree_add_expert_remaining(end_of_bitstream_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset);
 }
 
 /* Ref 7.3.2.8 Filler data RBSP syntax */
 static void
-dissect_h265_filler_data_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_filler_data_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
 	proto_tree *filler_data_rbsp_tree;
 	filler_data_rbsp_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_h265_filler_data_rbsp, NULL, "Filler data RBSP");
-	proto_tree_add_expert(filler_data_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset, -1);
+	proto_tree_add_expert_remaining(filler_data_rbsp_tree, pinfo, &ei_h265_undecoded, tvb, offset);
 }
 
 /* Ref 7.3.3 Profile, tier and level syntax */
-static int
-dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int offset, bool profilePresentFlag, int vps_max_sub_layers_minus1)
+static unsigned
+dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned offset, bool profilePresentFlag, int vps_max_sub_layers_minus1)
 {
 	proto_item *general_level_idc_item;
 	uint32_t    general_profile_idc, general_level_idc;
@@ -1733,7 +1659,7 @@ dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pi
 
 		proto_tree_add_item(tree, hf_h265_general_profile_compatibility_flags, tvb, offset, 4, ENC_BIG_ENDIAN);
 
-		int bit_offset = offset << 3;
+		unsigned bit_offset = offset << 3;
 		for (int j = 0; j < 32; j++)
 			general_profile_compatibility_flag[j] = tvb_get_bits8(tvb, bit_offset + j, 1);
 		bit_offset = bit_offset + 32;
@@ -1941,8 +1867,8 @@ dissect_h265_profile_tier_level(proto_tree* tree, tvbuff_t* tvb, packet_info* pi
 /* 7.3.6 Slice segment header syntax */
 /* Just parse a few bits same as in H.264 */
 /* TODO: if need more info from slice header, do more parsing */
-static int
-dissect_h265_slice_segment_header(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, uint8_t nal_unit_type)
+static unsigned
+dissect_h265_slice_segment_header(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset, uint8_t nal_unit_type)
 {
 	bool first_slice_segment_in_pic_flag = 0, /*no_output_of_prior_pics_flag = 0,*/ dependent_slice_segment_flag = 0;
 
@@ -1988,9 +1914,9 @@ dissect_h265_slice_segment_header(proto_tree *tree, tvbuff_t *tvb, packet_info *
 
 /* 7.3.2.9 Slice segment layer RBSP syntax */
 static void
-dissect_h265_slice_segment_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int offset, uint8_t nal_unit_type)
+dissect_h265_slice_segment_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned offset, uint8_t nal_unit_type)
 {
-	int bit_offset;
+	unsigned bit_offset;
 
 	bit_offset = offset << 3;
 
@@ -2001,8 +1927,8 @@ dissect_h265_slice_segment_layer_rbsp(proto_tree *tree, tvbuff_t *tvb, packet_in
 }
 
 /* 7.3.4 Scaling list data syntax */
-static int
-dissect_h265_scaling_list_data(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset)
+static unsigned
+dissect_h265_scaling_list_data(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset)
 {
 	bool scaling_list_pred_mode_flag[4][6] = { { 0 } };
 	/*int32_t ScalingList[4][6][64] = { 0 };*/
@@ -2033,8 +1959,8 @@ dissect_h265_scaling_list_data(proto_tree* tree, tvbuff_t* tvb, packet_info* pin
 }
 
 /* D.2.1 General SEI message syntax */
-static int
-dissect_h265_sei_payload(proto_tree* tree _U_, tvbuff_t* tvb _U_, packet_info* pinfo _U_, int bit_offset, unsigned payloadType _U_, unsigned payloadSize, uint8_t nal_unit_type _U_)
+static unsigned
+dissect_h265_sei_payload(proto_tree* tree _U_, tvbuff_t* tvb _U_, packet_info* pinfo _U_, unsigned bit_offset, unsigned payloadType _U_, unsigned payloadSize, uint8_t nal_unit_type _U_)
 {
 	//int bit_start = bit_offset;
 #if 0
@@ -2203,11 +2129,11 @@ dissect_h265_sei_payload(proto_tree* tree _U_, tvbuff_t* tvb _U_, packet_info* p
 }
 
 /* 7.3.5 Supplemental enhancement information message syntax */
-static int
-dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset, uint8_t nal_unit_type)
+static unsigned
+dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset, uint8_t nal_unit_type)
 {
 	unsigned payloadType = 0, last_payload_type_byte, payloadSize, last_payload_size_byte;
-	int     start_bit_offset, length;
+	unsigned start_bit_offset, length;
 
 	start_bit_offset = bit_offset;
 
@@ -2244,8 +2170,8 @@ dissect_h265_sei_message(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, in
 }
 
 /* 7.3.7 Short-term reference picture set syntax */
-static int
-dissect_h265_st_ref_pic_set(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset, int stRpsIdx, int num_short_term_ref_pic_sets, int32_t NumDeltaPocs[H265_MAX_NUM_SHORT_TERM_REF_PIC_SETS])
+static unsigned
+dissect_h265_st_ref_pic_set(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset, int stRpsIdx, int num_short_term_ref_pic_sets, int32_t NumDeltaPocs[H265_MAX_NUM_SHORT_TERM_REF_PIC_SETS])
 {
 	int j;
 	unsigned i;
@@ -2299,8 +2225,8 @@ dissect_h265_st_ref_pic_set(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo 
 }
 
 /* E.2.3 Sub-layer HRD parameters syntax */
-static int
-dissect_h265_sub_layer_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, unsigned subLayerId _U_, uint32_t CpbCnt, bool sub_pic_hrd_params_present_flag)
+static unsigned
+dissect_h265_sub_layer_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset, unsigned subLayerId _U_, uint32_t CpbCnt, bool sub_pic_hrd_params_present_flag)
 {
 	/*The variable CpbCnt is set equal to cpb_cnt_minus1[ subLayerId ] + 1.*/
 	unsigned i;
@@ -2318,8 +2244,8 @@ dissect_h265_sub_layer_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_in
 }
 
 /* E.2.2 HRD parameters syntax */
-static int
-dissect_h265_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, int bit_offset, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1)
+static unsigned
+dissect_h265_hrd_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo _U_, unsigned bit_offset, bool commonInfPresentFlag, unsigned maxNumSubLayersMinus1)
 {
 	unsigned subLayerId;
 	bool nal_hrd_parameters_present_flag = 0, vcl_hrd_parameters_present_flag = 0, sub_pic_hrd_params_present_flag = 0;
@@ -2433,8 +2359,8 @@ static const value_string h265_video_format_vals[] = {
 };
 
 /* E.2.1 VUI parameters syntax */
-static int
-dissect_h265_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int bit_offset, uint8_t sps_max_sub_layers_minus1)
+static unsigned
+dissect_h265_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, unsigned bit_offset, uint8_t sps_max_sub_layers_minus1)
 {
 	uint8_t aspect_ratio_info_present_flag, aspect_ratio_idc, overscan_info_present_flag;
 	uint8_t video_signal_type_present_flag, colour_description_present_flag, chroma_loc_info_present_flag;
@@ -2625,8 +2551,8 @@ dissect_h265_vui_parameters(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
 }
 
 /* 7.3.2.2.2 Sequence parameter set range extension syntax */
-static int
-dissect_h265_sps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset)
+static unsigned
+dissect_h265_sps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset)
 {
 	proto_tree_add_bits_item(tree, hf_h265_transform_skip_rotation_enabled_flag, tvb, bit_offset, 1, ENC_BIG_ENDIAN);
 	bit_offset++;
@@ -2659,28 +2585,28 @@ dissect_h265_sps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* p
 }
 
 /* F.7.3.2.2.4 Sequence parameter set multilayer extension syntax */
-static int
-dissect_h265_sps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset)
+static unsigned
+dissect_h265_sps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset)
 {
 	proto_tree *sps_multilayer_extension_tree;
 	sps_multilayer_extension_tree = proto_tree_add_subtree(tree, tvb, bit_offset >> 3, 1, ett_h265_sps_multilayer_extension, NULL, "sps_multilayer_extension");
-	proto_tree_add_expert(sps_multilayer_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3, -1);
+	proto_tree_add_expert_remaining(sps_multilayer_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3);
 	return bit_offset;
 }
 
 /* I.7.3.2.2.5 Sequence parameter set 3D extension syntax */
-static int
-dissect_h265_sps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset)
+static unsigned
+dissect_h265_sps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset)
 {
 	proto_tree *sps_3d_extension_tree;
 	sps_3d_extension_tree = proto_tree_add_subtree(tree, tvb, bit_offset >> 3, 1, ett_h265_sps_3d_extension, NULL, "sps_3d_extension");
-	proto_tree_add_expert(sps_3d_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3, -1);
+	proto_tree_add_expert_remaining(sps_3d_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3);
 	return bit_offset;
 }
 
 /* 7.3.2.2.3 Sequence parameter set screen content coding extension syntax */
-static int
-dissect_h265_sps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset, unsigned chroma_format_idc, unsigned bit_depth_luma_minus8, unsigned bit_depth_chroma_minus8)
+static unsigned
+dissect_h265_sps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset, unsigned chroma_format_idc, unsigned bit_depth_luma_minus8, unsigned bit_depth_chroma_minus8)
 {
 	unsigned BitDepthY = 8 + bit_depth_luma_minus8, BitDepthC = 8 + bit_depth_chroma_minus8;
 	bool palette_mode_enabled_flag, sps_palette_predictor_initializers_present_flag;
@@ -2728,11 +2654,11 @@ dissect_h265_sps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pin
 }
 
 /* 7.3.2.3.2 Picture parameter set range extension syntax */
-static int
-dissect_h265_pps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset, unsigned transform_skip_enabled_flag)
+static unsigned
+dissect_h265_pps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset, unsigned transform_skip_enabled_flag)
 {
 	bool chroma_qp_offset_list_enabled_flag;
-        int offset;
+        unsigned offset;
 	unsigned i, chroma_qp_offset_list_len_minus1;
 
 	if (transform_skip_enabled_flag) {
@@ -2771,10 +2697,10 @@ dissect_h265_pps_range_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* p
 }
 
 /* 7.3.2.3.3 Picture parameter set screen content coding extension syntax */
-static int
-dissect_h265_pps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, int bit_offset)
+static unsigned
+dissect_h265_pps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo _U_, unsigned bit_offset)
 {
-	int offset;
+	unsigned offset;
 	unsigned pps_num_palette_predictor_initializers, numComps, comp, i;
 	bool residual_adaptive_colour_transform_enabled_flag, pps_palette_predictor_initializers_present_flag,
 		monochrome_palette_flag;
@@ -2849,30 +2775,30 @@ dissect_h265_pps_scc_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pin
 }
 
 /* F.7.3.2.3.4 Picture parameter set multilayer extension syntax */
-static int
-dissect_h265_pps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset)
+static unsigned
+dissect_h265_pps_multilayer_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset)
 {
 	proto_tree *pps_multilayer_extension_tree;
 	pps_multilayer_extension_tree = proto_tree_add_subtree(tree, tvb, bit_offset >> 3, 1, ett_h265_pps_multilayer_extension, NULL, "pps_multilayer_extension");
-	proto_tree_add_expert(pps_multilayer_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3, -1);
+	proto_tree_add_expert_remaining(pps_multilayer_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3);
 
 	return bit_offset;
 }
 
 /* I.7.3.2.3.7 Picture parameter set 3D extension syntax */
-static int
-dissect_h265_pps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int bit_offset)
+static unsigned
+dissect_h265_pps_3d_extension(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, unsigned bit_offset)
 {
 	proto_tree *pps_3d_extension_tree;
 	pps_3d_extension_tree = proto_tree_add_subtree(tree, tvb, bit_offset >> 3, 1, ett_h265_pps_3d_extension, NULL, "pps_3d_extension");
-	proto_tree_add_expert(pps_3d_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3, -1);
+	proto_tree_add_expert_remaining(pps_3d_extension_tree, pinfo, &ei_h265_undecoded, tvb, bit_offset >> 3);
 
 	return bit_offset;
 }
 
 
 static tvbuff_t *
-dissect_h265_unescap_nal_unit(tvbuff_t *tvb, packet_info *pinfo, int offset)
+dissect_h265_unescap_nal_unit(tvbuff_t *tvb, packet_info *pinfo, unsigned offset)
 {
 	tvbuff_t *tvb_rbsp;
 	int       length = tvb_reported_length_remaining(tvb, offset);
@@ -2880,7 +2806,7 @@ dissect_h265_unescap_nal_unit(tvbuff_t *tvb, packet_info *pinfo, int offset)
 	int       i;
 	uint8_t   *buff;
 
-	buff = (char *)wmem_alloc(pinfo->pool, length);
+	buff = (uint8_t *)wmem_alloc(pinfo->pool, length);
 	for (i = 0; i < length; i++) {
 		if ((i + 2 < length) && (tvb_get_ntoh24(tvb, offset) == 0x000003)) {
 			buff[NumBytesInRBSP++] = tvb_get_uint8(tvb, offset);
@@ -2931,7 +2857,7 @@ dissect_h265_format_specific_parameter(proto_tree *tree, tvbuff_t *tvb, packet_i
 		dissect_h265_pic_parameter_set_rbsp(h265_nal_tree, rbsp_tvb, pinfo, 0);
 		break;
 	default:
-		proto_tree_add_expert(tree, pinfo, &ei_h265_format_specific_parameter, tvb, offset, -1);
+		proto_tree_add_expert_remaining(tree, pinfo, &ei_h265_format_specific_parameter, tvb, offset);
 		break;
 	}
 }
@@ -2940,7 +2866,7 @@ dissect_h265_format_specific_parameter(proto_tree *tree, tvbuff_t *tvb, packet_i
 static int
 dissect_h265(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int         offset = 0;
+	unsigned    offset = 0;
 	proto_item *item;
 	proto_tree *h265_tree, *h265_nal_tree, *stream_tree, *fua_tree;
 	uint8_t    type;
@@ -2954,7 +2880,7 @@ dissect_h265(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	type = h265_nalu_hextet >> 9 & 0x3F;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, " %s",
-		val_to_str(pinfo->pool, type, h265_type_summary_values, "Unknown Type (%u)"));
+		val_to_str_ext(pinfo->pool, type, &h265_type_summary_values_ext, "Unknown Type (%u)"));
 
 	/* if (tree) */ {
 		item = proto_tree_add_item(tree, proto_h265, tvb, 0, -1, ENC_NA);
@@ -2996,7 +2922,7 @@ dissect_h265(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 			if ((tvb_get_uint8(tvb, offset) & 0x80) == 0x80) {
 				type = tvb_get_uint8(tvb, offset) & 0x1f;
 				col_append_fstr(pinfo->cinfo, COL_INFO, " Start:%s",
-					val_to_str(pinfo->pool, type, h265_type_summary_values, "Unknown Type (%u)"));
+					val_to_str_ext(pinfo->pool, type, &h265_type_summary_values_ext, "Unknown Type (%u)"));
 				offset++;
 			}
 			else
@@ -3084,7 +3010,8 @@ static int
 dissect_h265_bytestream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	tvbuff_t *next_tvb; //, *rbsp_tvb;
-	int offset = 0, end_offset;
+        unsigned offset = 0;
+        unsigned end_offset;
 	uint32_t dword;
 
 	/* Look for the first start word. Assume byte aligned. */
@@ -3112,20 +3039,20 @@ dissect_h265_bytestream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 		}
 		/* start_code_prefix_one_3bytes */
 		offset += 3;
-		int nal_length = tvb_reported_length_remaining(tvb, offset);
+		unsigned nal_length = tvb_reported_length_remaining(tvb, offset);
 		/* Search for \0\0\1 or \0\0\0\1 */
-		end_offset = tvb_find_uint16(tvb, offset, -1, 0);
-		while (end_offset != -1) {
-			if (tvb_find_uint16(tvb, end_offset + 1, 3, 1) != -1) {
+		end_offset = offset;
+		while (tvb_find_uint16_remaining(tvb, end_offset, 0, &end_offset)) {
+			if (tvb_find_uint16_length(tvb, end_offset + 1, 3, 1, NULL)) {
 				nal_length = end_offset - offset;
 				break;
 			}
-			end_offset = tvb_find_uint16(tvb, end_offset + 1, -1, 0);
+			end_offset++;
 		}
 
-		/* If end_offset is -1, we got to the end; assume this is the
-		 * end of the NAL. Handling NALs split across lower level
-		 * packets requires something like epan/stream.h
+		/* If we got to the end, assume this is the end of the NAL.
+                 * Handling NALs split across lower level packets requires
+                 * something like epan/stream.h
 		 */
 
 		next_tvb = tvb_new_subset_length(tvb, offset, nal_length);
@@ -3150,8 +3077,8 @@ proto_register_h265(void)
 		NULL, HFILL }
 		},
 		{ &hf_h265_type,
-        { "Type", "h265.type",
-		FT_UINT16, BASE_DEC, VALS(h265_type_values), 0x7E00,
+		{ "Type", "h265.type",
+		FT_UINT16, BASE_DEC|BASE_EXT_STRING, &h265_type_values_ext, 0x7E00,
 		NULL, HFILL }
 		},
 		{ &hf_h265_nuh_layer_id,
@@ -3176,7 +3103,7 @@ proto_register_h265(void)
 		},
 		{ &hf_h265_nal_unit_type,
 		{ "Nal_unit_type", "h265.nal_unit_type",
-		FT_UINT8, BASE_DEC, VALS(h265_type_values), 0x1f,
+		FT_UINT8, BASE_DEC|BASE_EXT_STRING, &h265_type_values_ext, 0x1f,
 		NULL, HFILL }
 		},
 		{ &hf_h265_rbsp_stop_bit,

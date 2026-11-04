@@ -97,7 +97,7 @@ syserr(const char *s)
 #ifdef NL80211
 static int __dhd_driver_io(void *dhd, dhd_ioctl_t *ioc)
 {
-	struct dhd_netlink_info dhd_nli;
+	struct dhd_netlink_info dhd_nli = { 0 };
 	struct ifreq *ifr = (struct ifreq *)dhd;
 	int ret = 0;
 
@@ -154,14 +154,16 @@ dhd_ioctl(void *dhd, int cmd, void *buf, int len, bool set)
 	/* For local dhd commands execute dhd. For wifi transport we still
 	 * execute wl commands.
 	 */
-	if (remote_type == NO_REMOTE && strncmp (buf, RWL_WIFI_ACTION_CMD,
-		strlen(RWL_WIFI_ACTION_CMD)) && strncmp(buf, RWL_WIFI_GET_ACTION_CMD,
-		strlen(RWL_WIFI_GET_ACTION_CMD))) {
+	if (remote_type == NO_REMOTE &&
+	    (buf == NULL ||
+	     (strncmp(buf, RWL_WIFI_ACTION_CMD, strlen(RWL_WIFI_ACTION_CMD)) &&
+	      strncmp(buf, RWL_WIFI_GET_ACTION_CMD, strlen(RWL_WIFI_GET_ACTION_CMD))))) {
 		driver_magic = DHD_IOCTL_MAGIC;
 		get_magic = DHD_GET_MAGIC;
 	}
 
 	/* do it */
+	memset(&ioc, 0, sizeof(ioc));
 	ioc.cmd = cmd;
 	ioc.buf = buf;
 	ioc.len = len;
@@ -188,24 +190,27 @@ int wl_ioctl(void *wl, int cmd, void *buf, int len, bool set)
  * wifi transport.
  */
 static int
-dhd_get_dev_type(char *name, void *buf, char *type)
+dhd_get_dev_type(char *name, void *buf, size_t buflen, char *type)
 {
 	int s;
 	int ret;
 	struct ifreq ifr;
 	struct ethtool_drvinfo info;
 
+	if (!buf || buflen == 0)
+		return -1;
+
 	/* open socket to kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 		syserr("socket");
 
 	/* get device type */
+	memset(&ifr, 0, sizeof(ifr));
 	memset(&info, 0, sizeof(info));
 	info.cmd = ETHTOOL_GDRVINFO;
-	strcpy(info.driver, "?");
-	strcat(info.driver, type);
+	snprintf(info.driver, sizeof(info.driver), "?%s", type ? type : "");
 	ifr.ifr_data = (caddr_t)&info;
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", name ? name : "");
 	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
 
 		if (errno != EAGAIN)
@@ -214,7 +219,7 @@ dhd_get_dev_type(char *name, void *buf, char *type)
 		*(char *)buf = '\0';
 	}
 	else
-		strcpy(buf, info.driver);
+		snprintf((char *)buf, buflen, "%s", info.driver);
 
 	close(s);
 	return ret;
@@ -255,12 +260,15 @@ dhd_set(void *dhd, int cmd, void *buf, int len)
 		return dnode;
 		break;
 	case DHD_DLDN_WRITE:
-		if (dnode > 0)
+		if (dnode >= 0)
 			return write(dnode, buf, len);
 		break;
 	case DHD_DLDN_END:
-		if (dnode > 0)
-			return close(dnode);
+		if (dnode >= 0) {
+			int rc = close(dnode);
+			dnode = -1;
+			return rc;
+		}
 		break;
 	default:
 		return wl_set(dhd, cmd, buf, len);
@@ -314,20 +322,24 @@ dhd_find(struct ifreq *ifr, char *type)
 
 	ifr->ifr_name[0] = '\0';
 	/* eat first two lines */
-	if (!(fp = fopen(proc_net_dev, "r")) ||
-	    !fgets(buf, sizeof(buf), fp) ||
-	    !fgets(buf, sizeof(buf), fp))
+	if (!(fp = fopen(proc_net_dev, "r")))
 		return;
+	if (!fgets(buf, sizeof(buf), fp) ||
+	    !fgets(buf, sizeof(buf), fp)) {
+		fclose(fp);
+		return;
+	}
 
 	while (fgets(buf, sizeof(buf), fp)) {
 		c = buf;
-		while (isspace(*c))
+		while (isspace((unsigned char)*c))
 			c++;
 		if (!(name = strsep(&c, ":")))
 			continue;
-		strncpy(ifr->ifr_name, name, IFNAMSIZ);
-		if (dhd_get_dev_type(name, dev_type, type) >= 0 &&
-			!strncmp(dev_type, type, strlen(dev_type) - 1))
+		snprintf(ifr->ifr_name, sizeof(ifr->ifr_name), "%s", name);
+		if (dhd_get_dev_type(name, dev_type, sizeof(dev_type), type) >= 0 &&
+		    dev_type[0] != '\0' && type &&
+		    !strncmp(dev_type, type, strlen(type)))
 		{
 			if (!wl_check((void*)ifr))
 				break;
@@ -427,7 +439,7 @@ wl_validatedev(void *dev_handle)
 	int retval = 1;
 	struct ifreq *ifr = (struct ifreq *)dev_handle;
 	/* validate the interface */
-	if (!ifr->ifr_name || wl_check((void *)ifr)) {
+	if (!ifr || !ifr->ifr_name[0] || wl_check((void *)ifr)) {
 		retval = 0;
 	}
 	return retval;
@@ -449,25 +461,26 @@ main(int argc, char **argv)
 	struct ipv4_addr temp;
 #endif /* RWL_SOCKET */
 
-	UNUSED_PARAMETER(argc);
+	if (argc < 1 || !argv || !argv[0])
+		return -1;
 
 	av0 = argv[0];
 	memset(&ifr, 0, sizeof(ifr));
 	argv++;
 
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
 	if ((status = dhd_option(&argv, &ifname, &help)) == CMD_OPT) {
 		if (ifname)
-			strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+			snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
 	}
 	/* Linux client looking for a Win32 server */
-	if (*argv && strncmp (*argv, "--wince", strlen(*argv)) == 0) {
+	if (*argv && strcmp(*argv, "--wince") == 0) {
 		rwl_os_type = WIN32_OS;
 		argv++;
 	}
 
 	/* RWL socket transport Usage: --socket ipaddr [port num] */
-	if (*argv && strncmp (*argv, "--socket", strlen(*argv)) == 0) {
+	if (*argv && strcmp(*argv, "--socket") == 0) {
 		argv++;
 
 		remote_type = REMOTE_SOCKET;
@@ -485,7 +498,7 @@ main(int argc, char **argv)
 		argv++;
 
 		g_rwl_servport = DEFAULT_SERVER_PORT;
-		if ((*argv) && isdigit(**argv)) {
+		if ((*argv) && isdigit((unsigned char)**argv)) {
 			g_rwl_servport = atoi(*argv);
 			argv++;
 		}
@@ -494,13 +507,13 @@ main(int argc, char **argv)
 
 	/* RWL from system serial port on client to uart dongle port on server */
 	/* Usage: --dongle /dev/ttyS0 */
-	if (*argv && strncmp (*argv, "--dongle", strlen(*argv)) == 0) {
+	if (*argv && strcmp(*argv, "--dongle") == 0) {
 		argv++;
 		remote_type = REMOTE_DONGLE;
 	}
 
 	/* RWL over wifi.  Usage: --wifi mac_address */
-	if (*argv && strncmp (*argv, "--wifi", strlen(*argv)) == 0) {
+	if (*argv && strcmp(*argv, "--wifi") == 0) {
 		argv++;
 #ifdef RWL_WIFI
 		remote_type = NO_REMOTE;
@@ -584,7 +597,7 @@ process_args(struct ifreq* ifr, char **argv)
 			if (help)
 				break;
 			if (ifname)
-				strncpy(ifr->ifr_name, ifname, IFNAMSIZ);
+				snprintf(ifr->ifr_name, sizeof(ifr->ifr_name), "%s", ifname);
 			continue;
 		}
 		/* parse error */

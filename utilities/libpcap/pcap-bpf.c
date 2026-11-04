@@ -43,9 +43,9 @@
 #endif
 #include <sys/utsname.h>
 
-#if defined(__FreeBSD__) && defined(SIOCIFCREATE2)
+#if defined(__FreeBSD__) && __FreeBSD_version < 1600006
 /*
- * Add support for capturing on FreeBSD usbusN interfaces.
+ * Add support for creating FreeBSD usbusN interfaces as necessary.
  */
 static const char usbus_prefix[] = "usbus";
 #define USBUS_PREFIX_LEN	(sizeof(usbus_prefix) - 1)
@@ -126,7 +126,7 @@ static int bpf_load(char *errbuf);
  * implements additional FreeBSDisms in <machine/atomic.h> and QNX implements
  * additional QNXisms in <atomic.h>.  These two functions use FreeBSDisms.
  */
-#if !defined(__QNX__) && defined(BIOCROTZBUF) && defined(BPF_BUFMODE_ZBUF)
+#if defined(HAVE_MACHINE_ATOMIC_H) && defined(BIOCROTZBUF) && defined(BPF_BUFMODE_ZBUF)
   #define HAVE_ZEROCOPY_BPF
   #include <sys/mman.h>
   #include <machine/atomic.h>
@@ -296,7 +296,7 @@ pcap_setnonblock_bpf(pcap_t *p, int nonblock)
  * buffer filled for a fresh BPF session.
  */
 static int
-pcap_next_zbuf_shm(pcap_t *p, ssize_t *cc)
+pcap_next_zbuf_shm(pcap_t *p, u_int *cc)
 {
 	struct pcap_bpf *pb = p->priv;
 	struct bpf_zbuf_header *bzh;
@@ -334,7 +334,7 @@ pcap_next_zbuf_shm(pcap_t *p, ssize_t *cc)
  * work.
  */
 static int
-pcap_next_zbuf(pcap_t *p, ssize_t *cc)
+pcap_next_zbuf(pcap_t *p, u_int *cc)
 {
 	struct pcap_bpf *pb = p->priv;
 	struct bpf_zbuf bz;
@@ -473,6 +473,68 @@ pcapint_create_interface(const char *device _U_, char *ebuf)
 #endif /* BIOCSTSTAMP */
 	return (p);
 }
+
+#ifdef __APPLE__
+/*
+ * Check whether a named device exists.
+ *
+ * Returns 0 if the device exists and a PCAP_ERROR_ code, filling
+ * in error, if it doesn't exist or if the attempt to check fails.
+ * PCAP_ERROR_NO_SUCH_DEVICE indicates that the device doesn't
+ * exist; other errors indicate that the attempt to check failed.
+ */
+static int
+check_device_exists(const char *name, char *errbuf)
+{
+	int fd;
+	int status;
+	struct ifreq ifr;
+
+	if (strlen(name) >= sizeof(ifr.ifr_name)) {
+		/* The name is too long, so it can't possibly exist. */
+		return (PCAP_ERROR_NO_SUCH_DEVICE);
+	}
+
+	/*
+	 * Attempt to pen a socket on which we can do an ioctl to
+	 * check whether the device exists.
+	 */
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd == -1) {
+		/* That failed; report that as the error. */
+		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
+		    errno, "Can't open socket to check whether a device exists");
+		return (PCAP_ERROR);
+	}
+
+	(void)pcapint_strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
+	status = ioctl(fd, SIOCGIFFLAGS, (caddr_t)&ifr);
+
+	if (status < 0 && (errno == ENXIO || errno == EINVAL)) {
+		/*
+		 * macOS and *BSD return one of those two errors if
+		 * the device doesn't exist.
+		 *
+		 * Don't fill in an error, as this is an "expected"
+		 * condition; this routine's purpose is to test
+		 * whether a device exists, and "it doesn't exist"
+		 * is an answer, not an indication that we couldn't
+		 * determine whether it exists.
+		 */
+		close(fd);
+		return (PCAP_ERROR_NO_SUCH_DEVICE);
+	}
+
+	/*
+	 * Either we were able to fetch the interface flags, indicating
+	 * that it exists, or we weren't able to fetch them but got an
+	 * error *other* than "there is no such device", which we
+	 * treat as an indication that the device exists.
+	 */
+	close(fd);
+	return (0);
+}
+#endif
 
 /*
  * On success, returns a file descriptor for a BPF device.
@@ -864,47 +926,6 @@ bpf_open_and_bind(const char *name, char *errbuf)
 	return (fd);
 }
 
-#ifdef __APPLE__
-static int
-device_exists(int fd, const char *name, char *errbuf)
-{
-	int status;
-	struct ifreq ifr;
-
-	if (strlen(name) >= sizeof(ifr.ifr_name)) {
-		/* The name is too long, so it can't possibly exist. */
-		return (PCAP_ERROR_NO_SUCH_DEVICE);
-	}
-	(void)pcapint_strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
-	status = ioctl(fd, SIOCGIFFLAGS, (caddr_t)&ifr);
-
-	if (status < 0) {
-		if (errno == ENXIO || errno == EINVAL) {
-			/*
-			 * macOS and *BSD return one of those two
-			 * errors if the device doesn't exist.
-			 * Don't fill in an error, as this is
-			 * an "expected" condition.
-			 */
-			return (PCAP_ERROR_NO_SUCH_DEVICE);
-		}
-
-		/*
-		 * Some other error - provide a message for it, as
-		 * it's "unexpected".
-		 */
-		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE, errno,
-		    "Can't get interface flags on %s", name);
-		return (PCAP_ERROR);
-	}
-
-	/*
-	 * The device exists.
-	 */
-	return (0);
-}
-#endif
-
 #ifdef BIOCGDLTLIST
 static int
 get_dlt_list(int fd, int v, struct bpf_dltlist *bdlp, char *ebuf)
@@ -991,8 +1012,8 @@ static int
 pcap_can_set_rfmon_bpf(pcap_t *p)
 {
 	struct utsname osinfo;
-	int fd;
 #ifdef BIOCGDLTLIST
+	int fd;
 	struct bpf_dltlist bdl;
 	int err;
 #endif
@@ -1045,21 +1066,13 @@ pcap_can_set_rfmon_bpf(pcap_t *p)
 			 */
 			return (0);
 		}
-		fd = socket(AF_INET, SOCK_DGRAM, 0);
-		if (fd == -1) {
-			pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "socket");
-			return (PCAP_ERROR);
-		}
 		if (pcapint_asprintf(&wlt_name, "wlt%s", p->opt.device + 2) == -1) {
 			pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 			    errno, "malloc");
-			close(fd);
 			return (PCAP_ERROR);
 		}
-		status = device_exists(fd, wlt_name, p->errbuf);
+		status = check_device_exists(wlt_name, p->errbuf);
 		free(wlt_name);
-		close(fd);
 		if (status != 0) {
 			if (status == PCAP_ERROR_NO_SUCH_DEVICE)
 				return (0);
@@ -1184,15 +1197,12 @@ static int
 pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 {
 	struct pcap_bpf *pb = p->priv;
-	ssize_t cc;
+	u_int cc;
 	int n = 0;
-	register u_char *bp, *ep;
+	u_char *bp, *ep;
 	u_char *datap;
 #ifdef PCAP_FDDIPAD
-	register u_int pad;
-#endif
-#ifdef HAVE_ZEROCOPY_BPF
-	int i;
+	u_int pad;
 #endif
 
  again:
@@ -1220,91 +1230,108 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		 */
 #ifdef HAVE_ZEROCOPY_BPF
 		if (pb->zerocopy) {
+			int next_zbuf_ret;
+
 			if (p->buffer != NULL)
 				pcap_ack_zbuf(p);
-			i = pcap_next_zbuf(p, &cc);
-			if (i == 0)
+			next_zbuf_ret = pcap_next_zbuf(p, &cc);
+			if (next_zbuf_ret == 0)
 				goto again;
-			if (i < 0)
-				return (PCAP_ERROR);
+			if (next_zbuf_ret < 0)
+				return (next_zbuf_ret);
 		} else
 #endif
 		{
-			cc = read(p->fd, p->buffer, p->bufsize);
-		}
-		if (cc < 0) {
-			/* Don't choke when we get ptraced */
-			switch (errno) {
+			ssize_t read_ret;
 
-			case EINTR:
-				goto again;
+			read_ret = read(p->fd, p->buffer, p->bufsize);
+			if (read_ret < 0) {
+				/* Don't choke when we get ptraced */
+				switch (errno) {
+
+				case EINTR:
+					goto again;
 
 #ifdef _AIX
-			case EFAULT:
-				/*
-				 * Sigh.  More AIX wonderfulness.
-				 *
-				 * For some unknown reason the uiomove()
-				 * operation in the bpf kernel extension
-				 * used to copy the buffer into user
-				 * space sometimes returns EFAULT. I have
-				 * no idea why this is the case given that
-				 * a kernel debugger shows the user buffer
-				 * is correct. This problem appears to
-				 * be mostly mitigated by the memset of
-				 * the buffer before it is first used.
-				 * Very strange.... Shaun Clowes
-				 *
-				 * In any case this means that we shouldn't
-				 * treat EFAULT as a fatal error; as we
-				 * don't have an API for returning
-				 * a "some packets were dropped since
-				 * the last packet you saw" indication,
-				 * we just ignore EFAULT and keep reading.
-				 */
-				goto again;
+				case EFAULT:
+					/*
+					 * Sigh.  More AIX wonderfulness.
+					 *
+					 * For some unknown reason the
+					 * uiomove() operation in the bpf
+					 * kernel extension used to copy
+					 * the buffer into user space
+					 * sometimes returns EFAULT. I have
+					 * no idea why this is the case given
+					 * that a kernel debugger shows the
+					 * user buffer is correct. This
+					 * problem appears to be mostly
+					 * mitigated by the memset of
+					 * the buffer before it is first used.
+					 * Very strange.... Shaun Clowes
+					 *
+					 * In any case this means that we
+					 * shouldn't treat EFAULT as a fatal
+					 * error; as we don't have an API for
+					 * returning a "some packets were
+					 * dropped since the last packet you
+					 * saw" indication, we just ignore
+					 * EFAULT and keep reading.
+					 */
+					goto again;
 #endif
 
-			case EWOULDBLOCK:
-				return (0);
+				case EWOULDBLOCK:
+					return (0);
 
-			case ENXIO:	/* FreeBSD, DragonFly BSD, and Darwin */
-			case EIO:	/* OpenBSD */
-					/* NetBSD appears not to return an error in this case */
-				/*
-				 * The device on which we're capturing
-				 * went away.
-				 *
-				 * XXX - we should really return
-				 * an appropriate error for that,
-				 * but pcap_dispatch() etc. aren't
-				 * documented as having error returns
-				 * other than PCAP_ERROR or PCAP_ERROR_BREAK.
-				 */
-				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
-				    "The interface disappeared");
-				return (PCAP_ERROR);
+				case ENXIO:	/* FreeBSD, DragonFly BSD, and Darwin */
+				case EIO:	/* OpenBSD */
+						/* NetBSD appears not to return an error in this case */
+					/*
+					 * The device on which we're capturing
+					 * went away.
+					 *
+					 * XXX - we should really return
+					 * an appropriate error for that,
+					 * but pcap_dispatch() etc. aren't
+					 * documented as having error returns
+					 * other than PCAP_ERROR or
+					 * PCAP_ERROR_BREAK.
+					 */
+					snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+					    "The interface disappeared");
+					return (PCAP_ERROR);
 
 #if defined(sun) && !defined(BSD) && !defined(__svr4__) && !defined(__SVR4)
-			/*
-			 * Due to a SunOS bug, after 2^31 bytes, the kernel
-			 * file offset overflows and read fails with EINVAL.
-			 * The lseek() to 0 will fix things.
-			 */
-			case EINVAL:
-				if (lseek(p->fd, 0L, SEEK_CUR) +
-				    p->bufsize < 0) {
-					(void)lseek(p->fd, 0L, SEEK_SET);
-					goto again;
-				}
-				/* fall through */
+				/*
+				 * Due to a SunOS bug, after 2^31 bytes, the
+				 * kernel file offset overflows and read
+				 * fails with EINVAL.
+				 * The lseek() to 0 will fix things.
+				 */
+				case EINVAL:
+					if (lseek(p->fd, 0L, SEEK_CUR) +
+					    p->bufsize < 0) {
+						(void)lseek(p->fd, 0L, SEEK_SET);
+						goto again;
+					}
+					/* fall through */
 #endif
+				}
+				pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
+				    errno, "read");
+				return (PCAP_ERROR);
 			}
-			pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "read");
-			return (PCAP_ERROR);
+
+			/*
+			 * At this point, read_ret is guaranteed to be
+			 * >= 0 and < p->bufsize; p->bufsize is a u_int,
+			 * so its value is guaranteed to fit in cc, which
+			 * is also a u_int.
+			 */
+			cc = (u_int)read_ret;
 		}
-		bp = (u_char *)p->buffer;
+		bp = p->buffer;
 	} else
 		bp = p->bp;
 
@@ -1324,7 +1351,8 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 	pad = p->fddipad;
 #endif
 	while (bp < ep) {
-		register u_int caplen, hdrlen;
+		u_int caplen, hdrlen;
+		size_t packet_bytes;
 
 		/*
 		 * Has "pcap_breakloop()" been called?
@@ -1338,22 +1366,7 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		 */
 		if (p->break_loop) {
 			p->bp = bp;
-			p->cc = (int)(ep - bp);
-			/*
-			 * ep is set based on the return value of read(),
-			 * but read() from a BPF device doesn't necessarily
-			 * return a value that's a multiple of the alignment
-			 * value for BPF_WORDALIGN().  However, whenever we
-			 * increment bp, we round up the increment value by
-			 * a value rounded up by BPF_WORDALIGN(), so we
-			 * could increment bp past ep after processing the
-			 * last packet in the buffer.
-			 *
-			 * We treat ep < bp as an indication that this
-			 * happened, and just set p->cc to 0.
-			 */
-			if (p->cc < 0)
-				p->cc = 0;
+			p->cc = (u_int)(ep - bp);
 			if (n == 0) {
 				p->break_loop = 0;
 				return (PCAP_ERROR_BREAK);
@@ -1364,6 +1377,22 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		caplen = bhp->bh_caplen;
 		hdrlen = bhp->bh_hdrlen;
 		datap = bp + hdrlen;
+
+		/*
+		 * Compute the number of bytes for this packet in
+		 * the buffer.
+		 *
+		 * That's the sum of the header length and the packet
+		 * data length plus, if this is not the last packet,
+		 * the padding required to align the next packet on
+		 * the appropriate boundary.
+		 *
+		 * That means that it should be the minimum of the
+		 * number of bytes left in the buffer (ep - bp) and the
+		 * rounded-up sum of the header and packet data lengths.
+		 */
+		packet_bytes = min((u_int)(ep - bp), BPF_WORDALIGN(caplen + hdrlen));
+
 		/*
 		 * Short-circuit evaluation: if using BPF filter
 		 * in kernel, no need to do it now - we already know
@@ -1391,7 +1420,14 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 
 				bintime2timespec(&bt, &ts);
 				pkthdr.ts.tv_sec = ts.tv_sec;
-				pkthdr.ts.tv_usec = ts.tv_nsec;
+				/*
+				 * On QNX 8.0 the former (timeval.tv_usec) is
+				 * an int via suseconds_t and the latter
+				 * (timespec.tv_nsec) is a long.  The value is
+				 * supposed to be in the [0 .. 999999999]
+				 * interval.
+				 */
+				pkthdr.ts.tv_usec = (suseconds_t)ts.tv_nsec;
 			} else {
 				struct timeval tv;
 
@@ -1432,22 +1468,17 @@ pcap_read_bpf(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			pkthdr.len = bhp->bh_datalen;
 #endif
 			(*callback)(user, &pkthdr, datap);
-			bp += BPF_WORDALIGN(caplen + hdrlen);
+			bp += packet_bytes;
 			if (++n >= cnt && !PACKET_COUNT_IS_UNLIMITED(cnt)) {
 				p->bp = bp;
-				p->cc = (int)(ep - bp);
-				/*
-				 * See comment above about p->cc < 0.
-				 */
-				if (p->cc < 0)
-					p->cc = 0;
+				p->cc = (u_int)(ep - bp);
 				return (n);
 			}
 		} else {
 			/*
 			 * Skip this packet.
 			 */
-			bp += BPF_WORDALIGN(caplen + hdrlen);
+			bp += packet_bytes;
 		}
 	}
 #undef bhp
@@ -1513,7 +1544,8 @@ bpf_odminit(char *errbuf)
 		if (odm_err_msg(odmerrno, &errstr) == -1)
 			errstr = "Unknown error";
 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
-		    "bpf_load: odm_initialize failed: %s",
+		    "%s: odm_initialize failed: %s",
+		    __func__,
 		    errstr);
 		return (PCAP_ERROR);
 	}
@@ -1522,7 +1554,8 @@ bpf_odminit(char *errbuf)
 		if (odm_err_msg(odmerrno, &errstr) == -1)
 			errstr = "Unknown error";
 		snprintf(errbuf, PCAP_ERRBUF_SIZE,
-		    "bpf_load: odm_lock of /etc/objrepos/config_lock failed: %s",
+		    "%s: odm_lock of /etc/objrepos/config_lock failed: %s",
+		    __func__,
 		    errstr);
 		(void)odm_terminate();
 		return (PCAP_ERROR);
@@ -1541,7 +1574,8 @@ bpf_odmcleanup(char *errbuf)
 			if (odm_err_msg(odmerrno, &errstr) == -1)
 				errstr = "Unknown error";
 			snprintf(errbuf, PCAP_ERRBUF_SIZE,
-			    "bpf_load: odm_unlock failed: %s",
+			    "%s: odm_unlock failed: %s",
+			    __func__,
 			    errstr);
 		}
 		return (PCAP_ERROR);
@@ -1552,7 +1586,8 @@ bpf_odmcleanup(char *errbuf)
 			if (odm_err_msg(odmerrno, &errstr) == -1)
 				errstr = "Unknown error";
 			snprintf(errbuf, PCAP_ERRBUF_SIZE,
-			    "bpf_load: odm_terminate failed: %s",
+			    "%s: odm_terminate failed: %s",
+			    __func__,
 			    errstr);
 		}
 		return (PCAP_ERROR);
@@ -1586,7 +1621,7 @@ bpf_load(char *errbuf)
 	major = genmajor(BPF_NAME);
 	if (major == -1) {
 		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "bpf_load: genmajor failed");
+		    errno, "%s: genmajor failed", __func__);
 		(void)bpf_odmcleanup(NULL);
 		return (PCAP_ERROR);
 	}
@@ -1596,7 +1631,7 @@ bpf_load(char *errbuf)
 		minors = genminor("bpf", major, 0, BPF_MINORS, 1, 1);
 		if (!minors) {
 			pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "bpf_load: genminor failed");
+			    errno, "%s: genminor failed", __func__);
 			(void)bpf_odmcleanup(NULL);
 			return (PCAP_ERROR);
 		}
@@ -1608,7 +1643,7 @@ bpf_load(char *errbuf)
 	rc = stat(BPF_NODE "0", &sbuf);
 	if (rc == -1 && errno != ENOENT) {
 		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-		    errno, "bpf_load: can't stat %s", BPF_NODE "0");
+		    errno, "%s: can't stat %s", __func__, BPF_NODE "0");
 		return (PCAP_ERROR);
 	}
 
@@ -1619,7 +1654,7 @@ bpf_load(char *errbuf)
 			if (mknod(buf, S_IRUSR | S_IFCHR, domakedev(major, i)) == -1) {
 				pcapint_fmt_errmsg_for_errno(errbuf,
 				    PCAP_ERRBUF_SIZE, errno,
-				    "bpf_load: can't mknod %s", buf);
+				    "%s: can't mknod %s", __func__, buf);
 				return (PCAP_ERROR);
 			}
 		}
@@ -1634,7 +1669,7 @@ bpf_load(char *errbuf)
 		/* Driver isn't loaded, load it now */
 		if (sysconfig(SYS_SINGLELOAD, (void *)&cfg_ld, sizeof(cfg_ld)) == -1) {
 			pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "bpf_load: could not load driver");
+			    errno, "%s: could not load driver", __func__);
 			return (PCAP_ERROR);
 		}
 	}
@@ -1648,7 +1683,7 @@ bpf_load(char *errbuf)
 		cfg_bpf.devno = domakedev(major, i);
 		if (sysconfig(SYS_CFGKMOD, (void *)&cfg_km, sizeof(cfg_km)) == -1) {
 			pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "bpf_load: could not configure driver");
+			    errno, "%s: could not configure driver", __func__);
 			return (PCAP_ERROR);
 		}
 	}
@@ -1728,7 +1763,7 @@ pcap_cleanup_bpf(pcap_t *p)
 		}
 #endif /* HAVE_BSD_IEEE80211 */
 
-#if defined(__FreeBSD__) && defined(SIOCIFCREATE2)
+#if defined(__FreeBSD__) && __FreeBSD_version < 1600006
 		/*
 		 * Attempt to destroy the usbusN interface that we created.
 		 */
@@ -1745,7 +1780,7 @@ pcap_cleanup_bpf(pcap_t *p)
 				}
 			}
 		}
-#endif /* defined(__FreeBSD__) && defined(SIOCIFCREATE2) */
+#endif /* defined(__FreeBSD__) && __FreeBSD_version < 1600006 */
 		/*
 		 * Take this pcap out of the list of pcaps for which we
 		 * have to take the interface out of some mode.
@@ -1781,7 +1816,6 @@ pcap_cleanup_bpf(pcap_t *p)
 static int
 check_setif_failure(pcap_t *p, int error)
 {
-	int fd;
 	int err;
 
 	if (error == PCAP_ERROR_NO_SUCH_DEVICE) {
@@ -1796,52 +1830,32 @@ check_setif_failure(pcap_t *p, int error)
 			 * "enN" device; if that device exists, return
 			 * "monitor mode not supported on the device".
 			 */
-			fd = socket(AF_INET, SOCK_DGRAM, 0);
-			if (fd != -1) {
-				char *en_name;
+			char *en_name;
 
-				if (pcapint_asprintf(&en_name, "en%s",
-				    p->opt.device + 3) == -1) {
-					/*
-					 * We can't find out whether there's
-					 * an underlying "enN" device, so
-					 * just report "no such device".
-					 */
-					pcapint_fmt_errmsg_for_errno(p->errbuf,
-					    PCAP_ERRBUF_SIZE, errno,
-					    "malloc");
-					close(fd);
-					return (PCAP_ERROR_NO_SUCH_DEVICE);
-				}
-				err = device_exists(fd, en_name, p->errbuf);
-				free(en_name);
-				if (err != 0) {
-					if (err == PCAP_ERROR_NO_SUCH_DEVICE) {
-						/*
-						 * The underlying "enN" device
-						 * exists, but there's no
-						 * corresponding "wltN" device;
-						 * that means that the "enN"
-						 * device doesn't support
-						 * monitor mode, probably
-						 * because it's an Ethernet
-						 * device rather than a
-						 * wireless device.
-						 */
-						err = PCAP_ERROR_RFMON_NOTSUP;
-					}
-				}
-				close(fd);
-			} else {
+			if (pcapint_asprintf(&en_name, "en%s",
+			    p->opt.device + 3) == -1) {
 				/*
-				 * We can't find out whether there's
-				 * an underlying "enN" device, so
-				 * just report "no such device".
+				 * We don't have enough memory to
+				 * construct a string for the name of
+				 * the "enN" device.
 				 */
-				err = PCAP_ERROR_NO_SUCH_DEVICE;
 				pcapint_fmt_errmsg_for_errno(p->errbuf,
-				    errno, PCAP_ERRBUF_SIZE,
-				    "socket() failed");
+				    PCAP_ERRBUF_SIZE, errno,
+				    "malloc");
+				return (PCAP_ERROR);
+			}
+			err = check_device_exists(en_name, p->errbuf);
+			free(en_name);
+			if (err == PCAP_ERROR_NO_SUCH_DEVICE) {
+				/*
+				 * The underlying "enN" device exists,
+				 * but there's no corresponding "wltN"
+				 * device; that means that the "enN"
+				 * device doesn't support monitor mode,
+				 * probably because it's an Ethernet
+				 * device rather than a wireless device.
+				 */
+				err = PCAP_ERROR_RFMON_NOTSUP;
 			}
 			return (err);
 		}
@@ -1871,19 +1885,15 @@ check_setif_failure(pcap_t *p _U_, int error)
 #endif
 
 /*
- * Default capture buffer size.
- * 32K isn't very much for modern machines with fast networks; we
- * pick .5M, as that's the maximum on at least some systems with BPF.
- *
- * However, on AIX 3.5, the larger buffer sized caused unrecoverable
- * read failures under stress, so we leave it as 32K; yet another
- * place where AIX's BPF is broken.
+ * We pick .5M, as that's the maximum on at least some systems with BPF.
+ * For reference, at the time of this writing sysctl(8) reports the following
+ * maximum buffer sizes.
+ * - FreeBSD 14.1: net.bpf.maxbufsize = 524288
+ * - macOS 12.6 (Darwin 21.6.0): debug.bpf_maxbufsize = 524288
+ * - NetBSD 10.0: net.bpf.maxbufsize = 1048576
+ * - OpenBSD 7.5: net.bpf.maxbufsize = 2097152
  */
-#ifdef _AIX
-#define DEFAULT_BUFSIZE	32768
-#else
 #define DEFAULT_BUFSIZE	524288
-#endif
 
 static int
 pcap_activate_bpf(pcap_t *p)
@@ -1896,7 +1906,6 @@ pcap_activate_bpf(pcap_t *p)
 	int fd;
 	struct bpf_version bv;
 #ifdef __APPLE__
-	int sockfd;
 	char *wltdev = NULL;
 #endif
 #ifdef BIOCGDLTLIST
@@ -1916,6 +1925,7 @@ pcap_activate_bpf(pcap_t *p)
 #ifdef HAVE_ZEROCOPY_BPF
 	struct bpf_zbuf bz;
 	u_int bufmode, zbufmax;
+	int flags = MAP_ANON;
 #endif
 
 	fd = bpf_open(p->errbuf);
@@ -1994,32 +2004,16 @@ pcap_activate_bpf(pcap_t *p)
 					 * Not an enN device; check
 					 * whether the device even exists.
 					 */
-					sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-					if (sockfd != -1) {
-						status = device_exists(sockfd,
-						    p->opt.device, p->errbuf);
-						if (status == 0) {
-							/*
-							 * The device exists,
-							 * but it's not an
-							 * enN device; that
-							 * means it doesn't
-							 * support monitor
-							 * mode.
-							 */
-							status = PCAP_ERROR_RFMON_NOTSUP;
-						}
-						close(sockfd);
-					} else {
+					status = check_device_exists(p->opt.device,
+					    p->errbuf);
+					if (status == 0) {
 						/*
-						 * We can't find out whether
-						 * the device exists, so just
-						 * report "no such device".
+						 * The device exists, but
+						 * it's not an "enN" device;
+						 * that means it doesn't
+						 * support monitor mode.
 						 */
-						status = PCAP_ERROR_NO_SUCH_DEVICE;
-						pcapint_fmt_errmsg_for_errno(p->errbuf,
-						    PCAP_ERRBUF_SIZE, errno,
-						    "socket() failed");
+						status = PCAP_ERROR_RFMON_NOTSUP;
 					}
 					goto bad;
 				}
@@ -2044,11 +2038,11 @@ pcap_activate_bpf(pcap_t *p)
 	}
 #endif /* __APPLE__ */
 
+#if defined(__FreeBSD__) && __FreeBSD_version < 1600006
 	/*
-	 * If this is FreeBSD, and the device name begins with "usbus",
-	 * try to create the interface if it's not available.
+	 * If this is FreeBSD 15 or earlier, and the device name begins
+	 * with "usbus", try to create the interface if it's not available.
 	 */
-#if defined(__FreeBSD__) && defined(SIOCIFCREATE2)
 	if (strncmp(p->opt.device, usbus_prefix, USBUS_PREFIX_LEN) == 0) {
 		/*
 		 * Do we already have an interface with that name?
@@ -2083,9 +2077,8 @@ pcap_activate_bpf(pcap_t *p)
 				/*
 				 * "atexit()" failed; don't create the
 				 * interface, just give up.
+				 * p->errbuf has already been filled.
 				 */
-				snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
-				     "atexit failed");
 				close(s);
 				status = PCAP_ERROR;
 				goto bad;
@@ -2122,7 +2115,7 @@ pcap_activate_bpf(pcap_t *p)
 			pcapint_add_to_pcaps_to_close(p);
 		}
 	}
-#endif /* defined(__FreeBSD__) && defined(SIOCIFCREATE2) */
+#endif /* defined(__FreeBSD__) && __FreeBSD_version < 1600006 */
 
 #ifdef HAVE_ZEROCOPY_BPF
 	/*
@@ -2169,17 +2162,20 @@ pcap_activate_bpf(pcap_t *p)
 		pb->zbufsize = roundup(v, getpagesize());
 		if (pb->zbufsize > zbufmax)
 			pb->zbufsize = zbufmax;
+#ifdef MAP_32BIT
+		if (pcapint_mmap_32bit) flags |= MAP_32BIT;
+#endif
 		pb->zbuf1 = mmap(NULL, pb->zbufsize, PROT_READ | PROT_WRITE,
-		    MAP_ANON, -1, 0);
+		    flags, -1, 0);
 		pb->zbuf2 = mmap(NULL, pb->zbufsize, PROT_READ | PROT_WRITE,
-		    MAP_ANON, -1, 0);
+		    flags, -1, 0);
 		if (pb->zbuf1 == MAP_FAILED || pb->zbuf2 == MAP_FAILED) {
 			pcapint_fmt_errmsg_for_errno(p->errbuf, PCAP_ERRBUF_SIZE,
 			    errno, "mmap");
 			status = PCAP_ERROR;
 			goto bad;
 		}
-		memset(&bz, 0, sizeof(bz)); /* bzero() deprecated, replaced with memset() */
+		memset(&bz, 0, sizeof(bz));
 		bz.bz_bufa = pb->zbuf1;
 		bz.bz_bufb = pb->zbuf2;
 		bz.bz_buflen = pb->zbufsize;
@@ -2341,27 +2337,6 @@ pcap_activate_bpf(pcap_t *p)
 		    v);
 		status = PCAP_ERROR;
 		goto bad;
-	}
-#endif
-#if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199510
-	/* The SLIP and PPP link layer header changed in BSD/OS 2.1 */
-	switch (v) {
-
-	case DLT_SLIP:
-		v = DLT_SLIP_BSDOS;
-		break;
-
-	case DLT_PPP:
-		v = DLT_PPP_BSDOS;
-		break;
-
-	case 11:	/*DLT_FR*/
-		v = DLT_FRELAY;
-		break;
-
-	case 12:	/*DLT_C_HDLC*/
-		v = DLT_CHDLC;
-		break;
 	}
 #endif
 
@@ -2871,18 +2846,80 @@ check_bpf_bindable(const char *name)
 	return (1);
 }
 
-#if defined(__FreeBSD__) && defined(SIOCIFCREATE2)
+#if defined(__FreeBSD__)
 static int
-get_usb_if_flags(const char *name _U_, bpf_u_int32 *flags _U_, char *errbuf _U_)
+get_flags_stub(const char *name _U_, bpf_u_int32 *flags _U_, char *errbuf _U_)
 {
-	/*
-	 * XXX - if there's a way to determine whether there's something
-	 * plugged into a given USB bus, use that to determine whether
-	 * this device is "connected" or not.
-	 */
 	return (0);
 }
 
+#if __FreeBSD_version >= 1600006
+static int
+finddevs_bpf(pcap_if_list_t *devlistp, char *errbuf)
+{
+	struct bpf_iflist bi;
+	const char *name;
+	int fd;
+
+	if ((fd = bpf_open(errbuf)) < 0) {
+		/*
+		 * XXX - this just means we won't have permission to
+		 * open any BPF devices, an thus we don't have
+		 * permission to capture on network interfaces.
+		 */
+		return (-1);
+	}
+
+	memset(&bi, 0, sizeof(bi));
+	if (ioctl(fd, BIOCGETIFLIST, (caddr_t)&bi) != 0) {
+		pcapint_fmt_errmsg_for_errno(errbuf,
+		    PCAP_ERRBUF_SIZE, errno, "BIOCGETIFLIST to get buffer size");
+		close(fd);
+		return (-1);
+	}
+	if (bi.bi_size == 0) {
+		/*
+		 * There are no devices attached to BPF.
+		 * This means that, in practice, whatever network
+		 * interfaces we found don't support packet capture
+		 * or injection.
+		 */
+		close(fd);
+		return (0);
+	}
+
+	if ((bi.bi_ubuf = malloc(bi.bi_size)) == NULL) {
+		pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE, errno,
+		    "malloc");
+		close(fd);
+		return (-1);
+	}
+
+	if (ioctl(fd, BIOCGETIFLIST, (caddr_t)&bi) != 0) {
+		pcapint_fmt_errmsg_for_errno(errbuf,
+		    PCAP_ERRBUF_SIZE, errno, "BIOCGETIFLIST to attached devics");
+		free(bi.bi_ubuf);
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+
+	for (name = bi.bi_ubuf; bi.bi_count > 0;
+	    bi.bi_count--, name += strlen(name) + 1)
+		/*
+		 * Add only those devices that were not added via the
+		 * getifaddrs() loop in pcapint_findalldevs_interfaces().
+		 */
+		if (pcapint_find_or_add_dev(devlistp, name, PCAP_IF_UP,
+		    get_flags_stub, NULL, errbuf) == NULL) {
+			free(bi.bi_ubuf);
+			return (-1);
+		}
+
+	free(bi.bi_ubuf);
+	return (0);
+}
+#else
 static int
 finddevs_usb(pcap_if_list_t *devlistp, char *errbuf)
 {
@@ -2947,7 +2984,7 @@ finddevs_usb(pcap_if_list_t *devlistp, char *errbuf)
 		 * for each bus.
 		 */
 		if (pcapint_find_or_add_dev(devlistp, name, PCAP_IF_UP,
-		    get_usb_if_flags, NULL, errbuf) == NULL) {
+		    get_flags_stub, NULL, errbuf) == NULL) {
 			free(name);
 			closedir(usbdir);
 			return (PCAP_ERROR);
@@ -2958,6 +2995,7 @@ finddevs_usb(pcap_if_list_t *devlistp, char *errbuf)
 	return (0);
 }
 #endif
+#endif	/* FreeBSD */
 
 /*
  * Get additional flags for a device, using SIOCGIFMEDIA.
@@ -3096,13 +3134,18 @@ pcapint_platform_finddevs(pcap_if_list_t *devlistp, char *errbuf)
 	/*
 	 * Add the "any" device.
 	 */
-	if (pcap_add_any_dev(devlistp, errbuf) == NULL)
+	if (pcapint_add_any_dev(devlistp, errbuf) == NULL)
 		return (-1);
 #endif
 
-#if defined(__FreeBSD__) && defined(SIOCIFCREATE2)
+#if defined(__FreeBSD__)
+#if __FreeBSD_version >= 1600006
+	if (finddevs_bpf(devlistp, errbuf) == -1)
+		return (-1);
+#else
 	if (finddevs_usb(devlistp, errbuf) == -1)
 		return (-1);
+#endif
 #endif
 
 	return (0);
@@ -3237,6 +3280,7 @@ monitor_mode(pcap_t *p, int set)
 				/*
 				 * "atexit()" failed; don't put the interface
 				 * in monitor mode, just give up.
+				 * p->errbuf has already been filled.
 				 */
 				close(sock);
 				return (PCAP_ERROR);

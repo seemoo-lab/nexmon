@@ -771,11 +771,21 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy, struct net_device *dev, s
 	s32 err = 0;
 	u16 chanspec;
 
-	//brcmf_err("DEBUG NexMon: brcmf_cfg80211_nexmon_set_channel() called!\n");
+	if (!chandef->chan || !wiphy->bands[chandef->chan->band]) {
+		brcmf_err("Set Channel rejected: unsupported band for this chip (chan=%p, band=%d)\n",
+			  chandef->chan, chandef->chan ? chandef->chan->band : -1);
+		return -EINVAL;
+	}
+
 	chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+	if (chanspec == INVCHANSPEC || chanspec == 0) {
+		brcmf_err("Set Channel rejected: invalid chanspec (0x%04x)\n", chanspec);
+		return -EINVAL;
+	}
 	err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
 	if (err < 0) {
 		brcmf_err("Set Channel failed: chspec=%d, %d\n", chanspec, err);
+		return err;
 	}
 	return 0;
 }
@@ -1863,6 +1873,10 @@ brcmf_set_key_mgmt(struct net_device *ndev, struct cfg80211_connect_params *sme)
 			if (sme->crypto.sae_pwd) {
 				brcmf_dbg(INFO, "using SAE offload\n");
 				profile->use_fwsup = BRCMF_PROFILE_FWSUP_SAE;
+			} else if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_FWSUP) &&
+				   brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT)) {
+				brcmf_dbg(INFO, "using EXTSAE with PSK offload\n");
+				profile->use_fwsup = BRCMF_PROFILE_FWSUP_PSK;
 			}
 			break;
 		case WLAN_AKM_SUITE_FT_OVER_SAE:
@@ -1871,6 +1885,10 @@ brcmf_set_key_mgmt(struct net_device *ndev, struct cfg80211_connect_params *sme)
 			if (sme->crypto.sae_pwd) {
 				brcmf_dbg(INFO, "using SAE offload\n");
 				profile->use_fwsup = BRCMF_PROFILE_FWSUP_SAE;
+			} else if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_FWSUP) &&
+				   brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT)) {
+				brcmf_dbg(INFO, "using EXTSAE with PSK offload\n");
+				profile->use_fwsup = BRCMF_PROFILE_FWSUP_PSK;
 			}
 			break;
 		default:
@@ -5145,6 +5163,16 @@ brcmf_cfg80211_update_mgmt_frame_registrations(struct wiphy *wiphy,
 }
 
 
+static atomic_t brcmf_mgmt_tx_id = ATOMIC_INIT(1);
+
+static inline u32 brcmf_next_mgmt_tx_id(void)
+{
+	u32 id = (u32)atomic_inc_return(&brcmf_mgmt_tx_id);
+	if (unlikely(id == 0))
+		id = (u32)atomic_inc_return(&brcmf_mgmt_tx_id);
+	return id;
+}
+
 static int
 brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		       struct cfg80211_mgmt_tx_params *params, u64 *cookie)
@@ -5167,7 +5195,8 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	brcmf_dbg(TRACE, "Enter\n");
 
-	*cookie = 0;
+	if (cookie)
+		*cookie = brcmf_next_mgmt_tx_id();
 
 	mgmt = (const struct ieee80211_mgmt *)buf;
 
@@ -5214,8 +5243,8 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			goto exit;
 		}
 		action_frame = &af_params->action_frame;
-		/* Add the packet Id */
-		action_frame->packet_id = cpu_to_le32(*cookie);
+		/* Add monotonic unique packet Id to prevent firmware TX completion collisions */
+		action_frame->packet_id = cpu_to_le32((u32)*cookie);
 		/* Add BSSID */
 		memcpy(&action_frame->da[0], &mgmt->da[0], ETH_ALEN);
 		memcpy(&af_params->bssid[0], &mgmt->bssid[0], ETH_ALEN);
@@ -5235,8 +5264,9 @@ brcmf_cfg80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		memcpy(action_frame->data, &buf[DOT11_MGMT_HDR_LEN],
 		       le16_to_cpu(action_frame->len));
 
-		brcmf_dbg(TRACE, "Action frame, cookie=%lld, len=%d, freq=%d\n",
-			  *cookie, le16_to_cpu(action_frame->len), freq);
+		brcmf_dbg(TRACE, "Action frame, cookie=%lld, packet_id=%u, len=%d, freq=%d\n",
+			  *cookie, le32_to_cpu(action_frame->packet_id),
+			  le16_to_cpu(action_frame->len), freq);
 
 		ack = brcmf_p2p_send_action_frame(cfg, cfg_to_ndev(cfg),
 						  af_params);
@@ -5374,6 +5404,10 @@ static int brcmf_cfg80211_get_channel(struct wiphy *wiphy,
 
 	freq = ieee80211_channel_to_frequency(ch.control_ch_num, band);
 	chandef->chan = ieee80211_get_channel(wiphy, freq);
+	if (!chandef->chan) {
+		bphy_err(drvr, "Invalid channel frequency %d\n", freq);
+		return -EINVAL;
+	}
 	chandef->width = width;
 	chandef->center_freq1 = ieee80211_channel_to_frequency(ch.chnum, band);
 	chandef->center_freq2 = 0;
@@ -6081,6 +6115,8 @@ brcmf_bss_connect_done(struct brcmf_cfg80211_info *cfg,
 			conn_params.status = WLAN_STATUS_SUCCESS;
 		} else {
 			conn_params.status = WLAN_STATUS_AUTH_TIMEOUT;
+			bphy_err(ifp->drvr, "connect failed: event %u status %u reason %u\n",
+				 e->event_code, e->status, e->reason);
 		}
 		conn_params.links[0].bssid = profile->bssid;
 		conn_params.req_ie = conn_info->req_ie;
@@ -7087,13 +7123,13 @@ static int brcmf_setup_ifmodes(struct wiphy *wiphy, struct brcmf_if *ifp)
 	if (p2p && rsdb) {
 		c0_limits[i].max = 2;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
-		combo[c].max_interfaces = 4;
+		combo[c].max_interfaces = 4 + mon_flag;
 	} else if (p2p) {
 		combo[c].max_interfaces = i;
 	} else if (rsdb) {
 		c0_limits[i].max = 2;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
-		combo[c].max_interfaces = 3;
+		combo[c].max_interfaces = 3 + mon_flag;
 	} else {
 		c0_limits[i].max = 1;
 		c0_limits[i++].types = BIT(NL80211_IFTYPE_AP);
@@ -7267,6 +7303,8 @@ static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
 			wiphy_ext_feature_set(wiphy,
 					      NL80211_EXT_FEATURE_SAE_OFFLOAD_AP);
 	}
+	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT))
+		wiphy->features |= NL80211_FEATURE_SAE;
 	wiphy->mgmt_stypes = brcmf_txrx_stypes;
 	wiphy->max_remain_on_channel_duration = 5000;
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_PNO)) {

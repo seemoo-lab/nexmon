@@ -130,8 +130,7 @@ typedef struct _x11_conv_data {
       unsigned     byte_order;       /* byte order of connection */
       bool      resync;           /* resynchronization of sequence number performed */
 
-      int       *keycodemap[256]; /* keycode to keysymvalue map. */
-      int       keysyms_per_keycode;
+      wmem_array_t *keycodemap[256]; /* keycode to keysymvalue map. */
       int       first_keycode;
       int       *modifiermap[array_length(modifiers)];/* modifier to keycode.*/
       int       keycodes_per_modifier;
@@ -198,6 +197,7 @@ static int ett_x11_visualtype;
 
 static expert_field ei_x11_invalid_format;
 static expert_field ei_x11_request_length;
+static expert_field ei_x11_event_length;
 static expert_field ei_x11_keycode_value_out_of_range;
 
 /* desegmentation of X11 messages */
@@ -1106,7 +1106,7 @@ static const value_string zero_is_none_vals[] = {
       proto_tree_add_uint_format(t, hf_x11_##name, tvb, offset, 1,    \
       keycode, "keycode: %d (%s)",                                    \
       keycode,  keycode2keysymString(pinfo->pool, state->keycodemap,  \
-      state->first_keycode, state->keysyms_per_keycode,               \
+      state->first_keycode,                                           \
       state->modifiermap, state->keycodes_per_modifier,               \
       keycode, mask));                                                \
       ++offset;                                                       \
@@ -1116,8 +1116,7 @@ static const value_string zero_is_none_vals[] = {
       unsigned char eventcode;                                        \
       const char *sent;                                               \
       proto_tree *event_proto_tree;                                   \
-      next_tvb = tvb_new_subset_length_caplen(tvb, offset, next_offset - offset,    \
-                                next_offset - offset);                \
+      next_tvb = tvb_new_subset_length(tvb, offset, next_offset - offset);    \
       eventcode = tvb_get_uint8(next_tvb, 0);                        \
       sent = (eventcode & 0x80) ? "Sent-" : "";                       \
       event_proto_tree = proto_tree_add_subtree_format(t, next_tvb,   \
@@ -1226,9 +1225,7 @@ static const value_string zero_is_none_vals[] = {
                   ; /* XXX yes, what then?  Need to skip/join. */     \
             }                                                         \
       }                                                               \
-      if (length_remaining > plen)                                    \
-            length_remaining = plen;                                  \
-      next_tvb = tvb_new_subset_length_caplen(tvb, offset, length_remaining, plen); \
+      next_tvb = tvb_new_subset_length(tvb, offset, plen);            \
                                                                       \
       if (sep == NULL) {                                              \
             col_set_str(pinfo->cinfo, COL_INFO, str);                 \
@@ -1418,55 +1415,77 @@ static void listOfByte(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
 }
 
 static void listOfCard16(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 2, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 2)) {
+            // hf is a FT_NONE, so this will mean "to the end of the tvbuff"
+            // An exception will be thrown at some point when adding an item.
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 2, byte_order);
             *offsetp += 2;
       }
 }
 
 static void listOfInt16(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 2, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 2)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 2, byte_order);
             *offsetp += 2;
       }
 }
 
 static void listOfCard32(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 4, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 4)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 4, byte_order);
             *offsetp += 4;
       }
 }
 
 static void listOfInt32(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 4, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 4)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 4, byte_order);
             *offsetp += 4;
       }
 }
 
 static void listOfCard64(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 8, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 8)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 8, byte_order);
             *offsetp += 8;
       }
@@ -1474,11 +1493,15 @@ static void listOfCard64(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
 
 #if 0 /* Not yet used by any extension */
 static void listOfInt64(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 8, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 8)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_card32);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 8, byte_order);
             *offsetp += 8;
       }
@@ -1486,22 +1509,30 @@ static void listOfInt64(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
 #endif
 
 static void listOfFloat(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 4, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 4)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_float);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 4, byte_order);
             *offsetp += 4;
       }
 }
 
 static void listOfDouble(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
-                         int hf_item, int length, unsigned byte_order)
+                         int hf_item, unsigned num_items, unsigned byte_order)
 {
-      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length * 8, byte_order);
+      int length;
+      if (ckd_mul(&length, num_items, 8)) {
+            length = INT_MAX;
+      }
+      proto_item *ti = proto_tree_add_item(t, hf, tvb, *offsetp, length, byte_order);
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_double);
-      while(length--) {
+      while(num_items--) {
             proto_tree_add_item(tt, hf_item, tvb, *offsetp, 8, byte_order);
             *offsetp += 8;
       }
@@ -1657,8 +1688,7 @@ XConvertCase(register int sym, int *lower, int *upper)
 }
 
 static const char *
-keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int first_keycode,
-                     int keysyms_per_keycode,
+keycode2keysymString(wmem_allocator_t* allocator, wmem_array_t *keycodemap[256], int first_keycode,
                      int *modifiermap[array_length(modifiers)],
                      int keycodes_per_modifier,
                      uint32_t keycode, uint32_t bitmask)
@@ -1668,15 +1698,19 @@ keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int firs
       int lockmod_is_capslock = 0, lockmod_is_shiftlock = 0;
       int lockmod_is_nosymbol = 1;
       int modifier, kc, keysym;
+      int keysyms_per_keycode;
 
-      if ((syms = keycodemap[keycode]) == NULL)
+      if ((keycodemap[keycode]) == NULL)
             return "<Unknown>";
 
-      for (kc = first_keycode, groupmodkc = numlockkc = -1; kc < 256; ++kc)
+      for (kc = first_keycode, groupmodkc = numlockkc = -1; kc < 256; ++kc) {
+            if (keycodemap[kc] == NULL) {
+                  continue;
+            }
+            keysyms_per_keycode = wmem_array_get_count(keycodemap[kc]);
+            syms = wmem_array_get_raw(keycodemap[kc]);
             for (keysym = 0; keysym < keysyms_per_keycode; ++keysym) {
-                  if (keycodemap[kc] == NULL)
-                        return "<Unknown>";
-                  switch (keycodemap[kc][keysym]) {
+                  switch (syms[keysym]) {
                         case 0xff7e:
                               groupmodkc = kc;
                               break;
@@ -1694,7 +1728,7 @@ keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int firs
                               break;
                   }
             }
-
+      }
 
       /*
        * If we have not seen the modifiermap we don't know what the
@@ -1728,6 +1762,9 @@ keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int firs
                   lockmod_is_capslock = lockmod_is_nosymbol = 0;
                   break;
             }
+
+      keysyms_per_keycode = wmem_array_get_count(keycodemap[keycode]);
+      syms = wmem_array_get_raw(keycodemap[keycode]);
 
 #if 0
       /*
@@ -1777,7 +1814,7 @@ keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int firs
 #else /* _XTranslateKey() based code. */
 
       while (keysyms_per_keycode > 2
-             && keycodemap[keysyms_per_keycode - 1] == NoSymbol)
+             && syms[keysyms_per_keycode - 1] == NoSymbol)
             --keysyms_per_keycode;
       if (keysyms_per_keycode > 2
           && (groupmod >= 0 && (modifiermask[groupmod] & bitmask))) {
@@ -1838,24 +1875,7 @@ keycode2keysymString(wmem_allocator_t* allocator, int *keycodemap[256], int firs
 
 static const char *keysymString(uint32_t v)
 {
-#if 0  /* XXX: Use of GTree no longer needed; use value_string_ext */
-      static GTree *keysymTable = NULL;
-
-      void *res;
-      if (!keysymTable) {
-
-            /* This table is so big that we built it only if necessary */
-            const value_string *p = x11_keysym_vals_source;
-            keysymTable = g_tree_new(compareGuint32);
-            for(; p -> strptr; p++)
-                  g_tree_insert(keysymTable, GINT_TO_POINTER(p -> value), (void *) (p -> strptr) );
-      }
-      res = g_tree_lookup(keysymTable, GINT_TO_POINTER(v));
-      return res ? res : "<Unknown>";
-#endif
-
       return val_to_str_ext_const(v, &x11_keysym_vals_source_ext, "<Unknown>");
-
 }
 
 static void listOfKeycode(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
@@ -1888,7 +1908,7 @@ static void listOfKeycode(tvbuff_t *tvb, int *offsetp, proto_tree *t, int hf,
 }
 
 static void listOfKeysyms(tvbuff_t *tvb, packet_info *pinfo, int *offsetp, proto_tree *t, int hf,
-                          int hf_item, int *keycodemap[256],
+                          int hf_item, wmem_array_t *keycodemap[256],
                           int keycode_first, int keycode_count,
                           int keysyms_per_keycode, unsigned byte_order)
 {
@@ -1896,6 +1916,7 @@ static void listOfKeysyms(tvbuff_t *tvb, packet_info *pinfo, int *offsetp, proto
       proto_tree *tt = proto_item_add_subtree(ti, ett_x11_list_of_keysyms);
       proto_item *tti;
       proto_tree *ttt;
+      int *syms;
       int i, keycode;
 
       DISSECTOR_ASSERT(keycode_first >= 0);
@@ -1915,8 +1936,15 @@ static void listOfKeysyms(tvbuff_t *tvb, packet_info *pinfo, int *offsetp, proto
             ttt = proto_item_add_subtree(tti, ett_x11_keysym);
 
             tvb_ensure_bytes_exist(tvb, *offsetp, 4 * keysyms_per_keycode);
+            /* XXX - To be more correct, this should be a tree that stores
+             * the lists at different frame numbers, so that nonsequential
+             * dissection on later passes works before and after a
+             * ChangeKeyboardMapping opcode. */
+            if (keycodemap[keycode]) {
+                  wmem_destroy_array(keycodemap[keycode]);
+            }
             keycodemap[keycode]
-                  =  (int *)wmem_alloc(wmem_file_scope(), sizeof(*keycodemap[keycode]) * keysyms_per_keycode);
+                  = wmem_array_sized_new(wmem_file_scope(), sizeof(int), keysyms_per_keycode);
 
             for(i = 0; i < keysyms_per_keycode; ++i) {
                   /* keysymvalue = byte3 * 256 + byte4. */
@@ -1928,33 +1956,34 @@ static void listOfKeysyms(tvbuff_t *tvb, packet_info *pinfo, int *offsetp, proto
                                              "keysym (keycode %d): 0x%08x (%s)",
                                              keycode, v, keysymString(v));
 
-                  keycodemap[keycode][i] = v;
+                  wmem_array_append_one(keycodemap[keycode], v);
                   *offsetp += 4;
             }
 
+            syms = wmem_array_get_raw(keycodemap[keycode]);
             for (i = 1; i < keysyms_per_keycode; ++i)
-                  if (keycodemap[keycode][i] != NoSymbol)
+                  if (syms[i] != NoSymbol)
                         break;
 
             if (i == keysyms_per_keycode) {
                   /* all but (possibly) first were NoSymbol. */
                   if (keysyms_per_keycode == 4) {
-                        keycodemap[keycode][1] = NoSymbol;
-                        keycodemap[keycode][2] = keycodemap[keycode][0];
-                        keycodemap[keycode][3] = NoSymbol;
+                        syms[1] = NoSymbol;
+                        syms[2] = syms[0];
+                        syms[3] = NoSymbol;
                   }
 
                   continue;
             }
 
             for (i = 2; i < keysyms_per_keycode; ++i)
-                  if (keycodemap[keycode][i] != NoSymbol)
+                  if (syms[i] != NoSymbol)
                         break;
             if (i == keysyms_per_keycode) {
                   /* all but (possibly) first two were NoSymbol. */
                   if (keysyms_per_keycode == 4) {
-                        keycodemap[keycode][2] = keycodemap[keycode][0];
-                        keycodemap[keycode][3] =  keycodemap[keycode][1];
+                        syms[2] = syms[0];
+                        syms[3] = syms[1];
                   }
 
                   continue;
@@ -2204,7 +2233,7 @@ static void listOfString8(tvbuff_t *tvb, packet_info* pinfo, int *offsetp, proto
 
       while(length--) {
             unsigned l = tvb_get_uint8(tvb, *offsetp);
-            s = tvb_get_string_enc(pinfo->pool, tvb, *offsetp + 1, l, ENC_ASCII);
+            s = (char*)tvb_get_string_enc(pinfo->pool, tvb, *offsetp + 1, l, ENC_ASCII);
             proto_tree_add_string_format(tt, hf_item, tvb, *offsetp, l + 1, s, "\"%s\"", s);
             *offsetp += l + 1;
       }
@@ -2297,7 +2326,7 @@ static void listOfTextItem(tvbuff_t *tvb, packet_info* pinfo, int *offsetp, prot
                         }
                         *offsetp += l*2 + 2;
                   } else {
-                        s = tvb_get_string_enc(pinfo->pool, tvb, *offsetp + 2, l, ENC_ASCII);
+                        s = (char*)tvb_get_string_enc(pinfo->pool, tvb, *offsetp + 2, l, ENC_ASCII);
                         tti = proto_tree_add_none_format(tt, hf_x11_textitem_string, tvb, *offsetp, l + 2,
                                                          "textitem (string): delta = %d, \"%s\"",
                                                          delta, s);
@@ -3376,11 +3405,13 @@ static void tryExtensionEvent(int event, tvbuff_t *tvb, int *offsetp, proto_tree
             func(tvb, offsetp, t, byte_order);
 }
 
-static void tryGenericExtensionEvent(tvbuff_t *tvb, int *offsetp, proto_tree *t,
+static void tryGenericExtensionEvent(tvbuff_t *tvb, packet_info *pinfo, int *offsetp, proto_tree *t,
                                      x11_conv_data_t *state, unsigned byte_order)
 {
+      proto_item *ti;
       const char *extname;
-      int extension, length;
+      int extension;
+      uint32_t length;
 
       extension = tvb_get_uint8(tvb, *offsetp);
       (*offsetp)++;
@@ -3394,9 +3425,17 @@ static void tryGenericExtensionEvent(tvbuff_t *tvb, int *offsetp, proto_tree *t,
 
       CARD16(event_sequencenumber);
 
-      length = REPLYLENGTH(eventlength);
-      length = length * 4 + 32;
+      ti = proto_tree_add_item_ret_uint(t, hf_x11_eventlength, tvb, *offsetp, 4, byte_order, &length);
       *offsetp += 4;
+      /* The length field specifies the number of 4-byte blocks after the
+       * initial 32 bytes. */
+      uint64_t tmp = (uint64_t)length * 4 + 32;
+      if (tmp > INT_MAX) {
+            expert_add_info_format(pinfo, ti, &ei_x11_event_length, "Bogus generic extension length (%"PRId64" bytes)", tmp);
+            return;
+      }
+      length = (uint32_t)tmp;
+      /* XXX - It might be better to take a subset TVB instead of passing length. */
 
       if (extname) {
           x11_generic_event_info *info;
@@ -3410,7 +3449,7 @@ static void tryGenericExtensionEvent(tvbuff_t *tvb, int *offsetp, proto_tree *t,
               for (i = 0; info[i].dissect != NULL; i++) {
                   if (info[i].minor == opcode) {
                       *offsetp += 2;
-                      info[i].dissect(tvb, length, offsetp, t, byte_order);
+                      info[i].dissect(tvb, (int)length, offsetp, t, byte_order);
                       return;
                   }
               }
@@ -3542,7 +3581,7 @@ static void dissect_x11_request(tvbuff_t *tvb, packet_info *pinfo,
                   query_ext_offset += 2;
                   /* Some unused bytes */
                   query_ext_offset += 2;
-                  name = tvb_get_string_enc(wmem_file_scope(), tvb, query_ext_offset, v16, ENC_ASCII);
+                  name = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, query_ext_offset, v16, ENC_ASCII);
 
                   /* store string of extension, opcode will be set at reply */
                   i = 0;
@@ -3815,11 +3854,11 @@ static void dissect_x11_request(tvbuff_t *tvb, packet_info *pinfo,
                 break;
             case 16:
                 if (v32)
-                    LISTofCARD16(data16, v32 * 2);
+                    listOfCard16(tvb, offsetp, t, hf_x11_data16, hf_x11_data16_item, v32, byte_order);
                 break;
             case 32:
                 if (v32)
-                    LISTofCARD32(data32, v32 * 4);
+                    listOfCard32(tvb, offsetp, t, hf_x11_data32, hf_x11_data32_item, v32, byte_order);
                 break;
             default:
                 expert_add_info(pinfo, ti, &ei_x11_invalid_format);
@@ -4811,6 +4850,7 @@ static void dissect_x11_request(tvbuff_t *tvb, packet_info *pinfo,
 
       case X_SetModifierMapping:
             v8 = FIELD8(keycodes_per_modifier);
+            state->keycodes_per_modifier = v8;
             requestLength(tvb, offsetp, t, byte_order);
             LISTofKEYCODE(state->modifiermap, keycodes, v8);
             break;
@@ -4849,7 +4889,6 @@ static void dissect_x11_requests(tvbuff_t *tvb, packet_info *pinfo,
       const char *volatile sep = NULL;
       conversation_t *conversation;
       x11_conv_data_t *volatile state;
-      int length;
       tvbuff_t *volatile next_tvb;
 
       while ((length_remaining = tvb_reported_length_remaining(tvb, offset)) > 0) {
@@ -5045,21 +5084,8 @@ static void dissect_x11_requests(tvbuff_t *tvb, packet_info *pinfo,
              * Construct a tvbuff containing the amount of the payload
              * we have available.  Make its reported length the
              * amount of data in the X11 request.
-             *
-             * XXX - if reassembly isn't enabled. the subdissector
-             * will throw a BoundsError exception, rather than a
-             * ReportedBoundsError exception.  We really want a tvbuff
-             * where the length is "length", the reported length is "plen",
-             * and the "if the snapshot length were infinite" length is the
-             * minimum of the reported length of the tvbuff handed to us
-             * and "plen", with a new type of exception thrown if the offset
-             * is within the reported length but beyond that third length,
-             * with that exception getting the "Unreassembled Packet" error.
              */
-            length = length_remaining;
-            if (length > plen)
-                  length = plen;
-            next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, plen);
+            next_tvb = tvb_new_subset_length(tvb, offset, plen);
 
             /*
              * Set the column appropriately.
@@ -5109,7 +5135,13 @@ static void dissect_x11_requests(tvbuff_t *tvb, packet_info *pinfo,
             /*
              * Skip the X11 message.
              */
-            offset += plen;
+            if (ckd_add(&offset, offset, plen)) {
+                  /*
+                   * Make sure we don't overflow. (Depending on the opcode, we
+                   * might not have tried to dissect a plen's worth of bytes.)
+                   */
+                  break;
+            }
 
             sep = ",";
       }
@@ -5122,7 +5154,7 @@ x11_stateinit(conversation_t *conversation)
       static x11_conv_data_t stateinit;
       int i;
 
-      state = wmem_new(wmem_file_scope(), x11_conv_data_t);
+      state = wmem_new0(wmem_file_scope(), x11_conv_data_t);
       *state = stateinit;
 
       /* initialise opcodes */
@@ -5311,7 +5343,13 @@ dissect_x11_replies(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                   }
             }
 
-            offset += plen;
+            if (ckd_add(&offset, offset, plen)) {
+                  /*
+                   * Make sure we don't overflow. (Depending on the opcode, we
+                   * might not have tried to dissect a plen's worth of bytes.)
+                   */
+                  break;
+            }
       }
 
       return;
@@ -5640,11 +5678,11 @@ dissect_x11_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                   REPLYCONTENTS_COMMON();
                   break;
 
-            case X_GetKeyboardMapping:
+            case X_GetKeyboardMapping: {
                   state->first_keycode =
                         state->request.GetKeyboardMapping.first_keycode;
                   REPLY(reply);
-                  state->keysyms_per_keycode =
+                  int keysyms_per_keycode =
                         FIELD8(keysyms_per_keycode);
                   SEQUENCENUMBER_REPLY(sequencenumber);
                   length = REPLYLENGTH(replylength);
@@ -5652,11 +5690,12 @@ dissect_x11_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                   *offsetp += 24;
                   LISTofKEYSYM(keysyms, state->keycodemap,
                                state->request.GetKeyboardMapping.first_keycode,
-                               /* XXX - length / state->keysyms_per_keycode can raise a division by zero,
+                               /* XXX - length / keysyms_per_keycode can raise a division by zero,
                                 * don't know if this is the *right* way to fix it ... */
-                               state->keysyms_per_keycode ? length / state->keysyms_per_keycode : 0,
-                               state->keysyms_per_keycode);
+                               keysyms_per_keycode ? length / keysyms_per_keycode : 0,
+                               keysyms_per_keycode);
                   break;
+            }
 
             case X_GetKeyboardControl:
                   REPLYCONTENTS_COMMON();
@@ -6122,7 +6161,7 @@ decode_x11_event(tvbuff_t *tvb, packet_info* pinfo, unsigned char eventcode, con
                   break;
 
             case GenericEvent:
-                  tryGenericExtensionEvent(tvb, offsetp, t, state, byte_order);
+                  tryGenericExtensionEvent(tvb, pinfo, offsetp, t, state, byte_order);
                   break;
 
             default:
@@ -6276,6 +6315,7 @@ static void register_x11_fields(const char* unused _U_)
       static ei_register_info ei[] = {
             { &ei_x11_invalid_format, { "x11.invalid_format", PI_PROTOCOL, PI_WARN, "Invalid Format", EXPFILL }},
             { &ei_x11_request_length, { "x11.request-length.invalid", PI_PROTOCOL, PI_WARN, "Invalid Length", EXPFILL }},
+            { &ei_x11_event_length, { "x11.eventlength.invalid", PI_PROTOCOL, PI_WARN, "Invalid Length", EXPFILL }},
             { &ei_x11_keycode_value_out_of_range, { "x11.keycode_value_out_of_range", PI_PROTOCOL, PI_WARN, "keycode value is out of range", EXPFILL }},
       };
 

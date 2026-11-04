@@ -37,7 +37,7 @@ static int ett_sparkplugb;
 static int ett_sparkplugb_namespace;
 
 /* The handle to the protobuf dissector */
-dissector_handle_t protobuf_handle;
+static dissector_handle_t protobuf_handle;
 
 /* The hf items */
 static int hf_sparkplugb_namespace;
@@ -51,17 +51,17 @@ static expert_field ei_sparkplugb_missing_groupid;
 static expert_field ei_sparkplugb_missing_messagetype;
 static expert_field ei_sparkplugb_missing_edgenodeid;
 
-static gboolean
+static int
 dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item *ti;
     proto_tree *sparkplugb_tree, *namespace_tree;
-    gchar **topic_elements, **current_element;
+    char **topic_elements, **current_element;
     char *topic = (char *)data;
 
     /* Confirm the expected topic data is present */
     if (topic == NULL)
-      return FALSE;
+      return 0;
 
     /* Parse the topic into the elements */
     topic_elements = g_strsplit(topic, "/", 5);
@@ -69,7 +69,7 @@ dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     /* Heuristic check that the first element of the topic is the SparkplugB namespace */
     if (!topic_elements || (g_strcmp0("spBv1.0", topic_elements[0]) != 0)) {
         g_strfreev(topic_elements);
-        return FALSE;
+        return 0;
     }
 
     /* Make entries in Protocol column */
@@ -98,7 +98,7 @@ dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     }
     else {
         expert_add_info(pinfo, namespace_tree, &ei_sparkplugb_missing_groupid);
-        return FALSE;
+        return 0;
     }
 
     /* Adjust the info column text with the message type */
@@ -112,7 +112,7 @@ dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     }
     else {
         expert_add_info(pinfo, namespace_tree, &ei_sparkplugb_missing_messagetype);
-        return FALSE;
+        return 0;
     }
 
     current_element += 1;
@@ -122,7 +122,7 @@ dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     }
     else {
         expert_add_info(pinfo, namespace_tree, &ei_sparkplugb_missing_edgenodeid);
-        return FALSE;
+        return 0;
     }
 
     /* Device ID is optional */
@@ -137,12 +137,12 @@ dissect_sparkplugb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     /* Now handoff the Payload message to the protobuf dissector */
     call_dissector_with_data(protobuf_handle, tvb, pinfo, sparkplugb_tree, "message,com.cirruslink.sparkplug.protobuf.Payload");
 
-    return TRUE;
+    return tvb_captured_length(tvb);
 }
 
 static bool dissect_sparkplugb_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data)
 {
-	return (bool)dissect_sparkplugb(tvb, pinfo, parent_tree, data);
+	return (dissect_sparkplugb(tvb, pinfo, parent_tree, data)>0);
 }
 
 void proto_register_sparkplug(void)

@@ -14,7 +14,6 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include <epan/nlpid.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
 #include "packet-osi.h"
@@ -185,8 +184,6 @@ static const value_string isis_hello_circuit_type_vals[] = {
     { ISIS_HELLO_TYPE_LEVEL_12,    "Level 1 and 2"},
     { 0,        NULL} };
 
-extern const range_string mtid_strings[];
-
 static void
 dissect_hello_mt_port_cap_spb_mcid_clv(tvbuff_t *tvb, packet_info* pinfo,
         proto_tree *tree, int offset, int subtype, int sublen)
@@ -196,7 +193,7 @@ dissect_hello_mt_port_cap_spb_mcid_clv(tvbuff_t *tvb, packet_info* pinfo,
     proto_tree *subtree;
 
     if (sublen != SUBLEN) {
-        proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+        proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                                      "Short SPB MCID TLV (%d vs %d)", sublen, SUBLEN);
         return;
     }
@@ -221,7 +218,7 @@ dissect_hello_mt_port_cap_spb_digest_clv(tvbuff_t *tvb, packet_info* pinfo,
     const int DIGEST_LEN = 32;
     const int SUBLEN     = 1 + DIGEST_LEN;
     if (sublen != SUBLEN) {
-        proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+        proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                               "Short SPB Digest TLV (%d vs %d)", sublen, SUBLEN);
         return;
     }
@@ -254,7 +251,7 @@ dissect_hello_mt_port_cap_spb_bvid_tuples_clv(tvbuff_t *tvb, packet_info* pinfo,
 
     while (sublen > 0) {
         if (sublen < 6) {
-            proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+            proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                                   "Short SPB BVID header entry (%d vs %d)", sublen, 6);
             return;
         }
@@ -431,7 +428,7 @@ dissect_hello_mt_port_cap_clv(tvbuff_t *tvb, packet_info* pinfo,
             length -= 2;
             offset += 2;
             if (subtlvlen > length) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                                       "Short type %d TLV (%d vs %d)", subtype, subtlvlen, length);
                 return;
             }
@@ -922,7 +919,7 @@ dissect_hello_ptp_adj_clv(tvbuff_t *tvb, packet_info* pinfo,
         proto_tree_add_item(tree, hf_isis_hello_neighbor_extended_local_circuit_id, tvb, offset+5+isis->system_id_len, 4, ENC_BIG_ENDIAN);
     break;
     default:
-        proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+        proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                    "malformed TLV (%d vs 1,5,11,15)", length );
     }
 }
@@ -950,7 +947,7 @@ dissect_hello_is_neighbors_clv(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tr
 {
     while ( length > 0 ) {
         if (length<6) {
-            proto_tree_add_expert_format(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset, -1,
+            proto_tree_add_expert_format_remaining(tree, pinfo, &ei_isis_hello_short_clv, tvb, offset,
                 "short is neighbor (%d vs 6)", length );
             return;
         }
@@ -1586,7 +1583,7 @@ proto_register_isis_hello(void)
       { &hf_isis_hello_clv_nlpid_nlpid, { "NLPID", "isis.hello.clv_nlpid.nlpid", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }},
       { &hf_isis_hello_clv_ip_authentication, { "NLPID", "isis.hello.clv_ip_authentication", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_isis_hello_authentication, { "Authentication", "isis.hello.clv_authentication", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
-      { &hf_isis_hello_mtid, { "Topology ID", "isis.hello.mtid", FT_UINT16, BASE_DEC|BASE_RANGE_STRING, RVALS(mtid_strings), 0x0fff, NULL, HFILL }},
+      { &hf_isis_hello_mtid, { "Topology ID", "isis.hello.mtid", FT_UINT16, BASE_DEC|BASE_RANGE_STRING, RVALS(isis_mtid_strings), 0x0fff, NULL, HFILL }},
       { &hf_isis_hello_trill_neighbor_sf, { "Smallest flag", "isis.hello.trill_neighbor.sf", FT_BOOLEAN, 8, TFS(&tfs_set_notset), 0x80, NULL, HFILL }},
       { &hf_isis_hello_trill_neighbor_lf, { "Largest flag", "isis.hello.trill_neighbor.lf", FT_BOOLEAN, 8, TFS(&tfs_set_notset), 0x40, NULL, HFILL }},
       { &hf_isis_hello_trill_neighbor_size, { "SNPA Size", "isis.hello.trill_neighbor.size", FT_UINT8, BASE_DEC, NULL, 0x1f, NULL, HFILL }},

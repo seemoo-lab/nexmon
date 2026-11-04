@@ -65,7 +65,7 @@ int getcommtype(const char *commname) {
    if (!comm_ent) {
       return -1;
    }
-   return (int)comm_ent->desc;
+   return (int)(size_t)comm_ent->desc;
 }
 
 /* fork for exec/system, but return before exec'ing.
@@ -102,7 +102,6 @@ int _xioopen_progcall(int xioflags,	/* XIO_RDONLY etc. */
    bool useopenpty = false;	/* try only openpty */
 #endif	/* HAVE_OPENPTY */
    bool usepty = false;		/* any of the pty options is selected */
-   char ptyname[MAXPTYNAMELEN];
 #endif /* HAVE_PTY */
    pid_t pid = 0;	/* mostly int */
    int leftfd[2] = { 0, 1 };
@@ -693,12 +692,13 @@ Warn1("xio-progcall.c: fd->howtoshut == %d", fd->howtoshut);
 	       /* we might have a temporary conflict between what FDs are
 		  currently allocated, and which are to be used. We try to find
 		  a graceful solution via temporary descriptors */
-	       int tmpi, tmpo;
 
 	       /* needed with system() (not with exec()) */
 	       if (XIOWITHRD(rw))  Close(rdpip[0]);
 	       if (XIOWITHWR(rw))  Close(wrpip[1]);
 #if 0
+	       int tmpi, tmpo;
+
 	       /*! might not be needed */
 	       if (XIOWITHRD(rw))  Close(rdpip[0]);
 	       if (XIOWITHWR(rw))  Close(wrpip[1]);

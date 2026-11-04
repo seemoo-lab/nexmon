@@ -110,7 +110,7 @@ static dissector_handle_t sdp_handle;
 static int
 dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int sap_version, is_ipv6, is_del, is_enc, is_comp, addr_len;
     uint8_t vers_flags;
     uint8_t auth_len;
@@ -151,8 +151,7 @@ dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     offset++;
 
-    auth_len = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(sap_tree, hf_sap_auth_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(sap_tree, hf_sap_auth_len, tvb, offset, 1, ENC_BIG_ENDIAN, &auth_len);
     offset++;
 
     proto_tree_add_item(sap_tree, hf_sap_message_identifier_hash, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -177,8 +176,7 @@ dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         sdi = proto_tree_add_item(sap_tree, hf_auth_data, tvb, offset, auth_data_len, ENC_NA);
         sa_tree = proto_item_add_subtree(sdi, ett_sap_auth);
 
-        auth_flags = tvb_get_uint8(tvb, offset);
-        sai = proto_tree_add_item(sa_tree, hf_auth_flags, tvb, offset, 1, ENC_BIG_ENDIAN);
+        sai = proto_tree_add_item_ret_uint8(sa_tree, hf_auth_flags, tvb, offset, 1, ENC_BIG_ENDIAN, &auth_flags);
         saf_tree = proto_item_add_subtree(sai, ett_sap_authf);
         proto_tree_add_item(saf_tree, hf_auth_flags_v, tvb, offset, 1, ENC_BIG_ENDIAN);
         proto_tree_add_item(saf_tree, hf_auth_flags_p, tvb, offset, 1, ENC_NA);
@@ -214,7 +212,7 @@ dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
         else
             mangle = &ei_sap_compressed;
 
-        proto_tree_add_expert(sap_tree, pinfo, mangle, tvb, offset, -1);
+        proto_tree_add_expert_remaining(sap_tree, pinfo, mangle, tvb, offset);
         return tvb_captured_length(tvb);
     }
 
@@ -224,7 +222,7 @@ dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             int remaining_len;
             uint32_t pt_len;
             int pt_string_len;
-            uint8_t* pt_str;
+            char* pt_str;
 
             remaining_len = tvb_captured_length_remaining(tvb, offset);
             if (remaining_len == 0) {
@@ -255,9 +253,9 @@ dissect_sap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
                 pt_len = pt_string_len + 1;
             }
 
-            pt_str = tvb_get_string_enc(pinfo->pool, tvb, offset, pt_string_len, ENC_ASCII);
-            proto_tree_add_string_format_value(sap_tree, hf_sap_payload_type, tvb, offset, pt_len,
-                pt_str, "%s", pt_str);
+            pt_str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, pt_string_len, ENC_ASCII);
+            proto_tree_add_string(sap_tree, hf_sap_payload_type, tvb, offset, pt_len,
+                pt_str);
             offset += pt_len;
         }
     }

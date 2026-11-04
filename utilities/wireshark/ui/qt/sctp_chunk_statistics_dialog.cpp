@@ -12,8 +12,12 @@
 #include <ui_sctp_chunk_statistics_dialog.h>
 #include "uat_dialog.h"
 
+#include <epan/prefs-int.h>
+#include <epan/uat-int.h>
+
 #include <wsutil/strtoi.h>
 #include <wsutil/wslog.h>
+#include <app/application_flavor.h>
 
 #include "ui/tap-sctp-analysis.h"
 #include <ui/qt/utils/qt_ui_utils.h>
@@ -94,7 +98,7 @@ void SCTPChunkStatisticsDialog::fillTable(bool all, const sctp_assoc_info_t *sel
         return;
     }
     uat_t *uat = prefs_get_uat_value(pref);
-    char* fname = uat_get_actual_filename(uat,true);
+    char* fname = uat_get_actual_filename(uat,true,application_configuration_environment_prefix());
     bool init = false;
 
     if (!fname) {
@@ -220,7 +224,7 @@ void SCTPChunkStatisticsDialog::on_pushButton_clicked()
 
     uat_t *uat = prefs_get_uat_value(pref);
 
-    char* fname = uat_get_actual_filename(uat,true);
+    char* fname = uat_get_actual_filename(uat,true,application_configuration_environment_prefix());
 
     if (!fname) {
         return;
@@ -229,7 +233,7 @@ void SCTPChunkStatisticsDialog::on_pushButton_clicked()
 
     if (!fp && errno == ENOENT) {
         char *pf_dir_path = NULL;
-        if (create_persconffile_dir(&pf_dir_path) != 0) {
+        if (create_persconffile_dir(application_configuration_environment_prefix(), &pf_dir_path) != 0) {
             g_free (pf_dir_path);
             return;
         }
@@ -298,7 +302,7 @@ void SCTPChunkStatisticsDialog::on_actionChunkTypePreferences_triggered()
     uat_t *uat = prefs_get_uat_value(pref);
     uat_clear(uat);
 
-    if (!uat_load(uat, NULL, &err)) {
+    if (!uat_load(uat, NULL, application_configuration_environment_prefix(), &err)) {
         /* XXX - report this through the GUI */
         ws_log(LOG_DOMAIN_QTUI, LOG_LEVEL_WARNING, "Error loading table '%s': %s", uat->name, err);
         g_free(err);

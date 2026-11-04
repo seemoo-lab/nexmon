@@ -1,0 +1,252 @@
+/* ===================================================================
+ * Wireshark Welcome Page Header — Gradient Header Bar
+ *
+ * Widget hierarchy:
+ *   #welcomeHeader            — QWidget, the blue gradient header bar
+ *     #headerTitle            — QLabel, "Wireshark"
+ *     #headerVersion          — QLabel, full version string
+ *     #headerBuildLabel       — QLabel, "Development Build" pill badge
+ *
+ *   #updateHeader             — QWidget, the green update notification bar
+ *     #updateDot              — QLabel (6×6px), pulsing green circle
+ *     #updateText             — QLabel, "Update available: Wireshark X.Y.Z"
+ *     — stretch —
+ *     #updateReleaseNotes     — QPushButton (flat), "Release Notes"
+ *     #updateDownload         — QPushButton, "Download Update"
+ *     #updateDismiss          — QToolButton (autoRaise), "×" close
+ *
+ * Layout (left → right):
+ *   updateDot · updateText · <stretch> · updateReleaseNotes · updateDownload · updateDismiss
+ *
+ * All colors are sourced from theme tokens resolved by
+ * ThemeManager::styleSheet("widgets/welcome-header"); the same file
+ * therefore covers both light and dark appearance.  No literal color
+ * values are allowed in this file.
+ *
+ * Notes:
+ *   - QWidget backgrounds with gradients use the `background` shorthand.
+ *   - The pulsing dot shape is stylesheet-driven (border-radius makes it
+ *     round); the animation uses QPropertyAnimation on a
+ *     QGraphicsOpacityEffect attached to #updateDot.  Respect
+ *     QStyleHints::animationsEnabled() — skip starting the animation
+ *     when platform accessibility disables motion.
+ *   - Hide #updateHeader entirely via setVisible(false) when no update
+ *     is available. The layout collapses cleanly with no leftover space.
+ *   - On dismiss (#updateDismiss clicked), call updateHeader->setVisible(false)
+ *     and optionally persist the dismissed version in QSettings so it
+ *     does not reappear for the same release.
+ * =================================================================== */
+
+
+/* -----------------------------------------------------------------
+ * Welcome Header — gradient bar
+ * ----------------------------------------------------------------- */
+#welcomeHeader {
+    background: qlineargradient(
+        spread:pad, x1:0, y1:0, x2:1, y2:1,
+        stop:0 wstheme(HeaderGradientStart),
+        stop:1 wstheme(HeaderGradientEnd)
+    );
+    min-height: 64px;
+}
+
+
+/* -----------------------------------------------------------------
+ * Title label — "Wireshark"
+ * ----------------------------------------------------------------- */
+#headerTitle {
+    color: wstheme(TextOnDark);
+    font-size: 16px;
+    font-weight: 600;
+    /* No background — sits on the gradient */
+    background: transparent;
+    padding: 0;
+}
+
+
+/* -----------------------------------------------------------------
+ * Version label — "4.7.0 (v4.7.0rc0-2438-g68ddfc1bcba4)"
+ * ----------------------------------------------------------------- */
+#headerVersion {
+    color: wstheme(TextOnDarkMuted);
+    font-size: 11px;
+    font-weight: 400;
+    background: transparent;
+    padding: 0;
+    margin-top: 1px;
+}
+
+
+/* -----------------------------------------------------------------
+ * Flavor badge — "Development Build" (pill)
+ *
+ * Only visible for non-release builds. For release builds, hide via
+ * setVisible(false) or simply don't add it to the layout.
+ * ----------------------------------------------------------------- */
+#headerBuildLabel {
+    /* TextOnWarning auto-picks black/white against AccentWarning via
+       contrastingText(), so a bright amber bg gets dark text and a
+       darker warning gets white — no per-theme hand-tuning. */
+    color: wstheme(TextOnWarning);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    /* letter-spacing is not supported in QSS — set via QFont if needed */
+    background-color: wstheme(AccentWarning);
+    border-radius: 4px;
+    padding: 3px 9px;
+    margin: 0;
+}
+
+
+/* =================================================================
+ * Update Header — green notification bar
+ *
+ * Shown below #welcomeHeader when an update is available.
+ * ================================================================= */
+#updateHeader {
+    background: qlineargradient(
+        spread:pad, x1:0, y1:0.5, x2:1, y2:0.5,
+        stop:0 wstheme(UpdateGradientStart),
+        stop:1 wstheme(UpdateGradientEnd)
+    );
+    border-bottom: 1px solid wstheme(UpdateBorder);
+    min-height: 36px;
+}
+
+
+/* -----------------------------------------------------------------
+ * Pulsing dot — 6×6px green circle (left of update text)
+ *
+ * The border-radius makes it round.  Animation is handled in code:
+ *
+ *   auto *effect = new QGraphicsOpacityEffect(updateDot);
+ *   updateDot->setGraphicsEffect(effect);
+ *   auto *anim = new QPropertyAnimation(effect, "opacity", updateDot);
+ *   anim->setDuration(2000);
+ *   anim->setStartValue(1.0);
+ *   anim->setKeyValueAt(0.5, 0.3);
+ *   anim->setEndValue(1.0);
+ *   anim->setEasingCurve(QEasingCurve::InOutSine);
+ *   anim->setLoopCount(-1);
+ *   if (QApplication::styleHints()->animationsEnabled())
+ *       anim->start();
+ * ----------------------------------------------------------------- */
+#updateDot {
+    background-color: wstheme(AccentSuccess);
+    border-radius: 3px;          /* half of 6px = circle */
+    min-width: 6px;
+    max-width: 6px;
+    min-height: 6px;
+    max-height: 6px;
+    border: none;
+    padding: 0;
+    margin-right: 2px;
+}
+
+
+/* -----------------------------------------------------------------
+ * Update text label — "Update available: Wireshark 4.8.0 — ..."
+ *
+ * Rich text (QLabel with <b> tags) is expected for the version
+ * portion, styled via the html <b> tag which inherits color from
+ * the label but can be overridden with inline style or a separate
+ * label.  If using a plain QLabel, set the full string here.
+ * For the bold version name, use a second QLabel or rich text using
+ * the wstheme(UpdateTextHighlight) color.
+ * ----------------------------------------------------------------- */
+#updateText {
+    color: wstheme(UpdateText);
+    font-size: 12px;
+    font-weight: 400;
+    background: transparent;
+    padding: 0;
+}
+
+
+/* -----------------------------------------------------------------
+ * Release Notes — flat text button
+ * ----------------------------------------------------------------- */
+#updateReleaseNotes {
+    color: wstheme(UpdateLink);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: underline;
+    background: transparent;
+    border: none;
+    padding: 4px 12px;
+}
+
+#updateReleaseNotes:hover {
+    color: wstheme(UpdateLinkHover);
+}
+
+#updateReleaseNotes:pressed {
+    color: wstheme(UpdateLinkPressed);
+}
+
+
+/* -----------------------------------------------------------------
+ * Download button — solid green
+ * ----------------------------------------------------------------- */
+#updateDownload {
+    /* UpdateButtonBg == AccentSuccess by derivation, so the matching
+       contrast-aware foreground is TextOnSuccess (auto-picks black on
+       bright greens, white on darker greens). */
+    color: wstheme(TextOnSuccess);
+    font-size: 11px;
+    font-weight: 500;
+    background-color: wstheme(UpdateButtonBg);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+}
+
+#updateDownload:hover {
+    background-color: wstheme(UpdateButtonHover);
+}
+
+#updateDownload:pressed {
+    background-color: wstheme(UpdateButtonPressed);
+}
+
+#updateDownload:disabled {
+    background-color: wstheme(UpdateButtonDisabledBg);
+    color: wstheme(UpdateButtonDisabledText);
+}
+
+
+/* -----------------------------------------------------------------
+ * Dismiss button — "×" to close the update bar
+ *
+ * QToolButton with autoRaise(true).  Borderless by default, subtle
+ * highlight on hover.  Sits on the green gradient in both themes,
+ * so the colors come from the shared update.* tokens.
+ *
+ * Connect clicked() → updateHeader->setVisible(false).
+ * Optionally persist dismissal per version via QSettings.
+ * ----------------------------------------------------------------- */
+#updateDismiss {
+    color: wstheme(UpdateText);
+    font-size: 15px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 0;
+    min-width: 22px;
+    max-width: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    margin-left: 4px;
+}
+
+#updateDismiss:hover {
+    background-color: wstheme(UpdateDismissHoverBg);
+    color: wstheme(UpdateTextHighlight);
+}
+
+#updateDismiss:pressed {
+    background-color: wstheme(UpdateDismissPressedBg);
+    color: wstheme(UpdateText);
+}

@@ -11,6 +11,7 @@
 
 #include <wsutil/filter_files.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 
 #include "filter_dialog.h"
 #include <ui_filter_dialog.h>
@@ -21,7 +22,8 @@
 #include <QSortFilterProxyModel>
 
 #include <ui/qt/utils/qt_ui_utils.h>
-#include <ui/qt/widgets/capture_filter_edit.h>
+#include <ui/qt/widgets/filter_edit.h>
+#include <ui/qt/models/capture_filter_validator.h>
 #include <ui/qt/widgets/display_filter_edit.h>
 #include "main_application.h"
 
@@ -36,11 +38,11 @@ FilterDialog::FilterDialog(QWidget *parent, FilterType filter_type, QString new_
     if (parent) loadGeometry(parent->width() * 2 / 3, parent->height() * 2 / 3);
     setWindowIcon(mainApp->normalIcon());
 
-    ui->newToolButton->setStockIcon("list-add");
-    ui->deleteToolButton->setStockIcon("list-remove");
-    ui->copyToolButton->setStockIcon("list-copy");
+    ui->newToolButton->setIconByName("list-add");
+    ui->deleteToolButton->setIconByName("list-remove");
+    ui->copyToolButton->setIconByName("list-copy");
 
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     ui->newToolButton->setAttribute(Qt::WA_MacSmallSize, true);
     ui->deleteToolButton->setAttribute(Qt::WA_MacSmallSize, true);
     ui->copyToolButton->setAttribute(Qt::WA_MacSmallSize, true);
@@ -93,7 +95,7 @@ FilterDialog::FilterDialog(QWidget *parent, FilterType filter_type, QString new_
 
     connect(ui->filterTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &FilterDialog::selectionChanged);
 
-    QString abs_path = gchar_free_to_qstring(get_persconffile_path(filename, true));
+    QString abs_path = gchar_free_to_qstring(get_persconffile_path(filename, true, application_configuration_environment_prefix()));
     if (file_exists(abs_path.toUtf8().constData())) {
         ui->pathLabel->setText(abs_path);
         ui->pathLabel->setUrl(QUrl::fromLocalFile(abs_path).toString());
@@ -251,7 +253,11 @@ QWidget *FilterTreeDelegate::createEditor(QWidget *parent, const QStyleOptionVie
         w = QStyledItemDelegate::createEditor(parent, option, index);
     }
     else if (filter_type_ == FilterDialog::CaptureFilter) {
-        w = new CaptureFilterEdit(parent, true);
+        // Plain capture-filter edit for the inline cell: validity tinting only,
+        // no bookmark/history chrome (this is the saved-filter manager itself).
+        FilterEdit *fe = new FilterEdit(parent);
+        fe->setValidator(new CaptureFilterValidator(fe));
+        w = fe;
     }
     else if (filter_type_ == FilterDialog::DisplayFilter) {
         w = new DisplayFilterEdit(parent, DisplayFilterToEnter);
@@ -260,13 +266,14 @@ QWidget *FilterTreeDelegate::createEditor(QWidget *parent, const QStyleOptionVie
         w = QStyledItemDelegate::createEditor(parent, option, index);
     }
 
-    if (qobject_cast<QLineEdit *>(w)) {
+    QLineEdit *le = qobject_cast<QLineEdit *>(w);
+    if (le != nullptr) {
         if (index.column() == FilterListModel::ColumnName) {
             if (filter_type_ == FilterDialog::DisplayMacro) {
-                qobject_cast<QLineEdit *>(w)->setValidator(new MacroNameValidator());
+                le->setValidator(new MacroNameValidator(le));
             }
             else {
-                qobject_cast<QLineEdit *>(w)->setValidator(new FilterValidator());
+                le->setValidator(new DialogFilterValidator(le));
             }
         }
     }
@@ -285,7 +292,7 @@ void FilterTreeDelegate::setEditorData(QWidget *editor, const QModelIndex &index
         qobject_cast<QLineEdit *>(editor)->setText(index.data().toString());
 }
 
-QValidator::State FilterValidator::validate(QString & input, int & /*pos*/) const
+QValidator::State DialogFilterValidator::validate(QString & input, int & /*pos*/) const
 {
     /* Making this a list to be able to easily add additional values in the future */
     QStringList invalidKeys = QStringList() << "\"";

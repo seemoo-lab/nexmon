@@ -7,10 +7,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __PROTO_DATA_H__
-#define __PROTO_DATA_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
@@ -86,7 +83,19 @@ WS_DLL_PUBLIC void *p_get_proto_data(wmem_allocator_t *scope, struct _packet_inf
  */
 WS_DLL_PUBLIC void p_remove_proto_data(wmem_allocator_t *scope, struct _packet_info* pinfo, int proto, uint32_t key);
 
-char *p_get_proto_name_and_key(wmem_allocator_t *scope, struct _packet_info* pinfo, unsigned pfd_index);
+/**
+ * Fetch the protocol names and keys for a protocol data entry.
+ *
+ * @param scope The memory scope, typically pinfo->pool or wmem_file_scope().
+ * @param pinfo This dissection's packet info.
+ * @return A GPtrArray containing a list of strings containing the protocol
+ * name and key for the each protocol data entry, or NULL if there are none.
+ * The GPtrArray must be freed.
+ *
+ * @note scope is the scope for the set of proto_data, *not* the scope for the
+ * strings, which are always allocated with pinfo->pool.
+ */
+GPtrArray *p_get_proto_names_and_keys(wmem_allocator_t *scope, struct _packet_info* pinfo);
 
 /**
  * Initialize or update a per-protocol and per-packet check for recursion, nesting, cycling, etc.
@@ -110,8 +119,6 @@ WS_DLL_PUBLIC unsigned p_get_proto_depth(struct _packet_info* pinfo, int proto);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif  /* __PROTO_DATA__ */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

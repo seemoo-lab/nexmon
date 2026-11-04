@@ -19,10 +19,34 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/**
+ * @brief Initialize a block-based memory allocator.
+ *
+ * Sets up a `wmem_allocator_t` to use block-based memory management by assigning
+ * function pointers for allocation, reallocation, freeing, and cleanup operations.
+ * Internally, it creates a `wmem_block_allocator_t` structure to manage memory blocks
+ * and assigns it to the allocator's private data.
+ *
+ * @param allocator Pointer to the allocator structure to initialize.
+ *
+ * @note After initialization, the allocator can be used for block-based memory operations.
+ *       The allocator must not be NULL.
+ */
 void
 wmem_block_allocator_init(wmem_allocator_t *allocator);
 
-/* Exposed only for testing purposes */
+/**
+ * @brief Verifies internal consistency of a wmem block allocator.
+ *
+ * This function performs integrity checks on the internal state of a block-based
+ * `wmem_allocator_t`. It is intended for use in unit tests or debugging scenarios
+ * to detect memory corruption, invalid pointers, or unexpected allocator behavior.
+ *
+ * @param allocator Pointer to the block allocator to verify.
+ *
+ * @note This function is exposed only for testing purposes and should not be used
+ *       in production code.
+ */
 void
 wmem_block_verify(wmem_allocator_t *allocator);
 

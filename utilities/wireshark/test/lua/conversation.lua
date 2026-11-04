@@ -13,7 +13,7 @@ local OTHER = "other"
 -- expected number of runs
 local n_frames = 4
 local taptests = {
-    [FIRSTPASS]=14,
+    [FIRSTPASS]=15,
     [FRAME]=n_frames,
     [PER_FRAME]=n_frames*8-1,
     [OTHER]=1,
@@ -100,6 +100,9 @@ function test_proto.dissector(buf, pinfo, root)
         testlib.test(FIRSTPASS,"Conversation.find",unique_conv("full",Conversation.find(frame_num,conv_type,addr1,addr2,port1,port2)))
 
         local conv = Conversation.find_from_pinfo(pinfo)
+
+        testlib.test(FIRSTPASS, "Conversation.__tostring",
+            string.match(tostring(conv), "^Conversation: id=") ~= nil)
 
         -- Check that nil is returned if no data has ever been assigned to the conversation
         testlib.test(FIRSTPASS,"conv[proto] == nil", conv[test_proto] == nil)

@@ -33,6 +33,8 @@
  **************************************************************************/
 
 #define _XOPEN_SOURCE 700
+#define _DEFAULT_SOURCE
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +42,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <byteswap.h>
+#include <endian.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -48,6 +51,7 @@
 
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #ifdef BUILD_ON_RPI
 #include <linux/if.h>
 #else
@@ -95,6 +99,7 @@ unsigned int    txip = IPADDR(192,168,222,255);
 unsigned int    custom_cmd = 0;
 signed char     custom_cmd_set = -1;
 unsigned int    custom_cmd_buf_len = 4;
+unsigned char   custom_cmd_buf_len_set = false;
 void            *custom_cmd_buf = NULL;
 char            *custom_cmd_value = NULL;
 unsigned char   get_chanspec = 0;
@@ -109,6 +114,21 @@ unsigned char   dump_objmem = false;
 unsigned char   disassociate = false;
 unsigned char   dump_wl_cnt = false;
 unsigned char   revinfo = false;
+unsigned char   nonblock = false;
+unsigned char   read_shm = false;
+unsigned int    read_shm_offset = 0;
+unsigned char   write_shm = false;
+unsigned char   write_shm_offset_set = false;
+unsigned int    write_shm_offset = 0;
+unsigned int    write_shm_val = 0;
+unsigned char   read_templ = false;
+unsigned int    read_templ_offset = 0;
+unsigned char   write_templ = false;
+unsigned char   write_templ_offset_set = false;
+unsigned int    write_templ_offset = 0;
+unsigned int    write_templ_val = 0;
+unsigned char   dump_templ = false;
+unsigned int    dump_templ_offset = 0;
 
 const char *argp_program_version = VERSION;
 const char *argp_program_bug_address = "<mschulz@seemoo.tu-darmstadt.de>";
@@ -128,10 +148,16 @@ static struct argp_option options[] = {
     {"custom-cmd-value-int", 'i', 0, 0, "Define that custom-cmd-value should be interpreted as integer"},
     {"custom-cmd-value-base64", 'b', 0, 0, "Define that custom-cmd-value should be interpreted as base64 string"},
     {"base64-output", 'R', 0, 0, "Write base64 encoded strings to stdout instead of hex dumping"},
-    {"raw-output", 'r', 0, 0, "Write raw output to stdout instead of hex dumping"},
-    {"dump-wl_cnt", 'w', 0, 0, "Dump WL counters"},
+    {"raw-output", 'r', "INT", OPTION_ARG_OPTIONAL, "Write raw output to stdout, or read D11 SHM at offset INT"},
+    {"dump-wl_cnt", 'w', "INT", OPTION_ARG_OPTIONAL, "Dump WL counters, or write D11 SHM at offset INT"},
+    {"read-shm", 'S', "INT", OPTION_ARG_OPTIONAL, "Read D11 SHM register at offset INT (host memory-mapped)"},
+    {"write-shm", 'W', "INT=VAL", OPTION_ARG_OPTIONAL, "Write D11 SHM register (offset=val, or offset with -v)"},
+    {"read-template", 'T', "INT", OPTION_ARG_OPTIONAL, "Read D11 template RAM at offset INT (host memory-mapped)"},
+    {"write-template", 'Y', "INT=VAL", OPTION_ARG_OPTIONAL, "Write D11 template RAM (offset=val, or -Y offset val)"},
+    {"dump-template", 'M', "INT", OPTION_ARG_OPTIONAL, "Dump D11 template RAM table (offset, default: 0)"},
     {"dump-objmem", 'o', "INT", 0, "Dumps objmem at addr INT"},
     {"chanspec", 'k', "CHAR/INT", OPTION_ARG_OPTIONAL, "Set chanspec either as integer (e.g., 0x1001, set -i) or as string (e.g., 64/80)."},
+    {"nonblock", 'n', 0, 0, "Non-blocking channel hopping mode (sub-2ms fast hop)"},
     {"security-cookie", 'x', "INT", OPTION_ARG_OPTIONAL, "Set/Get security cookie"},
     {"use-udp-tunneling", 'X', "INT", 0, "Use UDP tunneling with security cookie INT"},
     {"broadcast-ip", 'B', "CHAR", 0, "Broadcast IP to use for UDP tunneling (default: 192.168.222.255)"},
@@ -139,54 +165,125 @@ static struct argp_option options[] = {
     { 0 }
 };
 
+static int last_optional_opt = 0;
+
+static unsigned char
+parse_uchar_range(const char *arg, int min_val, int max_val, const char *name, struct argp_state *state)
+{
+    char *endptr = NULL;
+    long val;
+
+    errno = 0;
+    val = strtol(arg, &endptr, 0);
+    if (endptr == arg || *endptr != '\0' || errno != 0 || val < min_val || val > max_val) {
+        fprintf(stderr, "ERR: invalid %s value '%s' (valid range: %d..%d)\n",
+                name, arg, min_val, max_val);
+        argp_error(state, "invalid %s value '%s' (valid range: %d..%d)",
+                   name, arg, min_val, max_val);
+    }
+    return (unsigned char) val;
+}
+
+static unsigned int
+parse_uint(const char *arg, const char *name, struct argp_state *state)
+{
+    char *endptr = NULL;
+    unsigned long val;
+
+    errno = 0;
+    val = strtoul(arg, &endptr, 0);
+    if (endptr == arg || *endptr != '\0' || errno != 0 || val > 0xFFFFFFFFUL) {
+        fprintf(stderr, "ERR: invalid %s '%s'\n", name, arg);
+        argp_error(state, "invalid %s '%s'", name, arg);
+    }
+    return (unsigned int) val;
+}
+
 static error_t
 parse_opt(int key, char *arg, struct argp_state *state)
 {
     switch (key) {
-        case 'I':
-            ifname = arg;
+        case ARGP_KEY_INIT:
+            last_optional_opt = 0;
             break;
+
+        case 'I': {
+            if (strlen(arg) >= IFNAMSIZ) {
+                fprintf(stderr, "ERR: interface name '%s' too long (max %d)\n", arg, IFNAMSIZ-1);
+                exit(EXIT_FAILURE);
+            }
+            ifname = arg;
+            last_optional_opt = 0;
+            break;
+        }
 
         case 'm':
             if (arg) {
                 set_monitor = true;
-                set_monitor_value = strtol(arg, NULL, 0);
+                set_monitor_value = parse_uchar_range(arg, 0, 255, "monitor mode", state);
+                last_optional_opt = 0;
             } else {
                 get_monitor = true;
+                last_optional_opt = 'm';
             }
             break;
 
         case 'p':
             if (arg) {
                 set_promisc = true;
-                set_promisc_value = strtol(arg, NULL, 0);
+                set_promisc_value = parse_uchar_range(arg, 0, 1, "promisc", state);
+                last_optional_opt = 0;
             } else {
                 get_promisc = true;
+                last_optional_opt = 'p';
             }
             break;
 
         case 'c':
             if (arg) {
                 set_scansuppress = true;
-                set_scansuppress_value = strtol(arg, NULL, 0);
+                set_scansuppress_value = parse_uchar_range(arg, 0, 1, "scansuppress", state);
+                last_optional_opt = 0;
             } else {
                 get_scansuppress = true;
+                last_optional_opt = 'c';
             }
             break;
 
         case 'd':
             disassociate = true;
+            last_optional_opt = 0;
             break;
 
-        case 'g':
+        case 'g': {
+            char *endptr = NULL;
+            long v;
+            errno = 0;
+            v = strtol(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "ERR: invalid custom command '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
             custom_cmd_set = false;
-            custom_cmd = strtol(arg, NULL, 0);
+            custom_cmd = (unsigned int) v;
+            last_optional_opt = 0;
             break;
+        }
 
-        case 's':
+        case 's': {
+            char *endptr = NULL;
+            long v;
+            errno = 0;
+            v = strtol(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v < 0 || v > INT_MAX) {
+                fprintf(stderr, "ERR: invalid custom command '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
             custom_cmd_set = true;
-            custom_cmd = strtol(arg, NULL, 0);
+            custom_cmd = (unsigned int) v;
+            last_optional_opt = 0;
             break;
+        }
         
         case 'l':
             {
@@ -200,6 +297,8 @@ parse_opt(int key, char *arg, struct argp_state *state)
                     exit(EXIT_FAILURE);
                 }
                 custom_cmd_buf_len = (unsigned int) v;
+                custom_cmd_buf_len_set = true;
+                last_optional_opt = 0;
             }
             break;
 
@@ -207,81 +306,316 @@ parse_opt(int key, char *arg, struct argp_state *state)
             if (arg) {
                 set_chanspec = true;
                 set_chanspec_value = arg;
+                last_optional_opt = 0;
             } else {
                 get_chanspec = true;
+                last_optional_opt = 'k';
             }
+            break;
+
+        case 'n':
+            nonblock = true;
+            last_optional_opt = 0;
             break;
 
         case 'v':
             custom_cmd_value = arg;
+            last_optional_opt = 0;
             break;
 
         case 'i':
             if (!custom_cmd_value_base64)
                 custom_cmd_value_int = true;
             else
-                printf("ERR: you can only either use base64 or integer encoding.");
+                argp_error(state, "you can only either use base64 (-b) or integer (-i) encoding");
+            last_optional_opt = 0;
             break;
 
         case 'b':
             if (!custom_cmd_value_int)
                 custom_cmd_value_base64 = true;
             else
-                printf("ERR: you can only either use base64 or integer encoding.");
+                argp_error(state, "you can only either use base64 (-b) or integer (-i) encoding");
+            last_optional_opt = 0;
+            break;
+
+        case 'S':
+            if (arg) {
+                read_shm = true;
+                read_shm_offset = parse_uint(arg, "shm offset", state);
+                last_optional_opt = 0;
+            } else {
+                read_shm = true;
+                last_optional_opt = 'S';
+            }
             break;
 
         case 'r':
-            if (!base64_output)
-                raw_output = true;
-            else
-                printf("ERR: you can only either use base64 or raw output.");
+            if (arg) {
+                read_shm = true;
+                read_shm_offset = parse_uint(arg, "shm offset", state);
+                last_optional_opt = 0;
+            } else {
+                if (!base64_output)
+                    raw_output = true;
+                last_optional_opt = 'r';
+            }
             break;
 
         case 'R':
             if (!raw_output)
                 base64_output = true;
             else
-                printf("ERR: you can only either use base64 or raw output.");
+                argp_error(state, "you can only either use base64 (-R) or raw (-r) output");
+            last_optional_opt = 0;
             break;
 
-        case 'o':
-            dump_objmem_addr = strtol(arg, NULL, 0);
+        case 'T':
+            read_templ = true;
+            if (arg) {
+                read_templ_offset = parse_uint(arg, "template offset", state);
+                last_optional_opt = 0;
+            } else {
+                read_templ_offset = 0;
+                last_optional_opt = 'T';
+            }
+            break;
+
+        case 'M':
+            dump_templ = true;
+            if (arg) {
+                dump_templ_offset = parse_uint(arg, "template dump offset", state);
+                last_optional_opt = 0;
+            } else {
+                dump_templ_offset = 0;
+                last_optional_opt = 'M';
+            }
+            break;
+
+        case 'Y': {
+            if (arg) {
+                char *eq = strpbrk(arg, "=,:");
+                if (eq) {
+                    *eq = '\0';
+                    write_templ_offset = parse_uint(arg, "template offset", state);
+                    write_templ_val = parse_uint(eq + 1, "template value", state);
+                    write_templ = true;
+                    last_optional_opt = 0;
+                } else {
+                    write_templ_offset = parse_uint(arg, "template offset", state);
+                    write_templ_offset_set = true;
+                    if (custom_cmd_value) {
+                        write_templ_val = parse_uint(custom_cmd_value, "template value", state);
+                        write_templ = true;
+                        last_optional_opt = 0;
+                    } else {
+                        last_optional_opt = 'Y';
+                    }
+                }
+            } else {
+                last_optional_opt = 'Y';
+            }
+            break;
+        }
+
+        case 'o': {
+            char *endptr = NULL;
+            unsigned long v;
+            errno = 0;
+            v = strtoul(arg, &endptr, 0);
+            if (endptr == arg || *endptr != '\0' || errno != 0 || v > 0xFFFFFFFFUL) {
+                fprintf(stderr, "ERR: invalid objmem addr '%s'\n", arg);
+                exit(EXIT_FAILURE);
+            }
+            dump_objmem_addr = (unsigned int) v;
             dump_objmem = true;
+            last_optional_opt = 0;
             break;
+        }
 
-        case 'w':
-            dump_wl_cnt = true;
+        case 'W':
+        case 'w': {
+            if (arg) {
+                char *eq = strpbrk(arg, "=,:");
+                if (eq) {
+                    *eq = '\0';
+                    write_shm_offset = parse_uint(arg, "shm offset", state);
+                    write_shm_val = parse_uint(eq + 1, "shm value", state);
+                    write_shm = true;
+                    last_optional_opt = 0;
+                } else {
+                    write_shm_offset = parse_uint(arg, "shm offset", state);
+                    write_shm_offset_set = true;
+                    if (custom_cmd_value) {
+                        write_shm_val = parse_uint(custom_cmd_value, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    } else {
+                        last_optional_opt = key;
+                    }
+                }
+            } else {
+                if (key == 'w')
+                    dump_wl_cnt = true;
+                last_optional_opt = key;
+            }
             break;
+        }
 
         case 'x':
+            if (use_udp_tunneling != 0)
+                argp_error(state, "You cannot use -x in combination with -X");
             if (arg) {
                 set_securitycookie = true;
-                set_securitycookie_value = strtol(arg, NULL, 0);
+                set_securitycookie_value = parse_uint(arg, "security cookie", state);
+                last_optional_opt = 0;
             } else {
                 get_securitycookie = true;
+                last_optional_opt = 'x';
             }
             break;
 
         case 'X':
-            if (set_securitycookie == false) {
-                use_udp_tunneling = strtol(arg, NULL, 0);
-                if (use_udp_tunneling == 0)
-                    printf("ERR: You need to use a security cookie different from 0.");
-            } else {
-                printf("ERR: You cannot use -x in combination with -X.");
-            }
+            if (set_securitycookie || get_securitycookie)
+                argp_error(state, "You cannot use -x in combination with -X");
+            use_udp_tunneling = parse_uint(arg, "security cookie", state);
+            if (use_udp_tunneling == 0)
+                argp_error(state, "You need to use a security cookie different from 0");
+            last_optional_opt = 0;
             break;
 
         case 'B':
             if (arg) {
-                txip = inet_addr(arg);
+                struct in_addr addr;
+                if (inet_pton(AF_INET, arg, &addr) != 1) {
+                    fprintf(stderr, "ERR: invalid broadcast IP address '%s'\n", arg);
+                    argp_error(state, "invalid broadcast IP address '%s'", arg);
+                }
+                txip = addr.s_addr;
             }
+            last_optional_opt = 0;
             break;
 
         case 'V':
             revinfo = true;
+            last_optional_opt = 0;
             break;
-        
+
+        case ARGP_KEY_ARG:
+            switch (last_optional_opt) {
+                case 'k':
+                    get_chanspec = false;
+                    set_chanspec = true;
+                    set_chanspec_value = arg;
+                    last_optional_opt = 0;
+                    break;
+                case 'm':
+                    get_monitor = false;
+                    set_monitor = true;
+                    set_monitor_value = parse_uchar_range(arg, 0, 2, "monitor mode", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'p':
+                    get_promisc = false;
+                    set_promisc = true;
+                    set_promisc_value = parse_uchar_range(arg, 0, 1, "promisc", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'c':
+                    get_scansuppress = false;
+                    set_scansuppress = true;
+                    set_scansuppress_value = parse_uchar_range(arg, 0, 1, "scansuppress", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'x':
+                    get_securitycookie = false;
+                    set_securitycookie = true;
+                    set_securitycookie_value = parse_uint(arg, "security cookie", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'S':
+                    read_shm = true;
+                    read_shm_offset = parse_uint(arg, "shm offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'r':
+                    raw_output = false;
+                    read_shm = true;
+                    read_shm_offset = parse_uint(arg, "shm offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'W':
+                case 'w': {
+                    dump_wl_cnt = false;
+                    char *eq = strpbrk(arg, "=,:");
+                    if (eq) {
+                        *eq = '\0';
+                        write_shm_offset = parse_uint(arg, "shm offset", state);
+                        write_shm_val = parse_uint(eq + 1, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    } else if (!write_shm_offset_set) {
+                        write_shm_offset = parse_uint(arg, "shm offset", state);
+                        write_shm_offset_set = true;
+                        if (custom_cmd_value) {
+                            write_shm_val = parse_uint(custom_cmd_value, "shm value", state);
+                            write_shm = true;
+                            last_optional_opt = 0;
+                        } else {
+                            last_optional_opt = 'w';
+                        }
+                    } else {
+                        write_shm_val = parse_uint(arg, "shm value", state);
+                        write_shm = true;
+                        last_optional_opt = 0;
+                    }
+                    break;
+                }
+                case 'T':
+                    read_templ = true;
+                    read_templ_offset = parse_uint(arg, "template offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'M':
+                    dump_templ = true;
+                    dump_templ_offset = parse_uint(arg, "template dump offset", state);
+                    last_optional_opt = 0;
+                    break;
+                case 'Y': {
+                    char *eq = strpbrk(arg, "=,:");
+                    if (eq) {
+                        *eq = '\0';
+                        write_templ_offset = parse_uint(arg, "template offset", state);
+                        write_templ_val = parse_uint(eq + 1, "template value", state);
+                        write_templ = true;
+                        last_optional_opt = 0;
+                    } else if (!write_templ_offset_set) {
+                        write_templ_offset = parse_uint(arg, "template offset", state);
+                        write_templ_offset_set = true;
+                        if (custom_cmd_value) {
+                            write_templ_val = parse_uint(custom_cmd_value, "template value", state);
+                            write_templ = true;
+                            last_optional_opt = 0;
+                        } else {
+                            last_optional_opt = 'Y';
+                        }
+                    } else {
+                        write_templ_val = parse_uint(arg, "template value", state);
+                        write_templ = true;
+                        last_optional_opt = 0;
+                    }
+                    break;
+                }
+                default:
+                    return ARGP_ERR_UNKNOWN;
+            }
+            break;
+
+        case ARGP_KEY_END:
+        case ARGP_KEY_SUCCESS:
+            last_optional_opt = 0;
+            break;
+
         default:
             return ARGP_ERR_UNKNOWN;
     }
@@ -312,7 +646,7 @@ hexdump(void *mem, unsigned int len)
             for(j = i - (HEXDUMP_COLS - 1); j <= i; j++) {
                 if(j >= len) {
                     putchar(' ');
-                } else if(isprint(((char*)mem)[j])) {
+                } else if(isprint((unsigned char)((char*)mem)[j])) {
                     putchar(0xFF & ((char*)mem)[j]);        
                 } else {
                         putchar('.');
@@ -321,6 +655,15 @@ hexdump(void *mem, unsigned int len)
             putchar('\n');
         }
     }
+}
+
+static void
+ioctl_alarm_handler(int sig)
+{
+    (void) sig;
+    const char msg[] = "ERR: ioctl timed out after 10s (firmware wedged, SDIO -110? check dmesg)\n";
+    (void) write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    _exit(124);
 }
 
 /* Produce a human-readable string for boardrev */
@@ -341,8 +684,13 @@ main(int argc, char **argv)
     struct nexio *nexio;
     int ret;
     int buf = 0;
+    int failed = 0;
 
     argp_parse(&argp, argc, argv, 0, 0, 0);
+
+    /* Guard against wedged SDIO firmware that blocks ioctl indefinitely */
+    signal(SIGALRM, ioctl_alarm_handler);
+    alarm(10);
 
     if (use_udp_tunneling != 0)
         nexio = nex_init_udp(use_udp_tunneling, txip);
@@ -363,11 +711,19 @@ main(int argc, char **argv)
     if (set_monitor) {
         buf = set_monitor_value;
         ret = nex_ioctl(nexio, WLC_SET_MONITOR, &buf, 4, true);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: could not set monitor mode to %d\n", set_monitor_value);
+            failed = 1;
+        }
     }
 
     if (set_promisc) {
         buf = set_promisc_value;
         ret = nex_ioctl(nexio, WLC_SET_PROMISC, &buf, 4, true);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: could not set promiscuous mode to %d\n", set_promisc_value);
+            failed = 1;
+        }
     }
 
     if (set_scansuppress) {
@@ -376,57 +732,146 @@ main(int argc, char **argv)
             ret = nex_ioctl(nexio, WLC_SET_SCANSUPPRESS, &buf, 4, true);
         else
             ret = nex_ioctl(nexio, WLC_SET_SCANSUPPRESS, &buf, 1, true);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: could not set scan suppress to %d\n", set_scansuppress_value);
+            failed = 1;
+        }
     }
 
     if (set_securitycookie) {
         buf = set_securitycookie_value;
         ret = nex_ioctl(nexio, NEX_SET_SECURITYCOOKIE, &buf, 4, true);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: could not set security cookie\n");
+            failed = 1;
+        }
     }
 
     if (get_monitor) {
         ret = nex_ioctl(nexio, WLC_GET_MONITOR, &buf, 4, false);
-        printf("monitor: %d\n", buf);
+        if (ret < 0) { fprintf(stderr, "ERR: could not get monitor mode\n"); failed = 1; }
+        else printf("monitor: %d\n", buf);
     }
 
     if (get_promisc) {
         ret = nex_ioctl(nexio, WLC_GET_PROMISC, &buf, 4, false);
-        printf("promisc: %d\n", buf);
+        if (ret < 0) { fprintf(stderr, "ERR: could not get promiscuous mode\n"); failed = 1; }
+        else printf("promisc: %d\n", buf);
     }
 
     if (get_scansuppress) {
         ret = nex_ioctl(nexio, WLC_GET_SCANSUPPRESS, &buf, 4, false);
-        printf("scansuppress: %d\n", buf);
+        if (ret < 0) { fprintf(stderr, "ERR: could not get scan suppress\n"); failed = 1; }
+        else printf("scansuppress: %d\n", buf);
     }
 
     if (get_securitycookie) {
         ret = nex_ioctl(nexio, NEX_GET_SECURITYCOOKIE, &buf, 4, false);
-        printf("securitycookie: %d\n", buf);
+        if (ret < 0) { fprintf(stderr, "ERR: could not get security cookie\n"); failed = 1; }
+        else printf("securitycookie: %d\n", buf);
     }
 
     if (get_chanspec) {
-        char charbuf[9] = "chanspec";
+        char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+        uint32 cs32 = 0;
         uint16 chanspec = 0;
-        ret = nex_ioctl(nexio, WLC_GET_VAR, charbuf, 9, false);
-        chanspec = *(uint16 *) charbuf;
-        printf("chanspec: 0x%04x, %s\n", chanspec, wf_chspec_ntoa(chanspec, charbuf));
+
+        /* Try fast-path NEX_GET_CHANSPEC_OVERRIDE first (sub-2ms direct driver/firmware read) */
+        ret = nex_ioctl(nexio, NEX_GET_CHANSPEC_OVERRIDE, &cs32, sizeof(cs32), false);
+        if (ret == 0 && cs32 != 0) {
+            chanspec = (uint16) le32toh(cs32);
+        } else {
+            /* Fallback to legacy WLC_GET_VAR "chanspec" */
+            char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+            ret = nex_ioctl(nexio, WLC_GET_VAR, charbuf, 13, false);
+            if (ret < 0 || memcmp(charbuf, "chanspec", 8) == 0) {
+                fprintf(stderr, "ERR: failed to get chanspec\n");
+                failed = 1;
+            } else {
+                memcpy(&chanspec, charbuf, sizeof(chanspec));
+                chanspec = le16toh(chanspec);
+            }
+        }
+
+        if (!failed) {
+            bool is_psc = wf_chspec_is_6g_psc((chanspec_t) chanspec);
+            printf("chanspec: 0x%04x, %s%s\n", chanspec,
+                   wf_chspec_ntoa_ex(chanspec, chanspec_str),
+                   is_psc ? " (6GHz PSC)" : "");
+        }
     }
 
     if (set_chanspec) {
-        char charbuf[13] = "chanspec";
-        uint32 *chanspec = (uint32 *) &charbuf[9];
+        uint32 cs = 0;
+        uint32 cs_le = 0;
 
         if (custom_cmd_value_int)
-            *chanspec = strtoul(set_chanspec_value, NULL, 0);
+            cs = strtoul(set_chanspec_value, NULL, 0);
         else
-            *chanspec = wf_chspec_aton(set_chanspec_value);
+            cs = wf_chspec_aton(set_chanspec_value);
 
-        if (*chanspec == 0)
-            printf("invalid chanspec\n");
-        else
-            ret = nex_ioctl(nexio, WLC_SET_VAR, charbuf, 13, true);
+        if (cs == 0 || cs == INVCHANSPEC) {
+            fprintf(stderr, "ERR: invalid chanspec '%s'\n", set_chanspec_value);
+            nex_free(nexio);
+            return -1;
+        } else {
+            cs_le = htole32(cs);
+            if (nonblock) {
+                /* Non-blocking fast channel hop (fire-and-forget sub-2ms) */
+                ret = nex_ioctl_nonblock(nexio, NEX_SET_CHANSPEC_OVERRIDE, &cs_le, sizeof(cs_le));
+                if (ret < 0) {
+                    char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+                    bool is_psc = wf_chspec_is_6g_psc((chanspec_t) cs);
+                    fprintf(stderr, "ERR: failed to non-blocking set chanspec 0x%04x (%s%s)\n",
+                            cs, wf_chspec_ntoa_ex((chanspec_t) cs, chanspec_str),
+                            is_psc ? " [6GHz PSC]" : "");
+                    nex_free(nexio);
+                    return -1;
+                }
+            } else {
+                /* Try fast-path NEX_SET_CHANSPEC_OVERRIDE first */
+                ret = nex_ioctl(nexio, NEX_SET_CHANSPEC_OVERRIDE, &cs_le, sizeof(cs_le), true);
+                if (ret < 0) {
+                    /* Fallback to legacy WLC_SET_VAR "chanspec" */
+                    char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                    memcpy(&charbuf[9], &cs_le, sizeof(cs_le));
+                    ret = nex_ioctl(nexio, WLC_SET_VAR, charbuf, 13, true);
+                    if (ret < 0) {
+                        char chanspec_str[CHANSPEC_STR_LEN] = { 0 };
+                        bool is_psc = wf_chspec_is_6g_psc((chanspec_t) cs);
+                        fprintf(stderr, "ERR: failed to set chanspec 0x%04x (%s%s)\n",
+                                cs, wf_chspec_ntoa_ex((chanspec_t) cs, chanspec_str),
+                                is_psc ? " [6GHz PSC]" : "");
+                        nex_free(nexio);
+                        return -1;
+                    }
+                }
+            }
+        }
     }
 
     if (custom_cmd_set != -1) {
+        if (!custom_cmd_buf_len_set) {
+            if (custom_cmd_set == 1) { // SET command
+                if (custom_cmd_value_base64 && custom_cmd_value) {
+                    size_t est_len = (strlen(custom_cmd_value) * 3) / 4 + 4;
+                    custom_cmd_buf_len = est_len > 4 ? (unsigned int) est_len : 4;
+                } else if (custom_cmd_value && !custom_cmd_value_int) {
+                    size_t slen = strlen(custom_cmd_value) + 1;
+                    custom_cmd_buf_len = slen > 4 ? (unsigned int) slen : 4;
+                } else if (custom_cmd_value_int) {
+                    custom_cmd_buf_len = sizeof(uint32);
+                }
+            } else if (custom_cmd_set == 0) { // GET command
+                /* For telemetry/structured dumps, 4 bytes truncates almost everything;
+                 * default to 256 bytes (or 1024 for known dump commands 511, 512, 514). */
+                if (custom_cmd == 511 || custom_cmd == 512 || custom_cmd == 514)
+                    custom_cmd_buf_len = 1024;
+                else
+                    custom_cmd_buf_len = 256;
+            }
+        }
+
         custom_cmd_buf = malloc(custom_cmd_buf_len);
         if (!custom_cmd_buf)
             return -1;
@@ -454,10 +899,31 @@ main(int argc, char **argv)
                         free(custom_cmd_buf);
                         return -1;
                     }
-                    memcpy(custom_cmd_buf, decoded, MIN(decoded_len, custom_cmd_buf_len));
+                    /* Auto-resize buffer if user did not specify -l */
+                    if (!custom_cmd_buf_len_set && decoded_len > custom_cmd_buf_len) {
+                        void *resized = realloc(custom_cmd_buf, decoded_len);
+                        if (!resized) {
+                            free(decoded);
+                            free(custom_cmd_buf);
+                            return -1;
+                        }
+                        custom_cmd_buf = resized;
+                        custom_cmd_buf_len = (unsigned int) decoded_len;
+                    } else if (decoded_len > custom_cmd_buf_len) {
+                        fprintf(stderr,
+                                "ERR: base64 payload decodes to %zu bytes but -l is %u; "
+                                "refusing to truncate. Re-run with -l %zu.\n",
+                                decoded_len, custom_cmd_buf_len, decoded_len);
+                        free(decoded);
+                        free(custom_cmd_buf);
+                        return -1;
+                    }
+                    memcpy(custom_cmd_buf, decoded, decoded_len);
                     free(decoded);
                 } else {
                     strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
+                    if (custom_cmd_buf_len > 0)
+                        ((char *) custom_cmd_buf)[custom_cmd_buf_len - 1] = '\0';
                 }
             } else {
                 /* no -v supplied: there is no integer to write. Requesting an
@@ -477,19 +943,29 @@ main(int argc, char **argv)
         if (custom_cmd_buf_len > 1502 && custom_cmd_set)
             fprintf(stderr, "WARN: Using SDIO, the ioctl payload length is limited to 1502 bytes.\n");
         ret = nex_ioctl(nexio, custom_cmd, custom_cmd_buf, custom_cmd_buf_len, custom_cmd_set);
-
-        if (custom_cmd_set == false) {
+        if (ret < 0) {
+            fprintf(stderr, "ERR: custom command ioctl (%d) failed (err=%d)\n", custom_cmd, ret);
+            failed = 1;
+        } else if (custom_cmd_set == false) {
             if (raw_output) {
                 fwrite(custom_cmd_buf, sizeof(char), custom_cmd_buf_len, stdout);
                 fflush(stdout);
             } else if (base64_output) {
                 char *encoded = b64_encode(custom_cmd_buf, custom_cmd_buf_len);
-                fwrite(encoded, sizeof(char), strlen(encoded), stdout);
-                fflush(stdout);
+                if (encoded) {
+                    fwrite(encoded, sizeof(char), strlen(encoded), stdout);
+                    fflush(stdout);
+                    free(encoded);
+                } else {
+                    fprintf(stderr, "ERR: base64 encoding failed\n");
+                }
             } else {
                 hexdump(custom_cmd_buf, custom_cmd_buf_len);
             }
         }
+
+        free(custom_cmd_buf);
+        custom_cmd_buf = NULL;
     }
 
     if (dump_objmem) {
@@ -505,15 +981,24 @@ main(int argc, char **argv)
         for (i = 0; i < custom_cmd_buf_len / 0x2000; i++) {
             *custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             printf("%8p %08x\n", custom_cmd_buf_pos, *custom_cmd_buf_pos);
-            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);    
+            ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);
+            if (ret < 0) {
+                fprintf(stderr, "ERR: dump_objmem ioctl failed\n");
+                failed++;
+                break;
+            }
             custom_cmd_buf_pos += 0x2000 / 4;
         }
         /* Only seed the address word into the tail if the remainder is at least
          * a full word; a 1-3 byte remainder has no room for the 4-byte write and
          * would overrun the allocation. */
-        if (custom_cmd_buf_len % 0x2000 >= sizeof(unsigned int)) {
+        if (failed == 0 && custom_cmd_buf_len % 0x2000 >= sizeof(unsigned int)) {
             *(unsigned int *) custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
+            if (ret < 0) {
+                fprintf(stderr, "ERR: dump_objmem ioctl failed\n");
+                failed++;
+            }
         }
 
         if (raw_output) {
@@ -527,9 +1012,91 @@ main(int argc, char **argv)
         custom_cmd_buf = NULL;
     }
 
+    if (read_shm) {
+        unsigned int val = 0;
+        ret = nex_read_d11_shm(nexio, read_shm_offset, &val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: read D11 SHM at 0x%04x failed (err=%d)\n", read_shm_offset, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                uint16_t val16 = (uint16_t) val;
+                fwrite(&val16, sizeof(val16), 1, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 SHM [0x%04x]: 0x%04x (%u)\n", read_shm_offset, val, val);
+            }
+        }
+    }
+
+    if (write_shm) {
+        ret = nex_write_d11_shm(nexio, write_shm_offset, write_shm_val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: write D11 SHM at 0x%04x <= 0x%04x failed (err=%d)\n",
+                    write_shm_offset, write_shm_val, ret);
+            failed = 1;
+        } else {
+            printf("D11 SHM [0x%04x] <= 0x%04x: SUCCESS\n", write_shm_offset, write_shm_val);
+        }
+    }
+
+    if (read_templ) {
+        unsigned int val = 0;
+        ret = nex_read_d11_templ(nexio, read_templ_offset, &val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: read D11 template RAM at 0x%04x failed (err=%d)\n", read_templ_offset, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                uint32_t val32 = (uint32_t) val;
+                fwrite(&val32, sizeof(val32), 1, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 TEMPL [0x%04x]: 0x%08x (%u)\n", read_templ_offset, val, val);
+            }
+        }
+    }
+
+    if (write_templ) {
+        ret = nex_write_d11_templ(nexio, write_templ_offset, write_templ_val);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: write D11 template RAM at 0x%04x <= 0x%08x failed (err=%d)\n",
+                    write_templ_offset, write_templ_val, ret);
+            failed = 1;
+        } else {
+            printf("D11 TEMPL [0x%04x] <= 0x%08x: SUCCESS\n", write_templ_offset, write_templ_val);
+        }
+    }
+
+    if (dump_templ) {
+        unsigned char tbuf[256];
+        unsigned int dump_len = custom_cmd_buf_len_set ? custom_cmd_buf_len : 128;
+        if (dump_len > sizeof(tbuf))
+            dump_len = sizeof(tbuf);
+        memset(tbuf, 0, sizeof(tbuf));
+        ret = nex_read_d11_template_ram(nexio, dump_templ_offset, tbuf, dump_len);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: dump D11 template RAM at 0x%04x len %u failed (err=%d)\n",
+                    dump_templ_offset, dump_len, ret);
+            failed = 1;
+        } else {
+            if (raw_output) {
+                fwrite(tbuf, 1, dump_len, stdout);
+                fflush(stdout);
+            } else {
+                printf("D11 TEMPLATE RAM DUMP [offset 0x%04x, len %u]:\n", dump_templ_offset, dump_len);
+                hexdump(tbuf, dump_len);
+            }
+        }
+    }
+
     if (disassociate) {
         buf = 1;
         ret = nex_ioctl(nexio, WLC_DISASSOC, &buf, 4, true);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: disassociate failed (err=%d)\n", ret);
+            failed = 1;
+        }
     }
 
     if (dump_wl_cnt) {
@@ -537,11 +1104,16 @@ main(int argc, char **argv)
         wl_cnt_t *_cnt = &cnt;
         memset(_cnt, 0, sizeof(cnt));
         ret = nex_ioctl(nexio, NEX_GET_WL_CNT, _cnt, sizeof(cnt), false);
-        unsigned int i;
-        printf("version: %d\n", _cnt->version);
-        printf("length: %d\n", _cnt->length);
-        for (i = 1; i < sizeof(cnt)/4; i++) {
-            printf("%s: %d (%s)\n", wl_cnt_varname[i], ((uint32 *) _cnt)[i], wl_cnt_description[i]);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: failed to get wl counters (err=%d)\n", ret);
+            failed = 1;
+        } else {
+            unsigned int i;
+            printf("version: %d\n", le16toh(_cnt->version));
+            printf("length: %d\n", le16toh(_cnt->length));
+            for (i = 1; i < sizeof(cnt)/4; i++) {
+                printf("%s: %u (%s)\n", wl_cnt_varname[i], le32toh(((uint32 *) _cnt)[i]), wl_cnt_description[i]);
+            }
         }
         //hexdump(_cnt, sizeof(_cnt)); 
     }
@@ -574,18 +1146,38 @@ main(int argc, char **argv)
         memset(&revinfo, 0, sizeof(revinfo));
 
         ret = nex_ioctl(nexio, WLC_GET_REVINFO, &revinfo, sizeof(revinfo), false);
+        if (ret < 0) {
+            fprintf(stderr, "ERR: failed to get revinfo (err=%d)\n", ret);
+            failed = 1;
+        }
 
 #ifdef ANDROID
         char model_string[PROP_VALUE_MAX + 1];
         __system_property_get("ro.product.model", model_string);
 #else
-        char model_string[] = "unknown";
+        char model_string[128] = "unknown";
+        FILE *f_model = fopen("/sys/firmware/devicetree/base/model", "r");
+        if (!f_model)
+            f_model = fopen("/proc/device-tree/model", "r");
+        if (f_model) {
+            if (fgets(model_string, sizeof(model_string), f_model)) {
+                model_string[strcspn(model_string, "\r\n")] = '\0';
+            }
+            fclose(f_model);
+        }
 #endif
         char fw_ver[256] = "ver\0";
         nex_ioctl(nexio, WLC_GET_VAR, fw_ver, sizeof(fw_ver), false);
         fw_ver[sizeof(fw_ver) - 1] = 0;
         char *fw_ver2 = strstr(fw_ver, "version");
-        if (fw_ver2 != NULL) {
+        /* fw_ver is filled from the firmware's WLC_GET_VAR reply, so treat it
+         * as untrusted: "version" can match right at the end of the buffer,
+         * and fw_ver2 + 8 would then point past the array. The strlen() and
+         * the trailing-NUL strip below would read and write out of bounds.
+         * Only skip when the result stays inside fw_ver; otherwise fall back
+         * to the whole buffer as we do when the marker is absent. */
+        if (fw_ver2 != NULL &&
+            (size_t)(fw_ver2 - fw_ver) + 8 < sizeof(fw_ver)) {
             fw_ver2 += 8;
             if (*fw_ver2 != '\0')
                 fw_ver2[strlen(fw_ver2) - 1] = 0;
@@ -593,23 +1185,23 @@ main(int argc, char **argv)
             fw_ver2 = fw_ver;
         }
 
-        snprintf(str[0], sizeof(str[0]), "0x%x", revinfo.vendorid);
-        snprintf(str[1], sizeof(str[0]), "0x%x", revinfo.deviceid);
-        snprintf(str[2], sizeof(str[0]), "0x%x", revinfo.radiorev);
-        snprintf(str[3], sizeof(str[0]), "0x%x", revinfo.chipnum);
-        snprintf(str[4], sizeof(str[0]), "0x%x", revinfo.chiprev);
-        snprintf(str[5], sizeof(str[0]), "0x%x", revinfo.chippkg);
-        snprintf(str[6], sizeof(str[0]), "0x%x", revinfo.corerev);
-        snprintf(str[7], sizeof(str[0]), "0x%x", revinfo.boardid);
-        snprintf(str[8], sizeof(str[0]), "0x%x", revinfo.boardvendor);
-        snprintf(str[9], sizeof(str[0]), "%s", bcm_brev_str(revinfo.boardrev, b));
-        snprintf(str[10], sizeof(str[0]), "0x%x", revinfo.driverrev);
-        snprintf(str[11], sizeof(str[0]), "0x%x", revinfo.ucoderev);
-        snprintf(str[12], sizeof(str[0]), "0x%x", revinfo.bus);
-        snprintf(str[13], sizeof(str[0]), "0x%x", revinfo.phytype);
-        snprintf(str[14], sizeof(str[0]), "0x%x", revinfo.phyrev);
-        snprintf(str[15], sizeof(str[0]), "0x%x", revinfo.anarev);
-        snprintf(str[16], sizeof(str[0]), "0x%x", revinfo.nvramrev);
+        snprintf(str[0], sizeof(str[0]), "0x%x", le32toh(revinfo.vendorid));
+        snprintf(str[1], sizeof(str[0]), "0x%x", le32toh(revinfo.deviceid));
+        snprintf(str[2], sizeof(str[0]), "0x%x", le32toh(revinfo.radiorev));
+        snprintf(str[3], sizeof(str[0]), "0x%x", le32toh(revinfo.chipnum));
+        snprintf(str[4], sizeof(str[0]), "0x%x", le32toh(revinfo.chiprev));
+        snprintf(str[5], sizeof(str[0]), "0x%x", le32toh(revinfo.chippkg));
+        snprintf(str[6], sizeof(str[0]), "0x%x", le32toh(revinfo.corerev));
+        snprintf(str[7], sizeof(str[0]), "0x%x", le32toh(revinfo.boardid));
+        snprintf(str[8], sizeof(str[0]), "0x%x", le32toh(revinfo.boardvendor));
+        snprintf(str[9], sizeof(str[0]), "%s", bcm_brev_str(le32toh(revinfo.boardrev), b));
+        snprintf(str[10], sizeof(str[0]), "0x%x", le32toh(revinfo.driverrev));
+        snprintf(str[11], sizeof(str[0]), "0x%x", le32toh(revinfo.ucoderev));
+        snprintf(str[12], sizeof(str[0]), "0x%x", le32toh(revinfo.bus));
+        snprintf(str[13], sizeof(str[0]), "0x%x", le32toh(revinfo.phytype));
+        snprintf(str[14], sizeof(str[0]), "0x%x", le32toh(revinfo.phyrev));
+        snprintf(str[15], sizeof(str[0]), "0x%x", le32toh(revinfo.anarev));
+        snprintf(str[16], sizeof(str[0]), "0x%x", le32toh(revinfo.nvramrev));
 
 #ifdef ANDROID
         printf("platform %s\n", model_string);
@@ -640,5 +1232,7 @@ main(int argc, char **argv)
             model_string, fw_ver2, str[0], str[1], str[2], str[3], str[4], str[5], str[6], str[7], str[8], str[9], str[10], str[11], str[12], str[13], str[14], str[15], str[16]);
     }
 
-    return 0;
+    alarm(0);
+    nex_free(nexio);
+    return failed ? EXIT_FAILURE : 0;
 }

@@ -9,8 +9,10 @@
 
 #include <QDropEvent>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QToolTip>
 #include <QAction>
+#include <QApplication>
 #include <QInputDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -28,10 +30,12 @@
 #include <models/pref_models.h>
 #include <ui/qt/utils/wireshark_mime_data.h>
 #include <ui/qt/widgets/packet_list_header.h>
+#include <ui/qt/utils/font_manager.h>
 
 PacketListHeader::PacketListHeader(Qt::Orientation orientation, QWidget *parent) :
-    QHeaderView(orientation, parent),
-    sectionIdx(-1)
+    AdaptiveHeaderView(orientation, parent),
+    sectionIdx(-1),
+    frozen_column_count_(0)
 {
     setAcceptDrops(true);
     setSectionsMovable(true);
@@ -100,11 +104,7 @@ void PacketListHeader::dropEvent(QDropEvent *event)
             MainWindow * mw = mainApp->mainWindow();
             if (mw)
             {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0 ,0)
                 int idx = logicalIndexAt(event->position().toPoint());
-#else
-                int idx = logicalIndexAt(event->pos());
-#endif
                 mw->insertColumn(data["description"].toString(), data["name"].toString(), idx);
             }
 
@@ -121,20 +121,32 @@ void PacketListHeader::mousePressEvent(QMouseEvent *e)
     if (e->button() == Qt::LeftButton && sectionIdx < 0)
     {
         /* No move happening yet */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0 ,0)
         int sectIdx = logicalIndexAt(e->position().toPoint().x() - 4, e->position().toPoint().y());
-#else
-        int sectIdx = logicalIndexAt(e->localPos().x() - 4, e->localPos().y());
-#endif
 
         QString headerName = model()->headerData(sectIdx, orientation()).toString();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0 ,0)
         QToolTip::showText(e->globalPosition().toPoint(), QStringLiteral("Width: %1").arg(sectionSize(sectIdx)));
-#else
-        QToolTip::showText(e->globalPos(), QStringLiteral("Width: %1").arg(sectionSize(sectIdx)));
-#endif
+    }
+    if (e->button() == Qt::LeftButton) {
+        press_pos_ = e->position().toPoint();
+        press_active_ = true;
     }
     QHeaderView::mousePressEvent(e);
+}
+
+void PacketListHeader::setDragActive(bool active)
+{
+    if (drag_active_ == active) {
+        return;
+    }
+    drag_active_ = active;
+    emit dragActiveChanged(active);
+}
+
+void PacketListHeader::mouseReleaseEvent(QMouseEvent *e)
+{
+    press_active_ = false;
+    QHeaderView::mouseReleaseEvent(e);
+    setDragActive(false);
 }
 
 void PacketListHeader::mouseMoveEvent(QMouseEvent *e)
@@ -147,11 +159,7 @@ void PacketListHeader::mouseMoveEvent(QMouseEvent *e)
     else if (e->buttons() & Qt::LeftButton)
     {
         /* section being moved */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0 ,0)
         int triggeredSection = logicalIndexAt(e->position().toPoint().x() - 4, e->position().toPoint().y());
-#else
-        int triggeredSection = logicalIndexAt(e->localPos().x() - 4, e->localPos().y());
-#endif
 
         if (sectionIdx < 0)
             sectionIdx = triggeredSection;
@@ -159,20 +167,42 @@ void PacketListHeader::mouseMoveEvent(QMouseEvent *e)
         {
             /* Only run for the current moving section after a change */
             QString headerName = model()->headerData(sectionIdx, orientation()).toString();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0 ,0)
             QToolTip::showText(e->globalPosition().toPoint(), QStringLiteral("Width: %1").arg(sectionSize(sectionIdx)));
-#else
-            QToolTip::showText(e->globalPos(), QStringLiteral("Width: %1").arg(sectionSize(sectionIdx)));
-#endif
         }
     }
+    if (press_active_ && (e->buttons() & Qt::LeftButton)
+        && (e->position().toPoint() - press_pos_).manhattanLength() >= QApplication::startDragDistance()) {
+        setDragActive(true);
+    }
     QHeaderView::mouseMoveEvent(e);
+}
+
+void PacketListHeader::showContextMenuAt(QContextMenuEvent *event)
+{
+    contextMenuEvent(event);
+}
+
+void PacketListHeader::forwardMousePressEvent(QMouseEvent *event)
+{
+    mousePressEvent(event);
+}
+
+void PacketListHeader::forwardMouseMoveEvent(QMouseEvent *event)
+{
+    mouseMoveEvent(event);
+}
+
+void PacketListHeader::forwardMouseReleaseEvent(QMouseEvent *event)
+{
+    press_active_ = false;
+    QHeaderView::mouseReleaseEvent(event);
+    setDragActive(false);
 }
 
 void PacketListHeader::contextMenuEvent(QContextMenuEvent *event)
 {
     int sectionIdx = logicalIndexAt(event->pos());
-    if (sectionIdx < 0 || sectionIdx >= prefs.num_cols)
+    if (sectionIdx < 0 || ((unsigned)sectionIdx >= prefs.num_cols))
         return;
 
     char xalign = recent_get_column_xalign(sectionIdx);
@@ -190,6 +220,10 @@ void PacketListHeader::contextMenuEvent(QContextMenuEvent *event)
     connect(action, &QAction::triggered, this, &PacketListHeader::resizeToContent);
     action = contextMenu->addAction(tr("Resize Column to Width…"));
     connect(action, &QAction::triggered, this, &PacketListHeader::resizeToWidth);
+
+    bool columnFrozen = sectionIdx < frozen_column_count_;
+    action = contextMenu->addAction(columnFrozen ? tr("Unfreeze Columns") : tr("Freeze Column"));
+    connect(action, &QAction::triggered, this, columnFrozen ? &PacketListHeader::doUnfreezeColumns : &PacketListHeader::doFreezeColumnsToHere);
 
     contextMenu->addSeparator();
 
@@ -232,7 +266,7 @@ void PacketListHeader::contextMenuEvent(QContextMenuEvent *event)
     action->setChecked(action->isEnabled() && (get_column_display_format(sectionIdx) == COLUMN_DISPLAY_STRINGS));
     action->setData(QVariant::fromValue(COLUMN_DISPLAY_STRINGS));
     action->setToolTip(displayToolTip);
-    action = displayActions->addAction(tr("Display as packet Details"));
+    action = displayActions->addAction(tr("Display as Packet Details"));
     action->setEnabled(canDisplayDetails);
     action->setCheckable(true);
     action->setChecked(action->isEnabled() && (get_column_display_format(sectionIdx) == COLUMN_DISPLAY_DETAILS));
@@ -243,7 +277,7 @@ void PacketListHeader::contextMenuEvent(QContextMenuEvent *event)
     contextMenu->addActions(displayActions->actions());
     contextMenu->addSeparator();
 
-    for (int cnt = 0; cnt < prefs.num_cols; cnt++) {
+    for (unsigned cnt = 0; cnt < prefs.num_cols; cnt++) {
         QString title(get_column_title(cnt));
         QString detail;
         if (get_column_format(cnt) == COL_CUSTOM) {
@@ -287,7 +321,15 @@ void PacketListHeader::columnVisibilityTriggered()
 
     PacketList* packetList = qobject_cast<PacketList*>(parent());
     if (packetList) {
-        packetList->setColumnDelegate();
+        // setColumnVisibility() (rather than setColumnDelegate() alone)
+        // since this checkbox only hides the column on this header itself
+        // above -- the pinned-column/pinned-row overlay views (and the
+        // primary view's own QTreeView column-hidden state, which this
+        // header's setSectionHidden() doesn't by itself guarantee stays in
+        // sync with) still need PacketList::setColumnVisibility() to apply
+        // the same hidden state to them, or they silently keep showing the
+        // column's stale last-visible content indefinitely.
+        packetList->setColumnVisibility();
     }
 
     prefs_main_write();
@@ -400,4 +442,28 @@ void PacketListHeader::resizeToWidth()
                                  sectionSize(section), 0, 1000, 1, &ok);
     if (ok)
         resizeSection(section, width);
+}
+
+void PacketListHeader::doFreezeColumnsToHere()
+{
+    QAction * action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
+    QMenu * menu = qobject_cast<QMenu *>(action->parent());
+    if (!menu)
+        return;
+
+    int section = menu->property("column").toInt();
+    emit freezeColumnsToHere(section + 1);
+}
+
+void PacketListHeader::doUnfreezeColumns()
+{
+    emit unfreezeColumns();
+}
+
+void PacketListHeader::setFrozenColumnCount(int frozen_column_count)
+{
+    frozen_column_count_ = frozen_column_count;
 }

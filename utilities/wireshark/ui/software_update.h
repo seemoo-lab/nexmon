@@ -17,6 +17,23 @@
  *
  * Routines that integrate with WinSparkle on Windows and Sparkle on
  * macOS.
+ *
+ * Sparkle and WinSparkle check for updates by fetching an Appcast XML file from www.wireshark.org.
+ * Appcast URLs have the form
+ * https://www.wireshark.org/update/<URL version>/<application>/<OS>/<architecture>/en-US/<channel>.xml
+ *
+ * Where:
+ *   URL version: Always 0
+ *   Application: One of "Wireshark" or "Stratoshark"
+ *   OS: One of :Windows" or "macOS"
+ *   Architecture: One of "x86-64" or "arm64"
+ *   Channel: One of "stable" or "development"
+ *
+ * Examples:
+ * https://www.wireshark.org/update/0/Wireshark/0.0.0/Windows/x86-64/en-US/stable.xml
+ * https://www.wireshark.org/update/0/Wireshark/0.0.0/macOS/arm64/en-US/stable.xml
+ * https://www.wireshark.org/update/0/Stratoshark/0.0.0/Windows/x86-64/en-US/stable.xml
+ *
  * @ingroup main_ui_group
  */
 
@@ -28,7 +45,7 @@ extern "C" {
  *
  * Does nothing on platforms that don't support software updates.
  */
-extern void software_update_init(void);
+extern void software_update_init(const char* su_application, const char* su_version);
 
 /** Force a software update check.
  *
@@ -41,12 +58,6 @@ extern void software_update_check(void);
  * Does nothing on platforms that don't support software updates.
  */
 extern void software_update_cleanup(void);
-
-/** Fetch a description of the software update mechanism.
- *
- * @return NULL, "Sparkle", or "WinSparkle".
- */
-extern const char *software_update_info(void);
 
 #ifdef _WIN32
 /** Check to see if Wireshark can shut down safely (e.g. offer to save the

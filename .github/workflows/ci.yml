@@ -1,0 +1,159 @@
+name: Nexmon CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (ruff + shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install linters
+        run: |
+          python -m pip install ruff
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Ruff (correctness rules, see pyproject.toml)
+        run: ruff check .
+
+      - name: Shellcheck
+        run: |
+          shellcheck -S error setup_env.sh monitor-mode.sh \
+            buildtools/*.sh buildtools/scripts/*.sh
+
+  test-and-build:
+    name: Native Utilities & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Cache ccache
+        uses: actions/cache@v6
+        with:
+          path: ~/.ccache
+          key: ccache-test-${{ runner.os }}-${{ hashFiles('utilities/nexutil/**', 'buildtools/**') }}
+          restore-keys: ccache-test-${{ runner.os }}-
+
+      - name: Install System Dependencies
+        run: |
+          sudo dpkg --add-architecture i386 || true
+          sudo apt-get update
+          sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev libgmp-dev:i386 make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache || \
+          sudo apt-get install -y gcc make gawk xxd libpcap-dev libnl-3-dev libnl-genl-3-dev libcap-dev ccache
+          mkdir -p "$HOME/.ccache"
+          ccache --set-config=cache_dir="$HOME/.ccache" || true
+
+      - name: Install Python Test Dependencies
+        run: python -m pip install capstone numpy zstandard
+
+      - name: Build Userspace Utilities & Extractors
+        # Explicitly select the host compiler on x86 too. The default x86 path
+        # builds Android binaries, which cannot serve the native SDK tests.
+        run: |
+          mkdir -p "$HOME/.ccache"
+          export PATH="/usr/lib/ccache:$PATH"
+          export CCACHE_DIR="$HOME/.ccache"
+          make -C utilities/nexutil NATIVE_BUILD=1
+          make -C buildtools/flash_patch_extractor
+          make -C buildtools/ucode_extractor
+          make -C buildtools/gcc-nexmon-plugin || true
+
+      - name: Run Unit Tests
+        run: python -m unittest discover -s tests -v
+
+  firmware:
+    name: Build & Validate BCM43455c0 Firmware
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Cache ccache and toolchain
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.ccache
+            buildtools/gcc-nexmon-plugin/*.so
+          key: ccache-firmware-${{ runner.os }}-${{ hashFiles('buildtools/gcc-nexmon-plugin/**', 'patches/bcm43455c0/**') }}
+          restore-keys: ccache-firmware-${{ runner.os }}-
+
+      - name: Install Firmware Build Dependencies
+        # The bundled x86 GCC 5 toolchain and its plugin are 32-bit executables.
+        run: |
+          sudo dpkg --add-architecture i386 || true
+          sudo apt-get update
+          sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev libgmp-dev:i386 make gawk qpdf xxd ccache || \
+          sudo apt-get install -y gcc g++-multilib libc6-i386 libgmp-dev make gawk qpdf xxd ccache
+          mkdir -p "$HOME/.ccache"
+          ccache --set-config=cache_dir="$HOME/.ccache" || true
+
+      - name: Build Firmware and Require Validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch DISABLE_STATISTICS
+          source setup_env.sh
+          export PATH="/usr/lib/ccache:$(dirname "${CC}gcc"):$PATH"
+          export CCACHE_DIR="$HOME/.ccache"
+          ccache -z || true
+          make -C buildtools/gcc-nexmon-plugin
+          make -C buildtools/flash_patch_extractor
+          make -C firmwares/bcm43455c0/7_45_265-28bca26-CY
+          make -j$(nproc) -C patches/bcm43455c0/7_45_265-28bca26-CY/nexmon firmware-only NEXMON_FREEZE_BUILD_NUMBER=1
+          ccache -s || true
+          python patches/bcm43455c0/7_45_265-28bca26-CY/nexmon/validate_build.py --require
+
+  sanitize:
+    name: Sanitize (ASan+UBSan) + Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make libpcap-dev
+          python -m pip install capstone
+
+      - name: Build rawproxy/rawproxyreverse/libnexio with sanitizers
+        run: |
+          make -C utilities/rawproxy sanitize
+          make -C utilities/rawproxyreverse sanitize
+          make -C utilities/libnexio sanitize
+
+      - name: Run radiotap fuzz tests
+        run: |
+          python -m unittest tests.test_radiotap_fuzz -v
+          python -m unittest tests.test_hardening -v

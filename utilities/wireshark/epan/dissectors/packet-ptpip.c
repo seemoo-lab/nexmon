@@ -69,7 +69,7 @@ static void dissect_ptpIP_data                 (tvbuff_t *tvb, packet_info *pinf
 static void dissect_ptpIP_end_data             (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
 static void dissect_ptpIP_event                (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
 static void dissect_ptpIP_unicode_name         (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
-static void dissect_ptpIP_protocol_version     (tvbuff_t *tvb,                     proto_tree *tree, uint16_t *offset);
+static void dissect_ptpIP_protocol_version     (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
 static void dissect_ptpIP_guid                 (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset);
 
 void proto_register_ptpip( void );
@@ -112,6 +112,7 @@ static const value_string ptp_opcode_names[] = {
     { PTP_OC_GetObjectHandles,                          "GetObjectHandles" },
     { PTP_OC_GetObjectInfo,                             "GetObjectInfo" },
     { PTP_OC_GetObject,                                 "GetObject" },
+    { PTP_OC_GetThumb,                                  "GetThumb" },
     { PTP_OC_DeleteObject,                              "DeleteObject" },
     { PTP_OC_SendObjectInfo,                            "SendObjectInfo" },
     { PTP_OC_SendObject,                                "SendObject" },
@@ -262,7 +263,6 @@ static value_string_ext ptp_opcode_canon_names_ext = VALUE_STRING_EXT_INIT(ptp_o
 
 static const value_string ptp_opcode_nikon_names[] = {
     { PTP_OC_NIKON_GetProfileAllData,                   "NIKON_GetProfileAllData" },
-    { PTP_OC_NIKON_SendProfileData,                     "NIKON_SendProfileData" },
     { PTP_OC_NIKON_SendProfileData,                     "NIKON_SendProfileData" },
     { PTP_OC_NIKON_DeleteProfile,                       "NIKON_DeleteProfile" },
     { PTP_OC_NIKON_SetProfileData,                      "NIKON_SetProfileData" },
@@ -566,8 +566,7 @@ int dissect_ptpIP (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     offset += 4;
     /* @todo:maybe add some length verification checks to see if len advertised matches actual len */
 
-    pktType = tvb_get_letohl(tvb, offset);
-    proto_tree_add_item(ptp_tree, hf_ptpIP_pktType, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(ptp_tree, hf_ptpIP_pktType, tvb, offset, 4, ENC_LITTLE_ENDIAN, &pktType);
     offset += 4;
     switch (pktType) {
         case PTPIP_INIT_COMMAND_REQUEST:
@@ -629,7 +628,7 @@ static void dissect_ptpIP_init_command_request(tvbuff_t *tvb, packet_info *pinfo
      * Note: [3] does not list this in the packet field. . [1] 2.3.1 states it's the last 4
      * bytes of the packet.
     */
-    dissect_ptpIP_protocol_version(tvb, tree, offset);
+    dissect_ptpIP_protocol_version(tvb, pinfo, tree, offset);
     return;
 }
 
@@ -647,8 +646,7 @@ static void dissect_ptpIP_init_command_ack(tvbuff_t *tvb, packet_info *pinfo, pr
         "Init Command Ack");
 
     /* Grabbing the Connection Number */
-    connectionNumber = tvb_get_letohl(tvb, *offset);
-    proto_tree_add_item(tree, hf_ptpIP_connectionNumber, tvb, *offset, 4,ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_ptpIP_connectionNumber, tvb, *offset, 4,ENC_LITTLE_ENDIAN, &connectionNumber);
     col_append_fstr(
         pinfo->cinfo,
         COL_INFO,
@@ -659,14 +657,14 @@ static void dissect_ptpIP_init_command_ack(tvbuff_t *tvb, packet_info *pinfo, pr
     dissect_ptpIP_guid(tvb, pinfo, tree, offset);
 
     /* grabbing name */
-    dissect_ptpIP_unicode_name(tvb,pinfo, tree, offset);
+    dissect_ptpIP_unicode_name(tvb, pinfo, tree, offset);
 
     /* grabbing protocol version. Note: like in the Init Command Request, [3] doesn't mention
      * this field, but [1] Section 2.3.2 does.
      */
 
 
-    dissect_ptpIP_protocol_version(tvb, tree, offset);
+    dissect_ptpIP_protocol_version(tvb, pinfo, tree, offset);
 }
 
 /**
@@ -683,8 +681,7 @@ static void dissect_ptpIP_init_event_request(tvbuff_t *tvb, packet_info *pinfo, 
         "Init Event Request");
 
     /* Grabbing the Connection Number */
-    connectionNumber = tvb_get_letohl(tvb, *offset);
-    proto_tree_add_item(tree, hf_ptpIP_connectionNumber, tvb, *offset, 4,ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_ptpIP_connectionNumber, tvb, *offset, 4,ENC_LITTLE_ENDIAN, &connectionNumber);
     col_append_fstr(
         pinfo->cinfo,
         COL_INFO,
@@ -969,8 +966,7 @@ void dissect_ptp_transactionID(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 {
     uint32_t transactionID;
 
-    transactionID = tvb_get_letohl(tvb, *offset);
-    proto_tree_add_item(tree, hf_ptp_transactionID, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_ptp_transactionID, tvb, *offset, 4, ENC_LITTLE_ENDIAN, &transactionID);
     *offset += 4;
     col_append_fstr(
         pinfo->cinfo,
@@ -981,7 +977,7 @@ void dissect_ptp_transactionID(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
 /**
  * This method handles dissecting the Unicode name that is
- * specificed in multiple packets.
+ * specified in multiple packets.
  */
 static void dissect_ptpIP_unicode_name(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset)
 {
@@ -999,10 +995,9 @@ static void dissect_ptpIP_unicode_name(tvbuff_t *tvb, packet_info *pinfo, proto_
  * as 0x00010000 == 1.0 where the Most significant bits are the major version and the least
  * significant bits are the minor version.
  */
-static void dissect_ptpIP_protocol_version(tvbuff_t *tvb, proto_tree *tree, uint16_t *offset)
+static void dissect_ptpIP_protocol_version(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset)
 {
-
-    uint8_t version[30];
+    char* version;
     uint32_t protoVersion;
     uint16_t majorVersion, minorVersion;
 
@@ -1010,7 +1005,7 @@ static void dissect_ptpIP_protocol_version(tvbuff_t *tvb, proto_tree *tree, uint
     /* logic to format version */
     minorVersion = protoVersion & 0xFFFF;
     majorVersion = (protoVersion & 0xFFFF0000) >>16;
-    snprintf(version, sizeof(version), "%u.%u", majorVersion, minorVersion);
+    version = wmem_strdup_printf(pinfo->pool, "%u.%u", majorVersion, minorVersion);
     proto_tree_add_string(tree, hf_ptpIP_version, tvb, *offset, 4, version);
     *offset += 4;
 }
@@ -1018,7 +1013,7 @@ static void dissect_ptpIP_protocol_version(tvbuff_t *tvb, proto_tree *tree, uint
 /* Grabbing the GUID */
 static void dissect_ptpIP_guid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t *offset)
 {
-    uint8_t *guid;
+    char *guid;
 
     guid = tvb_bytes_to_str(pinfo->pool, tvb, *offset, PTPIP_GUID_SIZE);
     proto_tree_add_item(tree, hf_ptpIP_guid, tvb, *offset, PTPIP_GUID_SIZE, ENC_NA);

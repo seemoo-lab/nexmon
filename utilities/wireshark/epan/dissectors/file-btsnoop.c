@@ -17,6 +17,7 @@
 #include <epan/expert.h>
 #include <wiretap/wtap.h>
 #include <wsutil/array.h>
+#include "packet-hci_mon.h"
 
 static dissector_handle_t btsnoop_handle;
 static dissector_handle_t hci_h1_handle;
@@ -55,8 +56,6 @@ static int ett_btsnoop_payload;
 static int ett_btsnoop_flags;
 
 static bool pref_dissect_next_layer;
-
-extern value_string_ext hci_mon_opcode_vals_ext;
 
 static const value_string datalink_vals[] = {
     { 1001,  "H1" },
@@ -123,8 +122,7 @@ dissect_btsnoop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
     proto_tree_add_item(header_tree, hf_btsnoop_version, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
 
-    proto_tree_add_item(header_tree, hf_btsnoop_datalink, tvb, offset, 4, ENC_BIG_ENDIAN);
-    datalink = tvb_get_ntohl(tvb, offset);
+    proto_tree_add_item_ret_uint(header_tree, hf_btsnoop_datalink, tvb, offset, 4, ENC_BIG_ENDIAN, &datalink);
     offset += 4;
 
     while (tvb_reported_length_remaining(tvb, offset) > 0) {
@@ -140,8 +138,7 @@ dissect_btsnoop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
         proto_tree_add_item(frame_tree, hf_btsnoop_origin_length, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
 
-        proto_tree_add_item(frame_tree, hf_btsnoop_included_length, tvb, offset, 4, ENC_BIG_ENDIAN);
-        length = tvb_get_ntohl(tvb, offset);
+        proto_tree_add_item_ret_uint(frame_tree, hf_btsnoop_included_length, tvb, offset, 4, ENC_BIG_ENDIAN, &length);
         offset += 4;
 
         flags_item = proto_tree_add_item(frame_tree, hf_btsnoop_flags, tvb, offset, 4, ENC_BIG_ENDIAN);

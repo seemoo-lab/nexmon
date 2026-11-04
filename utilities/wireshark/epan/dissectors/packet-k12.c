@@ -58,8 +58,8 @@ static dissector_handle_t data_handle;
 static dissector_handle_t sscop_handle;
 static dissector_handle_t fp_handle;
 
-extern int proto_sscop;
-extern int proto_fp;
+static int proto_sscop;
+static int proto_fp;
 
 static wmem_tree_t* port_handles;
 static uat_t* k12_uat;
@@ -157,6 +157,9 @@ fill_fp_info(fp_info* p_fp_info, unsigned char* extra_info, uint32_t length)
 
 	if (info_type == 0x30) { /* data frame */
 		p_fp_info->num_chans = extra_info[23 + adj];
+		if (p_fp_info->num_chans > MAX_FP_CHANS) {
+			p_fp_info->num_chans = MAX_FP_CHANS;
+		}
 		/* For each channel */
 		for (i = 0; i < (unsigned)p_fp_info->num_chans && (36+i*104+adj) <= length; ++i) {
 			/* Read TB size */
@@ -501,6 +504,9 @@ proto_register_k12(void)
 
 void proto_reg_handoff_k12(void)
 {
+	proto_sscop  = proto_get_id_by_filter_name("sscop");
+	proto_fp     = proto_get_id_by_filter_name("fp");
+
 	data_handle  = find_dissector("data");
 	sscop_handle = find_dissector("sscop");
 	fp_handle    = find_dissector("fp");

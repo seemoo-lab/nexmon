@@ -7,20 +7,19 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __CRC32_TVB_H__
-#define __CRC32_TVB_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-/** Compute CRC32 CCITT checksum of a tv buffer.
+/**
+ @brief Compute CRC32 CCITT checksum of a tv buffer.
  @param tvb The tv buffer containing the data.
  @param len The number of bytes to include in the computation.
- @return The CRC32 CCITT checksum. */
+ @return The CRC32 CCITT checksum.
+ */
 WS_DLL_PUBLIC uint32_t crc32_ccitt_tvb(tvbuff_t *tvb, unsigned len);
 
 /** Compute CRC32 CCITT checksum of a tv buffer.
@@ -110,8 +109,15 @@ WS_DLL_PUBLIC uint32_t crc32_mpeg2_tvb_offset_seed(tvbuff_t *tvb, unsigned offse
 WS_DLL_PUBLIC uint32_t crc32_0x0AA725CF_tvb_offset_seed(tvbuff_t *tvb,
                                             unsigned offset, unsigned len, uint32_t seed);
 
+/** Compute SC-32 CRC32 checksum of a buffer of data.
+ * @param tvb The tv buffer containing the data.
+ * @param offset The offset into the tv buffer.
+ * @param len The number of bytes to include in the computation.
+ * @param seed The seed to use.
+ * @return The CRC32 SC-32 checksum (using the given seed). */
+WS_DLL_PUBLIC uint32_t crc32_sc32_tvb_offset_seed(tvbuff_t *tvb, unsigned offset,
+						   unsigned len, uint32_t seed);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* crc32-tvb.h */

@@ -24,11 +24,15 @@
 #include <QAction>
 #include <QStackedWidget>
 #include <QToolBar>
+#include <QLineEdit>
 
 #include <ui/qt/data_source_tab.h>
 #include <ui/qt/packet_list.h>
+#include <ui/qt/widgets/packet_list_pane.h>
 #include <ui/qt/packet_diagram.h>
 #include <ui/qt/proto_tree.h>
+#include <ui/qt/widgets/display_filter_entry.h>
+#include "main_application.h"
 #include <ui/qt/welcome_page.h>
 
 #include <wsutil/ws_assert.h>
@@ -41,6 +45,9 @@ void MainWindow::showWelcome()
 void MainWindow::showCapture()
 {
     main_stack_->setCurrentWidget(&master_split_);
+    if (packet_list_) {
+        packet_list_->setFocus();
+    }
 }
 
 QWidget* MainWindow::getLayoutWidget(layout_pane_content_e type) {
@@ -48,7 +55,7 @@ QWidget* MainWindow::getLayoutWidget(layout_pane_content_e type) {
         case layout_pane_content_none:
             return &empty_pane_;
         case layout_pane_content_plist:
-            return packet_list_;
+            return packet_list_pane_;
         case layout_pane_content_pdetails:
             return proto_tree_;
         case layout_pane_content_pbytes:
@@ -67,6 +74,37 @@ QWidget* MainWindow::getLayoutWidget(layout_pane_content_e type) {
 // - At startup
 // - When the preferences change
 // - When the profile changes
+void MainWindow::cyclePane(bool reverse)
+{
+    QList<QWidget *> panes;
+    if (df_combo_box_) panes << df_combo_box_;
+    if (packet_list_) panes << packet_list_;
+    if (proto_tree_) panes << proto_tree_;
+    if (data_source_tab_) panes << data_source_tab_;
+
+    if (panes.isEmpty()) return;
+
+    QWidget *current_focus = mainApp->focusWidget();
+    int current_index = -1;
+
+    for (int i = 0; i < panes.size(); ++i) {
+        if (panes[i] == current_focus || (current_focus && panes[i]->isAncestorOf(current_focus))) {
+            current_index = i;
+            break;
+        }
+    }
+
+    int next_index;
+    int count = static_cast<int>(panes.size());
+    if (reverse) {
+        next_index = (current_index - 1 + count) % count;
+    } else {
+        next_index = (current_index + 1) % count;
+    }
+
+    panes[next_index]->setFocus();
+}
+
 void MainWindow::layoutPanes()
 {
     QVector<unsigned> new_layout = QVector<unsigned>() << prefs.gui_layout_type
@@ -85,7 +123,7 @@ void MainWindow::layoutPanes()
     // Reparent all widgets and add them back in the proper order below.
     // This hides each widget as well.
     bool frozen = packet_list_->freeze(); // Clears tree, byte view tabs, and diagram.
-    packet_list_->setParent(main_stack_);
+    packet_list_pane_->setParent(main_stack_);
     proto_tree_->setParent(main_stack_);
     data_source_tab_->setParent(main_stack_);
     if (packet_diagram_) {
@@ -156,18 +194,36 @@ void MainWindow::layoutPanes()
     if (frozen) {
         // Show the packet list here to prevent pending resize events changing columns
         // when the packet list is set as current widget for the first time.
-        packet_list_->show();
+        packet_list_pane_->show();
     }
 
     const QList<QWidget *> ms_children = master_split_.findChildren<QWidget *>();
 
     extra_split_.setVisible(ms_children.contains(&extra_split_));
-    packet_list_->setVisible(ms_children.contains(packet_list_) && recent.packet_list_show);
+    packet_list_pane_->setVisible(ms_children.contains(packet_list_pane_) && recent.packet_list_show);
     proto_tree_->setVisible(ms_children.contains(proto_tree_) && recent.tree_view_show);
     data_source_tab_->setVisible(ms_children.contains(data_source_tab_) && recent.byte_view_show);
     if (packet_diagram_) {
         packet_diagram_->setVisible(ms_children.contains(packet_diagram_) && recent.packet_diagram_show);
     }
+
+    // Splitter handles shouldn't take focus.
+    for (int i = 0; i < master_split_.count(); i++) {
+        if (master_split_.handle(i)) master_split_.handle(i)->setFocusPolicy(Qt::NoFocus);
+    }
+    for (int i = 0; i < extra_split_.count(); i++) {
+        if (extra_split_.handle(i)) extra_split_.handle(i)->setFocusPolicy(Qt::NoFocus);
+    }
+
+    if (df_combo_box_) {
+        QWidget *main_toolbar = findChild<QWidget *>("mainToolBar");
+        if (main_toolbar) {
+            setTabOrder(main_toolbar, df_combo_box_);
+        }
+        setTabOrder(df_combo_box_, packet_list_);
+    }
+    setTabOrder(packet_list_, proto_tree_);
+    setTabOrder(proto_tree_, data_source_tab_);
 
     if (frozen) {
         packet_list_->thaw(true);

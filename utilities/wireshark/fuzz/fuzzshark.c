@@ -24,6 +24,7 @@
 #include <wsutil/cmdarg_err.h>
 #include <ui/failure_message.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 #include <wsutil/privileges.h>
 #include <wsutil/clopts_common.h>
 #include <wsutil/ws_getopt.h>
@@ -82,6 +83,15 @@ fuzzshark_epan_new(void)
 {
 	static const struct packet_provider_funcs funcs = {
 		fuzzshark_get_frame_ts,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -147,6 +157,12 @@ fuzz_init(int argc, char **argv)
 		LONGOPT_WSLOG
 		{0, 0, 0, 0 }
 	};
+	const struct file_extension_info* file_extensions;
+	unsigned num_extensions;
+	epan_app_data_t app_data;
+
+	/* Future proof by zeroing out all data */
+	memset(&app_data, 0, sizeof(app_data));
 
 	const char *fuzz_target =
 #if defined(FUZZ_DISSECTOR_TARGET)
@@ -167,7 +183,7 @@ fuzz_init(int argc, char **argv)
 	const char *fuzz_table = getenv("FUZZSHARK_TABLE");
 
 	/*
-	 * Set the pogram name.
+	 * Set the program name.
 	 *
 	 * XXX - yes, this isn't main(), but it still needs to be
 	 * set, as many Wireshark library routines depend on it
@@ -224,7 +240,7 @@ fuzz_init(int argc, char **argv)
 	cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
 	/* Initialize log handler early so we can have proper logging during startup. */
-	ws_log_init(vcmdarg_err);
+	ws_log_init(vcmdarg_err, "Fuzzshark Debug Console");
 
 	/* Early logging command-line initialization. */
 	ws_log_parse_args(&argc, argv, "v", long_options, vcmdarg_err, LOG_ARGS_NOEXIT);
@@ -244,14 +260,14 @@ fuzz_init(int argc, char **argv)
 	/*
 	 * Attempt to get the pathname of the executable file.
 	 */
-	configuration_init_error = configuration_init(argv[0]);
+	configuration_init_error = configuration_init(argv[0], "wireshark");
 	if (configuration_init_error != NULL) {
 		fprintf(stderr, "fuzzshark: Can't get pathname of oss-fuzzshark program: %s.\n", configuration_init_error);
 		g_free(configuration_init_error);
 	}
 
 	/* Initialize the version information. */
-	ws_init_version_info("OSS Fuzzshark",
+	ws_init_version_info("OSS Fuzzshark", NULL, application_get_vcs_version_info,
 	    epan_gather_compile_info, epan_gather_runtime_info);
 
 	init_report_failure_message("fuzzshark");
@@ -265,13 +281,19 @@ fuzz_init(int argc, char **argv)
 	 * dissection-time handlers for file-type-dependent blocks can
 	 * register using the file type/subtype value for the file type.
 	 */
-	wtap_init(true);
+	application_file_extensions(&file_extensions, &num_extensions);
+	wtap_init(true, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
 	/* Register all dissectors; we must do this before checking for the
 	   "-G" flag, as the "-G" flag dumps information registered by the
 	   dissectors, and we must do it before we read the preferences, in
 	   case any dissectors register preferences. */
-	if (!epan_init(NULL, NULL, false))
+	app_data.env_var_prefix = application_configuration_environment_prefix();
+	app_data.col_fmt = application_columns();
+	app_data.num_cols = application_num_columns();
+	app_data.register_func = register_all_protocols;
+	app_data.handoff_func = register_all_protocol_handoffs;
+	if (!epan_init(NULL, NULL, false, &app_data))
 	{
 		ret = EPAN_INIT_FAIL;
 		goto clean_exit;
@@ -280,7 +302,7 @@ fuzz_init(int argc, char **argv)
 	/* Load libwireshark settings from the current profile. */
 	prefs_p = epan_load_settings();
 
-	if (!color_filters_init(&err_msg, NULL))
+	if (!color_filters_init(&err_msg, NULL, application_configuration_environment_prefix()))
 	{
 		fprintf(stderr, "%s\n", err_msg);
 		g_free(err_msg);
@@ -325,7 +347,7 @@ fuzz_init(int argc, char **argv)
 #endif
 
 #ifdef FUZZ_EPAN
-	g_assert(fuzz_handle != NULL && "Requested dissector is not found!");
+	g_assert(fuzz_handle != NULL && "Requested dissector is not found.");
 	register_postdissector(fuzz_handle);
 #endif
 

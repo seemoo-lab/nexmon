@@ -25,7 +25,6 @@
 #include <epan/unit_strings.h>
 #include "packet-mbtcp.h"
 
-#define PROTO_TAG_ECMP	"ECMP"
 #define ECMP_TCP_PORT   6160
 
 void proto_reg_handoff_ecmp(void);
@@ -754,7 +753,7 @@ static expert_field ei_ecmp_data_type;
 /* General Commands and Framing Dissectors                            */
 /*--------------------------------------------------------------------*/
 /*a function to add the initial information about the transport layer (the first bits)*/
-static int add_transport_layer_frame(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree, int addr_type)
+static int add_transport_layer_frame(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree, int addr_type)
 {
 	proto_item *ecmp_address_item = NULL;
 	proto_tree *ecmp_address_tree = NULL;
@@ -795,7 +794,7 @@ static int add_transport_layer_frame(int offset, tvbuff_t *tvb, proto_tree* ecmp
 
 
 /* a function to display option codes */
-static int add_option_codes(int offset, packet_info *pinfo, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static int add_option_codes(unsigned offset, packet_info *pinfo, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_option_number_item = NULL;
 	proto_item* ecmp_option_item;
@@ -844,7 +843,7 @@ static int add_option_codes(int offset, packet_info *pinfo, tvbuff_t *tvb, proto
 
 
 /* a function to display attributes */
-static void add_attributes(packet_info* pinfo, int offset, tvbuff_t *tvb, proto_tree* ecmp_tree, bool request)
+static void add_attributes(packet_info* pinfo, unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree, bool request)
 {
 	proto_item* ecmp_attribute_number_item = NULL;
 	proto_item* ecmp_attribute_item = NULL, *color_item;
@@ -940,7 +939,7 @@ static void add_attributes(packet_info* pinfo, int offset, tvbuff_t *tvb, proto_
 
 
 /* a function to display the category codes */
-static int add_category_codes(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static int add_category_codes(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item *ecmp_category_item = NULL;
 	proto_tree *ecmp_category_tree = NULL;
@@ -979,7 +978,7 @@ static int add_category_codes(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 
 
 /* a function to display response size data */
-static int get_response_size(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static int get_response_size(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_max_response_item = NULL;
 	proto_tree* ecmp_response_size_tree = NULL;
@@ -1003,7 +1002,7 @@ static int get_response_size(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 
 
 /* a function to display the command code and type (request/response) */
-static int add_command_codes(packet_info* pinfo, int offset, tvbuff_t *tvb, proto_tree* ecmp_tree, uint8_t transaction_id_value, uint8_t* command_value)
+static int add_command_codes(packet_info* pinfo, unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree, uint8_t transaction_id_value, uint8_t* command_value)
 {
 	proto_tree *ecmp_command_tree;
 	const char* command_str;
@@ -1029,7 +1028,7 @@ static int add_command_codes(packet_info* pinfo, int offset, tvbuff_t *tvb, prot
 
 
 /* a function to add a cyclic frame query */
-static int add_cyclic_frame_query(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree )
+static int add_cyclic_frame_query(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree )
 {
 	/* display the cyclic link number  */
 	proto_tree_add_item(ecmp_tree, hf_ecmp_cyclic_link_num, tvb, offset++, 1, ENC_BIG_ENDIAN);
@@ -1038,7 +1037,7 @@ static int add_cyclic_frame_query(int offset, tvbuff_t *tvb, proto_tree* ecmp_tr
 
 
 /* a function to add a cyclic frame */
-static int add_cyclic_frame(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree )
+static int add_cyclic_frame(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree )
 {
 	uint32_t scheme;
 	proto_item *ecmp_scheme_item = NULL;
@@ -1066,7 +1065,7 @@ static int add_cyclic_frame(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree )
 
 
 /* a function to display cyclic tvb data in byte (8-bit), word (16-bit), and long (32-bit) unsigned formats  */
-static int display_raw_cyclic_data(uint8_t display, int offset, uint16_t buffer_size, tvbuff_t *tvb, packet_info *pinfo, proto_tree* ecmp_current_tree )
+static int display_raw_cyclic_data(uint8_t display, unsigned offset, uint16_t buffer_size, tvbuff_t *tvb, packet_info *pinfo, proto_tree* ecmp_current_tree )
 {
 	/****************************************************************************************/
 	/*                                                                                      */
@@ -1178,7 +1177,7 @@ static int display_raw_cyclic_data(uint8_t display, int offset, uint16_t buffer_
 
 
 /* a function returning the information requested by the 'info' command */
-static void add_info_response(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void add_info_response(unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_info_address_item = NULL;
 	proto_tree* ecmp_info_tree = NULL;
@@ -1228,7 +1227,7 @@ static void add_info_response(int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 /*--------------------------------------------------------------------*/
 
 /* a function to display data given data_type */
-static int get_data_type(packet_info* pinfo, int offset, uint8_t data_type, tvbuff_t *tvb, proto_tree* ecmp_current_tree)
+static int get_data_type(packet_info* pinfo, unsigned offset, uint8_t data_type, tvbuff_t *tvb, proto_tree* ecmp_current_tree)
 {
 	/*switch to decide correct data_type dissection*/
 	switch(data_type)
@@ -1292,7 +1291,7 @@ static int get_data_type(packet_info* pinfo, int offset, uint8_t data_type, tvbu
 		break;
 	default: /*display untyped size*/
 		if (data_type < 128) {
-			proto_tree_add_expert(ecmp_current_tree, pinfo, &ei_ecmp_data_type, tvb, 0, -1);
+			proto_tree_add_expert_remaining(ecmp_current_tree, pinfo, &ei_ecmp_data_type, tvb, 0);
 		} else {
 			proto_tree_add_item(ecmp_current_tree, hf_ecmp_data, tvb, offset, (data_type- 127), ENC_NA);
 			offset += (data_type- 128);
@@ -1304,7 +1303,7 @@ static int get_data_type(packet_info* pinfo, int offset, uint8_t data_type, tvbu
 
 
 /* a function to add the parameter address schemes for 'read' command */
-static int get_address_scheme(packet_info* pinfo, int offset, uint8_t scheme, tvbuff_t *tvb, proto_tree* ecmp_parameter_tree)
+static int get_address_scheme(packet_info* pinfo, unsigned offset, uint8_t scheme, tvbuff_t *tvb, proto_tree* ecmp_parameter_tree)
 {
 	/*if address scheme is standard*/
 	switch (scheme)
@@ -1354,7 +1353,7 @@ static int get_address_scheme(packet_info* pinfo, int offset, uint8_t scheme, tv
 
 
 /* a function to display an array of the read address schemes */
-static void get_parameter_definitions(packet_info* pinfo, int offset, uint8_t command_value, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void get_parameter_definitions(packet_info* pinfo, unsigned offset, uint8_t command_value, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_parameter_item = NULL;
 	proto_tree* ecmp_parameter_number_tree = NULL;
@@ -1421,8 +1420,7 @@ static void get_parameter_definitions(packet_info* pinfo, int offset, uint8_t co
 				offset = get_address_scheme(pinfo, offset, scheme, tvb, ecmp_parameter_tree);
 				offset++;
 				if (command_value == ECMP_COMMAND_WRITE) {
-					data_type = tvb_get_uint8(tvb, offset);
-					proto_tree_add_item(ecmp_parameter_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+					proto_tree_add_item_ret_uint8(ecmp_parameter_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN, &data_type);
 					offset++;
 					dec = tvb_get_int8(tvb, offset);
 					if (dec != -1) {
@@ -1441,7 +1439,7 @@ static void get_parameter_definitions(packet_info* pinfo, int offset, uint8_t co
 
 
 /* a function to show the "objectinfo" command response */
-static void get_object_info_response(packet_info* pinfo, int offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void get_object_info_response(packet_info* pinfo, unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_response_item = NULL;
 	proto_tree* ecmp_parameter_number_tree = NULL;
@@ -1532,16 +1530,14 @@ static void get_object_info_response(packet_info* pinfo, int offset, tvbuff_t *t
 				case 4:
 					/*display minimum allowed value*/
 					offset++;
-					data_type = tvb_get_uint8(tvb,offset);
-					ecmp_response_item = proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+					ecmp_response_item = proto_tree_add_item_ret_uint8(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN, &data_type);
 					offset++;
 					offset = get_data_type(pinfo, offset, data_type, tvb, ecmp_parameter_response_tree);
 					break;
 				case 5:
 					/*display maximum allowed value*/
 					offset++;
-					data_type = tvb_get_uint8(tvb,offset);
-					ecmp_response_item = proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+					ecmp_response_item = proto_tree_add_item_ret_uint8(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN, &data_type);
 					offset++;
 					offset = get_data_type(pinfo, offset, data_type, tvb, ecmp_parameter_response_tree);
 					break;
@@ -1566,7 +1562,7 @@ static void get_object_info_response(packet_info* pinfo, int offset, tvbuff_t *t
 
 
 /* a function to display an array of the read responses */
-static int get_parameter_responses(packet_info* pinfo, int offset, uint8_t command_value, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static int get_parameter_responses(packet_info* pinfo, unsigned offset, uint8_t command_value, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_response_item = NULL;
 	proto_tree* ecmp_parameter_number_tree = NULL;
@@ -1648,8 +1644,7 @@ static int get_parameter_responses(packet_info* pinfo, int offset, uint8_t comma
 					ecmp_parameter_response_tree = proto_tree_add_subtree_format(ecmp_parameter_number_tree, tvb, offset, 0, ett_ecmp_command, &ecmp_response_item, "Response %d:", (a+1));
 					proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_parameter_status, tvb, offset, 1, ENC_BIG_ENDIAN);
 					offset++;
-					proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-					data_type = tvb_get_uint8(tvb,offset);
+					proto_tree_add_item_ret_uint8(ecmp_parameter_response_tree, hf_ecmp_data_type, tvb, offset, 1, ENC_BIG_ENDIAN, &data_type);
 					offset++;
 					offset = get_data_type(pinfo, offset, data_type, tvb, ecmp_parameter_response_tree);
 
@@ -1665,8 +1660,7 @@ static int get_parameter_responses(packet_info* pinfo, int offset, uint8_t comma
 						}
 						offset++;
 						/*display unit ID*/
-						unit_id = tvb_get_uint8(tvb, offset);
-						proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_display_unit_id, tvb, offset, 1, ENC_NA);
+						proto_tree_add_item_ret_uint8(ecmp_parameter_response_tree, hf_ecmp_display_unit_id, tvb, offset, 1, ENC_NA, &unit_id);
 						if (unit_id == 255) {
 							offset++;
 							proto_tree_add_item(ecmp_parameter_response_tree, hf_ecmp_unit_id_string, tvb, offset, 2, ENC_BIG_ENDIAN|ENC_ASCII);
@@ -1688,7 +1682,7 @@ static int get_parameter_responses(packet_info* pinfo, int offset, uint8_t comma
 /*                   File Access Commands                             */
 /*--------------------------------------------------------------------*/
 /* a function to dissect "FileOpen" command */
-static void file_open(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_open(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_tree* ecmp_scheme_data_tree = NULL;
 	uint8_t additional_scheme = 0;
@@ -1744,7 +1738,7 @@ static void file_open(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_
 
 
 /* a function to dissect "FileRead" command */
-static void file_read(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_read(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	uint16_t req_bytes = 0;
 
@@ -1773,7 +1767,7 @@ static void file_read(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_
 
 
 /* a function to dissect "FileWrite" command */
-static void file_write(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_write(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	uint16_t req_bytes;
 
@@ -1796,7 +1790,7 @@ static void file_write(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp
 
 
 /*a function to dissect "FileClose" command*/
-static void file_close(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_close(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	if (request) {
 		/*display file handle*/
@@ -1818,7 +1812,7 @@ static void file_close(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp
 
 
 /*a function to display file attributes*/
-static int get_file_attribute(packet_info* pinfo, int offset, tvbuff_t *tvb, proto_tree* ecmp_current_tree)
+static int get_file_attribute(packet_info* pinfo, unsigned offset, tvbuff_t *tvb, proto_tree* ecmp_current_tree)
 {
 	proto_item *ecmp_file_info_att_item;
 	proto_tree *ecmp_file_info_att_tree;
@@ -1879,7 +1873,7 @@ static int get_file_attribute(packet_info* pinfo, int offset, tvbuff_t *tvb, pro
 
 
 /*a function to dissect "FileInfo" command*/
-static void file_info(packet_info* pinfo, int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_info(packet_info* pinfo, unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_tree *ecmp_file_info_tree;
 	uint32_t a, no_of_att;
@@ -1938,7 +1932,7 @@ static void file_state_delete(uint16_t offset, bool request, tvbuff_t *tvb, prot
 
 
 /*a function to dissect "FilePos" command*/
-static void file_pos(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_pos(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_tree* ecmp_file_position_tree = NULL;
 
@@ -1972,7 +1966,7 @@ static void file_pos(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_t
 
 
 /*a function to dissect "FileList" command*/
-static void file_list(packet_info* pinfo, int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_list(packet_info* pinfo, unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item* ecmp_file_list_item, *ecmp_file_list_item2, *item_type_item;
 	proto_tree* ecmp_file_list_no_tree = NULL;
@@ -2045,7 +2039,7 @@ static void file_list(packet_info* pinfo, int offset, bool request, tvbuff_t *tv
 
 
 /*a function to dissect "FileExists" command*/
-static void file_exists(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void file_exists(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	if (request) {
 		/*display filename*/
@@ -2057,7 +2051,7 @@ static void file_exists(int offset, bool request, tvbuff_t *tvb, proto_tree* ecm
 }
 
 
-static int add_cyclic_setup_attributes(packet_info* pinfo, int offset, uint16_t length, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static int add_cyclic_setup_attributes(packet_info* pinfo, unsigned offset, uint16_t length, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_item *cyclic_setup_attributes_root = NULL;
 	proto_item *cyclic_setup_attributes = NULL;
@@ -2072,8 +2066,7 @@ static int add_cyclic_setup_attributes(packet_info* pinfo, int offset, uint16_t 
 	cyclic_setup_attributes = proto_item_add_subtree(cyclic_setup_attributes_root, ett_cyclic_setup_attribs);
 
 	while (offset < length) {
-		attrib = tvb_get_uint8(tvb, offset);
-		cyclic_setup_attrib_item_root = proto_tree_add_item(cyclic_setup_attributes, hf_ecmp_cyclic_setup_attrib, tvb, offset++, 1, ENC_BIG_ENDIAN);
+		cyclic_setup_attrib_item_root = proto_tree_add_item_ret_uint8(cyclic_setup_attributes, hf_ecmp_cyclic_setup_attrib, tvb, offset++, 1, ENC_BIG_ENDIAN, &attrib);
 
 		cyclic_setup_attrib_item = proto_item_add_subtree(cyclic_setup_attrib_item_root, ett_cyclic_setup_attrib_item);
 
@@ -2344,7 +2337,7 @@ static void cyclic_setup(packet_info* pinfo, uint16_t offset, bool request, tvbu
 
 
 /*a function to dissect "ProgramStatus" command  */
-static void program_status(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void program_status(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 /*  Description:function to dissect Program Status command              */
 /*                                                                      */
@@ -2396,7 +2389,7 @@ static void program_status(int offset, bool request, tvbuff_t *tvb, proto_tree* 
 
 
 /*a function to dissect "ProgramControl" command  */
-static void program_control(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void program_control(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 /*  Description:function to dissect Program Control command             */
 /*                                                                      */
@@ -2454,7 +2447,7 @@ static void program_control(int offset, bool request, tvbuff_t *tvb, proto_tree*
 
 
 /*a function to dissect "ModbusPDU" command  */
-static void modbus_pdu(int offset, bool request, tvbuff_t *tvb, packet_info* pinfo, proto_tree* ecmp_tree)
+static void modbus_pdu(unsigned offset, bool request, tvbuff_t *tvb, packet_info* pinfo, proto_tree* ecmp_tree)
 {
 /*  Description:function to dissect Modbus PDU ECMP transactions        */
 /*                                                                      */
@@ -2503,8 +2496,7 @@ static void modbus_pdu(int offset, bool request, tvbuff_t *tvb, packet_info* pin
 	/* differentiate between ECMP query and response  */
 	if (request) {
 		/* read and display the Size  */
-		size = tvb_get_ntohs(tvb, offset);
-		proto_tree_add_item(ecmp_tree, hf_ecmp_modbus_pdu_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint16(ecmp_tree, hf_ecmp_modbus_pdu_size, tvb, offset, 2, ENC_BIG_ENDIAN, &size);
 		offset += 2;
 
 		/* keep packet context */
@@ -2516,8 +2508,7 @@ static void modbus_pdu(int offset, bool request, tvbuff_t *tvb, packet_info* pin
 
 	} else {
 		/* read and display the Size  */
-		size = tvb_get_ntohs(tvb, offset);
-		proto_tree_add_item(ecmp_tree, hf_ecmp_modbus_pdu_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint16(ecmp_tree, hf_ecmp_modbus_pdu_size, tvb, offset, 2, ENC_BIG_ENDIAN, &size);
 		offset += 2;
 
 		modbus_data.packet_type = RESPONSE_PACKET;
@@ -2530,7 +2521,7 @@ static void modbus_pdu(int offset, bool request, tvbuff_t *tvb, packet_info* pin
 
 
 /*a function to dissect "Interrogate" command  */
-static void interrogate(packet_info* pinfo, int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void interrogate(packet_info* pinfo, unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 /*  Description:  function to dissect Interrogate command               */
 /*                                                                      */
@@ -2602,13 +2593,11 @@ static void interrogate(packet_info* pinfo, int offset, bool request, tvbuff_t *
 		ecmp_interrogate_tree = proto_tree_add_subtree(ecmp_tree, tvb, offset, 2, ett_ecmp_interrogate_message, NULL, "Interrogate: (Query)");
 
 		/* read the item_type (command/option setting)  */
-		item_type = tvb_get_uint8(tvb, offset);
-		proto_tree_add_item(ecmp_interrogate_tree, hf_ecmp_interrogate_item_type, tvb, offset, 1, ENC_NA);
+		proto_tree_add_item_ret_uint8(ecmp_interrogate_tree, hf_ecmp_interrogate_item_type, tvb, offset, 1, ENC_NA, &item_type);
 		offset += 1;
 
 		/* read the count  */
-		count = tvb_get_uint8(tvb, offset);
-		proto_tree_add_item(ecmp_interrogate_tree, hf_ecmp_interrogate_count, tvb, offset, 1, ENC_NA);
+		proto_tree_add_item_ret_uint(ecmp_interrogate_tree, hf_ecmp_interrogate_count, tvb, offset, 1, ENC_NA, &count);
 		offset += 1;
 
 		/*create the interrogate details sub-tree  */
@@ -2671,7 +2660,7 @@ static void interrogate(packet_info* pinfo, int offset, bool request, tvbuff_t *
 }
 
 
-static void tunnel_frame(int offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
+static void tunnel_frame(unsigned offset, bool request, tvbuff_t *tvb, proto_tree* ecmp_tree)
 {
 	proto_tree_add_item(ecmp_tree, hf_ecmp_tunnel_control, tvb, offset, 1, ENC_BIG_ENDIAN);
 	proto_tree_add_item(ecmp_tree, hf_ecmp_tunnel_start_flag, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2756,7 +2745,7 @@ static int dissect_ecmp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	}
 
 	/* this code block processes ECMP TCP messages (most of them)  */
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_ECMP);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ECMP");
 	col_clear(pinfo->cinfo,COL_INFO);
 
 
@@ -2872,7 +2861,7 @@ static int dissect_ecmp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 				modbus_pdu(offset, request, tvb, pinfo, ecmp_tree);
 				break;
 			default:
-				proto_tree_add_expert(ecmp_tree, pinfo, &ei_ecmp_unknown_command, tvb, 0, -1);
+				proto_tree_add_expert_remaining(ecmp_tree, pinfo, &ei_ecmp_unknown_command, tvb, 0);
 				break;
 		}
 
@@ -2983,7 +2972,7 @@ static int dissect_ecmp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 						modbus_pdu(offset, request, tvb, pinfo, ecmp_tree);
 						break;
 					default:
-						proto_tree_add_expert(ecmp_tree, pinfo, &ei_ecmp_unknown_command, tvb, 0, -1);
+						proto_tree_add_expert_remaining(ecmp_tree, pinfo, &ei_ecmp_unknown_command, tvb, 0);
 						break;
 				}
 /********************************* END of code to be modified ***********************************/
@@ -3017,7 +3006,7 @@ static int dissect_ecmp_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	}
 
 	/* display the "ECMP" protocol indication in the PROTOCOL field  */
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_ECMP);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ECMP");
 
 	/* Clear out stuff in the info column */
 	col_clear(pinfo->cinfo,COL_INFO);
@@ -3064,8 +3053,7 @@ static int dissect_ecmp_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 		offset += 1;
 
 		/* display the scheme  */
-		scheme = tvb_get_uint8(tvb, offset);
-		proto_tree_add_item(ecmp_tree, hf_ecmp_udp_scheme, tvb, offset, 1, ENC_NA);
+		proto_tree_add_item_ret_uint8(ecmp_tree, hf_ecmp_udp_scheme, tvb, offset, 1, ENC_NA, &scheme);
 		offset += 1;
 
 		/* if the scheme is 1, there is grandmaster data to be printed  */
@@ -3464,7 +3452,7 @@ void proto_register_ecmp (void)
 
 	expert_module_t* expert_ecmp;
 
-	proto_ecmp = proto_register_protocol ("ECMP", PROTO_TAG_ECMP, "ecmp");
+	proto_ecmp = proto_register_protocol ("ECMP", "ECMP", "ecmp");
 	ecmp_tcp_handle = register_dissector("ecmp_tcp", dissect_ecmp_tcp, proto_ecmp);
 	ecmp_udp_handle = register_dissector("ecmp_udp", dissect_ecmp_udp, proto_ecmp);
 

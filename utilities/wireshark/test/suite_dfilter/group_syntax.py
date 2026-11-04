@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-import pytest
-from suite_dfilter.dfiltertest import *
+# from suite_dfilter.dfiltertest import *
 
 
 class TestDfilterSyntax:
@@ -133,7 +132,7 @@ class TestDfilterSyntax:
         dfilter = "tcp.flags.push == True"
         checkDFilterCount(dfilter, 1)
 
-    def test_bool_2(self, checkDFilterCount):
+    def test_bool_3(self, checkDFilterCount):
         dfilter = "tcp.flags.push == FALSE"
         checkDFilterCount(dfilter, 0)
 
@@ -370,6 +369,17 @@ class TestDfilterArithmetic:
         dfilter = 'udp.dstport * { udp.srcport / {5 - 4} } == udp.srcport * { 2 * udp.dstport - 68 }'
         checkDFilterCount(dfilter, 2)
 
+    def test_div_by_zero(self, checkDFilterCount):
+        # This is a runtime divide by zero, which makes the left side be
+        # "not equal",  and also "not gt" and "not lt", any value on the right.
+        # udp.port has two values, 68 and 67, and dhcp.hops only one, 0, which
+        # exercised a bug.
+        # We possibly should optimize and print an error at compile time if
+        # dividing by a constant zero, but even if we did, there would be
+        # runtime cases like this.
+        dfilter = "udp.port / dhcp.hops == dhcp.secs"
+        checkDFilterCount(dfilter, 0)
+
 class TestDfilterFieldReference:
     trace_file = "ipoipoip.pcap"
 
@@ -440,6 +450,29 @@ class TestDfilterLayer:
         dfilter = 'ip.dst#[-5] == 2.2.2.2'
         checkDFilterCount(dfilter, 1)
 
+    def test_layer_invalid_1(self, checkDFilterFail):
+        dfilter = r"ip.dst#"
+        checkDFilterFail(dfilter, "layer number or range was missing")
+
+    def test_layer_invalid_2(self, checkDFilterFail):
+        dfilter = r"ip.dst#ip"
+        checkDFilterFail(dfilter, "Expected digit or \"[\"")
+
+    def test_layer_register_reuse(self, checkDFilterCount):
+        # A later field should not use the same register as a range limited one
+        dfilter = 'ip.dst#[3-4] == 8.8.8.8 and ip.dst == 4.4.4.4'
+        checkDFilterCount(dfilter, 1)
+
+    def test_layer_register_reuse2(self, checkDFilterCount):
+        # A later range-limited field should not use the same register as an unlimited one
+        dfilter = 'ip.dst == 8.8.8.8 and ip.dst#[1-2] == 8.8.8.8'
+        checkDFilterCount(dfilter, 0)
+
+    def test_layer_register_reuse3(self, checkDFilterCount):
+        # The same field with different ranges should use different registers
+        dfilter = 'ip.dst#1 == 2.2.2.2 and ip.dst#2 == 4.4.4.4'
+        checkDFilterCount(dfilter, 1)
+
 class TestDfilterQuantifiers:
     trace_file = "ipoipoip.pcap"
 
@@ -465,6 +498,11 @@ class TestDfilterRawModifier:
     def test_raw2(self, checkDFilterCount):
         dfilter = '@s7comm.blockinfo.blocktype == 30:fe'
         checkDFilterCount(dfilter, 1)
+
+    def test_raw3(self, checkDFilterCount):
+        # ordinary and raw field values should go in different registers
+        dfilter = 's7comm.blockinfo.blocktype == "0\uFFFD" and @s7comm.blockinfo.blocktype == 30:aa'
+        checkDFilterCount(dfilter, 2)
 
     def test_raw_ref(self, checkDFilterCountWithSelectedFrame):
         dfilter = '@s7comm.blockinfo.blocktype == ${@s7comm.blockinfo.blocktype}'

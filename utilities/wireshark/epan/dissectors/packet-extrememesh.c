@@ -525,8 +525,7 @@ static void dissect_extrememesh_ps_breq(tvbuff_t *tvb, packet_info *pinfo, proto
 		proto_tree_add_item_ret_uint(tree, hf_extrememesh_ps_breq_option, tvb, offset, 1, ENC_BIG_ENDIAN, &option);
 		offset++;
 		if (option == 0) continue;
-		proto_tree_add_item(tree, hf_extrememesh_ps_breq_option_len, tvb, offset, 1, ENC_BIG_ENDIAN);
-		option_len = tvb_get_uint8(tvb, offset);
+		proto_tree_add_item_ret_uint8(tree, hf_extrememesh_ps_breq_option_len, tvb, offset, 1, ENC_BIG_ENDIAN, &option_len);
 		offset++;
 		switch(option)
 		{
@@ -666,8 +665,7 @@ static void dissect_extrememesh_ps_bann(tvbuff_t *tvb, packet_info *pinfo, proto
 		proto_tree_add_item_ret_uint(tree, hf_extrememesh_ps_bann_option, tvb, offset, 1, ENC_BIG_ENDIAN, &option);
 		offset++;
 		if(option == 0) continue; // Option 0 is a single padding byte, no length byte
-		option_len = tvb_get_uint8(tvb, offset);
-		proto_tree_add_item(tree, hf_extrememesh_ps_bann_option_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint8(tree, hf_extrememesh_ps_bann_option_len, tvb, offset, 1, ENC_BIG_ENDIAN, &option_len);
 		offset++;
 		switch(option)
 		{
@@ -928,8 +926,7 @@ static void dissect_extrememesh_ps_preq(tvbuff_t *tvb, packet_info *pinfo, proto
 		proto_tree_add_item_ret_uint(tree, hf_extrememesh_ps_preq_option, tvb, offset, 2, ENC_BIG_ENDIAN, &option);
 		offset+=2;
 		if(option == 0) continue; // Option 0 is a single padding byte, no length byte
-		option_len = tvb_get_ntohs(tvb, offset);
-		proto_tree_add_item(tree, hf_extrememesh_ps_preq_option_len, tvb, offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint16(tree, hf_extrememesh_ps_preq_option_len, tvb, offset, 2, ENC_BIG_ENDIAN, &option_len);
 		offset+=2;
 		switch(option)
 		{
@@ -1020,8 +1017,7 @@ static void dissect_extrememesh_ps_prep(tvbuff_t *tvb, packet_info *pinfo, proto
 		proto_tree_add_item_ret_uint(tree, hf_extrememesh_ps_prep_option, tvb, offset, 2, ENC_BIG_ENDIAN, &option);
 		offset+=2;
 		if(option == 0) continue; // Option 0 is a single padding byte, no length byte
-		option_len = tvb_get_ntohs(tvb, offset);
-		proto_tree_add_item(tree, hf_extrememesh_ps_prep_option_len, tvb, offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint16(tree, hf_extrememesh_ps_prep_option_len, tvb, offset, 2, ENC_BIG_ENDIAN, &option_len);
 		offset+=2;
 		switch(option)
 		{
@@ -1102,7 +1098,7 @@ Dissects the path selection path reset (PRST).
 /*****************************************************************************/
 static void dissect_extrememesh_ps_prst(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	col_set_str(pinfo->cinfo, COL_INFO, "Extreme Mesh Path Selection Path Reset");
 	proto_tree_add_item(tree, proto_extrememesh_ps_prst, tvb, offset, -1, ENC_NA);
@@ -1422,7 +1418,7 @@ static int dissect_extrememesh_eth_noaddr(tvbuff_t *tvb, packet_info *pinfo, pro
 
 static int dissect_extrememesh_l2upd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	col_set_str(pinfo->cinfo, COL_INFO, "Extreme Mesh L2 Update");
 	proto_tree_add_item(tree, proto_extrememesh_l2upd, tvb, offset, -1, ENC_NA);
@@ -1435,7 +1431,7 @@ static int dissect_extrememesh_l2upd(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 
 static int dissect_extrememesh_probe(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint16_t ballast_len;
 
 	col_set_str(pinfo->cinfo, COL_INFO, "Extreme Mesh Probe Message");
@@ -1466,7 +1462,7 @@ static int dissect_extrememesh_probe(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 static int dissect_extrememesh_mch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_tree *meshTree = tree;
-	int offset = 0;
+	unsigned offset = 0;
 	int next_proto;
 	tvbuff_t *nextTvb;
 
@@ -1496,7 +1492,7 @@ static int dissect_extrememesh_mch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 	proto_tree_add_item(meshTree, hf_extrememesh_mch_src, tvb, offset, 6, ENC_NA);
 	offset+=6;
 
-	nextTvb = tvb_new_subset_length(tvb, offset, -1);
+	nextTvb = tvb_new_subset_remaining(tvb, offset);
 
 	while(next_proto != (int)MESH_NEXT_PROTOCOL_INVALID)
 	{
@@ -1554,7 +1550,7 @@ static int dissect_extrememesh_mch(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
 static int dissect_extrememesh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	/*uint8_t packet_type = 0;*/
 	tvbuff_t *next_tvb = NULL;
 
@@ -1571,7 +1567,7 @@ static int dissect_extrememesh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 	proto_tree_add_item(meshTree, hf_extrememesh_nextproto, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset++;
 
-	next_tvb = tvb_new_subset_length(tvb, offset, -1);
+	next_tvb = tvb_new_subset_remaining(tvb, offset);
 
 	while(next_proto != (int)MESH_NEXT_PROTOCOL_INVALID)
 	{

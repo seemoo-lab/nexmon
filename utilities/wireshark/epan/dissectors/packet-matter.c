@@ -250,7 +250,7 @@ dissect_matter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
     is_unsecured_session = (message_session_type == SECURITY_FLAG_SESSION_TYPE_UNICAST && session_id == 0);
 
     if (is_unsecured_session)
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Unsecured Session");
+        col_set_str(pinfo->cinfo, COL_INFO, "Unsecured Session");
     else if (message_session_type == SECURITY_FLAG_SESSION_TYPE_UNICAST)
         col_add_fstr(pinfo->cinfo, COL_INFO, "Unicast Session [0x%04x]", session_id);
     else if (message_session_type == SECURITY_FLAG_SESSION_TYPE_GROUP)
@@ -398,8 +398,8 @@ dissect_matter_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     static const int elem_sizes[] = { 1, 2, 4, 8 };
 
     int matter_tlv_elem_tag = hf_matter_tlv_elem_tag;
-    int length = tvb_reported_length_remaining(tvb, 0);
-    int offset = 0;
+    unsigned length = tvb_reported_length_remaining(tvb, 0);
+    unsigned offset = 0;
 
     if (data != NULL)
         // Use caller-provided tag field.
@@ -747,5 +747,9 @@ proto_register_matter(void)
 void
 proto_reg_handoff_matter(void)
 {
+    /* Register default Matter ports 5540 for automatic dissection */
+    dissector_add_uint("udp.port", 5540, matter_handle);
+
+    /* Allow decode-as for other ports */
     dissector_add_for_decode_as("udp.port", matter_handle);
 }

@@ -32,7 +32,7 @@
 #
 cog.out('/*\n')
 cog.out(' * Generated automatically Using (from wireshark base directory):\n')
-cog.out(' *   cog.py -D xmlfile=tools/SkinnyProtocolOptimized.xml -d -c -o epan/dissectors/packet-skinny.c epan/dissectors/packet-skinny.c.in\n')
+cog.out(' *   cog.py -D xmlfile=tools/dissector_generators/SkinnyProtocolOptimized.xml -d -c -o epan/dissectors/packet-skinny.c epan/dissectors/packet-skinny.c.in\n')
 cog.out(' */\n')
 /*]]]*/
 /*[[[end]]]*/
@@ -99,9 +99,9 @@ static const value_string header_version[] = {
 /* Declare MessageId */
 /* [[[cog
 import sys
-sys.path.append('tools/')
+sys.path.append('tools/dissector_generators/')
 
-import parse_xml2skinny_dissector as xml2skinny
+import generate_skinny as xml2skinny
 global skinny
 global message_dissector_functions
 
@@ -178,7 +178,7 @@ static skinny_info_t pi_arr[MAX_SKINNY_MESSAGES_IN_PACKET];
 static int pi_current;
 static skinny_info_t *si;
 
-dissector_handle_t skinny_handle;
+static dissector_handle_t skinny_handle;
 
 /* Get the length of a single SKINNY PDU */
 static unsigned
@@ -214,7 +214,7 @@ dissect_skinny_xml(ptvcursor_t *cursor, int hfindex, packet_info *pinfo, uint32_
 
   item = proto_tree_add_item(tree, hf_skinny_xmlData, tvb, offset, length, ENC_ASCII);
   subtree = proto_item_add_subtree(item, 0);
-  next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, -1);
+  next_tvb = tvb_new_subset_length(tvb, offset, length);
   if (xml_handle != NULL) {
     call_dissector(xml_handle, next_tvb, pinfo, subtree);
   }

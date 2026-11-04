@@ -19,7 +19,7 @@
 #include <epan/asn1.h>    /* Needed for non asn1 dissectors?*/
 
 extern int proto_rrc;
-int dissect_rrc_InterRATHandoverInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+unsigned dissect_rrc_InterRATHandoverInfo(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 int dissect_rrc_HandoverToUTRANCommand_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_rrc_InterRATHandoverInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
 int dissect_rrc_MeasurementReport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
@@ -89,7 +89,7 @@ typedef struct rrc_info
 typedef struct rrc_ciphering_info
 {
   int seq_no[31][2];    /*Indicates for each Rbid when ciphering starts - Indexers are [BearerID][Direction]*/
-  GTree * /*uint32_t*/ start_cs;    /*Start value for CS counter*/
+  GTree * /*uint32_t*/ start_cs;    /*Start value for CS counter*/ /* XXX - UNUSED? */
   GTree * /*uint32_t*/ start_ps;    /*Start value for PS counter*/
   int32_t ciphering_algorithm;    /*Indicates which type of ciphering algorithm used*/
   int32_t integrity_algorithm;    /*Indicates which type of integrity algorithm used*/

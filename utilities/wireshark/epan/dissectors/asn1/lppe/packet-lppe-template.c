@@ -21,15 +21,6 @@
 #include "packet-per.h"
 #include "packet-lpp.h"
 
-#define PNAME  "LTE Positioning Protocol Extensions (LLPe)"
-#define PSNAME "LPPe"
-#define PFNAME "lppe"
-
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
 void proto_register_lppe(void);
 void proto_reg_handoff_lppe(void);
 
@@ -70,7 +61,7 @@ void proto_register_lppe(void) {
 
 
   /* Register protocol */
-  proto_lppe = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_lppe = proto_register_protocol("LTE Positioning Protocol Extensions (LLPe)", "LPPe", "lppe");
   register_dissector("lppe", dissect_OMA_LPPe_MessageExtension_PDU, proto_lppe);
 
   /* Register fields and subtrees */

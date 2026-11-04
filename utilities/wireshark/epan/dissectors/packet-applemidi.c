@@ -55,7 +55,7 @@ void proto_reg_handoff_applemidi(void);
 /* Apple network MIDI valid commands */
 #define APPLEMIDI_COMMAND_INVITATION			0x494e		/*   "IN"   */
 #define APPLEMIDI_COMMAND_INVITATION_REJECTED		0x4e4f		/*   "NO"   */
-#define APLLEMIDI_COMMAND_INVITATION_ACCEPTED		0x4f4b		/*   "OK"   */
+#define APPLEMIDI_COMMAND_INVITATION_ACCEPTED		0x4f4b		/*   "OK"   */
 #define APPLEMIDI_COMMAND_ENDSESSION			0x4259		/*   "BY"   */
 #define APPLEMIDI_COMMAND_SYNCHRONIZATION		0x434b		/*   "CK"   */
 #define APPLEMIDI_COMMAND_RECEIVER_FEEDBACK		0x5253		/*   "RS"   */
@@ -85,7 +85,7 @@ static int	ett_applemidi_seq_num;
 static const value_string applemidi_commands[] = {
 	{ APPLEMIDI_COMMAND_INVITATION,			"Invitation" },
 	{ APPLEMIDI_COMMAND_INVITATION_REJECTED,	"Invitation Rejected" },
-	{ APLLEMIDI_COMMAND_INVITATION_ACCEPTED,	"Invitation Accepted" },
+	{ APPLEMIDI_COMMAND_INVITATION_ACCEPTED,	"Invitation Accepted" },
 	{ APPLEMIDI_COMMAND_ENDSESSION,			"End Session" },
 	{ APPLEMIDI_COMMAND_SYNCHRONIZATION,		"Synchronization" },
 	{ APPLEMIDI_COMMAND_RECEIVER_FEEDBACK,		"Receiver Feedback" },
@@ -107,7 +107,7 @@ dissect_applemidi_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 	proto_item *ti;
 	uint16_t		 seq_num;
 	uint8_t		 count;
-	uint8_t		*name;
+	const char	*name;
 	int		 offset			= 0;
 	int		 len;
 	int		 string_size;
@@ -134,7 +134,7 @@ dissect_applemidi_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 	 * name of the participant */
 	if ( ( APPLEMIDI_COMMAND_INVITATION == command ) ||
 	     ( APPLEMIDI_COMMAND_INVITATION_REJECTED == command ) ||
-	     ( APLLEMIDI_COMMAND_INVITATION_ACCEPTED == command ) ||
+	     ( APPLEMIDI_COMMAND_INVITATION_ACCEPTED == command ) ||
 	     ( APPLEMIDI_COMMAND_ENDSESSION == command ) ) {
 
 		proto_tree_add_item( applemidi_tree, hf_applemidi_protocol_version, tvb, offset, 4, ENC_BIG_ENDIAN  );
@@ -150,7 +150,7 @@ dissect_applemidi_common( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, u
 
 		/* Name is optional */
 		if ( len > 0 ) {
-			name = tvb_get_string_enc( pinfo->pool, tvb, offset, len, ENC_UTF_8|ENC_NA );
+			name = (char *)tvb_get_string_enc( pinfo->pool, tvb, offset, len, ENC_UTF_8|ENC_NA );
 			string_size = (int)( strlen( name ) + 1 );
 			proto_tree_add_item( applemidi_tree, hf_applemidi_name, tvb, offset, string_size, ENC_UTF_8 );
 			col_append_fstr( pinfo->cinfo, COL_INFO, ": peer = \"%s\"", name );
@@ -227,7 +227,7 @@ test_applemidi(tvbuff_t *tvb, uint16_t *command_p, bool conversation_established
 
 	*command_p = tvb_get_ntohs( tvb, 2 );
 
-	/* If the conversation is establised (one prior packet with a valid known command)
+	/* If the conversation is established (one prior packet with a valid known command)
 	 * we won't check the commands anymore - this way we still show new commands
 	 * Apple might introduce as "unknown" instead of punting to RTP-dissector */
 	if ( conversation_established ) {
@@ -238,7 +238,7 @@ test_applemidi(tvbuff_t *tvb, uint16_t *command_p, bool conversation_established
 	/* ... followed by packet-command: "IN", "NO", "OK", "BY", "CK" and "RS" and "RL" */
 	if ( ( APPLEMIDI_COMMAND_INVITATION            == *command_p ) ||
 	     ( APPLEMIDI_COMMAND_INVITATION_REJECTED   == *command_p ) ||
-	     ( APLLEMIDI_COMMAND_INVITATION_ACCEPTED   == *command_p ) ||
+	     ( APPLEMIDI_COMMAND_INVITATION_ACCEPTED   == *command_p ) ||
 	     ( APPLEMIDI_COMMAND_ENDSESSION            == *command_p ) ||
 	     ( APPLEMIDI_COMMAND_SYNCHRONIZATION       == *command_p ) ||
 	     ( APPLEMIDI_COMMAND_RECEIVER_FEEDBACK     == *command_p ) ||
@@ -511,7 +511,7 @@ proto_reg_handoff_applemidi( void ) {
 	 * packets, it will be most likely RTP-MIDI...
 	 */
 	rtp_handle = find_dissector_add_dependency( "rtp", proto_applemidi );
-	heur_dissector_add( "udp", dissect_applemidi_heur, "Apple MIDI over UDP", "applemidi_udp", proto_applemidi, HEURISTIC_ENABLE );
+	heur_dissector_add( "udp", dissect_applemidi_heur, "Apple MIDI over UDP", "applemidi_udp", proto_applemidi, HEURISTIC_DISABLE );
 }
 
 /*

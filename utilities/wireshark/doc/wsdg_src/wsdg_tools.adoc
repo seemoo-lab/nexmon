@@ -118,10 +118,9 @@ Let you set the path to a locally-compiled version of c-ares. Most
 optional libraries have xxx_INCLUDE_DIR and xxx_LIB flags that let you
 control their discovery.
 
--DCMAKE_OSX_DEPLOYMENT_TARGET=10.14::
+-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0::
 Specify the minimum macOS version for Wireshark and each command line utility.
 Note that this doesn’t affect the minimum target for third-party libraries.
-For example, if you’re building for macOS 10.14 you’ll need to install https://doc.qt.io/qt-5/supported-platforms.html[Qt 5.15 or earlier] and ensure that other libraries support macOS 10.14, for example by running `tools/macos-setup.sh -t 10.14`.
 
 -DENABLE_APPLICATION_BUNDLE=OFF:: Disable building an application bundle (Wireshark.app) on macOS
 
@@ -131,7 +130,21 @@ after the cmake run. To only view the current cache, add option `-N`.
 
 Depending on your needs, it might be useful to save your CMake configuration options in a file outside your build directory.
 CMake supports this via its https://cmake.org/cmake/help/v3.23/manual/cmake-presets.7.html[presets] option.
-For example, adding the following to `CMakeUserPresets.json` would let you build using Ninja in the `build` directory, enable ccache, and set a custom Qt directory by running `cmake --preset mydev`:
+
+Wireshark ships a `CMakePresets.json` with a predefined `ninja_ccache` preset that uses Ninja as the generator and enables ccache.
+This preset sets the build directory to `${sourceDir}/build`.
+You can use it directly:
+
+[source,sh]
+----
+cmake --preset ninja_ccache
+cmake --build build
+----
+
+To customize the build directory or other settings without modifying the shared `CMakePresets.json`, create a `CMakeUserPresets.json` file in the source root (it is already listed in `.gitignore`).
+Use `inherits` to extend the shipped preset and override only what you need.
+
+For example, on macOS or Linux, to use an out-of-tree build directory, enable ccache and set a custom Qt path:
 
 [source,json]
 ----
@@ -141,8 +154,8 @@ For example, adding the following to `CMakeUserPresets.json` would let you build
     {
       "name": "mydev",
       "displayName": "Local development",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
+      "inherits": "ninja_ccache",
+      "binaryDir": "${sourceDir}/../build",
       "cacheVariables": {
         "ENABLE_CCACHE": "ON"
       },
@@ -153,6 +166,44 @@ For example, adding the following to `CMakeUserPresets.json` would let you build
   ]
 }
 ----
+
+On Windows, you might want to use the Visual Studio generator and a different build directory instead.
+The `inherits` field still pulls in cache variables like `ENABLE_CCACHE` from the base preset, while letting you override the generator and build path:
+
+[source,json]
+----
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "vs-dev",
+      "displayName": "Visual Studio development",
+      "inherits": "ninja_ccache",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "C:/build"
+    }
+  ]
+}
+----
+
+Then configure and build using your preset:
+
+[source,sh]
+----
+cmake --preset mydev
+cmake --build ../build
+----
+
+If you use VSCode with the CMake Tools extension, select your preset via the command palette (*CMake: Select Configure Preset*) or set it in `.vscode/settings.json`:
+
+[source,json]
+----
+{
+  "cmake.configurePreset": "mydev"
+}
+----
+
+NOTE: When a configure preset is active, CMake Tools uses the preset's `binaryDir` and ignores the `cmake.buildDirectory` setting.
 
 After running cmake, you can always run `make help` to see a list of all possible make targets.
 
@@ -170,6 +221,39 @@ About CMake in general and why KDE4 uses it: https://lwn.net/Articles/188693/
 Useful variables: https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/Useful-Variables
 
 Frequently Asked Questions: https://gitlab.kitware.com/cmake/community/wikis/FAQ
+
+[#ChToolsCMakeIdioms]
+
+==== CMake Idioms
+
+If you will be creating or editing CMake files,
+you will need to be aware of some idioms in use in the Wireshark source code.
+
+[NOTE]
+.When in doubt, check the source
+====
+As with most open-source software, this documentation can fall behind what's actually in use.
+Check the root _CMakeLists.txt_ file and the files in _cmake/modules/_
+to see the most current information.
+====
+
+.Library dependencies.
+Most dependencies are imported via the CMake _find_package()_ command.
+The mechanics of finding a particular package _foo_ are often specified in the relevant
+_cmake/modules/FindFoo.cmake_ file, but they will usually define a variable
+_FOO_INCLUDE_DIRS_ for helping future CMake commands find the _foo_ header files,
+along with a _FOO_LIBRARIES_ variable listing the compiled library files for linking.
+Both variables will be empty if the corresponding dependency is not found.
+
+Most dependencies are intuitively named, but there are some exceptions:
+
+* **_Lib_ prefix:** Most libraries do not have any added prefix to their names.
+_LIBXML2_ and _LIBSSH_ are two notable exceptions.
+
+* **Mathematics:** The name of this library is simply _M_ (_M_INCLUDE_DIRS_, _M_LIBRARIES_).
+
+* **Netlink:** The name of this library is _NL_.
+
 
 [#ChToolsGNUChain]
 
@@ -314,6 +398,10 @@ _windows.h_, _WS2_32.lib_)
 
 Official releases are or were built with the following Visual {cpp} versions:
 
+* Wireshark 4.6.7-: Microsoft Visual {cpp} 2026.
+* Wireshark 4.6.0-4.6.6: Microsoft Visual {cpp} 2022.
+* Wireshark 4.4.17-: Microsoft Visual {cpp} 2026.
+* Wireshark 4.4.0-4.4.16: Microsoft Visual {cpp} 2022.
 * Wireshark 4.2.x: Microsoft Visual {cpp} 2022.
 * Wireshark 4.0.x: Microsoft Visual {cpp} 2022.
 * Wireshark 3.6.x: Microsoft Visual {cpp} 2019.
@@ -335,7 +423,7 @@ Official releases are or were built with the following Visual {cpp} versions:
 Using the release compilers is recommended for Wireshark development work.
 
 “Community” editions of Visual Studio such as “Visual Studio Community
-2022” can be used to compile Wireshark but any PortableApps packages you
+2026” can be used to compile Wireshark but any PortableApps packages you
 create with them might require the installation of a separate Visual
 {cpp} Redistributable package on any machine on which the PortableApps
 package is to be used. See <<msvc-runtime-redistributable>> below for
@@ -349,26 +437,26 @@ Essentials] account if you don't have a Visual Studio (MSDN)
 subscription.  The older versions can be downloaded from
 https://visualstudio.microsoft.com/vs/older-downloads/[].
 
-==== Visual {cpp} 2022 Community Edition
+==== Visual {cpp} 2026 Community Edition
 
 IDE + Debugger?:: Yes
 
 SDK required for 64-bit builds?:: No
 
-CMake Generator: *`Visual Studio 17`*
+CMake Generator: *`Visual Studio 18`*
 
 You can use Chocolatey to install Visual Studio, e.g:
 
 [source,cmd]
 ----
-PS:\> choco install visualstudiocommunity2022 visualstudio2022-workload-nativedesktop
+PS:\> choco install visualstudiocommunity2026 visualstudio2026-workload-nativedesktop
 ----
 
 If you wish to build Arm64 executables you must install the following components:
 
-Microsoft.VisualStudio.Component.VC.Tools.ARM64:: MSVC v143 - VS 2022 C++ ARM64/ARM64EC build tools (Latest)
+Microsoft.VisualStudio.Component.VC.Tools.ARM64:: MSVC v145 - VS 2026 C++ ARM64/ARM64EC build tools (Latest)
 
-Microsoft.VisualStudio.Component.VC.Runtimes.ARM64.Spectre:: MSVC v143 - VS 2022 C++ ARM64/ARM64EC Spectre-mitigated libs (Latest)
+Microsoft.VisualStudio.Component.VC.Runtimes.ARM64.Spectre:: MSVC v145 - VS 2026 C++ ARM64/ARM64EC Spectre-mitigated libs (Latest)
 
 ==== cl.exe (C Compiler)
 
@@ -378,7 +466,7 @@ versions ordered by release date.
 
 |===
 | Compiler Package   | V{cpp} | _MSC_VER
-| Visual Studio 2022 (17.4.2) | 14.34   | 1934
+| Visual Studio 2026 (18.6.1) | 14.51   | 1951
 |===
 
 A description of `_MSC_VER` and `_MSC_FULL_VER`, and their relation to Visual Studio and compiler versions,
@@ -467,10 +555,9 @@ https://docs.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files[Red
 
 In all cases where _vc_redist.x64.exe_ or _vc_redist.arm64.exe_ is
 downloaded it should be downloaded to the directory into which the
-support libraries for Wireshark have been downloaded and installed. This
-directory is specified by the `WIRESHARK_BASE_DIR` or
-`WIRESHARK_LIB_DIR` environment variables. It need not, and should not,
-be run after being downloaded.
+support libraries for Wireshark have been downloaded and installed.
+This directory is specified by the `WIRESHARK_BASE_DIR` environment or CMake variable.
+It need not, and should not, be run after being downloaded.
 
 ==== Windows Platform SDK
 
@@ -486,8 +573,9 @@ Edition, it will include an SDK.
 [#ChToolsDocumentationToolchain]
 === Documentation Toolchain
 
-Wireshark’s documentation is split across two directories.
-The `doc` directory contains man pages, User’s Guide, Developer’s Guide, and the release notes, which are written in Asciidoctor markup.
+Wireshark’s documentation is located in the `doc` directory.
+It contains man pages, User’s Guide, Developer’s Guide, and the release notes, which are written in Asciidoctor markup.
+A bunch of README files in text format can also be found there.
 
 Our various output formats are generated using the following tools.
 Intermediate formats are in _italics_.
@@ -499,7 +587,6 @@ Guide HTML:: Asciidoctor → _DocBook XML_ → xsltproc + DocBook XSL
 Guide PDF:: Asciidoctor
 
 Release notes HTML:: Asciidoctor
-Release notes text:: Asciidoctor → _HTML_ → html2text.py
 
 ==== Asciidoctor
 
@@ -508,7 +595,7 @@ The Ruby and Java flavors can be used to build Wireshark’s documentation, but 
 CMake will download a pre-built version of Ruby and the Asciidoctor gem on Windows.
 // We need docbook5, PDF & EPUB output and macros
 
-The guides and release notes were originally written in DocBook (hence the directory name).
+The guides and release notes were originally written in DocBook.
 They were later converted to AsciiDoc and then migrated to Asciidoctor.
 The man pages were originally in Perl’s POD (Plain Old Documentation) format and were later converted to Asciidoctor.
 We use Asciidoctor’s modern (>= 1.5.0) syntax.
@@ -553,7 +640,7 @@ Studio from the same command prompt, e.g.
 [source,cmd]
 ----
 C:\Development\wsbuild64>set PATH="%PATH%;C:\Development\wsbuild64\run\RelwithDebInfo"
-C:\Development\wsbuild64>wireshark.sln
+C:\Development\wsbuild64>wireshark.slnx
 ----
 
 for PowerShell use
@@ -561,7 +648,7 @@ for PowerShell use
 [source,cmd]
 ----
 PS C:\Development\wsbuild64>$env:PATH += ";$(Convert-Path run\RelWithDebInfo)"
-PS C:\Development\wsbuild64>wireshark.sln
+PS C:\Development\wsbuild64>wireshark.slnx
 ----
 
 When Visual Studio has finished loading the solution, set the executable to
@@ -608,7 +695,7 @@ menu and then click on the required line and press F9.  To run the program,
 press F5.
 
 If you require a non-optimised version, then build using a debug configuration, e.g.
-*`msbuild /m /p:Configuration=Debug Wireshark.sln`*. The build products will be found
+*`msbuild /m /p:Configuration=Debug Wireshark.slnx`*. The build products will be found
 in C:\Development\wsbuild64\run\Debug\.
 
 [#ChToolsBash]
@@ -840,7 +927,7 @@ https://git-scm.com/downloads/guis[] for details.
 === Perl (Optional)
 
 https://www.perl.org[Perl] is an interpreted programming language.
-It is used to convert various text files into usable source code and for various source code checks, but it it is not required for general Wireshark development.
+It is used to convert various text files into usable source code, but it it is not required for general Wireshark development.
 Perl version 5.6 and above should work fine.
 
 [#ChToolsUnixPerl]
@@ -935,9 +1022,10 @@ You can download it from the link:https://wixtoolset.org/[WiX web site] or insta
 PS$> choco install wixtoolset
 ----
 
-This also requires the Visual C++ redistributable merge modules, which can be installed by selecting “Individual Components -> {cpp} 2022 Redistributable MSMs” or “...2019 Redistributable MSMs” as appropriate for your compiler in the Visual Studio installer.
-
 Wireshark’s .msi packaging is currently experimental and the generated packages may be incomplete.
+Packages reqire a compatible version of the Visual {cpp} Redistributable.
+If one is not present the installer will exit.
+See <<msvc-runtime-redistributable>> for more details.
 
 [#ChToolsPortableApps]
 === Windows: PortableApps (Optional)

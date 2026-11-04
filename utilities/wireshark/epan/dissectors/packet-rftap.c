@@ -124,7 +124,7 @@ struct rftap_hdr {
  * returns Data Link Type (dlt) and subdissector name
  */
 static void
-dissect_rftap_header(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t *dlt, const uint8_t **subdissector_name)
+dissect_rftap_header(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t *dlt, const char **subdissector_name)
 {
     proto_item *ti_header;
     proto_tree *header_tree;
@@ -264,7 +264,7 @@ dissect_rftap_header(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32
         return;  /* we've hit a tagged parameter we can't decode, abort */
 
     proto_tree_add_item_ret_string(tree, hf_rftap_subdissector_name, tvb,
-        offset+4, tag_len, ENC_ASCII, pinfo->pool, subdissector_name);
+        offset+4, tag_len, ENC_ASCII, pinfo->pool, (const uint8_t**)&subdissector_name);
 }
 
 /* Main entry point to dissect the packets.
@@ -286,7 +286,7 @@ dissect_rftap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     int32_t     rftap_len;  /* length in bytes */
     dissector_handle_t subdissector_handle;
     uint32_t    subdissector_dlt;
-    const uint8_t *subdissector_name;
+    const char *subdissector_name;
 
     /* heuristics */
 
@@ -306,7 +306,7 @@ dissect_rftap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     /* dissect part 1: rftap header */
 
     rftap_len = 4 * (int32_t) tvb_get_letohs(tvb, 4);
-    rftap_tvb = tvb_new_subset_length_caplen(tvb, 0, rftap_len, rftap_len);
+    rftap_tvb = tvb_new_subset_length(tvb, 0, rftap_len);
 
     ti = proto_tree_add_protocol_format(tree, proto_rftap, rftap_tvb, 0, -1,
         "RFtap Protocol (%d bytes)", rftap_len);

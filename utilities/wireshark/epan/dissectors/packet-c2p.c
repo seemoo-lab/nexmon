@@ -13,6 +13,7 @@
 
 #include <epan/packet.h>
 #include <epan/unit_strings.h>
+#include <wsutil/time_util.h>
 #include <inttypes.h>
 
 
@@ -1160,6 +1161,12 @@ typedef enum sti_type_t {
     STI_EV_JACKKNIFE,
 
     /**
+    ISO-3166-1 numeric country code.
+    @type [integer]
+    */
+    STI_COUNTRY_CODE,
+
+    /**
     Project specific STI values.
     @type [integer]
     @unit [varying]
@@ -1205,6 +1212,11 @@ typedef enum sti_type_t {
 static int proto_desc;
 static int ett_c2p;
 static dissector_handle_t ieee80211_handle;
+static dissector_handle_t its_handle;
+static dissector_handle_t j2735_handle;
+static dissector_handle_t wsa_handle;
+static dissector_handle_t cn_msg_frame_handle;
+static dissector_handle_t commsigniaapi_handle;
 
 static int hf_c2p_version_desc;
 static int hf_c2p_type_desc;
@@ -1283,6 +1295,28 @@ static int hf_c2p_sti_value_lightbar_desc;
 static int hf_c2p_sti_value_lane_position_desc;
 static int hf_c2p_sti_value_state_desc;
 static int hf_c2p_sti_value_tristate_desc;
+static int hf_c2p_fac_msg_type_desc;
+static int hf_c2p_fac_timestamp_desc;
+static int hf_c2p_fac_interface_id_desc;
+static int hf_c2p_fac_source_address_desc;
+static int hf_c2p_fac_dest_address_desc;
+static int hf_c2p_fac_datarate_desc;
+static int hf_c2p_fac_user_prio_desc;
+static int hf_c2p_fac_rssi_desc;
+static int hf_c2p_fac_fingerprint_desc;
+static int hf_c2p_fac_verify_result_desc;
+static int hf_c2p_fac_psid_desc;
+static int hf_c2p_fac_ssp_type_desc;
+static int hf_c2p_fac_ssp_field_desc;
+static int hf_c2p_fac_ssp_length_desc;
+static int hf_c2p_fac_signer_id_desc;
+static int hf_c2p_fac_generation_time_desc;
+static int hf_c2p_fac_payload_length_desc;
+
+static int hf_c2p_api_direction_desc;
+static int hf_c2p_api_client_ip_desc;
+static int hf_c2p_api_client_port_desc;
+static int hf_c2p_api_length_desc;
 
 
 #define C2P_TYPE_DSRC_RX        1UL
@@ -1293,8 +1327,10 @@ static int hf_c2p_sti_value_tristate_desc;
 #define C2P_TYPE_POTI           6UL
 #define C2P_TYPE_CV2X_RX        7UL
 #define C2P_TYPE_CV2X_TX        8UL
+#define C2P_TYPE_API            11UL
+#define C2P_TYPE_FAC_INJECT     12UL
 
-enum { C2P_TYPES_NUM = 9UL };
+enum { C2P_TYPES_NUM = 11UL };
 
 static const value_string c2p_types[C2P_TYPES_NUM] = {
     { C2P_TYPE_DSRC_RX, "Received DSRC Packet" },
@@ -1305,6 +1341,116 @@ static const value_string c2p_types[C2P_TYPES_NUM] = {
     { C2P_TYPE_POTI, "Position & Timing" },
     { C2P_TYPE_CV2X_RX, "Received CV2X Packet" },
     { C2P_TYPE_CV2X_TX, "Transmitted CV2X Packet" },
+    { C2P_TYPE_API, "Remote API Message" },
+    { C2P_TYPE_FAC_INJECT, "Injected Facility Packet" },
+    { 0, NULL }
+};
+
+/**
+Direction of a captured remote API message
+*/
+static const value_string api_directions[] = {
+    { 0, "Received from the API client" },
+    { 1, "Sent to the API client" },
+    { 0, NULL }
+};
+
+/**
+Facility message types of an injected facility packet
+*/
+static const value_string fac_msg_types[] = {
+    { 1, "EU CAM (Cooperative Awareness Message)" },
+    { 2, "EU DENM (Decentralized Environmental Notification Message)" },
+    { 3, "EU MAP" },
+    { 4, "EU SPAT (Signal Phase & Timing)" },
+    { 5, "EU IVI (In-Vehicle Information)" },
+    { 6, "EU RTCM (Real Time Correction Message)" },
+    { 7, "EU SRM (Signal Request Message)" },
+    { 8, "EU SSM (Signal Status Message)" },
+    { 9, "EU CPM (Collective Perception Message)" },
+    { 10, "EU VAM (Vulnerable Road User Awareness Message)" },
+    { 100, "US BSM (Basic Safety Message)" },
+    { 101, "US TIM (Traveler Information Message)" },
+    { 102, "US RSA (Road Side Alert)" },
+    { 103, "US MAP" },
+    { 104, "US SPAT (Signal Phase & Timing)" },
+    { 105, "US SRM (Signal Request Message)" },
+    { 106, "US SSM (Signal Status Message)" },
+    { 107, "US PSM (Personal Safety Message)" },
+    { 108, "US PVD (Probe Vehicle Data)" },
+    { 109, "US PDM (Probe Data Management)" },
+    { 110, "US RTCM (Real Time Correction Message)" },
+    { 111, "US WSA (WAVE Service Advertisement)" },
+    { 112, "US SDSM (Sensor Data Sharing Message)" },
+    { 113, "US CSR (Common Safety Request)" },
+    { 114, "US ICA (Intersection Collision Avoidance)" },
+    { 115, "US NMEA (NMEA Corrections)" },
+    { 116, "US RSM (Road Safety Message)" },
+    { 117, "US RWM (Road Weather Message)" },
+    { 118, "US PDC (Probe Data Config Message)" },
+    { 119, "US PDR (Probe Data Report Message)" },
+    { 120, "US TAM (Toll Advertisement Message)" },
+    { 121, "US TUM (Toll Usage Message)" },
+    { 122, "US TUM_ACK (Toll Usage Ack Message)" },
+    { 123, "US CCM (Cooperative Control Message)" },
+    { 124, "US MSCM (Maneuver Sharing and Coordinating Message)" },
+    { 125, "US RGA (Road Geometry and Attributes)" },
+    { 126, "US PSM2 (Personal Safety Message 2)" },
+    { 127, "US TSPAT (Traffic Signal Phase and Timing)" },
+    { 128, "US SCPR (Signal Control and Prioritization Request)" },
+    { 129, "US SCPS (Signal Control and Prioritization Status)" },
+    { 130, "US RUCCM (Road User Charging Config Message)" },
+    { 131, "US RUCRM (Road User Charging Report Message)" },
+    { 132, "US TLSM (Traffic Light Status Message)" },
+    { 200, "China BSM (Basic Safety Message)" },
+    { 201, "China MAP" },
+    { 202, "China SPAT (Signal Phase & Timing)" },
+    { 203, "China RSI (Road Side Information)" },
+    { 204, "China RSM (Road Side Message)" },
+    { 0, NULL }
+};
+
+/**
+Security verification result of a facility packet
+*/
+static const value_string fac_verify_results[] = {
+    { 0, "Unsecured" },
+    { 1, "Success" },
+    { 2, "Signed (Disabled security)" },
+    { 3, "Timeout" },
+    { 4, "Invalid signature" },
+    { 5, "Invalid signer ID" },
+    { 6, "Invalid certificate" },
+    { 7, "Invalid PSID" },
+    { 8, "Invalid generation time" },
+    { 9, "Invalid generation location" },
+    { 10, "Internal error" },
+    { 11, "Invalid hash algorithm" },
+    { 12, "Malformed message" },
+    { 13, "Invalid protocol version" },
+    { 14, "Invalid security profile" },
+    { 15, "Replayed message" },
+    { 16, "Generation time is not consistent with certificate" },
+    { 17, "Generation time is missing" },
+    { 18, "Invalid critical information fields" },
+    { 19, "Missing expiry time" },
+    { 20, "Expiry time is in the past" },
+    { 21, "Expiry time is not consistent with certificate" },
+    { 22, "Expiry time is before generation time" },
+    { 23, "Security header's PSID is inconsistent with certificate" },
+    { 24, "Generation location is missing" },
+    { 25, "Generation location is inconsistent with certificate" },
+    { 26, "Network layer location is inconsistent with certificate" },
+    { 0, NULL }
+};
+
+/**
+Service Specific Permissions (SSP) field types
+*/
+static const value_string fac_ssp_types[] = {
+    { 0, "Opaque" },
+    { 1, "Bitmap" },
+    { 2, "Invalid" },
     { 0, NULL }
 };
 
@@ -1714,6 +1860,7 @@ static const value_string sti_types[STI_TYPE_LAST + 1] = {
     { STI_PEDESTRIAN_COLLISION, "Pedestrian collision" },
     { STI_HIGH_SEVERITY_CRASH, "High severity crash" },
     { STI_EV_JACKKNIFE, "Jackknife" },
+    { STI_COUNTRY_CODE, "Country code" },
     { STI_PROJECT_00, "Project #0" },
     { STI_PROJECT_01, "Project #1" },
     { STI_PROJECT_02, "Project #2" },
@@ -1751,7 +1898,7 @@ static const value_string sti_types[STI_TYPE_LAST + 1] = {
 
 
 /** STI parameters to hf_index mapping */
-static int* sti_params[STI_TYPE_LAST] = {
+static const int* const sti_params[STI_TYPE_LAST] = {
     [STI_TRANSMISSION_STATE] = &hf_c2p_sti_value_transmission_state_desc,
     [STI_STEERING_WHEEL_ANGLE] = &hf_c2p_sti_value_angle_desc,
     [STI_STEERING_WHEEL_ANGLE_CONF] = &hf_c2p_sti_value_angle_desc,
@@ -1850,6 +1997,7 @@ static int* sti_params[STI_TYPE_LAST] = {
     [STI_PEDESTRIAN_COLLISION] = &hf_c2p_sti_value_state_desc,
     [STI_HIGH_SEVERITY_CRASH] = &hf_c2p_sti_value_state_desc,
     [STI_EV_JACKKNIFE] = &hf_c2p_sti_value_state_desc,
+    [STI_COUNTRY_CODE] = &hf_c2p_sti_value_integer_desc,
     [STI_PROJECT_00] = &hf_c2p_sti_value_integer_desc,
     [STI_PROJECT_01] = &hf_c2p_sti_value_integer_desc,
     [STI_PROJECT_02] = &hf_c2p_sti_value_integer_desc,
@@ -1884,7 +2032,7 @@ static int* sti_params[STI_TYPE_LAST] = {
     [STI_PROJECT_31] = &hf_c2p_sti_value_integer_desc,
 };
 
-static void set_tst_proto_item_info(tvbuff_t* tvb, int offset, proto_item* ti)
+static void c2p_set_tst_proto_item_info(tvbuff_t* tvb, int offset, proto_item* ti)
 {
     if((NULL != tvb) && (NULL != ti)) {
         uint32_t tst_sec = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
@@ -1892,7 +2040,12 @@ static void set_tst_proto_item_info(tvbuff_t* tvb, int offset, proto_item* ti)
 
         static const time_t TIME_2004_IN_ABSTIME = 1072915200ULL;
         time_t timestamp = tst_sec + TIME_2004_IN_ABSTIME;
-        struct tm* utc_time = gmtime(&timestamp);
+        struct tm tm_buf;
+        struct tm* utc_time = ws_gmtime_r(&timestamp, &tm_buf);
+        if (utc_time == NULL) {
+            proto_item_append_text(ti, " - Not representable");
+            return;
+        }
 
         enum { TIMETAMP_STR_MAX_LEN = 128UL };
         char timestamp_str[TIMETAMP_STR_MAX_LEN] = {0};
@@ -1902,23 +2055,23 @@ static void set_tst_proto_item_info(tvbuff_t* tvb, int offset, proto_item* ti)
     }
 }
 
-static void channel_format(char* string, uint32_t value)
+static void c2p_channel_format(char* string, uint32_t value)
 {
     static const uint8_t CHANNEL_NA = 0U;
 
     if(CHANNEL_NA == value) {
-        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%d)", value);
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%u)", value);
     } else {
         snprintf(string, ITEM_LABEL_LENGTH, "%u", value);
     }
 }
 
-static void datarate_format(char* string, uint32_t value)
+static void c2p_datarate_format(char* string, uint32_t value)
 {
     static const uint8_t DATARATE_NA = 0U;
 
     if(DATARATE_NA == value) {
-        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%d)", value);
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%u)", value);
     } else {
         static const uint32_t DATARATE_500_KBPS_TO_KBPS_FACTOR = 500UL;
         uint32_t value_kbps = value * DATARATE_500_KBPS_TO_KBPS_FACTOR;
@@ -1926,7 +2079,7 @@ static void datarate_format(char* string, uint32_t value)
     }
 }
 
-static void latitude_format(char* string, uint32_t value)
+static void c2p_latitude_format(char* string, uint32_t value)
 {
     int32_t lat = (int32_t)value;
     static const int32_t LATITUDE_NA = 900000001L;
@@ -1934,7 +2087,7 @@ static void latitude_format(char* string, uint32_t value)
     if(LATITUDE_NA == lat) {
         snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%ld)", (long int)lat);
     } else {
-        snprintf(string, ITEM_LABEL_LENGTH, "%u°%u'%.3f\"%c (%d)",
+        snprintf(string, ITEM_LABEL_LENGTH, "%d°%d'%.3f\"%c (%d)",
                  abs(lat) / 10000000,
                  abs(lat) % 10000000 * 6 / 1000000,
                  abs(lat) % 10000000 * 6 % 1000000 * 6.0 / 100000.0,
@@ -1943,7 +2096,7 @@ static void latitude_format(char* string, uint32_t value)
     }
 }
 
-static void longitude_format(char* string, uint32_t value)
+static void c2p_longitude_format(char* string, uint32_t value)
 {
     int32_t lon = (int32_t)value;
     static const int32_t LONGITUDE_NA = 1800000001L;
@@ -1951,7 +2104,7 @@ static void longitude_format(char* string, uint32_t value)
     if(LONGITUDE_NA == lon) {
         snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%ld)", (long int)lon);
     } else {
-        snprintf(string, ITEM_LABEL_LENGTH, "%u°%u'%.3f\"%c (%d)",
+        snprintf(string, ITEM_LABEL_LENGTH, "%d°%d'%.3f\"%c (%d)",
                  abs(lon) / 10000000,
                  abs(lon) % 10000000 * 6 / 1000000,
                  abs(lon) % 10000000 * 6 % 1000000 * 6.0 / 100000.0,
@@ -1960,7 +2113,7 @@ static void longitude_format(char* string, uint32_t value)
     }
 }
 
-static void altitude_format(char* string, uint32_t value)
+static void c2p_altitude_format(char* string, uint32_t value)
 {
     int32_t alt = (int32_t)value;
     static const int32_t ALTIITUDE_NA = 800001L;
@@ -1976,7 +2129,7 @@ static void altitude_format(char* string, uint32_t value)
     }
 }
 
-static void speed_format(char* string, uint32_t value)
+static void c2p_speed_format(char* string, uint32_t value)
 {
     static const uint32_t SPEED_STANDSTILL = 0UL;
     static const uint32_t SPEED_NA = 16383UL;
@@ -2001,7 +2154,7 @@ static void speed_format(char* string, uint32_t value)
     }
 }
 
-static void heading_format(char* string, uint32_t value)
+static void c2p_heading_format(char* string, uint32_t value)
 {
     const char* p = try_val_to_str(value, VALS(heading_predefined_values));
     if(NULL != p) {
@@ -2014,7 +2167,7 @@ static void heading_format(char* string, uint32_t value)
     }
 }
 
-static void semi_axis_format(char* string, uint32_t value)
+static void c2p_semi_axis_format(char* string, uint32_t value)
 {
     static const uint16_t SEMI_AXIS_NA = 4095U;
     static const uint16_t SEMI_AXIS_OOR = 4094U;
@@ -2031,7 +2184,7 @@ static void semi_axis_format(char* string, uint32_t value)
     }
 }
 
-static void altitude_acc_format(char* string, uint32_t value)
+static void c2p_altitude_acc_format(char* string, uint32_t value)
 {
     static const uint16_t ALTITUDE_ACC_NA = 65535U;
 
@@ -2045,7 +2198,7 @@ static void altitude_acc_format(char* string, uint32_t value)
     }
 }
 
-static void heading_acc_format(char* string, uint32_t value)
+static void c2p_heading_acc_format(char* string, uint32_t value)
 {
     static const uint16_t HEADING_ACC_NA = 127U;
 
@@ -2059,7 +2212,7 @@ static void heading_acc_format(char* string, uint32_t value)
     }
 }
 
-static void speed_acc_format(char* string, uint32_t value)
+static void c2p_speed_acc_format(char* string, uint32_t value)
 {
     static const uint16_t SPEED_ACC_NA = 127U;
 
@@ -2081,7 +2234,7 @@ static void speed_acc_format(char* string, uint32_t value)
     }
 }
 
-static void power_format(char* string, uint32_t value)
+static void c2p_power_format(char* string, uint32_t value)
 {
     int8_t rssi = (int8_t)value;
     static const int8_t RSSI_NA = 127;
@@ -2093,7 +2246,7 @@ static void power_format(char* string, uint32_t value)
     }
 }
 
-static void cv2x_tx_power_format(char* string, int32_t value)
+static void c2p_power_dbm_format(char* string, int32_t value)
 {
     static const int32_t POWER_NA = INT16_MAX;
 
@@ -2116,7 +2269,7 @@ static const value_string priority_format_vals[] = {
     {0, NULL}
 };
 
-static void cbr_format(char* string, uint32_t value)
+static void c2p_cbr_format(char* string, uint32_t value)
 {
     static const uint16_t CBR_NA = 1001U;
 
@@ -2130,7 +2283,7 @@ static void cbr_format(char* string, uint32_t value)
     }
 }
 
-static void gps_timestamp_format(char* string, uint64_t value)
+static void c2p_gps_timestamp_format(char* string, uint64_t value)
 {
     static const uint64_t GPS_TIMESTAMP_NA = 0U;
 
@@ -2139,7 +2292,12 @@ static void gps_timestamp_format(char* string, uint64_t value)
     } else {
         time_t timestamp = value / 1000ULL;
         uint32_t tst_msec = value % 1000UL;
-        struct tm* utc_time = gmtime(&timestamp);
+        struct tm tm_buf;
+        struct tm* utc_time = ws_gmtime_r(&timestamp, &tm_buf);
+        if (utc_time == NULL) {
+            snprintf(string, ITEM_LABEL_LENGTH, "Not representable (%" PRIu64 ")", value);
+            return;
+        }
 
         enum { TIMETAMP_STR_MAX_LEN = 128UL };
         char timestamp_str[TIMETAMP_STR_MAX_LEN] = {0};
@@ -2154,7 +2312,7 @@ static void gps_timestamp_format(char* string, uint64_t value)
     }
 }
 
-static bool sti_value_common_format(char* string, int64_t value)
+static bool c2p_sti_value_common_format(char* string, int64_t value)
 {
     bool formatted = true;
     static const int64_t STI_VALUE_NA = INT64_MIN;
@@ -2181,9 +2339,9 @@ static bool sti_value_common_format(char* string, int64_t value)
 }
 
 
-static void sti_value_angle_format(char* string, int64_t value)
+static void c2p_sti_value_angle_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double FACTOR_0P001_DEG_TO_DEG_FACTOR = 0.001;
         double value_deg = value * FACTOR_0P001_DEG_TO_DEG_FACTOR;
 
@@ -2195,9 +2353,9 @@ static void sti_value_angle_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_acceleration_format(char* string, int64_t value)
+static void c2p_sti_value_acceleration_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double MMPS2_TO_MPS2_FACTOR = 0.001;
         double value_mps2 = value * MMPS2_TO_MPS2_FACTOR;
 
@@ -2209,9 +2367,9 @@ static void sti_value_acceleration_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_angular_velocity_format(char* string, int64_t value)
+static void c2p_sti_value_angular_velocity_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double FACTOR_0P001_DEGPS_TO_DEGPS_FACTOR = 0.001;
         double value_degps = value * FACTOR_0P001_DEGPS_TO_DEGPS_FACTOR;
 
@@ -2223,9 +2381,9 @@ static void sti_value_angular_velocity_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_thousandths_format(char* string, int64_t value)
+static void c2p_sti_value_thousandths_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double THOUSANDTHS_TO_PERCENT_FACTOR = 0.1;
         double value_percent = value * THOUSANDTHS_TO_PERCENT_FACTOR;
 
@@ -2237,9 +2395,9 @@ static void sti_value_thousandths_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_length_format(char* string, int64_t value)
+static void c2p_sti_value_length_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double MM_TO_M_FACTOR = 0.001;
         double value_m = value * MM_TO_M_FACTOR;
 
@@ -2251,9 +2409,9 @@ static void sti_value_length_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_mass_format(char* string, int64_t value)
+static void c2p_sti_value_mass_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double G_TO_KG_FACTOR = 0.001;
         double value_kg = value * G_TO_KG_FACTOR;
 
@@ -2265,9 +2423,9 @@ static void sti_value_mass_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_rain_rate_format(char* string, int64_t value)
+static void c2p_sti_value_rain_rate_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         snprintf(string,
                  ITEM_LABEL_LENGTH,
                  "%" PRId64 " g/s/m²",
@@ -2275,9 +2433,9 @@ static void sti_value_rain_rate_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_solar_irradiance_format(char* string, int64_t value)
+static void c2p_sti_value_solar_irradiance_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         snprintf(string,
                  ITEM_LABEL_LENGTH,
                  "%" PRId64 " J/m²",
@@ -2285,9 +2443,9 @@ static void sti_value_solar_irradiance_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_temperature_format(char* string, int64_t value)
+static void c2p_sti_value_temperature_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         static const double FACTOR_0P1_DEG_TO_DEG_FACTOR = 0.1;
         double value_deg = value * FACTOR_0P1_DEG_TO_DEG_FACTOR;
 
@@ -2299,9 +2457,9 @@ static void sti_value_temperature_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_pressure_format(char* string, int64_t value)
+static void c2p_sti_value_pressure_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         snprintf(string,
                  ITEM_LABEL_LENGTH,
                  "%" PRId64 " Pa",
@@ -2309,9 +2467,9 @@ static void sti_value_pressure_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_sweep_rate_format(char* string, int64_t value)
+static void c2p_sti_value_sweep_rate_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         snprintf(string,
                  ITEM_LABEL_LENGTH,
                  "%" PRId64 " sweeps/min",
@@ -2319,9 +2477,9 @@ static void sti_value_sweep_rate_format(char* string, int64_t value)
     }
 }
 
-static void sti_value_integer_format(char* string, int64_t value)
+static void c2p_sti_value_integer_format(char* string, int64_t value)
 {
-    if(!sti_value_common_format(string, value)) {
+    if(!c2p_sti_value_common_format(string, value)) {
         snprintf(string,
                  ITEM_LABEL_LENGTH,
                  "%" PRId64,
@@ -2329,9 +2487,170 @@ static void sti_value_integer_format(char* string, int64_t value)
     }
 }
 
-static int dissect_dsrc_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+static void c2p_fac_timestamp_format(char* string, uint64_t value)
 {
-    int offset = 0;
+    static const uint64_t TIMESTAMP_NA = UINT64_MAX;
+
+    if(TIMESTAMP_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%" PRIu64 ")", value);
+    } else {
+        static const uint64_t MSEC_PER_SEC = 1000ULL;
+
+        time_t timestamp = (time_t)(value / MSEC_PER_SEC);
+        uint32_t tst_msec = (uint32_t)(value % MSEC_PER_SEC);
+        struct tm tm_buf;
+        struct tm* utc_time = ws_gmtime_r(&timestamp, &tm_buf);
+        if (utc_time == NULL) {
+            snprintf(string, ITEM_LABEL_LENGTH, "Not representable (%" PRIu64 ")", value);
+            return;
+        }
+
+        enum { TIMESTAMP_STR_MAX_LEN = 128UL };
+        char timestamp_str[TIMESTAMP_STR_MAX_LEN] = {0};
+        strftime(timestamp_str, sizeof(timestamp_str), "%Y-%m-%d %H:%M:%S", utc_time);
+
+        snprintf(string,
+                 ITEM_LABEL_LENGTH,
+                 "%s.%03lu GMT (%" PRIu64 ")",
+                 timestamp_str,
+                 (unsigned long)tst_msec,
+                 value);
+    }
+}
+
+static void c2p_fac_generation_time_format(char* string, uint64_t value)
+{
+    static const uint64_t GENERATION_TIME_NA = 0ULL;
+
+    if(GENERATION_TIME_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%" PRIu64 ")", value);
+    } else {
+        static const time_t TIME_2004_IN_ABSTIME = 1072915200ULL;
+        /*
+         * The generation time is TAI based, subtract the leap seconds inserted
+         * since the 2004 epoch to display it as UTC.
+         */
+        static const time_t TAI_UTC_OFFSET_SINCE_2004 = 5;
+        static const uint64_t USEC_PER_SEC = 1000000ULL;
+
+        time_t timestamp = ((time_t)(value / USEC_PER_SEC) + TIME_2004_IN_ABSTIME) -
+                           TAI_UTC_OFFSET_SINCE_2004;
+        uint32_t tst_usec = (uint32_t)(value % USEC_PER_SEC);
+        struct tm tm_buf;
+        struct tm* utc_time = ws_gmtime_r(&timestamp, &tm_buf);
+        if (utc_time == NULL) {
+            snprintf(string, ITEM_LABEL_LENGTH, "Not representable (%" PRIu64 ")", value);
+            return;
+        }
+
+        enum { TIMESTAMP_STR_MAX_LEN = 128UL };
+        char timestamp_str[TIMESTAMP_STR_MAX_LEN] = {0};
+        strftime(timestamp_str, sizeof(timestamp_str), "%Y-%m-%d %H:%M:%S", utc_time);
+
+        snprintf(string,
+                 ITEM_LABEL_LENGTH,
+                 "%s.%06lu (%" PRIu64 " usec)",
+                 timestamp_str,
+                 (unsigned long)tst_usec,
+                 value);
+    }
+}
+
+static void c2p_fac_fingerprint_format(char* string, uint64_t value)
+{
+    static const uint64_t FINGERPRINT_NA = 0ULL;
+
+    if(FINGERPRINT_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (0x%" PRIx64 ")", value);
+    } else {
+        snprintf(string, ITEM_LABEL_LENGTH, "0x%" PRIx64, value);
+    }
+}
+
+static uint32_t c2p_psid_non_p_enc_to_p_enc(uint32_t psid)
+{
+    /* Minimal p-encoded PSID values that occupy 2, 3 and 4 bytes */
+    static const uint32_t ENC_PSID_MIN_2B = 0x00008000UL;
+    static const uint32_t ENC_PSID_MIN_3B = 0x00C00000UL;
+    static const uint32_t ENC_PSID_MIN_4B = 0xE0000000UL;
+
+    /* Maximal non p-encoded PSID values that fit into 1, 2, 3 and 4 bytes */
+    static const uint32_t PSID_MAX_1B = 0x0000007FUL;
+    static const uint32_t PSID_MAX_2B = 0x0000407FUL;
+    static const uint32_t PSID_MAX_3B = 0x0020407FUL;
+    static const uint32_t PSID_MAX_4B = 0x1020407FUL;
+
+    uint32_t result = 0UL;
+
+    if(psid > PSID_MAX_4B) {
+        result = UINT32_MAX;
+    } else if(psid > PSID_MAX_3B) {
+        result = (psid - (PSID_MAX_3B + 1UL)) | ENC_PSID_MIN_4B;
+    } else if(psid > PSID_MAX_2B) {
+        result = (psid - (PSID_MAX_2B + 1UL)) | ENC_PSID_MIN_3B;
+    } else if(psid > PSID_MAX_1B) {
+        result = (psid - (PSID_MAX_1B + 1UL)) | ENC_PSID_MIN_2B;
+    } else {
+        result = psid;
+    }
+
+    return result;
+}
+
+static void c2p_psid_format(char* string, uint32_t value)
+{
+    static const uint32_t PSID_NA = UINT32_MAX;
+    /* The PSID is only valid if the message was signed */
+    static const uint32_t PSID_UNSIGNED = 0UL;
+
+    if((PSID_NA == value) || (PSID_UNSIGNED == value)) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%lu)", (unsigned long)value);
+    } else {
+        snprintf(string,
+                 ITEM_LABEL_LENGTH,
+                 "0x%lX (0p%lX) (%lu)",
+                 (unsigned long)value,
+                 (unsigned long)c2p_psid_non_p_enc_to_p_enc(value),
+                 (unsigned long)value);
+    }
+}
+
+static void c2p_fac_interface_id_format(char* string, uint32_t value)
+{
+    static const uint32_t INTERFACE_ID_NA = UINT32_MAX;
+
+    if(INTERFACE_ID_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%lu)", (unsigned long)value);
+    } else {
+        snprintf(string, ITEM_LABEL_LENGTH, "%lu", (unsigned long)value);
+    }
+}
+
+static void c2p_fac_datarate_format(char* string, uint32_t value)
+{
+    static const uint16_t DATARATE_NA = UINT16_MAX;
+
+    if(DATARATE_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%lu)", (unsigned long)value);
+    } else {
+        snprintf(string, ITEM_LABEL_LENGTH, "%lu Kbps", (unsigned long)value);
+    }
+}
+
+static void c2p_fac_user_prio_format(char* string, uint32_t value)
+{
+    static const uint8_t USER_PRIO_NA = UINT8_MAX;
+
+    if(USER_PRIO_NA == value) {
+        snprintf(string, ITEM_LABEL_LENGTH, "Unavailable (%lu)", (unsigned long)value);
+    } else {
+        snprintf(string, ITEM_LABEL_LENGTH, "%lu", (unsigned long)value);
+    }
+}
+
+static int dissect_c2p_dsrc_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+{
+    unsigned offset = 0;
 
     proto_tree_add_item(c2p_tree, hf_c2p_primary_channel_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -2373,9 +2692,9 @@ static int dissect_dsrc_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pin
     return offset;
 }
 
-static int dissect_dsrc_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+static int dissect_c2p_dsrc_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(c2p_tree, hf_c2p_primary_channel_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -2411,9 +2730,9 @@ static int dissect_dsrc_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pin
     return offset;
 }
 
-static int dissect_cv2x_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+static int dissect_c2p_cv2x_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(c2p_tree, hf_c2p_sps_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -2441,9 +2760,9 @@ static int dissect_cv2x_tx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pin
     return offset;
 }
 
-static int dissect_cv2x_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+static int dissect_c2p_cv2x_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(c2p_tree, hf_c2p_socket_index_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -2463,9 +2782,9 @@ static int dissect_cv2x_rx(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pin
     return offset;
 }
 
-static int dissect_nav(tvbuff_t* tvb, proto_tree* c2p_tree)
+static int dissect_c2p_nav(tvbuff_t* tvb, proto_tree* c2p_tree)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     proto_tree_add_item(c2p_tree, hf_c2p_nav_fix_is_valid_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -2497,9 +2816,9 @@ static int dissect_nav(tvbuff_t* tvb, proto_tree* c2p_tree)
     return offset;
 }
 
-static int dissect_sti(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+static int dissect_c2p_sti(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     uint32_t length = tvb_get_uint32(tvb, 0, ENC_LITTLE_ENDIAN);
 
@@ -2546,9 +2865,190 @@ static int dissect_sti(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
     return offset;
 }
 
+/*
+ * The payload of an injected facility packet is the facility layer message
+ * itself, its message set is determined by the facility message type. Return
+ * the dissector of that message set, or NULL if it is not available.
+ */
+static dissector_handle_t c2p_fac_payload_dissector(uint32_t msg_type)
+{
+    /* Facility message type ranges of the known message sets */
+    static const uint32_t FAC_MSG_EU_FIRST = 1UL;
+    static const uint32_t FAC_MSG_EU_LAST = 10UL;
+    static const uint32_t FAC_MSG_US_FIRST = 100UL;
+    static const uint32_t FAC_MSG_US_LAST = 132UL;
+    static const uint32_t FAC_MSG_US_WSA = 111UL;
+    static const uint32_t FAC_MSG_CN_FIRST = 200UL;
+    static const uint32_t FAC_MSG_CN_LAST = 204UL;
+
+    dissector_handle_t handle = NULL;
+
+    if((msg_type >= FAC_MSG_EU_FIRST) && (msg_type <= FAC_MSG_EU_LAST)) {
+        handle = its_handle;
+    } else if(FAC_MSG_US_WSA == msg_type) {
+        /* The WSA is an IEEE 1609.3 message, not an SAE J2735 MessageFrame */
+        handle = wsa_handle;
+    } else if((msg_type >= FAC_MSG_US_FIRST) && (msg_type <= FAC_MSG_US_LAST)) {
+        handle = j2735_handle;
+    } else if((msg_type >= FAC_MSG_CN_FIRST) && (msg_type <= FAC_MSG_CN_LAST)) {
+        handle = cn_msg_frame_handle;
+    }
+
+    return handle;
+}
+
+static int dissect_c2p_fac_inject(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+{
+    /*
+     * Sizes of the facility notification metadata that precedes the injected
+     * payload. Every multi-byte field of it is in network byte order.
+     */
+    enum {
+        RADIO_PARAMS_LEN = 37,
+        SECURITY_INFO_LEN = 63,
+        SSP_LEN = 39,
+        SSP_FIELD_LEN = 31
+    };
+
+    unsigned offset = 0;
+    uint32_t msg_type = 0;
+    uint32_t payload_length = 0;
+
+    proto_tree_add_item_ret_uint(c2p_tree,
+                                 hf_c2p_fac_msg_type_desc,
+                                 tvb,
+                                 offset,
+                                 4,
+                                 ENC_BIG_ENDIAN,
+                                 &msg_type);
+    offset += 4;
+
+    proto_tree* radio_tree = proto_tree_add_subtree(c2p_tree,
+                                                    tvb,
+                                                    offset,
+                                                    RADIO_PARAMS_LEN,
+                                                    ett_c2p,
+                                                    NULL,
+                                                    "Radio parameters");
+
+    proto_tree_add_item(radio_tree, hf_c2p_fac_timestamp_desc, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset += 8;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_interface_id_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_source_address_desc, tvb, offset, 6, ENC_NA);
+    offset += 6;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_dest_address_desc, tvb, offset, 6, ENC_NA);
+    offset += 6;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_datarate_desc, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_user_prio_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_rssi_desc, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+    proto_tree_add_item(radio_tree, hf_c2p_fac_fingerprint_desc, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset += 8;
+
+    proto_tree* security_tree = proto_tree_add_subtree(c2p_tree,
+                                                       tvb,
+                                                       offset,
+                                                       SECURITY_INFO_LEN,
+                                                       ett_c2p,
+                                                       NULL,
+                                                       "Security");
+
+    proto_tree_add_item(security_tree, hf_c2p_fac_verify_result_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(security_tree, hf_c2p_fac_psid_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+
+    proto_tree* ssp_tree = proto_tree_add_subtree(security_tree,
+                                                  tvb,
+                                                  offset,
+                                                  SSP_LEN,
+                                                  ett_c2p,
+                                                  NULL,
+                                                  "Service Specific Permissions");
+
+    proto_tree_add_item(ssp_tree, hf_c2p_fac_ssp_type_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(ssp_tree, hf_c2p_fac_ssp_field_desc, tvb, offset, SSP_FIELD_LEN, ENC_NA);
+    offset += SSP_FIELD_LEN;
+    proto_tree_add_item(ssp_tree, hf_c2p_fac_ssp_length_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+
+    proto_tree_add_item(security_tree, hf_c2p_fac_signer_id_desc, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset += 8;
+    proto_tree_add_item(security_tree, hf_c2p_fac_generation_time_desc, tvb, offset, 8, ENC_BIG_ENDIAN);
+    offset += 8;
+
+    proto_tree_add_item_ret_uint(c2p_tree,
+                                 hf_c2p_fac_payload_length_desc,
+                                 tvb,
+                                 offset,
+                                 2,
+                                 ENC_BIG_ENDIAN,
+                                 &payload_length);
+    offset += 2;
+
+    dissector_handle_t payload_handle = c2p_fac_payload_dissector(msg_type);
+    proto_tree* root_tree = proto_tree_get_root(c2p_tree);
+    tvbuff_t* next_tvb = tvb_new_subset_length(tvb, offset, payload_length);
+
+    if(NULL != payload_handle) {
+        call_dissector(payload_handle, next_tvb, pinfo, root_tree);
+    } else {
+        call_data_dissector(next_tvb, pinfo, root_tree);
+    }
+
+    offset += tvb_reported_length(next_tvb);
+
+    return offset;
+}
+
+/*
+ * The payload of a remote API packet is one complete Commsignia API frame,
+ * its own frame header included. Hand it to the commsigniaapi dissector when
+ * that plugin is installed.
+ */
+static int dissect_c2p_api(tvbuff_t* tvb, proto_tree* c2p_tree, packet_info* pinfo)
+{
+    /* Every multi-byte field of the API metadata is in network byte order. */
+    unsigned offset = 0;
+    uint32_t length = 0;
+
+    proto_tree_add_item(c2p_tree, hf_c2p_api_direction_desc, tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset += 1;
+    proto_tree_add_item(c2p_tree, hf_c2p_api_client_ip_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
+    offset += 4;
+    proto_tree_add_item(c2p_tree, hf_c2p_api_client_port_desc, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+
+    proto_tree_add_item_ret_uint(c2p_tree,
+                                 hf_c2p_api_length_desc,
+                                 tvb,
+                                 offset,
+                                 2,
+                                 ENC_BIG_ENDIAN,
+                                 &length);
+    offset += 2;
+
+    proto_tree* root_tree = proto_tree_get_root(c2p_tree);
+    tvbuff_t* next_tvb = tvb_new_subset_length(tvb, offset, length);
+
+    if(NULL != commsigniaapi_handle) {
+        call_dissector(commsigniaapi_handle, next_tvb, pinfo, root_tree);
+    } else {
+        call_data_dissector(next_tvb, pinfo, root_tree);
+    }
+
+    offset += tvb_reported_length(next_tvb);
+
+    return offset;
+}
+
 static int dissect_c2p(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t type, version;
     char* str_type;
 
@@ -2577,7 +3077,7 @@ static int dissect_c2p(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
                                                       NULL,
                                                       "Timestamp");
 
-    set_tst_proto_item_info(tvb, offset, c2p_tst_tree);
+    c2p_set_tst_proto_item_info(tvb, offset, c2p_tst_tree);
 
     proto_tree_add_item(c2p_tst_tree, hf_c2p_tst_sec_desc, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -2588,30 +3088,30 @@ static int dissect_c2p(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
     proto_item_set_len(c2p_tst_tree, 8);
 
     /* Dissect the rest depending on type */
-    tvbuff_t* next_tvb = tvb_new_subset_length_caplen(tvb, offset, -1, -1);
+    tvbuff_t* next_tvb = tvb_new_subset_remaining(tvb, offset);
 
-    static uint8_t C2P_VERSION_0 = 0U;
-    static uint8_t C2P_VERSION_1 = 1U;
-    static uint8_t C2P_VERSION_2 = 2U;
+    static const uint8_t C2P_VERSION_0 = 0U;
+    static const uint8_t C2P_VERSION_1 = 1U;
+    static const uint8_t C2P_VERSION_2 = 2U;
 
     (void)C2P_VERSION_0;
 
     if(C2P_VERSION_1 == version) {
         switch(type) {
         case C2P_TYPE_DSRC_RX:
-            offset += dissect_dsrc_rx(next_tvb, c2p_tree, pinfo);
+            offset += dissect_c2p_dsrc_rx(next_tvb, c2p_tree, pinfo);
             break;
         case C2P_TYPE_DSRC_TX:
-            offset += dissect_dsrc_tx(next_tvb, c2p_tree, pinfo);
+            offset += dissect_c2p_dsrc_tx(next_tvb, c2p_tree, pinfo);
             break;
         case C2P_TYPE_NAV:
-            offset += dissect_nav(next_tvb, c2p_tree);
+            offset += dissect_c2p_nav(next_tvb, c2p_tree);
             break;
         case C2P_TYPE_CV2X_RX:
-            offset += dissect_cv2x_rx(next_tvb, c2p_tree, pinfo);
+            offset += dissect_c2p_cv2x_rx(next_tvb, c2p_tree, pinfo);
             break;
         case C2P_TYPE_CV2X_TX:
-            offset += dissect_cv2x_tx(next_tvb, c2p_tree, pinfo);
+            offset += dissect_c2p_cv2x_tx(next_tvb, c2p_tree, pinfo);
             break;
         default:
             break;
@@ -2619,7 +3119,13 @@ static int dissect_c2p(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void
     } else if(C2P_VERSION_2 == version) {
         switch(type) {
         case C2P_TYPE_STI:
-            offset += dissect_sti(next_tvb, c2p_tree, pinfo);
+            offset += dissect_c2p_sti(next_tvb, c2p_tree, pinfo);
+            break;
+        case C2P_TYPE_API:
+            offset += dissect_c2p_api(next_tvb, c2p_tree, pinfo);
+            break;
+        case C2P_TYPE_FAC_INJECT:
+            offset += dissect_c2p_fac_inject(next_tvb, c2p_tree, pinfo);
             break;
         default:
             break;
@@ -2694,7 +3200,7 @@ void proto_register_c2p(void)
                 "c2p.primary_channel",
                 FT_UINT8,
                 BASE_CUSTOM,
-                CF_FUNC(channel_format),
+                CF_FUNC(c2p_channel_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2707,7 +3213,7 @@ void proto_register_c2p(void)
                 "c2p.secondary_channel",
                 FT_UINT8,
                 BASE_CUSTOM,
-                CF_FUNC(channel_format),
+                CF_FUNC(c2p_channel_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2733,7 +3239,7 @@ void proto_register_c2p(void)
                 "c2p.datarate",
                 FT_UINT8,
                 BASE_CUSTOM,
-                CF_FUNC(datarate_format),
+                CF_FUNC(c2p_datarate_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2759,7 +3265,7 @@ void proto_register_c2p(void)
                 "c2p.latitude",
                 FT_INT32,
                 BASE_CUSTOM,
-                CF_FUNC(latitude_format),
+                CF_FUNC(c2p_latitude_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2772,7 +3278,7 @@ void proto_register_c2p(void)
                 "c2p.longitude",
                 FT_INT32,
                 BASE_CUSTOM,
-                CF_FUNC(longitude_format),
+                CF_FUNC(c2p_longitude_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2785,7 +3291,7 @@ void proto_register_c2p(void)
                 "c2p.altitude",
                 FT_INT32,
                 BASE_CUSTOM,
-                CF_FUNC(altitude_format),
+                CF_FUNC(c2p_altitude_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2798,7 +3304,7 @@ void proto_register_c2p(void)
                 "c2p.speed",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(speed_format),
+                CF_FUNC(c2p_speed_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2811,7 +3317,7 @@ void proto_register_c2p(void)
                 "c2p.heading",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(heading_format),
+                CF_FUNC(c2p_heading_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2824,7 +3330,7 @@ void proto_register_c2p(void)
                 "c2p.semi_major_conf",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(semi_axis_format),
+                CF_FUNC(c2p_semi_axis_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2837,7 +3343,7 @@ void proto_register_c2p(void)
                 "c2p.semi_minor_conf",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(semi_axis_format),
+                CF_FUNC(c2p_semi_axis_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2850,7 +3356,7 @@ void proto_register_c2p(void)
                 "c2p.semi_major_orientation",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(heading_format),
+                CF_FUNC(c2p_heading_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2863,7 +3369,7 @@ void proto_register_c2p(void)
                 "c2p.altitude_accuracy",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(altitude_acc_format),
+                CF_FUNC(c2p_altitude_acc_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2876,7 +3382,7 @@ void proto_register_c2p(void)
                 "c2p.heading_accuracy",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(heading_acc_format),
+                CF_FUNC(c2p_heading_acc_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2889,7 +3395,7 @@ void proto_register_c2p(void)
                 "c2p.speed_accuracy",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(speed_acc_format),
+                CF_FUNC(c2p_speed_acc_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2902,7 +3408,7 @@ void proto_register_c2p(void)
                 "c2p.rssi_antenna1",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2915,7 +3421,7 @@ void proto_register_c2p(void)
                 "c2p.rssi_antenna2",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2928,7 +3434,7 @@ void proto_register_c2p(void)
                 "c2p.noise_antenna1",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2941,7 +3447,7 @@ void proto_register_c2p(void)
                 "c2p.noise_antenna2",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2954,7 +3460,7 @@ void proto_register_c2p(void)
                 "c2p.cbr_antenna1",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(cbr_format),
+                CF_FUNC(c2p_cbr_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2967,7 +3473,7 @@ void proto_register_c2p(void)
                 "c2p.cbr_antenna2",
                 FT_UINT16,
                 BASE_CUSTOM,
-                CF_FUNC(cbr_format),
+                CF_FUNC(c2p_cbr_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2980,7 +3486,7 @@ void proto_register_c2p(void)
                 "c2p.tx_power",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -2993,7 +3499,7 @@ void proto_register_c2p(void)
                 "c2p.tssi_antenna1",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3006,7 +3512,7 @@ void proto_register_c2p(void)
                 "c2p.tssi_antenna2",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3058,7 +3564,7 @@ void proto_register_c2p(void)
                 "c2p.tx_power",
                 FT_INT32,
                 BASE_CUSTOM,
-                CF_FUNC(cv2x_tx_power_format),
+                CF_FUNC(c2p_power_dbm_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3149,7 +3655,7 @@ void proto_register_c2p(void)
                 "c2p.cv2x_rssi",
                 FT_INT8,
                 BASE_CUSTOM,
-                CF_FUNC(power_format),
+                CF_FUNC(c2p_power_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3175,7 +3681,7 @@ void proto_register_c2p(void)
                 "c2p.gps_timestamp",
                 FT_UINT64,
                 BASE_CUSTOM,
-                CF_FUNC(gps_timestamp_format),
+                CF_FUNC(c2p_gps_timestamp_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3214,7 +3720,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_angle_format),
+                CF_FUNC(c2p_sti_value_angle_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3227,7 +3733,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_acceleration_format),
+                CF_FUNC(c2p_sti_value_acceleration_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3240,7 +3746,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_angular_velocity_format),
+                CF_FUNC(c2p_sti_value_angular_velocity_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3253,7 +3759,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_thousandths_format),
+                CF_FUNC(c2p_sti_value_thousandths_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3266,7 +3772,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_length_format),
+                CF_FUNC(c2p_sti_value_length_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3279,7 +3785,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_mass_format),
+                CF_FUNC(c2p_sti_value_mass_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3292,7 +3798,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_rain_rate_format),
+                CF_FUNC(c2p_sti_value_rain_rate_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3305,7 +3811,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_solar_irradiance_format),
+                CF_FUNC(c2p_sti_value_solar_irradiance_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3318,7 +3824,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_temperature_format),
+                CF_FUNC(c2p_sti_value_temperature_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3331,7 +3837,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_pressure_format),
+                CF_FUNC(c2p_sti_value_pressure_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3344,7 +3850,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_sweep_rate_format),
+                CF_FUNC(c2p_sti_value_sweep_rate_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3357,7 +3863,7 @@ void proto_register_c2p(void)
                 "c2p.sti_value",
                 FT_INT64,
                 BASE_CUSTOM,
-                CF_FUNC(sti_value_integer_format),
+                CF_FUNC(c2p_sti_value_integer_format),
                 0x00,
                 NULL,
                 HFILL
@@ -3636,19 +4142,286 @@ void proto_register_c2p(void)
                 HFILL
             }
         },
+        {
+            &hf_c2p_fac_msg_type_desc,
+            {
+                "Facility message type",
+                "c2p.fac.msg_type",
+                FT_UINT32,
+                BASE_DEC,
+                VALS(fac_msg_types),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_timestamp_desc,
+            {
+                "Timestamp",
+                "c2p.fac.timestamp",
+                FT_UINT64,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_timestamp_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_interface_id_desc,
+            {
+                "Interface ID",
+                "c2p.fac.interface_id",
+                FT_UINT32,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_interface_id_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_source_address_desc,
+            {
+                "Source address",
+                "c2p.fac.source_address",
+                FT_ETHER,
+                BASE_NONE,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_dest_address_desc,
+            {
+                "Destination address",
+                "c2p.fac.dest_address",
+                FT_ETHER,
+                BASE_NONE,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_datarate_desc,
+            {
+                "Datarate",
+                "c2p.fac.datarate",
+                FT_UINT16,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_datarate_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_user_prio_desc,
+            {
+                "User priority",
+                "c2p.fac.user_prio",
+                FT_UINT8,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_user_prio_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_rssi_desc,
+            {
+                "RSSI",
+                "c2p.fac.rssi",
+                FT_INT16,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_power_dbm_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_fingerprint_desc,
+            {
+                "Fingerprint",
+                "c2p.fac.fingerprint",
+                FT_UINT64,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_fingerprint_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_verify_result_desc,
+            {
+                "Verification result",
+                "c2p.fac.verify_result",
+                FT_UINT32,
+                BASE_DEC,
+                VALS(fac_verify_results),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_psid_desc,
+            {
+                "PSID",
+                "c2p.fac.psid",
+                FT_UINT32,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_psid_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_ssp_type_desc,
+            {
+                "Type",
+                "c2p.fac.ssp.type",
+                FT_UINT32,
+                BASE_DEC,
+                VALS(fac_ssp_types),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_ssp_field_desc,
+            {
+                "Field",
+                "c2p.fac.ssp.field",
+                FT_BYTES,
+                BASE_NONE,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_ssp_length_desc,
+            {
+                "Length",
+                "c2p.fac.ssp.length",
+                FT_UINT32,
+                BASE_DEC,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_signer_id_desc,
+            {
+                "Signer ID",
+                "c2p.fac.signer_id",
+                FT_UINT64,
+                BASE_HEX,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_generation_time_desc,
+            {
+                "Generation time",
+                "c2p.fac.generation_time",
+                FT_UINT64,
+                BASE_CUSTOM,
+                CF_FUNC(c2p_fac_generation_time_format),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_fac_payload_length_desc,
+            {
+                "Payload length",
+                "c2p.fac.payload_length",
+                FT_UINT16,
+                BASE_DEC,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_api_direction_desc,
+            {
+                "Direction",
+                "c2p.api.direction",
+                FT_UINT8,
+                BASE_DEC,
+                VALS(api_directions),
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_api_client_ip_desc,
+            {
+                "Client address",
+                "c2p.api.client_ip",
+                FT_IPv4,
+                BASE_NONE,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_api_client_port_desc,
+            {
+                "Client port",
+                "c2p.api.client_port",
+                FT_UINT16,
+                BASE_DEC,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
+        {
+            &hf_c2p_api_length_desc,
+            {
+                "API frame length",
+                "c2p.api.length",
+                FT_UINT16,
+                BASE_DEC,
+                NULL,
+                0x00,
+                NULL,
+                HFILL
+            }
+        },
     };
 
     int* ett[] = {
         &ett_c2p
     };
 
-    static const char* C2P_PROTOCOL_NAME = "C2P (Commsignia Capture Protocol)";
-    static const char* C2P_PROTOCOL_SHORT_NAME = "C2P";
-    static const char* C2P_FILTER_NAME = "c2p";
-
-    proto_desc = proto_register_protocol(C2P_PROTOCOL_NAME,
-                                         C2P_PROTOCOL_SHORT_NAME,
-                                         C2P_FILTER_NAME);
+    proto_desc = proto_register_protocol("C2P (Commsignia Capture Protocol)", "C2P", "c2p");
 
     proto_register_field_array(proto_desc, header_fields, array_length(header_fields));
     proto_register_subtree_array(ett, array_length(ett));
@@ -3661,9 +4434,14 @@ void proto_reg_handoff_c2p(void)
     c2p_handle = create_dissector_handle(dissect_c2p, proto_desc);
 
     ieee80211_handle = find_dissector_add_dependency("wlan", proto_desc);
+    its_handle = find_dissector_add_dependency("its", proto_desc);
+    j2735_handle = find_dissector_add_dependency("j2735", proto_desc);
+    wsa_handle = find_dissector_add_dependency("wsa", proto_desc);
+    cn_msg_frame_handle = find_dissector_add_dependency("cn-msg-frame", proto_desc);
+    commsigniaapi_handle = find_dissector_add_dependency("commsigniaapi", proto_desc);
 
     static const uint32_t C2P_PORT = 7943UL;
-    static const char* UDP_PORT_NAME = "udp.port";
+    static const char* const UDP_PORT_NAME = "udp.port";
 
     dissector_add_uint(UDP_PORT_NAME, C2P_PORT, c2p_handle);
 }

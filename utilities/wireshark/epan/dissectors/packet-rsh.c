@@ -97,9 +97,9 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     proto_tree *rsh_tree=NULL;
 
     /* Variables for extracting and displaying data from the packet */
-    unsigned char *field_stringz; /* Temporary storage for each field we extract */
+    const char *field_stringz; /* Temporary storage for each field we extract */
 
-    int length;
+    unsigned length;
     unsigned offset = 0;
     conversation_t *conversation;
     rsh_hash_entry_t *hash_info;
@@ -218,13 +218,13 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
      * then it must be session data only and we can skip looking
      * for the other fields.
      */
-    if(tvb_find_uint8(tvb, tvb_captured_length(tvb)-1, 1, '\0') == -1){
+    if(!tvb_find_uint8_length(tvb, tvb_captured_length(tvb)-1, 1, '\0', NULL)){
         hash_info->state = WAIT_FOR_DATA;
     }
 
     if(hash_info->state == WAIT_FOR_STDERR_PORT
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
+        field_stringz = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the stderr_port field.
          * It is optional, so it may only be 1 character long
@@ -247,7 +247,7 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_CLIENT_USERNAME
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
+        field_stringz = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the username field */
         if(length != 1 && length <= RSH_CLIENT_USERNAME_LEN
@@ -275,7 +275,7 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_SERVER_USERNAME
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
+        field_stringz = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the password field */
         if(length != 1 && length <= RSH_SERVER_USERNAME_LEN
@@ -300,7 +300,7 @@ dissect_rsh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     if(hash_info->state == WAIT_FOR_COMMAND
             && tvb_reported_length_remaining(tvb, offset)){
-        field_stringz = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
+        field_stringz = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &length, ENC_ASCII);
 
         /* Check if this looks like the command field */
         if(length != 1 && length <= RSH_COMMAND_LEN

@@ -19,6 +19,8 @@ extern "C" {
 
 #define SOME_FUNCTIONS_ARE_INLINE
 
+#define DEFAULT_INIT_BUFFER_SIZE_2048 (2 * 1024) /* Everyone still uses 1500 byte frames, right? */
+
 /**
  * @brief A dynamic byte buffer with adjustable start and end positions.
  *
@@ -100,6 +102,12 @@ void ws_buffer_cleanup(void);
 
 #ifdef SOME_FUNCTIONS_ARE_INLINE
 /* Or inlines */
+
+/**
+ * @brief Cleans a buffer by resetting its start and first_free pointers to zero.
+ *
+ * @param buffer Pointer to the buffer to be cleaned.
+ */
 static inline void
 ws_buffer_clean(Buffer *buffer)
 {
@@ -107,30 +115,60 @@ ws_buffer_clean(Buffer *buffer)
 	buffer->first_free = 0;
 }
 
+/**
+ * @brief Increases the length of a buffer by a specified number of bytes.
+ *
+ * @param buffer The buffer to increase in length.
+ * @param bytes The number of bytes to add to the buffer's length.
+ */
 static inline void
 ws_buffer_increase_length(Buffer* buffer, size_t bytes)
 {
 	buffer->first_free += bytes;
 }
 
+/**
+ * @brief Get the length of the data in a buffer.
+ *
+ * @param buffer Pointer to the Buffer structure.
+ * @return size_t The number of bytes currently used in the buffer.
+ */
 static inline size_t
 ws_buffer_length(const Buffer* buffer)
 {
 	return buffer->first_free - buffer->start;
 }
 
+/**
+ * @brief Returns a pointer to the start of the buffer data.
+ *
+ * @param buffer Pointer to the Buffer structure.
+ * @return uint8_t* Pointer to the start of the buffer data.
+ */
 static inline uint8_t *
 ws_buffer_start_ptr(const Buffer* buffer)
 {
 	return buffer->data + buffer->start;
 }
 
+/**
+ * @brief Returns a pointer to the end of the buffer.
+ *
+ * @param buffer The buffer whose end pointer is to be returned.
+ * @return A pointer to the first free byte in the buffer.
+ */
 static inline uint8_t *
 ws_buffer_end_ptr(const Buffer* buffer)
 {
 	return buffer->data + buffer->first_free;
 }
 
+/**
+ * @brief Appends the contents of one buffer to another.
+ *
+ * @param buffer The destination buffer to which data will be appended.
+ * @param src_buffer The source buffer from which data will be copied.
+ */
 static inline void
 ws_buffer_append_buffer(Buffer* buffer, const Buffer* src_buffer)
 {

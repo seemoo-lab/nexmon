@@ -74,7 +74,7 @@ bitstream_getbits(bitstream_t *b, uint8_t nbits, bool *ok) {
 }
 
 static bool
-bitstream_copyraw(bitstream_t *b, uint8_t *dest, int nbytes)
+bitstream_copyraw(bitstream_t *b, uint8_t *dest, unsigned nbytes)
 {
 	if (tvb_captured_length_remaining(b->input, b->offset) < nbytes)
 		return false;
@@ -513,12 +513,15 @@ rdp8_decompress(zgfx_context_t *zgfx, wmem_allocator_t *allocator, tvbuff_t *tvb
 			offset += 4;
 
 			zgfx->outputCount = 0;
-			if (!rdp8_decompress_segment(zgfx, tvb_new_subset_length(tvb, offset, segment_size)))
+			if (!rdp8_decompress_segment(zgfx, tvb_new_subset_length(tvb, offset, segment_size))) {
+				wmem_free(allocator, output);
 				return NULL;
+			}
 
 			output_consumed += zgfx->outputCount;
 			if (output_consumed > uncompressed_size) {
 				// TODO: error message ?
+				wmem_free(allocator, output);
 				return NULL;
 			}
 			memcpy(output_ptr, zgfx->outputSegment, zgfx->outputCount);

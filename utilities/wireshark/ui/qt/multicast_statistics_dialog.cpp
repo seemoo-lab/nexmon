@@ -60,7 +60,7 @@ public:
         num_buff_alarms_ = 0;
     }
 
-    ~MulticastStatTreeWidgetItem()
+    ~MulticastStatTreeWidgetItem() override
     {
         // This probably doesn't outlive the stream_info, so perhaps we
         // could shallow copy the addresses.
@@ -100,7 +100,7 @@ public:
         setText(col_buffer_alarms_, QString::number(num_buff_alarms_));
     }
 
-    bool operator< (const QTreeWidgetItem &other) const
+    bool operator< (const QTreeWidgetItem &other) const override
     {
         if (other.type() != mcast_table_type_) return QTreeWidgetItem::operator< (other);
         const MulticastStatTreeWidgetItem *other_row = static_cast<const MulticastStatTreeWidgetItem *>(&other);
@@ -261,7 +261,6 @@ MulticastStatisticsDialog::MulticastStatisticsDialog(QWidget &parent, CaptureFil
         simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK,
                         "%s", error_string->str);
         g_string_free(error_string, TRUE);
-        exit(1);
     }
 
     updateWidgets();

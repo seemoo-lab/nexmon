@@ -12,10 +12,7 @@
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-
-#ifndef __WSCBOR_ENC_H__
-#define __WSCBOR_ENC_H__
-
+#pragma once
 #include <ws_symbol_export.h>
 #include <glib.h>
 #include <stdbool.h>
@@ -104,5 +101,3 @@ void wscbor_enc_map_head(GByteArray *buf, size_t len);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __WSCBOR_ENC_H__ */

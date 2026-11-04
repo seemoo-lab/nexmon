@@ -3171,15 +3171,21 @@ dissect_nt_conditional_ace(tvbuff_t *tvb, packet_info *pinfo, int offset, uint16
 */
 static int ett_nt_access_mask;
 static int ett_nt_access_mask_generic;
+static int ett_nt_access_mask_other;
 static int ett_nt_access_mask_standard;
 static int ett_nt_access_mask_specific;
 
-static int hf_access_sacl;
 static int hf_access_maximum_allowed;
 static int hf_access_generic_read;
 static int hf_access_generic_write;
 static int hf_access_generic_execute;
 static int hf_access_generic_all;
+static int hf_access_other_3;
+static int hf_access_other_2;
+static int hf_access_system_security;
+static int hf_access_standard_7;
+static int hf_access_standard_6;
+static int hf_access_standard_5;
 static int hf_access_standard_delete;
 static int hf_access_standard_read_control;
 static int hf_access_standard_synchronise;
@@ -3253,7 +3259,7 @@ dissect_nt_access_mask(tvbuff_t *tvb, int offset, packet_info *pinfo,
 		       struct access_mask_info *ami, uint32_t *perms)
 {
 	proto_item *item;
-	proto_tree *subtree, *generic_tree, *standard_tree, *specific_tree;
+	proto_tree *subtree, *generic_tree, *other_tree, *standard_tree, *specific_tree;
 	uint32_t access;
 
 	static int * const generic_access_flags[] = {
@@ -3261,12 +3267,21 @@ dissect_nt_access_mask(tvbuff_t *tvb, int offset, packet_info *pinfo,
 		&hf_access_generic_write,
 		&hf_access_generic_execute,
 		&hf_access_generic_all,
+		NULL
+	};
+
+	static int * const other_access_flags[] = {
+		&hf_access_other_3,
+		&hf_access_other_2,
 		&hf_access_maximum_allowed,
-		&hf_access_sacl,
+		&hf_access_system_security,
 		NULL
 	};
 
 	static int * const standard_access_flags[] = {
+		&hf_access_standard_7,
+		&hf_access_standard_6,
+		&hf_access_standard_5,
 		&hf_access_standard_synchronise,
 		&hf_access_standard_write_owner,
 		&hf_access_standard_write_dac,
@@ -3330,6 +3345,14 @@ dissect_nt_access_mask(tvbuff_t *tvb, int offset, packet_info *pinfo,
 				   access & GENERIC_RIGHTS_MASK);
 
 	proto_tree_add_bitmask_list_value(generic_tree, tvb, offset - 4, 4, generic_access_flags, access);
+
+	/* Other access rights */
+
+	other_tree = proto_tree_add_subtree_format(subtree, tvb, offset - 4, 4,
+				   ett_nt_access_mask_other, NULL, "Other rights: 0x%08x",
+				   access & 0x0F000000);
+
+	proto_tree_add_bitmask_list_value(other_tree, tvb, offset - 4, 4, other_access_flags, access);
 
 	/* Standard access rights */
 
@@ -3859,8 +3882,8 @@ static const true_false_string tfs_sec_desc_type_dacl_trusted = {
 	"Dacl trusted is FALSE"
 };
 static const true_false_string tfs_sec_desc_type_server_security = {
-	"SERVER SECURITY is TRUE",
-	"Server security is FALSE"
+	"DACL SERVER SECURITY is TRUE",
+	"DACL server security is FALSE"
 };
 static const true_false_string tfs_sec_desc_type_dacl_auto_inherit_req = {
 	"DACL has AUTO INHERIT REQUIRED",
@@ -4181,8 +4204,8 @@ proto_do_register_windows_common(int proto_smb)
 		    TFS(&tfs_sec_desc_type_dacl_trusted), 0x0040, "Does this SecDesc have DACL TRUSTED set?", HFILL }},
 
 		{ &hf_nt_sec_desc_type_server_security,
-		  { "Server Security", "nt.sec_desc.type.server_security", FT_BOOLEAN, 16,
-		    TFS(&tfs_sec_desc_type_server_security), 0x0080, "Does this SecDesc have SERVER SECURITY set?", HFILL }},
+		  { "DACL Server Security", "nt.sec_desc.type.server_security", FT_BOOLEAN, 16,
+		    TFS(&tfs_sec_desc_type_server_security), 0x0080, "Does this SecDesc have DACL SERVER SECURITY set?", HFILL }},
 
 		{ &hf_nt_sec_desc_type_sacl_auto_inherit_req,
 		  { "SACL Auto Inherit Required", "nt.sec_desc.type.sacl_auto_inherit_req", FT_BOOLEAN, 16,
@@ -4334,15 +4357,40 @@ proto_do_register_windows_common(int proto_smb)
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    GENERIC_ALL_ACCESS, NULL, HFILL }},
 
+		{ &hf_access_other_3,
+		  { "Other access, bit 3", "nt.access_mask.other_3",
+		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
+		    0x08000000, NULL, HFILL }},
+
+		{ &hf_access_other_2,
+		  { "Other access, bit 2", "nt.access_mask.other_2",
+		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
+		    0x04000000, NULL, HFILL }},
+
 		{ &hf_access_maximum_allowed,
 		  { "Maximum allowed", "nt.access_mask.maximum_allowed",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    MAXIMUM_ALLOWED_ACCESS, NULL, HFILL }},
 
-		{ &hf_access_sacl,
-		  { "Access SACL", "nt.access_mask.access_sacl",
+		{ &hf_access_system_security,
+		  { "System security", "nt.access_mask.system_security",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
-		    ACCESS_SACL_ACCESS, NULL, HFILL }},
+		    SYSTEM_SECURITY_ACCESS, NULL, HFILL }},
+
+		{ &hf_access_standard_7,
+		  { "Standard access, bit 7", "nt.access_mask.standard_7",
+		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
+		    0x00800000, NULL, HFILL }},
+
+		{ &hf_access_standard_6,
+		  { "Standard access, bit 6", "nt.access_mask.standard_6",
+		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
+		    0x00400000, NULL, HFILL }},
+
+		{ &hf_access_standard_5,
+		  { "Standard access, bit 5", "nt.access_mask.standard_5",
+		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
+		    0x00200000, NULL, HFILL }},
 
 		{ &hf_access_standard_read_control,
 		  { "Read control", "nt.access_mask.read_control",
@@ -4405,47 +4453,47 @@ proto_do_register_windows_common(int proto_smb)
 		    0x00000200, NULL, HFILL }},
 
 		{ &hf_access_specific_8,
-		  { "Specific access, bit 8", "nt.access_mask.specific_8",
+		  { "Write attributes", "nt.access_mask.specific_8",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000100, NULL, HFILL }},
 
 		{ &hf_access_specific_7,
-		  { "Specific access, bit 7", "nt.access_mask.specific_7",
+		  { "Read attributes", "nt.access_mask.specific_7",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000080, NULL, HFILL }},
 
 		{ &hf_access_specific_6,
-		  { "Specific access, bit 6", "nt.access_mask.specific_6",
+		  { "Delete child", "nt.access_mask.specific_6",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 			0x00000040, NULL, HFILL }},
 
 		{ &hf_access_specific_5,
-		  { "Specific access, bit 5", "nt.access_mask.specific_5",
+		  { "Execute file / Traverse directory", "nt.access_mask.specific_5",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000020, NULL, HFILL }},
 
 		{ &hf_access_specific_4,
-		  { "Specific access, bit 4", "nt.access_mask.specific_4",
+		  { "Write extended attributes", "nt.access_mask.specific_4",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000010, NULL, HFILL }},
 
 		{ &hf_access_specific_3,
-		  { "Specific access, bit 3", "nt.access_mask.specific_3",
+		  { "Read extended attributes", "nt.access_mask.specific_3",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000008, NULL, HFILL }},
 
 		{ &hf_access_specific_2,
-		  { "Specific access, bit 2", "nt.access_mask.specific_2",
+		  { "Append data to file / Add subdirectory / Create pipe instance", "nt.access_mask.specific_2",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000004, NULL, HFILL }},
 
 		{ &hf_access_specific_1,
-		  { "Specific access, bit 1", "nt.access_mask.specific_1",
+		  { "Write data to file / Add file to directory", "nt.access_mask.specific_1",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000002, NULL, HFILL }},
 
 		{ &hf_access_specific_0,
-		  { "Specific access, bit 0", "nt.access_mask.specific_0",
+		  { "Read data file / List directory", "nt.access_mask.specific_0",
 		    FT_BOOLEAN, 32, TFS(&tfs_set_notset),
 		    0x00000001, NULL, HFILL }},
 
@@ -4653,6 +4701,7 @@ proto_do_register_windows_common(int proto_smb)
 		&ett_nt_ace_object_flags,
 		&ett_nt_access_mask,
 		&ett_nt_access_mask_generic,
+		&ett_nt_access_mask_other,
 		&ett_nt_access_mask_standard,
 		&ett_nt_access_mask_specific,
 		&ett_nt_security_information,

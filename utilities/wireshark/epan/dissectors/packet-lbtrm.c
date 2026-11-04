@@ -444,6 +444,8 @@ typedef struct
 #define LBTRM_NAK_PARITY_FORMAT 0x1
 #define LBTRM_NAK_HDR_FORMAT(x) (x & 0xF)
 #define LBTRM_NAK_HDR_FORMAT_MASK 0x0F
+#define LBTRM_NAK_HDR_PARITY_UNDERSTOOD_FLAG 0x8000
+#define LBTRM_NAK_HDR_DONT_CONFIRM_FLAG 0x4000
 
 /* LBT-RM NAK Confirmation */
 typedef struct
@@ -723,7 +725,7 @@ static char * lbtrm_tag_find(packet_info * pinfo)
     {
         tag = &(lbtrm_tag_entry[idx]);
         /* Is the destination a multicast address? */
-        if (IN_MULTICAST(dest_addr_h))
+        if (in4_addr_is_multicast(dest_addr_h))
         {
             /* Check the MC address. */
             if ((dest_addr_h >= tag->mc_address_low_val_h) && (dest_addr_h <= tag->mc_address_high_val_h))
@@ -810,6 +812,8 @@ static int hf_lbtrm_sm_reserved;
 static int hf_lbtrm_nak;
 static int hf_lbtrm_nak_num_naks;
 static int hf_lbtrm_nak_format;
+static int hf_lbtrm_nak_hdr_parity_understood;
+static int hf_lbtrm_nak_hdr_dont_confirm;
 static int hf_lbtrm_nak_list;
 static int hf_lbtrm_nak_list_nak;
 static int hf_lbtrm_ncf;
@@ -886,8 +890,7 @@ static int dissect_lbtrm_ncf_list(tvbuff_t * tvb, int offset, packet_info * pinf
     {
         proto_item * sep_ncf_item = NULL;
 
-        ncf = tvb_get_ntohl(tvb, offset + len);
-        sep_ncf_item = proto_tree_add_item(ncf_tree, hf_lbtrm_ncf_list_ncf, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        sep_ncf_item = proto_tree_add_item_ret_uint(ncf_tree, hf_lbtrm_ncf_list_ncf, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN, &ncf);
         if (lbtrm_expert_separate_ncfs)
         {
             expert_add_info_format(pinfo, sep_ncf_item, &ei_lbtrm_analysis_ncf_ncf, "NCF 0x%08x %s", ncf, val_to_str(pinfo->pool, reason, lbtrm_ncf_reason, "Unknown (0x%02x)"));
@@ -947,8 +950,7 @@ static int dissect_lbtrm_nak_list(tvbuff_t * tvb, int offset, packet_info * pinf
     {
         proto_item * sep_nak_item = NULL;
 
-        nak = tvb_get_ntohl(tvb, offset + len);
-        sep_nak_item = proto_tree_add_item(nak_tree, hf_lbtrm_nak_list_nak, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        sep_nak_item = proto_tree_add_item_ret_uint(nak_tree, hf_lbtrm_nak_list_nak, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN, &nak);
         if (lbtrm_expert_separate_naks)
         {
             expert_add_info_format(pinfo, sep_nak_item, &ei_lbtrm_analysis_nak_nak, "NAK 0x%08x", nak);
@@ -968,9 +970,10 @@ static int dissect_lbtrm_nak(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 
     nak_item = proto_tree_add_item(tree, hf_lbtrm_nak, tvb, offset, -1, ENC_NA);
     nak_tree = proto_item_add_subtree(nak_item, ett_lbtrm_nak);
-    num_naks = tvb_get_ntohs(tvb, offset + O_LBTRM_NAK_HDR_T_NUM_NAKS);
-    proto_tree_add_item(nak_tree, hf_lbtrm_nak_num_naks, tvb, offset + O_LBTRM_NAK_HDR_T_NUM_NAKS, L_LBTRM_NAK_HDR_T_NUM_NAKS, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(nak_tree, hf_lbtrm_nak_num_naks, tvb, offset + O_LBTRM_NAK_HDR_T_NUM_NAKS, L_LBTRM_NAK_HDR_T_NUM_NAKS, ENC_BIG_ENDIAN, &num_naks);
     proto_tree_add_item(nak_tree, hf_lbtrm_nak_format, tvb, offset + O_LBTRM_NAK_HDR_T_FORMAT, L_LBTRM_NAK_HDR_T_FORMAT, ENC_BIG_ENDIAN);
+    proto_tree_add_item(nak_tree, hf_lbtrm_nak_hdr_parity_understood, tvb, offset + O_LBTRM_NAK_HDR_T_FORMAT, L_LBTRM_NAK_HDR_T_FORMAT, ENC_BIG_ENDIAN);
+    proto_tree_add_item(nak_tree, hf_lbtrm_nak_hdr_dont_confirm, tvb, offset + O_LBTRM_NAK_HDR_T_FORMAT, L_LBTRM_NAK_HDR_T_FORMAT, ENC_BIG_ENDIAN);
     len = L_LBTRM_NAK_HDR_T;
     if (!lbtrm_expert_separate_naks)
     {
@@ -1096,7 +1099,7 @@ static int dissect_lbtrm(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
 {
     proto_tree * lbtrm_tree = NULL;
     proto_item * lbtrm_item;
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t next_hdr = 0;
     char * tag_name = NULL;
     int dissected_len = 0;
@@ -1513,7 +1516,7 @@ static bool test_lbtrm_packet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         dest_addr_h = pntohu32(pinfo->dst.data);
 
         /* Is the destination a multicast address? */
-        if (IN_MULTICAST(dest_addr_h))
+        if (in4_addr_is_multicast(dest_addr_h))
         {
             /* Check the MC address. */
             if ((dest_addr_h >= lbtrm_mc_address_low_host) && (dest_addr_h <= lbtrm_mc_address_high_host))
@@ -1611,7 +1614,11 @@ void proto_register_lbtrm(void)
         { &hf_lbtrm_nak_num_naks,
             { "Number of NAKs", "lbtrm.nak.num_naks", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtrm_nak_format,
-            { "Format", "lbtrm.nak.format", FT_UINT8, BASE_HEX, VALS(lbtrm_nak_format), LBTRM_NAK_HDR_FORMAT_MASK, NULL, HFILL } },
+            { "Format", "lbtrm.nak.format", FT_UINT16, BASE_HEX, VALS(lbtrm_nak_format), LBTRM_NAK_HDR_FORMAT_MASK, NULL, HFILL } },
+        { &hf_lbtrm_nak_hdr_parity_understood,
+            { "Parity Understood", "lbtrm.nak.parity_understood", FT_BOOLEAN, 16, TFS(&tfs_set_notset), LBTRM_NAK_HDR_PARITY_UNDERSTOOD_FLAG, "Set if the sender of this NAK understands parity-based FEC", HFILL } },
+        { &hf_lbtrm_nak_hdr_dont_confirm,
+            { "Don't Confirm", "lbtrm.nak.dont_confirm", FT_BOOLEAN, 16, TFS(&tfs_set_notset), LBTRM_NAK_HDR_DONT_CONFIRM_FLAG, "Set if the source should not send a NAK confirmation (NCF) in response to this NAK", HFILL } },
         { &hf_lbtrm_nak_list,
             { "NAK List", "lbtrm.nak.list", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtrm_nak_list_nak,

@@ -132,8 +132,7 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     msnlb_tree = proto_item_add_subtree(ti, ett_msnlb);
   }
 
-  proto_tree_add_item(msnlb_tree, hf_msnlb_signature, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-  signature = tvb_get_letohl(tvb, offset);
+  proto_tree_add_item_ret_uint(msnlb_tree, hf_msnlb_signature, tvb, offset, 4, ENC_LITTLE_ENDIAN, &signature);
   offset += 4;
 
   proto_tree_add_item(msnlb_tree, hf_msnlb_version, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -260,8 +259,7 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         ti = proto_tree_add_item(msnlb_subtree, hf_msnlb_extended_hb, tvb, offset, -1, ENC_NA);
         hb_tree = proto_item_add_subtree(ti, ett_msnlb_extended_hb);
 
-        proto_tree_add_item(hb_tree, hf_msnlb_extended_hb_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        hb_type = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(hb_tree, hf_msnlb_extended_hb_type, tvb, offset, 1, ENC_LITTLE_ENDIAN, &hb_type);
         proto_item_append_text(ti, " - %s", val_to_str(pinfo->pool, hb_type, nlb_extended_hb_type_vals, "Unknown (%u)"));
         offset += 1;
 
@@ -287,8 +285,7 @@ dissect_msnlb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             offset += 2;
             proto_tree_add_item(hb_tree, hf_msnlb_reserved, tvb, offset, 4, ENC_NA);
             offset += 4;
-            proto_tree_add_item(hb_tree, hf_msnlb_address_family, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-            address_family = tvb_get_letohs(tvb, offset);
+            proto_tree_add_item_ret_uint16(hb_tree, hf_msnlb_address_family, tvb, offset, 2, ENC_LITTLE_ENDIAN, &address_family);
             offset += 2;
             switch(address_family){
               case 0x2: /* IPv4 */

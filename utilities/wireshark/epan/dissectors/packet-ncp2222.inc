@@ -1,7 +1,7 @@
 #define FAKE_TREE_IS_VISIBLE 1
 /* fake that the tree is visible so that proto.c will not try to
  "fake" generation of finfo values/nodes.
-  Thus this means netware dissector is slower than it has to, but it wont crash.
+  Thus this means netware dissector is slower than it has to, but it won't crash.
   once the dissector is refactored to avoid calling fvalue_ functions directly this faking of whether the tree is visible or not can be removed.
 */
 
@@ -34,7 +34,6 @@ bool ncp_echo_server = true;
 bool ncp_echo_file;
 bool ncp_newstyle    = true;
 
-extern dissector_handle_t nds_data_handle;
 typedef struct {
     uint32_t    nds_frag_verb;
     uint32_t    nds_frag_version;
@@ -2165,7 +2164,7 @@ ncp_hash_lookup(conversation_t *conversation, uint8_t nw_sequence, uint32_t pkt_
     request_key.nw_sequence_long = (0x10000+((pkt_num/16)<<16)) | nw_sequence;
 
     /* Since masking of sequence number utilizes the packet number as
-     * part of it's algorythm it is possible for a packet to sit right
+     * part of its algorithm, it is possible for a packet to sit right
      * on the boundary and fail. (depending on number of packets in trace)
      * Loop through all the previous sequence numbers in the hash to see
      * if the original request packet can be found.
@@ -2391,7 +2390,7 @@ add_ptvc_field(packet_info* pinfo, ptvcursor_t *ptvc, const ptvc_record *rec, bo
                                  tvb_get_string_enc(pinfo->pool, ptvcursor_tvbuff(ptvc),
                                      ptvcursor_current_offset(ptvc), rec->length, ENC_ASCII));
         } else if (hinfo->type == FT_STRINGZ) {
-            int length;
+            uint32_t length;
             col_append_fstr(pinfo->cinfo, COL_INFO,
                                 (const char*)(repeat ? rec->req_info_str->repeat_string : rec->req_info_str->first_string),
                                 tvb_get_stringz_enc(pinfo->pool, ptvcursor_tvbuff(ptvc),
@@ -2529,7 +2528,7 @@ process_struct_sub_ptvc_record(ptvcursor_t *ptvc, packet_info *pinfo, const ptvc
     int                 ett;
     proto_tree          *old_tree=NULL, *new_tree;
     proto_item          *item=NULL;
-    int                 offset=0;
+    unsigned int        offset=0;
 
     /* Create a sub-proto_tree? */
     if (rec->sub_ptvc_rec->descr) {
@@ -2812,7 +2811,7 @@ static void file_rights_expert_func(ptvcursor_t *ptvc, packet_info *pinfo, const
         if (request) {
             uint8_t oaction = 0, path_count = 0;
             uint16_t rights = 0;
-            uint8_t* filename = "";
+            uint8_t* filename = (uint8_t *)"";
 
             if (ncp_rec->func == 87) {
                 switch(ncp_rec->subfunc)
@@ -3426,7 +3425,7 @@ print_nds_values(proto_tree *vtree, packet_info* pinfo, tvbuff_t *tvb, uint32_t 
             value1 = tvb_get_letohl(tvb, voffset);
             voffset = voffset + 4;
             if (strcmp(vvalues->vstring, "zendmSearchOrder")==0) {
-                vvalues->vstring = tvb_get_string_enc(pinfo->pool, tvb, voffset, value1, ENC_UTF_16|ENC_LITTLE_ENDIAN);
+                vvalues->vstring = (const char*)tvb_get_string_enc(pinfo->pool, tvb, voffset, value1, ENC_UTF_16|ENC_LITTLE_ENDIAN);
                 if (strcmp(vvalues->vstring, "0")==0) {
                     vvalues->vstring = "Value (0) = Object";
                 }
@@ -4687,7 +4686,7 @@ process_multivalues(proto_tree *ncp_tree, tvbuff_t *tvb, packet_info *pinfo, nds
     uint32_t        value2 = 0;
     uint8_t         value3 = 0;
     uint32_t        value4 = 0;
-    int             value5 = 0;
+    uint32_t        value5 = 0;
     uint32_t        value6 = 0;
     uint32_t        value7 = 0;
     const char      *valuestr = "";
@@ -6694,7 +6693,7 @@ dissect_ncp_123_62_reply(tvbuff_t *tvb, packet_info* pinfo, proto_tree *volatile
 {
     uint8_t cmd_type;
     const char * param_string;
-    int ret_len;
+    uint32_t ret_len;
 
     cmd_type = tvb_get_uint8(tvb, 8+16);
     param_string = (const char *)tvb_get_stringz_enc(pinfo->pool, tvb, 8+24, &ret_len, ENC_ASCII);

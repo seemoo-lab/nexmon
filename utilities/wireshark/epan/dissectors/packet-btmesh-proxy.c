@@ -273,7 +273,7 @@ dissect_btmesh_proxy_configuration_msg(tvbuff_t *tvb, packet_info *pinfo, proto_
         }
         /* Still some octets left */
         if (offset - net_mic_size != decry_off + 7) {
-            proto_tree_add_expert(cntrl_sub_tree, pinfo, &ei_btmesh_proxy_unknown_payload, de_cry_tvb, decry_off, -1);
+            proto_tree_add_expert_remaining(cntrl_sub_tree, pinfo, &ei_btmesh_proxy_unknown_payload, de_cry_tvb, decry_off);
         }
     }
     return offset;
@@ -325,7 +325,7 @@ dissect_btmesh_proxy_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     switch (proxy_sar){
         case PROXY_COMPLETE_MESSAGE:
             packet_completed = true;
-            next_tvb = tvb_new_subset_length_caplen(tvb, offset, -1, tvb_captured_length(tvb) - offset);
+            next_tvb = tvb_new_subset_remaining(tvb, offset);
             col_append_str(pinfo->cinfo, COL_INFO," (Complete)");
 
         break;

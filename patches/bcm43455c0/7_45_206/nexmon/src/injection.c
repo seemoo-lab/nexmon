@@ -94,6 +94,11 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
         }
     }
 
+    if (ret != -ENOENT) {
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
+
     //remove radiotap header
     skb_pull(p, rtap_len);
 
@@ -106,7 +111,11 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
 int
 wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
+    if (!dev || !dev->softc)
+        return -1;
     struct wl_info *wl = (struct wl_info *) dev->softc;
+    if (!wl || !wl->wlc)
+        return -1;
     struct wlc_info *wlc = wl->wlc;
 
     /*
@@ -114,16 +123,18 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
      * which is true of a radiotap header (it_version 0, it_pad 0) but also of
      * any other frame that happens to start 00 00. Validate the length field
      * before committing to the radiotap path: it has to be at least a bare
-     * radiotap header and cannot claim more bytes than the skb actually holds.
+     * radiotap header and must leave at least 1 byte of 802.11 payload.
      * Anything else goes out the normal TX path instead of being pulled apart
      * as a radiotap frame - which is both correct for a non-injected frame and
      * keeps a malformed header from reaching skb_pull()/wlc_sendctl().
      */
-    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+    if (wlc->monitor && p != 0 && p->data != 0 &&
+        p->len >= sizeof(struct ieee80211_radiotap_header) &&
+        ((short *) p->data)[0] == 0) {
         int rtap_len = rtap_len_of(p);
 
         if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
-            rtap_len <= (int) p->len) {
+            rtap_len < (int) p->len) {
             return inject_frame(wl, p, rtap_len);
         }
     }

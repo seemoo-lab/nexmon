@@ -21,8 +21,8 @@
 #include <wsutil/privileges.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
+#include <app/application_flavor.h>
 
-#include <cli_main.h>
 #include <wsutil/cmdarg_err.h>
 #include "etl.h"
 
@@ -44,21 +44,45 @@ enum {
     OPT_HELP,
     OPT_VERSION,
     OPT_INCLUDE_UNDECIDABLE_EVENT,
+    OPT_EVENT_ENABLE_SID,
+    OPT_EVENT_ENABLE_PROPERTY_TS_ID,
+    OPT_EVENT_ENABLE_PROPERTY_PROCESS_START_KEY,
+    OPT_EVENT_ENABLE_PROPERTY_EVENT_KEY,
+    OPT_EVENT_ENABLE_STACK_TRACE,
+    OPT_EVENT_ENABLE_SILOS,
+    OPT_EVENT_ENABLE_PROPERTY_SOURCE_CONTAINER_TRACKING,
     OPT_ETLFILE,
-    OPT_PARAMS
+    OPT_PARAMS,
+    OPT_DEBUG_PARSERS,
 };
 
 static const struct ws_option longopts[] = {
     EXTCAP_BASE_OPTIONS,
-    { "help",    ws_no_argument,       NULL, OPT_HELP},
-    { "version", ws_no_argument,       NULL, OPT_VERSION},
-    { "iue",     ws_optional_argument, NULL, OPT_INCLUDE_UNDECIDABLE_EVENT},
-    { "etlfile", ws_required_argument, NULL, OPT_ETLFILE},
-    { "params",  ws_required_argument, NULL, OPT_PARAMS},
+    { "help",             ws_no_argument,       NULL, OPT_HELP},
+    { "version",          ws_no_argument,       NULL, OPT_VERSION},
+    { "iue",              ws_optional_argument, NULL, OPT_INCLUDE_UNDECIDABLE_EVENT},
+    { "event-sid",        ws_optional_argument, NULL, OPT_EVENT_ENABLE_SID},
+    { "event-stacktrace", ws_optional_argument, NULL, OPT_EVENT_ENABLE_STACK_TRACE},
+    { "event-tsid",       ws_optional_argument, NULL, OPT_EVENT_ENABLE_PROPERTY_TS_ID},
+    { "event-pstartkey",  ws_optional_argument, NULL, OPT_EVENT_ENABLE_PROPERTY_PROCESS_START_KEY},
+    { "event-eventkey",   ws_optional_argument, NULL, OPT_EVENT_ENABLE_PROPERTY_EVENT_KEY},
+    { "event-silos",      ws_optional_argument, NULL, OPT_EVENT_ENABLE_SILOS},
+    { "event-containerid",ws_optional_argument, NULL, OPT_EVENT_ENABLE_PROPERTY_SOURCE_CONTAINER_TRACKING},
+    { "etlfile",          ws_required_argument, NULL, OPT_ETLFILE},
+    { "params",           ws_required_argument, NULL, OPT_PARAMS},
+    { "debug-parsers",    ws_optional_argument, NULL, OPT_DEBUG_PARSERS},
     { 0, 0, 0, 0 }
 };
 
 int g_include_undecidable_event;
+BOOL g_event_enable_sid;
+BOOL g_event_enable_tsid;
+BOOL g_event_enable_event_key;
+BOOL g_event_enable_property_pstartkey;
+BOOL g_event_enable_stack_trace;
+BOOL g_event_enable_silos;
+BOOL g_event_property_source_container_tracking;
+BOOL g_debug_parsers;
 
 static void graceful_shutdown_cb(void)
 {
@@ -97,8 +121,8 @@ static DWORD list_providers(unsigned inc)
     // Retrieve the required buffer size.
     status = TdhEnumerateProviders(penum, &BufferSize);
 
-    // Allocate the required buffer and call TdhEnumerateProviders. The list of 
-    // providers can change between the time you retrieved the required buffer 
+    // Allocate the required buffer and call TdhEnumerateProviders. The list of
+    // providers can change between the time you retrieved the required buffer
     // size and the time you enumerated the providers, so call TdhEnumerateProviders
     // in a loop until the function does not return ERROR_INSUFFICIENT_BUFFER.
 
@@ -131,16 +155,16 @@ static DWORD list_providers(unsigned inc)
         // Some of Microsoft Message Analyser original scenarios are not fully implemented and are therefore commented out.
         // One can still enable any of the providers using the "ALL" section, but don't display them in the "Supported" tab.
         // Enable them once they're more nicely supported.
-        printf("value {arg=%u}{value=Microsoft-Windows-NDIS-PacketCapture}{display=Local Network Interfaces (Microsoft-Windows-NDIS-PacketCapture)}{parent=SCENARIO}\n", inc);
-        // printf("value {arg=%u}{value=Microsoft-Windows-Ras-NdisWanPacketCapture}{display=VPN traffic (Microsoft-Windows-Ras-NdisWanPacketCapture)}{parent=SCENARIO}\n", inc);
-        printf("value {arg=%u}{value=Microsoft-Windows-Wmbclass-Opn}{display=Mobile Broadband (Microsoft-Windows-Wmbclass-Opn)}{parent=SCENARIO}\n", inc);
-        // printf("value {arg=%u}{value=Microsoft-Windows-LDAP-Client}{display=SASL LDAP pre-encryption (Microsoft-Windows-LDAP-Client)}{parent=SCENARIO}\n", inc);
-        // printf("value {arg=%u}{value=Microsoft-Windows-WinINet-Capture}{display=WinInet HTTPS pre-encryption (Microsoft-Windows-WinINet-Capture)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-PacketCapture}{display=Local Packet Capture (Microsoft-Windows-NDIS-PacketCapture)}{parent=SCENARIO}\n", inc);
+        // printf("value {arg=%u}{value=Scenario-NdisWanPacketCapture}{display=IPsec Packet Capture (Microsoft-Windows-Ras-NdisWanPacketCapture)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-Wbmclass-Opn}{display=Mobile Broadband (Microsoft-Windows-Wmbclass-Opn)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-WinINet-Capture}{display=WinInet pre-encryption (Microsoft-Windows-WinINet-Capture)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-WebIO-Capture}{display=WebIO (WinHTTP) pre-encryption (Microsoft-Windows-WebIO)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-SASL-LDAP-Capture}{display=SASL LDAP pre-encryption (Microsoft-Windows-LDAP-Client)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-SMBClient-Capture}{display=SMB Client Payloads (Microsoft-Windows-SMBClient)}{parent=SCENARIO}\n", inc);
+        printf("value {arg=%u}{value=Scenario-SMBServer-Capture}{display=SMB Server Payloads (Microsoft-Windows-SMBServer)}{parent=SCENARIO}\n", inc);
         printf("value {arg=%u}{value=Microsoft-Windows-RPC}{display=RPC (Microsoft-Windows-RPC)}{parent=SCENARIO}\n", inc);
-        printf("value {arg=%u}{value=Microsoft-Windows-SMBClient}{display=SMB Client Payloads (Microsoft-Windows-SMBClient)}{parent=SCENARIO}\n", inc);
-        printf("value {arg=%u}{value=Microsoft-Windows-SMBServer}{display=SMB Server Payloads (Microsoft-Windows-SMBServer)}{parent=SCENARIO}\n", inc);
-        // printf("value {arg=%u}{value=BLUETOOTH}{display=Bluetooth}{parent=SCENARIO}{enabled=false}\n", inc);
-        // printf("value {arg=%u}{value=Microsoft-Windows-BTH-BTHPORT}{display=Bluetooth Host Radio (Microsoft-Windows-BTH-BTHPORT)}{parent=BLUETOOTH}\n", inc);
+        printf("value {arg=%u}{value=Scenario-BTH-BTHPORT}{display=Bluetooth Host Radio (Microsoft-Windows-BTH-BTHPORT)}{parent=SCENARIO}\n", inc);
         // printf("value {arg=%u}{value=Microsoft-Windows-BTH-BTHUSB}{display=Bluetooth USB (Microsoft-Windows-BTH-BTHUSB)}{parent=BLUETOOTH}\n", inc);
         // printf("value {arg=%u}{value=Microsoft-Windows-Bluetooth-Bthmini}{display=Bluetooth HCI (Microsoft-Windows-Bluetooth-Bthmini)}{parent=BLUETOOTH}\n", inc);
 
@@ -186,7 +210,7 @@ cleanup:
  * Lists the configuration parameters for this extcap interface.
  * @param interface The interface name.
  */
-static int list_config(char* interface)
+static int list_config(const char* interface)
 {
     unsigned inc = 0;
     unsigned etwselector;
@@ -216,10 +240,34 @@ static int list_config(char* interface)
         "{type=table}{tooltip=Should contain the list of provider GUIDs, keyword and level filters for the etl file or live session.}{required=sufficient}{group=Capture}\n",
         inc++);
     /*
-    * The undecidable events are those that either don't have sub-dissector or don't have anthing meaningful to display except for the EVENT_HEADER.
+    * The undecidable events are those that either don't have sub-dissector or don't have anything meaningful to display except for the EVENT_HEADER.
     */
     printf("arg {number=%u}{call=--iue}{display=Should undecidable events be included}"
         "{type=boolflag}{default=false}{tooltip=Choose if the undecidable event is included}{group=Capture}\n",
+        inc++);
+    /*
+    * We provide capture options to collect extra details about the ETW events (Windows 10+)
+    */
+    printf("arg {number=%u}{call=--event-sid}{display=Include the security identifier (SID) of the user in the event's extended data.}"
+        "{type=boolflag}{default=false}{tooltip=The SID of the user whose token is running the process in which an event created is captured.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-stacktrace}{display=Add a call stack trace to the extended data of events.}"
+        "{type=boolflag}{default=false}{tooltip=This request the event stack trace to be added to extended data.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-tsid}{display=Include the terminal session identifier (TSID).}"
+        "{type=boolflag}{default=false}{tooltip=The terminal session identifier (TSID) will be included in the event's extended data.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-pstartkey}{display=Include the Process Start Key in the extended data.}"
+        "{type=boolflag}{default=false}{tooltip=The Process Start Key is a sequence number that identifies the process. While the Process ID may be reused within a session, the Process Start Key is guaranteed to be unique in the current boot session.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-eventkey}{display=Include the Event Key in the extended data.}"
+        "{type=boolflag}{default=false}{tooltip=The Event Key is a unique identifier for the event instance that will be constant across multiple trace sessions listening to this event. It can be used to correlate simultaneous trace sessions.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-silos}{display=Enables host logging sessions to collect Crimson events from server silos.}"
+        "{type=boolflag}{default=false}{tooltip=When running Windows Containers On Windows (WCOW), enables the logging of sessions within server silos.}{group=Advanced}\n",
+        inc++);
+    printf("arg {number=%u}{call=--event-containerid}{display=Marks the provider's events with source container information.}"
+        "{type=boolflag}{default=false}{tooltip=When running Windows Containers On Windows (WCOW), capture the source container in which a process is running.}{group=Advanced}\n",
         inc++);
 
     /*
@@ -231,7 +279,14 @@ static int list_config(char* interface)
         return EXIT_FAILURE;
     }
 
+    /*
+     * Debug options
+     */
     extcap_config_debug(&inc);
+    printf("arg {number=%u}{call=--debug-parsers}{display=Disable all of Wireshark's ETW special dissectors.}"
+        "{type=boolflag}{default=false}{tooltip=Disable all special dissectors and show all the properties as raw. This can be used for troubleshooting.}{group=Debug}\n",
+        inc++);
+
     return EXIT_SUCCESS;
 }
 
@@ -241,12 +296,15 @@ static int list_config(char* interface)
  * @param option_name The value of the option queried (only 'params' supported)
  * @param option_value The value of the provider we're getting sub-options for.
  */
-static int list_config_option(char* interface, char* option_name, char* option_value)
+static int list_config_option(const char* interface, const char* option_name, char* option_value)
 {
     unsigned inc = 0;
     unsigned loglevelselector = 0;
-
-    (void)option_value;
+    uint64_t default_keyword = 0xffffffffffffffff;
+    uint8_t default_level = 4;
+    WCHAR provider_id[FILENAME_MAX] = { 0 };
+    GUID ProviderGuid = { 0 };
+    HRESULT hr = -1;
 
     if (!interface) {
         ws_warning("No interface specified.");
@@ -263,25 +321,86 @@ static int list_config_option(char* interface, char* option_name, char* option_v
         return EXIT_SUCCESS;
     }
 
+    // Get the provider from the passed option
+    mbstowcs(provider_id, option_value, FILENAME_MAX);
+    if (wcsncmp(provider_id, SCENARIO_KEY, sizeof(SCENARIO_KEY) / sizeof(WCHAR) - 1) == 0)
+    {
+        // Provider is a "scenario" which includes keywords + level
+        SCENARIO* scenario = (SCENARIO*)&g_scenarios;
+        while (scenario->name)
+        {
+            if (wcscmp(scenario->name, provider_id) == 0)
+            {
+                hr = 0;
+                default_keyword = scenario->ProviderFilter.Keyword;
+                default_level = scenario->ProviderFilter.Level;
+                ProviderGuid = scenario->ProviderFilter.ProviderId;
+                break;
+            }
+            scenario += 1;
+        }
+    }
+    else
+    {
+        hr = UuidFromString(provider_id, &ProviderGuid);
+    }
+
+    if (hr != ERROR_SUCCESS) {
+        ws_warning("Invalid provider or scenario %s", option_value);
+        return EXIT_FAILURE;
+    }
+
     /*
      * There's always at least the keyword and the level argument to offer.
      */
     printf("arg {number=%u}{call=--k}{display=Keywords}"
         "{type=long}{tooltip=What keywords to select for this provider. Defaults to ALL}"
-        "{default=0xffffffffffffffff}{group=ETW Generic}\n",
-        inc++);
+        "{default=%llu}{group=ETW Generic}\n",
+        inc++,
+        default_keyword);
     loglevelselector = inc;
     printf("arg {number=%u}{call=--l}{display=Level}"
         "{type=selector}{tooltip=What log level to apply to this provider}{group=ETW Generic}\n",
         inc++);
 
     /* The 6 possible log levels (from traceview) */
-    printf("value {arg=%u}{value=0}{display=0 Log always}{default=false}{group=ETW Generic}\n", loglevelselector);
-    printf("value {arg=%u}{value=1}{display=1 Critical}{default=false}{group=ETW Generic}\n", loglevelselector);
-    printf("value {arg=%u}{value=2}{display=2 Error}{default=false}{group=ETW Generic}\n", loglevelselector);
-    printf("value {arg=%u}{value=3}{display=3 Warning}{default=false}{group=ETW Generic}\n", loglevelselector);
-    printf("value {arg=%u}{value=4}{display=4 Information}{default=true}{group=ETW Generic}\n", loglevelselector);
-    printf("value {arg=%u}{value=5}{display=5 Verbose}{default=false}{group=ETW Generic}\n", loglevelselector);
+    printf("value {arg=%u}{value=0}{display=0 Log always}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 0 ? "true" : "false");
+    printf("value {arg=%u}{value=1}{display=1 Critical}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 1 ? "true" : "false");
+    printf("value {arg=%u}{value=2}{display=2 Error}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 2 ? "true" : "false");
+    printf("value {arg=%u}{value=3}{display=3 Warning}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 3 ? "true" : "false");
+    printf("value {arg=%u}{value=4}{display=4 Information}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 4 ? "true" : "false");
+    printf("value {arg=%u}{value=5}{display=5 Verbose}{default=%s}{group=ETW Generic}\n", loglevelselector, default_level == 5 ? "true" : "false");
+
+    /* Get Keywords for this provider */
+   /* if (hr == 0)
+    {
+        TDHSTATUS status;
+        PPROVIDER_FIELD_INFOARRAY pBuffer = NULL;
+        ULONG ulBufferSize = 0;
+
+        status = TdhEnumerateProviderFieldInformation(&ProviderGuid, EventKeywordInformation, pBuffer, &ulBufferSize);
+        if (status == ERROR_INSUFFICIENT_BUFFER)
+        {
+            pBuffer = malloc(ulBufferSize);
+            if (pBuffer == NULL)
+                return EXIT_FAILURE;
+
+            status = TdhEnumerateProviderFieldInformation(&ProviderGuid, EventKeywordInformation, pBuffer, &ulBufferSize);
+        }
+
+        if (pBuffer != NULL && status == ERROR_SUCCESS)
+        {
+            for (DWORD i = 0; i < pBuffer->NumberOfElements; i++)
+            {
+
+            }
+        }
+
+        if (pBuffer != NULL)
+        {
+            free(pBuffer);
+        }
+    }*/
 
     return EXIT_SUCCESS;
 }
@@ -304,7 +423,7 @@ int main(int argc, char* argv[])
     g_set_prgname("etwdump");
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    extcap_log_init();
+    extcap_log_init(extcap_conf);
 
     /*
      * Get credential information for later use.
@@ -315,28 +434,20 @@ int main(int argc, char* argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    err_msg = configuration_init(argv[0]);
+    err_msg = configuration_init(argv[0], "wireshark");
     if (err_msg != NULL) {
         ws_warning("Can't get pathname of directory containing the extcap program: %s.",
             err_msg);
         g_free(err_msg);
     }
 
-    help_url = data_file_url("etwdump.html");
+    help_url = data_file_url("etwdump.html", application_configuration_environment_prefix());
     extcap_base_set_util_info(extcap_conf, argv[0], ETWDUMP_VERSION_MAJOR, ETWDUMP_VERSION_MINOR,
         ETWDUMP_VERSION_RELEASE, help_url);
     g_free(help_url);
-    extcap_base_register_interface(extcap_conf, ETW_EXTCAP_INTERFACE, "Event Tracing for Windows (ETW) reader", 290, "DLT_ETW");
+    extcap_base_register_interface_ext(extcap_conf, ETW_EXTCAP_INTERFACE, "Event Tracing for Windows (ETW) reader", 290, NULL, "DLT_ETW", EXTCAP_CONTROL_QUIT);
 
     if (!extcap_base_register_graceful_shutdown_cb(extcap_conf, graceful_shutdown_cb))
-    {
-        ret = EXIT_FAILURE;
-        goto end;
-    }
-
-    /* etwdump will be killed and the capture won't be properly closed. We need to add a postkill
-     * cleanup hook. */
-    if (!extcap_base_register_cleanup_postkill_cb(extcap_conf, graceful_shutdown_cb))
     {
         ret = EXIT_FAILURE;
         goto end;
@@ -387,6 +498,38 @@ int main(int argc, char* argv[])
             g_include_undecidable_event = true;
             break;
 
+        case OPT_EVENT_ENABLE_SID:
+            g_event_enable_sid = true;
+            break;
+
+        case OPT_EVENT_ENABLE_PROPERTY_TS_ID:
+            g_event_enable_tsid = true;
+            break;
+
+        case OPT_EVENT_ENABLE_PROPERTY_PROCESS_START_KEY:
+            g_event_enable_property_pstartkey = true;
+            break;
+
+        case OPT_EVENT_ENABLE_PROPERTY_EVENT_KEY:
+            g_event_enable_event_key = true;
+            break;
+
+        case OPT_EVENT_ENABLE_STACK_TRACE:
+            g_event_enable_stack_trace = true;
+            break;
+
+        case OPT_EVENT_ENABLE_SILOS:
+            g_event_enable_silos = true;
+            break;
+
+        case OPT_EVENT_ENABLE_PROPERTY_SOURCE_CONTAINER_TRACKING:
+            g_event_property_source_container_tracking = true;
+            break;
+
+        case OPT_DEBUG_PARSERS:
+            g_debug_parsers = true;
+            break;
+
         case ':':
             /* missing option argument */
             ws_warning("Option '%s' requires an argument", argv[ws_optind - 1]);
@@ -422,6 +565,9 @@ int main(int argc, char* argv[])
 
     if (extcap_conf->capture) {
 
+        const struct file_extension_info* file_extensions;
+        unsigned num_extensions;
+
         if (g_strcmp0(extcap_conf->interface, ETW_EXTCAP_INTERFACE)) {
             ws_warning("ERROR: invalid interface");
             goto end;
@@ -433,7 +579,8 @@ int main(int argc, char* argv[])
             goto end;
         }
 
-        wtap_init(false);
+        application_file_extensions(&file_extensions, &num_extensions);
+        wtap_init(false, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
         switch(etw_dump(etlfile, extcap_conf->fifo, params, &ret, &err_msg))
         {

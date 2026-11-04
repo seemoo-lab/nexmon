@@ -19,21 +19,27 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#pragma once
 
 /**
- * Check the final crc value(Receiver code)
+ * @brief Check the final crc value(Receiver code)  of a message.
  *
- * \param p The tv buffer containing the data.
- * \param len Number of bytes in the message.
- * \param offset Offset in the message.
- * \param received_fcs The received FCS.
- * \return     Returns true if the checksum is correct, false if it is not correct
- *****************************************************************************/
-
-#ifndef __CRC8_TVB_H__
-#define __CRC8_TVB_H__
-
+ * @param p Pointer to the tvbuff_t structure containing the message data.
+ * @param len Length of the message in bytes.
+ * @param offset Offset in the message
+ * @param received_fcs The received FCS value to be compared with the calculated FCS.
+ * @return true if the FCS matches, false otherwise.
+ */
 extern bool check_fcs(tvbuff_t *p, uint8_t len, uint8_t offset, uint8_t received_fcs);
-extern uint8_t get_crc8_ieee8023_epon(tvbuff_t *p, uint8_t len, uint8_t offset);
 
-#endif /* __CRC8_TVB_H__ */
+/**
+ * @brief Calculate CRC-8 IEEE 802.3 EoN for a given TVB buffer.
+ *
+ * This function computes the CRC-8 value using the IEEE 802.3 Extended On-The-Network (EoN) algorithm.
+ *
+ * @param p Pointer to the TVB buffer containing the data to be processed.
+ * @param len Length of the data in the TVB buffer.
+ * @param offset Offset within the TVB buffer where the data starts.
+ * @return uint8_t The calculated CRC-8 value.
+ */
+WS_DLL_PUBLIC uint8_t get_crc8_ieee8023_epon(tvbuff_t *p, uint8_t len, uint8_t offset);

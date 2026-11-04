@@ -47,19 +47,24 @@
 #include <time.h>
 
 static uint64_t
-_tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bits);
+_tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const unsigned total_no_of_bits);
 
 static uint64_t
-_tvb_get_bits64_le(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bits);
+_tvb_get_bits64_le(tvbuff_t *tvb, unsigned bit_offset, const unsigned total_no_of_bits);
 
-static inline int
-_tvb_captured_length_remaining(const tvbuff_t *tvb, const int offset);
+static inline unsigned
+_tvb_captured_length_remaining(const tvbuff_t *tvb, const unsigned offset);
 
 static inline const uint8_t*
 ensure_contiguous(tvbuff_t *tvb, const int offset, const int length);
 
+/* coverity[ +taint_sanitize : arg-1 ] */
+/* coverity[ +taint_sanitize : arg-2 ] */
+static inline const uint8_t*
+ensure_contiguous_unsigned(tvbuff_t *tvb, const unsigned offset, const unsigned length);
+
 static inline uint8_t *
-tvb_get_raw_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int length);
+tvb_get_raw_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned length);
 
 tvbuff_t *
 tvb_new(const struct tvb_ops *ops)
@@ -79,7 +84,7 @@ tvb_new(const struct tvb_ops *ops)
 	tvb->reported_length	 = 0;
 	tvb->contained_length	 = 0;
 	tvb->real_data		 = NULL;
-	tvb->raw_offset		 = -1;
+	tvb->raw_offset		 = 0;
 	tvb->ds_tvb		 = NULL;
 
 	return tvb;
@@ -102,7 +107,7 @@ tvb_free_internal(tvbuff_t *tvb)
 
 /* XXX: just call tvb_free_chain();
  *      Not removed so that existing dissectors using tvb_free() need not be changed.
- *      I'd argue that existing calls to tvb_free() should have actually beeen
+ *      I'd argue that existing calls to tvb_free() should have actually been
  *      calls to tvb_free_chain() although the calls were OK as long as no
  *      subsets, etc had been created on the tvb. */
 void
@@ -225,6 +230,101 @@ validate_offset(const tvbuff_t *tvb, const unsigned abs_offset)
 }
 
 static inline int
+validate_offset_and_remaining(const tvbuff_t *tvb, const unsigned offset, unsigned *rem_len)
+{
+	int exception;
+
+	exception = validate_offset(tvb, offset);
+	if (!exception)
+		*rem_len = tvb->length - offset;
+
+	return exception;
+}
+
+/* Returns integer indicating whether the given offset and the end offset
+ * calculated from that offset and the given length are in bounds (0) or
+ * not (exception number).
+ * No exception is thrown; on success, we return 0, otherwise we return an
+ * exception for the caller to throw if appropriate.
+ *
+ * N.B. - we return success (0), if the offset is positive and right
+ * after the end of the tvbuff (i.e., equal to the length).  We do this
+ * so that a dissector constructing a subset tvbuff for the next protocol
+ * will get a zero-length tvbuff, not an exception, if there's no data
+ * left for the next protocol - we want the next protocol to be the one
+ * that gets an exception, so the error is reported as an error in that
+ * protocol rather than the containing protocol.  */
+static inline int
+validate_offset_length_no_exception(const tvbuff_t *tvb,
+				    const unsigned offset, const unsigned length)
+{
+	unsigned end_offset;
+	int   exception;
+
+	/* Compute the offset */
+	/* Since offset is unsigned, the only effect of validation is to throw
+	 * a possibly different exception if offset is outside the captured
+	 * bytes. E.g., offset could be outside the captured bytes but in the
+	 * reported length, but end_offset outside the reported length.
+	 * XXX - Which *is* the proper exception? Compare fast_ensure_contiguous
+	 * which only throws the exception related to the end offset.
+	 */
+	exception = validate_offset(tvb, offset);
+	if (exception)
+		return exception;
+
+	/*
+	 * Compute the offset of the first byte past the length,
+	 * checking for an overflow.
+	 */
+	if (ckd_add(&end_offset, offset, length))
+		return BoundsError;
+
+	return validate_offset(tvb, end_offset);
+}
+
+/* Checks offset and length and throws an exception if
+ * either is out of bounds. Sets integer ptrs to the new length. */
+static inline void
+validate_offset_length(const tvbuff_t *tvb,
+		    const unsigned offset, const unsigned length)
+{
+	int exception;
+
+	exception = validate_offset_length_no_exception(tvb, offset, length);
+	if (exception)
+		THROW(exception);
+}
+
+/* Internal function so that other translation units can use
+ * validate_offset_length. */
+void
+tvb_validate_offset_length(const tvbuff_t *tvb,
+			   const unsigned offset, const unsigned length)
+{
+	validate_offset_length(tvb, offset, length);
+}
+
+/* Internal function so that other translation units can use
+ * validate_offset_and_remaining. This throws the exception
+ * from validate_offset_and_remaining. */
+void
+tvb_validate_offset_and_remaining(const tvbuff_t *tvb,
+				  const unsigned offset, unsigned *rem_len)
+{
+	int exception;
+
+	exception = validate_offset_and_remaining(tvb, offset, rem_len);
+	if (exception)
+		THROW(exception);
+}
+
+/*
+ * The same as validate_offset except this accepts negative offsets, meaning
+ * relative to the end of (captured) length. (That it's captured, not reported,
+ * length is one reason to deprecate signed offsets, #20103.)
+ */
+static inline int
 compute_offset(const tvbuff_t *tvb, const int offset, unsigned *offset_ptr)
 {
 	if (offset >= 0) {
@@ -243,13 +343,18 @@ compute_offset(const tvbuff_t *tvb, const int offset, unsigned *offset_ptr)
 	}
 	else {
 		/* Negative offset - relative to the end of the packet. */
-		if (G_LIKELY((unsigned) -offset <= tvb->length)) {
-			*offset_ptr = tvb->length + offset;
-		} else if ((unsigned) -offset <= tvb->contained_length) {
+		/* Prevent UB on 2's complement platforms. All tested compilers
+		 * (gcc, clang, MSVC) compile this to a single instruction on
+		 * x86, ARM, RISC-V, S390x, SPARC, etc. at -O1 and higher
+		 * according to godbolt.org. */
+		unsigned abs_offset = ((unsigned)-(offset + 1)) + 1;
+		if (G_LIKELY(abs_offset <= tvb->length)) {
+			*offset_ptr = tvb->length - abs_offset;
+		} else if (abs_offset <= tvb->contained_length) {
 			return BoundsError;
 		} else if (tvb->flags & TVBUFF_FRAGMENT) {
 			return FragmentBoundsError;
-		} else if ((unsigned) -offset <= tvb->reported_length) {
+		} else if (abs_offset <= tvb->reported_length) {
 			return ContainedBoundsError;
 		} else {
 			return ReportedBoundsError;
@@ -257,18 +362,6 @@ compute_offset(const tvbuff_t *tvb, const int offset, unsigned *offset_ptr)
 	}
 
 	return 0;
-}
-
-static inline int
-compute_offset_and_remaining(const tvbuff_t *tvb, const int offset, unsigned *offset_ptr, unsigned *rem_len)
-{
-	int exception;
-
-	exception = compute_offset(tvb, offset, offset_ptr);
-	if (!exception)
-		*rem_len = tvb->length - *offset_ptr;
-
-	return exception;
 }
 
 /* Computes the absolute offset and length based on a possibly-negative offset
@@ -343,10 +436,12 @@ check_offset_length(const tvbuff_t *tvb,
 		THROW(exception);
 }
 
+/* Internal function so that other translation units can use
+ * check_offset_length. */
 void
 tvb_check_offset_length(const tvbuff_t *tvb,
-		        const int offset, int const length_val,
-		        unsigned *offset_ptr, unsigned *length_ptr)
+			const int offset, int const length_val,
+			unsigned *offset_ptr, unsigned *length_ptr)
 {
 	check_offset_length(tvb, offset, length_val, offset_ptr, length_ptr);
 }
@@ -362,12 +457,19 @@ static const unsigned char left_aligned_bitmask[] = {
 	0xfe
 };
 
+/* tvb_new_octet_aligned used to support -1 no_of_bits as meaning "to the
+ * end of the buffer." Nothing every used it. It could be supported with
+ * a _remaining() function if necessary. Note that the previous implementation
+ * didn't properly keep the extra reported length if the reported length
+ * was greater than the captured length.
+ */
+
 tvbuff_t *
-tvb_new_octet_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bits)
+tvb_new_octet_aligned(tvbuff_t *tvb, uint32_t bit_offset, uint32_t no_of_bits)
 {
 	tvbuff_t     *sub_tvb = NULL;
 	uint32_t      byte_offset;
-	int32_t       datalen, i;
+	uint32_t      datalen, i;
 	uint8_t       left, right, remaining_bits, *buf;
 	const uint8_t *data;
 
@@ -377,31 +479,24 @@ tvb_new_octet_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bits)
 	left = bit_offset % 8; /* for left-shifting */
 	right = 8 - left; /* for right-shifting */
 
-	if (no_of_bits == -1) {
-		datalen = _tvb_captured_length_remaining(tvb, byte_offset);
-		remaining_bits = 0;
-	} else {
-		datalen = no_of_bits >> 3;
-		remaining_bits = no_of_bits % 8;
-		if (remaining_bits) {
-			datalen++;
-		}
+	datalen = no_of_bits >> 3;
+	remaining_bits = no_of_bits % 8;
+	if (remaining_bits) {
+		datalen++;
 	}
 
 	/* already aligned -> shortcut */
-	if ((left == 0) && (remaining_bits == 0)) {
+	if (((left == 0) && (remaining_bits == 0)) || datalen == 0) {
 		return tvb_new_subset_length_caplen(tvb, byte_offset, datalen, datalen);
 	}
 
-	DISSECTOR_ASSERT(datalen>0);
-
-	/* if at least one trailing byte is available, we must use the content
-	* of that byte for the last shift (i.e. tvb_get_ptr() must use datalen + 1
-	* if non extra byte is available, the last shifted byte requires
-	* special treatment
-	*/
+	/* If at least one trailing byte is available, we must use the content
+	 * of that byte for the last shift (i.e. tvb_get_ptr() must use datalen + 1).
+	 * If no extra byte is available, the last shifted byte requires
+	 * special treatment.
+	 */
 	if (_tvb_captured_length_remaining(tvb, byte_offset) > datalen) {
-		data = ensure_contiguous(tvb, byte_offset, datalen + 1); /* tvb_get_ptr */
+		data = ensure_contiguous_unsigned(tvb, byte_offset, datalen + 1); /* tvb_get_ptr */
 
 		/* Do this allocation AFTER tvb_get_ptr() (which could throw an exception) */
 		buf = (uint8_t *)g_malloc(datalen);
@@ -410,7 +505,7 @@ tvb_new_octet_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bits)
 		for (i = 0; i < datalen; i++)
 			buf[i] = (data[i] << left) | (data[i+1] >> right);
 	} else {
-		data = ensure_contiguous(tvb, byte_offset, datalen); /* tvb_get_ptr() */
+		data = ensure_contiguous_unsigned(tvb, byte_offset, datalen); /* tvb_get_ptr() */
 
 		/* Do this allocation AFTER tvb_get_ptr() (which could throw an exception) */
 		buf = (uint8_t *)g_malloc(datalen);
@@ -429,11 +524,11 @@ tvb_new_octet_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bits)
 }
 
 tvbuff_t *
-tvb_new_octet_right_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bits)
+tvb_new_octet_right_aligned(tvbuff_t *tvb, uint32_t bit_offset, uint32_t no_of_bits)
 {
 	tvbuff_t     *sub_tvb = NULL;
 	uint32_t      byte_offset;
-	int           src_len, dst_len, i;
+	unsigned      src_len, dst_len, i;
 	uint8_t       left, right, remaining_bits, *buf;
 	const uint8_t *data;
 
@@ -445,23 +540,16 @@ tvb_new_octet_right_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bi
 	/* left shift to get most significant bits from next octet */
 	left = 8 - right;
 
-	if (no_of_bits == -1) {
-		dst_len = _tvb_captured_length_remaining(tvb, byte_offset);
-		remaining_bits = 0;
-	} else {
-		dst_len = no_of_bits / 8;
-		remaining_bits = no_of_bits % 8;
-		if (remaining_bits) {
-			dst_len++;
-		}
+	dst_len = no_of_bits / 8;
+	remaining_bits = no_of_bits % 8;
+	if (remaining_bits) {
+		dst_len++;
 	}
 
 	/* already aligned -> shortcut */
-	if ((right == 0) && (remaining_bits == 0)) {
+	if (((right == 0) && (remaining_bits == 0)) || dst_len == 0) {
 		return tvb_new_subset_length_caplen(tvb, byte_offset, dst_len, dst_len);
 	}
-
-	DISSECTOR_ASSERT(dst_len>0);
 
 	if (_tvb_captured_length_remaining(tvb, byte_offset) > dst_len) {
 		/* last octet will get data from trailing octet */
@@ -471,7 +559,7 @@ tvb_new_octet_right_aligned(tvbuff_t *tvb, uint32_t bit_offset, int32_t no_of_bi
 		src_len = dst_len;
 	}
 
-	data = ensure_contiguous(tvb, byte_offset, src_len); /* tvb_get_ptr */
+	data = ensure_contiguous_unsigned(tvb, byte_offset, src_len); /* tvb_get_ptr */
 
 	/* Do this allocation AFTER tvb_get_ptr() (which could throw an exception) */
 	buf = (uint8_t *)g_malloc(dst_len);
@@ -532,7 +620,7 @@ tvb_clone(tvbuff_t *tvb)
 	return tvb_clone_offset_len(tvb, 0, tvb->length);
 }
 
-unsigned
+inline unsigned
 tvb_captured_length(const tvbuff_t *tvb)
 {
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
@@ -541,28 +629,13 @@ tvb_captured_length(const tvbuff_t *tvb)
 }
 
 /* For tvbuff internal use */
-static inline int
-_tvb_captured_length_remaining(const tvbuff_t *tvb, const int offset)
+static inline unsigned
+_tvb_captured_length_remaining(const tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0, rem_length;
+	unsigned rem_length;
 	int   exception;
 
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &rem_length);
-	if (exception)
-		return 0;
-
-	return rem_length;
-}
-
-int
-tvb_captured_length_remaining(const tvbuff_t *tvb, const int offset)
-{
-	unsigned abs_offset = 0, rem_length;
-	int   exception;
-
-	DISSECTOR_ASSERT(tvb && tvb->initialized);
-
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &rem_length);
+	exception = validate_offset_and_remaining(tvb, offset, &rem_length);
 	if (exception)
 		return 0;
 
@@ -570,16 +643,26 @@ tvb_captured_length_remaining(const tvbuff_t *tvb, const int offset)
 }
 
 unsigned
-tvb_ensure_captured_length_remaining(const tvbuff_t *tvb, const int offset)
+tvb_captured_length_remaining(const tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0, rem_length = 0;
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	return _tvb_captured_length_remaining(tvb, offset);
+}
+
+unsigned
+tvb_ensure_captured_length_remaining(const tvbuff_t *tvb, const unsigned offset)
+{
+	unsigned rem_length = 0;
 	int   exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &rem_length);
+	exception = validate_offset(tvb, offset);
 	if (exception)
 		THROW(exception);
+
+	rem_length = tvb->length - offset;
 
 	if (rem_length == 0) {
 		/*
@@ -587,11 +670,11 @@ tvb_ensure_captured_length_remaining(const tvbuff_t *tvb, const int offset)
 		 * There aren't any bytes available, so throw the appropriate
 		 * exception.
 		 */
-		if (abs_offset < tvb->contained_length) {
+		if (offset < tvb->contained_length) {
 			THROW(BoundsError);
 		} else if (tvb->flags & TVBUFF_FRAGMENT) {
 			THROW(FragmentBoundsError);
-		} else if (abs_offset < tvb->reported_length) {
+		} else if (offset < tvb->reported_length) {
 			THROW(ContainedBoundsError);
 		} else {
 			THROW(ReportedBoundsError);
@@ -601,12 +684,11 @@ tvb_ensure_captured_length_remaining(const tvbuff_t *tvb, const int offset)
 }
 
 /* Validates that 'length' bytes are available starting from
- * offset (pos/neg). Does not throw an exception. */
+ * offset. Does not throw an exception. */
 bool
-tvb_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
+tvb_bytes_exist(const tvbuff_t *tvb, const unsigned offset, const int length)
 {
-	unsigned abs_offset = 0, abs_length;
-	int   exception;
+	unsigned end_offset;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
@@ -617,8 +699,18 @@ tvb_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
 	if (length < 0)
 		return false;
 
-	exception = check_offset_length_no_exception(tvb, offset, length, &abs_offset, &abs_length);
-	if (exception)
+	/*
+	 * Compute the offset of the first byte past the length.
+	 * Make sure it doesn't overflow.
+	 */
+	if (ckd_add(&end_offset, offset, length))
+		return false;
+
+	/*
+	 * Check that bytes exist up to right before that offset. (As length is
+	 * positive and there was no overflow we don't need to check offset.)
+	 */
+	if (end_offset > tvb->length)
 		return false;
 
 	return true;
@@ -627,8 +719,10 @@ tvb_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
 /* Validates that 'length' bytes, where 'length' is a 64-bit unsigned
  * integer, are available starting from offset (pos/neg). Throws an
  * exception if they aren't. */
+/* coverity[ +taint_sanitize : arg-1 ] */
+/* coverity[ +taint_sanitize : arg-2 ] */
 void
-tvb_ensure_bytes_exist64(const tvbuff_t *tvb, const int offset, const uint64_t length)
+tvb_ensure_bytes_exist64(const tvbuff_t *tvb, const unsigned offset, const uint64_t length)
 {
 	/*
 	 * Make sure the value fits in a signed integer; if not, assume
@@ -644,10 +738,13 @@ tvb_ensure_bytes_exist64(const tvbuff_t *tvb, const int offset, const uint64_t l
 
 /* Validates that 'length' bytes are available starting from
  * offset (pos/neg). Throws an exception if they aren't. */
+/* coverity[ +taint_sanitize : arg-1 ] */
+/* coverity[ +taint_sanitize : arg-2 ] */
 void
-tvb_ensure_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
+tvb_ensure_bytes_exist(const tvbuff_t *tvb, const unsigned offset, const int length)
 {
-	unsigned real_offset, end_offset;
+	unsigned end_offset;
+	int exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
@@ -665,49 +762,19 @@ tvb_ensure_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
 		THROW(ReportedBoundsError);
 	}
 
-	/* XXX: Below this point could be replaced with a call to
-	 * check_offset_length with no functional change, however this is a
-	 * *very* hot path and check_offset_length is not well-optimized for
-	 * this case, so we eat some code duplication for a lot of speedup. */
-
-	if (offset >= 0) {
-		/* Positive offset - relative to the beginning of the packet. */
-		if (G_LIKELY((unsigned) offset <= tvb->length)) {
-			real_offset = offset;
-		} else if ((unsigned) offset <= tvb->contained_length) {
-			THROW(BoundsError);
-		} else if (tvb->flags & TVBUFF_FRAGMENT) {
-			THROW(FragmentBoundsError);
-		} else if ((unsigned) offset <= tvb->reported_length) {
-			THROW(ContainedBoundsError);
-		} else {
-			THROW(ReportedBoundsError);
-		}
-	}
-	else {
-		/* Negative offset - relative to the end of the packet. */
-		if (G_LIKELY((unsigned) -offset <= tvb->length)) {
-			real_offset = tvb->length + offset;
-		} else if ((unsigned) -offset <= tvb->contained_length) {
-			THROW(BoundsError);
-		} else if (tvb->flags & TVBUFF_FRAGMENT) {
-			THROW(FragmentBoundsError);
-		} else if ((unsigned) -offset <= tvb->reported_length) {
-			THROW(ContainedBoundsError);
-		} else {
-			THROW(ReportedBoundsError);
-		}
-	}
+	exception = validate_offset(tvb, offset);
+	if (exception)
+		THROW(exception);
 
 	/*
 	 * Compute the offset of the first byte past the length.
 	 */
-	end_offset = real_offset + length;
+	end_offset = offset + length;
 
 	/*
 	 * Check for an overflow
 	 */
-	if (end_offset < real_offset)
+	if (end_offset < offset)
 		THROW(BoundsError);
 
 	if (G_LIKELY(end_offset <= tvb->length))
@@ -723,21 +790,14 @@ tvb_ensure_bytes_exist(const tvbuff_t *tvb, const int offset, const int length)
 }
 
 bool
-tvb_offset_exists(const tvbuff_t *tvb, const int offset)
+tvb_offset_exists(const tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0;
-	int   exception;
-
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	exception = compute_offset(tvb, offset, &abs_offset);
-	if (exception)
-		return false;
-
-	/* compute_offset only throws an exception on >, not >= because of the
-	 * comment above check_offset_length_no_exception, but here we want the
-	 * opposite behaviour so we check ourselves... */
-	return abs_offset < tvb->length;
+	/* We don't care why the offset doesn't exist, and unlike some
+	 * other functions we don't accept an offset one past the end,
+	 * so we check ourselves... */
+	return offset < tvb->length;
 }
 
 unsigned
@@ -748,38 +808,36 @@ tvb_reported_length(const tvbuff_t *tvb)
 	return tvb->reported_length;
 }
 
-int
-tvb_reported_length_remaining(const tvbuff_t *tvb, const int offset)
+unsigned
+tvb_reported_length_remaining(const tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0;
 	int   exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	exception = compute_offset(tvb, offset, &abs_offset);
+	exception = validate_offset(tvb, offset);
 	if (exception)
 		return 0;
 
-	if (tvb->reported_length >= abs_offset)
-		return tvb->reported_length - abs_offset;
+	if (tvb->reported_length >= offset)
+		return tvb->reported_length - offset;
 	else
 		return 0;
 }
 
 unsigned
-tvb_ensure_reported_length_remaining(const tvbuff_t *tvb, const int offset)
+tvb_ensure_reported_length_remaining(const tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0;
 	int   exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	exception = compute_offset(tvb, offset, &abs_offset);
+	exception = validate_offset(tvb, offset);
 	if (exception)
 		THROW(exception);
 
-	if (tvb->reported_length >= abs_offset)
-		return tvb->reported_length - abs_offset;
+	if (tvb->reported_length >= offset)
+		return tvb->reported_length - offset;
 	else
 		THROW(ReportedBoundsError);
 }
@@ -836,6 +894,54 @@ tvb_offset_from_real_beginning(const tvbuff_t *tvb)
 }
 
 static inline const uint8_t*
+ensure_contiguous_unsigned_no_exception(tvbuff_t *tvb, const unsigned offset, const unsigned length, int *pexception)
+{
+	int   exception;
+
+	exception = validate_offset_length_no_exception(tvb, offset, length);
+	if (exception) {
+		if (pexception)
+			*pexception = exception;
+		return NULL;
+	}
+
+	/*
+	 * Special case: if the caller (e.g. tvb_get_ptr) requested no data,
+	 * then it is acceptable to have an empty tvb (!tvb->real_data).
+	 */
+	if (length == 0) {
+		return NULL;
+	}
+
+	/*
+	 * We know that all the data is present in the tvbuff, so
+	 * no exceptions should be thrown.
+	 */
+	if (tvb->real_data)
+		return tvb->real_data + offset;
+
+	if (tvb->ops->tvb_get_ptr)
+		return tvb->ops->tvb_get_ptr(tvb, offset, length);
+
+	DISSECTOR_ASSERT_NOT_REACHED();
+	return NULL;
+}
+
+static inline const uint8_t*
+ensure_contiguous_unsigned(tvbuff_t *tvb, const unsigned offset, const unsigned length)
+{
+	int           exception = 0;
+	const uint8_t *p;
+
+	p = ensure_contiguous_unsigned_no_exception(tvb, offset, length, &exception);
+	if (p == NULL && length != 0) {
+		DISSECTOR_ASSERT(exception > 0);
+		THROW(exception);
+	}
+	return p;
+}
+
+static inline const uint8_t*
 ensure_contiguous_no_exception(tvbuff_t *tvb, const int offset, const int length, int *pexception)
 {
 	unsigned abs_offset = 0, abs_length = 0;
@@ -885,24 +991,29 @@ ensure_contiguous(tvbuff_t *tvb, const int offset, const int length)
 }
 
 static inline const uint8_t*
-fast_ensure_contiguous(tvbuff_t *tvb, const int offset, const unsigned length)
+fast_ensure_contiguous(tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
 	unsigned end_offset;
-	unsigned u_offset;
 
+	/* Since offset is unsigned, we have to check for overflow. */
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
-	/* We don't check for overflow in this fast path so we only handle simple types */
-	DISSECTOR_ASSERT(length <= 8);
 
-	if (offset < 0 || !tvb->real_data) {
-		return ensure_contiguous(tvb, offset, length);
+	/* This is only called internally, never with zero. Try to satisfy
+	 * Coverity that we don't run off the end. */
+	ws_assert(length != 0);
+
+	if (!tvb->real_data) {
+	       return ensure_contiguous_unsigned(tvb, offset, length);
 	}
 
-	u_offset = offset;
-	end_offset = u_offset + length;
+	/* XXX - Is this really faster now (other than the slight difference
+	 * in behavior from only throwing the exception related to the end
+	 * offset?) */
+	if (ckd_add(&end_offset, offset, length))
+		THROW(BoundsError);
 
 	if (G_LIKELY(end_offset <= tvb->length)) {
-		return tvb->real_data + u_offset;
+		return tvb->real_data + offset;
 	} else if (end_offset <= tvb->contained_length) {
 		THROW(BoundsError);
 	} else if (tvb->flags & TVBUFF_FRAGMENT) {
@@ -921,32 +1032,23 @@ fast_ensure_contiguous(tvbuff_t *tvb, const int offset, const unsigned length)
 /************** ACCESSORS **************/
 
 void *
-tvb_memcpy(tvbuff_t *tvb, void *target, const int offset, size_t length)
+tvb_memcpy(tvbuff_t *tvb, void *target, const unsigned offset, size_t length)
 {
-	unsigned	abs_offset = 0, abs_length = 0;
-
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
 	/*
-	 * XXX - we should eliminate the "length = -1 means 'to the end
-	 * of the tvbuff'" convention, and use other means to achieve
-	 * that; this would let us eliminate a bunch of checks for
-	 * negative lengths in cases where the protocol has a 32-bit
-	 * length field.
-	 *
-	 * Allowing -1 but throwing an assertion on other negative
-	 * lengths is a bit more work with the length being a size_t;
-	 * instead, we check for a length <= 2^31-1.
+	 * XXX - The length is a size_t, but the tvb length and tvb_ops
+	 * only supports an unsigned.
 	 */
-	DISSECTOR_ASSERT(length <= 0x7FFFFFFF);
-	check_offset_length(tvb, offset, (int) length, &abs_offset, &abs_length);
+	DISSECTOR_ASSERT(length <= UINT_MAX);
+	validate_offset_length(tvb, offset, (unsigned)length);
 
 	if (target && tvb->real_data) {
-		return memcpy(target, tvb->real_data + abs_offset, abs_length);
+		return memcpy(target, tvb->real_data + offset, length);
 	}
 
 	if (target && tvb->ops->tvb_memcpy)
-		return tvb->ops->tvb_memcpy(tvb, target, abs_offset, abs_length);
+		return tvb->ops->tvb_memcpy(tvb, target, offset, (unsigned)length);
 
 	/*
 	 * If the length is 0, there's nothing to do.
@@ -964,14 +1066,8 @@ tvb_memcpy(tvbuff_t *tvb, void *target, const int offset, size_t length)
 
 
 /*
- * XXX - this doesn't treat a length of -1 as an error.
- * If it did, this could replace some code that calls
- * "tvb_ensure_bytes_exist()" and then allocates a buffer and copies
- * data to it.
- *
- * "composite_get_ptr()" depends on -1 not being
- * an error; does anything else depend on this routine treating -1 as
- * meaning "to the end of the buffer"?
+ * XXX - This could replace some code that calls "tvb_ensure_bytes_exist()"
+ * and then allocates a buffer and copies data to it.
  *
  * If scope is NULL, memory is allocated with g_malloc() and user must
  * explicitly free it with g_free().
@@ -979,33 +1075,59 @@ tvb_memcpy(tvbuff_t *tvb, void *target, const int offset, size_t length)
  * lifetime.
  */
 void *
-tvb_memdup(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, size_t length)
+tvb_memdup(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, size_t length)
 {
-	unsigned  abs_offset = 0, abs_length = 0;
 	void  *duped;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	check_offset_length(tvb, offset, (int) length, &abs_offset, &abs_length);
+	/*
+	 * XXX - The length is a size_t, but the tvb length and tvb_ops
+	 * only supports an unsigned.
+	 */
+	DISSECTOR_ASSERT(length <= UINT_MAX);
+	validate_offset_length(tvb, offset, (unsigned)length);
 
-	if (abs_length == 0)
+	if (length == 0)
 		return NULL;
 
-	duped = wmem_alloc(scope, abs_length);
-	return tvb_memcpy(tvb, duped, abs_offset, abs_length);
+	duped = wmem_alloc(scope, length);
+	return tvb_memcpy(tvb, duped, offset, length);
 }
 
+#if 0
+/* XXX - Is a _remaining variant of this necessary? The user would still need
+ * to get the length from tvb_captured_length_remaining() to productively use
+ * the (not necessarily null terminated) byte array. See also tvb_get_ptr(),
+ * which is similar. */
+void *
+tvb_memdup_remaining(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset)
+{
+	void  *duped;
+	unsigned length;
 
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	validate_offset_and_remaining(tvb, offset, &length);
+
+	if (length == 0)
+		return NULL;
+
+	duped = wmem_alloc(scope, length);
+	return tvb_memcpy(tvb, duped, offset, length);
+}
+#endif
 
 const uint8_t*
-tvb_get_ptr(tvbuff_t *tvb, const int offset, const int length)
+tvb_get_ptr(tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
-	return ensure_contiguous(tvb, offset, length);
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+	return ensure_contiguous_unsigned(tvb, offset, length);
 }
 
 /* ---------------- */
 uint8_t
-tvb_get_uint8(tvbuff_t *tvb, const int offset)
+tvb_get_uint8(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1014,7 +1136,7 @@ tvb_get_uint8(tvbuff_t *tvb, const int offset)
 }
 
 int8_t
-tvb_get_int8(tvbuff_t *tvb, const int offset)
+tvb_get_int8(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1023,7 +1145,7 @@ tvb_get_int8(tvbuff_t *tvb, const int offset)
 }
 
 uint16_t
-tvb_get_ntohs(tvbuff_t *tvb, const int offset)
+tvb_get_ntohs(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1032,7 +1154,7 @@ tvb_get_ntohs(tvbuff_t *tvb, const int offset)
 }
 
 int16_t
-tvb_get_ntohis(tvbuff_t *tvb, const int offset)
+tvb_get_ntohis(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1041,7 +1163,7 @@ tvb_get_ntohis(tvbuff_t *tvb, const int offset)
 }
 
 uint32_t
-tvb_get_ntoh24(tvbuff_t *tvb, const int offset)
+tvb_get_ntoh24(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1050,7 +1172,7 @@ tvb_get_ntoh24(tvbuff_t *tvb, const int offset)
 }
 
 int32_t
-tvb_get_ntohi24(tvbuff_t *tvb, const int offset)
+tvb_get_ntohi24(tvbuff_t *tvb, const unsigned offset)
 {
 	uint32_t ret;
 
@@ -1060,7 +1182,7 @@ tvb_get_ntohi24(tvbuff_t *tvb, const int offset)
 }
 
 uint32_t
-tvb_get_ntohl(tvbuff_t *tvb, const int offset)
+tvb_get_ntohl(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1069,7 +1191,7 @@ tvb_get_ntohl(tvbuff_t *tvb, const int offset)
 }
 
 int32_t
-tvb_get_ntohil(tvbuff_t *tvb, const int offset)
+tvb_get_ntohil(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1078,7 +1200,7 @@ tvb_get_ntohil(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_ntoh40(tvbuff_t *tvb, const int offset)
+tvb_get_ntoh40(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1087,7 +1209,7 @@ tvb_get_ntoh40(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_ntohi40(tvbuff_t *tvb, const int offset)
+tvb_get_ntohi40(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1097,7 +1219,7 @@ tvb_get_ntohi40(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_ntoh48(tvbuff_t *tvb, const int offset)
+tvb_get_ntoh48(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1106,7 +1228,7 @@ tvb_get_ntoh48(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_ntohi48(tvbuff_t *tvb, const int offset)
+tvb_get_ntohi48(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1116,7 +1238,7 @@ tvb_get_ntohi48(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_ntoh56(tvbuff_t *tvb, const int offset)
+tvb_get_ntoh56(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1125,7 +1247,7 @@ tvb_get_ntoh56(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_ntohi56(tvbuff_t *tvb, const int offset)
+tvb_get_ntohi56(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1135,7 +1257,7 @@ tvb_get_ntohi56(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_ntoh64(tvbuff_t *tvb, const int offset)
+tvb_get_ntoh64(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1144,7 +1266,7 @@ tvb_get_ntoh64(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_ntohi64(tvbuff_t *tvb, const int offset)
+tvb_get_ntohi64(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1153,7 +1275,7 @@ tvb_get_ntohi64(tvbuff_t *tvb, const int offset)
 }
 
 uint16_t
-tvb_get_uint16(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint16(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohs(tvb, offset);
 	} else {
@@ -1162,7 +1284,7 @@ tvb_get_uint16(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int16_t
-tvb_get_int16(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int16(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohis(tvb, offset);
 	} else {
@@ -1171,7 +1293,7 @@ tvb_get_int16(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint32_t
-tvb_get_uint24(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint24(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letoh24(tvb, offset);
 	} else {
@@ -1180,7 +1302,7 @@ tvb_get_uint24(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int32_t
-tvb_get_int24(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int24(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohi24(tvb, offset);
 	} else {
@@ -1189,7 +1311,7 @@ tvb_get_int24(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint32_t
-tvb_get_uint32(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint32(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohl(tvb, offset);
 	} else {
@@ -1198,7 +1320,7 @@ tvb_get_uint32(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int32_t
-tvb_get_int32(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int32(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohil(tvb, offset);
 	} else {
@@ -1207,7 +1329,7 @@ tvb_get_int32(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint64_t
-tvb_get_uint40(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint40(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letoh40(tvb, offset);
 	} else {
@@ -1216,7 +1338,7 @@ tvb_get_uint40(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int64_t
-tvb_get_int40(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int40(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohi40(tvb, offset);
 	} else {
@@ -1225,7 +1347,7 @@ tvb_get_int40(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint64_t
-tvb_get_uint48(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint48(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letoh48(tvb, offset);
 	} else {
@@ -1234,7 +1356,7 @@ tvb_get_uint48(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int64_t
-tvb_get_int48(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int48(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohi48(tvb, offset);
 	} else {
@@ -1243,7 +1365,7 @@ tvb_get_int48(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint64_t
-tvb_get_uint56(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint56(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letoh56(tvb, offset);
 	} else {
@@ -1252,7 +1374,7 @@ tvb_get_uint56(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 int64_t
-tvb_get_int56(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int56(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohi56(tvb, offset);
 	} else {
@@ -1261,7 +1383,7 @@ tvb_get_int56(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint64_t
-tvb_get_uint64(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_uint64(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letoh64(tvb, offset);
 	} else {
@@ -1270,7 +1392,7 @@ tvb_get_uint64(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 uint64_t
-tvb_get_uint64_with_length(tvbuff_t *tvb, const int offset, unsigned length, const unsigned encoding)
+tvb_get_uint64_with_length(tvbuff_t *tvb, const unsigned offset, unsigned length, const unsigned encoding)
 {
 	uint64_t value;
 
@@ -1328,7 +1450,7 @@ tvb_get_uint64_with_length(tvbuff_t *tvb, const int offset, unsigned length, con
 }
 
 int64_t
-tvb_get_int64(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_int64(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohi64(tvb, offset);
 	} else {
@@ -1337,7 +1459,7 @@ tvb_get_int64(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 float
-tvb_get_ieee_float(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_ieee_float(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohieee_float(tvb, offset);
 	} else {
@@ -1346,7 +1468,7 @@ tvb_get_ieee_float(tvbuff_t *tvb, const int offset, const unsigned encoding) {
 }
 
 double
-tvb_get_ieee_double(tvbuff_t *tvb, const int offset, const unsigned encoding) {
+tvb_get_ieee_double(tvbuff_t *tvb, const unsigned offset, const unsigned encoding) {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		return tvb_get_letohieee_double(tvb, offset);
 	} else {
@@ -1509,7 +1631,7 @@ get_ieee_double(const uint64_t w)
  * "float" format?
  */
 float
-tvb_get_ntohieee_float(tvbuff_t *tvb, const int offset)
+tvb_get_ntohieee_float(tvbuff_t *tvb, const unsigned offset)
 {
 #if defined(vax)
 	return get_ieee_float(tvb_get_ntohl(tvb, offset));
@@ -1529,7 +1651,7 @@ tvb_get_ntohieee_float(tvbuff_t *tvb, const int offset)
  * big-endian form, and returns a "double".
  */
 double
-tvb_get_ntohieee_double(tvbuff_t *tvb, const int offset)
+tvb_get_ntohieee_double(tvbuff_t *tvb, const unsigned offset)
 {
 #if defined(vax)
 	union {
@@ -1558,7 +1680,7 @@ tvb_get_ntohieee_double(tvbuff_t *tvb, const int offset)
 }
 
 uint16_t
-tvb_get_letohs(tvbuff_t *tvb, const int offset)
+tvb_get_letohs(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1567,7 +1689,7 @@ tvb_get_letohs(tvbuff_t *tvb, const int offset)
 }
 
 int16_t
-tvb_get_letohis(tvbuff_t *tvb, const int offset)
+tvb_get_letohis(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1576,7 +1698,7 @@ tvb_get_letohis(tvbuff_t *tvb, const int offset)
 }
 
 uint32_t
-tvb_get_letoh24(tvbuff_t *tvb, const int offset)
+tvb_get_letoh24(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1585,7 +1707,7 @@ tvb_get_letoh24(tvbuff_t *tvb, const int offset)
 }
 
 int32_t
-tvb_get_letohi24(tvbuff_t *tvb, const int offset)
+tvb_get_letohi24(tvbuff_t *tvb, const unsigned offset)
 {
 	uint32_t ret;
 
@@ -1595,7 +1717,7 @@ tvb_get_letohi24(tvbuff_t *tvb, const int offset)
 }
 
 uint32_t
-tvb_get_letohl(tvbuff_t *tvb, const int offset)
+tvb_get_letohl(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1604,7 +1726,7 @@ tvb_get_letohl(tvbuff_t *tvb, const int offset)
 }
 
 int32_t
-tvb_get_letohil(tvbuff_t *tvb, const int offset)
+tvb_get_letohil(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1613,7 +1735,7 @@ tvb_get_letohil(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_letoh40(tvbuff_t *tvb, const int offset)
+tvb_get_letoh40(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1622,7 +1744,7 @@ tvb_get_letoh40(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_letohi40(tvbuff_t *tvb, const int offset)
+tvb_get_letohi40(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1632,7 +1754,7 @@ tvb_get_letohi40(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_letoh48(tvbuff_t *tvb, const int offset)
+tvb_get_letoh48(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1641,7 +1763,7 @@ tvb_get_letoh48(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_letohi48(tvbuff_t *tvb, const int offset)
+tvb_get_letohi48(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1651,7 +1773,7 @@ tvb_get_letohi48(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_letoh56(tvbuff_t *tvb, const int offset)
+tvb_get_letoh56(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1660,7 +1782,7 @@ tvb_get_letoh56(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_letohi56(tvbuff_t *tvb, const int offset)
+tvb_get_letohi56(tvbuff_t *tvb, const unsigned offset)
 {
 	uint64_t ret;
 
@@ -1670,7 +1792,7 @@ tvb_get_letohi56(tvbuff_t *tvb, const int offset)
 }
 
 uint64_t
-tvb_get_letoh64(tvbuff_t *tvb, const int offset)
+tvb_get_letoh64(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1679,7 +1801,7 @@ tvb_get_letoh64(tvbuff_t *tvb, const int offset)
 }
 
 int64_t
-tvb_get_letohi64(tvbuff_t *tvb, const int offset)
+tvb_get_letohi64(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 
@@ -1696,7 +1818,7 @@ tvb_get_letohi64(tvbuff_t *tvb, const int offset)
  * "float" format?
  */
 float
-tvb_get_letohieee_float(tvbuff_t *tvb, const int offset)
+tvb_get_letohieee_float(tvbuff_t *tvb, const unsigned offset)
 {
 #if defined(vax)
 	return get_ieee_float(tvb_get_letohl(tvb, offset));
@@ -1716,7 +1838,7 @@ tvb_get_letohieee_float(tvbuff_t *tvb, const int offset)
  * little-endian form, and returns a "double".
  */
 double
-tvb_get_letohieee_double(tvbuff_t *tvb, const int offset)
+tvb_get_letohieee_double(tvbuff_t *tvb, const unsigned offset)
 {
 #if defined(vax)
 	union {
@@ -1791,8 +1913,8 @@ validate_single_byte_ascii_encoding(const unsigned encoding)
 }
 
 GByteArray*
-tvb_get_string_bytes(tvbuff_t *tvb, const int offset, const int length,
-		     const unsigned encoding, GByteArray *bytes, int *endoff)
+tvb_get_string_bytes(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		     const unsigned encoding, GByteArray *bytes, unsigned *endoff)
 {
 	char *ptr;
 	const char *begin;
@@ -1811,7 +1933,7 @@ tvb_get_string_bytes(tvbuff_t *tvb, const int offset, const int length,
 	if (*begin && bytes) {
 		if (hex_str_to_bytes_encoding(begin, bytes, &end, encoding, false)) {
 			if (bytes->len > 0) {
-				if (endoff) *endoff = offset + (int)(end - ptr);
+				if (endoff) *endoff = offset + (unsigned)(end - ptr);
 				retval = bytes;
 			}
 		}
@@ -1836,6 +1958,334 @@ parse_month_name(const char *name, int *tm_mon)
 	return false;
 }
 
+bool
+tvb_get_string_uint64(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		      const unsigned encoding, uint64_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftou64(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftou64(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftou64(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_uint(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, uint32_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftou32(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftou32(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftou32(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_uint16(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, uint16_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftou16(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftou16(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftou16(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_uint8(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, uint8_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftou8(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftou8(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftou8(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_int64(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		     const unsigned encoding, int64_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftoi64(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftoi64(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftoi64(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_int(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		   const unsigned encoding, int32_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftoi32(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftoi32(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftoi32(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_int16(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, int16_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftoi16(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftoi16(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftoi16(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
+bool
+tvb_get_string_int8(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, int8_t *value, unsigned *endoff)
+{
+	const uint8_t *ptr;
+	const uint8_t *endptr;
+	const uint8_t **endptrptr = endoff ? &endptr : NULL;
+	bool success;
+
+	validate_single_byte_ascii_encoding(encoding);
+
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+
+	if (ptr == NULL) {
+		*value = 0;
+		if (endoff) {
+			*endoff = offset;
+		}
+		return false;
+	}
+
+	switch (encoding & ENC_STRING) {
+	case ENC_STR_HEX:
+		success = ws_hexbuftoi8(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_DEC:
+		success = ws_buftoi8(ptr, length, endptrptr, value);
+		break;
+	case ENC_STR_NUM:
+	default:
+		success = ws_basebuftoi8(ptr, length, endptrptr, value, 0);
+	}
+
+	if (endoff) {
+		// 0 <= endptr - ptr <= length
+		*endoff = offset + (uint32_t)(endptr - ptr);
+	}
+
+	return success;
+}
+
 /*
  * Is the character a WSP character, as per RFC 5234?  (space or tab).
  */
@@ -1843,8 +2293,8 @@ parse_month_name(const char *name, int *tm_mon)
 
 /* support hex-encoded time values? */
 nstime_t*
-tvb_get_string_time(tvbuff_t *tvb, const int offset, const int length,
-		    const unsigned encoding, nstime_t *ns, int *endoff)
+tvb_get_string_time(tvbuff_t *tvb, const unsigned offset, const unsigned length,
+		    const unsigned encoding, nstime_t *ns, unsigned *endoff)
 {
 	char *begin;
 	const char *ptr;
@@ -2082,7 +2532,7 @@ tvb_get_string_time(tvbuff_t *tvb, const int offset, const int length,
 	}
 
 	if (endoff)
-	    *endoff = (int)(offset + (end - begin));
+	    *endoff = (unsigned)(offset + (end - begin));
 	wmem_free(NULL, begin);
 	return ns;
 
@@ -2095,7 +2545,7 @@ fail:
  * We do *not* convert them to host byte order; we leave them in
  * network byte order. */
 uint32_t
-tvb_get_ipv4(tvbuff_t *tvb, const int offset)
+tvb_get_ipv4(tvbuff_t *tvb, const unsigned offset)
 {
 	const uint8_t *ptr;
 	uint32_t      addr;
@@ -2107,11 +2557,11 @@ tvb_get_ipv4(tvbuff_t *tvb, const int offset)
 
 /* Fetch an IPv6 address. */
 void
-tvb_get_ipv6(tvbuff_t *tvb, const int offset, ws_in6_addr *addr)
+tvb_get_ipv6(tvbuff_t *tvb, const unsigned offset, ws_in6_addr *addr)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, sizeof(*addr));
+	ptr = ensure_contiguous_unsigned(tvb, offset, sizeof(*addr));
 	memcpy(addr, ptr, sizeof *addr);
 }
 
@@ -2120,7 +2570,7 @@ tvb_get_ipv6(tvbuff_t *tvb, const int offset, ws_in6_addr *addr)
  * and -1 if the prefix length is too long.
  */
 int
-tvb_get_ipv4_addr_with_prefix_len(tvbuff_t *tvb, int offset, ws_in4_addr *addr,
+tvb_get_ipv4_addr_with_prefix_len(tvbuff_t *tvb, const unsigned offset, ws_in4_addr *addr,
     uint32_t prefix_len)
 {
 	uint8_t addr_len;
@@ -2141,7 +2591,7 @@ tvb_get_ipv4_addr_with_prefix_len(tvbuff_t *tvb, int offset, ws_in4_addr *addr,
  * and -1 if the prefix length is too long.
  */
 int
-tvb_get_ipv6_addr_with_prefix_len(tvbuff_t *tvb, int offset, ws_in6_addr *addr,
+tvb_get_ipv6_addr_with_prefix_len(tvbuff_t *tvb, const unsigned offset, ws_in6_addr *addr,
     uint32_t prefix_len)
 {
 	uint32_t addr_len;
@@ -2162,9 +2612,9 @@ tvb_get_ipv6_addr_with_prefix_len(tvbuff_t *tvb, int offset, ws_in6_addr *addr,
 
 /* Fetch a GUID. */
 void
-tvb_get_ntohguid(tvbuff_t *tvb, const int offset, e_guid_t *guid)
+tvb_get_ntohguid(tvbuff_t *tvb, const unsigned offset, e_guid_t *guid)
 {
-	const uint8_t *ptr = ensure_contiguous(tvb, offset, GUID_LEN);
+	const uint8_t *ptr = ensure_contiguous_unsigned(tvb, offset, GUID_LEN);
 
 	guid->data1 = pntohu32(ptr + 0);
 	guid->data2 = pntohu16(ptr + 4);
@@ -2173,9 +2623,9 @@ tvb_get_ntohguid(tvbuff_t *tvb, const int offset, e_guid_t *guid)
 }
 
 void
-tvb_get_letohguid(tvbuff_t *tvb, const int offset, e_guid_t *guid)
+tvb_get_letohguid(tvbuff_t *tvb, const unsigned offset, e_guid_t *guid)
 {
-	const uint8_t *ptr = ensure_contiguous(tvb, offset, GUID_LEN);
+	const uint8_t *ptr = ensure_contiguous_unsigned(tvb, offset, GUID_LEN);
 
 	guid->data1 = pletohu32(ptr + 0);
 	guid->data2 = pletohu16(ptr + 4);
@@ -2184,7 +2634,7 @@ tvb_get_letohguid(tvbuff_t *tvb, const int offset, e_guid_t *guid)
 }
 
 void
-tvb_get_guid(tvbuff_t *tvb, const int offset, e_guid_t *guid, const unsigned encoding)
+tvb_get_guid(tvbuff_t *tvb, const unsigned offset, e_guid_t *guid, const unsigned encoding)
 {
 	if (encoding & ENC_LITTLE_ENDIAN) {
 		tvb_get_letohguid(tvb, offset, guid);
@@ -2213,7 +2663,7 @@ static const uint8_t bit_mask8[] = {
  * When encoding is ENC_LITTLE_ENDIAN, the data is aligned to the right.
  */
 uint8_t *
-tvb_get_bits_array(wmem_allocator_t *scope, tvbuff_t *tvb, const int bit_offset,
+tvb_get_bits_array(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned bit_offset,
 		   size_t no_of_bits, size_t *data_length, const unsigned encoding)
 {
 	tvbuff_t *sub_tvb;
@@ -2228,7 +2678,7 @@ tvb_get_bits_array(wmem_allocator_t *scope, tvbuff_t *tvb, const int bit_offset,
 
 /* Get 1 - 8 bits */
 uint8_t
-tvb_get_bits8(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits)
+tvb_get_bits8(tvbuff_t *tvb, unsigned bit_offset, const unsigned no_of_bits)
 {
 	DISSECTOR_ASSERT_HINT(no_of_bits <= 8, "Too many bits requested for 8-bit return type");
 	return (uint8_t)_tvb_get_bits64(tvb, bit_offset, no_of_bits);
@@ -2236,7 +2686,7 @@ tvb_get_bits8(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits)
 
 /* Get 1 - 16 bits */
 uint16_t
-tvb_get_bits16(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const unsigned encoding)
+tvb_get_bits16(tvbuff_t *tvb, unsigned bit_offset, const unsigned no_of_bits, const unsigned encoding)
 {
 	DISSECTOR_ASSERT_HINT(no_of_bits <= 16, "Too many bits requested for 16-bit return type");
 	return (uint16_t)tvb_get_bits64(tvb, bit_offset, no_of_bits, encoding);
@@ -2244,7 +2694,7 @@ tvb_get_bits16(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const u
 
 /* Get 1 - 32 bits */
 uint32_t
-tvb_get_bits32(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const unsigned encoding)
+tvb_get_bits32(tvbuff_t *tvb, unsigned bit_offset, const unsigned no_of_bits, const unsigned encoding)
 {
 	DISSECTOR_ASSERT_HINT(no_of_bits <= 32, "Too many bits requested for 32-bit return type");
 	return (uint32_t)tvb_get_bits64(tvb, bit_offset, no_of_bits, encoding);
@@ -2252,7 +2702,7 @@ tvb_get_bits32(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const u
 
 /* Get 1 - 64 bits */
 uint64_t
-tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const unsigned encoding)
+tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const unsigned no_of_bits, const unsigned encoding)
 {
 	DISSECTOR_ASSERT_HINT(no_of_bits <= 64, "Too many bits requested for 64-bit return type");
 
@@ -2272,7 +2722,7 @@ tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const int no_of_bits, const u
  * The function tolerates requests for more than 64 bits, but will only return the least significant 64 bits.
  */
 static uint64_t
-_tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bits)
+_tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const unsigned total_no_of_bits)
 {
 	uint64_t value;
 	unsigned	octet_offset = bit_offset >> 3;
@@ -2351,12 +2801,12 @@ _tvb_get_bits64(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bits)
  * The function tolerates requests for more than 64 bits, but will only return the least significant 64 bits.
  */
 static uint64_t
-_tvb_get_bits64_le(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bits)
+_tvb_get_bits64_le(tvbuff_t *tvb, unsigned bit_offset, const unsigned total_no_of_bits)
 {
 	uint64_t value = 0;
 	unsigned octet_offset = bit_offset / 8;
-	int remaining_bits = total_no_of_bits;
-	int shift = 0;
+	unsigned remaining_bits = total_no_of_bits;
+	unsigned shift = 0;
 
 	if (remaining_bits > 64)
 	{
@@ -2417,194 +2867,261 @@ _tvb_get_bits64_le(tvbuff_t *tvb, unsigned bit_offset, const int total_no_of_bit
 	return value;
 }
 
-/* Get 1 - 32 bits (should be deprecated as same as tvb_get_bits32??) */
-uint32_t
-tvb_get_bits(tvbuff_t *tvb, const unsigned bit_offset, const int no_of_bits, const unsigned encoding)
-{
-	return (uint32_t)tvb_get_bits64(tvb, bit_offset, no_of_bits, encoding);
-}
-
-static int
-tvb_find_uint8_generic(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, uint8_t needle)
+static bool
+tvb_find_uint8_generic(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, uint8_t needle, unsigned *end_offset)
 {
 	const uint8_t *ptr;
 	const uint8_t *result;
 
-	ptr = ensure_contiguous(tvb, abs_offset, limit); /* tvb_get_ptr() */
+	if (end_offset) {
+		*end_offset = abs_offset + limit;
+	}
+
+	ptr = ensure_contiguous_unsigned(tvb, abs_offset, limit); /* tvb_get_ptr() */
 	if (!ptr)
-		return -1;
+		return false;
 
 	result = (const uint8_t *) memchr(ptr, needle, limit);
 	if (!result)
-		return -1;
+		return false;
 
-	return (int) ((result - ptr) + abs_offset);
+	if (end_offset) {
+		*end_offset = (unsigned)((result - ptr) + abs_offset);
+	}
+	return true;
 }
 
-/* Find first occurrence of needle in tvbuff, starting at offset. Searches
- * at most maxlength number of bytes; if maxlength is -1, searches to
- * end of tvbuff.
- * Returns the offset of the found needle, or -1 if not found.
- * Will not throw an exception, even if maxlength exceeds boundary of tvbuff;
- * in that case, -1 will be returned if the boundary is reached before
- * finding needle. */
-int
-tvb_find_uint8(tvbuff_t *tvb, const int offset, const int maxlength, const uint8_t needle)
+static bool
+_tvb_find_uint8_length(tvbuff_t *tvb, const unsigned offset, const unsigned limit, const uint8_t needle, unsigned *end_offset)
 {
 	const uint8_t *result;
-	unsigned	      abs_offset = 0;
-	unsigned	      limit = 0;
-	int           exception;
-
-	DISSECTOR_ASSERT(tvb && tvb->initialized);
-
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &limit);
-	if (exception)
-		THROW(exception);
-
-	/* Only search to end of tvbuff, w/o throwing exception. */
-	if (maxlength >= 0 && limit > (unsigned) maxlength) {
-		/* Maximum length doesn't go past end of tvbuff; search
-		   to that value. */
-		limit = (unsigned) maxlength;
-	}
 
 	/* If we have real data, perform our search now. */
 	if (tvb->real_data) {
-		result = (const uint8_t *)memchr(tvb->real_data + abs_offset, needle, limit);
+		result = (const uint8_t *)memchr(tvb->real_data + offset, needle, limit);
 		if (result == NULL) {
-			return -1;
+			if (end_offset) {
+				*end_offset = offset + limit;
+			}
+			return false;
 		}
 		else {
-			return (int) (result - tvb->real_data);
+			if (end_offset) {
+				*end_offset = (unsigned)(result - tvb->real_data);
+			}
+			return true;
 		}
 	}
 
 	if (tvb->ops->tvb_find_uint8)
-		return tvb->ops->tvb_find_uint8(tvb, abs_offset, limit, needle);
+		return tvb->ops->tvb_find_uint8(tvb, offset, limit, needle, end_offset);
 
-	return tvb_find_uint8_generic(tvb, offset, limit, needle);
+	return tvb_find_uint8_generic(tvb, offset, limit, needle, end_offset);
 }
 
-/* Same as tvb_find_uint8() with 16bit needle. */
-int
-tvb_find_uint16(tvbuff_t *tvb, const int offset, const int maxlength,
-		 const uint16_t needle)
+bool
+tvb_find_uint8_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength, const uint8_t needle, unsigned *end_offset)
 {
-	unsigned	      abs_offset = 0;
-	unsigned	      limit = 0;
-	int           exception;
-
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &limit);
-	if (exception)
-		THROW(exception);
-
-	/* Only search to end of tvbuff, w/o throwing exception. */
-	if (maxlength >= 0 && limit > (unsigned) maxlength) {
-		/* Maximum length doesn't go past end of tvbuff; search
-		   to that value. */
-		limit = (unsigned) maxlength;
-	}
-
-	const uint8_t needle1 = ((needle & 0xFF00) >> 8);
-	const uint8_t needle2 = ((needle & 0x00FF) >> 0);
-	unsigned searched_bytes = 0;
-	unsigned pos = abs_offset;
-
-	do {
-		int offset1 =
-			tvb_find_uint8(tvb, pos, limit - searched_bytes, needle1);
-		int offset2 = -1;
-
-		if (offset1 == -1) {
-			return -1;
-		}
-
-		searched_bytes = (unsigned)offset1 - abs_offset + 1;
-
-		if (searched_bytes >= limit) {
-			return -1;
-		}
-
-		offset2 = tvb_find_uint8(tvb, offset1 + 1, 1, needle2);
-
-		searched_bytes += 1;
-
-		if (offset2 != -1) {
-			if (searched_bytes > limit) {
-				return -1;
-			}
-			return offset1;
-		}
-
-		pos = offset1 + 1;
-	} while (searched_bytes < limit);
-
-	return -1;
-}
-
-static inline int
-tvb_ws_mempbrk_uint8_generic(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, const ws_mempbrk_pattern* pattern, unsigned char *found_needle)
-{
-	const uint8_t *ptr;
-	const uint8_t *result;
-
-	ptr = ensure_contiguous(tvb, abs_offset, limit); /* tvb_get_ptr */
-	if (!ptr)
-		return -1;
-
-	result = ws_mempbrk_exec(ptr, limit, pattern, found_needle);
-	if (!result)
-		return -1;
-
-	return (int) ((result - ptr) + abs_offset);
-}
-
-
-/* Find first occurrence of any of the pattern chars in tvbuff, starting at offset.
- * Searches at most maxlength number of bytes; if maxlength is -1, searches
- * to end of tvbuff.
- * Returns the offset of the found needle, or -1 if not found.
- * Will not throw an exception, even if maxlength exceeds boundary of tvbuff;
- * in that case, -1 will be returned if the boundary is reached before
- * finding needle. */
-int
-tvb_ws_mempbrk_pattern_uint8(tvbuff_t *tvb, const int offset, const int maxlength,
-			const ws_mempbrk_pattern* pattern, unsigned char *found_needle)
-{
-	const uint8_t *result;
-	unsigned	      abs_offset = 0;
-	unsigned	      limit = 0;
+	unsigned      limit = 0;
 	int           exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	exception = compute_offset_and_remaining(tvb, offset, &abs_offset, &limit);
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
 	if (exception)
 		THROW(exception);
 
 	/* Only search to end of tvbuff, w/o throwing exception. */
-	if (limit > (unsigned) maxlength) {
+	if (limit > maxlength) {
 		/* Maximum length doesn't go past end of tvbuff; search
 		   to that value. */
 		limit = maxlength;
 	}
 
+	return _tvb_find_uint8_length(tvb, offset, limit, needle, end_offset);
+}
+
+bool
+tvb_find_uint8_remaining(tvbuff_t *tvb, const unsigned offset, const uint8_t needle, unsigned *end_offset)
+{
+	unsigned      limit = 0;
+	int           exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_find_uint8_length(tvb, offset, limit, needle, end_offset);
+}
+
+static bool
+_tvb_find_uint16_length(tvbuff_t *tvb, const unsigned offset, const unsigned limit, const uint16_t needle, unsigned *end_offset)
+{
+	const uint8_t needle1 = ((needle & 0xFF00) >> 8);
+	const uint8_t needle2 = ((needle & 0x00FF) >> 0);
+	unsigned searched_bytes = 0;
+	unsigned pos = offset;
+
+	if (end_offset) {
+		*end_offset = offset + limit;
+	}
+
+	do {
+		if (!_tvb_find_uint8_length(tvb, pos, limit - searched_bytes, needle1, &pos)) {
+			return false;
+		}
+
+		/* Bytes searched so far (not counting the second byte) */
+		searched_bytes = pos - offset + 1;
+
+		/* Test vs. equality to account for the second byte */
+		if (searched_bytes >= limit) {
+			return false;
+		}
+
+		if (_tvb_find_uint8_length(tvb, pos + 1, 1, needle2, NULL)) {
+			if (end_offset) {
+				*end_offset = pos;
+			}
+			return true;
+		}
+
+		pos += 1;
+		searched_bytes += 1;
+	} while (searched_bytes < limit);
+
+	return false;
+}
+
+bool
+tvb_find_uint16_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength, const uint16_t needle, unsigned *end_offset)
+{
+	unsigned      limit = 0;
+	int           exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (limit > maxlength) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = maxlength;
+	}
+
+	return _tvb_find_uint16_length(tvb, offset, limit, needle, end_offset);
+}
+
+bool
+tvb_find_uint16_remaining(tvbuff_t *tvb, const unsigned offset, const uint16_t needle, unsigned *end_offset)
+{
+	unsigned      limit = 0;
+	int           exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_find_uint16_length(tvb, offset, limit, needle, end_offset);
+}
+
+static inline bool
+tvb_ws_mempbrk_uint8_generic(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, const ws_mempbrk_pattern* pattern, unsigned *found_offset, unsigned char *found_needle)
+{
+	const uint8_t *ptr;
+	const uint8_t *result;
+
+	if (found_offset) {
+		*found_offset = abs_offset + limit;
+	}
+
+	ptr = ensure_contiguous_unsigned(tvb, abs_offset, limit); /* tvb_get_ptr */
+	if (!ptr)
+		return false;
+
+	result = ws_mempbrk_exec(ptr, limit, pattern, found_needle);
+	if (!result)
+		return false;
+
+	if (found_offset) {
+		*found_offset = (unsigned)((result - ptr) + abs_offset);
+	}
+	return true;
+}
+
+static bool
+_tvb_ws_mempbrk_uint8_length(tvbuff_t *tvb, const unsigned offset, const unsigned limit,
+			const ws_mempbrk_pattern* pattern, unsigned *found_offset, unsigned char *found_needle)
+{
+	const uint8_t *result;
+
 	/* If we have real data, perform our search now. */
 	if (tvb->real_data) {
-		result = ws_mempbrk_exec(tvb->real_data + abs_offset, limit, pattern, found_needle);
+		result = ws_mempbrk_exec(tvb->real_data + offset, limit, pattern, found_needle);
 		if (result == NULL) {
-			return -1;
+			if (found_offset) {
+				*found_offset = offset + limit;
+			}
+			return false;
 		}
 		else {
-			return (int) (result - tvb->real_data);
+			if (found_offset) {
+				*found_offset = (unsigned)(result - tvb->real_data);
+			}
+			return true;
 		}
 	}
 
 	if (tvb->ops->tvb_ws_mempbrk_pattern_uint8)
-		return tvb->ops->tvb_ws_mempbrk_pattern_uint8(tvb, abs_offset, limit, pattern, found_needle);
+		return tvb->ops->tvb_ws_mempbrk_pattern_uint8(tvb, offset, limit, pattern, found_offset, found_needle);
 
-	return tvb_ws_mempbrk_uint8_generic(tvb, abs_offset, limit, pattern, found_needle);
+	return tvb_ws_mempbrk_uint8_generic(tvb, offset, limit, pattern, found_offset, found_needle);
+}
+
+bool
+tvb_ws_mempbrk_uint8_remaining(tvbuff_t *tvb, const unsigned offset,
+			const ws_mempbrk_pattern* pattern, unsigned *found_offset, unsigned char *found_needle)
+{
+	unsigned      limit = 0;
+	int           exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_ws_mempbrk_uint8_length(tvb, offset, limit, pattern, found_offset, found_needle);
+}
+
+bool
+tvb_ws_mempbrk_uint8_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength,
+			const ws_mempbrk_pattern* pattern, unsigned *found_offset, unsigned char *found_needle)
+{
+	unsigned      limit = 0;
+	int           exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (limit > maxlength) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = maxlength;
+	}
+
+	return _tvb_ws_mempbrk_uint8_length(tvb, offset, limit, pattern, found_offset, found_needle);
 }
 
 /* Find size of stringz (NUL-terminated string) by looking for terminating
@@ -2613,16 +3130,14 @@ tvb_ws_mempbrk_pattern_uint8(tvbuff_t *tvb, const int offset, const int maxlengt
  * If the NUL isn't found, it throws the appropriate exception.
  */
 unsigned
-tvb_strsize(tvbuff_t *tvb, const int offset)
+tvb_strsize(tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned abs_offset = 0, junk_length;
-	int   nul_offset;
+	unsigned nul_offset;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	check_offset_length(tvb, offset, 0, &abs_offset, &junk_length);
-	nul_offset = tvb_find_uint8(tvb, abs_offset, -1, 0);
-	if (nul_offset == -1) {
+	validate_offset(tvb, offset);
+	if (!tvb_find_uint8_remaining(tvb, offset, 0, &nul_offset)) {
 		/*
 		 * OK, we hit the end of the tvbuff, so we should throw
 		 * an exception.
@@ -2637,26 +3152,123 @@ tvb_strsize(tvbuff_t *tvb, const int offset)
 			THROW(ReportedBoundsError);
 		}
 	}
-	return (nul_offset - abs_offset) + 1;
+	return (nul_offset - offset) + 1;
 }
 
 /* UTF-16/UCS-2 version of tvb_strsize */
 /* Returns number of bytes including the (two-bytes) null terminator */
 unsigned
-tvb_unicode_strsize(tvbuff_t *tvb, const int offset)
+tvb_unicode_strsize(tvbuff_t *tvb, const unsigned offset)
 {
-	unsigned  i = 0;
+	unsigned  cur_offset = offset;
 	gunichar2 uchar;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
+	/* Note: don't use tvb_find_uint16 because it must be aligned */
 	do {
 		/* Endianness doesn't matter when looking for null */
-		uchar = tvb_get_ntohs(tvb, offset + i);
-		i += 2;
+		uchar = tvb_get_ntohs(tvb, cur_offset);
+		/* Make sure we don't overflow */
+		if (ckd_add(&cur_offset, cur_offset, 2)) {
+			THROW(ReportedBoundsError);
+		}
 	} while(uchar != 0);
 
-	return i;
+	return cur_offset - offset;
+}
+
+/* UTF-32/UCS-4 version of tvb_strsize */
+/* Returns number of bytes including the (four-bytes) null terminator */
+static unsigned
+tvb_ucs_4_strsize(tvbuff_t *tvb, const unsigned offset)
+{
+
+	unsigned       end_offset;
+	gunichar       uchar;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+	end_offset = offset;
+	do {
+		/* Endianness doesn't matter when looking for null */
+		uchar = tvb_get_ntohl(tvb, end_offset);
+		/* Make sure we don't overflow */
+		if (ckd_add(&end_offset, end_offset, 4)) {
+			THROW(ReportedBoundsError);
+		}
+	} while(uchar != 0);
+	return end_offset - offset;
+}
+
+unsigned
+tvb_strsize_enc(tvbuff_t *tvb, const unsigned offset, const unsigned encoding)
+{
+	switch (encoding & ENC_CHARENCODING_MASK) {
+	case ENC_UTF_16:
+	case ENC_UCS_2:
+		return tvb_unicode_strsize(tvb, offset);
+
+	case ENC_UCS_4:
+		return tvb_ucs_4_strsize(tvb, offset);
+
+        case ENC_3GPP_TS_23_038_7BITS_PACKED:
+        case ENC_3GPP_TS_23_038_7BITS_UNPACKED:
+        case ENC_ETSI_TS_102_221_ANNEX_A:
+                REPORT_DISSECTOR_BUG("TS 23.038 7bits has no null character and doesn't support null-terminated strings");
+                break;
+
+	case ENC_ASCII_7BITS:
+		REPORT_DISSECTOR_BUG("Null-terminated strings not implemented for ENC_ASCII_7BITS yet");
+		break;
+
+	case ENC_APN_STR:
+		/* At least as defined in 3GPP TS 23.003 Clause 9.1, null-termination
+		 * does make sense as internal nulls are not allowed. */
+		REPORT_DISSECTOR_BUG("Null-terminated strings are not implemented for ENC_APN_STR");
+		break;
+
+	case ENC_BCD_DIGITS_0_9:
+	case ENC_KEYPAD_ABC_TBCD:
+	case ENC_KEYPAD_BC_TBCD:
+	case ENC_DECT_STANDARD_4BITS_TBCD:
+		REPORT_DISSECTOR_BUG("Null-terminated strings are not supported for BCD encodings.");
+		break;
+
+	case ENC_ASCII:
+	case ENC_UTF_8:
+	case ENC_ISO_8859_1:
+	case ENC_ISO_8859_2:
+	case ENC_ISO_8859_3:
+	case ENC_ISO_8859_4:
+	case ENC_ISO_8859_5:
+	case ENC_ISO_8859_6:
+	case ENC_ISO_8859_7:
+	case ENC_ISO_8859_8:
+	case ENC_ISO_8859_9:
+	case ENC_ISO_8859_10:
+	case ENC_ISO_8859_11:
+	case ENC_ISO_8859_13:
+	case ENC_ISO_8859_14:
+	case ENC_ISO_8859_15:
+	case ENC_ISO_8859_16:
+	case ENC_WINDOWS_1250:
+	case ENC_WINDOWS_1251:
+	case ENC_WINDOWS_1252:
+	case ENC_MAC_ROMAN:
+	case ENC_CP437:
+	case ENC_CP855:
+	case ENC_CP866:
+	case ENC_ISO_646_BASIC:
+	case ENC_EBCDIC:
+	case ENC_EBCDIC_CP037:
+	case ENC_EBCDIC_CP500:
+	case ENC_T61:
+	case ENC_GB18030:
+	case ENC_EUC_KR:
+	case ENC_DECT_STANDARD_8BITS:
+	default:
+		return tvb_strsize(tvb, offset);
+	}
 }
 
 /* Find length of string by looking for end of string ('\0'), up to
@@ -2664,22 +3276,19 @@ tvb_unicode_strsize(tvbuff_t *tvb, const int offset)
  * of tvbuff.
  * Returns -1 if 'maxlength' reached before finding EOS. */
 int
-tvb_strnlen(tvbuff_t *tvb, const int offset, const unsigned maxlength)
+tvb_strnlen(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength)
 {
-	int   result_offset;
-	unsigned abs_offset = 0, junk_length;
+	unsigned result_offset;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	check_offset_length(tvb, offset, 0, &abs_offset, &junk_length);
-
-	result_offset = tvb_find_uint8(tvb, abs_offset, maxlength, 0);
-
-	if (result_offset == -1) {
+	/* TODO - this needs a variant that returns a bool
+	 * and sets a unsigned offset to the value if true. */
+	if (!tvb_find_uint8_length(tvb, offset, maxlength, 0, &result_offset)) {
 		return -1;
 	}
 	else {
-		return result_offset - abs_offset;
+		return (int)(result_offset - offset);
 	}
 }
 
@@ -2692,11 +3301,11 @@ tvb_strnlen(tvbuff_t *tvb, const int offset, const unsigned maxlength)
  * it returns 0 (meaning "equal") and -1 otherwise, otherwise return -1.
  */
 int
-tvb_strneql(tvbuff_t *tvb, const int offset, const char *str, const size_t size)
+tvb_strneql(tvbuff_t *tvb, const unsigned offset, const char *str, const size_t size)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous_no_exception(tvb, offset, (int)size, NULL);
+	ptr = ensure_contiguous_unsigned_no_exception(tvb, offset, (unsigned)size, NULL);
 
 	if (ptr) {
 		int cmp = strncmp((const char *)ptr, str, size);
@@ -2719,11 +3328,11 @@ tvb_strneql(tvbuff_t *tvb, const int offset, const char *str, const size_t size)
  * 0 if it returns 0 (meaning "equal") and -1 otherwise, otherwise return -1.
  */
 int
-tvb_strncaseeql(tvbuff_t *tvb, const int offset, const char *str, const size_t size)
+tvb_strncaseeql(tvbuff_t *tvb, const unsigned offset, const char *str, const size_t size)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous_no_exception(tvb, offset, (int)size, NULL);
+	ptr = ensure_contiguous_unsigned_no_exception(tvb, offset, (unsigned)size, NULL);
 
 	if (ptr) {
 		int cmp = g_ascii_strncasecmp((const char *)ptr, str, size);
@@ -2747,11 +3356,11 @@ tvb_strncaseeql(tvbuff_t *tvb, const int offset, const char *str, const size_t s
  * and -1 for error. This function does not throw an exception.
  */
 int
-tvb_memeql(tvbuff_t *tvb, const int offset, const uint8_t *str, size_t size)
+tvb_memeql(tvbuff_t *tvb, const unsigned offset, const uint8_t *str, size_t size)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous_no_exception(tvb, offset, (int) size, NULL);
+	ptr = ensure_contiguous_unsigned_no_exception(tvb, offset, (unsigned)size, NULL);
 
 	if (ptr) {
 		int cmp = memcmp(ptr, str, size);
@@ -2773,30 +3382,24 @@ tvb_memeql(tvbuff_t *tvb, const int offset, const uint8_t *str, size_t size)
  * Format the data in the tvb from offset for size.
  */
 char *
-tvb_format_text(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int size)
+tvb_format_text(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned size)
 {
 	const uint8_t *ptr;
-	int           len;
 
-	len = (size > 0) ? size : 0;
-
-	ptr = ensure_contiguous(tvb, offset, size);
-	return format_text(scope, ptr, len);
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
+	return format_text(scope, (const char*)ptr, size);
 }
 
 /*
  * Format the data in the tvb from offset for length ...
  */
 char *
-tvb_format_text_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const int offset, const int size)
+tvb_format_text_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const unsigned offset, const unsigned size)
 {
 	const uint8_t *ptr;
-	int           len;
 
-	len = (size > 0) ? size : 0;
-
-	ptr = ensure_contiguous(tvb, offset, size);
-	return format_text_wsp(allocator, ptr, len);
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
+	return format_text_wsp(allocator, (const char*)ptr, size);
 }
 
 /**
@@ -2804,18 +3407,15 @@ tvb_format_text_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const int offset
  * the null padding characters as "\000".
  */
 char *
-tvb_format_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int size)
+tvb_format_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned size)
 {
 	const uint8_t *ptr, *p;
-	int           len;
-	int           stringlen;
+	unsigned      stringlen;
 
-	len = (size > 0) ? size : 0;
-
-	ptr = ensure_contiguous(tvb, offset, size);
-	for (p = ptr, stringlen = 0; stringlen < len && *p != '\0'; p++, stringlen++)
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
+	for (p = ptr, stringlen = 0; stringlen < size && *p != '\0'; p++, stringlen++)
 		;
-	return format_text(scope, ptr, stringlen);
+	return format_text(scope, (const char*)ptr, stringlen);
 }
 
 /*
@@ -2823,18 +3423,15 @@ tvb_format_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, 
  * the null padding characters as "\000".
  */
 char *
-tvb_format_stringzpad_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const int offset, const int size)
+tvb_format_stringzpad_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const unsigned offset, const unsigned size)
 {
 	const uint8_t *ptr, *p;
-	int           len;
-	int           stringlen;
+	unsigned      stringlen;
 
-	len = (size > 0) ? size : 0;
-
-	ptr = ensure_contiguous(tvb, offset, size);
-	for (p = ptr, stringlen = 0; stringlen < len && *p != '\0'; p++, stringlen++)
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
+	for (p = ptr, stringlen = 0; stringlen < size && *p != '\0'; p++, stringlen++)
 		;
-	return format_text_wsp(allocator, ptr, stringlen);
+	return format_text_wsp(allocator, (const char*)ptr, stringlen);
 }
 
 /*
@@ -2860,11 +3457,11 @@ tvb_format_stringzpad_wsp(wmem_allocator_t* allocator, tvbuff_t *tvb, const int 
  * REPLACEMENT CHARACTER.
  */
 static uint8_t *
-tvb_get_ascii_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_ascii_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_ascii_string(scope, ptr, length);
 }
 
@@ -2882,11 +3479,11 @@ tvb_get_ascii_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int len
  * REPLACEMENT CHARACTER.
  */
 static uint8_t *
-tvb_get_iso_646_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length, const gunichar2 table[0x80])
+tvb_get_iso_646_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length, const gunichar2 table[0x80])
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_iso_646_string(scope, ptr, length, table);
 }
 
@@ -2906,11 +3503,11 @@ tvb_get_iso_646_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int l
  * be added later.
  */
 static uint8_t *
-tvb_get_utf_8_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int length)
+tvb_get_utf_8_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_utf_8_string(scope, ptr, length);
 }
 
@@ -2920,26 +3517,16 @@ tvb_get_utf_8_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, c
  * raw string, and return a pointer to that string, allocated using the
  * wmem scope. This means a null is appended at the end, but no replacement
  * checking is done otherwise, unlike tvb_get_utf_8_string().
- *
- * Also, this one allows a length of -1 to mean get all, but does not
- * allow a negative offset.
  */
 static inline uint8_t *
-tvb_get_raw_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int length)
+tvb_get_raw_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
 	uint8_t *strbuf;
-	int     abs_length = length;
 
-	DISSECTOR_ASSERT(offset     >=  0);
-	DISSECTOR_ASSERT(abs_length >= -1);
-
-	if (abs_length < 0)
-		abs_length = tvb->length - offset;
-
-	tvb_ensure_bytes_exist(tvb, offset, abs_length);
-	strbuf = (uint8_t *)wmem_alloc(scope, abs_length + 1);
-	tvb_memcpy(tvb, strbuf, offset, abs_length);
-	strbuf[abs_length] = '\0';
+	tvb_ensure_bytes_exist(tvb, offset, length);
+	strbuf = (uint8_t *)wmem_alloc(scope, length + 1);
+	tvb_memcpy(tvb, strbuf, offset, length);
+	strbuf[length] = '\0';
 	return strbuf;
 }
 
@@ -2950,11 +3537,11 @@ tvb_get_raw_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, con
  * using the wmem scope.
  */
 static uint8_t *
-tvb_get_string_8859_1(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_string_8859_1(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_8859_1_string(scope, ptr, length);
 }
 
@@ -2969,11 +3556,11 @@ tvb_get_string_8859_1(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int le
  * wmem scope.
  */
 static uint8_t *
-tvb_get_string_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length, const gunichar2 table[0x80])
+tvb_get_string_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length, const gunichar2 table[0x80])
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_unichar2_string(scope, ptr, length, table);
 }
 
@@ -2985,7 +3572,8 @@ tvb_get_string_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int 
  * Multilingual Plane (plane 0) of Unicode, and return a pointer to a
  * UTF-8 string, allocated with the wmem scope.
  *
- * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN.
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * optionally with ENC_BOM.
  *
  * Specify length in bytes.
  *
@@ -2995,11 +3583,11 @@ tvb_get_string_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int 
  * REPLACEMENT CHARACTER at the end.
  */
 static uint8_t *
-tvb_get_ucs_2_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length, const unsigned encoding)
+tvb_get_ucs_2_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned length, const unsigned encoding)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_ucs_2_string(scope, ptr, length, encoding);
 }
 
@@ -3010,7 +3598,8 @@ tvb_get_ucs_2_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, i
  * the byte order in question, and return a pointer to a UTF-8 string,
  * allocated with the wmem scope.
  *
- * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN.
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * optionally with ENC_BOM.
  *
  * Specify length in bytes.
  *
@@ -3020,11 +3609,11 @@ tvb_get_ucs_2_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, i
  * REPLACEMENT CHARACTER at the end.
  */
 static uint8_t *
-tvb_get_utf_16_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length, const unsigned encoding)
+tvb_get_utf_16_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned length, const unsigned encoding)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_utf_16_string(scope, ptr, length, encoding);
 }
 
@@ -3035,7 +3624,8 @@ tvb_get_utf_16_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, 
  * the byte order in question, and return a pointer to a UTF-8 string,
  * allocated with the wmem scope.
  *
- * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN
+ * Encoding parameter should be ENC_BIG_ENDIAN or ENC_LITTLE_ENDIAN,
+ * optionally with ENC_BOM.
  *
  * Specify length in bytes
  *
@@ -3046,64 +3636,90 @@ tvb_get_utf_16_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, 
  * REPLACEMENT CHARACTER at the end.
  */
 static char *
-tvb_get_ucs_4_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int length, const unsigned encoding)
+tvb_get_ucs_4_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned length, const unsigned encoding)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
-	return get_ucs_4_string(scope, ptr, length, encoding);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+	return (char*)get_ucs_4_string(scope, ptr, length, encoding);
 }
 
 char *
 tvb_get_ts_23_038_7bits_string_packed(wmem_allocator_t *scope, tvbuff_t *tvb,
-	const int bit_offset, int no_of_chars)
+	const unsigned bit_offset, unsigned no_of_chars)
 {
-	int            in_offset = bit_offset >> 3; /* Current pointer to the input buffer */
-	int            length = ((no_of_chars + 1) * 7 + (bit_offset & 0x07)) >> 3;
+	unsigned       in_offset = bit_offset >> 3; /* Current pointer to the input buffer */
+	/* Calculate the number of bytes this will occupy without overflow.
+	 * The end result never overflow (although some compilers don't know
+	 * that and will warn about shortening absent an explicit cast), but
+	 * we must store the intermediate result in a wider type. */
+	unsigned length = (unsigned)((((uint64_t)no_of_chars + 1) * 7 + (bit_offset & 0x07)) >> 3);
+#if 0
+	/* Alternatively, on 32-bit architectures (or if we were doing the
+	 * same operation on 64-bit integers), we could divide by 8 first,
+	 * splitting no_of_chars into its quotient and remainder: */
+	unsigned       length = (no_of_chars >> 3) * 7;
+	/* Then calculate the number of bytes occupied by the remainder and bit
+	 * offset, rounded up. */
+	length += ((no_of_chars & 0x7 + 1) * 7 + (bit_offset & 0x7)) >> 3;
+#endif
 	const uint8_t *ptr;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	ptr = ensure_contiguous(tvb, in_offset, length);
-	return get_ts_23_038_7bits_string_packed(scope, ptr, bit_offset, no_of_chars);
+	ptr = ensure_contiguous_unsigned(tvb, in_offset, length);
+	return (char*)get_ts_23_038_7bits_string_packed(scope, ptr, bit_offset, no_of_chars);
 }
 
 char *
 tvb_get_ts_23_038_7bits_string_unpacked(wmem_allocator_t *scope, tvbuff_t *tvb,
-	const int offset, int length)
+	const unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	ptr = ensure_contiguous(tvb, offset, length);
-	return get_ts_23_038_7bits_string_unpacked(scope, ptr, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+	return (char*)get_ts_23_038_7bits_string_unpacked(scope, ptr, length);
 }
 
 char *
 tvb_get_etsi_ts_102_221_annex_a_string(wmem_allocator_t *scope, tvbuff_t *tvb,
-	const int offset, int length)
+	const unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	ptr = ensure_contiguous(tvb, offset, length);
-	return get_etsi_ts_102_221_annex_a_string(scope, ptr, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
+	return (char*)get_etsi_ts_102_221_annex_a_string(scope, ptr, length);
 }
 
 char *
 tvb_get_ascii_7bits_string(wmem_allocator_t *scope, tvbuff_t *tvb,
-	const int bit_offset, int no_of_chars)
+	const unsigned bit_offset, unsigned no_of_chars)
 {
-	int            in_offset = bit_offset >> 3; /* Current pointer to the input buffer */
-	int            length = ((no_of_chars + 1) * 7 + (bit_offset & 0x07)) >> 3;
+	unsigned       in_offset = bit_offset >> 3; /* Current pointer to the input buffer */
+	/* Calculate the number of bytes this will occupy without overflow.
+	 * The end result never overflow (although some compilers don't know
+	 * that and will warn about shortening absent an explicit cast), but
+	 * we must store the intermediate result in a wider type. */
+	unsigned length = (unsigned)((((uint64_t)no_of_chars + 1) * 7 + (bit_offset & 0x07)) >> 3);
+#if 0
+	/* Alternatively, on 32-bit architectures (or if we were doing the
+	 * same operation on 64-bit integers), we could divide by 8 first,
+	 * splitting no_of_chars into its quotient and remainder: */
+	unsigned       length = (no_of_chars >> 3) * 7;
+	/* Then calculate the number of bytes occupied by the remainder and bit
+	 * offset, rounded up. */
+	length += ((no_of_chars & 0x7 + 1) * 7 + (bit_offset & 0x7)) >> 3;
+#endif
 	const uint8_t *ptr;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	ptr = ensure_contiguous(tvb, in_offset, length);
-	return get_ascii_7bits_string(scope, ptr, bit_offset, no_of_chars);
+	ptr = ensure_contiguous_unsigned(tvb, in_offset, length);
+	return (char*)get_ascii_7bits_string(scope, ptr, bit_offset, no_of_chars);
 }
 
 /*
@@ -3115,11 +3731,11 @@ tvb_get_ascii_7bits_string(wmem_allocator_t *scope, tvbuff_t *tvb,
  * return a pointer to a UTF-8 string, allocated with the wmem scope.
  */
 static uint8_t *
-tvb_get_nonascii_unichar2_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length, const gunichar2 table[256])
+tvb_get_nonascii_unichar2_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length, const gunichar2 table[256])
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_nonascii_unichar2_string(scope, ptr, length, table);
 }
 
@@ -3134,11 +3750,11 @@ tvb_get_nonascii_unichar2_string(wmem_allocator_t *scope, tvbuff_t *tvb, int off
  * As expected, this will also decode GBK and GB2312 strings.
  */
 static uint8_t *
-tvb_get_gb18030_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_gb18030_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_gb18030_string(scope, ptr, length);
 }
 
@@ -3151,20 +3767,20 @@ tvb_get_gb18030_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int l
  * ( https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf )
  */
 static uint8_t *
-tvb_get_euc_kr_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_euc_kr_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_euc_kr_string(scope, ptr, length);
 }
 
 static uint8_t *
-tvb_get_t61_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_t61_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_t61_string(scope, ptr, length);
 }
 
@@ -3200,8 +3816,8 @@ static const dgt_set_t Dgt_dect_standard_4bits_tbcd = {
 };
 
 static uint8_t *
-tvb_get_apn_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
-			     int length)
+tvb_get_apn_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset,
+			     unsigned length)
 {
 	wmem_strbuf_t *str;
 
@@ -3212,7 +3828,7 @@ tvb_get_apn_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 	 * (FQDNs)", subsection 19.4.2.1 "General", says:
 	 *
 	 *    The encoding of any identifier used as part of a Fully
-	 *    Qualifed Domain Name (FQDN) shall follow the Name Syntax
+	 *    Qualified Domain Name (FQDN) shall follow the Name Syntax
 	 *    defined in IETF RFC 2181 [18], IETF RFC 1035 [19] and
 	 *    IETF RFC 1123 [20].  An FQDN consists of one or more
 	 *    labels. Each label is coded as a one octet length field
@@ -3227,7 +3843,7 @@ tvb_get_apn_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 	if (length > 0) {
 		const uint8_t *ptr;
 
-		ptr = ensure_contiguous(tvb, offset, length);
+		ptr = ensure_contiguous_unsigned(tvb, offset, length);
 
 		for (;;) {
 			unsigned label_len;
@@ -3267,11 +3883,11 @@ end:
 }
 
 static uint8_t *
-tvb_get_dect_standard_8bits_string(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int length)
+tvb_get_dect_standard_8bits_string(wmem_allocator_t *scope, tvbuff_t *tvb, unsigned offset, unsigned length)
 {
 	const uint8_t *ptr;
 
-	ptr = ensure_contiguous(tvb, offset, length);
+	ptr = ensure_contiguous_unsigned(tvb, offset, length);
 	return get_dect_standard_8bits_string(scope, ptr, length);
 }
 
@@ -3283,18 +3899,13 @@ tvb_get_dect_standard_8bits_string(wmem_allocator_t *scope, tvbuff_t *tvb, int o
  * return a pointer to the string.
  */
 uint8_t *
-tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
-			     const int length, const unsigned encoding)
+tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset,
+			     const unsigned length, const unsigned encoding)
 {
 	uint8_t *strptr;
 	bool odd, skip_first;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
-
-	/* make sure length = -1 fails */
-	if (length < 0) {
-		THROW(ReportedBoundsError);
-	}
 
 	switch (encoding & ENC_CHARENCODING_MASK) {
 
@@ -3327,7 +3938,7 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 		break;
 
 	case ENC_UCS_4:
-		strptr = tvb_get_ucs_4_string(scope, tvb, offset, length,
+		strptr = (uint8_t*)tvb_get_ucs_4_string(scope, tvb, offset, length,
 		    encoding & (ENC_LITTLE_ENDIAN|ENC_BOM));
 		break;
 
@@ -3430,17 +4041,17 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 
 	case ENC_3GPP_TS_23_038_7BITS_PACKED:
 		{
-			int bit_offset  = offset << 3;
-			int no_of_chars = (length << 3) / 7;
-			strptr = tvb_get_ts_23_038_7bits_string_packed(scope, tvb, bit_offset, no_of_chars);
+			unsigned bit_offset  = offset << 3;
+			unsigned no_of_chars = (length << 3) / 7;
+			strptr = (uint8_t*)tvb_get_ts_23_038_7bits_string_packed(scope, tvb, bit_offset, no_of_chars);
 		}
 		break;
 
 	case ENC_ASCII_7BITS:
 		{
-			int bit_offset  = offset << 3;
-			int no_of_chars = (length << 3) / 7;
-			strptr = tvb_get_ascii_7bits_string(scope, tvb, bit_offset, no_of_chars);
+			unsigned bit_offset  = offset << 3;
+			unsigned no_of_chars = (length << 3) / 7;
+			strptr = (uint8_t*)tvb_get_ascii_7bits_string(scope, tvb, bit_offset, no_of_chars);
 		}
 		break;
 
@@ -3477,7 +4088,7 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 		 */
 		odd = (encoding & ENC_BCD_ODD_NUM_DIG) >> 16;
 		skip_first = (encoding & ENC_BCD_SKIP_FIRST) >> 17;
-		strptr = tvb_get_bcd_string(scope, tvb, offset, length, &Dgt0_9_bcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
+		strptr = (uint8_t*)tvb_get_bcd_string(scope, tvb, offset, length, &Dgt0_9_bcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
 		break;
 
 	case ENC_KEYPAD_ABC_TBCD:
@@ -3487,7 +4098,7 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 		 */
 		odd = (encoding & ENC_BCD_ODD_NUM_DIG) >> 16;
 		skip_first = (encoding & ENC_BCD_SKIP_FIRST) >> 17;
-		strptr = tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_keypad_abc_tbcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
+		strptr = (uint8_t*)tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_keypad_abc_tbcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
 		break;
 
 	case ENC_KEYPAD_BC_TBCD:
@@ -3497,15 +4108,15 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 		 */
 		odd = (encoding & ENC_BCD_ODD_NUM_DIG) >> 16;
 		skip_first = (encoding & ENC_BCD_SKIP_FIRST) >> 17;
-		strptr = tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_ansi_tbcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
+		strptr = (uint8_t*)tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_ansi_tbcd, skip_first, odd, !(encoding & ENC_LITTLE_ENDIAN));
 		break;
 
 	case ENC_3GPP_TS_23_038_7BITS_UNPACKED:
-		strptr = tvb_get_ts_23_038_7bits_string_unpacked(scope, tvb, offset, length);
+		strptr = (uint8_t*)tvb_get_ts_23_038_7bits_string_unpacked(scope, tvb, offset, length);
 		break;
 
 	case ENC_ETSI_TS_102_221_ANNEX_A:
-		strptr = tvb_get_etsi_ts_102_221_annex_a_string(scope, tvb, offset, length);
+		strptr = (uint8_t*)tvb_get_etsi_ts_102_221_annex_a_string(scope, tvb, offset, length);
 		break;
 
 	case ENC_GB18030:
@@ -3531,7 +4142,7 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
 		 */
 		odd = (encoding & ENC_BCD_ODD_NUM_DIG) >> 16;
 		skip_first = (encoding & ENC_BCD_SKIP_FIRST) >> 17;
-		strptr = tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_dect_standard_4bits_tbcd, skip_first, odd, false);
+		strptr = (uint8_t*)tvb_get_bcd_string(scope, tvb, offset, length, &Dgt_dect_standard_4bits_tbcd, skip_first, odd, false);
 		break;
 	}
 	return strptr;
@@ -3549,8 +4160,8 @@ tvb_get_string_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
  * involve null termination, that might change.
  */
 uint8_t *
-tvb_get_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
-		   const int length, const unsigned encoding)
+tvb_get_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset,
+		   const unsigned length, const unsigned encoding)
 {
 	return tvb_get_string_enc(scope, tvb, offset, length, encoding);
 }
@@ -3565,70 +4176,65 @@ tvb_get_stringzpad(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
  * encodings).
  */
 static uint8_t *
-tvb_get_ascii_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp)
+tvb_get_ascii_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
-	unsigned	       size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_ascii_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_iso_646_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp, const gunichar2 table[0x80])
+tvb_get_iso_646_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const gunichar2 table[0x80])
 {
-	unsigned	       size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_iso_646_string(scope, ptr, size, table);
 }
 
 static uint8_t *
-tvb_get_utf_8_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp)
+tvb_get_utf_8_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
 	unsigned   size;
 	const uint8_t *ptr;
 
 	size   = tvb_strsize(tvb, offset);
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_utf_8_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_stringz_8859_1(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp)
+tvb_get_stringz_8859_1(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
 	unsigned size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_8859_1_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_stringz_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp, const gunichar2 table[0x80])
+tvb_get_stringz_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const gunichar2 table[0x80])
 {
 	unsigned size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_unichar2_string(scope, ptr, size, table);
@@ -3643,144 +4249,119 @@ tvb_get_stringz_unichar2(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int
  * through a pointer.
  *
  * As long as we aren't using composite TVBs, this saves the cycles used
- * (often unnecessariliy) in allocating a buffer and copying the string into
- * it.  (If we do start using composite TVBs, we may want to replace this
- * function with the _ephemeral version.)
+ * (often unnecessarily) in allocating a buffer and copying the string into
+ * it. OTOH, the string returned isn't valid UTF-8, so it shouldn't be
+ * added to the tree, the columns, etc., just used with various other
+ * functions that operate on strings that don't have a tvb_ equivalent.
+ * That's hard to enforce, which is why this is deprecated.
  */
-const uint8_t *
-tvb_get_const_stringz(tvbuff_t *tvb, const int offset, int *lengthp)
-{
-	unsigned      size;
-	const uint8_t *strptr;
-
-	size   = tvb_strsize(tvb, offset);
-	strptr = ensure_contiguous(tvb, offset, size);
-	if (lengthp)
-		*lengthp = size;
-	return strptr;
-}
-
 static char *
-tvb_get_ucs_2_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp, const unsigned encoding)
+tvb_get_ucs_2_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const unsigned encoding)
 {
-	int            size;    /* Number of bytes in string */
+	unsigned       size;    /* Number of bytes in string */
 	const uint8_t *ptr;
 
 	size = tvb_unicode_strsize(tvb, offset);
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
-	return get_ucs_2_string(scope, ptr, size, encoding);
+	return (char*)get_ucs_2_string(scope, ptr, size, encoding);
 }
 
 static char *
-tvb_get_utf_16_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp, const unsigned encoding)
+tvb_get_utf_16_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const unsigned encoding)
 {
-	int            size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_unicode_strsize(tvb, offset);
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
-	return get_utf_16_string(scope, ptr, size, encoding);
+	return (char*)get_utf_16_string(scope, ptr, size, encoding);
 }
 
 static char *
-tvb_get_ucs_4_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp, const unsigned encoding)
+tvb_get_ucs_4_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const unsigned encoding)
 {
-	int            size;
-	gunichar       uchar;
+	unsigned       size;
 	const uint8_t *ptr;
 
-	size = 0;
-	do {
-		/* Endianness doesn't matter when looking for null */
-		uchar = tvb_get_ntohl(tvb, offset + size);
-		size += 4;
-	} while(uchar != 0);
+	size = tvb_ucs_4_strsize(tvb, offset);
 
-	ptr = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
-	return get_ucs_4_string(scope, ptr, size, encoding);
+	return (char*)get_ucs_4_string(scope, ptr, size, encoding);
 }
 
 static uint8_t *
-tvb_get_nonascii_unichar2_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp, const gunichar2 table[256])
+tvb_get_nonascii_unichar2_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const gunichar2 table[256])
 {
-	unsigned	       size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_nonascii_unichar2_string(scope, ptr, size, table);
 }
 
 static uint8_t *
-tvb_get_t61_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp)
+tvb_get_t61_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
-	unsigned	       size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_t61_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_gb18030_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp)
+tvb_get_gb18030_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
 	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_gb18030_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_euc_kr_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int   *lengthp)
+tvb_get_euc_kr_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
 	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_euc_kr_string(scope, ptr, size);
 }
 
 static uint8_t *
-tvb_get_dect_standard_8bits_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, int *lengthp)
+tvb_get_dect_standard_8bits_stringz(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp)
 {
-	unsigned	       size;
+	unsigned       size;
 	const uint8_t *ptr;
 
 	size = tvb_strsize(tvb, offset);
-	ptr  = ensure_contiguous(tvb, offset, size);
-	/* XXX, conversion between signed/unsigned integer */
+	ptr  = ensure_contiguous_unsigned(tvb, offset, size);
 	if (lengthp)
 		*lengthp = size;
 	return get_dect_standard_8bits_string(scope, ptr, size);
 }
 
 uint8_t *
-tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp, const unsigned encoding)
+tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned *lengthp, const unsigned encoding)
 {
 	uint8_t *strptr;
 
@@ -3803,27 +4384,21 @@ tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, in
 		break;
 
 	case ENC_UTF_8:
-		/*
-		 * XXX - should map all invalid UTF-8 sequences
-		 * to a "substitute" UTF-8 character.
-		 * XXX - should map code points > 10FFFF to REPLACEMENT
-		 * CHARACTERs.
-		 */
 		strptr = tvb_get_utf_8_stringz(scope, tvb, offset, lengthp);
 		break;
 
 	case ENC_UTF_16:
-		strptr = tvb_get_utf_16_stringz(scope, tvb, offset, lengthp,
+		strptr = (uint8_t*)tvb_get_utf_16_stringz(scope, tvb, offset, lengthp,
 		    encoding & (ENC_LITTLE_ENDIAN|ENC_BOM));
 		break;
 
 	case ENC_UCS_2:
-		strptr = tvb_get_ucs_2_stringz(scope, tvb, offset, lengthp,
+		strptr = (uint8_t*)tvb_get_ucs_2_stringz(scope, tvb, offset, lengthp,
 		    encoding & (ENC_LITTLE_ENDIAN|ENC_BOM));
 		break;
 
 	case ENC_UCS_4:
-		strptr = tvb_get_ucs_4_stringz(scope, tvb, offset, lengthp,
+		strptr = (uint8_t*)tvb_get_ucs_4_stringz(scope, tvb, offset, lengthp,
 		    encoding & (ENC_LITTLE_ENDIAN|ENC_BOM));
 		break;
 
@@ -3924,6 +4499,13 @@ tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, in
 		strptr = tvb_get_iso_646_stringz(scope, tvb, offset, lengthp, charset_table_iso_646_basic);
 		break;
 
+	case ENC_BCD_DIGITS_0_9:
+	case ENC_KEYPAD_ABC_TBCD:
+	case ENC_KEYPAD_BC_TBCD:
+	case ENC_DECT_STANDARD_4BITS_TBCD:
+		REPORT_DISSECTOR_BUG("Null-terminated strings are not supported for BCD encodings.");
+		break;
+
 	case ENC_3GPP_TS_23_038_7BITS_PACKED:
 	case ENC_3GPP_TS_23_038_7BITS_UNPACKED:
 	case ENC_ETSI_TS_102_221_ANNEX_A:
@@ -3969,6 +4551,12 @@ tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, in
 		strptr = tvb_get_euc_kr_stringz(scope, tvb, offset, lengthp);
 		break;
 
+	case ENC_APN_STR:
+		/* At least as defined in 3GPP TS 23.003 Clause 9.1, null-termination
+		 * does make sense as internal nulls are not allowed. */
+		REPORT_DISSECTOR_BUG("Null-terminated strings not implemented for ENC_APN_STR");
+		break;
+
 	case ENC_DECT_STANDARD_8BITS:
 		strptr = tvb_get_dect_standard_8bits_stringz(scope, tvb, offset, lengthp);
 		break;
@@ -3979,32 +4567,35 @@ tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, in
 
 /* Looks for a stringz (NUL-terminated string) in tvbuff and copies
  * no more than bufsize number of bytes, including terminating NUL, to buffer.
- * Returns length of string (not including terminating NUL), or -1 if the string was
- * truncated in the buffer due to not having reached the terminating NUL.
+ * Returns length of string (not including terminating NUL).
  * In this way, it acts like snprintf().
  *
  * bufsize MUST be greater than 0.
  *
- * When processing a packet where the remaining number of bytes is less
- * than bufsize, an exception is not thrown if the end of the packet
- * is reached before the NUL is found. If no NUL is found before reaching
- * the end of the short packet, -1 is still returned, and the string
- * is truncated with a NUL, albeit not at buffer[bufsize - 1], but
- * at the correct spot, terminating the string.
+ * This function does not otherwise throw an exception for running out of room
+ * in the buffer or running out of remaining bytes in the tvbuffer. It will
+ * copy as many bytes to the buffer as possible (the lesser of bufsize - 1
+ * and the number of remaining captured bytes) and then NUL terminate the
+ * string.
  *
  * *bytes_copied will contain the number of bytes actually copied,
- * including the terminating-NUL.
+ * including the terminating-NUL if present in the frame, but not
+ * if it was supplied by the function instead of copied from packet data.
+ * [Not currently used, but could be used to determine how much to advance
+ * the offset.]
  */
-static int
-_tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer, int *bytes_copied)
+static unsigned
+_tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const unsigned offset, const unsigned bufsize, uint8_t* buffer, unsigned *bytes_copied)
 {
+	int	 exception;
 	int      stringlen;
-	unsigned abs_offset = 0;
-	int      limit, len = 0;
-	bool     decreased_max = false;
+	unsigned limit;
+	unsigned len = 0;
 
 	/* Only read to end of tvbuff, w/o throwing exception. */
-	check_offset_length(tvb, offset, -1, &abs_offset, &len);
+	exception = validate_offset_and_remaining(tvb, offset, &len);
+	if (exception)
+		THROW(exception);
 
 	/* There must at least be room for the terminating NUL. */
 	DISSECTOR_ASSERT(bufsize != 0);
@@ -4012,73 +4603,50 @@ _tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const int offset, const unsigned bu
 	/* If there's no room for anything else, just return the NUL. */
 	if (bufsize == 1) {
 		buffer[0] = 0;
-		*bytes_copied = 1;
+		if (len && tvb_get_uint8(tvb, offset) == 0) {
+			*bytes_copied = 1;
+		} else {
+			*bytes_copied = 0;
+		}
 		return 0;
 	}
 
-	/* check_offset_length() won't throw an exception if we're
+	/* validate_offset_and_remaining() won't throw an exception if we're
 	 * looking at the byte immediately after the end of the tvbuff. */
 	if (len == 0) {
 		THROW(ReportedBoundsError);
 	}
 
-	/* This should not happen because check_offset_length() would
-	 * have already thrown an exception if 'offset' were out-of-bounds.
-	 */
-	DISSECTOR_ASSERT(len != -1);
-
-	/*
-	 * If we've been passed a negative number, bufsize will
-	 * be huge.
-	 */
-	DISSECTOR_ASSERT(bufsize <= INT_MAX);
-
-	if ((unsigned)len < bufsize) {
+	if (len < bufsize) {
 		limit = len;
-		decreased_max = true;
 	}
 	else {
-		limit = bufsize;
+		limit = bufsize - 1;
 	}
 
-	stringlen = tvb_strnlen(tvb, abs_offset, limit - 1);
-	/* If NUL wasn't found, copy the data and return -1 */
+	stringlen = tvb_strnlen(tvb, offset, limit);
+	/* If NUL wasn't found, copy the data up to the limit and terminate */
 	if (stringlen == -1) {
-		tvb_memcpy(tvb, buffer, abs_offset, limit);
-		if (decreased_max) {
-			buffer[limit] = 0;
-			/* Add 1 for the extra NUL that we set at buffer[limit],
-			 * pretending that it was copied as part of the string. */
-			*bytes_copied = limit + 1;
-		}
-		else {
-			*bytes_copied = limit;
-		}
-		return -1;
+		tvb_memcpy(tvb, buffer, offset, limit);
+		buffer[limit] = 0;
+		*bytes_copied = limit;
+		return limit;
 	}
 
 	/* Copy the string to buffer */
-	tvb_memcpy(tvb, buffer, abs_offset, stringlen + 1);
+	tvb_memcpy(tvb, buffer, offset, stringlen + 1);
 	*bytes_copied = stringlen + 1;
-	return stringlen;
+	return (unsigned)stringlen;
 }
 
-int
-tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer)
+unsigned
+tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const unsigned offset, const unsigned bufsize, uint8_t* buffer)
 {
-	int	len, bytes_copied;
+	unsigned bytes_copied;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	len = _tvb_get_raw_bytes_as_stringz(tvb, offset, bufsize, buffer, &bytes_copied);
-
-	if (len == -1) {
-		buffer[bufsize - 1] = 0;
-		return bytes_copied - 1;
-	}
-	else {
-		return len;
-	}
+	return _tvb_get_raw_bytes_as_stringz(tvb, offset, bufsize, buffer, &bytes_copied);
 }
 
 /*
@@ -4087,25 +4655,26 @@ tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const int offset, const unsigned buf
  * as 1) are available in the tvbuff and 2) will fit in the buffer, leaving
  * room for a terminating NUL.
  */
-int
-tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const int offset, char *buffer, size_t bufsize)
+unsigned
+tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const unsigned offset, char *buffer, size_t bufsize)
 {
-	int      len = 0;
+	unsigned len = 0;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
 	/* There must be room for the string and the terminating NUL. */
 	DISSECTOR_ASSERT(bufsize > 0);
 
-	DISSECTOR_ASSERT(bufsize - 1 < INT_MAX);
+	/* bufsize is size_t, but tvbuffers only have up to unsigned bytes */
+	DISSECTOR_ASSERT(bufsize - 1 < UINT_MAX);
 
-	len = tvb_captured_length_remaining(tvb, offset);
-	if (len <= 0) {
+	len = _tvb_captured_length_remaining(tvb, offset);
+	if (len == 0) {
 		buffer[0] = '\0';
 		return 0;
 	}
-	if (len > (int)(bufsize - 1))
-		len = (int)(bufsize - 1);
+	if (len > (bufsize - 1))
+		len = (unsigned)(bufsize - 1);
 
 	/* Copy the string to buffer */
 	tvb_memcpy(tvb, buffer, offset, len);
@@ -4114,16 +4683,15 @@ tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const int offset, char *buffer, size_
 }
 
 bool
-tvb_ascii_isprint(tvbuff_t *tvb, const int offset, const int length)
+tvb_ascii_isprint(tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
-	const uint8_t* buf = tvb_get_ptr(tvb, offset, length);
-	unsigned abs_offset, abs_length = length;
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	if (length == -1) {
-		/* tvb_get_ptr has already checked for exceptions. */
-		compute_offset_and_remaining(tvb, offset, &abs_offset, &abs_length);
-	}
-	for (unsigned i = 0; i < abs_length; i++, buf++)
+	/* XXX - Perhaps this function should return false instead of throwing
+	 * an exception. */
+	const uint8_t* buf = ensure_contiguous_unsigned(tvb, offset, length);
+
+	for (unsigned i = 0; i < length; i++, buf++)
 		if (!g_ascii_isprint(*buf))
 			return false;
 
@@ -4131,30 +4699,65 @@ tvb_ascii_isprint(tvbuff_t *tvb, const int offset, const int length)
 }
 
 bool
-tvb_utf_8_isprint(tvbuff_t *tvb, const int offset, const int length)
+tvb_ascii_isprint_remaining(tvbuff_t *tvb, const unsigned offset)
 {
-	const uint8_t* buf = tvb_get_ptr(tvb, offset, length);
-	unsigned abs_offset, abs_length = length;
+	int exception;
+	unsigned length;
 
-	if (length == -1) {
-		/* tvb_get_ptr has already checked for exceptions. */
-		compute_offset_and_remaining(tvb, offset, &abs_offset, &abs_length);
-	}
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	return isprint_utf8_string(buf, abs_length);
+	exception = validate_offset_and_remaining(tvb, offset, &length);
+	if (exception)
+		THROW(exception);
+
+	const uint8_t* buf = ensure_contiguous_unsigned(tvb, offset, length);
+
+	for (unsigned i = 0; i < length; i++, buf++)
+		if (!g_ascii_isprint(*buf))
+			return false;
+
+	return true;
 }
 
 bool
-tvb_ascii_isdigit(tvbuff_t *tvb, const int offset, const int length)
+tvb_utf_8_isprint(tvbuff_t *tvb, const unsigned offset, const unsigned length)
 {
-	const uint8_t* buf = tvb_get_ptr(tvb, offset, length);
-	unsigned abs_offset, abs_length = length;
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	if (length == -1) {
-		/* tvb_get_ptr has already checked for exceptions. */
-		compute_offset_and_remaining(tvb, offset, &abs_offset, &abs_length);
-	}
-	for (unsigned i = 0; i < abs_length; i++, buf++)
+	/* XXX - Perhaps this function should return false instead of throwing
+	 * an exception. */
+	const uint8_t* buf = ensure_contiguous_unsigned(tvb, offset, length);
+
+	return isprint_utf8_string((const char*)buf, length);
+}
+
+bool
+tvb_utf_8_isprint_remaining(tvbuff_t *tvb, const unsigned offset)
+{
+	int exception;
+	unsigned length;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &length);
+	if (exception)
+		THROW(exception);
+
+	const uint8_t* buf = ensure_contiguous_unsigned(tvb, offset, length);
+
+	return isprint_utf8_string((const char*)buf, length);
+}
+
+bool
+tvb_ascii_isdigit(tvbuff_t *tvb, const unsigned offset, const unsigned length)
+{
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	/* XXX - Perhaps this function should return false instead of throwing
+	 * an exception. */
+	const uint8_t* buf = ensure_contiguous_unsigned(tvb, offset, length);
+
+	for (unsigned i = 0; i < length; i++, buf++)
 		if (!g_ascii_isdigit(*buf))
 			return false;
 
@@ -4162,77 +4765,48 @@ tvb_ascii_isdigit(tvbuff_t *tvb, const int offset, const int length)
 }
 
 static ws_mempbrk_pattern pbrk_crlf;
-/*
- * Given a tvbuff, an offset into the tvbuff, and a length that starts
- * at that offset (which may be -1 for "all the way to the end of the
- * tvbuff"), find the end of the (putative) line that starts at the
- * specified offset in the tvbuff, going no further than the specified
- * length.
- *
- * Return the length of the line (not counting the line terminator at
- * the end), or, if we don't find a line terminator:
- *
- * if "desegment" is true, return -1;
- *
- * if "desegment" is false, return the amount of data remaining in
- * the buffer.
- *
- * If "next_offset" is not NULL, set "*next_offset" to the offset of the
- * character past the line terminator, or past the end of the buffer if
- * we don't find a line terminator.  (It's not set if we return -1.)
- */
-int
-tvb_find_line_end(tvbuff_t *tvb, const int offset, int len, int *next_offset, const bool desegment)
+
+static bool
+_tvb_find_line_end_length(tvbuff_t *tvb, const unsigned offset, const unsigned limit, unsigned *linelen, unsigned *next_offset)
 {
-	int    eob_offset;
-	int    eol_offset;
-	int    linelen;
-	unsigned char found_needle = 0;
 	static bool compiled = false;
-
-	DISSECTOR_ASSERT(tvb && tvb->initialized);
-
-	if (len == -1) {
-		len = _tvb_captured_length_remaining(tvb, offset);
-		/* if offset is past the end of the tvbuff, len is now 0 */
-	}
-
-	eob_offset = offset + len;
+	unsigned eob_offset;
+	unsigned eol_offset;
+	unsigned char found_needle = 0;
 
 	if (!compiled) {
 		ws_mempbrk_compile(&pbrk_crlf, "\r\n");
 		compiled = true;
 	}
 
+	eob_offset = offset + limit;
+
 	/*
 	 * Look either for a CR or an LF.
 	 */
-	eol_offset = tvb_ws_mempbrk_pattern_uint8(tvb, offset, len, &pbrk_crlf, &found_needle);
-	if (eol_offset == -1) {
+	if (!_tvb_ws_mempbrk_uint8_length(tvb, offset, limit, &pbrk_crlf, &eol_offset, &found_needle)) {
 		/*
 		 * No CR or LF - line is presumably continued in next packet.
 		 */
-		if (desegment) {
-			/*
-			 * Tell our caller we saw no EOL, so they can
-			 * try to desegment and get the entire line
-			 * into one tvbuff.
-			 */
-			return -1;
-		} else {
-			/*
-			 * Pretend the line runs to the end of the tvbuff.
-			 */
-			linelen = eob_offset - offset;
-			if (next_offset)
-				*next_offset = eob_offset;
-		}
+		/*
+		 * Pretend the line runs to the end of the tvbuff.
+		 */
+		if (linelen)
+			*linelen = eob_offset - offset;
+		if (next_offset)
+			*next_offset = eob_offset;
+		/*
+		 * Tell our caller we saw no EOL, so they can try to
+		 * desegment and get the entire line into one tvbuff.
+		 */
+		return false;
 	} else {
 		/*
 		 * Find the number of bytes between the starting offset
 		 * and the CR or LF.
 		 */
-		linelen = eol_offset - offset;
+		if (linelen)
+			*linelen = eol_offset - offset;
 
 		/*
 		 * Is it a CR?
@@ -4246,20 +4820,22 @@ tvb_find_line_end(tvbuff_t *tvb, const int offset, int len, int *next_offset, co
 				 * Dunno - the next byte isn't in this
 				 * tvbuff.
 				 */
-				if (desegment) {
-					/*
-					 * We'll return -1, although that
-					 * runs the risk that if the line
-					 * really *is* terminated with a CR,
-					 * we won't properly dissect this
-					 * tvbuff.
-					 *
-					 * It's probably more likely that
-					 * the line ends with CR-LF than
-					 * that it ends with CR by itself.
-					 */
-					return -1;
-				}
+				if (next_offset)
+					*next_offset = eob_offset;
+				/*
+				 * We'll return false, although that
+				 * runs the risk that if the line
+				 * really *is* terminated with a CR,
+				 * we won't properly dissect this
+				 * tvbuff.
+				 *
+				 * It's probably more likely that
+				 * the line ends with CR-LF than
+				 * that it ends with CR by itself.
+				 *
+				 * XXX - Return a third value?
+				 */
+				return false;
 			} else {
 				/*
 				 * Well, we can at least look at the next
@@ -4282,79 +4858,92 @@ tvb_find_line_end(tvbuff_t *tvb, const int offset, int len, int *next_offset, co
 		if (next_offset)
 			*next_offset = eol_offset + 1;
 	}
-	return linelen;
+	return true;
 }
 
-static ws_mempbrk_pattern pbrk_crlf_dquote;
-/*
- * Given a tvbuff, an offset into the tvbuff, and a length that starts
- * at that offset (which may be -1 for "all the way to the end of the
- * tvbuff"), find the end of the (putative) line that starts at the
- * specified offset in the tvbuff, going no further than the specified
- * length.
- *
- * However, treat quoted strings inside the buffer specially - don't
- * treat newlines in quoted strings as line terminators.
- *
- * Return the length of the line (not counting the line terminator at
- * the end), or the amount of data remaining in the buffer if we don't
- * find a line terminator.
- *
- * If "next_offset" is not NULL, set "*next_offset" to the offset of the
- * character past the line terminator, or past the end of the buffer if
- * we don't find a line terminator.
- */
-int
-tvb_find_line_end_unquoted(tvbuff_t *tvb, const int offset, int len, int *next_offset)
+bool
+tvb_find_line_end_remaining(tvbuff_t *tvb, const unsigned offset, unsigned *linelen, unsigned *next_offset)
 {
-	int      cur_offset, char_offset;
-	bool     is_quoted;
-	unsigned char   c = 0;
-	int      eob_offset;
-	int      linelen;
-	static bool compiled = false;
+	unsigned limit;
+	int exception;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	if (len == -1)
-		len = _tvb_captured_length_remaining(tvb, offset);
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_find_line_end_length(tvb, offset, limit, linelen, next_offset);
+}
+
+bool
+tvb_find_line_end_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength, unsigned *linelen, unsigned *next_offset)
+{
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (limit > maxlength) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = maxlength;
+	}
+
+	return _tvb_find_line_end_length(tvb, offset, limit, linelen, next_offset);
+}
+
+static ws_mempbrk_pattern pbrk_crlf_dquote;
+
+static bool
+_tvb_find_line_end_unquoted_length(tvbuff_t *tvb, const unsigned offset, unsigned limit, unsigned *linelen, unsigned *next_offset)
+{
+	unsigned cur_offset, char_offset;
+	bool     is_quoted;
+	unsigned char   c = 0;
+	unsigned eob_offset;
+	static bool compiled = false;
+	unsigned len;
+	bool	 found;
 
 	if (!compiled) {
 		ws_mempbrk_compile(&pbrk_crlf_dquote, "\r\n\"");
 		compiled = true;
 	}
 
-	/*
-	 * XXX - what if "len" is still -1, meaning "offset is past the
-	 * end of the tvbuff"?
-	 */
-	eob_offset = offset + len;
+	eob_offset = offset + limit;
 
 	cur_offset = offset;
 	is_quoted  = false;
 	for (;;) {
-			/*
+		len = limit - (cur_offset - offset);
+		/*
 		 * Is this part of the string quoted?
 		 */
 		if (is_quoted) {
 			/*
 			 * Yes - look only for the terminating quote.
 			 */
-			char_offset = tvb_find_uint8(tvb, cur_offset, len,
-				'"');
+			found = _tvb_find_uint8_length(tvb, cur_offset, len, '"', &char_offset);
 		} else {
 			/*
 			 * Look either for a CR, an LF, or a '"'.
 			 */
-			char_offset = tvb_ws_mempbrk_pattern_uint8(tvb, cur_offset, len, &pbrk_crlf_dquote, &c);
+			found = _tvb_ws_mempbrk_uint8_length(tvb, cur_offset, len, &pbrk_crlf_dquote, &char_offset, &c);
 		}
-		if (char_offset == -1) {
+		if (!found) {
 			/*
 			 * Not found - line is presumably continued in
 			 * next packet.
 			 * We pretend the line runs to the end of the tvbuff.
 			 */
-			linelen = eob_offset - offset;
+			if (linelen)
+				*linelen = eob_offset - offset;
 			if (next_offset)
 				*next_offset = eob_offset;
 			break;
@@ -4386,7 +4975,8 @@ tvb_find_line_end_unquoted(tvbuff_t *tvb, const int offset, int len, int *next_o
 				 * Find the number of bytes between the
 				 * starting offset and the CR or LF.
 				 */
-				linelen = char_offset - offset;
+				if (linelen)
+					*linelen = char_offset - offset;
 
 				/*
 				 * Is it a CR?
@@ -4428,13 +5018,97 @@ tvb_find_line_end_unquoted(tvbuff_t *tvb, const int offset, int len, int *next_o
 			 * next packet.
 			 * We pretend the line runs to the end of the tvbuff.
 			 */
-			linelen = eob_offset - offset;
+			if (linelen)
+				*linelen = eob_offset - offset;
 			if (next_offset)
 				*next_offset = eob_offset;
 			break;
 		}
 	}
-	return linelen;
+	return found;
+}
+
+/*
+ * Given a tvbuff, an offset into the tvbuff, and a length that starts
+ * at that offset (which may be -1 for "all the way to the end of the
+ * tvbuff"), find the end of the (putative) line that starts at the
+ * specified offset in the tvbuff, going no further than the specified
+ * length.
+ *
+ * However, treat quoted strings inside the buffer specially - don't
+ * treat newlines in quoted strings as line terminators.
+ *
+ * Return the length of the line (not counting the line terminator at
+ * the end), or the amount of data remaining in the buffer if we don't
+ * find a line terminator.
+ *
+ * If "next_offset" is not NULL, set "*next_offset" to the offset of the
+ * character past the line terminator, or past the end of the buffer if
+ * we don't find a line terminator.
+ */
+int
+tvb_find_line_end_unquoted(tvbuff_t *tvb, const unsigned offset, int len, int *next_offset)
+{
+	unsigned linelen;
+	unsigned abs_next_offset;
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (len >= 0 && limit > (unsigned) len) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = (unsigned) len;
+	}
+
+	_tvb_find_line_end_unquoted_length(tvb, offset, limit, &linelen, &abs_next_offset);
+	if (next_offset) {
+		*next_offset = (int)abs_next_offset;
+	}
+	return (int)linelen;
+}
+
+bool
+tvb_find_line_end_unquoted_remaining(tvbuff_t *tvb, const unsigned offset, unsigned *linelen, unsigned *next_offset)
+{
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_find_line_end_unquoted_length(tvb, offset, limit, linelen, next_offset);
+}
+
+bool
+tvb_find_line_end_unquoted_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength, unsigned *linelen, unsigned *next_offset)
+{
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (limit > maxlength) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = maxlength;
+	}
+
+	return _tvb_find_line_end_unquoted_length(tvb, offset, limit, linelen, next_offset);
 }
 
 /*
@@ -4453,12 +5127,12 @@ tvb_find_line_end_unquoted(tvbuff_t *tvb, const int offset, int len, int *next_o
  *			character following offset or offset + maxlength -1 whichever
  *			is smaller.
  */
-int
-tvb_skip_wsp(tvbuff_t *tvb, const int offset, const int maxlength)
+unsigned
+tvb_skip_wsp(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength)
 {
-	int    counter;
-	int    end, tvb_len;
-	uint8_t tempchar;
+	unsigned counter;
+	unsigned end, tvb_len;
+	uint8_t  tempchar;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
@@ -4466,42 +5140,49 @@ tvb_skip_wsp(tvbuff_t *tvb, const int offset, const int maxlength)
 	/*tvb_len = tvb_captured_length(tvb);*/
 	tvb_len = tvb->length;
 
-	end     = offset + maxlength;
-	if (end >= tvb_len)
-	{
+	if (ckd_add(&end, offset, maxlength) || end > tvb_len) {
 		end = tvb_len;
 	}
 
 	/* Skip past spaces, tabs, CRs and LFs until run out or meet something else */
+	/* XXX - The MEGACO dissector uses g_ascii_isspace(), which might be
+	 * slightly faster but also tests for vertical tab and form feed. */
 	for (counter = offset;
 		 counter < end &&
 		  ((tempchar = tvb_get_uint8(tvb,counter)) == ' ' ||
 		  tempchar == '\t' || tempchar == '\r' || tempchar == '\n');
 		 counter++);
 
-	return (counter);
+	return counter;
 }
 
-int
-tvb_skip_wsp_return(tvbuff_t *tvb, const int offset)
+unsigned
+tvb_skip_wsp_return(tvbuff_t *tvb, const unsigned offset)
 {
-	int    counter;
-	uint8_t tempchar;
+	unsigned counter;
+	uint8_t  tempchar;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
+	/* XXX - DISSECTOR_ASSERT(offset > 0) and then subtract 1 from offset?
+	 * The way this is used the caller almost always wants to subtract one
+	 * from the offset of a non WSP separator, and they might forget to do
+	 * so and then this function return the offset past the separator. */
+
+	/* XXX - The MEGACO dissector uses g_ascii_isspace(), which might be
+	 * slightly faster but also tests for vertical tab and form feed. */
 	for (counter = offset; counter > 0 &&
 		((tempchar = tvb_get_uint8(tvb,counter)) == ' ' ||
 		tempchar == '\t' || tempchar == '\n' || tempchar == '\r'); counter--);
 	counter++;
 
-	return (counter);
+	return counter;
 }
 
-int
-tvb_skip_uint8(tvbuff_t *tvb, int offset, const int maxlength, const uint8_t ch)
+unsigned
+tvb_skip_uint8(tvbuff_t *tvb, unsigned offset, const unsigned maxlength, const uint8_t ch)
 {
-	int end, tvb_len;
+	unsigned end, tvb_len;
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
@@ -4509,9 +5190,9 @@ tvb_skip_uint8(tvbuff_t *tvb, int offset, const int maxlength, const uint8_t ch)
 	/*tvb_len = tvb_captured_length(tvb);*/
 	tvb_len = tvb->length;
 
-	end     = offset + maxlength;
-	if (end >= tvb_len)
+	if (ckd_add(&end, offset, maxlength) || end > tvb_len) {
 		end = tvb_len;
+	}
 
 	while (offset < end) {
 		uint8_t tempch = tvb_get_uint8(tvb, offset);
@@ -4526,22 +5207,12 @@ tvb_skip_uint8(tvbuff_t *tvb, int offset, const int maxlength, const uint8_t ch)
 
 static ws_mempbrk_pattern pbrk_whitespace;
 
-int tvb_get_token_len(tvbuff_t *tvb, const int offset, int len, int *next_offset, const bool desegment)
+static bool
+_tvb_get_token_len_length(tvbuff_t *tvb, const unsigned offset, unsigned limit, unsigned *tokenlen, unsigned *next_offset)
 {
-	int    eob_offset;
-	int    eot_offset;
-	int    tokenlen;
+	unsigned eot_offset;
 	unsigned char found_needle = 0;
 	static bool compiled = false;
-
-	DISSECTOR_ASSERT(tvb && tvb->initialized);
-
-	if (len == -1) {
-		len = _tvb_captured_length_remaining(tvb, offset);
-		/* if offset is past the end of the tvbuff, len is now 0 */
-	}
-
-	eob_offset = offset + len;
 
 	if (!compiled) {
 		ws_mempbrk_compile(&pbrk_whitespace, " \r\n");
@@ -4551,44 +5222,124 @@ int tvb_get_token_len(tvbuff_t *tvb, const int offset, int len, int *next_offset
 	/*
 	* Look either for a space, CR, or LF.
 	*/
-	eot_offset = tvb_ws_mempbrk_pattern_uint8(tvb, offset, len, &pbrk_whitespace, &found_needle);
-	if (eot_offset == -1) {
+	if (!_tvb_ws_mempbrk_uint8_length(tvb, offset, limit, &pbrk_whitespace, &eot_offset, &found_needle)) {
 		/*
 		* No space, CR or LF - token is presumably continued in next packet.
 		*/
-		if (desegment) {
-			/*
-			* Tell our caller we saw no whitespace, so they can
-			* try to desegment and get the entire line
-			* into one tvbuff.
-			*/
-			return -1;
-		}
-		else {
-			/*
-			* Pretend the token runs to the end of the tvbuff.
-			*/
-			tokenlen = eob_offset - offset;
-			if (next_offset)
-				*next_offset = eob_offset;
-		}
-	}
-	else {
 		/*
-		* Find the number of bytes between the starting offset
-		* and the space, CR or LF.
+		* Pretend the token runs to the end of the tvbuff.
 		*/
-		tokenlen = eot_offset - offset;
-
-		/*
-		* Return the offset of the character after the last
-		* character in the line, skipping over the last character
-		* in the line terminator.
-		*/
+		if (tokenlen)
+			*tokenlen = eot_offset - offset;
 		if (next_offset)
-			*next_offset = eot_offset + 1;
+			*next_offset = eot_offset;
+		/*
+		* Tell our caller we saw no whitespace, so they can
+		* try to desegment and get the entire line
+		* into one tvbuff.
+		*/
+		return false;
 	}
-	return tokenlen;
+
+	/*
+	* Find the number of bytes between the starting offset
+	* and the space, CR or LF.
+	*/
+	if (tokenlen)
+		*tokenlen = eot_offset - offset;
+
+	/*
+	* Return the offset of the character after the token delimiter,
+	* skipping over the last character in the separator.
+	*
+	* XXX - get_token_len() from strutil.h returns the start offset of
+	* the next token by skipping trailing spaces (but not spaces that
+	* follow a CR or LF, only consecutive spaces). Should we align
+	* the two functions? Most dissectors want to skip extra spaces,
+	* and while the dissector _can_ follow up with tvb_skip_wsp, this
+	* probably causes dissectors to use tvb_get_ptr + get_token_len,
+	* which we want to discourage. OTOH, IMAP, which uses this, says
+	* "in all cases, SP refers to exactly one space. It is NOT permitted
+	* to substitute TAB, insert additional spaces, or otherwise treat
+	* SP as being equivalent to linear whitespace (LWSP)."
+	* https://www.rfc-editor.org/rfc/rfc9051.html#name-formal-syntax
+	*
+	* XXX - skip over CR-LF as a unit like tvb_find_line_end()?
+	* get_token_len() doesn't, probably because most dissectors have
+	* already found the line end before, but it probably makes sense
+	* to do and unlike above it's unlikely it would break any protocol
+	* (and might even fix some.)
+	*/
+	if (next_offset)
+		*next_offset = eot_offset + 1;
+
+	return true;
+}
+
+int tvb_get_token_len(tvbuff_t *tvb, const unsigned offset, int len, int *next_offset, const bool desegment)
+{
+	unsigned tokenlen;
+	unsigned abs_next_offset;
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (len >= 0 && limit > (unsigned) len) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = (unsigned) len;
+	}
+
+	if (!_tvb_get_token_len_length(tvb, offset, limit, &tokenlen, &abs_next_offset) && desegment) {
+		return -1;
+	}
+	if (next_offset) {
+		*next_offset = (int)abs_next_offset;
+	}
+	return (int)tokenlen;
+}
+
+bool
+tvb_get_token_len_remaining(tvbuff_t *tvb, const unsigned offset, unsigned *tokenlen, unsigned *next_offset)
+{
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	return _tvb_get_token_len_length(tvb, offset, limit, tokenlen, next_offset);
+}
+
+bool
+tvb_get_token_len_length(tvbuff_t *tvb, const unsigned offset, const unsigned maxlength, unsigned *tokenlen, unsigned *next_offset)
+{
+	unsigned limit;
+	int exception;
+
+	DISSECTOR_ASSERT(tvb && tvb->initialized);
+
+	exception = validate_offset_and_remaining(tvb, offset, &limit);
+	if (exception)
+		THROW(exception);
+
+	/* Only search to end of tvbuff, w/o throwing exception. */
+	if (limit > maxlength) {
+		/* Maximum length doesn't go past end of tvbuff; search
+		   to that value. */
+		limit = maxlength;
+	}
+
+	return _tvb_get_token_len_length(tvb, offset, limit, tokenlen, next_offset);
 }
 
 /*
@@ -4597,10 +5348,9 @@ int tvb_get_token_len(tvbuff_t *tvb, const int offset, int len, int *next_offset
  * separator.
  */
 char *
-tvb_bytes_to_str_punct(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int len, const char punct)
+tvb_bytes_to_str_punct(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned len, const char punct)
 {
-	DISSECTOR_ASSERT(len >= 0);
-	return bytes_to_str_punct(scope, ensure_contiguous(tvb, offset, len), len, punct);
+	return bytes_to_str_punct(scope, ensure_contiguous_unsigned(tvb, offset, len), len, punct);
 }
 
 /*
@@ -4619,7 +5369,7 @@ tvb_bytes_to_str_punct(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset,
  * i.e. an even number of nibbles are considered.)
  */
 char *
-tvb_get_bcd_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int len, const dgt_set_t *dgt, bool skip_first, bool odd, bool bigendian)
+tvb_get_bcd_string(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, unsigned len, const dgt_set_t *dgt, bool skip_first, bool odd, bool bigendian)
 {
 	const uint8_t *ptr;
 	int           i = 0;
@@ -4628,21 +5378,7 @@ tvb_get_bcd_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int
 
 	DISSECTOR_ASSERT(tvb && tvb->initialized);
 
-	if (len == -1) {
-		/*
-		 * Run to the end of the captured data.
-		 *
-		 * XXX - captured, or total?
-		 */
-		/*length = tvb_captured_length(tvb);*/
-		len = tvb->length;
-		if (len < offset) {
-			return (char *)"";
-		}
-		len -= offset;
-	}
-
-	ptr = ensure_contiguous(tvb, offset, len);
+	ptr = ensure_contiguous_unsigned(tvb, offset, len);
 
 	/*
 	 * XXX - map illegal digits (digits that map to 0) to REPLACEMENT
@@ -4700,9 +5436,9 @@ tvb_get_bcd_string(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int
 	return digit_str;
 }
 
-/* XXXX Fix me - needs odd indicator added */
+/* XXXX Fix me - needs odd indicator added (or just use of tvb_get_bcd_string / proto_tree_add_item) */
 const char *
-tvb_bcd_dig_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int len, const dgt_set_t *dgt, bool skip_first)
+tvb_bcd_dig_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned len, const dgt_set_t *dgt, bool skip_first)
 {
 	if (!dgt)
 		dgt = &Dgt0_9_bcd;
@@ -4711,7 +5447,7 @@ tvb_bcd_dig_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, con
 }
 
 const char *
-tvb_bcd_dig_to_str_be(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, const int len, const dgt_set_t *dgt, bool skip_first)
+tvb_bcd_dig_to_str_be(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, const unsigned len, const dgt_set_t *dgt, bool skip_first)
 {
 	if (!dgt)
 		dgt = &Dgt0_9_bcd;
@@ -4723,11 +5459,10 @@ tvb_bcd_dig_to_str_be(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, 
  * Format a bunch of data from a tvbuff as bytes, returning a pointer
  * to the string with the formatted data.
  */
-char *tvb_bytes_to_str(wmem_allocator_t *allocator, tvbuff_t *tvb,
-    const int offset, const int len)
+char *
+tvb_bytes_to_str(wmem_allocator_t *allocator, tvbuff_t *tvb, const unsigned offset, const unsigned len)
 {
-	DISSECTOR_ASSERT(len >= 0);
-	return bytes_to_str(allocator, ensure_contiguous(tvb, offset, len), len);
+	return bytes_to_str(allocator, ensure_contiguous_unsigned(tvb, offset, len), len);
 }
 
 /* Find a needle tvbuff within a haystack tvbuff. */
@@ -4763,10 +5498,52 @@ tvb_find_tvb(tvbuff_t *haystack_tvb, tvbuff_t *needle_tvb, const int haystack_of
 	return -1;
 }
 
-int
+/* Find a needle tvbuff within a haystack tvbuff. */
+bool
+tvb_find_tvb_remaining(tvbuff_t *haystack_tvb, tvbuff_t *needle_tvb, const unsigned haystack_offset, unsigned *found_offset)
+{
+	const uint8_t *haystack_data;
+	const uint8_t *needle_data;
+	const unsigned   needle_len = needle_tvb->length;
+	const uint8_t *location;
+	int exception;
+	unsigned haystack_rem_length;
+
+	DISSECTOR_ASSERT(haystack_tvb && haystack_tvb->initialized);
+	DISSECTOR_ASSERT(needle_tvb && needle_tvb->initialized);
+
+	if (haystack_tvb->length < 1 || needle_tvb->length < 1) {
+		return false;
+	}
+
+	exception = validate_offset_and_remaining(haystack_tvb, haystack_offset, &haystack_rem_length);
+	if (exception)
+		THROW(exception);
+
+	/* Get pointers to the tvbuffs' data. */
+	haystack_data = ensure_contiguous_unsigned(haystack_tvb, haystack_offset, haystack_rem_length);
+	needle_data   = ensure_contiguous_unsigned(needle_tvb, 0, needle_len);
+
+	location = ws_memmem(haystack_data, haystack_rem_length,
+			needle_data, needle_len);
+
+	if (location) {
+		if (found_offset)
+			*found_offset = (unsigned) (location - haystack_data) + haystack_offset;
+		return true;
+	}
+
+	return false;
+}
+
+unsigned
 tvb_raw_offset(tvbuff_t *tvb)
 {
-	return ((tvb->raw_offset==-1) ? (tvb->raw_offset = tvb_offset_from_real_beginning(tvb)) : tvb->raw_offset);
+	if (!(tvb->flags & TVBUFF_RAW_OFFSET)) {
+		tvb->raw_offset = tvb_offset_from_real_beginning(tvb);
+		tvb->flags |= TVBUFF_RAW_OFFSET;
+	}
+	return tvb->raw_offset;
 }
 
 void
@@ -4873,7 +5650,10 @@ tvb_get_varint(tvbuff_t *tvb, unsigned offset, unsigned maxlen, uint64_t *value,
 		DISSECTOR_ASSERT_NOT_REACHED();
 	}
 
-	return 0; /* 10 bytes scanned, but no bytes' msb is zero */
+	// We have scanned 10 bytes, but no bytes' msb is zero. We should probably
+	// return a nonzero value instead since we might be incrementing an offset
+	// inside a loop.
+	return 0;
 }
 
 /*

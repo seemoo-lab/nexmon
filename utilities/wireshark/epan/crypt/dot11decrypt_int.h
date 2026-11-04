@@ -59,12 +59,14 @@
 #define DOT11DECRYPT_CIPHER_BIP_CMAC256		13
 
 /*
- * Min length of encrypted data (TKIP=21bytes, CCMP=17bytes)
- * CCMP = 8 octets of CCMP header, 1 octet of data, 8 octets of MIC.
+ * Min length of encrypted data (WEP=9bytes, TKIP=21bytes, CCMP=17bytes, GCMP=25bytes)
+ * WEP = 4 octets of IV, 1 octet of data, 4 octets of ICV.
  * TKIP = 4 octets of IV/Key ID, 4 octets of Extended IV, 1 octet of data,
- *  8 octets of MIC, 4 octets of ICV
+ *  8 octets of MIC, 4 octets of ICV.
+ * CCMP = 8 octets of CCMP header, 1 octet of data, 8 octets of MIC.
+ * GCMP = 8 octets of GCMP header, 1 octet of data, 16 octets of MIC.
  */
-#define	DOT11DECRYPT_CRYPTED_DATA_MINLEN	17
+#define	DOT11DECRYPT_CRYPTED_DATA_MINLEN	9
 
 #define DOT11DECRYPT_TA_OFFSET	10
 
@@ -101,6 +103,9 @@
 
 /* Note: copied from net80211/ieee80211.h					*/
 #define DOT11DECRYPT_FC1_DIR_MASK                  0x03
+#define IEEE80211_FC1_DIR_NODS                     0x00    /* STA->STA */
+#define IEEE80211_FC1_DIR_TODS                     0x01    /* STA->AP  */
+#define IEEE80211_FC1_DIR_FROMDS                   0x02    /* AP ->STA */
 #define DOT11DECRYPT_FC1_DIR_DSTODS                0x03    /* AP ->AP  */
 #define DOT11DECRYPT_FC0_SUBTYPE_QOS               0x80
 #define DOT11DECRYPT_FC0_TYPE_DATA                 0x08
@@ -133,48 +138,56 @@
 #pragma pack(1)
 #endif
 
-/* Definition of IEEE 802.11 frame (without the address 4)			*/
+/**
+ * @brief IEEE 802.11 MAC frame header without Address 4 field.
+ */
 typedef struct _DOT11DECRYPT_MAC_FRAME {
-	unsigned char	fc[2];
-	unsigned char	dur[2];
-	unsigned char	addr1[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr2[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr3[DOT11DECRYPT_MAC_LEN];
-	unsigned char	seq[2];
+    unsigned char fc[2];                       /**< Frame Control field: protocol version, type, subtype, and flags */
+    unsigned char dur[2];                      /**< Duration/ID field: NAV value or association ID */
+    unsigned char addr1[DOT11DECRYPT_MAC_LEN]; /**< Destination address (DA) or BSSID depending on frame type */
+    unsigned char addr2[DOT11DECRYPT_MAC_LEN]; /**< Source address (SA) or transmitter address (TA) */
+    unsigned char addr3[DOT11DECRYPT_MAC_LEN]; /**< BSSID, SA, or DA depending on To DS / From DS bits */
+    unsigned char seq[2];                      /**< Sequence Control field: fragment number and sequence number */
 } DOT11DECRYPT_MAC_FRAME, *PDOT11DECRYPT_MAC_FRAME;
 
-/* Definition of IEEE 802.11 frame (with the address 4)			*/
+/**
+ * @brief IEEE 802.11 MAC frame header with Address 4 field (WDS / mesh, both To DS and From DS set).
+ */
 typedef struct _DOT11DECRYPT_MAC_FRAME_ADDR4 {
-	unsigned char	fc[2];
-	unsigned char	dur[2];
-	unsigned char	addr1[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr2[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr3[DOT11DECRYPT_MAC_LEN];
-	unsigned char	seq[2];
-	unsigned char	addr4[DOT11DECRYPT_MAC_LEN];
+    unsigned char fc[2];                       /**< Frame Control field: protocol version, type, subtype, and flags */
+    unsigned char dur[2];                      /**< Duration/ID field: NAV value or association ID */
+    unsigned char addr1[DOT11DECRYPT_MAC_LEN]; /**< Receiver address (RA) */
+    unsigned char addr2[DOT11DECRYPT_MAC_LEN]; /**< Transmitter address (TA) */
+    unsigned char addr3[DOT11DECRYPT_MAC_LEN]; /**< Destination address (DA) */
+    unsigned char seq[2];                      /**< Sequence Control field: fragment number and sequence number */
+    unsigned char addr4[DOT11DECRYPT_MAC_LEN]; /**< Source address (SA); present only when both To DS and From DS bits are set */
 } DOT11DECRYPT_MAC_FRAME_ADDR4, *PDOT11DECRYPT_MAC_FRAME_ADDR4;
 
-/* Definition of IEEE 802.11 frame (without the address 4, with QOS)		*/
+/**
+ * @brief IEEE 802.11 MAC frame header without Address 4 field, with QoS Control field (QoS data frames).
+ */
 typedef struct _DOT11DECRYPT_MAC_FRAME_QOS {
-	unsigned char	fc[2];
-	unsigned char	dur[2];
-	unsigned char	addr1[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr2[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr3[DOT11DECRYPT_MAC_LEN];
-	unsigned char	seq[2];
-	unsigned char	qos[2];
+    unsigned char fc[2];                       /**< Frame Control field: protocol version, type, subtype, and flags */
+    unsigned char dur[2];                      /**< Duration/ID field: NAV value or association ID */
+    unsigned char addr1[DOT11DECRYPT_MAC_LEN]; /**< Destination address (DA) or BSSID depending on frame type */
+    unsigned char addr2[DOT11DECRYPT_MAC_LEN]; /**< Source address (SA) or transmitter address (TA) */
+    unsigned char addr3[DOT11DECRYPT_MAC_LEN]; /**< BSSID, SA, or DA depending on To DS / From DS bits */
+    unsigned char seq[2];                      /**< Sequence Control field: fragment number and sequence number */
+    unsigned char qos[2];                      /**< QoS Control field: traffic identifier (TID), AMSDU flag, and AP/STA-specific subfields */
 } DOT11DECRYPT_MAC_FRAME_QOS, *PDOT11DECRYPT_MAC_FRAME_QOS;
 
-/* Definition of IEEE 802.11 frame (with the address 4 and QOS)		*/
+/**
+ * @brief IEEE 802.11 MAC frame header with both Address 4 and QoS Control fields (WDS QoS data frames).
+ */
 typedef struct _DOT11DECRYPT_MAC_FRAME_ADDR4_QOS {
-	unsigned char	fc[2];
-	unsigned char	dur[2];
-	unsigned char	addr1[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr2[DOT11DECRYPT_MAC_LEN];
-	unsigned char	addr3[DOT11DECRYPT_MAC_LEN];
-	unsigned char	seq[2];
-	unsigned char	addr4[DOT11DECRYPT_MAC_LEN];
-	unsigned char	qos[2];
+    unsigned char fc[2];                       /**< Frame Control field: protocol version, type, subtype, and flags */
+    unsigned char dur[2];                      /**< Duration/ID field: NAV value or association ID */
+    unsigned char addr1[DOT11DECRYPT_MAC_LEN]; /**< Receiver address (RA) */
+    unsigned char addr2[DOT11DECRYPT_MAC_LEN]; /**< Transmitter address (TA) */
+    unsigned char addr3[DOT11DECRYPT_MAC_LEN]; /**< Destination address (DA) */
+    unsigned char seq[2];                      /**< Sequence Control field: fragment number and sequence number */
+    unsigned char addr4[DOT11DECRYPT_MAC_LEN]; /**< Source address (SA); present only when both To DS and From DS bits are set */
+    unsigned char qos[2];                      /**< QoS Control field: traffic identifier (TID), AMSDU flag, and AP/STA-specific subfields */
 } DOT11DECRYPT_MAC_FRAME_ADDR4_QOS, *PDOT11DECRYPT_MAC_FRAME_ADDR4_QOS;
 
 #ifdef _MSC_VER		/* MS Visual C++ */
@@ -183,26 +196,93 @@ typedef struct _DOT11DECRYPT_MAC_FRAME_ADDR4_QOS {
 
 /******************************************************************************/
 
+/**
+ * @brief Decrypt CCMP encrypted MPDU.
+ *
+ * @param m Pointer to the MPDU to decrypt (in-place).
+ * @param mac_header_len Length of the MAC header in bytes.
+ * @param len Total length of the MPDU in bytes.
+ * @param TK1 Pointer to the Temporal Key (TK) used for decryption.
+ * @param tk_len Length of the Temporal Key in bytes.
+ * @param mic_len Length of the Message Integrity Code (MIC) in bytes.
+ * @param ap_mld_mac Pointer to the AP's MAC address (for MLD).
+ * @param sta_mld_mac Pointer to the station's MAC address (for MLD).
+ * @return
+ * - -1: Length constraint is not satisfied indicating that decryption is impossible
+ * - 1: Decryption fails
+ * - 0: Decryption succeeds
+ */
 int Dot11DecryptCcmpDecrypt(
 	uint8_t *m,
 	int mac_header_len,
 	int len,
 	uint8_t *TK1,
 	int tk_len,
-	int mic_len);
+	int mic_len,
+	const uint8_t *ap_mld_mac,
+	const uint8_t *sta_mld_mac);
 
+/** @brief Decrypt GCMP encrypted MPDU.
+ *
+ * @param m Pointer to the MPDU to decrypt (in-place).
+ * @param mac_header_len Length of the MAC header in bytes.
+ * @param len Total length of the MPDU in bytes.
+ * @param TK1 Pointer to the Temporal Key (TK) used for decryption.
+ * @param tk_len Length of the Temporal Key in bytes.
+ * @param ap_mld_mac Pointer to the AP's MAC address (for MLD).
+ * @param sta_mld_mac Pointer to the station's MAC address (for MLD).
+ * @return
+ * - -1: Length constraint is not satisfied indicating that decryption is impossible
+ * - 1: Decryption fails
+ * - 0: Decryption succeeds
+ */
 int Dot11DecryptGcmpDecrypt(
 	uint8_t *m,
 	int mac_header_len,
 	int len,
 	uint8_t *TK1,
-	int tk_len);
+	int tk_len,
+	const uint8_t *ap_mld_mac,
+	const uint8_t *sta_mld_mac);
 
+/** @brief Decrypt TKIP encrypted MPDU.
+ *
+ * @param mpdu Pointer to the MPDU to decrypt (in-place).
+ * @param mac_header_len Length of the MAC header in bytes.
+ * @param mpdu_len Total length of the MPDU in bytes.
+ * @param TK Pointer to the Temporal Key (TK) used for decryption.
+ * @return
+ * - -1: Length constraint is not satisfied indicating that decryption is impossible
+ * - 1: Decryption fails
+ * - 0: Decryption succeeds
+ */
 int Dot11DecryptTkipDecrypt(
-	unsigned char *tkip_mpdu,
+	uint8_t *mpdu,
+	size_t mac_header_len,
 	size_t mpdu_len,
-	unsigned char TA[DOT11DECRYPT_MAC_LEN],
-	unsigned char TK[DOT11DECRYPT_TK_LEN])
-	;
+	unsigned char TK[DOT11DECRYPT_TK_LEN]);
+
+/**
+ * @brief Decrypt WEP-encrypted 802.11 payload using RC4 stream cipher.
+ *
+ * Performs WEP decryption on the provided `cypher_text` buffer using the RC4
+ * algorithm seeded with the specified initialization vector and WEP key.
+ * The decryption is done in-place, modifying `cypher_text` directly.
+ *
+ * This function assumes the input data is WEP-encrypted and that the seed
+ * contains both the IV and the shared WEP key. It verifies the ICV assumed
+ * to follow right after the cypher_text.
+ *
+ * @param seed        Pointer to the RC4 seed (IV + WEP key).
+ * @param seed_len    Length of the seed in bytes.
+ * @param cypher_text Pointer to the encrypted data buffer (will be decrypted in-place).
+ * @param data_len    Length of the encrypted data in bytes.
+ * @return            0 on success, non-zero on failure.
+ */
+WS_DLL_PUBLIC int Dot11DecryptWepDecrypt(
+	const unsigned char *seed,
+	size_t seed_len,
+	unsigned char *cypher_text,
+	size_t data_len);
 
 #endif

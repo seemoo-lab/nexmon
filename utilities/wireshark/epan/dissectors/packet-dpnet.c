@@ -317,7 +317,7 @@ static void process_dpnet_query(proto_tree *dpnet_tree, tvbuff_t *tvb, packet_in
 static void
 dpnet_process_data_frame(proto_tree *dpnet_tree, tvbuff_t *tvb, packet_info *pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
 
     col_set_str(pinfo->cinfo, COL_INFO, "DPNET DFrame");
 
@@ -329,10 +329,10 @@ dpnet_process_data_frame(proto_tree *dpnet_tree, tvbuff_t *tvb, packet_info *pin
 static void
 dpnet_process_control_frame(proto_tree *dpnet_tree, tvbuff_t *tvb, packet_info *pinfo)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int command;
     const char *command_str;
-    int flag;
+    uint8_t flag;
     uint32_t data_tvb_len;
 
     col_set_str(pinfo->cinfo, COL_INFO, "DPNET CFrame");
@@ -399,8 +399,7 @@ dpnet_process_control_frame(proto_tree *dpnet_tree, tvbuff_t *tvb, packet_info *
                 proto_tree_add_item(dpnet_tree, hf_dpnet_data_cframe_signature, tvb, offset, 8, ENC_BIG_ENDIAN);
             break;
         case FRAME_EXOPCODE_SACK:
-            flag = tvb_get_uint8(tvb, offset);
-            proto_tree_add_item(dpnet_tree, hf_dpnet_data_cframe_flags, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item_ret_uint8(dpnet_tree, hf_dpnet_data_cframe_flags, tvb, offset, 1, ENC_LITTLE_ENDIAN, &flag);
             offset += 1;
             proto_tree_add_item(dpnet_tree, hf_dpnet_data_cframe_retry, tvb, offset, 1, ENC_LITTLE_ENDIAN);
             offset += 1;

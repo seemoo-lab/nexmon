@@ -68,7 +68,9 @@
  */
 
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <config.h>
 
@@ -92,13 +94,43 @@
 #include <netinet/in.h>
 #include <linux/if_ether.h>
 #include <linux/netlink.h>
+
 #include <linux/if_arp.h>
+#ifndef ARPHRD_IEEE802154
+  // Linux before 2.6.31
+  #define ARPHRD_IEEE802154 804
+#endif
+#ifndef ARPHRD_IEEE802154_MONITOR
+  // Linux before 3.5
+  #define ARPHRD_IEEE802154_MONITOR 805
+#endif
+#ifndef ARPHRD_NETLINK
+  // Linux before 3.11
+  #define ARPHRD_NETLINK 824
+#endif
+#ifndef ARPHRD_6LOWPAN
+  // Linux before 3.14
+  #define ARPHRD_6LOWPAN 825
+#endif
+#ifndef ARPHRD_VSOCKMON
+  // Linux before 4.12
+  #define ARPHRD_VSOCKMON 826
+#endif
+#ifndef ARPHRD_LAPD
+  /*
+   * ARPHRD_LAPD is unofficial and randomly allocated, if reallocation
+   * is needed, please report it to <daniele@orlandi.com>
+   */
+  #define ARPHRD_LAPD 8445
+#endif
+
 #include <poll.h>
 #include <dirent.h>
 #include <sys/eventfd.h>
 
 #include "pcap-int.h"
 #include "pcap-util.h"
+#include "pcap-snf.h"
 #include "pcap/sll.h"
 #include "pcap/vlan.h"
 #include "pcap/can_socketcan.h"
@@ -188,7 +220,7 @@ struct pcap_linux {
 
 	char	*device;	/* device name */
 	int	filter_in_userland; /* must filter in userland */
-	int	blocks_to_filter_in_userland;
+	u_int	blocks_to_filter_in_userland;
 	int	must_do_on_close; /* stuff we must do when we close */
 	int	timeout;	/* timeout for buffering */
 	int	cooked;		/* using SOCK_DGRAM rather than SOCK_RAW */
@@ -219,9 +251,7 @@ struct pcap_linux {
 /*
  * Prototypes for internal functions and methods.
  */
-static int get_if_flags(const char *, bpf_u_int32 *, char *);
 static int is_wifi(const char *);
-static int map_arphrd_to_dlt(pcap_t *, int, const char *, int);
 static int pcap_activate_linux(pcap_t *);
 static int setup_socket(pcap_t *, int);
 static int setup_mmapped(pcap_t *);
@@ -231,7 +261,6 @@ static int pcap_stats_linux(pcap_t *, struct pcap_stat *);
 static int pcap_setfilter_linux(pcap_t *, struct bpf_program *);
 static int pcap_setdirection_linux(pcap_t *, pcap_direction_t);
 static int pcap_set_datalink_linux(pcap_t *, int);
-static void pcap_cleanup_linux(pcap_t *);
 
 union thdr {
 	struct tpacket2_hdr		*h2;
@@ -888,12 +917,12 @@ pcap_can_set_rfmon_linux(pcap_t *handle)
  * The author has found no straightforward way to check for support.
  */
 static long long int
-linux_get_stat(const char * if_name, const char * stat) {
+linux_get_stat(const char * if_name, const char * stat_name) {
 	ssize_t bytes_read;
 	int fd;
 	char buffer[PATH_MAX];
 
-	snprintf(buffer, sizeof(buffer), "/sys/class/net/%s/statistics/%s", if_name, stat);
+	snprintf(buffer, sizeof(buffer), "/sys/class/net/%s/statistics/%s", if_name, stat_name);
 	fd = open(buffer, O_RDONLY);
 	if (fd == -1)
 		return 0;
@@ -972,7 +1001,7 @@ static void	pcap_cleanup_linux( pcap_t *handle )
 	}
 
 	if (handlep->oneshot_buffer != NULL) {
-		free(handlep->oneshot_buffer);
+		munmap(handlep->oneshot_buffer, handle->snapshot);
 		handlep->oneshot_buffer = NULL;
 	}
 
@@ -1131,14 +1160,6 @@ set_vlan_offset(pcap_t *handle)
 	}
 }
 
-/*
- *  Get a handle for a live capture from the given device. You can
- *  pass NULL as device to get all packages (without link level
- *  information of course). If you pass 1 as promisc the interface
- *  will be set to promiscuous mode (XXX: I think this usage should
- *  be deprecated and functions be added to select that later allow
- *  modification of that values -- Torsten).
- */
 static int
 pcap_activate_linux(pcap_t *handle)
 {
@@ -1747,14 +1768,14 @@ get_if_ioctl_socket(void)
 }
 
 /*
- * Get additional flags for a device, using SIOCGIFMEDIA.
+ * Get additional flags for a device, using SIOCETHTOOL.
  */
 static int
 get_if_flags(const char *name, bpf_u_int32 *flags, char *errbuf)
 {
 	int sock;
 	FILE *fh;
-	unsigned int arptype;
+	unsigned int arptype = ARPHRD_VOID;
 	struct ifreq ifr;
 	struct ethtool_value info;
 
@@ -1826,15 +1847,9 @@ get_if_flags(const char *name, bpf_u_int32 *flags, char *errbuf)
 				case ARPHRD_IEEE80211:
 				case ARPHRD_IEEE80211_PRISM:
 				case ARPHRD_IEEE80211_RADIOTAP:
-#ifdef ARPHRD_IEEE802154
 				case ARPHRD_IEEE802154:
-#endif
-#ifdef ARPHRD_IEEE802154_MONITOR
 				case ARPHRD_IEEE802154_MONITOR:
-#endif
-#ifdef ARPHRD_6LOWPAN
 				case ARPHRD_6LOWPAN:
-#endif
 					/*
 					 * Various wireless types.
 					 */
@@ -1893,6 +1908,19 @@ get_if_flags(const char *name, bpf_u_int32 *flags, char *errbuf)
 			close(sock);
 			return 0;
 
+		case EPERM:
+			/*
+			 * OK, this version of the kernel requires
+			 * CAP_NET_ADMIN privileges for this, and
+			 * we don't have those privileges.
+			 *
+			 * Just leave it as PCAP_IF_CONNECTION_STATUS_UNKNOWN,
+			 * as we can't determine the status; just say "OK" and
+			 * don't set anything.
+			 */
+			close(sock);
+			return 0;
+
 		default:
 			/*
 			 * Other error.
@@ -1923,6 +1951,15 @@ get_if_flags(const char *name, bpf_u_int32 *flags, char *errbuf)
 #endif
 
 	close(sock);
+
+#ifdef HAVE_SNF_API
+	// For "down" SNF devices the SNF API makes the flags more relevant.
+	if (arptype == ARPHRD_ETHER &&
+	    ! (*flags & PCAP_IF_UP) &&
+	    snf_get_if_flags(name, flags, errbuf) < 0)
+		return PCAP_ERROR;
+#endif // HAVE_SNF_API
+
 	return 0;
 }
 
@@ -1939,7 +1976,7 @@ pcapint_platform_finddevs(pcap_if_list_t *devlistp, char *errbuf)
 	/*
 	 * Add the "any" device.
 	 */
-	if (pcap_add_any_dev(devlistp, errbuf) == NULL)
+	if (pcapint_add_any_dev(devlistp, errbuf) == NULL)
 		return (-1);
 
 	return (0);
@@ -2106,16 +2143,11 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 	case ARPHRD_CHAOS:
 		handle->linktype = DLT_CHAOS;
 		break;
-#ifndef ARPHRD_CAN
-#define ARPHRD_CAN 280
-#endif
+
 	case ARPHRD_CAN:
 		handle->linktype = DLT_CAN_SOCKETCAN;
 		break;
 
-#ifndef ARPHRD_IEEE802_TR
-#define ARPHRD_IEEE802_TR 800	/* From Linux 2.4 */
-#endif
 	case ARPHRD_IEEE802_TR:
 	case ARPHRD_IEEE802:
 		handle->linktype = DLT_IEEE802;
@@ -2126,17 +2158,11 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		handle->linktype = DLT_ARCNET_LINUX;
 		break;
 
-#ifndef ARPHRD_FDDI	/* From Linux 2.2.13 */
-#define ARPHRD_FDDI	774
-#endif
 	case ARPHRD_FDDI:
 		handle->linktype = DLT_FDDI;
 		handle->offset = 3;
 		break;
 
-#ifndef ARPHRD_ATM  /* FIXME: How to #include this? */
-#define ARPHRD_ATM 19
-#endif
 	case ARPHRD_ATM:
 		/*
 		 * The Classical IP implementation in ATM for Linux
@@ -2180,23 +2206,14 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 			handle->linktype = -1;
 		break;
 
-#ifndef ARPHRD_IEEE80211  /* From Linux 2.4.6 */
-#define ARPHRD_IEEE80211 801
-#endif
 	case ARPHRD_IEEE80211:
 		handle->linktype = DLT_IEEE802_11;
 		break;
 
-#ifndef ARPHRD_IEEE80211_PRISM  /* From Linux 2.4.18 */
-#define ARPHRD_IEEE80211_PRISM 802
-#endif
 	case ARPHRD_IEEE80211_PRISM:
 		handle->linktype = DLT_PRISM_HEADER;
 		break;
 
-#ifndef ARPHRD_IEEE80211_RADIOTAP /* new */
-#define ARPHRD_IEEE80211_RADIOTAP 803
-#endif
 	case ARPHRD_IEEE80211_RADIOTAP:
 		handle->linktype = DLT_IEEE802_11_RADIO;
 		break;
@@ -2207,9 +2224,9 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		 * header whatsoever to PF_PACKET sockets; other PPP
 		 * code supplies PPP link-layer headers ("syncppp.c");
 		 * some PPP code might supply random link-layer
-		 * headers (PPP over ISDN - there's code in Ethereal,
+		 * headers (PPP over ISDN - there's code in Wireshark,
 		 * for example, to cope with PPP-over-ISDN captures
-		 * with which the Ethereal developers have had to cope,
+		 * with which the Wireshark developers have had to cope,
 		 * heuristically trying to determine which of the
 		 * oddball link-layer headers particular packets have).
 		 *
@@ -2244,9 +2261,6 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		}
 		break;
 
-#ifndef ARPHRD_CISCO
-#define ARPHRD_CISCO 513 /* previously ARPHRD_HDLC */
-#endif
 	case ARPHRD_CISCO:
 		handle->linktype = DLT_C_HDLC;
 		break;
@@ -2254,22 +2268,13 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 	/* Not sure if this is correct for all tunnels, but it
 	 * works for CIPE */
 	case ARPHRD_TUNNEL:
-#ifndef ARPHRD_SIT
-#define ARPHRD_SIT 776	/* From Linux 2.2.13 */
-#endif
 	case ARPHRD_SIT:
 	case ARPHRD_CSLIP:
 	case ARPHRD_SLIP6:
 	case ARPHRD_CSLIP6:
 	case ARPHRD_ADAPT:
 	case ARPHRD_SLIP:
-#ifndef ARPHRD_RAWHDLC
-#define ARPHRD_RAWHDLC 518
-#endif
 	case ARPHRD_RAWHDLC:
-#ifndef ARPHRD_DLCI
-#define ARPHRD_DLCI 15
-#endif
 	case ARPHRD_DLCI:
 		/*
 		 * XXX - should some of those be mapped to DLT_LINUX_SLL
@@ -2278,9 +2283,6 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		handle->linktype = DLT_RAW;
 		break;
 
-#ifndef ARPHRD_FRAD
-#define ARPHRD_FRAD 770
-#endif
 	case ARPHRD_FRAD:
 		handle->linktype = DLT_FRELAY;
 		break;
@@ -2308,21 +2310,9 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		handle->linktype = DLT_IP_OVER_FC;
 		break;
 
-#ifndef ARPHRD_FCPP
-#define ARPHRD_FCPP	784
-#endif
 	case ARPHRD_FCPP:
-#ifndef ARPHRD_FCAL
-#define ARPHRD_FCAL	785
-#endif
 	case ARPHRD_FCAL:
-#ifndef ARPHRD_FCPL
-#define ARPHRD_FCPL	786
-#endif
 	case ARPHRD_FCPL:
-#ifndef ARPHRD_FCFABRIC
-#define ARPHRD_FCFABRIC	787
-#endif
 	case ARPHRD_FCFABRIC:
 		/*
 		 * Back in 2002, Donald Lee at Cray wanted a DLT_ for
@@ -2355,7 +2345,7 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		 *
 		 *	https://github.com/mcr/libpcap/pull/29
 		 *
-		 * There don't seem to be any network drivers that uses
+		 * There don't seem to be any network drivers that use
 		 * any of the ARPHRD_FC* values for IP-over-FC, and
 		 * it's not exactly clear what the "Dummy types for non
 		 * ARP hardware" are supposed to mean (link-layer
@@ -2383,9 +2373,6 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		handle->dlt_count = 3;
 		break;
 
-#ifndef ARPHRD_IRDA
-#define ARPHRD_IRDA	783
-#endif
 	case ARPHRD_IRDA:
 		/* Don't expect IP packet out of this interfaces... */
 		handle->linktype = DLT_LINUX_IRDA;
@@ -2396,19 +2383,11 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		/* handlep->cooked = 1; */
 		break;
 
-	/* ARPHRD_LAPD is unofficial and randomly allocated, if reallocation
-	 * is needed, please report it to <daniele@orlandi.com> */
-#ifndef ARPHRD_LAPD
-#define ARPHRD_LAPD	8445
-#endif
 	case ARPHRD_LAPD:
 		/* Don't expect IP packet out of this interfaces... */
 		handle->linktype = DLT_LINUX_LAPD;
 		break;
 
-#ifndef ARPHRD_NONE
-#define ARPHRD_NONE	0xFFFE
-#endif
 	case ARPHRD_NONE:
 		/*
 		 * No link-layer header; packets are just IP
@@ -2417,16 +2396,10 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		handle->linktype = DLT_RAW;
 		break;
 
-#ifndef ARPHRD_IEEE802154
-#define ARPHRD_IEEE802154      804
-#endif
-       case ARPHRD_IEEE802154:
-               handle->linktype =  DLT_IEEE802_15_4_NOFCS;
-               break;
+	case ARPHRD_IEEE802154:
+		handle->linktype = DLT_IEEE802_15_4_NOFCS;
+		break;
 
-#ifndef ARPHRD_NETLINK
-#define ARPHRD_NETLINK	824
-#endif
 	case ARPHRD_NETLINK:
 		handle->linktype = DLT_NETLINK;
 		/*
@@ -2439,9 +2412,6 @@ static int map_arphrd_to_dlt(pcap_t *handle, int arptype,
 		/* handlep->cooked = 1; */
 		break;
 
-#ifndef ARPHRD_VSOCKMON
-#define ARPHRD_VSOCKMON	826
-#endif
 	case ARPHRD_VSOCKMON:
 		handle->linktype = DLT_VSOCK;
 		break;
@@ -2468,10 +2438,6 @@ setup_socket(pcap_t *handle, int is_any_device)
 	int			val;
 	int			err = 0;
 	struct packet_mreq	mr;
-#if defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT)
-	int			bpf_extensions;
-	socklen_t		len = sizeof(bpf_extensions);
-#endif
 
 	/*
 	 * Open a socket with protocol family packet. If cooked is true,
@@ -2808,12 +2774,29 @@ setup_socket(pcap_t *handle, int is_any_device)
 	 */
 	handle->fd = sock_fd;
 
-#if defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT)
+	/*
+	 * Any supported Linux version implements at least four auxiliary
+	 * data items (SKF_AD_PROTOCOL, SKF_AD_PKTTYPE, SKF_AD_IFINDEX and
+	 * SKF_AD_NLATTR).  Set a flag so the code generator can use these
+	 * items if necessary.
+	 */
+	handle->bpf_codegen_flags |= BPF_SPECIAL_BASIC_HANDLING;
+
 	/*
 	 * Can we generate special code for VLAN checks?
 	 * (XXX - what if we need the special code but it's not supported
 	 * by the OS?  Is that possible?)
+	 *
+	 * This depends on both a runtime condition (the running Linux kernel
+	 * must support at least SKF_AD_VLAN_TAG_PRESENT in the auxiliary data
+	 * and must support SO_BPF_EXTENSIONS in order to tell the userland
+	 * process what it supports) and a compile-time condition (the OS
+	 * headers must define both constants in order to compile libpcap code
+	 * that asks the kernel about the support).
 	 */
+#if defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT)
+	int bpf_extensions;
+	socklen_t len = sizeof(bpf_extensions);
 	if (getsockopt(sock_fd, SOL_SOCKET, SO_BPF_EXTENSIONS,
 	    &bpf_extensions, &len) == 0) {
 		if (bpf_extensions >= SKF_AD_VLAN_TAG_PRESENT) {
@@ -2823,7 +2806,7 @@ setup_socket(pcap_t *handle, int is_any_device)
 			handle->bpf_codegen_flags |= BPF_SPECIAL_VLAN_HANDLING;
 		}
 	}
-#endif /* defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT) */
+#endif // defined(SO_BPF_EXTENSIONS) && defined(SKF_AD_VLAN_TAG_PRESENT)
 
 	return status;
 }
@@ -2841,14 +2824,18 @@ static int
 setup_mmapped(pcap_t *handle)
 {
 	struct pcap_linux *handlep = handle->priv;
+	int flags = MAP_ANONYMOUS | MAP_PRIVATE;
 	int status;
 
 	/*
 	 * Attempt to allocate a buffer to hold the contents of one
 	 * packet, for use by the oneshot callback.
 	 */
-	handlep->oneshot_buffer = malloc(handle->snapshot);
-	if (handlep->oneshot_buffer == NULL) {
+#ifdef MAP_32BIT
+	if (pcapint_mmap_32bit) flags |= MAP_32BIT;
+#endif
+	handlep->oneshot_buffer = mmap(0, handle->snapshot, PROT_READ | PROT_WRITE, flags, -1, 0);
+	if (handlep->oneshot_buffer == MAP_FAILED) {
 		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "can't allocate oneshot buffer");
 		return PCAP_ERROR;
@@ -2860,7 +2847,7 @@ setup_mmapped(pcap_t *handle)
 	}
 	status = prepare_tpacket_socket(handle);
 	if (status == -1) {
-		free(handlep->oneshot_buffer);
+		munmap(handlep->oneshot_buffer, handle->snapshot);
 		handlep->oneshot_buffer = NULL;
 		return PCAP_ERROR;
 	}
@@ -2870,7 +2857,7 @@ setup_mmapped(pcap_t *handle)
 		 * Error attempting to enable memory-mapped capture;
 		 * fail.  The return value is the status to return.
 		 */
-		free(handlep->oneshot_buffer);
+		munmap(handlep->oneshot_buffer, handle->snapshot);
 		handlep->oneshot_buffer = NULL;
 		return status;
 	}
@@ -3032,8 +3019,6 @@ prepare_tpacket_socket(pcap_t *handle)
 	return -1;
 }
 
-#define MAX(a,b) ((a)>(b)?(a):(b))
-
 /*
  * Attempt to set up memory-mapped access.
  *
@@ -3048,6 +3033,7 @@ create_ring(pcap_t *handle)
 {
 	struct pcap_linux *handlep = handle->priv;
 	unsigned i, j, frames_per_block;
+	int flags = MAP_SHARED;
 #ifdef HAVE_TPACKET3
 	/*
 	 * For sockets using TPACKET_V2, the extra stuff at the end of a
@@ -3152,7 +3138,7 @@ create_ring(pcap_t *handle)
 			if (offload == -1)
 				return PCAP_ERROR;
 			if (offload)
-				max_frame_len = MAX(mtu, 65535);
+				max_frame_len = max(mtu, 65535);
 			else
 				max_frame_len = mtu;
 			max_frame_len += 18;
@@ -3420,8 +3406,10 @@ retry:
 
 	/* memory map the rx ring */
 	handlep->mmapbuflen = req.tp_block_nr * req.tp_block_size;
-	handlep->mmapbuf = mmap(0, handlep->mmapbuflen,
-	    PROT_READ|PROT_WRITE, MAP_SHARED, handle->fd, 0);
+#ifdef MAP_32BIT
+	if (pcapint_mmap_32bit) flags |= MAP_32BIT;
+#endif
+	handlep->mmapbuf = mmap(0, handlep->mmapbuflen, PROT_READ | PROT_WRITE, flags, handle->fd, 0);
 	if (handlep->mmapbuf == MAP_FAILED) {
 		pcapint_fmt_errmsg_for_errno(handle->errbuf, PCAP_ERRBUF_SIZE,
 		    errno, "can't mmap rx ring");
@@ -3579,7 +3567,7 @@ pcap_setnonblock_linux(pcap_t *handle, int nonblock)
  * Get the status field of the ring buffer frame at a specified offset.
  */
 static inline u_int
-pcap_get_ring_frame_status(pcap_t *handle, int offset)
+pcap_get_ring_frame_status(pcap_t *handle, u_int offset)
 {
 	struct pcap_linux *handlep = handle->priv;
 	union thdr h;
@@ -3588,11 +3576,9 @@ pcap_get_ring_frame_status(pcap_t *handle, int offset)
 	switch (handlep->tp_version) {
 	case TPACKET_V2:
 		return __atomic_load_n(&h.h2->tp_status, __ATOMIC_ACQUIRE);
-		break;
 #ifdef HAVE_TPACKET3
 	case TPACKET_V3:
 		return __atomic_load_n(&h.h3->hdr.bh1.block_status, __ATOMIC_ACQUIRE);
-		break;
 #endif
 	}
 	/* This should not happen. */
@@ -4102,6 +4088,7 @@ static int pcap_handle_packet_mmap(
 		 */
 		if (sll->sll_hatype == ARPHRD_CAN) {
 			pcap_can_socketcan_hdr *canhdr = (pcap_can_socketcan_hdr *)bp;
+			pcap_can_socketcan_xl_hdr *canxl_hdr = (pcap_can_socketcan_xl_hdr *)bp;
 			uint16_t protocol = ntohs(sll->sll_protocol);
 
 			/*
@@ -4111,97 +4098,80 @@ static int pcap_handle_packet_mmap(
 			 * that a program can tell what type of frame
 			 * it is.
 			 *
+			 * These operations should not have any effect
+			 * when reading proper CAN frames from Linux
+			 * CAN interfaces. Enforcing these bit values
+			 * ensures proper DLT_CAN_SOCKETCAN data even
+			 * with malformed PF_PACKET content.
+			 *
 			 * The two flags are:
 			 *
 			 *   CANFD_FDF, which is in the fd_flags field
-			 *   of the CAN classic/CAN FD header;
+			 *   of the CAN CC/CAN FD header;
 			 *
 			 *   CANXL_XLF, which is in the flags field
 			 *   of the CAN XL header, which overlaps
-			 *   the payload_length field of the CAN
-			 *   classic/CAN FD header.
+			 *   the payload_length field of the CAN CC/
+			 *   CAN FD header. Setting CANXL_XLF in the
+			 *   payload_length of CAN CC/FD frames would
+			 *   intentionally break the payload length.
 			 */
 			switch (protocol) {
 
 			case LINUX_SLL_P_CAN:
 				/*
-				 * CAN classic.
+				 * CAN CC frame (aka Classical CAN, CAN 2.0B)
 				 *
-				 * Zero out the fd_flags and reserved
-				 * fields, in case they're uninitialized
-				 * crap, and clear the CANXL_XLF bit in
-				 * the payload_length field.
-				 *
-				 * This means that the CANFD_FDF flag isn't
-				 * set in the fd_flags field, and that
-				 * the CANXL_XLF bit isn't set in the
-				 * payload_length field, so this frame
-				 * will appear to be a CAN classic frame.
+				 * Zero out the CAN FD and CAN XL flags
+				 * so that this frame will be identified
+				 * as a CAN CC frame.
 				 */
-				canhdr->payload_length &= ~CANXL_XLF;
-				canhdr->fd_flags = 0;
-				canhdr->reserved1 = 0;
-				canhdr->reserved2 = 0;
+				canxl_hdr->flags &= ~CANXL_XLF;
+				canhdr->fd_flags &= ~CANFD_FDF;
 				break;
 
 			case LINUX_SLL_P_CANFD:
 				/*
+				 * CAN FD frame
+				 *
 				 * Set CANFD_FDF in the fd_flags field,
 				 * and clear the CANXL_XLF bit in the
-				 * payload_length field, so this frame
-				 * will appear to be a CAN FD frame.
+				 * CAN XL flags field, so that this frame
+				 * will be identified as a CAN FD frame.
+				 *
+				 * The CANFD_FDF bit is not reliably
+				 * set by the Linux kernel. But setting
+				 * that bit for CAN FD is recommended.
 				 */
-				canhdr->payload_length &= ~CANXL_XLF;
+				canxl_hdr->flags &= ~CANXL_XLF;
 				canhdr->fd_flags |= CANFD_FDF;
-
-				/*
-				 * Zero out all the unknown bits in fd_flags
-				 * and clear the reserved fields, so that
-				 * a program reading this can assume that
-				 * CANFD_FDF is set because we set it, not
-				 * because some uninitialized crap was
-				 * provided in the fd_flags field.
-				 *
-				 * (At least some LINKTYPE_CAN_SOCKETCAN
-				 * files attached to Wireshark bugs had
-				 * uninitialized junk there, so it does
-				 * happen.)
-				 *
-				 * Update this if Linux adds more flag bits
-				 * to the fd_flags field or uses either of
-				 * the reserved fields for FD frames.
-				 */
-				canhdr->fd_flags &= (CANFD_FDF|CANFD_ESI|CANFD_BRS);
-				canhdr->reserved1 = 0;
-				canhdr->reserved2 = 0;
 				break;
 
 			case LINUX_SLL_P_CANXL:
 				/*
-				 * CAN XL frame.
+				 * CAN XL frame
 				 *
-				 * Make sure the CANXL_XLF bit is set in
-				 * the payload_length field, so that
-				 * this frame will appear to be a
-				 * CAN XL frame.
+				 * Set CANXL_XLF bit in the CAN XL flags
+				 * field, so that this frame will appear
+				 * to be a CAN XL frame.
 				 */
-				canhdr->payload_length |= CANXL_XLF;
+				canxl_hdr->flags |= CANXL_XLF;
 				break;
 			}
 
 			/*
 			 * Put multi-byte header fields in a byte-order
-			 *-independent format.
+			 * -independent format.
 			 */
-			if (canhdr->payload_length & CANXL_XLF) {
+			if (canxl_hdr->flags & CANXL_XLF) {
 				/*
 				 * This is a CAN XL frame.
 				 *
 				 * DLT_CAN_SOCKETCAN is specified as having
-				 * the Priority ID/VCID field in big--
+				 * the Priority ID/VCID field in big-
 				 * endian byte order, and the payload length
 				 * and Acceptance Field in little-endian byte
-				 * order. but capturing on a CAN device
+				 * order, but capturing on a CAN device
 				 * provides them in host byte order.
 				 * Convert them to the appropriate byte
 				 * orders.
@@ -4216,7 +4186,7 @@ static int pcap_handle_packet_mmap(
 				 * headers, and treats that field as
 				 * being big-endian.
 				 *
-				 * The other fields are put in little-
+				 * The reason other fields are put in little-
 				 * endian byte order is that older
 				 * libpcap code, ignorant of CAN XL,
 				 * left those fields alone, and the
@@ -4224,7 +4194,6 @@ static int pcap_handle_packet_mmap(
 				 * frames were captured are likely
 				 * to be little-endian processors.
 				 */
-				pcap_can_socketcan_xl_hdr *canxl_hdr = (pcap_can_socketcan_xl_hdr *)bp;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 				/*
@@ -4235,7 +4204,7 @@ static int pcap_handle_packet_mmap(
 				 * field in little-endian byte order.
 				 */
 				/* Byte-swap priority/VCID. */
-				canxl_hdr->priority_vcid = SWAPLONG(canxl_hdr->priority_vcid);
+				canxl_hdr->priority_vcid = PCAP_BSWAP_32(canxl_hdr->priority_vcid);
 #elif __BYTE_ORDER == __BIG_ENDIAN
 				/*
 				 * We're capturing on a big-endian
@@ -4245,7 +4214,7 @@ static int pcap_handle_packet_mmap(
 				 * fields to little-endian.
 				 */
 				/* Byte-swap the payload length */
-				canxl_hdr->payload_length = SWAPSHORT(canxl_hdr->payload_length);
+				canxl_hdr->payload_length = PCAP_BSWAP_16(canxl_hdr->payload_length);
 
 				/*
 				 * Byte-swap the acceptance field.
@@ -4253,13 +4222,13 @@ static int pcap_handle_packet_mmap(
 				 * XXX - is it just a 4-octet string,
 				 * not in any byte order?
 				 */
-				canxl_hdr->acceptance_field = SWAPLONG(canxl_hdr->acceptance_field);
+				canxl_hdr->acceptance_field = PCAP_BSWAP_32(canxl_hdr->acceptance_field);
 #else
 #error "Unknown byte order"
 #endif
 			} else {
 				/*
-				 * CAN or CAN FD frame.
+				 * CAN CC or CAN FD frame.
 				 *
 				 * DLT_CAN_SOCKETCAN is specified as having
 				 * the CAN ID and flags in network byte
@@ -4290,7 +4259,30 @@ static int pcap_handle_packet_mmap(
 	if (!linux_check_direction(handle, sll))
 		return 0;
 
-	/* get required packet info from ring header */
+	/*
+	 * Get required packet info from ring header.
+	 *
+	 * The seconds part of the time stamp is a 32-bit
+	 * unsigned integer; this will have a problem in 2106,
+	 * but not in 2038.
+	 *
+	 * ts.tv_sec is a time_t, which is signed, and which
+	 * may be 32-bit or 64-bit.  Pass it through; if we
+	 * have a 32-bit signed time_t, in which values >
+	 * 2^31-1 won't fit, then:
+	 *
+	 *    Writing the packet to a file will pass the bits
+	 *    through.  If the program reading the file can
+	 *    handle 32-bit unsigned time stamps, including
+	 *    any conversion to local time or UTC, it will
+	 *    properly handle the time stamps.
+	 *
+	 *    Reporting the packet time stamp may give
+	 *    an error or a pre-1970 time stamp on platforms
+	 *    with signed 32-bit time stamps, but that
+	 *    will happen even if it's captured on a
+	 *    platform with a 64-bit time_t.
+	 */
 	pcaphdr.ts.tv_sec = tp_sec;
 	pcaphdr.ts.tv_usec = tp_usec;
 	pcaphdr.caplen = tp_snaplen;
@@ -4433,7 +4425,7 @@ pcap_read_linux_mmap_v2(pcap_t *handle, int max_packets, pcap_handler callback,
 		 * the one we've just processed.
 		 */
 		packet_mmap_release(h.h2);
-		if (handlep->blocks_to_filter_in_userland > 0) {
+		if (handlep->blocks_to_filter_in_userland != 0) {
 			handlep->blocks_to_filter_in_userland--;
 			if (handlep->blocks_to_filter_in_userland == 0) {
 				/*
@@ -4564,7 +4556,7 @@ again:
 			 * just processed.
 			 */
 			packet_mmap_v3_release(h.h3);
-			if (handlep->blocks_to_filter_in_userland > 0) {
+			if (handlep->blocks_to_filter_in_userland != 0) {
 				handlep->blocks_to_filter_in_userland--;
 				if (handlep->blocks_to_filter_in_userland == 0) {
 					/*
@@ -4606,7 +4598,7 @@ pcap_setfilter_linux(pcap_t *handle, struct bpf_program *filter)
 	struct sock_fprog	fcode;
 	int			can_filter_in_kernel;
 	int			err = 0;
-	int			n, offset;
+	u_int			n, offset;
 
 	if (!handle)
 		return -1;
@@ -4632,7 +4624,6 @@ pcap_setfilter_linux(pcap_t *handle, struct bpf_program *filter)
 
 	/* Install kernel level filter if possible */
 
-#ifdef USHRT_MAX
 	if (handle->fcode.bf_len > USHRT_MAX) {
 		/*
 		 * fcode.len is an unsigned short for current kernel.
@@ -4644,9 +4635,7 @@ pcap_setfilter_linux(pcap_t *handle, struct bpf_program *filter)
 		fcode.len = 0;
 		fcode.filter = NULL;
 		can_filter_in_kernel = 0;
-	} else
-#endif /* USHRT_MAX */
-	{
+	} else {
 		/*
 		 * Oh joy, the Linux kernel uses struct sock_fprog instead
 		 * of struct bpf_program and of course the length field is
@@ -4792,11 +4781,13 @@ pcap_setfilter_linux(pcap_t *handle, struct bpf_program *filter)
 	 * walk the ring backward and count the free blocks.
 	 */
 	offset = handle->offset;
-	if (--offset < 0)
-		offset = handle->cc - 1;
+	if (offset == 0)
+		offset = handle->cc;
+	offset--;
 	for (n=0; n < handle->cc; ++n) {
-		if (--offset < 0)
-			offset = handle->cc - 1;
+		if (offset == 0)
+			offset = handle->cc;
+		offset--;
 		if (pcap_get_ring_frame_status(handle, offset) != TP_STATUS_KERNEL)
 			break;
 	}
@@ -4969,15 +4960,15 @@ enter_rfmon_mode(pcap_t *handle, int sock_fd, const char *device)
 		nl80211_cleanup(&nlstate);
 		return ret;
 	}
-        if (type == NL80211_IFTYPE_MONITOR) {
+	if (type == NL80211_IFTYPE_MONITOR) {
 		/*
 		 * OK, it's already a monitor mode device; just use it.
 		 * There's no point in creating another monitor device
 		 * that will have to be cleaned up.
 		 */
-                nl80211_cleanup(&nlstate);
-                return ret;
-        }
+		nl80211_cleanup(&nlstate);
+		return ret;
+	}
 
 	/*
 	 * OK, it's apparently a mac80211 device but not a monitor device.
@@ -5032,6 +5023,7 @@ added:
 		/*
 		 * "atexit()" failed; don't put the interface
 		 * in rfmon mode, just give up.
+		 * handle->errbuf has already been filled.
 		 */
 		del_mon_if(handle, sock_fd, &nlstate, device,
 		    handlep->mondevice);
@@ -5453,7 +5445,7 @@ iface_get_offload(pcap_t *handle _U_)
  * 2. Using the hex dumps and any other available supporting materials, produce
  *    a sufficiently detailed description of the DSA tag structure, complete
  *    with a full comment indicating whether it's type 1, 2, or 3, and, for
- *    type 2, indicating whether it has an Ethertype and, if so, what that type
+ *    type 2, indicating whether it has an EtherType and, if so, what that type
  *    is, and whether it's registered with the IEEE or not.  Refer to the
  *    specification(s), existing implementation(s), or any other relevant
  *    resources.
@@ -5501,7 +5493,7 @@ static struct dsa_proto {
 	{ "dsa", DLT_DSA_TAG_DSA },
 
 	/*
-	 * Type 2, with an Ethertype field, but without
+	 * Type 2, with an EtherType field, but without
 	 * an assigned EtherType value that can be relied
 	 * on.
 	 */
@@ -5864,13 +5856,69 @@ iface_get_arptype(int fd, const char *device, char *ebuf)
 	return ifr.ifr_hwaddr.sa_family;
 }
 
+/*
+ * In a DLT_CAN_SOCKETCAN frame the first four bytes are a 32-bit integer
+ * value in host byte order if the filter program is running in the kernel and
+ * in network byte order if in userland.  This applies to both CC, FD and XL
+ * frames, see pcap_handle_packet_mmap() for the rationale.  Return 1 iff the
+ * [possibly modified] filter program can work correctly in the kernel.
+ */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static int
+fix_dlt_can_socketcan(const u_int len, struct bpf_insn insn[])
+{
+	for (u_int i = 0; i < len; ++i) {
+		switch (insn[i].code) {
+		case BPF_LD|BPF_B|BPF_ABS: // ldb [k]
+		case BPF_LDX|BPF_MSH|BPF_B: // ldxb 4*([k]&0xf)
+			if (insn[i].k < 4)
+				insn[i].k = 3 - insn[i].k; // Fixed now.
+			break;
+		case BPF_LD|BPF_H|BPF_ABS: // ldh [k]
+		case BPF_LD|BPF_W|BPF_ABS: // ld [k]
+			/*
+			 * A halfword or a word load cannot be fixed by just
+			 * changing k, even if every required byte is within
+			 * the byte-swapped part of the frame, even if the
+			 * load is aligned.  The fix would require either
+			 * rewriting the filter program extensively or
+			 * generating it differently in the first place.
+			 */
+		case BPF_LD|BPF_B|BPF_IND: // ldb [x + k]
+		case BPF_LD|BPF_H|BPF_IND: // ldh [x + k]
+		case BPF_LD|BPF_W|BPF_IND: // ld [x + k]
+			/*
+			 * In addition to the above, a variable offset load
+			 * cannot be fixed because x can have any value, thus
+			 * x + k can have any value, but only the first four
+			 * bytes are swapped.  An easy way to demonstrate it
+			 * is to compile "link[link[4]] == 0", which will use
+			 * "ldb [x + 0]" to access one of the first four bytes
+			 * of the frame iff CAN CC/FD payload length is less
+			 * than 4.
+			 */
+			if (insn[i].k < 4)
+				return 0; // Userland filtering only.
+			break;
+		}
+	}
+	return 1;
+}
+#else
+static int
+fix_dlt_can_socketcan(const u_int len _U_, struct bpf_insn insn[] _U_)
+{
+	return 1;
+}
+#endif // __BYTE_ORDER == __LITTLE_ENDIAN
+
 static int
 fix_program(pcap_t *handle, struct sock_fprog *fcode)
 {
 	struct pcap_linux *handlep = handle->priv;
 	size_t prog_size;
-	register int i;
-	register struct bpf_insn *p;
+	int i;
+	struct bpf_insn *p;
 	struct bpf_insn *f;
 	int len;
 
@@ -5889,6 +5937,17 @@ fix_program(pcap_t *handle, struct sock_fprog *fcode)
 	memcpy(f, handle->fcode.bf_insns, prog_size);
 	fcode->len = len;
 	fcode->filter = (struct sock_filter *) f;
+
+	switch (handle->linktype) {
+	case DLT_CAN_SOCKETCAN:
+		/*
+		 * If a similar fix needs to be done for CAN frames that
+		 * appear on the "any" pseudo-interface, it needs to be done
+		 * differently because that would be within DLT_LINUX_SLL or
+		 * DLT_LINUX_SLL2.
+		 */
+		return fix_dlt_can_socketcan(len, f);
+	}
 
 	for (i = 0; i < len; ++i) {
 		p = &f[i];

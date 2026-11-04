@@ -73,13 +73,14 @@
 #include <epan/packet.h>
 #include <epan/capture_dissectors.h>
 #include <epan/etypes.h>
-#include <epan/ppptypes.h>
-#include <epan/ipproto.h>
-#include <epan/arcnet_pids.h>
-#include <epan/llcsaps.h>
 #include <epan/to_str.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
+#include "packet-ppp.h"
+#include "packet-llc.h"
+#include "packet-arcnet.h"
+
 
 void proto_register_vines_frp(void);
 void proto_reg_handoff_vines_frp(void);
@@ -290,7 +291,7 @@ enum {
 	PKTTYPE_DGRAM = 0,	/* Unreliable datagram */
 	PKTTYPE_DATA = 1,	/* User Data */
 	PKTTYPE_ERR = 2,	/* Error */
-	PKTTYPE_DISC = 3,	/* Diconnect Request */
+	PKTTYPE_DISC = 3,	/* Disconnect Request */
 	PKTTYPE_PROBE = 4,	/* Probe (retransmit) */
 	PKTTYPE_ACK = 5	/* Acknowledgement */
 };
@@ -1199,8 +1200,7 @@ dissect_vines_arp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	ti = proto_tree_add_item(tree, proto_vines_arp, tvb, 0, -1, ENC_NA);
 	vines_arp_tree = proto_item_add_subtree(ti, ett_vines_arp);
 
-	version = tvb_get_uint8(tvb, 0);
-	proto_tree_add_item(vines_arp_tree, hf_vines_arp_version, tvb, 0, 1, ENC_NA);
+	proto_tree_add_item_ret_uint8(vines_arp_tree, hf_vines_arp_version, tvb, 0, 1, ENC_NA, &version);
 
 	if (version == VINES_VERS_5_5) {
 		/*
@@ -1412,7 +1412,7 @@ rtp_show_gateway_info(proto_tree *tree, tvbuff_t *tvb, int offset,
 static int
 dissect_vines_rtp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_tree *vines_rtp_tree = NULL;
 	proto_item *ti;
 	proto_tree *subtree;
@@ -1451,11 +1451,9 @@ dissect_vines_rtp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 			case VRTP_OP_REDIRECT2:
 				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_version, tvb, offset, 2, ENC_BIG_ENDIAN);
 				offset += 2;
-				link_addr_length = tvb_get_uint8(tvb, offset);
-				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_link_address_length, tvb, offset, 1, ENC_NA);
+				proto_tree_add_item_ret_uint8(vines_rtp_tree, hf_vines_rtp_link_address_length, tvb, offset, 1, ENC_NA, &link_addr_length);
 				offset += 1;
-				source_route_length = tvb_get_uint8(tvb, offset);
-				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_source_route_length, tvb, offset, 1, ENC_NA);
+				proto_tree_add_item_ret_uint8(vines_rtp_tree, hf_vines_rtp_source_route_length, tvb, offset, 1, ENC_NA, &source_route_length);
 				offset += 1;
 				offset = srtp_show_machine_info(vines_rtp_tree, tvb, offset, hf_vines_rtp_destination,
 							hf_vines_rtp_metric_to_destination, hf_vines_rtp_destination_node_type,
@@ -1559,11 +1557,9 @@ dissect_vines_rtp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 				break;
 
 			case VRTP_OP_REDIRECT:
-				link_addr_length = tvb_get_uint8(tvb, offset);
-				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_link_address_length, tvb, offset, 1, ENC_NA);
+				proto_tree_add_item_ret_uint8(vines_rtp_tree, hf_vines_rtp_link_address_length, tvb, offset, 1, ENC_NA, &link_addr_length);
 				offset += 1;
-				source_route_length = tvb_get_uint8(tvb, offset);
-				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_source_route_length, tvb, offset, 1, ENC_NA);
+				proto_tree_add_item_ret_uint8(vines_rtp_tree, hf_vines_rtp_source_route_length, tvb, offset, 1, ENC_NA, &source_route_length);
 				offset += 1;
 				proto_tree_add_item(vines_rtp_tree, hf_vines_rtp_destination, tvb, offset, VINES_ADDR_LEN, ENC_NA);
 				offset += VINES_ADDR_LEN;
@@ -1899,7 +1895,7 @@ static const value_string vines_icp_packet_type_vals[] = {
 static int
 dissect_vines_icp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_tree *vines_icp_tree;
 	proto_item *ti;
 	uint16_t packet_type;

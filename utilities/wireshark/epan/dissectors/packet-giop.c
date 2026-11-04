@@ -264,8 +264,8 @@
  */
 
 
-#define WS_LOG_DOMAIN "packet-giop"
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-giop"
 #include <wireshark.h>
 
 #include <errno.h>
@@ -947,7 +947,7 @@ struct complete_reply_hash_val {
   uint32_t mfn;                  /* matching frame number (request)  */
 };
 
-GHashTable *giop_complete_reply_hash; /* hash */
+static GHashTable *giop_complete_reply_hash; /* hash */
 
 /*
  * DATA - Module Hash stuff to store data from register_giop_user_module
@@ -970,7 +970,7 @@ struct giop_module_val {
   giop_sub_handle_t *subh;      /* handle to sub dissector */
 };
 
-GHashTable *giop_module_hash; /* hash */
+static GHashTable *giop_module_hash; /* hash */
 
 
 /*
@@ -1069,7 +1069,7 @@ struct giop_object_val {
   ior_src_t  src;               /* where did Iget this IOR from */
 };
 
-GHashTable *giop_objkey_hash; /* hash */
+static GHashTable *giop_objkey_hash; /* hash */
 
 /*
  * Data structure attached to a conversation.
@@ -3102,7 +3102,7 @@ bool get_CDR_boolean(tvbuff_t *tvb, int *offset) {
 
 /* Copy a 1 octet sequence from the tvbuff
  * which represents a char, and convert
- * it to an char value.
+ * it to a char value.
  * offset is then incremented by 1, to indicate the 1 octet which
  * has been processed.
  */
@@ -3380,7 +3380,7 @@ void get_CDR_interface(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int 
 
 /* Copy a 4 octet sequence from the tvbuff
  * which represents a signed long value, and convert
- * it to an signed long value, taking into account byte order.
+ * it to a signed long value, taking into account byte order.
  * offset is first incremented so that it falls on a proper alignment
  * boundary for long values.
  * offset is then incremented by 4, to indicate the 4 octets which
@@ -3404,7 +3404,7 @@ int32_t get_CDR_long(tvbuff_t *tvb, int *offset, bool stream_is_big_endian, int 
 
 /* Copy a 8 octet sequence from the tvbuff
  * which represents a signed long long value, and convert
- * it to an signed long long value, taking into account byte order.
+ * it to a signed long long value, taking into account byte order.
  * offset is first incremented so that it falls on a proper alignment
  * boundary for long long values.
  * offset is then incremented by 8, to indicate the 8 octets which
@@ -3525,7 +3525,7 @@ giop_add_CDR_string(wmem_allocator_t* scope, proto_tree *tree, tvbuff_t *tvb, in
 
 /* Copy an octet sequence from the tvbuff
  * which represents a string, and convert
- * it to an string value, taking into account byte order.
+ * it to a string value, taking into account byte order.
  * offset is first incremented so that it falls on a proper alignment
  * boundary for string values. (begins with an unsigned long LI)
  *
@@ -3569,7 +3569,7 @@ uint32_t get_CDR_string(wmem_allocator_t* scope, tvbuff_t *tvb, const char **seq
     /* XXX - add expert_add_info_format note */
     slength = (uint32_t)reported_length;
   }
-  *seq = tvb_get_string_enc(scope, tvb, *offset, slength, ENC_ISO_8859_1);
+  *seq = (char*)tvb_get_string_enc(scope, tvb, *offset, slength, ENC_ISO_8859_1);
   *offset += slength;
 
   return slength;               /* return length */
@@ -4302,10 +4302,8 @@ dissect_reply_body (tvbuff_t *tvb, int offset, packet_info *pinfo,
 
     if (sequence_length != 0 && sequence_length < ITEM_LABEL_LENGTH)
     {
-      header->exception_id = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &sequence_length, ENC_ASCII);
-
-      proto_tree_add_string(tree, hf_giop_exception_id, tvb, offset,
-                            sequence_length, header->exception_id);
+      proto_tree_add_item_ret_string(tree, hf_giop_exception_id, tvb, offset,
+                            (int)sequence_length, ENC_ASCII, pinfo->pool, (const uint8_t**)&header->exception_id);
       offset += sequence_length;
     }
 
@@ -4365,7 +4363,8 @@ dissect_reply_body (tvbuff_t *tvb, int offset, packet_info *pinfo,
     }
 
     if (!exres && !strcmp(giop_op_is_a, entry->operation)) {
-      proto_tree_add_boolean(tree, hf_giop_type_id_match, tvb, offset - 1, 1,
+      int old_offset = offset;
+      proto_tree_add_boolean(tree, hf_giop_type_id_match, tvb, old_offset, 1,
                           get_CDR_boolean(tvb, &offset));
     }
 

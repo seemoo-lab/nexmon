@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-build glib 2.90.0 and its dependencies for Android with the NDK,
+# Cross-build glib 2.90.1 and its dependencies for Android with the NDK,
 # producing the static archives checked into this directory:
 #
 #   libglib-2.0.a   glib core (PCRE2 for GRegex included)
@@ -7,7 +7,7 @@
 #   libgmodule-2.0.a libgio-2.0.a libgthread-2.0.a
 #   libintl.a       gettext stub (proxy-libintl, NLS disabled)
 #
-# Sources: ../glib (glib 2.90.0, meson), ../libffi (autotools), ../pcre2 (autotools).
+# Sources: ../glib (glib 2.90.1, meson), ../libffi (autotools), ../pcre2 (autotools).
 # The fresh headers are installed into ./glib-2.0/.
 #
 # Usage: ./build-android.sh [APP_ABI]        (default: arm64-v8a)
@@ -31,18 +31,22 @@ if [ "$ABI" = "all" ]; then
 fi
 case "$ABI" in
   arm64-v8a|arm64|aarch64)
+    ANDROID_ABI=arm64-v8a
     CLANG_TARGET=aarch64-linux-android$API
     AUTOTOOLS_HOST=aarch64-linux-android
     MESON_CPU_FAMILY=aarch64; MESON_CPU=aarch64 ;;
   armeabi-v7a|armv7|arm|armeabi)
+    ANDROID_ABI=armeabi-v7a
     CLANG_TARGET=armv7a-linux-androideabi$API
     AUTOTOOLS_HOST=arm-linux-androideabi
     MESON_CPU_FAMILY=arm; MESON_CPU=armv7a ;;
   x86)
+    ANDROID_ABI=x86
     CLANG_TARGET=i686-linux-android$API
     AUTOTOOLS_HOST=i686-linux-android
     MESON_CPU_FAMILY=x86; MESON_CPU=i686 ;;
   x86_64|x64)
+    ANDROID_ABI=x86_64
     CLANG_TARGET=x86_64-linux-android$API
     AUTOTOOLS_HOST=x86_64-linux-android
     MESON_CPU_FAMILY=x86_64; MESON_CPU=x86_64 ;;
@@ -50,6 +54,7 @@ case "$ABI" in
     echo "unsupported APP_ABI: $ABI (supported: arm64-v8a armeabi-v7a x86 x86_64)" >&2
     exit 1 ;;
 esac
+ABI="$ANDROID_ABI"
 
 # --- NDK ---------------------------------------------------------------
 if [ -z "${NDK_ROOT:-}" ]; then
@@ -93,11 +98,17 @@ fi
 
 WORK="$HERE/local/build-$ABI"
 PREFIX="$WORK/prefix"
+STAMP="$WORK/.stamp"
 # Serialize concurrent runs (e.g. two `make all-arm64` at once): without the
 # lock they rm -rf / regenerate the same build dirs and corrupt each other.
 mkdir -p "$HERE/local"
 exec 9> "$HERE/local/.build-$ABI.lock"
 flock 9
+if [ -f "$STAMP" ] && [ -f "$HERE/libglib-2.0.a" ] && [ -f "$PREFIX/lib/pkgconfig/glib-2.0.pc" ] \
+   && [ "$HERE/libglib-2.0.a" -nt "$STAMP" ]; then
+    echo "  glib-2.0 ($ABI) archives up to date"
+    exit 0
+fi
 rm -rf "$WORK"
 mkdir -p "$PREFIX" "$WORK/bin"
 
@@ -199,5 +210,6 @@ cp -a "$WORK/stage$PREFIX/include/glib-2.0" "$HERE/glib-2.0"
 # libdir/glib-2.0/include; consumers here include it from glib-2.0/.
 cp "$WORK/glib/glib/glibconfig.h" "$HERE/glib-2.0/glibconfig.h"
 cp "$WORK/glib/glib/glibconfig.h" "$HERE/glibconfig.h"
+touch "$STAMP" "$HERE/libglib-2.0.a"
 
 echo "  DONE: glib $(awk '/GLIB_(MAJOR|MINOR|MICRO)_VERSION/{printf "%s%s", sep, $3; sep="."}' "$HERE/glib-2.0/glibconfig.h") ($ABI) installed in $HERE"

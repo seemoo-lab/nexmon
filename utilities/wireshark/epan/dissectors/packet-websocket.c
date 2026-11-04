@@ -201,12 +201,12 @@ static tvbuff_t *
 tvb_unmasked(tvbuff_t *tvb, packet_info *pinfo, const unsigned offset, unsigned payload_length, const uint8_t *masking_key)
 {
 
-  char         *data_unmask;
+  uint8_t       *data_unmask;
   unsigned      i;
   const uint8_t *data_mask;
   unsigned      unmasked_length = payload_length > pref_max_unmasked_len ? pref_max_unmasked_len : payload_length;
 
-  data_unmask = (char *)wmem_alloc(pinfo->pool, unmasked_length);
+  data_unmask = (uint8_t*)wmem_alloc(pinfo->pool, unmasked_length);
   data_mask   = tvb_get_ptr(tvb, offset, unmasked_length);
   /* Unmasked(XOR) Data... */
   for(i=0; i < unmasked_length; i++) {
@@ -753,8 +753,7 @@ dissect_websocket_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
   }
 
   /* Opcode */
-  proto_tree_add_item(ws_tree, hf_ws_opcode, tvb, 0, 1, ENC_BIG_ENDIAN);
-  opcode = tvb_get_uint8(tvb, 0) & MASK_WS_OPCODE;
+  proto_tree_add_item_ret_uint8(ws_tree, hf_ws_opcode, tvb, 0, 1, ENC_BIG_ENDIAN, &opcode);
   col_append_fstr(pinfo->cinfo, COL_INFO, " %s", val_to_str_const(opcode, ws_opcode_vals, "Unknown Opcode"));
   col_append_str(pinfo->cinfo, COL_INFO, fin ? " [FIN]" : "[FRAGMENT] ");
 

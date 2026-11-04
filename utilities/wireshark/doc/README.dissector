@@ -280,9 +280,6 @@ signed integers (int8_t):
 uint8_t tvb_get_uint8(tvbuff_t *tvb, const int offset);
 int8_t tvb_get_int8(tvbuff_t *tvb, const int offset);
 
-These functions were previously named tvb_get_guint8 and tvb_get_gint8. You
-can still use the old names but they have been deprecated.
-
 Network-to-host-order accessors:
 
 16-bit unsigned (uint16_t) and signed (int16_t) integers:
@@ -411,9 +408,6 @@ int64_t tvb_get_int56(tvbuff_t *tvb, const int offset, const unsigned encoding);
 uint64_t tvb_get_uint64(tvbuff_t *tvb, const int offset, const unsigned encoding);
 int64_t tvb_get_int64(tvbuff_t *tvb, const int offset, const unsigned encoding);
 
-These functions were previously named tvb_get_guintXX and tvb_get_gintXX. You
-can still use the old names but they have been deprecated.
-
 Single-precision and double-precision IEEE floating-point numbers:
 
 float tvb_get_ieee_float(tvbuff_t *tvb, const int offset, const unsigned encoding);
@@ -460,7 +454,7 @@ and produces UTF-8 in the buffer. See below for a list of input encoding values.
 The buffer is allocated in the given wmem scope (see README.wmem for more
 information).
 
-uint8_t *tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, int *lengthp, const unsigned encoding);
+uint8_t *tvb_get_stringz_enc(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, unsigned int *lengthp, const unsigned encoding);
 
 Returns a null-terminated buffer allocated from the specified scope,
 containing data from the specified tvbuff, starting at the specified
@@ -473,18 +467,25 @@ the string, including the terminating null.
 The buffer is allocated in the given wmem scope (see README.wmem for more
 information).
 
-int tvb_get_nstringz(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer);
-int tvb_get_nstringz0(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer);
+int tvb_get_raw_bytes_as_stringz(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer);
 
-Copies bufsize bytes, including the terminating NULL, to buffer. If a NULL
+Copies up to bufsize - 1 bytes to buffer and adds a terminating NUL. If a NUL
 terminator is found before reaching bufsize, only the bytes up to and including
-the NULL are copied. Returns the number of bytes copied (not including
-terminating NULL), or -1 if the string was truncated in the buffer due to
-not having reached the terminating NULL. In this case, the resulting
-buffer is not NULL-terminated.
-tvb_get_nstringz0() works like tvb_get_nstringz(), but never returns -1 since
-the string is guaranteed to have a terminating NULL. If the string was truncated
-when copied into buffer, a NULL is placed at the end of buffer to terminate it.
+the NUL are copied. If no NUL is found, then bufsize - 1 bytes are copied and a
+NUL byte is added to ensure null termination. If fewer bytes are available than
+bufsize - 1, as many bytes as are present in the tvb are copied and a NUL
+terminator is added. Bufsize must be at least 1 to allow space for the NUL.
+Returns the number of bytes copied, not including terminating NUL.
+
+WARNING - This function does not do encoding validation and does not guarantee
+that it produces a UTF-8 string, and the result should never be added to the
+tree, columns, or other output without validation. (This might be used, for
+example, to handle character encodings not supported by the API yet.)
+
+int tvb_get_raw_bytes_as_string(tvbuff_t *tvb, const int offset, const unsigned bufsize, uint8_t* buffer);
+
+Similar to the above, but does not stop at a NUL byte and always copies as
+many bytes up to bufsize - 1 as possible.
 
 char *tvb_get_ts_23_038_7bits_string(wmem_allocator_t *scope, tvbuff_t *tvb,
                                      const int bit_offset, int no_of_chars);
@@ -535,12 +536,12 @@ A pointer to the packet scope allocated string will be returned.
 Note: a tvbuff content of 0xf is considered a 'filler' and will end the conversion.
 
 Copying memory:
-void *tvb_memcpy(tvbuff_t *tvb, void *target, const int offset, size_t length);
+void *tvb_memcpy(tvbuff_t *tvb, void *target, const unsigned offset, size_t length);
 
 Copies into the specified target the specified length's worth of data
 from the specified tvbuff, starting at the specified offset.
 
-void *tvb_memdup(wmem_allocator_t *scope, tvbuff_t *tvb, const int offset, size_t length);
+void *tvb_memdup(wmem_allocator_t *scope, tvbuff_t *tvb, const unsigned offset, size_t length);
 
 Returns a buffer containing a copy of the given TVB bytes. The buffer is
 allocated in the given wmem scope (see README.wmem for more information).
@@ -827,10 +828,7 @@ Here is how the frame "protocol" is registered.
 
         int proto_frame;
 
-        proto_frame = proto_register_protocol (
-                /* name */            "Frame",
-                /* short name */      "Frame",
-                /* abbrev */          "frame" );
+        proto_frame = proto_register_protocol("Frame", "Frame", "frame"); /* name, short name, abbreviation */
 
 A header field is also registered with its name and abbreviation, but
 information about its data type is needed. It helps to look at
@@ -1614,9 +1612,14 @@ encodings that are currently supported are:
         NTP time). It's used by the Object Management Group's Real-Time
         Publish-Subscribe Wire Protocol for the Data Distribution Service.
 
-    ENC_TIME_SECS_USECS - 8 bytes; the first 4 bytes are seconds since the
-        UN*X epoch and the next 4 bytes are microseconds since that
-        second. (I.e., a UN*X struct timeval with a 4-byte time_t.)
+    ENC_TIME_SECS_USECS - 8, 12, or 16 bytes. For 8 bytes, the first 4
+        bytes are seconds and the next 4 bytes are microseconds; for 12
+        bytes, the first 8 bytes are seconds and the next 4 bytes are
+        microseconds; for 16 bytes, the first 8 bytes are seconds and
+        the next 8 bytes are microseconds. The seconds are seconds
+        since the UN*X epoch. (I.e., a POSIX struct timeval with a 4-byte
+        time_t and a 4-byte suseconds_t, or an 8-byte time_t and either
+        a 4-byte or 8-byte suseconds_t.)
 
     ENC_TIME_SECS - 4 to 8 bytes, representing a value in seconds since
         the UN*X epoch.
@@ -1644,8 +1647,16 @@ encodings that are currently supported are:
         and the remaining 16 bits indicate the number of 1/65536's of a second
         since that second.
 
-    ENC_TIME_CLASSIC_MAC_OS_SECS - 4-8 bytes, representing a count of seconds
+    ENC_TIME_MP4_FILE_SECS - 4-8 bytes, representing a count of seconds
         since January 1, 1904, 00:00:00 UTC.
+
+    ENC_TIME_ZBEE_ZCL - 4-8 bytes, representing a count of seconds
+        since January 1, 2000, 00:00:00 UTC.
+
+    ENC_TIME_WINDOWS - 8 bytes, representing a count of 100-nanosecond
+        intervals since January 1, 1601, 00:00:00 UTC. (I.e., a Windows
+        FILETIME structure, with the lower 32 bits first and the upper
+        32 bits second, even when big-endian.)
 
 For FT_RELATIVE_TIME fields, the encoding specifies the form in which
 the time stamp is specified, as well as its byte order. The time stamp
@@ -2286,8 +2297,9 @@ contains the payload portion of the protocol (that is, the bytes
 that are relevant to the next dissector).
 
 To create a new TVBUFF_SUBSET that begins at a specified offset in a
-parent tvbuff, and runs to the end of the parent tvbuff, the routine
-tvbuff_new_subset_remaining() is used:
+parent tvbuff, and runs to the end of the parent tvbuff (i.e., when
+the current protocol doesn't specify the size of the payload), the
+routine tvbuff_new_subset_remaining() is used:
 
     next_tvb = tvb_new_subset_remaining(tvb, offset);
 
@@ -2334,13 +2346,10 @@ Where:
     offset is the byte offset of 'tvb' at which the new tvbuff
     should start. The first byte is the byte at offset 0.
 
-    length is the number of bytes in the new TVBUFF_SUBSET. A length
-    argument of -1 says to use as many bytes as are available in
-    'tvb'.
+    length is the number of bytes in the new TVBUFF_SUBSET.
 
     reported_length is the number of bytes that the current protocol
-    says should be in the payload. A reported_length of -1 says that
-    the protocol doesn't say anything about the size of its payload.
+    says should be in the payload.
 
 To call a dissector you need to get the handle of the dissector using
 find_dissector(), passing it the string name of the dissector. The setting
@@ -2559,7 +2568,7 @@ Where:
         this conversation
     conversation_element_t *elements = An array of data types and
         values which identify this conversation. The array MUST be
-        terminated with a CE_ENDPOINT element.
+        terminated with a CE_CONVERSATION_TYPE element.
 
 2.2.1.4 The find_conversation function.
 
@@ -2625,7 +2634,7 @@ Where:
         this conversation
     conversation_element_t *elements = An array of data types and
         values which identify this conversation. The array MUST be
-        terminated with a CE_ENDPOINT element.
+        terminated with a CE_CONVERSATION_TYPE element.
 
 2.2.1.6 The find_conversation_pinfo function.
 
@@ -2650,7 +2659,7 @@ or pinfo->conv_elements if it is set.
 
 This convenience function will find an existing conversation (by calling
 find_conversation()) and, if a conversation does not already exist, create a
-new conversation by calling conversation_new().
+new conversation by calling conversation_new() or conversation_new_full().
 
 The find_or_create_conversation prototype:
 
@@ -2659,14 +2668,15 @@ The find_or_create_conversation prototype:
 Where:
     packet_info *pinfo = the packet_info structure
 
-The frame number and the addresses necessary for find_conversation() and
-conversation_new() are taken from the pinfo structure (as is commonly done)
-and no 'options' are used.
+The frame number and the addresses or conversation elements necessary for
+find_conversation() and conversation_new()/conversation_new_full()  are
+taken from the pinfo structure (as is commonly done) and no 'options' are
+used.
 
 2.2.1.8 The conversation_add_proto_data function.
 
-Once you have created a conversation with conversation_new, you can
-associate data with it using this function.
+Once you have created a conversation with conversation_new() or
+conversation_new_full(), you can associate data with it using this function.
 
 The conversation_add_proto_data prototype:
 
@@ -3608,9 +3618,10 @@ Consider the following example using IP dissection, stolen from packet-ip.c:
     static build_valid_func ip_da_build_value[1] = {ip_value};
     static decode_as_value_t ip_da_values = {ip_prompt, 1, ip_da_build_value};
     static decode_as_t ip_da = {"ip", "ip.proto", 1, 0, &ip_da_values, NULL, NULL,
-                                decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
     ...
-    ip_dissector_table = register_dissector_table("ip.proto", "IP protocol", ip_proto, FT_UINT8, BASE_DEC);
+    ip_dissector_table = register_dissector_table("ip.proto", "IP protocol",
+                                                  proto_ip, FT_UINT8, BASE_DEC);
     ...
     register_decode_as(&ip_da);
 
@@ -3670,7 +3681,7 @@ instead, the API description here should be good enough.
 2.11.1 ptvcursor API.
 
 ptvcursor_t*
-ptvcursor_new(proto_tree* tree, tvbuff_t* tvb, int offset)
+ptvcursor_new(proto_tree* tree, tvbuff_t* tvb, unsigned offset)
     This creates a new ptvcursor_t object for iterating over a tvbuff.
 You must call this and use this ptvcursor_t object so you can use the
 ptvcursor API.
@@ -3685,11 +3696,11 @@ starts where this call finished. The 'encoding' parameter is relevant for
 certain type of fields (See above under proto_tree_add_item()).
 
 proto_item *
-ptvcursor_add_ret_uint(ptvcursor_t* ptvc, int hf, int length, const unsigned encoding, uint32_t *retval);
+ptvcursor_add_ret_uint(ptvcursor_t* ptvc, int hf, unsigned length, const unsigned encoding, uint32_t *retval);
     Like ptvcursor_add, but returns uint value retrieved
 
 proto_item *
-ptvcursor_add_ret_int(ptvcursor_t* ptvc, int hf, int length, const unsigned encoding, int32_t *retval);
+ptvcursor_add_ret_int(ptvcursor_t* ptvc, int hf, unsigned length, const unsigned encoding, int32_t *retval);
     Like ptvcursor_add, but returns int value retrieved
 
 proto_item *
@@ -3697,7 +3708,7 @@ ptvcursor_add_ret_string(ptvcursor_t* ptvc, int hf, int length, const unsigned e
     Like ptvcursor_add, but returns string retrieved
 
 proto_item *
-ptvcursor_add_ret_boolean(ptvcursor_t* ptvc, int hf, int length, const unsigned encoding, bool *retval);
+ptvcursor_add_ret_boolean(ptvcursor_t* ptvc, int hf, unsigned length, const unsigned encoding, bool *retval);
     Like ptvcursor_add, but returns boolean value retrieved
 
 proto_item *
@@ -3705,7 +3716,7 @@ ptvcursor_add_no_advance(ptvcursor_t* ptvc, int hf, int length, const unsigned e
     Like ptvcursor_add, but does not advance the internal cursor.
 
 void
-ptvcursor_advance(ptvcursor_t* ptvc, int length)
+ptvcursor_advance(ptvcursor_t* ptvc, unsigned length)
     Advances the internal cursor without adding anything to the proto_tree.
 
 void
@@ -3745,7 +3756,7 @@ tvbuff_t *
 ptvcursor_tvbuff(ptvcursor_t* ptvc)
     Returns the tvbuff associated with the ptvcursor.
 
-int
+unsigned
 ptvcursor_current_offset(ptvcursor_t* ptvc)
     Returns the current offset.
 

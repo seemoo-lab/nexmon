@@ -19,6 +19,7 @@
 
 #include <errno.h>
 #include "wsutil/filesystem.h"
+#include "app/application_flavor.h"
 #include "wsutil/nstime.h"
 #include "wsutil/str_util.h"
 #include "wsutil/utf8_entities.h"
@@ -136,7 +137,7 @@ check_savability_t CaptureFileDialog::checkSaveAsWithComments(QWidget *parent, c
         msg_dialog.setDefaultButton(QMessageBox::Cancel);
     }
 
-#if defined(Q_OS_MAC)
+#if defined(Q_OS_MACOS)
     /*
      * In macOS, the "default button" is not necessarily the button that
      * has the input focus; Enter/Return activates the default button, and
@@ -243,7 +244,7 @@ QString CaptureFileDialog::fileExtensionType(int et, bool extension_globs)
     extensions_list = wtap_get_file_extension_type_extensions(et);
 
     // Get the list of compression-type extensions.
-    GSList *compression_type_extensions = wtap_get_all_compression_type_extensions_list();
+    GSList *compression_type_extensions = ws_get_all_compression_type_extensions_list();
 
     /* Construct the list of patterns. */
     for (extension = extensions_list; extension != NULL;
@@ -419,7 +420,7 @@ void CaptureFileDialog::fixFilenameExtension()
 
     // Fixup the new suffix based on whether we're compressing or not.
     // Strip off any compression suffix
-    GSList *compression_type_extensions = wtap_get_all_compression_type_extensions_list();
+    GSList *compression_type_extensions = ws_get_all_compression_type_extensions_list();
     for (GSList *compression_type_extension = compression_type_extensions;
         compression_type_extension != NULL;
         compression_type_extension = g_slist_next(compression_type_extension)) {
@@ -433,9 +434,9 @@ void CaptureFileDialog::fixFilenameExtension()
         }
     }
     g_slist_free(compression_type_extensions);
-    if (compressionType() != WTAP_UNCOMPRESSED) {
+    if (compressionType() != WS_FILE_UNCOMPRESSED) {
         // Compressing; append the appropriate compression suffix.
-        QString compressed_file_extension = QStringLiteral(".") + wtap_compression_type_extension(compressionType());
+        QString compressed_file_extension = QStringLiteral(".") + ws_compression_type_extension(compressionType());
         if (valid_extensions.contains(new_suffix + compressed_file_extension)) {
             new_suffix += compressed_file_extension;
         }
@@ -501,7 +502,7 @@ int CaptureFileDialog::selectedFileType() {
     return type_hash_.value(selectedNameFilter(), WTAP_FILE_TYPE_SUBTYPE_UNKNOWN);
 }
 
-wtap_compression_type CaptureFileDialog::compressionType() {
+ws_compression_type CaptureFileDialog::compressionType() {
     return compress_group_box_.compressionType();
 }
 
@@ -807,7 +808,7 @@ void CaptureFileDialog::preview(const QString & path)
         return;
     }
 
-    wth = wtap_open_offline(path.toUtf8().data(), WTAP_TYPE_AUTO, &err, &err_info, true);
+    wth = wtap_open_offline(path.toUtf8().data(), WTAP_TYPE_AUTO, &err, &err_info, true, application_configuration_environment_prefix());
     if (wth == NULL) {
         if (err == WTAP_ERR_FILE_UNKNOWN_FORMAT) {
             preview_format_.setText(tr("unknown file format"));

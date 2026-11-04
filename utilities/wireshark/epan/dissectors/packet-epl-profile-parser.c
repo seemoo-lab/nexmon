@@ -21,7 +21,6 @@
 #include "packet-epl.h"
 #include "ws_attributes.h"
 
-#include <epan/ws_printf.h>
 #include <epan/range.h>
 
 #include <string.h>
@@ -47,7 +46,7 @@
 typedef int xpath_handler(xmlNodeSetPtr, void*);
 static xpath_handler populate_object_list, populate_datatype_list, populate_profile_name;
 
-static struct xpath_namespace {
+static const struct xpath_namespace {
 	const xmlChar *prefix, *href;
 } namespaces[] = {
 	{ BAD_CAST "x",   BAD_CAST "http://www.ethernet-powerlink.org" },
@@ -55,7 +54,7 @@ static struct xpath_namespace {
 	{ NULL, NULL }
 };
 
-static struct xpath {
+static const struct xpath {
 	const xmlChar *expr;
 	xpath_handler *handler;
 } xpaths[] = {
@@ -301,8 +300,8 @@ epl_xdd_load(struct profile *profile, const char *xml_file)
 {
 	xmlXPathContextPtr xpathCtx = NULL;
 	xmlDoc *doc = NULL;
-	struct xpath_namespace *ns = NULL;
-	struct xpath *xpath = NULL;
+	const struct xpath_namespace *ns = NULL;
+	const struct xpath *xpath = NULL;
 	GHashTable *typemap = NULL;
 
 	/* Load XML document */
@@ -736,23 +735,6 @@ epl_wmem_iarray_find(epl_wmem_iarray_t *iarr, uint32_t value) {
 	return (range_admin_t*)bsearch_garray(&needle, iarr->arr, find_in_range);
 }
 
-#if 0
-void
-epl_wmem_print_iarr(epl_wmem_iarray_t *iarr)
-{
-	range_admin_t *elem;
-	unsigned i, len;
-	elem = (range_admin_t*)iarr->arr->data;
-	len = iarr->arr->len;
-	for (i = 0; i < len; i++)
-	{
-
-		ws_debug_printf("Range: low=%" PRIu32 " high=%" PRIu32 "\n", elem->low, elem->high);
-
-		elem = (range_admin_t*)((char*)elem + g_array_get_element_size(iarr->arr));
-	}
-}
-#endif
 
 /*
  * Editor modelines  -	https://www.wireshark.org/tools/modelines.html

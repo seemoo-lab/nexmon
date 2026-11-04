@@ -20,7 +20,6 @@
 #include <epan/packet.h>
 #include <epan/address_types.h>
 #include <epan/prefs.h>
-#include <epan/sctpppids.h>
 #include <epan/tap.h>
 #include <epan/to_str.h>
 #include <epan/tfs.h>
@@ -31,6 +30,9 @@
 
 #include "packet-mtp3.h"
 #include "packet-sccp.h"
+#include "packet-sctp.h"
+
+
 void proto_register_sua(void);
 void proto_reg_handoff_sua(void);
 
@@ -208,7 +210,7 @@ static const value_string message_class_type_acro_values[] = {
   { MESSAGE_CLASS_RKM_MESSAGE   * 256 + MESSAGE_TYPE_DEREG_RSP ,    "DEREG_RSP" },
   { 0,                           NULL } };
 
-const value_string sua_co_class_type_acro_values[] = {
+static const value_string sua_co_class_type_acro_values[] = {
   { MESSAGE_TYPE_CORE ,         "CORE" },
   { MESSAGE_TYPE_COAK ,         "COAK" },
   { MESSAGE_TYPE_COREF ,        "COREF" },
@@ -751,12 +753,11 @@ static const value_string status_type_info_values[] = {
 static void
 dissect_status_type_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree, proto_item *parameter_item)
 {
-  uint16_t status_type, status_info;
+  uint32_t status_type, status_info;
 
-  status_type = tvb_get_ntohs(parameter_tvb, STATUS_TYPE_OFFSET);
   status_info = tvb_get_ntohs(parameter_tvb, STATUS_INFO_OFFSET);
 
-  proto_tree_add_item(parameter_tree, hf_sua_status_type, parameter_tvb, STATUS_TYPE_OFFSET, STATUS_TYPE_LENGTH, ENC_BIG_ENDIAN);
+  proto_tree_add_item_ret_uint(parameter_tree, hf_sua_status_type, parameter_tvb, STATUS_TYPE_OFFSET, STATUS_TYPE_LENGTH, ENC_BIG_ENDIAN, &status_type);
   proto_tree_add_uint_format_value(parameter_tree, hf_sua_status_info, parameter_tvb, STATUS_INFO_OFFSET, STATUS_INFO_LENGTH,
                              status_info, "%s (%u)", val_to_str_const(status_type * 256 * 256 + status_info, status_type_info_values, "unknown"), status_info);
 
@@ -1013,10 +1014,8 @@ dissect_sccp_cause_parameter(tvbuff_t *parameter_tvb, proto_tree *parameter_tree
   const char *cause_string;
 
   proto_tree_add_item(parameter_tree, hf_sua_cause_reserved, parameter_tvb, PARAMETER_VALUE_OFFSET, RESERVED_2_LENGTH,  ENC_NA);
-  proto_tree_add_item(parameter_tree, hf_sua_cause_type,     parameter_tvb, CAUSE_TYPE_OFFSET,      CAUSE_TYPE_LENGTH,  ENC_BIG_ENDIAN);
-  cause_type = tvb_get_uint8(parameter_tvb, CAUSE_TYPE_OFFSET);
-  pi = proto_tree_add_item(parameter_tree, hf_sua_cause_value, parameter_tvb, CAUSE_VALUE_OFFSET,   CAUSE_VALUE_LENGTH, ENC_BIG_ENDIAN);
-  cause = tvb_get_uint8(parameter_tvb, CAUSE_VALUE_OFFSET);
+  proto_tree_add_item_ret_uint8(parameter_tree, hf_sua_cause_type, parameter_tvb, CAUSE_TYPE_OFFSET, CAUSE_TYPE_LENGTH, ENC_BIG_ENDIAN, &cause_type);
+  pi = proto_tree_add_item_ret_uint8(parameter_tree, hf_sua_cause_value, parameter_tvb, CAUSE_VALUE_OFFSET, CAUSE_VALUE_LENGTH, ENC_BIG_ENDIAN, &cause);
 
   switch (cause_type) {
   case CAUSE_TYPE_RETURN:

@@ -44,9 +44,6 @@
  * SOME/IP, and others.
  */
 
-#define SPDU_NAME                                           "Signal PDU"
-#define SPDU_NAME_LONG                                      "Signal PDU"
-#define SPDU_NAME_FILTER                                    "signal_pdu"
 #define SPDU_NAME_SIGNAL_PREFIX                             "signal_pdu.signals"
 
 
@@ -94,6 +91,8 @@ static bool spdu_deserializer_hide_raw_values           = true;
 static expert_field ei_spdu_payload_truncated;
 static expert_field ei_spdu_config_error;
 static expert_field ei_spdu_unaligned_data;
+static expert_field ei_spdu_payload_disabled;
+static expert_field ei_spdu_payload_not_configured;
 
 /*** Data Structure for UAT based config ***/
 static GHashTable *data_spdu_messages;
@@ -1189,7 +1188,7 @@ post_update_spdu_signal_value_names_read_in_data(spdu_signal_value_name_uat_t* d
 }
 
 static void
-destroy_notify_signal_value_names(gpointer data) {
+destroy_notify_signal_value_names(void *data) {
     spdu_signal_value_name_t *list = (spdu_signal_value_name_t *)data;
 
     for (unsigned i = 0; i < list->num_of_items; i++) {
@@ -2160,7 +2159,7 @@ dissect_shifted_and_shortened_uint(tvbuff_t *tvb, int offset, int offset_bits, i
 }
 
 static int
-dissect_spdu_payload_signal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int offset_bits, spdu_signal_item_t *item, int *multiplexer) {
+dissect_spdu_payload_signal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, int offset_bits, spdu_signal_item_t *item, int *multiplexer) {
     DISSECTOR_ASSERT(item != NULL);
     DISSECTOR_ASSERT(item->hf_id_effective != NULL);
 
@@ -2171,11 +2170,11 @@ dissect_spdu_payload_signal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     int         hf_id_effective = 0;
     int         hf_id_raw = 0;
 
-    int offset_end = (int)((8 * offset + offset_bits + item->bitlength_encoded_type) / 8);
-    int offset_end_bits = (int)((8 * offset + offset_bits + item->bitlength_encoded_type) % 8);
+    unsigned offset_end = ((8 * offset + offset_bits + item->bitlength_encoded_type) / 8);
+    unsigned offset_end_bits = ((8 * offset + offset_bits + item->bitlength_encoded_type) % 8);
 
-    int string_length = 0;
-    int signal_length = offset_end - offset;
+    unsigned string_length = 0;
+    unsigned signal_length = offset_end - offset;
     if (offset_end_bits != 0) {
         signal_length++;
     }
@@ -2402,22 +2401,22 @@ dissect_spdu_payload_signal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_spdu_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, uint32_t id, bool update_column) {
-    int offset = 0;
-    int offset_bits = 0;
+    unsigned offset = 0;
+    unsigned offset_bits = 0;
     int bits_parsed = 0;
     int multiplexer = -1;
 
-    proto_item *ti = proto_tree_add_item(root_tree, proto_signal_pdu, tvb, offset, -1, ENC_NA);
-    proto_tree *tree = proto_item_add_subtree(ti, ett_spdu_payload);
+    proto_item *pdu_item = proto_tree_add_item(root_tree, proto_signal_pdu, tvb, offset, -1, ENC_NA);
+    proto_tree *tree = proto_item_add_subtree(pdu_item, ett_spdu_payload);
 
     char *name = get_message_name(id);
     if (name != NULL) {
-        proto_item_append_text(ti, ": %s", name);
+        proto_item_append_text(pdu_item, ": %s", name);
         if (update_column) {
             col_append_fstr(pinfo->cinfo, COL_INFO, " (PDU: %s)", name);
-            col_set_str(pinfo->cinfo, COL_PROTOCOL, SPDU_NAME);
+            col_set_str(pinfo->cinfo, COL_PROTOCOL, "Signal PDU");
         }
-        ti = proto_tree_add_string(tree, hf_pdu_name, tvb, offset, -1, name);
+        proto_item* ti = proto_tree_add_string(tree, hf_pdu_name, tvb, offset, -1, name);
         proto_item_set_generated(ti);
         proto_item_set_hidden(ti);
     }
@@ -2430,13 +2429,13 @@ dissect_spdu_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, u
     }
 
     if (!spdu_deserializer_activated) {
-        proto_tree_add_text_internal(tree, tvb, 0, tvb_captured_length(tvb), "Dissection of payload is disabled. It can be enabled via protocol preferences.");
+        expert_add_info(pinfo, pdu_item, &ei_spdu_payload_disabled);
         return tvb_captured_length(tvb);
     }
 
     if (tvb_captured_length(tvb) > 0 && paramlist == NULL) {
         /* we only receive a tvb with nothing behind us */
-        proto_tree_add_text_internal(tree, tvb, 0, tvb_captured_length(tvb), "Payload of PDU is not configured. See protocol preferences.");
+        expert_add_info(pinfo, pdu_item, &ei_spdu_payload_not_configured);
         return call_data_dissector(tvb, pinfo, tree);
     }
 
@@ -2444,7 +2443,7 @@ dissect_spdu_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *root_tree, u
         return tvb_captured_length(tvb);
     }
 
-    int length = tvb_captured_length_remaining(tvb, 0);
+    unsigned length = tvb_captured_length_remaining(tvb, 0);
 
     for (unsigned i = 0; i < paramlist->num_of_items; i++) {
         if (!paramlist->items[i].sig_val_names_valid) {
@@ -2788,10 +2787,14 @@ proto_register_signal_pdu(void) {
           PI_MALFORMED, PI_ERROR, "Signal PDU: Config Error (missing filter, filter duplicate, ...)!", EXPFILL} },
         { &ei_spdu_unaligned_data, {"signal_pdu.payload.unaligned_data",
           PI_MALFORMED, PI_ERROR, "Signal PDU: Unaligned data! Strings etc. need to be aligned to bytes!", EXPFILL} },
+        { &ei_spdu_payload_disabled, {"signal_pdu.payload.disabled",
+          PI_PROTOCOL, PI_WARN, "Dissection of payload is disabled. It can be enabled via protocol preferences.", EXPFILL} },
+        { &ei_spdu_payload_not_configured, {"signal_pdu.payload.not_configured",
+          PI_PROTOCOL, PI_WARN, "Payload of PDU is not configured. See protocol preferences.", EXPFILL} },
     };
 
     /* Register ETTs */
-    proto_signal_pdu = proto_register_protocol(SPDU_NAME_LONG, SPDU_NAME, SPDU_NAME_FILTER);
+    proto_signal_pdu = proto_register_protocol("Signal PDU", "Signal PDU", "signal_pdu");
     proto_register_field_array(proto_signal_pdu, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_module_lpdu = expert_register_protocol(proto_signal_pdu);

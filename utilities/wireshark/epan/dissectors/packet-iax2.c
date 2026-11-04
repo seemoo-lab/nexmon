@@ -31,7 +31,6 @@
 #include <wsutil/str_util.h>
 
 #include "packet-iax2.h"
-#include <epan/iax2_codec_type.h>
 
 void proto_register_iax2(void);
 void proto_reg_handoff_iax2(void);
@@ -1503,7 +1502,7 @@ static uint32_t dissect_ies(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
           } else {
             /* we don't understand this ie: add a generic one */
             uint32_t      value;
-            const uint8_t *ptr;
+            const char *ptr;
             const char   *ie_name = val_to_str_ext_const(ies_type, &iax_ies_type_ext, "Unknown");
 
             switch (ies_len) {
@@ -1532,7 +1531,7 @@ static uint32_t dissect_ies(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
                 break;
 
               default:
-                ptr = tvb_get_string_enc(pinfo->pool, tvb, offset + 2, ies_len, ENC_ASCII);
+                ptr = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + 2, ies_len, ENC_ASCII);
                 ie_item =
                   proto_tree_add_string_format(ies_tree, hf_IAX_IE_UNKNOWN_BYTES,
                                                tvb, offset+2, ies_len, ptr,
@@ -1554,7 +1553,7 @@ static uint32_t dissect_ies(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
           proto_item_set_text(ti, "Information Element: %s",
                               ie_finfo->rep->representation);
         else {
-          uint8_t *ie_val = (uint8_t *)wmem_alloc(pinfo->pool, ITEM_LABEL_LENGTH);
+          char *ie_val = (char *)wmem_alloc(pinfo->pool, ITEM_LABEL_LENGTH);
           proto_item_fill_label(ie_finfo, ie_val, NULL);
           proto_item_set_text(ti, "Information Element: %s",
                               ie_val);
@@ -2544,7 +2543,13 @@ static void dissect_payload(tvbuff_t *tvb, uint32_t offset,
   proto_tree_add_item(iax2_tree, hf_iax2_payload_data, sub_tvb, 0, -1, ENC_NA);
 
   iax2_info->payload_len = nbytes;
-  iax2_info->payload_data = tvb_get_ptr(sub_tvb, 0, -1);
+  /* XXX - The IAX2 Analysis Dialog does check if pinfo->fd->pkt_len and
+   * pinfo->fd->cap_len are equal before using this, but it might be safer
+   * to do like the RTP dissector and have the payload_data pointer be NULL
+   * if the lengths aren't equal, and perhaps a boolean indicating that the
+   * the payload data is absent.
+   */
+  iax2_info->payload_data = tvb_get_ptr(sub_tvb, 0, tvb_captured_length(sub_tvb));
 
   /* pass the rest of the block to a subdissector */
   if (iax_packet->call_data)

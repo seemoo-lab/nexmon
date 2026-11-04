@@ -12,8 +12,8 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#define WS_LOG_DOMAIN "packet-ntlmssp"
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-ntlmssp"
 #include <wireshark.h>
 #include <string.h>
 
@@ -21,11 +21,14 @@
 #include <epan/exceptions.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
+#include <epan/uat.h>
 #include <epan/tap.h>
 #include <epan/expert.h>
 #include <epan/show_exception.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
+#include <epan/strutil.h>
+#include <epan/read_keytab_file.h>
 
 #include <wsutil/array.h>
 #include <wsutil/wsgcrypt.h>
@@ -37,7 +40,6 @@
 #include "packet-dcerpc.h"
 #include "packet-gssapi.h"
 
-#include "read_keytab_file.h"
 
 #include "packet-ntlmssp.h"
 
@@ -114,7 +116,7 @@ static GHashTable* hash_packet;
 #define NTLMSSP_NEGOTIATE_ANONYMOUS                0x00000800 // J
 #define NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED      0x00001000 // K
 #define NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED 0x00002000 // L
-#define NTLMSSP_UNUSED_00004000                    0x00004000 // r7
+#define NTLMSSP_NEGOTIATE_LOCAL_CALL               0x00004000 // r7
 #define NTLMSSP_NEGOTIATE_ALWAYS_SIGN              0x00008000 // M
 #define NTLMSSP_TARGET_TYPE_DOMAIN                 0x00010000 // N
 #define NTLMSSP_TARGET_TYPE_SERVER                 0x00020000 // O
@@ -288,8 +290,26 @@ static expert_field ei_ntlmssp_sessionkey;
 
 static dissector_handle_t ntlmssp_handle, ntlmssp_wrap_handle;
 
-/* Configuration variables */
-static const char *ntlmssp_option_nt_password;
+/* UAT for NT credentials (passwords and hashes) */
+enum {
+  NTLMSSP_CRED_PASSWORD = 0,
+  NTLMSSP_CRED_NT_HASH  = 1
+};
+
+static const value_string ntlmssp_cred_type_vals[] = {
+  { NTLMSSP_CRED_PASSWORD, "NT Password" },
+  { NTLMSSP_CRED_NT_HASH,  "NT Hash" },
+  { 0, NULL }
+};
+
+typedef struct _ntlmssp_cred_record_t {
+  unsigned type;     /* NTLMSSP_CRED_PASSWORD or NTLMSSP_CRED_NT_HASH */
+  char    *value;    /* Password or hex hash string */
+} ntlmssp_cred_record_t;
+
+static ntlmssp_cred_record_t *ntlmssp_creds;
+static unsigned num_ntlmssp_creds;
+static uat_t *ntlmssp_creds_uat;
 
 #define NTLMSSP_CONV_INFO_KEY 0
 /* Used in the conversation function */
@@ -356,11 +376,12 @@ ntlmssp_sessions_destroy_cb(wmem_allocator_t *allocator _U_, wmem_cb_event_t eve
 
 /*
   Perform a DES encryption with a 16-byte key and 8-byte data item.
-  It's in fact 3 susbsequent call to crypt_des_ecb with a 7-byte key.
+  It's in fact 3 subsequent call to crypt_des_ecb with a 7-byte key.
   Missing bytes for the key are replaced by 0;
   Returns output in response, which is expected to be 24 bytes.
+  Returns true on success, false on failure (unlikely).
 */
-static int
+static bool
 crypt_des_ecb_long(uint8_t *response,
                    const uint8_t *key,
                    const uint8_t *data)
@@ -370,19 +391,23 @@ crypt_des_ecb_long(uint8_t *response,
   memcpy(pw21, key, 16);
 
   memset(response, 0, 24);
-  crypt_des_ecb(response, data, pw21);
-  crypt_des_ecb(response + 8, data, pw21 + 7);
-  crypt_des_ecb(response + 16, data, pw21 + 14);
+  if (crypt_des_ecb(response, data, pw21))
+    return false;
+  if (crypt_des_ecb(response + 8, data, pw21 + 7))
+    return false;
+  if (crypt_des_ecb(response + 16, data, pw21 + 14))
+    return false;
 
-  return 1;
+  return true;
 }
 
 /*
   Generate a challenge response, given an eight byte challenge and
   either the NT or the Lan Manager password hash (16 bytes).
   Returns output in response, which is expected to be 24 bytes.
+  Return true on success, false on failure (unlikely).
 */
-static int
+static bool
 ntlmssp_generate_challenge_response(uint8_t *response,
                                     const uint8_t *passhash,
                                     const uint8_t *challenge)
@@ -394,11 +419,14 @@ ntlmssp_generate_challenge_response(uint8_t *response,
 
   memset(response, 0, 24);
 
-  crypt_des_ecb(response, challenge, pw21);
-  crypt_des_ecb(response + 8, challenge, pw21 + 7);
-  crypt_des_ecb(response + 16, challenge, pw21 + 14);
+  if (crypt_des_ecb(response, challenge, pw21))
+    return false;
+  if (crypt_des_ecb(response + 8, challenge, pw21 + 7))
+    return false;
+  if (crypt_des_ecb(response + 16, challenge, pw21 + 14))
+    return false;
 
-  return 1;
+  return true;
 }
 
 
@@ -461,51 +489,162 @@ get_keyexchange_key(unsigned char keyexchangekey[NTLMSSP_KEY_LEN], const unsigne
   }
 }
 
+/* UAT callbacks for NTLMSSP credentials */
+static void*
+ntlmssp_cred_copy_cb(void *dest, const void *orig, size_t len _U_)
+{
+  const ntlmssp_cred_record_t *o = (const ntlmssp_cred_record_t *)orig;
+  ntlmssp_cred_record_t       *d = (ntlmssp_cred_record_t *)dest;
+  d->type  = o->type;
+  d->value = g_strdup(o->value);
+  return d;
+}
+
+static bool
+ntlmssp_cred_update_cb(void *record, char **error)
+{
+  ntlmssp_cred_record_t *r = (ntlmssp_cred_record_t *)record;
+
+  if (r->value == NULL || strlen(r->value) == 0) {
+    *error = g_strdup("Value cannot be empty");
+    return false;
+  }
+
+  if (r->type == NTLMSSP_CRED_NT_HASH) {
+    size_t len = strlen(r->value);
+    if (len != 2 * NTLMSSP_KEY_LEN) {
+      *error = g_strdup_printf("NT Hash must be exactly %d hex characters (got %u)",
+                                2 * NTLMSSP_KEY_LEN, (unsigned)len);
+      return false;
+    }
+    for (size_t i = 0; i < len; i++) {
+      if (!g_ascii_isxdigit(r->value[i])) {
+        *error = g_strdup("NT Hash must contain only hexadecimal characters");
+        return false;
+      }
+    }
+  } else {
+    if (strlen(r->value) >= 129) {
+      *error = g_strdup("Password must be less than 129 characters");
+      return false;
+    }
+  }
+  return true;
+}
+
+static void
+ntlmssp_cred_free_cb(void *record)
+{
+  ntlmssp_cred_record_t *r = (ntlmssp_cred_record_t *)record;
+  g_free(r->value);
+}
+
+UAT_VS_DEF(ntlmssp_creds, type, ntlmssp_cred_record_t, unsigned, NTLMSSP_CRED_PASSWORD, "NT Password")
+UAT_CSTRING_CB_DEF(ntlmssp_creds, value, ntlmssp_cred_record_t)
+
+static uat_field_t ntlmssp_creds_flds[] = {
+  UAT_FLD_VS(ntlmssp_creds, type, "Type", ntlmssp_cred_type_vals,
+             "Credential type: NT Password or NT Hash"),
+  UAT_FLD_CSTRING(ntlmssp_creds, value, "Value",
+                  "The password string or NT hash as 32 hex characters"),
+  UAT_END_FIELDS
+};
+
+/* Parse a 32-character hex string into a 16-byte NT hash.
+ * Returns true on success, false if the string is not valid. */
+static bool
+ntlmssp_parse_nt_hash(const char *hex_str, unsigned char nt_hash_out[NTLMSSP_KEY_LEN])
+{
+  GByteArray *bytes;
+  bool        result;
+
+  if (hex_str == NULL || strlen(hex_str) != 2 * NTLMSSP_KEY_LEN)
+    return false;
+
+  bytes = g_byte_array_new();
+  result = hex_str_to_bytes(hex_str, bytes, false);
+  if (result && bytes->len == NTLMSSP_KEY_LEN) {
+    memcpy(nt_hash_out, bytes->data, NTLMSSP_KEY_LEN);
+  } else {
+    result = false;
+  }
+  g_byte_array_free(bytes, true);
+  return result;
+}
+
 uint32_t
 get_md4pass_list(wmem_allocator_t *pool, md4_pass** p_pass_list)
 {
 #if defined(HAVE_HEIMDAL_KERBEROS) || defined(HAVE_MIT_KERBEROS)
   uint32_t       nb_pass = 0;
-  enc_key_t     *ek;
-  const char*    password = ntlmssp_option_nt_password;
+  const enc_key_t *ek;
   unsigned char  nt_hash[NTLMSSP_KEY_LEN];
   char           password_unicode[256];
   md4_pass*      pass_list;
   int            i;
+  unsigned       j;
 
   *p_pass_list = NULL;
   read_keytab_file_from_preferences();
 
-  for (ek=enc_key_list; ek; ek=ek->next) {
+  for (ek=keytab_get_enc_key_list(); ek; ek=ek->next) {
     if (NTLMSSP_EK_IS_NT4HASH(ek)) {
       nb_pass++;
     }
   }
-  memset(password_unicode, 0, sizeof(password_unicode));
-  memset(nt_hash, 0, NTLMSSP_KEY_LEN);
-  /* Compute the NT hash of the provided password, even if empty */
-  if (strlen(password) < 129) {
-    int password_len;
-    nb_pass++;
-    password_len = (int)strlen(password);
-    ansi_to_unicode(password, password_unicode);
-    gcry_md_hash_buffer(GCRY_MD_MD4, nt_hash, password_unicode, password_len*2);
+
+  /* Count valid UAT credential entries */
+  for (j = 0; j < num_ntlmssp_creds; j++) {
+    if (ntlmssp_creds[j].value == NULL || strlen(ntlmssp_creds[j].value) == 0)
+      continue;
+    if (ntlmssp_creds[j].type == NTLMSSP_CRED_PASSWORD) {
+      if (strlen(ntlmssp_creds[j].value) < 129)
+        nb_pass++;
+    } else if (ntlmssp_creds[j].type == NTLMSSP_CRED_NT_HASH) {
+      if (strlen(ntlmssp_creds[j].value) == 2 * NTLMSSP_KEY_LEN)
+        nb_pass++;
+    }
   }
+
   if (nb_pass == 0) {
-    /* Unable to calculate the session key without a valid password (128 chars or less) ......*/
+    /* Unable to calculate the session key without a valid credential */
     return 0;
   }
   i = 0;
   *p_pass_list = (md4_pass *)wmem_alloc0(pool, nb_pass*sizeof(md4_pass));
   pass_list = *p_pass_list;
 
-  if (memcmp(nt_hash, gbl_zeros, NTLMSSP_KEY_LEN) != 0) {
-    memcpy(pass_list[i].md4, nt_hash, NTLMSSP_KEY_LEN);
-    snprintf(pass_list[i].key_origin, NTLMSSP_MAX_ORIG_LEN,
-               "<Global NT Password>");
-    i = 1;
+  /* Add UAT credentials */
+  for (j = 0; j < num_ntlmssp_creds; j++) {
+    if (ntlmssp_creds[j].value == NULL || strlen(ntlmssp_creds[j].value) == 0)
+      continue;
+    if (ntlmssp_creds[j].type == NTLMSSP_CRED_PASSWORD) {
+      int password_len = (int)strlen(ntlmssp_creds[j].value);
+      if (password_len >= 129)
+        continue;
+      memset(password_unicode, 0, sizeof(password_unicode));
+      memset(nt_hash, 0, NTLMSSP_KEY_LEN);
+      ansi_to_unicode(ntlmssp_creds[j].value, password_unicode);
+      gcry_md_hash_buffer(GCRY_MD_MD4, nt_hash, password_unicode, password_len*2);
+      if (memcmp(nt_hash, gbl_zeros, NTLMSSP_KEY_LEN) != 0) {
+        memcpy(pass_list[i].md4, nt_hash, NTLMSSP_KEY_LEN);
+        snprintf(pass_list[i].key_origin, NTLMSSP_MAX_ORIG_LEN,
+                   "<NT Password %u>", j + 1);
+        i++;
+      }
+    } else if (ntlmssp_creds[j].type == NTLMSSP_CRED_NT_HASH) {
+      memset(nt_hash, 0, NTLMSSP_KEY_LEN);
+      if (ntlmssp_parse_nt_hash(ntlmssp_creds[j].value, nt_hash)) {
+        memcpy(pass_list[i].md4, nt_hash, NTLMSSP_KEY_LEN);
+        snprintf(pass_list[i].key_origin, NTLMSSP_MAX_ORIG_LEN,
+                   "<NT Hash %u>", j + 1);
+        i++;
+      }
+    }
   }
-  for (ek=enc_key_list; ek; ek=ek->next) {
+
+  /* Add keytab entries */
+  for (ek=keytab_get_enc_key_list(); ek; ek=ek->next) {
     if (NTLMSSP_EK_IS_NT4HASH(ek)) {
       memcpy(pass_list[i].md4, ek->keyvalue, NTLMSSP_KEY_LEN);
       memcpy(pass_list[i].key_origin, ek->key_origin,
@@ -553,6 +692,8 @@ create_ntlmssp_v2_key(const uint8_t *serverchallenge, const uint8_t *clientchall
   const md4_pass   *used_md4 = NULL;
   uint32_t          nb_pass = 0;
   bool              found = false;
+  uint8_t          *nt_proof_input;
+  size_t            nt_proof_input_len;
 
   /* We are going to try password encrypted in keytab as well, it's an idea of Stefan Metzmacher <metze@samba.org>
    * The idea is to be able to test all the key of domain in once and to be able to decode the NTLM dialogs */
@@ -583,6 +724,18 @@ create_ntlmssp_v2_key(const uint8_t *serverchallenge, const uint8_t *clientchall
     /* Unable to calculate the session not enough space in buffer, note this is unlikely to happen but ......*/
     return;
   }
+
+  /* The NT proof is computed over the server challenge followed by the
+   * NTLMv2 response after the NT proof itself (the NTLMv2_CLIENT_CHALLENGE,
+   * which includes the AV pairs, so its length is variable.) */
+  if (ntlm_response->length <= NTLMSSP_KEY_LEN) {
+    return;
+  }
+  nt_proof_input_len = 8 + ntlm_response->length - NTLMSSP_KEY_LEN;
+  nt_proof_input = (uint8_t *)wmem_alloc(pinfo->pool, nt_proof_input_len);
+  memcpy(nt_proof_input, serverchallenge, 8);
+  memcpy(nt_proof_input + 8, ntlm_response->contents + NTLMSSP_KEY_LEN, ntlm_response->length - NTLMSSP_KEY_LEN);
+
   while (i < nb_pass) {
     ws_debug("Turn %d", i);
     used_md4 = &pass_list[i];
@@ -609,10 +762,7 @@ create_ntlmssp_v2_key(const uint8_t *serverchallenge, const uint8_t *clientchall
     ws_log_buffer(lm_challenge_response, 24, "LM Response");
 
     /* NT proof = First NTLMSSP_KEY_LEN bytes of NT response */
-    memset(buf, 0, BUF_SIZE);
-    memcpy(buf, serverchallenge, 8);
-    memcpy(buf+8, ntlm_response->contents+NTLMSSP_KEY_LEN, MIN(BUF_SIZE - 8, ntlm_response->length-NTLMSSP_KEY_LEN));
-    if (ws_hmac_buffer(GCRY_MD_MD5, nt_proof, buf, ntlm_response->length-8, ntowfv2, NTLMSSP_KEY_LEN)) {
+    if (ws_hmac_buffer(GCRY_MD_MD5, nt_proof, nt_proof_input, nt_proof_input_len, ntowfv2, NTLMSSP_KEY_LEN)) {
       return;
     }
     ws_log_buffer(nt_proof, NTLMSSP_KEY_LEN, "NT proof");
@@ -707,7 +857,7 @@ create_ntlmssp_v1_key(const uint8_t *serverchallenge, const uint8_t *clientchall
                       ntlmssp_header_t *ntlmssph,
                       packet_info *pinfo, proto_tree *ntlmssp_tree)
 {
-  const char       *password = ntlmssp_option_nt_password;
+  const char       *password = NULL;
   unsigned char     lm_password_upper[NTLMSSP_KEY_LEN];
   unsigned char     lm_hash[NTLMSSP_KEY_LEN];
   unsigned char     nt_hash[NTLMSSP_KEY_LEN];
@@ -737,30 +887,45 @@ create_ntlmssp_v1_key(const uint8_t *serverchallenge, const uint8_t *clientchall
     {0x4b, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25}; // "KGS!@#$%"
 
   memset(sessionkey, 0, NTLMSSP_KEY_LEN);
-  /* Create a NT hash of the input password, even if empty */
-  // NTOWFv1 as defined in https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/464551a8-9fc4-428e-b3d3-bc5bfb2e73a5
-  password_len = strlen(password);
-  /*Do not forget to free password*/
-  ansi_to_unicode(password, password_unicode);
-  gcry_md_hash_buffer(GCRY_MD_MD4, nt_hash, password_unicode, password_len*2);
+  /* Derive initial NT hash from the first password credential in UAT */
+  memset(nt_hash, 0, NTLMSSP_KEY_LEN);
+  password_len = 0;
+  for (i = 0; i < num_ntlmssp_creds; i++) {
+    if (ntlmssp_creds[i].value == NULL || strlen(ntlmssp_creds[i].value) == 0)
+      continue;
+    if (ntlmssp_creds[i].type == NTLMSSP_CRED_PASSWORD && strlen(ntlmssp_creds[i].value) < 129) {
+      password = ntlmssp_creds[i].value;
+      password_len = strlen(password);
+      ansi_to_unicode(password, password_unicode);
+      gcry_md_hash_buffer(GCRY_MD_MD4, nt_hash, password_unicode, password_len*2);
+      break;
+    } else if (ntlmssp_creds[i].type == NTLMSSP_CRED_NT_HASH) {
+      ntlmssp_parse_nt_hash(ntlmssp_creds[i].value, nt_hash);
+      password = NULL;
+      break;
+    }
+  }
 
   if ((flags & NTLMSSP_NEGOTIATE_LM_KEY && !(flags & NoLMResponseNTLMv1)) || !(flags & NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)  || !(flags & NTLMSSP_NEGOTIATE_NTLM)) {
     /* Create a LM hash of the input password, even if empty */
     // LMOWFv1 as defined in https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/464551a8-9fc4-428e-b3d3-bc5bfb2e73a5
-    /* Truncate password if too long */
-    if (password_len > NTLMSSP_KEY_LEN)
-      password_len = NTLMSSP_KEY_LEN;
+    /* LM hash requires plaintext password; skip if only NT hash is available */
+    if (password != NULL) {
+      /* Truncate password if too long */
+      if (password_len > NTLMSSP_KEY_LEN)
+        password_len = NTLMSSP_KEY_LEN;
 
-    memset(lm_password_upper, 0, sizeof(lm_password_upper));
-    for (i = 0; i < password_len; i++) {
-      lm_password_upper[i] = g_ascii_toupper(password[i]);
+      memset(lm_password_upper, 0, sizeof(lm_password_upper));
+      for (i = 0; i < password_len; i++) {
+        lm_password_upper[i] = g_ascii_toupper(password[i]);
+      }
+
+      crypt_des_ecb(lm_hash, lmhash_key, lm_password_upper);
+      crypt_des_ecb(lm_hash+8, lmhash_key, lm_password_upper+7);
+      ntlmssp_generate_challenge_response(lm_challenge_response,
+                                          lm_hash, serverchallenge);
+      memcpy(sessionbasekey, lm_hash, NTLMSSP_KEY_LEN);
     }
-
-    crypt_des_ecb(lm_hash, lmhash_key, lm_password_upper);
-    crypt_des_ecb(lm_hash+8, lmhash_key, lm_password_upper+7);
-    ntlmssp_generate_challenge_response(lm_challenge_response,
-                                        lm_hash, serverchallenge);
-    memcpy(sessionbasekey, lm_hash, NTLMSSP_KEY_LEN);
   }
   else {
 
@@ -1144,15 +1309,19 @@ dissect_ntlmssp_string (tvbuff_t *tvb, wmem_allocator_t* allocator, int offset,
                         proto_tree *ntlmssp_tree,
                         bool unicode_strings,
                         int string_hf, int *start, int *end,
-                        const uint8_t **stringp)
+                        const char **stringp)
 {
   proto_tree *tree          = NULL;
   proto_item *tf            = NULL;
-  int16_t     string_length = tvb_get_letohs(tvb, offset);
-  int16_t     string_maxlen = tvb_get_letohs(tvb, offset+2);
-  int32_t     string_offset = tvb_get_letohl(tvb, offset+4);
+  uint16_t     string_length = tvb_get_letohs(tvb, offset);
+  uint16_t     string_maxlen = tvb_get_letohs(tvb, offset+2);
+  uint32_t     string_offset = tvb_get_letohl(tvb, offset+4);
 
-  *start = (string_offset > offset+8 ? string_offset : (signed)tvb_reported_length(tvb));
+  if (string_offset > (unsigned)(unicode_strings ? INT_MAX - 1 : INT_MAX)) {
+    THROW(ReportedBoundsError);
+  }
+
+  *start = ((int)string_offset > offset+8 ? (int)string_offset : (int)tvb_reported_length(tvb));
   if (0 == string_length) {
     *end = *start;
     if (ntlmssp_tree)
@@ -1171,7 +1340,7 @@ dissect_ntlmssp_string (tvbuff_t *tvb, wmem_allocator_t* allocator, int offset,
   tf = proto_tree_add_item_ret_string(ntlmssp_tree, string_hf, tvb,
                            string_offset, string_length,
                            unicode_strings ? ENC_UTF_16|ENC_LITTLE_ENDIAN : ENC_ASCII|ENC_NA,
-                           allocator, stringp);
+                           allocator, (const uint8_t**)stringp);
   tree = proto_item_add_subtree(tf, ett_ntlmssp_string);
   proto_tree_add_uint(tree, hf_ntlmssp_string_len,
                       tvb, offset, 2, string_length);
@@ -1204,6 +1373,10 @@ dissect_ntlmssp_blob (tvbuff_t *tvb, packet_info *pinfo,
   uint16_t    blob_length = tvb_get_letohs(tvb, offset);
   uint16_t    blob_maxlen = tvb_get_letohs(tvb, offset+2);
   uint32_t    blob_offset = tvb_get_letohl(tvb, offset+4);
+
+  if (blob_offset > (unsigned)INT_MAX) {
+    THROW(ReportedBoundsError);
+  }
 
   if (0 == blob_length) {
     *end                  = (blob_offset > ((unsigned)offset)+8 ? blob_offset : ((unsigned)offset)+8);
@@ -1606,6 +1779,16 @@ dissect_ntlmssp_negotiate (tvbuff_t *tvb, packet_info* pinfo, int offset, proto_
   proto_tree_add_bitmask(ntlmssp_tree, tvb, offset, hf_ntlmssp_negotiate_flags, ett_ntlmssp_negotiate_flags, ntlmssp_negotiate_flags, ENC_LITTLE_ENDIAN);
   offset += 4;
 
+  /* MS-NLMP 2.2.1.1: DomainName MUST be encoded using the OEM character set.
+   * WorkstationName MUST be encoded using the OEM character set.
+   * The Davenport document ("The Type 1 Message") agrees, noting that these
+   * "are always in OEM format, even if Unicode is supported by the client."
+   *
+   * Presumably this is because this is the initial message, so while the
+   * client is offering Unicode support, it has not been negotiated yet.
+   * Note the flags are known as NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED
+   * and NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED.
+   */
   /*
    * XXX - the davenport document says that these might not be
    * sent at all, presumably meaning the length of the message
@@ -1946,7 +2129,7 @@ dissect_ntlmssp_auth (tvbuff_t *tvb, packet_info *pinfo, int offset,
    * XXX: I've seen a capture which does an HTTP CONNECT which:
    *      - has the NEGOTIATE & CHALLENGE messages in one TCP connection;
    *      - has the AUTHENTICATE message in a second TCP connection;
-   *        (The authentication aparently succeeded).
+   *        (The authentication apparently succeeded).
    *      For that case, in order to get the flags from the CHALLENGE_MESSAGE,
    *      we'd somehow have to manage NTLMSSP exchanges that cross TCP
    *      connection boundaries.
@@ -2080,6 +2263,9 @@ dissect_ntlmssp_auth (tvbuff_t *tvb, packet_info *pinfo, int offset,
   data_start = MIN(data_start, item_start);
   data_end = MAX(data_end, item_end);
 
+  if (!ntlmssph->domain_name[0] && !ntlmssph->acct_name[0])
+    col_append_sep_str(pinfo->cinfo, COL_INFO, ", ", "User: anonymous");
+  else
   col_append_sep_fstr(pinfo->cinfo, COL_INFO, ", ", "User: %s\\%s",
                   ntlmssph->domain_name, ntlmssph->acct_name);
 
@@ -2893,8 +3079,8 @@ ntlmssp_cleanup_protocol(void)
 
 
 
-static int
-wrap_dissect_ntlmssp(tvbuff_t *tvb, int offset, packet_info *pinfo,
+static unsigned
+wrap_dissect_ntlmssp(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                      proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
   tvbuff_t *auth_tvb;
@@ -2906,8 +3092,8 @@ wrap_dissect_ntlmssp(tvbuff_t *tvb, int offset, packet_info *pinfo,
   return tvb_captured_length_remaining(tvb, offset);
 }
 
-static int
-wrap_dissect_ntlmssp_verf(tvbuff_t *tvb, int offset, packet_info *pinfo,
+static unsigned
+wrap_dissect_ntlmssp_verf(tvbuff_t *tvb, unsigned offset, packet_info *pinfo,
                           proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
   tvbuff_t *auth_tvb;
@@ -3114,8 +3300,8 @@ proto_register_ntlmssp(void)
         NULL, HFILL }
     },
     { &hf_ntlmssp_negotiate_flags_4000,
-      { "Negotiate 0x00004000", "ntlmssp.unused00004000",
-        FT_BOOLEAN, 32, TFS (&tfs_set_notset), NTLMSSP_UNUSED_00004000,
+      { "Negotiate Local Call", "ntlmssp.negotiatelocalcall",
+        FT_BOOLEAN, 32, TFS (&tfs_set_notset), NTLMSSP_NEGOTIATE_LOCAL_CALL,
         NULL, HFILL }
     },
     { &hf_ntlmssp_negotiate_flags_8000,
@@ -3684,11 +3870,7 @@ proto_register_ntlmssp(void)
   module_t *ntlmssp_module;
   expert_module_t* expert_ntlmssp;
 
-  proto_ntlmssp = proto_register_protocol (
-    "NTLM Secure Service Provider", /* name */
-    "NTLMSSP",  /* short name */
-    "ntlmssp"   /* abbrev */
-    );
+  proto_ntlmssp = proto_register_protocol ("NTLM Secure Service Provider", "NTLMSSP", "ntlmssp");
   proto_register_field_array (proto_ntlmssp, hf, array_length (hf));
   proto_register_subtree_array (ett, array_length (ett));
   expert_ntlmssp = expert_register_protocol(proto_ntlmssp);
@@ -3698,10 +3880,25 @@ proto_register_ntlmssp(void)
 
   ntlmssp_module = prefs_register_protocol(proto_ntlmssp, NULL);
 
-  prefs_register_string_preference(ntlmssp_module, "nt_password",
-                                   "NT Password",
-                                   "Cleartext NT Password (used to decrypt payloads, supports only ASCII passwords)",
-                                   &ntlmssp_option_nt_password);
+  ntlmssp_creds_uat = uat_new("NTLMSSP Credentials",
+      sizeof(ntlmssp_cred_record_t),
+      "ntlmssp_creds",
+      true,
+      &ntlmssp_creds,
+      &num_ntlmssp_creds,
+      UAT_AFFECTS_DISSECTION,
+      NULL,
+      ntlmssp_cred_copy_cb,
+      ntlmssp_cred_update_cb,
+      ntlmssp_cred_free_cb,
+      NULL,
+      NULL,
+      ntlmssp_creds_flds);
+
+  prefs_register_uat_preference(ntlmssp_module, "nt_credentials",
+                                "NT Credentials",
+                                "A table of NT passwords and hashes for NTLM payload decryption",
+                                ntlmssp_creds_uat);
 
   ntlmssp_handle = register_dissector("ntlmssp", dissect_ntlmssp, proto_ntlmssp);
   ntlmssp_wrap_handle = register_dissector("ntlmssp_payload", dissect_ntlmssp_payload, proto_ntlmssp);

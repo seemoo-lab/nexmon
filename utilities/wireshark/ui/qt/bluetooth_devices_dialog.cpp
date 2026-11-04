@@ -12,13 +12,12 @@
 
 #include "bluetooth_device_dialog.h"
 
-#include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 
 #include "epan/epan.h"
 #include "epan/addr_resolv.h"
 #include "epan/to_str.h"
 #include "epan/epan_dissect.h"
-#include "epan/prefs.h"
 #include "epan/dissectors/packet-bluetooth.h"
 #include "epan/dissectors/packet-bthci_evt.h"
 
@@ -74,11 +73,7 @@ BluetoothDevicesDialog::BluetoothDevicesDialog(QWidget &parent, CaptureFile &cf,
 
     connect(ui->tableTreeWidget, &QTreeWidget::customContextMenuRequested, this, &BluetoothDevicesDialog::tableContextMenu);
     connect(ui->tableTreeWidget, &QTreeWidget::itemDoubleClicked, this, &BluetoothDevicesDialog::tableItemDoubleClicked);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     connect(ui->interfaceComboBox, &QComboBox::currentIndexChanged, this, &BluetoothDevicesDialog::interfaceCurrentIndexChanged);
-#else
-    connect(ui->interfaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &BluetoothDevicesDialog::interfaceCurrentIndexChanged);
-#endif
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 7, 0))
     connect(ui->showInformationStepsCheckBox, &QCheckBox::checkStateChanged, this, &BluetoothDevicesDialog::showInformationStepsChanged);
 #else
@@ -87,7 +82,10 @@ BluetoothDevicesDialog::BluetoothDevicesDialog(QWidget &parent, CaptureFile &cf,
 
     ui->tableTreeWidget->sortByColumn(column_number_bd_addr, Qt::AscendingOrder);
 
-    ui->tableTreeWidget->setStyleSheet("QTreeView::item:hover{background-color:lightyellow; color:black;}");
+    ui->tableTreeWidget->setStyleSheet(ThemeManager::styleSheet(QStringLiteral("widgets/bluetooth-table")));
+    connect(ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
+        ui->tableTreeWidget->setStyleSheet(ThemeManager::styleSheet(QStringLiteral("widgets/bluetooth-table")));
+    });
 
     context_menu_.addActions(QList<QAction *>() << ui->actionMark_Unmark_Cell);
     context_menu_.addActions(QList<QAction *>() << ui->actionMark_Unmark_Row);
@@ -148,7 +146,7 @@ void BluetoothDevicesDialog::keyPressEvent(QKeyEvent *event)
 {
 /* NOTE: Do nothing*, but in real it "takes focus" from button_box so allow user
  * to use Enter button to jump to frame from tree widget */
-/* * - reimplement shortcuts from contex menu */
+/* * - reimplement shortcuts from context menu */
 
    if (event->modifiers() & Qt::ControlModifier && event->key()== Qt::Key_M)
         on_actionMark_Unmark_Row_triggered();
@@ -177,12 +175,12 @@ void BluetoothDevicesDialog::on_actionMark_Unmark_Cell_triggered()
     QBrush fg;
     QBrush bg;
 
-    if (ui->tableTreeWidget->currentItem()->background(ui->tableTreeWidget->currentColumn()) == QBrush(ColorUtils::fromColorT(&prefs.gui_marked_bg))) {
+    if (ui->tableTreeWidget->currentItem()->background(ui->tableTreeWidget->currentColumn()) == QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarked))) {
         fg = QBrush();
         bg = QBrush();
     } else {
-        fg = QBrush(ColorUtils::fromColorT(&prefs.gui_marked_fg));
-        bg = QBrush(ColorUtils::fromColorT(&prefs.gui_marked_bg));
+        fg = QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarkedText));
+        bg = QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarked));
     }
 
     ui->tableTreeWidget->currentItem()->setForeground(ui->tableTreeWidget->currentColumn(), fg);
@@ -197,7 +195,7 @@ void BluetoothDevicesDialog::on_actionMark_Unmark_Row_triggered()
     bool   is_marked = true;
 
     for (int i = 0; i < ui->tableTreeWidget->columnCount(); i += 1) {
-        if (ui->tableTreeWidget->currentItem()->background(i) != QBrush(ColorUtils::fromColorT(&prefs.gui_marked_bg)))
+        if (ui->tableTreeWidget->currentItem()->background(i) != QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarked)))
             is_marked = false;
     }
 
@@ -205,8 +203,8 @@ void BluetoothDevicesDialog::on_actionMark_Unmark_Row_triggered()
         fg = QBrush();
         bg = QBrush();
     } else {
-        fg = QBrush(ColorUtils::fromColorT(&prefs.gui_marked_fg));
-        bg = QBrush(ColorUtils::fromColorT(&prefs.gui_marked_bg));
+        fg = QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarkedText));
+        bg = QBrush(ThemeManager::instance()->color(ThemeManager::PacketsMarked));
     }
 
     for (int i = 0; i < ui->tableTreeWidget->columnCount(); i += 1) {

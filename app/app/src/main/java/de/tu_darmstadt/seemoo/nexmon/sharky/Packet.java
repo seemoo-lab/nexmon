@@ -52,7 +52,7 @@ public class Packet implements Parcelable {
     public byte[] _rawData;
     public int _lqi;  // only for ZigBee
     public int _band;  // only for ZigBee also since there is no radiotap header
-    public int _dissection_ptr;
+    public long _dissection_ptr;
     private Hashtable<String, ProtoNode> table = null;
     public static AtomicBoolean blocked = new AtomicBoolean(false);
 
@@ -113,7 +113,7 @@ public class Packet implements Parcelable {
         _rawData = null;
         _encap = encap;
         _lqi = -1;
-        _dissection_ptr = -1;
+        _dissection_ptr = -1L;
         _band = -1;
     }
 
@@ -129,7 +129,7 @@ public class Packet implements Parcelable {
         in.readByteArray(_rawData);
         _lqi = in.readInt();
         _band = in.readInt();
-        _dissection_ptr = in.readInt();
+        _dissection_ptr = in.readLong();
     }
 
     public int describeContents() {
@@ -144,7 +144,7 @@ public class Packet implements Parcelable {
         out.writeByteArray(_rawData);
         out.writeInt(_lqi);
         out.writeInt(_band);
-        out.writeInt(-1);    // Cannot pass the dissection pointer, otherwise the GC will
+        out.writeLong(-1L);    // Cannot pass the dissection pointer, otherwise the GC will
         // try to free the object more than once.  Once per copied object.
     }
 
@@ -155,14 +155,14 @@ public class Packet implements Parcelable {
         if (_rawHeader == null || _rawData == null)
             return false;  // can't dissect something without the data
 
-        if (_dissection_ptr != -1)  // packet is already dissected
+        if (_dissection_ptr != -1L && _dissection_ptr != 0L)  // packet is already dissected
             return true;
 
         //Log.d("PKT", _rawHeader + " " + _rawData + " " + _encap);
         _dissection_ptr = dissectPacket(_rawHeader, _rawData, _encap.getWtapLinktype());
 
 
-        if (_dissection_ptr == -1)
+        if (_dissection_ptr == -1L || _dissection_ptr == 0L)
             return false;
 
         return true;
@@ -217,7 +217,7 @@ public class Packet implements Parcelable {
             throw new RuntimeException("Forgot to set blocked in class Packet during dissection!");
         String result;
 
-        if (_dissection_ptr == -1)
+        if (_dissection_ptr == -1L || _dissection_ptr == 0L)
             if (!dissect())
                 return null;
 
@@ -228,9 +228,9 @@ public class Packet implements Parcelable {
     }
 
     public synchronized void cleanDissection() {
-        if (_dissection_ptr != -1)
+        if (_dissection_ptr != -1L && _dissection_ptr != 0L)
             dissectCleanup(_dissection_ptr);
-        _dissection_ptr = -1;
+        _dissection_ptr = -1L;
     }
 
 	/*
@@ -297,6 +297,8 @@ public class Packet implements Parcelable {
             String fields[] = wiresharkGetAll(_dissection_ptr);
             Hashtable<String, ProtoNode> pkt_fields;
             pkt_fields = new Hashtable<String, ProtoNode>();
+            if (fields == null)
+                return pkt_fields;
 
             for (int i = 0; i < fields.length; i++) {
                 String spl[] = fields[i].split("---", 5); // spl[0]: desc, spl[1]: value
@@ -327,7 +329,7 @@ public class Packet implements Parcelable {
 
     public void nativeCrashed() {
         Log.e("Packet", "crashed");
-        Log.d("Packet", "(JNIDEBUG) In nativeCrashed(): " + Integer.toString(_dissection_ptr) + ", writing crashed packet to /sdcard/crash.pcap");
+        Log.d("Packet", "(JNIDEBUG) In nativeCrashed(): " + Long.toString(_dissection_ptr) + ", writing crashed packet to /sdcard/crash.pcap");
         try {
             DataOutputStream os = new DataOutputStream(new FileOutputStream("/sdcard/crash.pcap"));
             byte pcap_header[] = {(byte) 0xd4, (byte) 0xc3, (byte) 0xb2, (byte) 0xa1,        // magic number
@@ -351,13 +353,13 @@ public class Packet implements Parcelable {
 
 
     // TODO: instead, create a class where all of the wireshark functions are static
-    public native static synchronized int dissectPacket(byte[] header, byte[] data, int encap);
+    public native static synchronized long dissectPacket(byte[] header, byte[] data, int encap);
 
-    public native static synchronized void dissectCleanup(int dissect_ptr);
+    public native static synchronized void dissectCleanup(long dissect_ptr);
 
-    public native static synchronized String wiresharkGet(int dissect_ptr, String param);
+    public native static synchronized String wiresharkGet(long dissect_ptr, String param);
 
-    public native static synchronized String[] wiresharkGetAll(int dissect_ptr);
+    public native static synchronized String[] wiresharkGetAll(long dissect_ptr);
 
     public native void decrypt(String bssid, String essid, String passphrase, String fileDir, int encryption);
 

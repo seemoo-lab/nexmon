@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Wireshark - Network traffic analyzer
+  ~ By Gerald Combs <gerald@wireshark.org>
+  ~ Copyright 1998 Gerald Combs
+  ~
+  ~ SPDX-License-Identifier: GPL-2.0-or-later
+  -->
+<ui version="4.0">
+ <class>LuaDebuggerDialog</class>
+ <widget class="QDialog" name="LuaDebuggerDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Lua Debugger</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QSplitter" name="mainSplitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QWidget" name="leftPanel">
+      <layout class="QVBoxLayout" name="leftPanelLayout">
+       <property name="spacing">
+        <number>2</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+      <item>
+       <widget class="QToolBar" name="toolBar">
+        <property name="movable">
+         <bool>false</bool>
+        </property>
+        <property name="floatable">
+         <bool>false</bool>
+        </property>
+        <addaction name="actionSepBeforeContinue"/>
+        <addaction name="actionContinue"/>
+        <addaction name="actionStepOver"/>
+        <addaction name="actionStepIn"/>
+        <addaction name="actionStepOut"/>
+        <addaction name="actionRunToLine"/>
+        <addaction name="actionSepAfterStep"/>
+        <addaction name="actionOpenFile"/>
+        <addaction name="actionSaveFile"/>
+        <addaction name="actionSepAfterSave"/>
+        <addaction name="actionReloadLuaPlugins"/>
+       </widget>
+      </item>
+       <item>
+        <widget class="QSplitter" name="leftSplitter">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="childrenCollapsible">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="codeEditorSide">
+      <layout class="QVBoxLayout" name="codeEditorSideLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="LuaDebuggerFindFrame" name="luaDebuggerFindFrame" native="true"/>
+       </item>
+       <item>
+        <widget class="LuaDebuggerGoToLineFrame" name="luaDebuggerGoToLineFrame" native="true"/>
+       </item>
+       <item>
+        <widget class="QTabWidget" name="codeTabWidget">
+         <property name="currentIndex">
+          <number>-1</number>
+         </property>
+         <property name="tabsClosable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      <item>
+       <widget class="LuaDebuggerErrorFrame" name="luaDebuggerErrorFrame" native="true"/>
+      </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+  <action name="actionContinue">
+   <property name="icon">
+    <iconset theme="media-playback-start"/>
+   </property>
+   <property name="text">
+    <string>Continue</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionSepBeforeContinue">
+   <property name="separator">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionSepAfterStep">
+   <property name="separator">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionStepOver">
+   <property name="icon">
+    <iconset theme="debug-step-over"/>
+   </property>
+   <property name="text">
+    <string>Step Over</string>
+   </property>
+   <property name="shortcut">
+    <string>F10</string>
+   </property>
+  </action>
+  <action name="actionStepIn">
+   <property name="icon">
+    <iconset theme="debug-step-into"/>
+   </property>
+   <property name="text">
+    <string>Step Into</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+  </action>
+  <action name="actionStepOut">
+   <property name="icon">
+    <iconset theme="debug-step-out"/>
+   </property>
+   <property name="text">
+    <string>Step Out</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+F11</string>
+   </property>
+  </action>
+  <action name="actionRunToLine">
+   <property name="text">
+    <string>Run to this line</string>
+   </property>
+   <property name="toolTip">
+    <string>Run to this line</string>
+   </property>
+  </action>
+  <action name="actionOpenFile">
+   <property name="icon">
+    <iconset theme="document-open"/>
+   </property>
+   <property name="text">
+    <string>Open File</string>
+   </property>
+  </action>
+  <action name="actionSaveFile">
+   <property name="icon">
+    <iconset theme="document-save"/>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSepAfterSave">
+   <property name="separator">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionFind">
+   <property name="icon">
+    <iconset theme="edit-find"/>
+   </property>
+   <property name="text">
+    <string>Find…</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionGoToLine">
+   <property name="text">
+    <string>Go to Line…</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionSepAfterEditor">
+   <property name="separator">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionReloadLuaPlugins">
+   <property name="icon">
+    <iconset theme="view-refresh"/>
+   </property>
+   <property name="text">
+    <string>Reload Lua Plugins</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+L</string>
+   </property>
+  </action>
+  <action name="actionAddWatch">
+   <property name="icon">
+    <iconset theme="list-add"/>
+   </property>
+   <property name="text">
+    <string>Add Watch</string>
+   </property>
+   <property name="toolTip">
+    <string>Add Watch</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LuaDebuggerCodeView</class>
+   <extends>QWidget</extends>
+   <header>lua_debugger_code_editor.h</header>
+  </customwidget>
+  <customwidget>
+   <class>LuaDebuggerFindFrame</class>
+   <extends>QFrame</extends>
+   <header>lua_debugger_find_frame.h</header>
+  </customwidget>
+  <customwidget>
+   <class>LuaDebuggerGoToLineFrame</class>
+   <extends>QFrame</extends>
+   <header>lua_debugger_goto_line_frame.h</header>
+  </customwidget>
+  <customwidget>
+   <class>LuaDebuggerErrorFrame</class>
+   <extends>QFrame</extends>
+   <header>lua_debugger_error_frame.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

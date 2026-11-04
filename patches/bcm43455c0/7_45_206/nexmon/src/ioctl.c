@@ -73,9 +73,31 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     switch(cmd) {
         case NEX_GET_CAPABILITIES:
         {
-            if (len == 4) {
+            if (len >= 4 && arg) {
                 memcpy(arg, &capabilities, 4);
                 ret = IOCTL_SUCCESS;
+            }
+            break;
+        }
+
+        case NEX_SET_CHANSPEC_OVERRIDE:
+        {
+            if (len >= 2 && arg) {
+                uint16 chanspec = *(uint16 *) arg;
+                char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                memcpy(&charbuf[9], &chanspec, sizeof(chanspec));
+                ret = wlc_ioctl(wlc, WLC_SET_VAR, charbuf, 13, wlc_if);
+            }
+            break;
+        }
+
+        case NEX_GET_CHANSPEC_OVERRIDE:
+        {
+            if (len >= 2 && arg) {
+                char charbuf[16] __attribute__((aligned(4))) = "chanspec";
+                ret = wlc_ioctl(wlc, WLC_GET_VAR, charbuf, 13, wlc_if);
+                if (ret == IOCTL_SUCCESS)
+                    memcpy(arg, charbuf, 2);
             }
             break;
         }
@@ -92,6 +114,9 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             dumpcb_t *d;
             struct bcmstrbuf b;
             int err;
+
+            if (!wlc || !arg || len <= 0)
+                break;
 
             bcm_binit(&b, arg, len);
 

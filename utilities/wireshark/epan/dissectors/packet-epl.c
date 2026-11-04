@@ -21,7 +21,7 @@
  *                     - Lukas Emersberger <lukas.emersberger[AT]br-automation.com>
  *                     - Josef Baumgartner <josef.baumgartner[AT]br-automation.com>
  *                     - Roland Knall <roland.knall[AT]br-automation.com>
- *                       - Extended to be similair in handling as to B&R plugin
+ *                       - Extended to be similar in handling as to B&R plugin
  *                       - Multiple SOD Read/Write dissection
  *                       - Include AInv message type
  *                       - Straighten text formatting
@@ -1861,7 +1861,7 @@ epl_address_equal(const void *a, const void *b)
  * if we have dangling pointers. Courtesy of Peter Wu.
  */
 
-unsigned current_convo_generation; /* FIXME remove */
+static unsigned current_convo_generation; /* FIXME remove */
 static wmem_allocator_t *pdo_mapping_scope;
 static struct object_mapping *
 get_object_mappings(wmem_array_t *arr, unsigned *len)
@@ -2470,7 +2470,7 @@ cleanup_dissector(void)
 }
 
 /* preference whether or not display the SoC flags in info column */
-bool show_soc_flags;
+static bool show_soc_flags;
 
 /* Define the tap for epl */
 /*static int epl_tap = -1;*/
@@ -2781,7 +2781,7 @@ dissect_epl_payload(proto_tree *epl_tree, tvbuff_t *tvb, packet_info *pinfo, int
 		expert_add_info(pinfo, item, &ei_real_length_differs );
 	}
 
-	/* To satisfy heurstic dissectors, we need to pass then the whole PDO payload as-is,
+	/* To satisfy heuristic dissectors, we need to pass then the whole PDO payload as-is,
 	 * so we check whether we were called from dissect_epl_pdo and skip trying heuristic
 	 * dissectors for the PDO's components
 	 */
@@ -3109,7 +3109,7 @@ dissect_epl_asnd(proto_tree *epl_tree, tvbuff_t *tvb, packet_info *pinfo, int of
 {
 	uint8_t svid;
 	uint8_t flags, flags2;
-	int size, reported_len;
+	int size;
 	tvbuff_t *next_tvb;
 	proto_item *item;
 	proto_tree *subtree;
@@ -3163,9 +3163,8 @@ dissect_epl_asnd(proto_tree *epl_tree, tvbuff_t *tvb, packet_info *pinfo, int of
 			break;
 		default:
 			size = tvb_captured_length_remaining(tvb, offset);
-			reported_len = tvb_reported_length_remaining(tvb, offset);
 
-			next_tvb = tvb_new_subset_length_caplen(tvb, offset, size, reported_len);
+			next_tvb = tvb_new_subset_remaining(tvb, offset);
 			/* Manufacturer specific entries for ASND services */
 			if (svid >= 0xA0 && svid < 0xFF && dissector_try_uint(epl_asnd_dissector_table,
 				svid, next_tvb, pinfo, ( epl_tree ? epl_tree->parent : NULL ))) {
@@ -5068,17 +5067,14 @@ dissect_epl_sdo_command_read_by_index(struct epl_convo *convo, proto_tree *epl_t
 	if (!response)
 	{   /* request */
 		const char *name;
-		idx = tvb_get_letohs(tvb, offset);
-		psf_item = proto_tree_add_item(epl_tree, hf_epl_asnd_sdo_cmd_data_index, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+		psf_item = proto_tree_add_item_ret_uint16(epl_tree, hf_epl_asnd_sdo_cmd_data_index, tvb, offset, 2, ENC_LITTLE_ENDIAN, &idx);
 		obj = object_lookup(convo->profile, idx);
 
 		name = obj ? obj->info.name : val_to_str_ext_const(((uint32_t)(idx<<16)), &sod_index_names, "User Defined");
 		proto_item_append_text(psf_item," (%s)", name);
 		offset += 2;
 
-
-		subindex = tvb_get_uint8(tvb, offset);
-		psf_item = proto_tree_add_item(epl_tree, hf_epl_asnd_sdo_cmd_data_subindex, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+		psf_item = proto_tree_add_item_ret_uint8(epl_tree, hf_epl_asnd_sdo_cmd_data_subindex, tvb, offset, 1, ENC_LITTLE_ENDIAN, &subindex);
 		subobj = subobject_lookup(obj, subindex);
 
 		name = subobj ? subobj->info.name
@@ -5347,10 +5343,9 @@ proto_register_epl(void)
 			{ "NetTime", "epl.soc.nettime",
 				FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, NULL, 0x0, NULL, HFILL }
 		},
-		/* TODO: should this be FT_RELATIVE_TIME? */
 		{ &hf_epl_soc_relativetime,
 			{ "RelativeTime", "epl.soc.relativetime",
-				FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }
+				FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0, NULL, HFILL }
 		},
 
 		/* PReq data fields*/

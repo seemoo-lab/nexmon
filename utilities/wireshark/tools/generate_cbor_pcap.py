@@ -9,19 +9,17 @@ This allows straightforward test and debugging of simple pcap files.
 SPDX-License-Identifier: LGPL-2.1-or-later
 '''
 
-from argparse import ArgumentParser
-import cbor2
-from io import BytesIO
 import random
-import scapy
-from scapy.layers.l2 import Ether
-from scapy.layers.inet import IP, TCP, UDP
-from scapy.layers.http import HTTP, HTTPRequest, HTTPResponse
+import sys
+from argparse import ArgumentParser
+
+import cbor_diag
 from scapy.contrib.coap import CoAP
+from scapy.layers.http import HTTP, HTTPRequest, HTTPResponse
+from scapy.layers.inet import IP, TCP, UDP
+from scapy.layers.l2 import Ether
 from scapy.packet import Raw
 from scapy.utils import wrpcap
-from subprocess import check_output
-import sys
 
 
 def intencode(val: int) -> bytes:
@@ -36,7 +34,7 @@ def main():
                         help='The PCAP output file, or "-" for stdout')
     parser.add_argument('--intype', default='cbordiag',
                         choices=['cbordiag', 'raw'],
-                        help='The input data type.')
+                        help='The input data type (default cbordiag)')
     subp = parser.add_subparsers(title='transport',
                                  dest='transport', required=True,
                                  help='Message transport')
@@ -63,15 +61,19 @@ def main():
     cbordata = []
     for infile_name in args.infile:
         infile_name = infile_name.strip()
-        if infile_name != '-':
-            infile = open(infile_name, 'rb')
-        else:
-            infile = sys.stdin.buffer
 
         if args.intype == 'raw':
+            if infile_name != '-':
+                infile = open(infile_name, 'rb')
+            else:
+                infile = sys.stdin.buffer
             cbordata.append(infile.read())
         elif args.intype == 'cbordiag':
-            cbordata.append(check_output('diag2cbor.rb', stdin=infile))
+            if infile_name != '-':
+                infile = open(infile_name, 'r')
+            else:
+                infile = sys.stdin
+            cbordata.append(cbor_diag.diag2cbor(infile.read(), seq=True))
 
     # Write the request directly into pcap
     outfile_name = args.outfile.strip()
@@ -99,11 +101,11 @@ def main():
         for idx, data in enumerate(cbordata):
             if idx % 2 == 0:
                 mid = random.randint(1, 0xFFFF)
-                coapopts = dict(
-                    type="CON",
-                    code=2,
-                    msg_id=mid,
-                    options=(
+                coapopts = {
+                    'type' : "CON",
+                    'code' : 2,
+                    'msg_id' : mid,
+                    'options' : (
                         [
                             ("Uri-Host", "example.com"),
                         ]
@@ -112,23 +114,23 @@ def main():
                             ("Content-Format", cformat.pop(0)),
                         ]
                     ),
-                    paymark=b'\xFF',
-                )
+                    'paymark'  : b'\xFF',
+                }
                 pyld = CoAP(**coapopts)/data
-                udpopts = dict(sport=cport, dport=5683)
+                udpopts = { 'sport' : cport, 'dport' : 5683 }
                 out_pkts.append(Ether()/IP()/UDP(**udpopts)/pyld)
             else:
-                coapopts = dict(
-                    type="ACK",
-                    code=68,
-                    msg_id=mid,
-                    options=[
+                coapopts = {
+                    'type' : "ACK",
+                    'code' : 68,
+                    'msg_id' : mid,
+                    'options' : [
                         ("Content-Format", cformat.pop(0)),
                     ],
-                    paymark=b'\xFF',
-                )
+                    'paymark' : b'\xFF'
+                }
                 pyld = CoAP(**coapopts)/data
-                udpopts = dict(sport=5683, dport=cport)
+                udpopts = { 'sport' : 5683, 'dport' : cport }
                 out_pkts.append(Ether()/IP()/UDP(**udpopts)/pyld)
 
     elif args.transport == 'http':
@@ -159,7 +161,7 @@ def main():
                 else:
                     flags = ""
                     seqadd = 0
-                udpopts = dict(sport=cport, seq=seq[0], flags=flags)
+                udpopts = { 'sport' : cport, 'seq' : seq[0], 'flags' : flags }
                 out_pkts.append(Ether()/IP()/TCP(**udpopts)/pyld)
                 seq[0] += len(bytes(pyld)) + seqadd
             else:
@@ -177,7 +179,7 @@ def main():
                 else:
                     flags = ""
                     seqadd = 0
-                udpopts = dict(dport=cport, seq=seq[1], flags=flags)
+                udpopts = { 'dport' : cport, 'seq' : seq[1], 'flags' : flags }
                 out_pkts.append(Ether()/IP()/TCP(**udpopts)/pyld)
                 seq[1] += len(bytes(pyld)) + seqadd
 

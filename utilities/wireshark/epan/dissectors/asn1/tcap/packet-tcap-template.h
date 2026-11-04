@@ -117,7 +117,7 @@ struct tcaphash_ansicall_t {
   struct tcaphash_ansicall_t * previous_ansicall;
 };
 
-/** The Key for the hash table is the TCAP origine transaction identifier
+/** The Key for the hash table is the TCAP original transaction identifier
    of the TC_BEGIN containing the InitialDP */
 
 struct tcaphash_context_key_t {
@@ -161,6 +161,8 @@ struct tcapsrt_info_t {
   uint8_t ope;
 };
 
+#include "packet-tcap-exp.h"
+
 /**
  * Initialize the Message Info used by the main dissector
  * Data are linked to a TCAP transaction
@@ -173,7 +175,7 @@ void tcapsrt_close(struct tcaphash_context_t * p_tcaphash_context,
 /**
  * Service Response Time analyze
  * Called just after dissector call
- * Associate a TCAP context to a tcap session and display session related infomations
+ * Associate a TCAP context to a tcap session and display session related information
  * like the first frame, the last, the session duration,
  * and a uniq session identifier for the filtering
  *
@@ -190,13 +192,10 @@ struct tcaphash_context_t * tcapsrt_call_matching(tvbuff_t *tvb,
 						  proto_tree *tree,
 						  struct tcapsrt_info_t * p_tcap_info);
 
-WS_DLL_PUBLIC bool gtcap_StatSRT;
 
 extern int tcap_standard;
 
 extern const value_string tcap_component_type_str[];
-void proto_reg_handoff_tcap(void);
-void proto_register_tcap(void);
 
 extern dissector_handle_t get_itu_tcap_subdissector(uint32_t ssn);
 dissector_handle_t get_ansi_tcap_subdissector(uint32_t ssn);
@@ -208,7 +207,5 @@ extern void delete_ansi_tcap_subdissector(uint32_t ssn, dissector_handle_t disse
 WS_DLL_PUBLIC void delete_itu_tcap_subdissector(uint32_t ssn, dissector_handle_t dissector);
 
 extern void call_tcap_dissector(dissector_handle_t, tvbuff_t*, packet_info*, proto_tree*);
-
-#include "packet-tcap-exp.h"
 
 #endif  /* PACKET_tcap_H */

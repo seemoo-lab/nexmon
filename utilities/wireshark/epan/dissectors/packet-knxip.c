@@ -26,13 +26,13 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/proto.h>
-#include <epan/ipproto.h>
 #include <epan/prefs.h>
 #include <epan/proto_data.h>
 #include <epan/to_str.h>
 #include <epan/tvbuff.h>
 #include <epan/strutil.h>
 #include <epan/unit_strings.h>
+#include <epan/iana-info.h>
 #include <wsutil/to_str.h>
 
 #include "packet-tcp.h"
@@ -2596,7 +2596,7 @@ static const char* make_key_info(wmem_allocator_t* scope, const uint8_t* key, co
       wmem_strbuf_append_printf(buf, " %02X", *key++);
   }
 
-  return wmem_strbuf_get_str(buf);
+  return wmem_strbuf_finalize(buf);
 }
 
 /* Dissect SECURE_WRAPPER
@@ -3760,8 +3760,8 @@ static int dissect_knxip( tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, v
       header_item = proto_tree_add_none_format( kip_tree, hf_folder, tvb, 0,
         (header_len <= remaining_len) ? header_len : remaining_len, "KNX/IP Header" );
       header_tree = proto_item_add_subtree( header_item, ett_efcp );
-      header_len_item = proto_tree_add_uint_format( header_tree, hf_knxip_header_length,
-        tvb, 0, 1, header_len, "Header Length: %u bytes", header_len );
+      header_len_item = proto_tree_add_uint_format_value( header_tree, hf_knxip_header_length,
+        tvb, 0, 1, header_len, "%u bytes", header_len );
     }
 
     if( header_len > remaining_len )
@@ -3826,8 +3826,8 @@ static int dissect_knxip( tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, v
 
           if( tree )
           {
-            total_length_item = proto_tree_add_uint_format( header_tree, hf_knxip_total_length,
-              tvb, 4, 2, total_len, "Total Length: %u bytes", total_len );
+            total_length_item = proto_tree_add_uint_format_value( header_tree, hf_knxip_total_length,
+              tvb, 4, 2, total_len, "%u bytes", total_len );
           }
 
           if( total_len < header_len )

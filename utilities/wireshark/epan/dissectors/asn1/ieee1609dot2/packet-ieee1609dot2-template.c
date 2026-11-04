@@ -24,20 +24,17 @@
 #include <epan/asn1.h>
 #include <epan/proto_data.h>
 #include <wsutil/array.h>
+#include <wsutil/time_util.h>
 
 #include "packet-oer.h"
 #include "packet-ieee1609dot2.h"
-
-#define PNAME  "IEEE1609dot2"
-#define PSNAME "IEEE1609dot2"
-#define PFNAME "ieee1609dot2"
 
 void proto_register_ieee1609dot2(void);
 void proto_reg_handoff_ieee1609dot2(void);
 
 /* Initialize the protocol and registered fields */
-int proto_ieee1609dot2;
-dissector_handle_t proto_ieee1609dot2_handle;
+static int proto_ieee1609dot2;
+static dissector_handle_t proto_ieee1609dot2_handle;
 
 /* WSMP PSID range to be passed to IEEE 1609.2 dissector */
 static range_t *global_wsmp_psid_range;
@@ -104,7 +101,11 @@ static void
 ieee1609dot2_Time32_fmt(char *s, uint32_t v)
 {
   time_t secs = v + 1072915200 - 5;
-  struct tm *tm = gmtime(&secs);
+  struct tm tm_buf, *tm = ws_gmtime_r(&secs, &tm_buf);
+  if (tm == NULL) {
+    snprintf(s, ITEM_LABEL_LENGTH, "Not representable (%u)", v);
+    return;
+  }
   snprintf(s, ITEM_LABEL_LENGTH, "%u-%02u-%02u %02u:%02u:%02u (%u)",
     tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, v
   );
@@ -115,7 +116,11 @@ ieee1609dot2_Time64_fmt(char *s, uint64_t v)
 {
   time_t secs = v / 1000000 + 1072915200 - 5;
   uint32_t usecs = v % 1000000;
-  struct tm *tm = gmtime(&secs);
+  struct tm tm_buf, *tm = ws_gmtime_r(&secs, &tm_buf);
+  if (tm == NULL) {
+    snprintf(s, ITEM_LABEL_LENGTH, "Not representable (%" PRIu64 ")", v);
+    return;
+  }
   snprintf(s, ITEM_LABEL_LENGTH, "%u-%02u-%02u %02u:%02u:%02u.%06u (%" PRIu64 ")",
     tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, usecs, v
   );
@@ -138,7 +143,7 @@ void proto_register_ieee1609dot2(void) {
   };
 
   /* Register protocol */
-  proto_ieee1609dot2 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_ieee1609dot2 = proto_register_protocol("IEEE1609dot2", "IEEE1609dot2", "ieee1609dot2");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_ieee1609dot2, hf, array_length(hf));

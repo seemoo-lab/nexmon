@@ -1,226 +1,317 @@
-# KrisWebDev[n01ce] Android.mk to build aircrack-ng suite for Android
-# Android.mk version: 1.1
+# ndk-build for aircrack-ng 1.7 (reorganized src/ + lib/ layout).
+LOCAL_PATH := $(call my-dir)
 
-LOCAL_PATH:=$(call my-dir)
+MY_CFLAGS := -g -O3 -Wall -DANDROID -DOS_ANDROID -DLinux \
+	-DHAVE_CONFIG_H -DSTATIC_BUILD -DDYNAMIC=0 \
+	-D_FILE_OFFSET_BITS=64 -fPIC -fcommon \
+	-Wno-unused-parameter -Wno-unused-variable \
+	-Wno-unused-but-set-variable -Wno-array-bounds \
+	-Wno-deprecated-declarations \
+	-include openssl/evp.h
 
-MY_SRC_PTW		:= src/aircrack-ptw-lib.c
-MY_SRC_AC		:= src/aircrack-ng.c src/crypto.c src/common.c $(MY_SRC_PTW)
-MY_OBJS_PTW		:= src/aircrack-ptw-lib.c
-MY_OBJS_AC		:= src/aircrack-ng.c src/crypto.c src/common.c src/uniqueiv.c src/simd-intrinsics.c src/cpuid.c src/memory.c src/wpapsk.c src/linecount.cpp $(MY_OBJS_PTW)
-MY_OBJS_AD		:= src/airdecap-ng.c src/crypto.c src/common.c
-MY_OBJS_PF		:= src/packetforge-ng.c src/common.c src/crypto.c
-MY_OBJS_AR		:= src/aireplay-ng.c src/common.c src/crypto.c
-MY_OBJS_ADU		:= src/airodump-ng.c src/common.c src/crypto.c src/uniqueiv.c
-MY_OBJS_AT		:= src/airtun-ng.c src/common.c src/crypto.c
-MY_OBJS_IV		:= src/ivstools.c src/common.c src/crypto.c src/uniqueiv.c
-MY_OBJS_AS		:= src/airserv-ng.c src/common.c
-MY_OBJS_WS		:= src/wesside-ng.c src/crypto.c src/common.c $(MY_OBJS_PTW)
-MY_OBJS_BS		:= src/besside-ng.c src/crypto.c src/common.c $(MY_OBJS_PTW)
-MY_OBJS_BC		:= src/besside-ng-crawler.c
-MY_OBJS_AL		:= src/airolib-ng.c src/crypto.c src/common.c
-MY_OBJS_ES		:= src/easside-ng.c src/common.c
-MY_OBJS_BUDDY		:= src/buddy-ng.c src/common.c
-MY_OBJS_MI		:= src/makeivs-ng.c src/common.c src/uniqueiv.c
-MY_OBJS_AB		:= src/airbase-ng.c src/common.c src/crypto.c
-MY_OBJS_AU		:= src/airdecloak-ng.c src/common.c
-MY_OBJS_TT		:= src/tkiptun-ng.c src/common.c src/crypto.c
-MY_OBJS_WC		:= src/wpaclean.c
+MY_C_INCLUDES := \
+	$(LOCAL_PATH)/android \
+	$(LOCAL_PATH)/include \
+	$(LOCAL_PATH)/include/aircrack-ng/osdep \
+	$(LOCAL_PATH)/lib \
+	$(LOCAL_PATH)/lib/osdep \
+	$(LOCAL_PATH)/lib/radiotap \
+	$(LOCAL_PATH)/src \
+	$(LOCAL_PATH)/src/aircrack-ng \
+	$(LOCAL_PATH)/src/airodump-ng \
+	$(LOCAL_PATH)/src/easside-ng \
+	$(LOCAL_PATH)/src/airdecloak-ng \
+	$(LOCAL_PATH)/src/airventriloquist-ng \
+	$(LOCAL_PATH)/../boringssl/include
 
-MY_CFLAGS		:= -g -W -Wall -O3 -DANDROID -D_REVISION=0 -D_FILE_OFFSET_BITS=64 \
-	-Wno-unused-but-set-variable -Wno-array-bounds -Wno-unused-parameter -Wno-unused-variable \
-	-I $(LOCAL_PATH)/src -I $(LOCAL_PATH)/src/include -D__int8_t_defined \
-	-fPIC -DANDROID -DOS_ANDROID -DLinux -DHAVE_SQLITE
-
-
+# ---------------------------------------------------------------------------
+# Prebuilts from utilities/libssl and utilities/libcrypto (boringssl)
+# ---------------------------------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE := libssl
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/armeabi/libssl.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libssl/local/$(TARGET_ARCH_ABI)/libssl.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)
-
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcrypto
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/armeabi/libcrypto.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/src/include
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libcrypto/local/$(TARGET_ARCH_ABI)/libcrypto.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../boringssl/include
 include $(PREBUILT_STATIC_LIBRARY)
 
-
+# ---------------------------------------------------------------------------
+# sqlite3 (AOSP libsqlite Android.mk is not usable with standalone ndk-build)
+# ---------------------------------------------------------------------------
 include $(CLEAR_VARS)
-LOCAL_MODULE := libsqlite
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libsqlite/local/armeabi/libsqlite.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libsqlite
-include $(PREBUILT_STATIC_LIBRARY)
+LOCAL_MODULE := libsqlite3_aircrack
+LOCAL_SRC_FILES := ../libsqlite/sqlite3.c
+LOCAL_CFLAGS += -DSQLITE_THREADSAFE=1 -DSQLITE_OMIT_LOAD_EXTENSION -DNDEBUG \
+	-Wno-unused-parameter -Wno-unused-variable
+include $(BUILD_STATIC_LIBRARY)
 
-
+# ---------------------------------------------------------------------------
+# aircrack-ng internal libraries
+# ---------------------------------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE := libosdep
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libosdep/local/armeabi/libosdep.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libosdep/src
-include $(PREBUILT_STATIC_LIBRARY)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= aircrack-ng
-LOCAL_SRC_FILES		:= $(MY_OBJS_AC)
-LOCAL_CFLAGS		+= $(MY_CFLAGS) -mfloat-abi=softfp -mfpu=neon -march=armv7 -DSIMD_CORE
-LOCAL_STATIC_LIBRARIES  += libcrypto libssl libosdep libsqlite
-LOCAL_LDLIBS		+= -landroid
-include $(BUILD_EXECUTABLE)
-
+LOCAL_SRC_FILES := \
+	lib/osdep/network.c \
+	lib/osdep/file.c \
+	lib/osdep/osdep.c \
+	lib/osdep/linux.c \
+	lib/osdep/linux_tap.c \
+	lib/osdep/common.c \
+	lib/radiotap/radiotap.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= airdecap-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AD)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= packetforge-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_PF)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
+LOCAL_MODULE := libaccrypto
+LOCAL_SRC_FILES := lib/crypto/crypto.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= aireplay-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AR)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= airodump-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_ADU)
-LOCAL_STATIC_LIBRARIES  += libosdep libsqlite libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
+LOCAL_MODULE := libptw
+LOCAL_SRC_FILES := lib/ptw/aircrack-ptw-lib.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= airserv-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AS)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libnl_2
-include $(BUILD_EXECUTABLE)
-
+LOCAL_MODULE := libaircrack-ce-wep
+LOCAL_SRC_FILES := lib/ce-wep/uniqueiv.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= airtun-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AT)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= ivstools
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_IV)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
+LOCAL_MODULE := libaircrack-ce-wpa
+LOCAL_SRC_FILES := \
+	lib/ce-wpa/crypto_engine.c \
+	lib/ce-wpa/memory.c \
+	lib/ce-wpa/simd-intrinsics.c \
+	lib/ce-wpa/wpapsk.c
+LOCAL_CFLAGS += $(MY_CFLAGS) -DSIMD_CORE -DHAS_NEON -D__ARM_NEON__
+ifneq ($(TARGET_ARCH_ABI),arm64-v8a)
+LOCAL_CFLAGS += -mfpu=neon -mfloat-abi=softfp
+endif
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= kstats
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= src/kstats.c
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= wesside-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_WS)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-LOCAL_SHARED_LIBRARIES	:= libz
-LOCAL_C_INCLUDES	+= $(LOCAL_PATH)/../zlib/src
-LOCAL_SHARED_LIBRARIES	+= libz
-LOCAL_LDLIBS		+= -lz
-include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= easside-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_ES)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_C_INCLUDES	+= $(LOCAL_PATH)/../zlib/src
-LOCAL_SHARED_LIBRARIES	+= libz
-LOCAL_LDLIBS		+= -lz
-include $(BUILD_EXECUTABLE)
+LOCAL_MODULE := libaircrack
+LOCAL_SRC_FILES := \
+	lib/libac/adt/avl_tree.c \
+	lib/libac/adt/circular_buffer.c \
+	lib/libac/adt/circular_queue.c \
+	lib/libac/cpu/simd_cpuid.c \
+	lib/libac/cpu/trampoline_arm.c \
+	lib/libac/cpu/cpuset_pthread.c \
+	lib/libac/support/fragments.c \
+	lib/libac/support/common.c \
+	lib/libac/support/communications.c \
+	lib/libac/support/crypto_engine_loader.c \
+	lib/libac/support/mcs_index_rates.c \
+	lib/libac/tui/console.c \
+	lib/libac/utf8/verifyssid.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= buddy-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_BUDDY)
-include $(BUILD_EXECUTABLE)
+LOCAL_MODULE := libcowpatty
+LOCAL_SRC_FILES := lib/cowpatty/cowpatty.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+include $(BUILD_STATIC_LIBRARY)
 
-# error: unknown type name 'pthread_cond_t':
-# Add #include <pthread.h> in besside-ng.c
+MY_STATIC_LIBS := \
+	libaircrack \
+	libaircrack-ce-wpa \
+	libaircrack-ce-wep \
+	libptw \
+	libaccrypto \
+	libosdep \
+	libssl \
+	libcrypto
+
+# ---------------------------------------------------------------------------
+# Binaries
+# ---------------------------------------------------------------------------
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= besside-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_BS)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-LOCAL_C_INCLUDES	+= $(LOCAL_PATH)/../zlib/src
-LOCAL_SHARED_LIBRARIES	+= libz
+LOCAL_MODULE := aircrack-ng
+LOCAL_SRC_FILES := \
+	src/aircrack-ng/aircrack-ng.c \
+	src/aircrack-ng/linecount.cpp \
+	src/aircrack-ng/session.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS) libsqlite3_aircrack
+LOCAL_LDLIBS += -lz -lm
 include $(BUILD_EXECUTABLE)
-
-
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= makeivs-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_MI)
-include $(BUILD_EXECUTABLE)
-
-# error: unknown type name 'pthread_cond_t':
-# Add #include <pthread.h> in airolib-ng.c
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= airolib-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS) -DHAVE_REGEXP
-LOCAL_SRC_FILES		:= $(MY_OBJS_AL)
-LOCAL_STATIC_LIBRARIES	+= libsqlite libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
-
-# This won't throw compilation error but runtime error...
-# Edit linux_tap.c: Replace "/dev/net/tun" by "/dev/tun"
-include $(CLEAR_VARS)
-LOCAL_MODULE		:= airbase-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AB)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
-include $(BUILD_EXECUTABLE)
-
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= airdecloak-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_AU)
-LOCAL_STATIC_LIBRARIES  += libosdep
-LOCAL_SHARED_LIBRARIES	:= libnl_2
+LOCAL_MODULE := airdecap-ng
+LOCAL_SRC_FILES := src/airdecap-ng/airdecap-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
 include $(BUILD_EXECUTABLE)
-
 
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= tkiptun-ng
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_TT)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
+LOCAL_MODULE := packetforge-ng
+LOCAL_SRC_FILES := src/packetforge-ng/packetforge-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
 include $(BUILD_EXECUTABLE)
 
-
-# Add #include <pthread.h> in wpaclean.c
 include $(CLEAR_VARS)
-LOCAL_MODULE		:= wpaclean
-LOCAL_CFLAGS		+= $(MY_CFLAGS)
-LOCAL_SRC_FILES		:= $(MY_OBJS_WC)
-LOCAL_STATIC_LIBRARIES  += libosdep libssl libcrypto
+LOCAL_MODULE := aireplay-ng
+LOCAL_SRC_FILES := src/aireplay-ng/aireplay-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
 include $(BUILD_EXECUTABLE)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := airodump-ng
+LOCAL_SRC_FILES := \
+	src/airodump-ng/airodump-ng.c \
+	src/airodump-ng/dump_write.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := airserv-ng
+LOCAL_SRC_FILES := src/airserv-ng/airserv-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := airtun-ng
+LOCAL_SRC_FILES := src/airtun-ng/airtun-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := ivstools
+LOCAL_SRC_FILES := src/ivstools/ivstools.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := kstats
+LOCAL_SRC_FILES := src/kstats/kstats.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := libaircrack
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := wesside-ng
+LOCAL_SRC_FILES := src/wesside-ng/wesside-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := easside-ng
+LOCAL_SRC_FILES := src/easside-ng/easside-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := buddy-ng
+LOCAL_SRC_FILES := src/buddy-ng/buddy-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := besside-ng
+LOCAL_SRC_FILES := src/besside-ng/besside-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := makeivs-ng
+LOCAL_SRC_FILES := src/makeivs-ng/makeivs-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := airolib-ng
+LOCAL_SRC_FILES := src/airolib-ng/airolib-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS) -DHAVE_REGEXP
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS) libcowpatty libsqlite3_aircrack
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := airbase-ng
+LOCAL_SRC_FILES := src/airbase-ng/airbase-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := airdecloak-ng
+LOCAL_SRC_FILES := src/airdecloak-ng/airdecloak-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := tkiptun-ng
+LOCAL_SRC_FILES := src/tkiptun-ng/tkiptun-ng.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := wpaclean
+LOCAL_SRC_FILES := src/wpaclean/wpaclean.c
+LOCAL_CFLAGS += $(MY_CFLAGS)
+LOCAL_C_INCLUDES += $(MY_C_INCLUDES)
+LOCAL_STATIC_LIBRARIES := $(MY_STATIC_LIBS)
+LOCAL_LDLIBS += -lz -lm
+include $(BUILD_EXECUTABLE)

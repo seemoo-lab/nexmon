@@ -340,7 +340,7 @@ wmem_map_insert(wmem_map_t *map, const void *key, void *value)
 }
 
 bool
-wmem_map_contains(wmem_map_t *map, const void *key)
+wmem_map_contains(const wmem_map_t *map, const void *key)
 {
     wmem_map_item_t *item;
 
@@ -365,7 +365,7 @@ wmem_map_contains(wmem_map_t *map, const void *key)
 }
 
 void *
-wmem_map_lookup(wmem_map_t *map, const void *key)
+wmem_map_lookup(const wmem_map_t *map, const void *key)
 {
     wmem_map_item_t *item;
 
@@ -390,7 +390,7 @@ wmem_map_lookup(wmem_map_t *map, const void *key)
 }
 
 bool
-wmem_map_lookup_extended(wmem_map_t *map, const void *key, const void **orig_key, void **value)
+wmem_map_lookup_extended(const wmem_map_t *map, const void *key, const void **orig_key, void **value)
 {
     wmem_map_item_t *item;
 
@@ -485,7 +485,7 @@ wmem_map_steal(wmem_map_t *map, const void *key)
 }
 
 wmem_list_t*
-wmem_map_get_keys(wmem_allocator_t *list_allocator, wmem_map_t *map)
+wmem_map_get_keys(wmem_allocator_t *list_allocator, const wmem_map_t *map)
 {
     size_t capacity, i;
     wmem_map_item_t *cur;
@@ -507,8 +507,31 @@ wmem_map_get_keys(wmem_allocator_t *list_allocator, wmem_map_t *map)
     return list;
 }
 
+wmem_list_t*
+wmem_map_get_keys_sorted(wmem_allocator_t *list_allocator, const wmem_map_t *map, GCompareFunc compare_func)
+{
+    size_t capacity, i;
+    wmem_map_item_t *cur;
+    wmem_list_t* list = wmem_list_new(list_allocator);
+
+    if (map->table != NULL) {
+        capacity = CAPACITY(map);
+
+        /* copy all the elements into the list over from table */
+        for (i=0; i<capacity; i++) {
+            cur = map->table[i];
+            while (cur) {
+                wmem_list_insert_sorted(list, (void*)cur->key, compare_func);
+                cur = cur->next;
+            }
+        }
+    }
+
+    return list;
+}
+
 void
-wmem_map_foreach(wmem_map_t *map, GHFunc foreach_func, void * user_data)
+wmem_map_foreach(const wmem_map_t *map, GHFunc foreach_func, void * user_data)
 {
     wmem_map_item_t *cur;
     unsigned i;
@@ -528,7 +551,7 @@ wmem_map_foreach(wmem_map_t *map, GHFunc foreach_func, void * user_data)
 }
 
 void*
-wmem_map_find(wmem_map_t *map, GHRFunc foreach_func, void * user_data)
+wmem_map_find(const wmem_map_t *map, GHRFunc foreach_func, void * user_data)
 {
     wmem_map_item_t **item;
     unsigned i;
@@ -581,7 +604,7 @@ wmem_map_foreach_remove(wmem_map_t *map, GHRFunc foreach_func, void * user_data)
 }
 
 unsigned
-wmem_map_size(wmem_map_t *map)
+wmem_map_size(const wmem_map_t *map)
 {
     return (unsigned)map->count;
 }
@@ -591,7 +614,7 @@ wmem_map_reserve(wmem_map_t *map, uint64_t capacity)
 {
     ws_return_val_if(!capacity, ((size_t)1) << map->min_capacity);
 
-    map->min_capacity = ws_ilog2(capacity) + 1;
+    map->min_capacity = (unsigned)ws_ilog2(capacity) + 1;
 
     map->min_capacity = MAX(map->min_capacity, WMEM_MAP_DEFAULT_CAPACITY);
 
@@ -611,8 +634,8 @@ wmem_map_reserve(wmem_map_t *map, uint64_t capacity)
 
 /* Borrowed from Perl 5.18. This is based on Bob Jenkin's one-at-a-time
  * algorithm with some additional randomness seeded in. It is believed to be
- * generally secure against collision attacks. See
- * http://blog.booking.com/hardening-perls-hash-function.html
+ * generally secure against collision attacks. See "Hardening Perl's Hash Function".
+ * https://medium.com/booking-com-development/hardening-perls-hash-function-d642601f4e54
  */
 uint32_t
 wmem_strong_hash(const uint8_t *buf, const size_t len)

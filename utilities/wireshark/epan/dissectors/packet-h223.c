@@ -18,7 +18,6 @@
 #include <epan/expert.h>
 #include <epan/stream.h>
 #include <epan/golay.h>
-#include <epan/iax2_codec_type.h>
 #include <epan/show_exception.h>
 #include <epan/asn1.h>
 #include <wsutil/bitswap.h>
@@ -26,9 +25,12 @@
 
 #include "packet-h245.h"
 #include "packet-iax2.h"
-#include "packet-h223.h"
+#include "packet-iax2.h"
 
 /* #define DEBUG_H223 */
+
+void proto_register_h223 (void);
+void proto_reg_handoff_h223(void);
 
 /* debug the mux-pdu defragmentation code. warning: verbose output! */
 /* #define DEBUG_H223_FRAGMENTATION */
@@ -407,7 +409,8 @@ init_logical_channel( uint32_t start_frame, h223_call_info* call_info, int vc, i
     } else {
         vc_info = (h223_vc_info *)conversation_get_proto_data( subcircuit, proto_h223 );
     }
-    add_h223_lc_params( vc_info, direction, params, start_frame );
+    if (vc_info)
+        add_h223_lc_params( vc_info, direction, params, start_frame );
 }
 
 /* create a brand-new h223_call_info structure */
@@ -1048,7 +1051,7 @@ dissect_mux_pdu( tvbuff_t *tvb, packet_info *pinfo, uint32_t pkt_offset,
     }
 
     if(mpl > 0) {
-        pdu_tvb = tvb_new_subset_length_caplen(tvb, offset, len, mpl);
+        pdu_tvb = tvb_new_subset_length(tvb, offset, mpl);
         if(errors != -1) {
             dissect_mux_payload(pdu_tvb,pinfo,pkt_offset+offset,pdu_tree,call_info,mc,end_of_mux_sdu, ctype, circuit_id);
         } else {

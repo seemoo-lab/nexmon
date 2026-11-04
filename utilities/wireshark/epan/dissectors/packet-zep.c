@@ -122,7 +122,7 @@ static int dissect_zep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         return 0;
 
     /*  Determine whether this is a Q51/IEEE 802.15.4 sniffer packet or not */
-    if(strcmp(tvb_get_string_enc(pinfo->pool, tvb, 0, 2, ENC_ASCII), ZEP_PREAMBLE)){
+    if(tvb_strneql(tvb, 0, ZEP_PREAMBLE, 2) != 0) {
         /*  This is not a Q51/ZigBee sniffer packet */
         return 0;
     }
@@ -217,7 +217,8 @@ static int dissect_zep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     /* Determine which dissector to call next. */
     if (lqi_mode) {
         /* CRC present, use standard IEEE dissector.
-         * XXX - 2-octet or 4-octet CRC?
+         * XXX - 2-octet or 4-octet CRC? For now, we have the user specify
+         * it.
          */
         next_dissector = ieee802154_handle;
     }

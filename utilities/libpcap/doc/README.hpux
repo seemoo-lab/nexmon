@@ -1,3 +1,40 @@
+If you use HP-UX, you must have at least version 10.20 and either the
+version of `cc` that supports C99 (`cc -AC99`) or else use the GNU C
+compiler.  The required DLPI streams package is standard starting with
+HP-UX 10.
+
+The HP implementation of DLPI is a little bit eccentric. Unlike
+Solaris, you must attach `/dev/dlpi` instead of the specific `/dev/*`
+network pseudo device entry in order to capture packets. The PPA is
+based on the ifnet "index" number.  Under HP-UX 10,
+DLPI can provide information for determining the PPA. It does not seem
+to be possible to trace the loopback interface. Unlike other DLPI
+implementations, PHYS implies MULTI and SAP and you get an error if you
+try to enable more than one promiscuous mode at a time.
+
+To capture outbound packets on HP-UX 10, you will, apparently, need a
+late "LAN products cumulative
+patch" (at one point, it was claimed that this would be PHNE_18173 for
+s700/10.20; at another point, it was claimed that the required patches
+were PHNE_20892, PHNE_20725 and PHCO_10947, or newer patches), and to do
+so on HP-UX 11 you will, apparently, need the latest lancommon/DLPI
+patches and the latest driver patch for the interface(s) in use on HP-UX
+11 (at one point, it was claimed that patches PHNE_19766, PHNE_19826,
+PHNE_20008, and PHNE_20735 did the trick).
+
+Furthermore, on HP-UX 10, you will need to turn on a kernel switch by
+doing
+
+	echo 'lanc_outbound_promisc_flag/W 1' | adb -w /stand/vmunix /dev/mem
+
+You would have to arrange that this happens on reboots; the right way to
+do that would probably be to put it into an executable script file
+`/sbin/init.d/outbound_promisc` and making
+`/sbin/rc2.d/S350outbound_promisc` a symbolic link to that script.
+
+Finally, testing shows that there can't be more than one simultaneous
+DLPI user per network interface.
+
 For HP-UX 11i (11.11) and later, there are no known issues with
 promiscuous mode under HP-UX.  If you are using a earlier version of
 HP-UX and cannot upgrade, please continue reading.
@@ -116,40 +153,6 @@ And another message to tcpdump-workers@tcpdump.org, from Rick Jones:
   Another option is to upgrade to 11i as outbound promiscuous mode support
   is there in the base OS, no patches required.
 
-Another posting:
-
-	https://groups.google.com/groups?selm=7d6gvn%24b3%241%40ocean.cup.hp.com
-
-indicates that you need to install the optional STREAMS product to do
-captures on HP-UX 9.x:
-
-  Newsgroups: comp.sys.hp.hpux
-  Subject:  Re: tcpdump HP/UX 9.x
-  Date: 03/22/1999
-  From: Rick Jones <foo@bar.baz>
-
-  Dave Barr (barr@cis.ohio-state.edu) wrote:
-  : Has anyone ported tcpdump (or something similar) to HP/UX 9.x?
-
-  I'm reasonably confident that any port of tcpdump to 9.X would require
-  the (then optional) STREAMS product.  This would bring DLPI, which is
-  what one uses to access interfaces in promiscuous mode.
-
-  I'm not sure that HP even sells the 9.X STREAMS product any longer,
-  since HP-UX 9.X is off the pricelist (well, maybe 9.10 for the old 68K
-  devices).
-
-  Your best bet is to be up on 10.20 or better if that is at all
-  possible.  If your hardware is supported by it, I'd go with HP-UX 11.
-  If you want to see the system's own outbound traffic, you'll never get
-  that functionality on 9.X, but it might happen at some point for 10.20
-  and 11.X.
-
-  rick jones
-
-(as per other messages cited here, the ability to see the system's own
-outbound traffic did happen).
-
 Rick Jones reports that HP-UX 11i needs no patches for outbound
 promiscuous mode support.
 
@@ -242,7 +245,7 @@ case $1 in
 # Syn-Flood-Protection an
 # ip_forwarding aus
 # Source-Routing aus
-# Ausgehende Packets an ethereal/tcpdump etc.
+# Ausgehende Packets an Wireshark/tcpdump etc.
 
 /usr/contrib/bin/nettune -s tcp_random_seq 2 || exit $ERROR
 /usr/contrib/bin/nettune -s hp_syn_protect 1 || exit $ERROR
@@ -252,3 +255,15 @@ echo 'lanc_outbound_promisc_flag/W 1' | adb -w /stand/vmunix /dev/mem  || exit $
 
 exit $OKAY
 -----------------------------------Cut Here-------------------------------------
+
+If you are trying to do packet capture with a FORE ATM card, you may or
+may not be able to. They usually only release their driver in object
+code so unless their driver supports packet capture, there's not much
+libpcap can do.
+
+If you get an error like:
+
+    tcpdump: recv_ack: bind error 0x???
+
+when using DLPI, look for the DL_ERROR_ACK error return values, usually
+in `/usr/include/sys/dlpi.h`, and find the corresponding value.

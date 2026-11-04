@@ -1,4 +1,4 @@
-/* packet-abis_oml.c
+/* packet-gsm_abis_oml.c
  * Routines for packet dissection of GSM A-bis OML (3GPP TS 12.21)
  * Copyright 2009-2011 by Harald Welte <laforge@gnumonks.org>
  * Copyright 2009 by Holger Hans Peter Freyther <zecke@selfish.org>
@@ -15,11 +15,11 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include <epan/lapd_sapi.h>
 #include <epan/prefs.h>
 #include <epan/unit_strings.h>
 
 #include "packet-gsm_a_common.h"
+#include "packet-lapd.h"
 
 void proto_register_abis_oml(void);
 void proto_reg_handoff_abis_oml(void);
@@ -1530,7 +1530,7 @@ ipacc_tr_ie_chan_usage(tvbuff_t *tvb, proto_tree *att_tree, int offset)
 static int
 dissect_ipacc_test_rep(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	proto_tree_add_item(tree, hf_attr_ipa_test_res, tvb, offset++,
 			    1, ENC_BIG_ENDIAN);
@@ -2003,7 +2003,7 @@ dissect_abis_oml(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	proto_item *ti;
 	proto_tree *oml_tree;
 	uint32_t remain_len;
-	int offset = 0;
+	unsigned offset = 0;
 
 	uint8_t	    msg_disc = tvb_get_uint8(tvb, offset);
 	uint8_t	    len	     = tvb_get_uint8(tvb, offset+3);

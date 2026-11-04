@@ -1,16 +1,5 @@
 SHELL = /bin/bash
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
-include ../version.mk
-include $(FW_PATH)/definitions.mk
-
-LOCAL_SRCS=$(wildcard src/*.c) src/ucode_compressed.c src/templateram.c
-COMMON_SRCS=$(wildcard $(NEXMON_ROOT)/patches/common/*.c)
-FW_SRCS=$(wildcard $(FW_PATH)/*.c)
-
-OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
-
-KERNEL_VERSION = $(shell uname -r | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
-DRIVER_FOLDER_NAME = $(NEXMON_ROOT)/patches/driver/brcmfmac_$(KERNEL_VERSION).y-nexmon
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
 
 CFLAGS= \
 	-fplugin=$(CCPLUGIN) \
@@ -44,7 +33,7 @@ ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j4 >log/driver.log
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) $(KBUILD_EXTRA_SYMV) -j4 >log/driver.log
 else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
 	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)mkdir -p log
@@ -122,22 +111,22 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
 	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
+	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/patches.log
 
 ###################################################################
 # ucode compression related
 ###################################################################
 
 gen/ucode.asm: $(FW_PATH)/ucode.bin
-	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
+	$(NEXMON_ROOT)/buildtools/b43-unified/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+#	$(NEXMON_ROOT)/buildtools/b43-unified/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43-unified/debug/include > tmp && mv tmp $@
 
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif
@@ -150,7 +139,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

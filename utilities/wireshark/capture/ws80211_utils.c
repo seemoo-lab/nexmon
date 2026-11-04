@@ -290,7 +290,7 @@ static void parse_band_he_cap_phy(struct ws80211_band *band,
 	 * and HT40MINUS channel types are confusing for users as at least
 	 * one won't work and will result in a failed tune. Instead
 	 * we should use a NL80211_CHAN_WIDTH_40 channel where the center
-	 * freq must be provided and calculate the approprate center freq
+	 * freq must be provided and calculate the appropriate center freq
 	 * for the non-overlapping channel as done for VHT80 and higher
 	 * bandwidths. So we really need a different channel type for that.
 	 */
@@ -1157,7 +1157,7 @@ int ws80211_set_fcs_validation(const char *name _U_, enum ws80211_fcs_validation
 	return WS80211_ERROR_NOT_SUPPORTED;
 }
 
-const char *network_manager_path = "/usr/sbin/NetworkManager"; /* Is this correct? */
+static const char *network_manager_path = "/usr/sbin/NetworkManager"; /* Is this correct? */
 const char *ws80211_get_helper_path(void) {
 	if (g_file_test(network_manager_path, G_FILE_TEST_IS_EXECUTABLE)) {
 		return network_manager_path;

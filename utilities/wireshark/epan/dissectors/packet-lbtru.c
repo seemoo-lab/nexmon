@@ -922,8 +922,7 @@ static int dissect_lbtru_ncf_list(tvbuff_t * tvb, int offset, packet_info * pinf
     {
         proto_item * sep_ncf_item = NULL;
 
-        ncf = tvb_get_ntohl(tvb, offset + len);
-        sep_ncf_item = proto_tree_add_item(ncf_tree, hf_lbtru_ncf_list_ncf, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        sep_ncf_item = proto_tree_add_item_ret_uint(ncf_tree, hf_lbtru_ncf_list_ncf, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN, &ncf);
         if (lbtru_expert_separate_ncfs)
         {
             expert_add_info_format(pinfo, sep_ncf_item, &ei_lbtru_analysis_ncf_ncf, "NCF 0x%08x %s", ncf, val_to_str(pinfo->pool, reason, lbtru_ncf_reason, "Unknown (0x%02x)"));
@@ -983,8 +982,7 @@ static int dissect_lbtru_nak_list(tvbuff_t * tvb, int offset, packet_info * pinf
         proto_item * sep_nak_item = NULL;
         lbm_uint32_t nak;
 
-        nak = tvb_get_ntohl(tvb, offset + len);
-        sep_nak_item = proto_tree_add_item(nak_tree, hf_lbtru_nak_list_nak, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        sep_nak_item = proto_tree_add_item_ret_uint(nak_tree, hf_lbtru_nak_list_nak, tvb, offset + len, sizeof(lbm_uint32_t), ENC_BIG_ENDIAN, &nak);
         if (lbtru_expert_separate_naks)
         {
             expert_add_info_format(pinfo, sep_nak_item, &ei_lbtru_analysis_nak_nak, "NAK 0x%08x", nak);
@@ -1353,8 +1351,7 @@ static int dissect_lbtru(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
                     return (total_dissected_len);
                 }
                 proto_tree_add_bitmask(opt_tree, tvb, ofs + O_LBTRU_BASIC_OPT_T_RES, hf_lbtru_opt_sid_flags, ett_lbtru_opt_sid_flags, sid_flags, ENC_BIG_ENDIAN);
-                proto_tree_add_item(opt_tree, hf_lbtru_opt_sid_session_id, tvb, ofs + L_LBTRU_BASIC_OPT_T + O_LBTRU_SID_OPT_T_SESSION_ID, L_LBTRU_SID_OPT_T_SESSION_ID, ENC_BIG_ENDIAN);
-                session_id = tvb_get_ntohl(tvb, ofs + L_LBTRU_BASIC_OPT_T + O_LBTRU_SID_OPT_T_SESSION_ID);
+                proto_tree_add_item_ret_uint(opt_tree, hf_lbtru_opt_sid_session_id, tvb, ofs + L_LBTRU_BASIC_OPT_T + O_LBTRU_SID_OPT_T_SESSION_ID, L_LBTRU_SID_OPT_T_SESSION_ID, ENC_BIG_ENDIAN, &session_id);
                 break;
             case LBTRU_NHDR_CID:
                 fld_item = proto_tree_add_item(lbtru_tree, hf_lbtru_opt_cid, tvb, ofs, L_LBTRU_BASIC_OPT_T + L_LBTRU_CID_OPT_T, ENC_NA);
@@ -1779,7 +1776,7 @@ void proto_register_lbtru(void)
         { &hf_lbtru_opt_sid_flags,
             { "Flags", "lbtru.opt_sid.flags", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtru_opt_sid_flags_ignore,
-            { "Ignore", "lbtru.opt_sid.flags.ignore", FT_BOOLEAN, L_LBTRU_BASIC_OPT_T_RES * 8, &(tfs_set_notset), LBTRU_OPT_IGNORE, NULL, HFILL } },
+            { "Ignore", "lbtru.opt_sid.flags.ignore", FT_BOOLEAN, L_LBTRU_BASIC_OPT_T_RES * 8, TFS(&tfs_set_notset), LBTRU_OPT_IGNORE, NULL, HFILL } },
         { &hf_lbtru_opt_sid_session_id,
             { "Session ID", "lbtru.opt_sid.session_id", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtru_opt_cid,
@@ -1791,7 +1788,7 @@ void proto_register_lbtru(void)
         { &hf_lbtru_opt_cid_flags,
             { "Flags", "lbtru.opt_cid.flags", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtru_opt_cid_flags_ignore,
-            { "Ignore", "lbtru.opt_cid.flags.ignore", FT_BOOLEAN, L_LBTRU_BASIC_OPT_T_RES * 8, &(tfs_set_notset), LBTRU_OPT_IGNORE, NULL, HFILL } },
+            { "Ignore", "lbtru.opt_cid.flags.ignore", FT_BOOLEAN, L_LBTRU_BASIC_OPT_T_RES * 8, TFS(&tfs_set_notset), LBTRU_OPT_IGNORE, NULL, HFILL } },
         { &hf_lbtru_opt_cid_client_id,
             { "Client ID", "lbtru.opt_cid.client_id", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbtru_opt_unknown,

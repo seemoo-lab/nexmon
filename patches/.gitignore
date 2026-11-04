@@ -6,6 +6,15 @@ gen
 *.o
 *.elf
 BUILD_NUMBER
-ucode_compressed.c
-templateram.c
+# Generated at build time from the extracted firmware blobs. The numbered
+# variants (templateram0.c, ucode1_compressed.c, ...) come from the
+# multi-template chips such as bcm4375b1 and bcm43439a0; listing only the
+# plain names left those showing up as untracked source after every build.
+ucode*_compressed.c
+templateram*.c
 *.bin
+# Patched firmware images and the generated C-style firmware header. The *.bin
+# rule above does not match the suffixed outputs the patch step writes
+# (bcmdhd_sta.bin_b1, w43439A0_..._combined.h).
+*.bin_*
+*_combined.h

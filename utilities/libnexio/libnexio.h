@@ -36,6 +36,17 @@ extern "C" {
 #endif
 
 int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
+int nex_ioctl_nonblock(struct nexio *nexio, int cmd, void *buf, int len);
+
+/* Direct D11 SHM / register memory-mapped access primitives (Kernel 7.4 commit f6e39ae4ea84) */
+int nex_read_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int *val);
+int nex_write_d11_shm(struct nexio *nexio, unsigned int offset, unsigned int val);
+int nex_read_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int *val);
+int nex_write_d11_reg(struct nexio *nexio, unsigned int offset, unsigned int val);
+int nex_read_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int *val);
+int nex_write_d11_templ(struct nexio *nexio, unsigned int offset, unsigned int val);
+int nex_read_d11_template_ram(struct nexio *nexio, unsigned int offset, void *buf, unsigned int len);
+int nex_write_d11_template_ram(struct nexio *nexio, unsigned int offset, const void *buf, unsigned int len);
 
 struct nexio *nex_init_ioctl(const char *ifname);
 struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);
@@ -49,6 +60,22 @@ struct nexio *nex_init_vendor_cmd(const char *ifname);
  * sockets, frees its ifreq, and (vendor-cmd path) its netlink socket and
  * callback. Safe on NULL and on a partially-initialised handle. */
 void nex_free(struct nexio *nexio);
+
+#ifndef _bcmwifi_channels_h_
+#ifndef _bcmwifi_channels_types_h_
+typedef unsigned short chanspec_t;
+#endif
+#endif
+
+#ifndef CHANSPEC_STR_LEN
+#define CHANSPEC_STR_LEN 20
+#endif
+
+/* Chanspec parsing and conversion helpers */
+chanspec_t wf_chspec_aton(const char *a);
+char *wf_chspec_ntoa(chanspec_t chspec, char *buf);
+char *wf_chspec_ntoa_ex(chanspec_t chspec, char *buf);
+bool wf_chspec_is_6g_psc(chanspec_t chspec);
 
 #ifdef __cplusplus
 }

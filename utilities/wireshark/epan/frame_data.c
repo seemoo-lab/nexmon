@@ -47,7 +47,7 @@
 static bool
 frame_delta_abs_time(const struct epan_session *epan, const frame_data *fdata, uint32_t prev_num, nstime_t *delta)
 {
-  const nstime_t *prev_abs_ts = (prev_num) ? epan_get_frame_ts(epan, prev_num) : NULL;
+  const nstime_t* prev_abs_ts;
 
   if (!fdata->has_ts) {
     /* We don't have a time stamp for this packet. Set the delta time
@@ -132,6 +132,36 @@ frame_rel_time(const struct epan_session *epan, const frame_data *fdata,
                                 delta);
 }
 
+bool
+frame_rel_start_time(const struct epan_session *epan, const frame_data *fdata,
+                     nstime_t *delta)
+{
+  if (!fdata->has_ts) {
+    /* We don't have a time stamp for this packet. Set the delta time
+       to zero, and return false. */
+    /* XXX - Would it make more sense to set the delta time to "unset"
+     * rather than zero here and in similar functions when returning
+     * false? */
+    nstime_set_zero(delta);
+    return false;
+  }
+
+  const nstime_t *start_ts = epan_get_start_ts(epan);
+
+  if (start_ts == NULL || nstime_is_unset(start_ts)) {
+    /* There isn't an explicit start time.  Set the delta
+       time to zero, and return false. */
+    nstime_set_zero(delta);
+    return false;
+  }
+
+  /* This frame has a time stamp and the start time stamp exists;
+     compute the delta between this frame's time stamp and
+     the start time stamp, and return true. */
+  nstime_delta(delta, &fdata->abs_ts, start_ts);
+  return true;
+}
+
 static int
 frame_compare_rel_times(const struct epan_session *epan,
                         const frame_data *fdata1, const frame_data *fdata2)
@@ -144,6 +174,20 @@ frame_compare_rel_times(const struct epan_session *epan,
 
   return frame_compare_time_deltas(fdata1, have_del_rel_ts1, &del_rel_ts1,
                                    fdata2, have_del_rel_ts2, &del_rel_ts2);
+}
+
+static int
+frame_compare_rel_start_times(const struct epan_session *epan,
+                        const frame_data *fdata1, const frame_data *fdata2)
+{
+  nstime_t del_rel_start_ts1, del_rel_start_ts2;
+  bool have_del_rel_start_ts1, have_del_rel_start_ts2;
+
+  have_del_rel_start_ts1 = frame_rel_start_time(epan, fdata1, &del_rel_start_ts1);
+  have_del_rel_start_ts2 = frame_rel_start_time(epan, fdata2, &del_rel_start_ts2);
+
+  return frame_compare_time_deltas(fdata1, have_del_rel_start_ts1, &del_rel_start_ts1,
+                                   fdata2, have_del_rel_start_ts2, &del_rel_start_ts2);
 }
 
 bool
@@ -212,6 +256,9 @@ frame_data_compare(const struct epan_session *epan, const frame_data *fdata1, co
     case TS_RELATIVE:
       return frame_compare_rel_times(epan, fdata1, fdata2);
 
+    case TS_RELATIVE_CAP:
+      return frame_compare_rel_start_times(epan, fdata1, fdata2);
+
     case TS_DELTA:
       return frame_compare_delta_times_prev_captured(epan, fdata1, fdata2);
 
@@ -245,6 +292,9 @@ frame_data_compare(const struct epan_session *epan, const frame_data *fdata1, co
 
   case COL_CUMULATIVE_BYTES:
     return COMPARE_NUM(cum_bytes);
+
+  case COL_TAG:
+    return 0; /* No meaningful sort order; treat all rows as equal */
 
   }
   g_return_val_if_reached(0);
@@ -326,6 +376,8 @@ frame_data_init(frame_data *fdata, uint32_t num, const wtap_rec *rec,
   fdata->shift_offset.nsecs = 0;
   fdata->frame_ref_num = 0;
   fdata->prev_dis_num = 0;
+  fdata->aggregation_key = NULL;
+  fdata->aggregated = false;
 }
 
 void
@@ -398,22 +450,14 @@ frame_data_reset(frame_data *fdata)
 {
   fdata->visited = 0;
 
-  if (fdata->pfd) {
-    g_slist_free(fdata->pfd);
-    fdata->pfd = NULL;
-  }
-
-  if (fdata->dependent_frames) {
-    g_hash_table_destroy(fdata->dependent_frames);
-    fdata->dependent_frames = NULL;
-  }
+  frame_data_destroy(fdata);
 }
 
 void
 frame_data_destroy(frame_data *fdata)
 {
   if (fdata->pfd) {
-    g_slist_free(fdata->pfd);
+    /* The file scope data has been freed already. */
     fdata->pfd = NULL;
   }
 
@@ -421,6 +465,17 @@ frame_data_destroy(frame_data *fdata)
     g_hash_table_destroy(fdata->dependent_frames);
     fdata->dependent_frames = NULL;
   }
+
+  frame_data_aggregation_free(fdata);
+}
+
+void frame_data_aggregation_free(frame_data* fdata)
+{
+  if (fdata->aggregation_key) {
+    g_free(fdata->aggregation_key);
+    fdata->aggregation_key = NULL;
+  }
+  fdata->aggregated = false;
 }
 
 /*

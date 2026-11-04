@@ -825,10 +825,10 @@ dissect_ncp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     uint16_t              ncp_burst_seqno, ncp_ack_seqno;
     uint16_t              flags = 0;
     proto_tree            *flags_tree = NULL;
-    int                   hdr_offset = 0;
-    int                   commhdr = 0;
-    int                   offset = 0;
-    int                   length_remaining;
+    unsigned              hdr_offset = 0;
+    unsigned              commhdr = 0;
+    unsigned              offset = 0;
+    unsigned              length_remaining;
     tvbuff_t              *next_tvb;
     uint32_t              ncp_burst_command, burst_len, burst_off, burst_file;
     uint8_t               subfunction;
@@ -1306,19 +1306,14 @@ dissect_ncp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             }
         } else {
             /*
-             * XXX - do this by using -1 and -1 as the length
-             * arguments to "tvb_new_subset_length_caplen()" and then calling
-             * "tvb_set_reported_length()"?  That'll throw an
-             * exception if "data_len" goes past the reported
+             * XXX - do this by calling "tvb_new_subset_remaining()"
+             * and then "tvb_set_reported_length()"?  That'll throw
+             * an exception if "data_len" goes past the reported
              * length of the packet, but that's arguably a
              * feature in this case.
              */
-            length_remaining = tvb_captured_length_remaining(tvb, offset);
-            if (length_remaining > data_len)
-                length_remaining = data_len;
             if (data_len != 0) {
-                call_data_dissector(tvb_new_subset_length_caplen(tvb, offset,
-                    length_remaining, data_len),
+                call_data_dissector(tvb_new_subset_length(tvb, offset, data_len),
                     pinfo, ncp_tree);
             }
         }
@@ -1329,7 +1324,7 @@ dissect_ncp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         break;
 
     default:
-        proto_tree_add_expert_format(ncp_tree, pinfo, &ei_ncp_type, tvb, commhdr + 6, -1,
+        proto_tree_add_expert_format_remaining(ncp_tree, pinfo, &ei_ncp_type, tvb, commhdr + 6,
             "%s packets not supported yet",
             val_to_str(pinfo->pool, header.type, ncp_type_vals,
                 "Unknown type (0x%04x)"));

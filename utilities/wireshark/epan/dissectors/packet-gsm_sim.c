@@ -16,12 +16,14 @@
 
 #include <epan/packet.h>
 #include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <epan/expert.h>
 #include <epan/reassemble.h>
 
 #include <wiretap/wtap.h>
 
 #include "packet-gsmtap.h"
+#include "packet-sgp22.h"
 #include "packet-sgp32.h"
 
 void proto_register_gsm_sim(void);
@@ -94,6 +96,64 @@ static int hf_select_selection;
 
 static int hf_status_application_status;
 static int hf_status_return_data;
+
+static int hf_template_tag;
+static int hf_template_len;
+
+/* FCP template */
+static int hf_fcp;
+static int hf_fcp_tag;
+static int hf_fcp_len;
+static int hf_fcp_value;
+static int hf_fcp_file_size;
+static int hf_fcp_file_id;
+static int hf_fcp_df_name;
+static int hf_fcp_file_rfu_byte;
+static int hf_fcp_file_rfu;
+static int hf_fcp_file_accessibility;
+static int hf_fcp_file_type;
+static int hf_fcp_file_type_ext;
+static int hf_fcp_ef_structure;
+static int hf_fcp_ef_structure_ext;
+static int hf_fcp_data_coding_byte;
+static int hf_fcp_lifecycle_status;
+static int hf_fcp_security_attr_compact;
+static int hf_fcp_security_attr_expanded;
+static int hf_fcp_security_attr_referenced;
+static int hf_fcp_pin_status_do;
+static int hf_fcp_total_file_size;
+static int hf_fcp_sfi;
+static int hf_fcp_record_len;
+static int hf_fcp_num_records;
+static int hf_fcp_prop;
+static int hf_fcp_prop_tag;
+static int hf_fcp_prop_len;
+static int hf_fcp_prop_value;
+static int hf_fcp_prop_uicc_clock_stop_allowed;
+static int hf_fcp_prop_uicc_clock_stop_rfu;
+static int hf_fcp_prop_uicc_clock_stop_0;
+static int hf_fcp_prop_uicc_clock_stop_1;
+static int hf_fcp_prop_uicc_supply_voltage_a;
+static int hf_fcp_prop_uicc_supply_voltage_b;
+static int hf_fcp_prop_uicc_supply_voltage_c;
+static int hf_fcp_prop_uicc_supply_voltage_d;
+static int hf_fcp_prop_app_supply_voltage_class;
+static int hf_fcp_prop_app_power_consumption;
+static int hf_fcp_prop_app_frequency;
+static int hf_fcp_prop_min_app_clock_freq;
+static int hf_fcp_prop_avail_memory;
+static int hf_fcp_prop_file_details_der_encoding;
+static int hf_fcp_prop_file_details_rfu;
+static int hf_fcp_prop_reserved_file_size;
+static int hf_fcp_prop_max_file_size;
+static int hf_fcp_prop_supported_sys_cmds_terminal_capability;
+static int hf_fcp_prop_supported_sys_cmds_rfu;
+static int hf_fcp_prop_uicc_env_conditions_temp_class;
+static int hf_fcp_prop_uicc_env_conditions_high_humidity;
+static int hf_fcp_prop_uicc_env_conditions_rfu;
+static int hf_fcp_prop_platform_to_platform_cat_secured_apdu;
+static int hf_fcp_prop_test_config_state;
+static int hf_fcp_prop_test_config_criterion_type;
 
 static int hf_search_ef_identifier;
 static int hf_search_mode;
@@ -429,6 +489,24 @@ static int hf_tp_rfu13;
 static int hf_tp_pa_prov_loci_ng_ran_satellite_timing_advance_info;
 static int hf_tp_rfu14;
 
+/* Terminal Capability */
+static int hf_tc;
+static int hf_tc_tag;
+static int hf_tc_len;
+static int hf_tc_value;
+static int hf_tc_actual_used_supply_voltage_class;
+static int hf_tc_max_available_power_supply;
+static int hf_tc_actual_used_clock_frequency;
+static int hf_tc_additional_interfaces_uicc_clf;
+static int hf_tc_additional_interfaces_rfu;
+static int hf_tc_sgp22_luid;
+static int hf_tc_sgp22_lpdd;
+static int hf_tc_sgp22_ldsd;
+static int hf_tc_sgp22_luie;
+static int hf_tc_sgp22_rfu;
+static int hf_tc_sgp32_ipad;
+static int hf_tc_sgp32_rfu;
+
 static int hf_cat_ber_tag;
 
 static int hf_related_to;
@@ -476,8 +554,11 @@ static int ett_tprof_b36;
 static int ett_tprof_b37;
 static int ett_tprof_b38;
 static int ett_tprof_b39;
+static int ett_terminal_capability;
 static int ett_auth_challenge;
 static int ett_auth_response;
+static int ett_fcp;
+static int ett_fcp_proprietary;
 
 static expert_field ei_unknown_bytes;
 
@@ -947,6 +1028,147 @@ static const value_string ber_tlv_cat_tag_vals[] = {
 	{ 0, NULL }
 };
 
+static const value_string template_tag_vals[] = {
+	{ 0x62, "FCP template" },
+	{ 0x6F, "FCI template" },
+	{ 0xA9, "Terminal Capability" },
+	{ 0, NULL }
+};
+
+static const value_string supply_voltage_class_vals[] = {
+	{ 0x01, "Class A (4.5 - 5.5 V)" },
+	{ 0x02, "Class B (2.7 - 3.3 V)" },
+	{ 0x04, "Class C (1.62 - 1.98 V)" },
+	{ 0x08, "Class D (1.1 - 1.3 V)" },
+	{ 0x10, "Class E (RFU)" },
+	{ 0, NULL }
+};
+
+/* FCP template tags (ETSI TS 102.221) */
+static const value_string fcp_tag_vals[] = {
+	{ 0x80, "File size" },
+	{ 0x81, "Total file size" },
+	{ 0x82, "File Descriptor" },
+	{ 0x83, "File Identifier" },
+	{ 0x84, "DF name (AID)" },
+	{ 0x88, "Short File Identifier (SFI)" },
+	{ 0x8A, "Life Cycle Status Integer" },
+	{ 0x8B, "Security attributes (referenced to expanded format)" },
+	{ 0x8C, "Security attributes (compact format)" },
+	{ 0xA5, "Proprietary information" },
+	{ 0xAB, "Security attributes (expanded format)" },
+	{ 0xC6, "PIN Status Template DO" },
+	{ 0xE0, "ISD-R Proprietary Application Template"},
+	{ 0xE1, "ISD-R Proprietary Application Template IoT"},
+	{ 0, NULL }
+};
+
+static const true_false_string fcp_file_accessibility_tfs = {
+	"Shareable file",
+	"Not shareable file"
+};
+
+static const value_string fcp_file_type_vals[] = {
+	{ 0x0, "Working EF" },
+	{ 0x1, "Internal EF" },
+	{ 0x2, "RFU" },
+	{ 0x3, "RFU" },
+	{ 0x4, "RFU" },
+	{ 0x5, "RFU" },
+	{ 0x6, "RFU" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_file_type_ext_vals[] = {
+	{ 0x38, "DF or ADF" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_ef_structure_vals[] = {
+	{ 0x00, "No information given" },
+	{ 0x01, "Transparent structure" },
+	{ 0x02, "Linear fixed structure" },
+	{ 0x03, "RFU" },
+	{ 0x04, "RFU" },
+	{ 0x05, "RFU" },
+	{ 0x06, "Cyclic structure" },
+	{ 0x07, "RFU" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_ef_structure_ext_vals[] = {
+	{ 0x39, "BER-TLV structure" },
+	{ 0, NULL }
+};
+
+static const range_string fcp_lifecycle_status_vals[] = {
+	{ 0x00, 0x00, "No information given" },
+	{ 0x01, 0x01, "Creation state" },
+	{ 0x02, 0x02, "RFU" },
+	{ 0x03, 0x03, "Initialization state" },
+	{ 0x04, 0x04, "Operational state - deactivated" },
+	{ 0x05, 0x05, "Operational state - activated" },
+	{ 0x06, 0x06, "Operational state - deactivated" },
+	{ 0x07, 0x07, "Operational state - activated" },
+	{ 0x08, 0x0B, "RFU" },
+	{ 0x0C, 0x0F, "Termination state" },
+	{ 0x10, 0xFF, "Proprietary" },
+	{ 0, 0, NULL }
+};
+
+static const value_string fcp_prop_tag_vals[] = {
+	{ 0x80, "UICC characteristics" },
+	{ 0x81, "Application power consumption" },
+	{ 0x82, "Minimum application clock frequency" },
+	{ 0x83, "Amount of available memory" },
+	{ 0x84, "File details" },
+	{ 0x85, "Reserved file size" },
+	{ 0x86, "Maximum file size" },
+	{ 0x87, "Supported system commands" },
+	{ 0x88, "Specific UICC environmental conditions" },
+	{ 0x89, "Platform to Platform CAT Secured APDU" },
+	{ 0x8A, "Test configuration state" },
+	{ 0x8B, "Test configuration criterion type" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_uicc_clock_stop_0_vals[] = {
+	{ 0x00, "Never" },
+	{ 0x01, "Unless at high level" },
+	{ 0x02, "Unless at low level"},
+	{ 0x03, "RFU" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_uicc_clock_stop_1_vals[] = {
+	{ 0x00, "No preferred level" },
+	{ 0x01, "High level preferred" },
+	{ 0x02, "Low level preferred" },
+	{ 0x03, "RFU" },
+	{ 0, NULL }
+};
+
+static const value_string fcp_uicc_env_conditions_temp_class_vals[] = {
+	{ 0x00, "Standard temperature range" },
+	{ 0x01, "Temperature class A" },
+	{ 0x02, "Temperature class B" },
+	{ 0x03, "Temperature class C" },
+	{ 0x04, "RFU" },
+	{ 0x05, "RFU" },
+	{ 0x06, "RFU" },
+	{ 0x07, "RFU" },
+	{ 0, NULL }
+};
+
+static const value_string terminal_capability_tag_vals[] = {
+	{ 0x80, "Terminal power supply" },
+	{ 0x81, "Extended logical channels terminal support" },
+	{ 0x82, "Additional interfaces support" },
+	{ 0x83, "RSP Device Capabilities (SGP.22)" },
+	{ 0x84, "IoT Device Capabilities (SGP.32)" },
+	{ 0, NULL }
+};
+
 static const value_string chan_op_vals[] = {
 	{ 0x00, "Open Channel" },
 	{ 0x80, "Close Channel" },
@@ -1254,7 +1476,7 @@ static const value_string adf_usim_efs[] = {
 	{ 0x6f01, "EF.5GS3GPPAccessNASSecCtxt" },
 	{ 0x6f02, "EF.5GSnon3GPPAccessNASSecCtxt" },
 	{ 0x6f03, "EF.SCICI" },
-	{ 0x6f04, "EF.UACAcessIdConfig" },
+	{ 0x6f04, "EF.UACAccessIdConfig" },
 	{ 0x6f06, "EF.ARR" },
 	{ 0x6f07, "EF.IMSI" },
 	{ 0x6f08, "EF.Keys" },
@@ -1594,6 +1816,354 @@ static const char *get_sw_string(wmem_allocator_t *scope, uint16_t sw)
 	return val_to_str(scope, sw, sw_vals, "Unknown status word: %04x");
 }
 
+/* Parse BER-TLV tag */
+static int
+get_ber_tlv_tag(tvbuff_t *tvb, int offset, uint32_t *tag, uint8_t *tag_size)
+{
+	*tag = tvb_get_uint8(tvb, offset++);
+	*tag_size = 1;
+
+	if ((*tag & 0x1F) == 0x1F) {
+		/* Extended tag */
+		*tag = 0;
+		while (tvb_reported_length_remaining(tvb, offset) > 0) {
+			uint8_t tag_byte = tvb_get_uint8(tvb, offset++);
+			*tag = (*tag << 7) | (tag_byte & 0x7F);
+			(*tag_size)++;
+
+			if ((tag_byte & 0x80) == 0) {
+				break; /* Last tag byte */
+			}
+		}
+	}
+
+	return offset;
+}
+
+/* Parse BER-TLV length */
+static int
+get_ber_tlv_len(tvbuff_t *tvb, int offset, uint32_t *len, uint8_t *len_size)
+{
+	*len = tvb_get_uint8(tvb, offset++);
+	*len_size = 1;
+
+	if (*len & 0x80) {
+		int n = *len & 0x7F;
+		while (n--) {
+			*len = (*len << 8) | tvb_get_uint8(tvb, offset++);
+			(*len_size)++;
+		}
+	}
+
+	return offset;
+}
+
+static void
+power_consumption_frequency_cf(char *result, uint32_t frequency)
+{
+	if (frequency == 0xFF) {
+		snprintf(result, ITEM_LABEL_LENGTH, "No frequency");
+	} else {
+		double freq_mhz = frequency * 0.1;
+		snprintf(result, ITEM_LABEL_LENGTH, "%.1f MHz", freq_mhz);
+	}
+}
+
+/* Dissect FCP proprietary information */
+static int
+dissect_fcp_proprietary_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length)
+{
+	proto_item *prop_ti;
+	proto_tree *prop_tree;
+	uint32_t tag, len;
+	uint8_t tag_size, len_size;
+	bool clock_stop_allowed;
+
+	int start_offset;
+	int end_offset = offset + length;
+
+	while (offset < end_offset) {
+		start_offset = offset;
+
+		offset = get_ber_tlv_tag(tvb, offset, &tag, &tag_size);
+		offset = get_ber_tlv_len(tvb, offset, &len, &len_size);
+
+		prop_ti = proto_tree_add_bytes_format(tree, hf_fcp_prop, tvb, start_offset,
+				tag_size + len_size + len, NULL, "%s%s%s",
+				val_to_str(pinfo->pool, tag, fcp_prop_tag_vals, "Unknown tag '%02x'"),
+				(len ? ": " : ""), tvb_bytes_to_str(pinfo->pool, tvb, offset, len));
+		prop_tree = proto_item_add_subtree(prop_ti, ett_fcp_proprietary);
+
+		proto_tree_add_item(prop_tree, hf_fcp_prop_tag, tvb, start_offset, tag_size, ENC_BIG_ENDIAN);
+		proto_tree_add_uint(prop_tree, hf_fcp_prop_len, tvb, start_offset + tag_size, len_size, len);
+
+		if (len == 0) {
+			/* No value field */
+			continue;
+		}
+
+		switch (tag) {
+		case 0x80: /* UICC characteristics */
+			proto_tree_add_item_ret_boolean(prop_tree, hf_fcp_prop_uicc_clock_stop_allowed, tvb, offset, 1, ENC_NA, &clock_stop_allowed);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_clock_stop_rfu, tvb, offset, 1, ENC_NA);
+			if (clock_stop_allowed) {
+				proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_clock_stop_1, tvb, offset, 1, ENC_NA);
+			} else {
+				proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_clock_stop_0, tvb, offset, 1, ENC_NA);
+			}
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_supply_voltage_a, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_supply_voltage_b, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_supply_voltage_c, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_supply_voltage_d, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x81: /* Application power consumption */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_app_supply_voltage_class, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_app_power_consumption, tvb, offset+1, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_app_frequency, tvb, offset+2, 1, ENC_NA);
+			break;
+		case 0x82: /* Minimum application clock frequency */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_min_app_clock_freq, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x83: /* Amount of available memory */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_avail_memory, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x84: /* File details */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_file_details_der_encoding, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_file_details_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x85: /* Reserved file size */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_reserved_file_size, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x86: /* Maximum file size */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_max_file_size, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x87: /* Supported system commands */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_supported_sys_cmds_terminal_capability, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_supported_sys_cmds_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x88: /* Specific UICC environmental conditions */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_env_conditions_temp_class, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_env_conditions_high_humidity, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(prop_tree, hf_fcp_prop_uicc_env_conditions_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x89: /* Platform to Platform CAT Secured APDU */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_platform_to_platform_cat_secured_apdu, tvb, offset, len, ENC_NA);
+			break;
+		case 0x8A: /* Test configuration state */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_test_config_state, tvb, offset, len, ENC_NA);
+			break;
+		case 0x8B: /* Test configuration criterion type */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_test_config_criterion_type, tvb, offset, len, ENC_NA);
+			break;
+		default:
+			/* Unknown proprietary tag */
+			proto_tree_add_item(prop_tree, hf_fcp_prop_value, tvb, offset, len, ENC_NA);
+			break;
+		}
+
+		offset += len;
+	}
+
+	return offset;
+}
+
+/* Dissect FCP (File Control Parameters) template as defined in ETSI TS 102.221 */
+static int
+dissect_fcp_template(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length)
+{
+	proto_item *value_ti;
+	proto_tree *value_tree;
+	tvbuff_t *subtvb;
+	uint32_t tag, len;
+	uint8_t tag_size, len_size;
+	uint8_t byte;
+
+	int start_offset = offset;
+	int end_offset = offset + length;
+
+	offset = get_ber_tlv_tag(tvb, offset, &tag, &tag_size);
+	/* Check for FCP and FCI template tags */
+	if (tag != 0x62 && tag != 0x6F) {
+		return 0;
+	}
+	offset = get_ber_tlv_len(tvb, offset, &len, &len_size);
+
+	proto_tree_add_item(tree, hf_template_tag, tvb, start_offset, tag_size, ENC_BIG_ENDIAN);
+	proto_tree_add_uint(tree, hf_template_len, tvb, start_offset + tag_size, len_size, len);
+
+	while (offset < end_offset) {
+		start_offset = offset;
+
+		offset = get_ber_tlv_tag(tvb, offset, &tag, &tag_size);
+		offset = get_ber_tlv_len(tvb, offset, &len, &len_size);
+
+		value_ti = proto_tree_add_bytes_format(tree, hf_fcp, tvb, start_offset,
+				tag_size + len_size + len, NULL, "%s%s%s",
+				val_to_str(pinfo->pool, tag, fcp_tag_vals, "Unknown tag '%02x'"),
+				(len ? ": " : ""), tvb_bytes_to_str(pinfo->pool, tvb, offset, len));
+		value_tree = proto_item_add_subtree(value_ti, ett_fcp);
+
+		proto_tree_add_item(value_tree, hf_fcp_tag, tvb, start_offset, tag_size, ENC_BIG_ENDIAN);
+		proto_tree_add_uint(value_tree, hf_fcp_len, tvb, start_offset + tag_size, len_size, len);
+
+		if (len == 0) {
+			/* No value field */
+			continue;
+		}
+
+		switch (tag) {
+		case 0x80: /* File size */
+			proto_tree_add_item(value_tree, hf_fcp_file_size, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x81: /* Total file size */
+			proto_tree_add_item(value_tree, hf_fcp_total_file_size, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x82: /* File Descriptor */
+			byte = tvb_get_uint8(tvb, offset);
+			if (byte & 0x80) {
+				proto_tree_add_item(value_tree, hf_fcp_file_rfu_byte, tvb, offset, 1, ENC_NA);
+			} else {
+				proto_tree_add_item(value_tree, hf_fcp_file_rfu, tvb, offset, 1, ENC_NA);
+				proto_tree_add_item(value_tree, hf_fcp_file_accessibility, tvb, offset, 1, ENC_NA);
+				if ((byte & 0x3F) == 0x38) { /* DF or ADF */
+					proto_tree_add_item(value_tree, hf_fcp_file_type_ext, tvb, offset, 1, ENC_NA);
+				} else if ((byte & 0x3F) == 0x39) { /* BER-TLV structure */
+					proto_tree_add_item(value_tree, hf_fcp_ef_structure_ext, tvb, offset, 1, ENC_NA);
+				} else {
+					proto_tree_add_item(value_tree, hf_fcp_file_type, tvb, offset, 1, ENC_NA);
+					proto_tree_add_item(value_tree, hf_fcp_ef_structure, tvb, offset, 1, ENC_NA);
+				}
+			}
+			if (len >= 2) {
+				proto_tree_add_item(value_tree, hf_fcp_data_coding_byte, tvb, offset + 1, 1, ENC_NA);
+			}
+			if (len >= 5) {
+				proto_tree_add_item(value_tree, hf_fcp_record_len, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+				proto_tree_add_item(value_tree, hf_fcp_num_records, tvb, offset + 4, 1, ENC_NA);
+			}
+			break;
+		case 0x83: /* File Identifier */
+			proto_tree_add_item(value_tree, hf_fcp_file_id, tvb, offset, len, ENC_BIG_ENDIAN);
+			break;
+		case 0x84: /* DF name (AID) */
+			proto_tree_add_item(value_tree, hf_fcp_df_name, tvb, offset, len, ENC_NA);
+			break;
+		case 0x88: /* Short File Identifier (SFI) */
+			proto_tree_add_item(value_tree, hf_fcp_sfi, tvb, offset, len, ENC_NA);
+			break;
+		case 0x8A: /* Life Cycle Status Integer */
+			proto_tree_add_item(value_tree, hf_fcp_lifecycle_status, tvb, offset, len, ENC_NA);
+			break;
+		case 0x8B: /* Security attributes (referenced to expanded format) */
+			proto_tree_add_item(value_tree, hf_fcp_security_attr_referenced, tvb, offset, len, ENC_NA);
+			break;
+		case 0x8C: /* Security attributes (compact format) */
+			proto_tree_add_item(value_tree, hf_fcp_security_attr_compact, tvb, offset, len, ENC_NA);
+			break;
+		case 0xA5: /* Proprietary information */
+			dissect_fcp_proprietary_info(tvb, pinfo, value_tree, offset, len);
+			break;
+		case 0xAB: /* Security attributes (expanded format) */
+			proto_tree_add_item(value_tree, hf_fcp_security_attr_expanded, tvb, offset, len, ENC_NA);
+			break;
+		case 0xC6: /* PIN Status Template DO */
+			proto_tree_add_item(value_tree, hf_fcp_pin_status_do, tvb, offset, len, ENC_NA);
+			break;
+		case 0xE0: /* ISDRProprietaryApplicationTemplate (SGP.22) */
+			subtvb = tvb_new_subset_length(tvb, start_offset, tag_size + len_size + len);
+			dissect_sgp22_ISDRProprietaryApplicationTemplate_PDU(subtvb, pinfo, value_tree, NULL);
+			break;
+		case 0xE1: /* ISDRProprietaryApplicationTemplateIoT (SGP.32) */
+			subtvb = tvb_new_subset_length(tvb, start_offset, tag_size + len_size + len);
+			dissect_sgp32_ISDRProprietaryApplicationTemplateIoT_PDU(subtvb, pinfo, value_tree, NULL);
+			break;
+		default:
+			/* Unknown tag */
+			proto_tree_add_item(value_tree, hf_fcp_value, tvb, offset, len, ENC_NA);
+			break;
+		}
+
+		offset += len;
+	}
+
+	return offset;
+}
+
+static int
+dissect_terminal_capability(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length)
+{
+	proto_item *value_ti;
+	proto_tree *value_tree;
+	uint32_t tag, len;
+	uint8_t tag_size, len_size;
+
+	int start_offset = offset;
+	int end_offset = offset + length;
+
+	offset = get_ber_tlv_tag(tvb, offset, &tag, &tag_size);
+	if (tag != 0xA9) {
+		return 0;
+	}
+	offset = get_ber_tlv_len(tvb, offset, &len, &len_size);
+
+	proto_tree_add_item(tree, hf_template_tag, tvb, start_offset, tag_size, ENC_BIG_ENDIAN);
+	proto_tree_add_uint(tree, hf_template_len, tvb, start_offset + tag_size, len_size, len);
+
+	while (offset < end_offset) {
+		start_offset = offset;
+
+		offset = get_ber_tlv_tag(tvb, offset, &tag, &tag_size);
+		offset = get_ber_tlv_len(tvb, offset, &len, &len_size);
+
+		value_ti = proto_tree_add_bytes_format(tree, hf_tc, tvb, start_offset,
+				tag_size + len_size + len, NULL, "%s%s%s",
+				val_to_str(pinfo->pool, tag, terminal_capability_tag_vals, "Unknown tag '%02x'"),
+				(len ? ": " : ""), tvb_bytes_to_str(pinfo->pool, tvb, offset, len));
+		value_tree = proto_item_add_subtree(value_ti, ett_terminal_capability);
+
+		proto_tree_add_item(value_tree, hf_tc_tag, tvb, start_offset, tag_size, ENC_BIG_ENDIAN);
+		proto_tree_add_uint(value_tree, hf_tc_len, tvb, start_offset + tag_size, len_size, len);
+
+		if (len == 0) {
+			/* No value field */
+			continue;
+		}
+
+		switch (tag) {
+		case 0x80: /* Terminal power supply */
+			proto_tree_add_item(value_tree, hf_tc_actual_used_supply_voltage_class, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_max_available_power_supply, tvb, offset+1, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_actual_used_clock_frequency, tvb, offset+2, 1, ENC_NA);
+			break;
+		case 0x81: /* Extended logical channels terminal support */
+			break;
+		case 0x82: /* Additional interfaces support */
+			proto_tree_add_item(value_tree, hf_tc_additional_interfaces_uicc_clf, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_additional_interfaces_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x83: /* RSP Device Capabilities (SGP.22) */
+			proto_tree_add_item(value_tree, hf_tc_sgp22_luid, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_sgp22_lpdd, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_sgp22_ldsd, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_sgp22_luie, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_sgp22_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		case 0x84: /* IoT Device Capabilities (SGP.32) */
+			proto_tree_add_item(value_tree, hf_tc_sgp32_ipad, tvb, offset, 1, ENC_NA);
+			proto_tree_add_item(value_tree, hf_tc_sgp32_rfu, tvb, offset, 1, ENC_NA);
+			break;
+		default:
+			/* Unknown tag */
+			proto_tree_add_item(value_tree, hf_tc_value, tvb, offset, len, ENC_NA);
+			break;
+		}
+
+		offset += len;
+	}
+
+	return offset;
+}
+
 static int
 dissect_bertlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
@@ -1605,10 +2175,9 @@ dissect_bertlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 		uint32_t len;
 		tvbuff_t *subtvb;
 
-		proto_tree_add_item(tree, hf_cat_ber_tag, tvb, pos, 1, ENC_BIG_ENDIAN);
-
 		/* FIXME: properly follow BER coding rules */
-		tag = tvb_get_uint8(tvb, pos++);
+		proto_tree_add_item_ret_uint8(tree, hf_cat_ber_tag, tvb, pos, 1, ENC_BIG_ENDIAN, &tag);
+		pos++;
 		col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",
 				val_to_str(pinfo->pool, tag, ber_tlv_cat_tag_vals, "%02x "));
 		len = tvb_get_uint8(tvb, pos++);
@@ -1804,6 +2373,33 @@ dissect_apdu_le(proto_tree *tree, tvbuff_t *tvb, int offset, bool extended_len, 
 	}
 }
 
+static void
+dissect_storage_data_command(tvbuff_t *tvb, int offset, int length, packet_info *pinfo,
+			     proto_tree *tree, proto_tree *sim_tree, gsm_sim_transaction_t *gsm_sim_trans)
+{
+	bool last_block = gsm_sim_trans->cmd_p1 & 0x80; /* Block chaining bit */
+	uint32_t frag_number = gsm_sim_trans->cmd_p2;   /* Block number */
+	tvbuff_t *subtvb;
+
+	if (frag_number == 0 && last_block) {
+		/* No reassembly needed. */
+		subtvb = tvb_new_subset_length(tvb, offset, length);
+	} else {
+		fragment_head *frag_msg;
+
+		/* The APDU reassembly is using the first command frame number as id. */
+		frag_msg = fragment_add_seq_check(&gsm_sim_reassembly_table, tvb, offset, pinfo,
+						  gsm_sim_trans->related_trans->cmd_frame, NULL,
+						  frag_number, length, !last_block);
+		subtvb = process_reassembled_data(tvb, offset, pinfo, "Reassembled APDU",
+						  frag_msg, &gsm_sim_frag_items, NULL, sim_tree);
+	}
+
+	if (subtvb && ((gsm_sim_trans->cmd_p1 & 0x78) == 0x10) && is_sgp32_request(subtvb)) {
+		dissect_sgp32_request(subtvb, pinfo, tree, NULL);
+	}
+}
+
 static tvbuff_t *
 gsm_sim_apdu_reassemble(tvbuff_t *tvb, int offset, packet_info *pinfo, gsm_sim_transaction_t *gsm_sim_trans,
 			proto_tree *sim_tree, uint8_t *apdu_ins, uint8_t *apdu_p1, uint8_t *apdu_p2)
@@ -1823,9 +2419,9 @@ gsm_sim_apdu_reassemble(tvbuff_t *tvb, int offset, packet_info *pinfo, gsm_sim_t
 	if (sw1 == 0x61 || gsm_sim_trans->cmd_ins == 0xC0) {
 		fragment_head *frag_msg;
 
-		/* The APDU reassembly is using the command frame number as id. */
+		/* The APDU reassembly is using the command frame number + 1 as id. */
 		frag_msg = fragment_add_seq_next(&gsm_sim_reassembly_table, tvb, offset, pinfo,
-						 gsm_sim_trans->related_trans->cmd_frame, NULL,
+						 gsm_sim_trans->related_trans->cmd_frame + 1, NULL,
 						 apdu_len, sw1 == 0x61);
 		subtvb = process_reassembled_data(tvb, offset, pinfo, "Reassembled APDU",
 						  frag_msg, &gsm_sim_frag_items, NULL, sim_tree);
@@ -1847,7 +2443,8 @@ gsm_sim_apdu_reassemble(tvbuff_t *tvb, int offset, packet_info *pinfo, gsm_sim_t
 
 static int
 dissect_gsm_apdu(uint8_t ins, uint8_t p1, uint8_t p2, uint16_t p3, bool extended_len,
-		 tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, proto_tree *sim_tree)
+		 tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, proto_tree *sim_tree,
+		 gsm_sim_transaction_t *gsm_sim_trans)
 {
 	uint16_t g16;
 	tvbuff_t *subtvb;
@@ -1873,6 +2470,11 @@ dissect_gsm_apdu(uint8_t ins, uint8_t p1, uint8_t p2, uint16_t p3, bool extended
 	case 0xF2: /* STATUS */
 		proto_tree_add_item(sim_tree, hf_status_application_status, tvb, offset+P1_OFFS, 1, ENC_BIG_ENDIAN);
 		proto_tree_add_item(sim_tree, hf_status_return_data, tvb, offset+P2_OFFS, 1, ENC_BIG_ENDIAN);
+		if (p1 == 0x01) {
+			col_append_str(pinfo->cinfo, COL_INFO, "(initialized) ");
+		} else if (p1 == 0x02) {
+			col_append_str(pinfo->cinfo, COL_INFO, "(terminate) ");
+		}
 		break;
 	case 0xB0: /* READ BINARY */
 	case 0xD6: /* UPDATE BINARY */
@@ -2113,6 +2715,11 @@ dissect_gsm_apdu(uint8_t ins, uint8_t p1, uint8_t p2, uint16_t p3, bool extended
 		proto_tree_add_item(sim_tree, hf_apdu_data, tvb, offset+data_offs, p3, ENC_NA);
 		offset += data_offs + p3;
 		break;
+	case 0xAA: /* TERMINAL CAPABILITY */
+		dissect_apdu_lc(sim_tree, tvb, offset+P3_OFFS, extended_len);
+		dissect_terminal_capability(tvb, pinfo, sim_tree, offset+data_offs, p3);
+		offset += data_offs + p3;
+		break;
 	case 0x70: /* MANAGE CHANNEL */
 		if (tvb_reported_length_remaining(tvb, offset+P3_OFFS)) {
 			dissect_apdu_le(sim_tree, tvb, offset+P3_OFFS, extended_len, true);
@@ -2150,11 +2757,8 @@ dissect_gsm_apdu(uint8_t ins, uint8_t p1, uint8_t p2, uint16_t p3, bool extended
 		break;
 	case 0xE2: /* STORE DATA */
 		dissect_apdu_lc(sim_tree, tvb, offset+P3_OFFS, extended_len);
-		subtvb = tvb_new_subset_length(tvb, offset+data_offs, p3);
-		if (((p1 & 0x78) == 0x10) && is_sgp32_request(subtvb)) {
-			dissect_sgp32_request(subtvb, pinfo, tree, NULL);
-		}
 		proto_tree_add_item(sim_tree, hf_apdu_data, tvb, offset+data_offs, p3, ENC_NA);
+		dissect_storage_data_command(tvb, offset+data_offs, p3, pinfo, tree, sim_tree, gsm_sim_trans);
 		offset += data_offs + p3;
 		if ((p1 & 0x80) && tvb_reported_length_remaining(tvb, offset)) {
 			/* Le is only present for "Last block" and not present for "More blocks" */
@@ -2247,6 +2851,12 @@ dissect_rsp_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 			proto_tree_add_item(sim_tree, hf_apdu_data, tvb, offset, apdu_len, ENC_NA);
 			response_only = false;
 			break;
+		case 0x70: /* MANAGE CHANNEL */
+			if (p1 == 0 && p2 == 0) {
+				/* Logical channels are assigned by the card when P2 is 0. */
+				proto_tree_add_item(sim_tree, hf_chan_nr, tvb, offset, apdu_len, ENC_BIG_ENDIAN);
+			}
+			break;
 		case 0x76: /* SUSPEND UICC */
 			proto_tree_add_item(sim_tree, hf_suspend_uicc_max_time_unit, tvb, offset, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(sim_tree, hf_suspend_uicc_max_time_length, tvb, offset+1, 1, ENC_BIG_ENDIAN);
@@ -2269,7 +2879,10 @@ dissect_rsp_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 			break;
 		case 0xF2: /* STATUS */
 		case 0xA4: /* SELECT */
-			/* FIXME: parse response */
+			if (!dissect_fcp_template(tvb, pinfo, sim_tree, offset, apdu_len)) {
+				proto_tree_add_item(sim_tree, hf_apdu_data, tvb, offset, apdu_len, ENC_NA);
+			}
+			break;
 		default:
 			proto_tree_add_item(sim_tree, hf_apdu_data, tvb, offset, apdu_len, ENC_NA);
 			break;
@@ -2343,6 +2956,7 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 	wmem_tree_key_t key[4];
 	uint32_t interface_id = 0;
 	uint32_t layer_num = pinfo->curr_layer_num;
+	uint32_t frame_num = pinfo->num;
 
 	/* Structure of command APDU: CLA INS P1 P2 [Lc] [Data] [Le]
 	 *
@@ -2371,7 +2985,7 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 		p3 = tvb_get_uint8(next_tvb, offset+4);
 		p3_present = true;
 
-		if (p3 == 0 && tvb_reported_length_remaining(next_tvb, offset+5) >= 2) {
+		if (p3 == 0 && !isSIMtrace && tvb_reported_length_remaining(next_tvb, offset+5) >= 2) {
 			/* Extended length */
 			p3 = tvb_get_uint16(next_tvb, offset+5, ENC_BIG_ENDIAN);
 			extended_len = true;
@@ -2391,7 +3005,7 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 	key[1].length = 1;
 	key[1].key = &layer_num;
 	key[2].length = 1;
-	key[2].key = &pinfo->num;
+	key[2].key = &frame_num;
 	key[3].length = 0;
 	key[3].key = NULL;
 
@@ -2409,6 +3023,16 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 		gsm_sim_trans->related_trans = gsm_sim_trans; /* Default to self */
 
 		wmem_tree_insert32_array(transactions, key, gsm_sim_trans);
+
+		if (gsm_sim_trans->cmd_ins == 0xE2 && p2 != 0) { /* STORE DATA */
+			/* Make a reference to the first APDU this STORE DATA is related to */
+			gsm_sim_transaction_t *prev_trans;
+			frame_num = gsm_sim_trans->cmd_frame - 1;
+			prev_trans = (gsm_sim_transaction_t *)wmem_tree_lookup32_array_le(transactions, key);
+			if (prev_trans) {
+				gsm_sim_trans->related_trans = prev_trans->related_trans;
+			}
+		}
 	}
 
 	ti = proto_tree_add_item(tree, proto_gsm_sim, tvb, 0, -1, ENC_NA);
@@ -2434,7 +3058,7 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 				val_to_str(pinfo->pool, cla>>4, apdu_cla_coding_vals, "%01x"));
 	}
 
-	rc = dissect_gsm_apdu(ins, p1, p2, p3, extended_len, next_tvb, offset, pinfo, tree, sim_tree);
+	rc = dissect_gsm_apdu(ins, p1, p2, p3, extended_len, next_tvb, offset, pinfo, tree, sim_tree, gsm_sim_trans);
 
 	if (rc == -1) {
 		/* default dissector */
@@ -2447,7 +3071,7 @@ dissect_cmd_apdu_tvb(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *
 				proto_tree_add_item(sim_tree, hf_apdu_p3, tvb, offset,
 						    extended_len ? 3 : 1, ENC_BIG_ENDIAN);
 				offset += (extended_len ? 3 : 1);
-			} else if (tvb_reported_length_remaining(tvb, offset) <= (extended_len ? 3 : 1)) {
+			} else if (tvb_reported_length_remaining(tvb, offset) <= (extended_len ? 3U : 1U)) {
 				/* Case 2 / 2E */
 				dissect_apdu_le(sim_tree, tvb, offset, extended_len, true);
 				offset += (extended_len ? 3 : 1);
@@ -2865,6 +3489,281 @@ proto_register_gsm_sim(void)
 		{ &hf_status_return_data,
 			{ "Return Data", "gsm_sim.status.return_data",
 			  FT_UINT8, BASE_HEX, VALS(status_return_data_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_template_tag,
+			{ "Template tag", "gsm_sim.template_tag",
+			  FT_UINT8, BASE_HEX, VALS(template_tag_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_template_len,
+			{ "Template length", "gsm_sim.template_len",
+			  FT_UINT32, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp,
+			{ "FCP Value", "gsm_sim.fcp",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_tag,
+			{ "Tag", "gsm_sim.fcp.tag",
+			  FT_UINT8, BASE_HEX, VALS(fcp_tag_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_len,
+			{ "Length", "gsm_sim.fcp.len",
+			  FT_UINT32, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_value,
+			{ "Value", "gsm_sim.fcp.value",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_file_size,
+			{ "File size", "gsm_sim.fcp.file_size",
+			  FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  "File size (excluding structural information)", HFILL }
+		},
+		{ &hf_fcp_total_file_size,
+			{ "Total file size", "gsm_sim.fcp.total_file_size",
+			  FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  "Total file size (including structural information)", HFILL }
+		},
+		{ &hf_fcp_file_id,
+			{ "File Identifier", "gsm_sim.fcp.file_id",
+			  FT_UINT16, BASE_HEX, VALS(mf_dfs), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_df_name,
+			{ "DF name (AID)", "gsm_sim.fcp.aid",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  "Application Identifier", HFILL }
+		},
+		{ &hf_fcp_file_rfu_byte,
+			{ "RFU", "gsm_sim.fcp.file_rfu_byte",
+			  FT_UINT8, BASE_HEX, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_file_rfu,
+			{ "RFU", "gsm_sim.fcp.file_rfu",
+			  FT_BOOLEAN, 8, NULL, 0x80,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_file_accessibility,
+			{ "File accessibility", "gsm_sim.fcp.file_accessibility",
+			  FT_BOOLEAN, 8, TFS(&fcp_file_accessibility_tfs), 0x40,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_file_type,
+			{ "File type", "gsm_sim.fcp.file_type",
+			  FT_UINT8, BASE_HEX, VALS(fcp_file_type_vals), 0x38,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_file_type_ext,
+			{ "File type", "gsm_sim.fcp.file_type",
+			  FT_UINT8, BASE_HEX, VALS(fcp_file_type_ext_vals), 0x3F,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_ef_structure,
+			{ "EF structure", "gsm_sim.fcp.ef_structure",
+			  FT_UINT8, BASE_HEX, VALS(fcp_ef_structure_vals), 0x07,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_ef_structure_ext,
+			{ "EF structure", "gsm_sim.fcp.ef_structure",
+			  FT_UINT8, BASE_HEX, VALS(fcp_ef_structure_ext_vals), 0x3F,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_data_coding_byte,
+			{ "Data coding byte", "gsm_sim.fcp.data_coding_byte",
+			  FT_UINT8, BASE_HEX, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_record_len,
+			{ "Record length", "gsm_sim.fcp.record_len",
+			  FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_num_records,
+			{ "Number of records", "gsm_sim.fcp.num_records",
+			  FT_UINT8, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_lifecycle_status,
+			{ "Life Cycle Status Integer", "gsm_sim.fcp.lifecycle_status",
+			  FT_UINT8, BASE_HEX|BASE_RANGE_STRING, RVALS(fcp_lifecycle_status_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_security_attr_compact,
+			{ "Security attributes (Compact)", "gsm_sim.fcp.security_attr_compact",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_security_attr_expanded,
+			{ "Security attributes (Expanded)", "gsm_sim.fcp.security_attr_expanded",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_security_attr_referenced,
+			{ "Security attributes (Referenced)", "gsm_sim.fcp.security_attr_referenced",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_pin_status_do,
+			{ "PIN Status DO", "gsm_sim.fcp.pin_status_do",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_sfi,
+			{ "Short File Identifier", "gsm_sim.fcp.sfi",
+			  FT_UINT8, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop,
+			{ "Proprietary", "gsm_sim.fcp.prop",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_tag,
+			{ "Proprietary Tag", "gsm_sim.fcp.prop.tag",
+			  FT_UINT8, BASE_HEX, VALS(fcp_prop_tag_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_len,
+			{ "Proprietary Length", "gsm_sim.fcp.prop.len",
+			  FT_UINT32, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_value,
+			{ "Proprietary Value", "gsm_sim.fcp.prop.value",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_clock_stop_allowed,
+			{ "Clock stop allowed", "gsm_sim.fcp.prop.uicc_clock_stop_allowed",
+			  FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_clock_stop_rfu,
+			{ "RFU", "gsm_sim.fcp.prop.uicc_clock_stop_rfu",
+			  FT_UINT8, BASE_DEC, NULL, 0x02,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_clock_stop_0,
+			{ "Clock stop", "gsm_sim.fcp.prop.uicc_clock_stop_0",
+			  FT_UINT8, BASE_HEX, VALS(fcp_uicc_clock_stop_0_vals), 0x0C,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_clock_stop_1,
+			{ "Clock stop", "gsm_sim.fcp.prop.uicc_clock_stop_1",
+			  FT_UINT8, BASE_HEX, VALS(fcp_uicc_clock_stop_1_vals), 0x0C,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_supply_voltage_a,
+			{ "Supply voltage class A", "gsm_sim.fcp.prop.uicc_supply_voltage_a",
+			  FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x10,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_supply_voltage_b,
+			{ "Supply voltage class B", "gsm_sim.fcp.prop.uicc_supply_voltage_b",
+			  FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x20,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_supply_voltage_c,
+			{ "Supply voltage class C", "gsm_sim.fcp.prop.uicc_supply_voltage_c",
+			  FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x40,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_supply_voltage_d,
+			{ "Supply voltage class D", "gsm_sim.fcp.prop.uicc_supply_voltage_d",
+			  FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x80,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_app_supply_voltage_class,
+			{ "Supply voltage class", "gsm_sim.fcp.prop.app_supply_voltage_class",
+			  FT_UINT8, BASE_HEX, VALS(supply_voltage_class_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_app_power_consumption,
+			{ "Application power consumption", "gsm_sim.fcp.prop.app_power_consumption",
+			  FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliamps), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_app_frequency,
+			{ "Power consumption frequency", "gsm_sim.fcp.prop.app_frequency",
+			  FT_UINT8, BASE_CUSTOM, CF_FUNC(power_consumption_frequency_cf), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_min_app_clock_freq,
+			{ "Minimum application clock frequency", "gsm_sim.fcp.prop.min_app_clock_freq",
+			  FT_UINT8, BASE_CUSTOM, CF_FUNC(power_consumption_frequency_cf), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_avail_memory,
+			{ "Available memory", "gsm_sim.fcp.prop.avail_memory",
+			  FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_file_details_der_encoding,
+			{ "DER encoding only", "gsm_sim.fcp.prop.file_details.der_encoding",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_file_details_rfu,
+			{ "RFU", "gsm_sim.fcp.prop.file_details.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xFE,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_reserved_file_size,
+			{ "Reserved file size", "gsm_sim.fcp.prop.reserved_file_size",
+			  FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_max_file_size,
+			{ "Maximum file size", "gsm_sim.fcp.prop.max_file_size",
+			  FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_supported_sys_cmds_terminal_capability,
+			{ "TERMINAL CAPABILITY", "gsm_sim.fcp.prop.supported_sys_cmds.terminal_capability",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_supported_sys_cmds_rfu,
+			{ "RFU", "gsm_sim.fcp.prop.supported_sys_cmds.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xFE,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_env_conditions_temp_class,
+			{ "Temperature class", "gsm_sim.fcp.prop.uicc_env_conditions.temperature_class",
+			  FT_UINT8, BASE_HEX, VALS(fcp_uicc_env_conditions_temp_class_vals), 0x07,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_env_conditions_high_humidity,
+			{ "High humidity", "gsm_sim.fcp.prop.uicc_env_conditions.high_humidity",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x08,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_uicc_env_conditions_rfu,
+			{ "RFU", "gsm_sim.fcp.prop.uicc_env_conditions.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xF0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_platform_to_platform_cat_secured_apdu,
+			{ "Platform to Platform CAT Secured APDU", "gsm_sim.fcp.prop.platform_to_platform_cat_secured_apdu",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_test_config_state,
+			{ "Test configuration state", "gsm_sim.fcp.prop.test_config_state",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_fcp_prop_test_config_criterion_type,
+			{ "Test configuration criterion type", "gsm_sim.fcp.prop.test_config_criterion_type",
+			  FT_BYTES, BASE_NONE, NULL, 0,
 			  NULL, HFILL }
 		},
 		{ &hf_suspend_uicc_op,
@@ -3340,6 +4239,7 @@ proto_register_gsm_sim(void)
 			  NULL, HFILL },
 		},
 		{ &hf_tp_soft_key_info_max_nb,
+			/* Note: The bitmask 0xff is needed */
 			{ "Maximum number of soft keys available", "gsm_sim.tp.soft_key_info.max_nb",
 			  FT_UINT8, BASE_DEC, NULL, 0xff,
 			  NULL, HFILL }
@@ -4333,6 +5233,88 @@ proto_register_gsm_sim(void)
 			  NULL, HFILL },
 		},
 
+		/* Terminal Capability */
+		{ &hf_tc,
+			{ "Terminal Capability", "gsm_sim.tc",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_tag,
+			{ "Tag", "gsm_sim.tc.tag",
+			  FT_UINT8, BASE_HEX, VALS(terminal_capability_tag_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_len,
+			{ "Length", "gsm_sim.tc.len",
+			  FT_UINT32, BASE_DEC, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_value,
+			{ "Value", "gsm_sim.tc.value",
+			  FT_BYTES, BASE_NONE, NULL, 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_actual_used_supply_voltage_class,
+			{ "Actual used supply voltage class", "gsm_sim.tc.actual_used_supply_voltage_class",
+			  FT_UINT8, BASE_HEX, VALS(supply_voltage_class_vals), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_max_available_power_supply,
+			{ "Maximum available power supply", "gsm_sim.tc.max_available_power_supply",
+			  FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliamps), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_actual_used_clock_frequency,
+			{ "Actual used clock frequency", "gsm_sim.tc.actual_used_clock_frequency",
+			  FT_UINT8, BASE_CUSTOM, CF_FUNC(power_consumption_frequency_cf), 0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_additional_interfaces_uicc_clf,
+			{ "UICC-CLF", "gsm_sim.tc.additional_interfaces.uicc_clf",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_additional_interfaces_rfu,
+			{ "RFU", "gsm_sim.tc.additional_interfaces.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xFE,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp22_luid,
+			{ "LUId", "gsm_sim.tc.sgp22.luid",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp22_lpdd,
+			{ "LPDd", "gsm_sim.tc.sgp22.lpdd",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x02,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp22_ldsd,
+			{ "LDSd", "gsm_sim.tc.sgp22.ldsd",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x04,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp22_luie,
+			{ "LUIe", "gsm_sim.tc.sgp22.luie",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x08,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp22_rfu,
+			{ "RFU", "gsm_sim.tc.sgp22.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xF0,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp32_ipad,
+			{ "IPAd", "gsm_sim.tc.sgp32.ipad",
+			  FT_BOOLEAN, 8, TFS(&tfs_supported_not_supported), 0x01,
+			  NULL, HFILL }
+		},
+		{ &hf_tc_sgp32_rfu,
+			{ "RFU", "gsm_sim.tc.sgp32.rfu",
+			  FT_UINT8, BASE_HEX, NULL, 0xFE,
+			  NULL, HFILL }
+		},
+
 		{ &hf_tprof_unknown_byte,
 			{ "Unknown Terminal Profile Byte", "gsm_sim.tp.unknown_byte",
 			  FT_UINT8, BASE_HEX, NULL, 0,
@@ -4482,8 +5464,11 @@ proto_register_gsm_sim(void)
 		&ett_tprof_b37,
 		&ett_tprof_b38,
 		&ett_tprof_b39,
+		&ett_terminal_capability,
 		&ett_auth_challenge,
 		&ett_auth_response,
+		&ett_fcp,
+		&ett_fcp_proprietary,
 		&ett_gsm_sim_fragment,
 		&ett_gsm_sim_fragments,
 	};

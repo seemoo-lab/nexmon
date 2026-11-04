@@ -41,6 +41,7 @@ static int hf_btavctp_number_of_packets;
 static int ett_btavctp;
 
 static expert_field ei_btavctp_unexpected_frame;
+static expert_field ei_btavctp_reassembled_too_long;
 static expert_field ei_btavctp_invalid_profile;
 
 static dissector_handle_t btavctp_handle;
@@ -104,7 +105,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     unsigned        number_of_packets = 0;
     unsigned        length;
     unsigned        i_frame;
-    bool            ipid = false;
+    uint8_t         ipid = 0;
     uint32_t        interface_id;
     uint32_t        adapter_id;
     uint32_t        chandle;
@@ -154,25 +155,22 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     cr = (tvb_get_uint8(tvb, offset) & 0x02) >> 1 ;
 
     if (packet_type == PACKET_TYPE_SINGLE || packet_type == PACKET_TYPE_START) {
-        ipid_item = proto_tree_add_item(btavctp_tree, hf_btavctp_ipid,  tvb, offset, 1, ENC_BIG_ENDIAN);
-        ipid = tvb_get_uint8(tvb, offset) & 0x01;
+        ipid_item = proto_tree_add_item_ret_uint8(btavctp_tree, hf_btavctp_ipid,  tvb, offset, 1, ENC_BIG_ENDIAN, &ipid);
     } else {
         proto_tree_add_item(btavctp_tree, hf_btavctp_rfa,  tvb, offset, 1, ENC_BIG_ENDIAN);
     }
     offset++;
 
     if (packet_type == PACKET_TYPE_START) {
-        proto_tree_add_item(btavctp_tree, hf_btavctp_number_of_packets,  tvb, offset, 1, ENC_BIG_ENDIAN);
-        number_of_packets = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint(btavctp_tree, hf_btavctp_number_of_packets,  tvb, offset, 1, ENC_BIG_ENDIAN, &number_of_packets);
         offset++;
     }
 
     if (packet_type == PACKET_TYPE_SINGLE || packet_type == PACKET_TYPE_START) {
-        proto_tree_add_item(btavctp_tree, hf_btavctp_pid,  tvb, offset, 2, ENC_BIG_ENDIAN);
-        pid = tvb_get_ntohs(tvb, offset);
+        proto_tree_add_item_ret_uint(btavctp_tree, hf_btavctp_pid,  tvb, offset, 2, ENC_BIG_ENDIAN, &pid);
 
         if (p_get_proto_data(pinfo->pool, pinfo, proto_bluetooth, PROTO_DATA_BLUETOOTH_SERVICE_UUID ) == NULL) {
-            uint8_t *value_data;
+            char *value_data;
             bluetooth_uuid_t  uuid;
 
             uuid.size = 2;
@@ -208,6 +206,8 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     length = tvb_reported_length_remaining(tvb, offset);
 
     /* reassembling */
+    /* XXX - All of this can and should be replaced with the standard reassembly API with
+     * custom key functions. */
     next_tvb = tvb_new_subset_length(tvb, offset, length);
     if (packet_type == PACKET_TYPE_SINGLE) {
         bluetooth_uuid_t  uuid;
@@ -282,6 +282,7 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     fragments->psm == psm))
                 fragments = NULL;
 
+            /* XXX - This does not check if the END has already been received. */
             if (!pinfo->fd->visited && fragments != NULL) {
                 fragment = wmem_new(wmem_file_scope(), fragment_t);
                 fragment->length = length;
@@ -363,14 +364,23 @@ dissect_btavctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                 call_data_dissector(next_tvb, pinfo, tree);
             } else {
                 uint8_t  *reassembled = NULL;
+                unsigned new_length;
                 bluetooth_uuid_t  uuid;
 
                 for (i_frame = 1; i_frame <= fragments->count; ++i_frame) {
                     fragment = (fragment_t *)wmem_tree_lookup32_le(fragments->fragment, i_frame);
                     if (fragment) {
-                        reassembled = (uint8_t*)wmem_realloc(pinfo->pool, reassembled, length + fragment->length);
+                        if (ckd_add(&new_length, length, fragment->length) || new_length > INT32_MAX) {
+                            expert_add_info(pinfo, pitem, &ei_btavctp_reassembled_too_long);
+                            new_length = INT32_MAX;
+                            reassembled = (uint8_t*)wmem_realloc(pinfo->pool, reassembled, new_length);
+                            memcpy(reassembled + length, fragment->data, new_length - length);
+                            length = new_length;
+                            break;
+                        }
+                        reassembled = (uint8_t*)wmem_realloc(pinfo->pool, reassembled, new_length);
                         memcpy(reassembled + length, fragment->data, fragment->length);
-                        length += fragment->length;
+                        length = new_length;
                     }
                 }
 
@@ -446,6 +456,7 @@ proto_register_btavctp(void)
 
     static ei_register_info ei[] = {
         { &ei_btavctp_unexpected_frame, { "btavctp.unexpected_frame", PI_PROTOCOL, PI_WARN, "Unexpected frame", EXPFILL }},
+        { &ei_btavctp_reassembled_too_long, { "btavctp.reassembled.too_long", PI_REASSEMBLE, PI_WARN, "Reassembled PDU too long, truncated", EXPFILL }},
         { &ei_btavctp_invalid_profile,  { "btavctp.invalid_profile",  PI_PROTOCOL, PI_NOTE, "Invalid Profile", EXPFILL }},
     };
 

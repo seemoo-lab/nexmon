@@ -212,7 +212,7 @@ is_first_frame_in_msg(blip_conversation_entry_t *conversation_entry_ptr, packet_
 }
 
 static int
-handle_ack_message(tvbuff_t *tvb, _U_ packet_info *pinfo, proto_tree *blip_tree, int offset, _U_ uint64_t value_frame_flags)
+handle_ack_message(tvbuff_t *tvb, _U_ packet_info *pinfo, proto_tree *blip_tree, unsigned offset, _U_ uint64_t value_frame_flags)
 {
 	// This gets the number of ack bytes received  as a var int in order to find out how much to bump
 	// the offset for the next proto_tree item
@@ -282,7 +282,7 @@ get_decompress_stream(packet_info* pinfo)
 }
 
 static tvbuff_t*
-decompress(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, int offset, int length)
+decompress(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, unsigned offset, int length)
 {
 	if(PINFO_FD_VISITED(pinfo)) {
 		const decompress_result_t* saved_data = (decompress_result_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_blip, 0);
@@ -302,7 +302,7 @@ decompress(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, int offset, int 
 			return NULL;
 		} else {
 			tvbuff_t* decompressedChild = tvb_new_child_real_data(tvb, (uint8_t *)saved_data->buf,
-				(int)saved_data->size, (int)saved_data->size);
+				(unsigned)saved_data->size, (unsigned)saved_data->size);
 			add_new_data_source(pinfo, decompressedChild, "Decompressed Payload");
 			return decompressedChild;
 		}
@@ -375,7 +375,7 @@ decompress(packet_info* pinfo, proto_tree* tree, tvbuff_t* tvb, int offset, int 
 	size_t bodyLength = decompress_stream->total_out - start;
 	Bytef* shortened_buffer = (Bytef *)wmem_memdup(wmem_file_scope(), decompress_buffer, bodyLength);
 
-	tvbuff_t* decompressedChild = tvb_new_child_real_data(tvb, shortened_buffer, (unsigned)bodyLength, (int)bodyLength);
+	tvbuff_t* decompressedChild = tvb_new_child_real_data(tvb, shortened_buffer, (unsigned)bodyLength, (unsigned)bodyLength);
 	add_new_data_source(pinfo, decompressedChild, "Decompressed Payload");
 	decompress_result_t* data_to_save = wmem_new0(wmem_file_scope(), decompress_result_t);
 	data_to_save->size = (size_t)bodyLength;
@@ -391,7 +391,7 @@ dissect_blip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, _U_ void *data
 {
 
 	proto_tree *blip_tree;
-	int offset = 0;
+	unsigned offset = 0;
 
 	/* Set the protocol column to say BLIP */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "BLIP");

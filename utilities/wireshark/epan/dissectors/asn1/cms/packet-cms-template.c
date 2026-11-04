@@ -28,10 +28,6 @@
 #include "packet-x509sat.h"
 #include "packet-pkcs12.h"
 
-#define PNAME  "Cryptographic Message Syntax"
-#define PSNAME "CMS"
-#define PFNAME "cms"
-
 void proto_register_cms(void);
 void proto_reg_handoff_cms(void);
 
@@ -46,7 +42,7 @@ static int ett_cms;
 
 static dissector_handle_t cms_handle;
 
-static int dissect_cms_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) ; /* XXX kill a compiler warning until asn2wrs stops generating these silly wrappers */
+static unsigned dissect_cms_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) ; /* XXX kill a compiler warning until asn2wrs stops generating these silly wrappers */
 
 struct cms_private_data {
   const char *object_identifier_id;
@@ -66,7 +62,7 @@ struct cms_private_data {
 #define HASH_SHA256 "2.16.840.1.101.3.4.2.1"
 #define SHA256_BUFFER_SIZE  32
 
-unsigned char digest_buf[MAX(HASH_SHA1_LENGTH, HASH_MD5_LENGTH)];
+static unsigned char digest_buf[MAX(HASH_SHA1_LENGTH, HASH_MD5_LENGTH)];
 
 /*
 * Dissect CMS PDUs inside a PPDU.
@@ -74,7 +70,7 @@ unsigned char digest_buf[MAX(HASH_SHA1_LENGTH, HASH_MD5_LENGTH)];
 static int
 dissect_cms(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	proto_item *item=NULL;
 	proto_tree *tree=NULL;
 	asn1_ctx_t asn1_ctx;
@@ -107,7 +103,7 @@ cms_get_private_data(packet_info *pinfo)
 static void
 cms_verify_msg_digest(proto_item *pi, tvbuff_t *content, const char *alg, tvbuff_t *tvb, int offset)
 {
-  int i= 0, buffer_size = 0;
+  int i, buffer_size = 0;
 
   /* we only support two algorithms at the moment  - if we do add SHA2
      we should add a registration process and use it */
@@ -173,9 +169,9 @@ void proto_register_cms(void) {
   };
 
   /* Register protocol */
-  proto_cms = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_cms = proto_register_protocol("Cryptographic Message Syntax", "CMS", "cms");
 
-  cms_handle = register_dissector(PFNAME, dissect_cms, proto_cms);
+  cms_handle = register_dissector("cms", dissect_cms, proto_cms);
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_cms, hf, array_length(hf));

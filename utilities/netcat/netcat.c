@@ -1,6 +1,7 @@
-/* $OpenBSD: netcat.c,v 1.103 2011/10/04 08:34:34 fgsch Exp $ */
+/* $OpenBSD: netcat.c,v 1.238 2026/02/23 16:47:07 deraadt Exp $ */
 /*
  * Copyright (c) 2001 Eric Jackson <ericj@monkey.org>
+ * Copyright (c) 2015 Bob Beck.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,47 +34,104 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>
+#include <sys/uio.h>
 #include <sys/un.h>
 
 #include <netinet/in.h>
-#include <netinet/in_systm.h>
 #include <netinet/tcp.h>
 #include <netinet/ip.h>
 #include <arpa/telnet.h>
 
+#include <ctype.h>
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <netdb.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <limits.h>
+
 #include "atomicio.h"
 
-#ifndef SUN_LEN
-#define SUN_LEN(su) \
-	(sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
-#endif
+#ifdef ANDROID
+/*
+ * bionic lacks the OpenBSD helpers below.  Provide a compatible strtonum()
+ * (the interface nc(1) relies on for range-checked numeric arguments) so the
+ * upstream call sites are used verbatim instead of a lossy atoi().
+ */
+#include <ctype.h>
+static long long
+strtonum(const char *numstr, long long minval, long long maxval,
+    const char **errstrp)
+{
+	long long ll = 0;
+	int error = 0;
+	char *ep;
+	struct errval {
+		const char *errstr;
+		int err;
+	} ev[4] = {
+		{ NULL,		0 },
+		{ "invalid",	EINVAL },
+		{ "too small",	ERANGE },
+		{ "too large",	ERANGE },
+	};
+#define NC_INVALID	1
+#define NC_TOOSMALL	2
+#define NC_TOOLARGE	3
+
+	ev[0].err = errno;
+	errno = 0;
+	if (minval > maxval) {
+		error = NC_INVALID;
+	} else {
+		ll = strtoll(numstr, &ep, 10);
+		if (numstr == ep || *ep != '\0')
+			error = NC_INVALID;
+		else if ((ll == LLONG_MIN && errno == ERANGE) || ll < minval)
+			error = NC_TOOSMALL;
+		else if ((ll == LLONG_MAX && errno == ERANGE) || ll > maxval)
+			error = NC_TOOLARGE;
+	}
+	if (errstrp != NULL)
+		*errstrp = ev[error].errstr;
+	errno = ev[error].err;
+	if (error)
+		ll = 0;
+	return ll;
+}
+#endif /* ANDROID */
 
 #define PORT_MAX	65535
-#define PORT_MAX_LEN	6
 #define UNIX_DG_TMP_SOCKET_SIZE	19
+
+#define POLL_STDIN	0
+#define POLL_NETOUT	1
+#define POLL_NETIN	2
+#define POLL_STDOUT	3
+#define BUFSIZE		16384
+
+/*
+ * TLS support is removed from this Android port (bionic ships no libtls).
+ * Keep an incomplete struct tls and the libtls poll sentinels so the NULL
+ * tls_ctx plumbing inherited from upstream OpenBSD nc(1) compiles unchanged.
+ */
+struct tls;
+#define TLS_WANT_POLLIN		-2
+#define TLS_WANT_POLLOUT	-3
 
 /* Command Line Options */
 int	dflag;					/* detached, no stdin */
+int	Fflag;					/* fdpass sock to stdout */
 unsigned int iflag;				/* Interval Flag */
-#ifdef ANDROID
-int	jflag = 0;
-#else
-int	jflag;					/* use jumbo frames if we can */
-#endif /* !ANDROID */
 int	kflag;					/* More than one connect */
 int	lflag;					/* Bind to local port */
+int	Nflag;					/* shutdown() network socket */
 int	nflag;					/* Don't do name look up */
 char   *Pflag;					/* Proxy username */
 char   *pflag;					/* Localport flag */
@@ -82,66 +140,71 @@ char   *sflag;					/* Source Address */
 int	tflag;					/* Telnet Emulation */
 int	uflag;					/* UDP - Default to TCP */
 int	vflag;					/* Verbosity */
-#ifndef ANDROID
 int	xflag;					/* Socks proxy */
-#endif /* !ANDROID */
 int	zflag;					/* Port Scan Flag */
 int	Dflag;					/* sodebug */
 int	Iflag;					/* TCP receive buffer size */
 int	Oflag;					/* TCP send buffer size */
-#ifndef ANDROID
 int	Sflag;					/* TCP MD5 signature option */
 int	Tflag = -1;				/* IP Type of Service */
-u_int	rtableid;
-#endif /* !ANDROID */
+int	rtableid = -1;
 
+int recvcount, recvlimit;
 int timeout = -1;
 int family = AF_UNSPEC;
 char *portlist[PORT_MAX+1];
 char *unix_dg_tmp_socket;
+int ttl = -1;
+int minttl = -1;
 
 void	atelnet(int, unsigned char *, unsigned int);
+int	strtoport(char *portstr, int udp);
 void	build_ports(char *);
-void	help(void);
-int	local_listen(char *, char *, struct addrinfo);
-void	readwrite(int);
-int	remote_connect(const char *, const char *, struct addrinfo);
+void	help(void) __attribute__((noreturn));
+int	local_listen(const char *, const char *, struct addrinfo);
+void	readwrite(int, struct tls *);
+void	fdpass(int nfd) __attribute__((noreturn));
+int	remote_connect(const char *, const char *, struct addrinfo, char *);
 int	timeout_connect(int, const struct sockaddr *, socklen_t);
-#ifndef ANDROID
 int	socks_connect(const char *, const char *, struct addrinfo,
 	    const char *, const char *, struct addrinfo, int, const char *);
-#endif /* !ANDROID */
 int	udptest(int);
-int	unix_bind(char *);
+void	connection_info(const char *, const char *, const char *, const char *);
+int	unix_bind(char *, int);
 int	unix_connect(char *);
 int	unix_listen(char *);
-void	set_common_sockopts(int);
-int	map_tos(char *, int *);
+void	set_common_sockopts(int, int);
+int	process_tos_opt(char *, int *);
+void	report_sock(const char *, const struct sockaddr *, socklen_t, char *);
 void	usage(int);
+ssize_t drainbuf(int, unsigned char *, size_t *, struct tls *);
+ssize_t fillbuf(int, unsigned char *, size_t *, struct tls *);
 
 int
 main(int argc, char *argv[])
 {
-	int ch, s, ret, socksv;
+	int ch, s = -1, ret, socksv;
 	char *host, *uport;
+	char ipaddr[NI_MAXHOST];
 	struct addrinfo hints;
-	struct servent *sv;
 	socklen_t len;
 	struct sockaddr_storage cliaddr;
-	char *proxy;
-	const char *errstr, *proxyhost = "", *proxyport = NULL;
+	char *proxy = NULL, *proxyport = NULL;
+	const char *errstr;
 	struct addrinfo proxyhints;
 	char unix_dg_tmp_socket_buf[UNIX_DG_TMP_SOCKET_SIZE];
+	struct tls *tls_ctx = NULL;
 
 	ret = 1;
-	s = 0;
 	socksv = 5;
 	host = NULL;
 	uport = NULL;
-	sv = NULL;
+
+	signal(SIGPIPE, SIG_IGN);
 
 	while ((ch = getopt(argc, argv,
-	    "46DdhI:i:jklnO:P:p:rSs:tT:UuV:vw:X:x:z")) != -1) {
+	    "46DdFhI:i:klM:m:NnO:P:p:rSs:T:tUuV:vW:w:X:x:z"))
+	    != -1) {
 		switch (ch) {
 		case '4':
 			family = AF_INET;
@@ -157,6 +220,8 @@ main(int argc, char *argv[])
 				socksv = -1; /* HTTP proxy CONNECT */
 			else if (strcmp(optarg, "4") == 0)
 				socksv = 4; /* SOCKS v.4 */
+			else if (strcasecmp(optarg, "4A") == 0)
+				socksv = 44; /* SOCKS v.4A */
 			else if (strcmp(optarg, "5") == 0)
 				socksv = 5; /* SOCKS v.5 */
 			else
@@ -165,28 +230,35 @@ main(int argc, char *argv[])
 		case 'd':
 			dflag = 1;
 			break;
+		case 'F':
+			Fflag = 1;
+			break;
 		case 'h':
 			help();
 			break;
 		case 'i':
-#ifdef ANDROID
-			iflag = atoi(optarg);
-#else
 			iflag = strtonum(optarg, 0, UINT_MAX, &errstr);
 			if (errstr)
 				errx(1, "interval %s: %s", errstr, optarg);
-#endif /* ANDROID */
 			break;
-#ifndef ANDROID
-		case 'j':
-			jflag = 1;
-			break;
-#endif /* !ANDROID */
 		case 'k':
 			kflag = 1;
 			break;
 		case 'l':
 			lflag = 1;
+			break;
+		case 'M':
+			ttl = strtonum(optarg, 0, 255, &errstr);
+			if (errstr)
+				errx(1, "ttl is %s", errstr);
+			break;
+		case 'm':
+			minttl = strtonum(optarg, 0, 255, &errstr);
+			if (errstr)
+				errx(1, "minttl is %s", errstr);
+			break;
+		case 'N':
+			Nflag = 1;
 			break;
 		case 'n':
 			nflag = 1;
@@ -211,7 +283,7 @@ main(int argc, char *argv[])
 			break;
 #ifndef ANDROID
 		case 'V':
-			rtableid = (unsigned int)strtonum(optarg, 0,
+			rtableid = (int)strtonum(optarg, 0,
 			    RT_TABLEID_MAX, &errstr);
 			if (errstr)
 				errx(1, "rtable %s: %s", errstr, optarg);
@@ -220,23 +292,22 @@ main(int argc, char *argv[])
 		case 'v':
 			vflag = 1;
 			break;
+		case 'W':
+			recvlimit = strtonum(optarg, 1, INT_MAX, &errstr);
+			if (errstr)
+				errx(1, "receive limit %s: %s", errstr, optarg);
+			break;
 		case 'w':
-#ifdef ANDROID
-			timeout = atoi(optarg);
-#else
 			timeout = strtonum(optarg, 0, INT_MAX / 1000, &errstr);
 			if (errstr)
 				errx(1, "timeout %s: %s", errstr, optarg);
-#endif
 			timeout *= 1000;
 			break;
-#ifndef ANDROID
 		case 'x':
 			xflag = 1;
 			if ((proxy = strdup(optarg)) == NULL)
 				err(1, NULL);
 			break;
-#endif /* !ANDROID */
 		case 'z':
 			zflag = 1;
 			break;
@@ -244,33 +315,25 @@ main(int argc, char *argv[])
 			Dflag = 1;
 			break;
 		case 'I':
-#ifdef ANDROID
-			Iflag = atoi(optarg);
-#else
 			Iflag = strtonum(optarg, 1, 65536 << 14, &errstr);
 			if (errstr != NULL)
 				errx(1, "TCP receive window %s: %s",
 				    errstr, optarg);
-#endif
 			break;
 		case 'O':
-#ifdef ANDROID
-			Oflag = atoi(optarg);
-#else
 			Oflag = strtonum(optarg, 1, 65536 << 14, &errstr);
 			if (errstr != NULL)
 				errx(1, "TCP send window %s: %s",
 				    errstr, optarg);
-#endif
 			break;
-#ifndef ANDROID
 		case 'S':
 			Sflag = 1;
 			break;
+#ifndef ANDROID
 		case 'T':
 			errstr = NULL;
 			errno = 0;
-			if (map_tos(optarg, &Tflag))
+			if (process_tos_opt(optarg, &Tflag))
 				break;
 			if (strlen(optarg) > 1 && optarg[0] == '0' &&
 			    optarg[1] == 'x')
@@ -289,20 +352,67 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+#ifndef ANDROID
+	if (rtableid >= 0)
+		if (setrtable(rtableid) == -1)
+			err(1, "setrtable");
+#endif /* !ANDROID */
+
 	/* Cruft to make sure options are clean, and used properly. */
-	if (argv[0] && !argv[1] && family == AF_UNIX) {
+	if (argc == 1 && family == AF_UNIX) {
 		host = argv[0];
-		uport = NULL;
-	} else if (argv[0] && !argv[1]) {
-		if  (!lflag)
-			usage(1);
+	} else if (argc == 1 && lflag) {
 		uport = argv[0];
-		host = NULL;
-	} else if (argv[0] && argv[1]) {
+	} else if (argc == 2) {
 		host = argv[0];
 		uport = argv[1];
 	} else
 		usage(1);
+
+#ifndef ANDROID
+	if (family == AF_UNIX && uflag && lflag && !kflag) {
+		/*
+		 * After recvfrom(2) from client, the server connects
+		 * to the client socket.  As the client path is determined
+		 * during runtime, we cannot unveil(2).
+		 */
+	} else {
+		if (family == AF_UNIX) {
+			if (unveil("/tmp", "rwc") == -1)
+				err(1, "unveil /tmp");
+			if (unveil(host, "rwc") == -1)
+				err(1, "unveil %s", host);
+			if (uflag && !kflag) {
+				if (sflag) {
+					if (unveil(sflag, "rwc") == -1)
+						err(1, "unveil %s", sflag);
+				} else {
+					if (unveil("/tmp", "rwc") == -1)
+						err(1, "unveil /tmp");
+				}
+			}
+		} else {
+			/* no filesystem visibility */
+			if (unveil("/", "") == -1)
+				err(1, "unveil /");
+		}
+	}
+
+	if (family == AF_UNIX) {
+		if (pledge("stdio rpath wpath cpath unix", NULL) == -1)
+			err(1, "pledge");
+	} else if (Fflag && Pflag) {
+		if (pledge("stdio inet dns sendfd tty", NULL) == -1)
+			err(1, "pledge");
+	} else if (Fflag) {
+		if (pledge("stdio inet dns sendfd", NULL) == -1)
+			err(1, "pledge");
+	} else if (Pflag) {
+		if (pledge("stdio inet dns tty", NULL) == -1)
+			err(1, "pledge");
+	} else if (pledge("stdio inet dns", NULL) == -1)
+		err(1, "pledge");
+#endif /* !ANDROID */
 
 	if (lflag && sflag)
 		errx(1, "cannot use -s and -l");
@@ -312,6 +422,8 @@ main(int argc, char *argv[])
 		errx(1, "cannot use -z and -l");
 	if (!lflag && kflag)
 		errx(1, "must use -l with -k");
+	if ((family == AF_UNIX) && Fflag)
+		errx(1, "cannot use -F and -U");
 
 	/* Get name of temporary socket for unix datagram client */
 	if ((family == AF_UNIX) && uflag && !lflag) {
@@ -319,7 +431,12 @@ main(int argc, char *argv[])
 			unix_dg_tmp_socket = sflag;
 		} else {
 			strlcpy(unix_dg_tmp_socket_buf, "/tmp/nc.XXXXXXXXXX",
-				UNIX_DG_TMP_SOCKET_SIZE);
+			    UNIX_DG_TMP_SOCKET_SIZE);
+#ifdef ANDROID
+			/*
+			 * Avoid the unsafe mktemp(3): create and unlink a
+			 * unique name, then bind(2) it below.
+			 */
 			{
 				int tmpfd = mkstemp(unix_dg_tmp_socket_buf);
 				if (tmpfd < 0)
@@ -328,6 +445,10 @@ main(int argc, char *argv[])
 				if (unlink(unix_dg_tmp_socket_buf) < 0)
 					err(1, "unlink");
 			}
+#else
+			if (mktemp(unix_dg_tmp_socket_buf) == NULL)
+				err(1, "mktemp");
+#endif /* ANDROID */
 			unix_dg_tmp_socket = unix_dg_tmp_socket_buf;
 		}
 	}
@@ -353,15 +474,29 @@ main(int argc, char *argv[])
 		if (family == AF_UNIX)
 			errx(1, "no proxy support for unix sockets");
 
-		/* XXX IPv6 transport to proxy would probably work */
-		if (family == AF_INET6)
-			errx(1, "no proxy support for IPv6");
-
 		if (sflag)
 			errx(1, "no proxy support for local source address");
 
-		proxyhost = strsep(&proxy, ":");
-		proxyport = proxy;
+		if (*proxy == '[') {
+			++proxy;
+			proxyport = strchr(proxy, ']');
+			if (proxyport == NULL)
+				errx(1, "missing closing bracket in proxy");
+			*proxyport++ = '\0';
+			if (*proxyport == '\0')
+				/* Use default proxy port. */
+				proxyport = NULL;
+			else {
+				if (*proxyport == ':')
+					++proxyport;
+				else
+					errx(1, "garbage proxy port delimiter");
+			}
+		} else {
+			proxyport = strrchr(proxy, ':');
+			if (proxyport != NULL)
+				*proxyport++ = '\0';
+		}
 
 		memset(&proxyhints, 0, sizeof(struct addrinfo));
 		proxyhints.ai_family = family;
@@ -373,58 +508,87 @@ main(int argc, char *argv[])
 #endif /* !ANDROID */
 
 	if (lflag) {
-		int connfd;
 		ret = 0;
 
 		if (family == AF_UNIX) {
 			if (uflag)
-				s = unix_bind(host);
+				s = unix_bind(host, 0);
 			else
 				s = unix_listen(host);
 		}
 
 		/* Allow only one connection at a time, but stay alive. */
 		for (;;) {
-			if (family != AF_UNIX)
+			if (family != AF_UNIX) {
+				if (s != -1)
+					close(s);
 				s = local_listen(host, uport, hints);
-			if (s < 0)
+			}
+			if (s == -1)
 				err(1, NULL);
-			/*
-			 * For UDP, we will use recvfrom() initially
-			 * to wait for a caller, then use the regular
-			 * functions to talk to the caller.
-			 */
-			if (uflag) {
-				int rv, plen;
-				char buf[16384];
+			if (uflag && kflag) {
+#ifndef ANDROID
+				if (family == AF_UNIX) {
+					if (pledge("stdio unix", NULL) == -1)
+						err(1, "pledge");
+				}
+#endif /* !ANDROID */
+				/*
+				 * For UDP and -k, don't connect the socket,
+				 * let it receive datagrams from multiple
+				 * socket pairs.
+				 */
+				readwrite(s, NULL);
+			} else if (uflag && !kflag) {
+				/*
+				 * For UDP and not -k, we will use recvfrom()
+				 * initially to wait for a caller, then use
+				 * the regular functions to talk to the caller.
+				 */
+				int rv;
+				char buf[2048];
 				struct sockaddr_storage z;
 
 				len = sizeof(z);
-				plen = jflag ? 16384 : 2048;
-				rv = recvfrom(s, buf, plen, MSG_PEEK,
+				rv = recvfrom(s, buf, sizeof(buf), MSG_PEEK,
 				    (struct sockaddr *)&z, &len);
-				if (rv < 0)
+				if (rv == -1)
 					err(1, "recvfrom");
 
 				rv = connect(s, (struct sockaddr *)&z, len);
-				if (rv < 0)
+				if (rv == -1)
 					err(1, "connect");
 
-				readwrite(s);
+#ifndef ANDROID
+				if (family == AF_UNIX) {
+					if (pledge("stdio unix", NULL) == -1)
+						err(1, "pledge");
+				}
+#endif /* !ANDROID */
+				if (vflag)
+					report_sock("Connection received",
+					    (struct sockaddr *)&z, len,
+					    family == AF_UNIX ? host : NULL);
+
+				readwrite(s, NULL);
 			} else {
-				len = sizeof(cliaddr);
-				connfd = accept(s, (struct sockaddr *)&cliaddr,
-				    &len);
-				readwrite(connfd);
-				close(connfd);
-			}
+				struct tls *tls_cctx = NULL;
+				int connfd;
 
-			if (family != AF_UNIX)
-				close(s);
-			else if (uflag) {
-				struct sockaddr disconnect_addr = { .sa_family = AF_UNSPEC };
-				if (connect(s, &disconnect_addr, sizeof(disconnect_addr)) < 0)
-					err(1, "connect");
+				len = sizeof(cliaddr);
+				connfd = accept4(s, (struct sockaddr *)&cliaddr,
+				    &len, SOCK_NONBLOCK);
+				if (connfd == -1) {
+					/* For now, all errnos are fatal */
+					err(1, "accept");
+				}
+				if (vflag)
+					report_sock("Connection received",
+					    (struct sockaddr *)&cliaddr, len,
+					    family == AF_UNIX ? host : NULL);
+				readwrite(connfd, NULL);
+				close(connfd);
+				(void)tls_cctx;
 			}
 
 			if (!kflag)
@@ -433,16 +597,18 @@ main(int argc, char *argv[])
 	} else if (family == AF_UNIX) {
 		ret = 0;
 
-		if ((s = unix_connect(host)) > 0 && !zflag) {
-			readwrite(s);
+		if ((s = unix_connect(host)) > 0) {
+			if (!zflag)
+				readwrite(s, NULL);
 			close(s);
-		} else
+		} else {
+			warn("%s", host);
 			ret = 1;
+		}
 
 		if (uflag)
 			unlink(unix_dg_tmp_socket);
-		exit(ret);
-
+		return ret;
 	} else {
 		int i = 0;
 
@@ -450,56 +616,53 @@ main(int argc, char *argv[])
 		build_ports(uport);
 
 		/* Cycle through portlist, connecting to each port. */
-		for (i = 0; portlist[i] != NULL; i++) {
-			if (s)
+		for (s = -1, i = 0; portlist[i] != NULL; i++) {
+			if (s != -1)
 				close(s);
 
 #ifndef ANDROID
 			if (xflag)
 				s = socks_connect(host, portlist[i], hints,
-				    proxyhost, proxyport, proxyhints, socksv,
+				    proxy, proxyport, proxyhints, socksv,
 				    Pflag);
 			else
 #endif /* !ANDROID */
-				s = remote_connect(host, portlist[i], hints);
+				s = remote_connect(host, portlist[i], hints,
+				    ipaddr);
 
-			if (s < 0)
+			if (s == -1)
 				continue;
 
 			ret = 0;
 			if (vflag || zflag) {
+				int print_info = 1;
+
 				/* For UDP, make sure we are connected. */
 				if (uflag) {
-					if (udptest(s) == -1) {
+					/* No info on failed or skipped test. */
+					if ((print_info = udptest(s)) == -1) {
 						ret = 1;
 						continue;
 					}
 				}
-
-				/* Don't look up port if -n. */
-				if (nflag)
-					sv = NULL;
-				else {
-					sv = getservbyport(
-					    ntohs(atoi(portlist[i])),
-					    uflag ? "udp" : "tcp");
-				}
-
-				fprintf(stderr,
-				    "Connection to %s %s port [%s/%s] "
-				    "succeeded!\n", host, portlist[i],
-				    uflag ? "udp" : "tcp",
-				    sv ? sv->s_name : "*");
+				if (print_info == 1)
+					connection_info(host, portlist[i],
+					    uflag ? "udp" : "tcp", ipaddr);
 			}
-			if (!zflag)
-				readwrite(s);
+			if (Fflag)
+				fdpass(s);
+			else {
+				if (!zflag)
+					readwrite(s, tls_ctx);
+			}
 		}
 	}
 
-	if (s)
+	if (s != -1)
 		close(s);
+	(void)tls_ctx;
 
-	exit(ret);
+	return ret;
 }
 
 /*
@@ -507,31 +670,36 @@ main(int argc, char *argv[])
  * Returns a unix socket bound to the given path
  */
 int
-unix_bind(char *path)
+unix_bind(char *path, int flags)
 {
-	struct sockaddr_un sun;
-	int s;
+	struct sockaddr_un s_un;
+	int s, save_errno;
 
 	/* Create unix domain socket. */
-	if ((s = socket(AF_UNIX, uflag ? SOCK_DGRAM : SOCK_STREAM,
-	     0)) < 0)
-		return (-1);
+	if ((s = socket(AF_UNIX, flags | (uflag ? SOCK_DGRAM : SOCK_STREAM),
+	    0)) == -1)
+		return -1;
 
-	memset(&sun, 0, sizeof(struct sockaddr_un));
-	sun.sun_family = AF_UNIX;
+	memset(&s_un, 0, sizeof(struct sockaddr_un));
+	s_un.sun_family = AF_UNIX;
 
-	if (strlcpy(sun.sun_path, path, sizeof(sun.sun_path)) >=
-	    sizeof(sun.sun_path)) {
+	if (strlcpy(s_un.sun_path, path, sizeof(s_un.sun_path)) >=
+	    sizeof(s_un.sun_path)) {
 		close(s);
 		errno = ENAMETOOLONG;
-		return (-1);
+		return -1;
 	}
 
-	if (bind(s, (struct sockaddr *)&sun, SUN_LEN(&sun)) < 0) {
+	if (bind(s, (struct sockaddr *)&s_un, sizeof(s_un)) == -1) {
+		save_errno = errno;
 		close(s);
-		return (-1);
+		errno = save_errno;
+		return -1;
 	}
-	return (s);
+	if (vflag)
+		report_sock("Bound", NULL, 0, path);
+
+	return s;
 }
 
 /*
@@ -541,33 +709,33 @@ unix_bind(char *path)
 int
 unix_connect(char *path)
 {
-	struct sockaddr_un sun;
-	int s;
+	struct sockaddr_un s_un;
+	int s, save_errno;
 
 	if (uflag) {
-		if ((s = unix_bind(unix_dg_tmp_socket)) < 0)
-			return (-1);
+		if ((s = unix_bind(unix_dg_tmp_socket, SOCK_CLOEXEC)) == -1)
+			return -1;
 	} else {
-		if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-			return (-1);
+		if ((s = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1)
+			return -1;
 	}
-	(void)fcntl(s, F_SETFD, 1);
 
-	memset(&sun, 0, sizeof(struct sockaddr_un));
-	sun.sun_family = AF_UNIX;
+	memset(&s_un, 0, sizeof(struct sockaddr_un));
+	s_un.sun_family = AF_UNIX;
 
-	if (strlcpy(sun.sun_path, path, sizeof(sun.sun_path)) >=
-	    sizeof(sun.sun_path)) {
+	if (strlcpy(s_un.sun_path, path, sizeof(s_un.sun_path)) >=
+	    sizeof(s_un.sun_path)) {
 		close(s);
 		errno = ENAMETOOLONG;
-		return (-1);
+		return -1;
 	}
-	if (connect(s, (struct sockaddr *)&sun, SUN_LEN(&sun)) < 0) {
+	if (connect(s, (struct sockaddr *)&s_un, sizeof(s_un)) == -1) {
+		save_errno = errno;
 		close(s);
-		return (-1);
+		errno = save_errno;
+		return -1;
 	}
-	return (s);
-
+	return s;
 }
 
 /*
@@ -578,14 +746,17 @@ int
 unix_listen(char *path)
 {
 	int s;
-	if ((s = unix_bind(path)) < 0)
-		return (-1);
 
-	if (listen(s, 5) < 0) {
+	if ((s = unix_bind(path, 0)) == -1)
+		return -1;
+	if (listen(s, 5) == -1) {
 		close(s);
-		return (-1);
+		return -1;
 	}
-	return (s);
+	if (vflag)
+		report_sock("Listening", NULL, 0, path);
+
+	return s;
 }
 
 /*
@@ -594,27 +765,20 @@ unix_listen(char *path)
  * port or source address if needed. Returns -1 on failure.
  */
 int
-remote_connect(const char *host, const char *port, struct addrinfo hints)
+remote_connect(const char *host, const char *port, struct addrinfo hints,
+    char *ipaddr)
 {
 	struct addrinfo *res, *res0;
-	int s, error, on = 1;
+	int s = -1, error, herr, on = 1, save_errno;
 
-	if ((error = getaddrinfo(host, port, &hints, &res)))
-		errx(1, "getaddrinfo: %s", gai_strerror(error));
+	if ((error = getaddrinfo(host, port, &hints, &res0)))
+		errx(1, "getaddrinfo for host \"%s\" port %s: %s", host,
+		    port, gai_strerror(error));
 
-	res0 = res;
-	do {
-		if ((s = socket(res0->ai_family, res0->ai_socktype,
-		    res0->ai_protocol)) < 0)
+	for (res = res0; res; res = res->ai_next) {
+		if ((s = socket(res->ai_family, res->ai_socktype |
+		    SOCK_NONBLOCK, res->ai_protocol)) == -1)
 			continue;
-
-#ifndef ANDROID
-		if (rtableid) {
-			if (setsockopt(s, SOL_SOCKET, SO_RTABLE, &rtableid,
-			    sizeof(rtableid)) == -1)
-				err(1, "setsockopt SO_RTABLE");
-		}
-#endif /* !ANDROID */
 
 		/* Bind to a local port or source address if specified. */
 		if (sflag || pflag) {
@@ -625,7 +789,7 @@ remote_connect(const char *host, const char *port, struct addrinfo hints)
 			setsockopt(s, SOL_SOCKET, SO_BINDANY, &on, sizeof(on));
 #endif /* !ANDROID */
 			memset(&ahints, 0, sizeof(struct addrinfo));
-			ahints.ai_family = res0->ai_family;
+			ahints.ai_family = res->ai_family;
 			ahints.ai_socktype = uflag ? SOCK_DGRAM : SOCK_STREAM;
 			ahints.ai_protocol = uflag ? IPPROTO_UDP : IPPROTO_TCP;
 			ahints.ai_flags = AI_PASSIVE;
@@ -633,26 +797,49 @@ remote_connect(const char *host, const char *port, struct addrinfo hints)
 				errx(1, "getaddrinfo: %s", gai_strerror(error));
 
 			if (bind(s, (struct sockaddr *)ares->ai_addr,
-			    ares->ai_addrlen) < 0)
-				errx(1, "bind failed: %s", strerror(errno));
+			    ares->ai_addrlen) == -1)
+				err(1, "bind failed");
 			freeaddrinfo(ares);
 		}
 
-		set_common_sockopts(s);
+		set_common_sockopts(s, res->ai_family);
 
-		if (timeout_connect(s, res0->ai_addr, res0->ai_addrlen) == 0)
+		if (ipaddr != NULL) {
+			herr = getnameinfo(res->ai_addr, res->ai_addrlen,
+			    ipaddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+			switch (herr) {
+			case 0:
+				break;
+			case EAI_SYSTEM:
+				err(1, "getnameinfo");
+			default:
+				errx(1, "getnameinfo: %s", gai_strerror(herr));
+			}
+		}
+
+		if (timeout_connect(s, res->ai_addr, res->ai_addrlen) == 0)
 			break;
-		else if (vflag)
-			warn("connect to %s port %s (%s) failed", host, port,
-			    uflag ? "udp" : "tcp");
 
+		if (vflag) {
+			/* only print IP if there is something to report */
+			if (nflag || ipaddr == NULL ||
+			    (strncmp(host, ipaddr, NI_MAXHOST) == 0))
+				warn("connect to %s port %s (%s) failed", host,
+				    port, uflag ? "udp" : "tcp");
+			else
+				warn("connect to %s (%s) port %s (%s) failed",
+				    host, ipaddr, port, uflag ? "udp" : "tcp");
+		}
+
+		save_errno = errno;
 		close(s);
+		errno = save_errno;
 		s = -1;
-	} while ((res0 = res0->ai_next) != NULL);
+	}
 
-	freeaddrinfo(res);
+	freeaddrinfo(res0);
 
-	return (s);
+	return s;
 }
 
 int
@@ -660,14 +847,8 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	struct pollfd pfd;
 	socklen_t optlen;
-	int flags, optval;
+	int optval;
 	int ret;
-
-	if (timeout != -1) {
-		flags = fcntl(s, F_GETFL, 0);
-		if (fcntl(s, F_SETFL, flags | O_NONBLOCK) == -1)
-			err(1, "set non-blocking mode");
-	}
 
 	if ((ret = connect(s, name, namelen)) != 0 && errno == EINPROGRESS) {
 		pfd.fd = s;
@@ -686,10 +867,7 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen)
 			err(1, "poll failed");
 	}
 
-	if (timeout != -1 && fcntl(s, F_SETFL, flags) == -1)
-		err(1, "restoring flags");
-
-	return (ret);
+	return ret;
 }
 
 /*
@@ -698,10 +876,10 @@ timeout_connect(int s, const struct sockaddr *name, socklen_t namelen)
  * address. Returns -1 on failure.
  */
 int
-local_listen(char *host, char *port, struct addrinfo hints)
+local_listen(const char *host, const char *port, struct addrinfo hints)
 {
 	struct addrinfo *res, *res0;
-	int s, ret, x = 1;
+	int s = -1, ret, x = 1, save_errno;
 	int error;
 
 	/* Allow nodename to be null. */
@@ -714,22 +892,13 @@ local_listen(char *host, char *port, struct addrinfo hints)
 	if (host == NULL && hints.ai_family == AF_UNSPEC)
 		hints.ai_family = AF_INET;
 
-	if ((error = getaddrinfo(host, port, &hints, &res)))
+	if ((error = getaddrinfo(host, port, &hints, &res0)))
 		errx(1, "getaddrinfo: %s", gai_strerror(error));
 
-	res0 = res;
-	do {
-		if ((s = socket(res0->ai_family, res0->ai_socktype,
-		    res0->ai_protocol)) < 0)
+	for (res = res0; res; res = res->ai_next) {
+		if ((s = socket(res->ai_family, res->ai_socktype,
+		    res->ai_protocol)) == -1)
 			continue;
-
-#ifndef ANDROID
-		if (rtableid) {
-			if (setsockopt(s, IPPROTO_IP, SO_RTABLE, &rtableid,
-			    sizeof(rtableid)) == -1)
-				err(1, "setsockopt SO_RTABLE");
-		}
-#endif /* !ANDROID */
 
 #ifdef ANDROID
 		ret = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &x, sizeof(x));
@@ -739,24 +908,36 @@ local_listen(char *host, char *port, struct addrinfo hints)
 		if (ret == -1)
 			err(1, NULL);
 
-		set_common_sockopts(s);
+		set_common_sockopts(s, res->ai_family);
 
-		if (bind(s, (struct sockaddr *)res0->ai_addr,
-		    res0->ai_addrlen) == 0)
+		if (bind(s, (struct sockaddr *)res->ai_addr,
+		    res->ai_addrlen) == 0)
 			break;
 
+		save_errno = errno;
 		close(s);
+		errno = save_errno;
 		s = -1;
-	} while ((res0 = res0->ai_next) != NULL);
-
-	if (!uflag && s != -1) {
-		if (listen(s, 1) < 0)
-			err(1, "listen");
 	}
 
-	freeaddrinfo(res);
+	if (!uflag && s != -1) {
+		if (listen(s, 1) == -1)
+			err(1, "listen");
+	}
+	if (vflag && s != -1) {
+		struct sockaddr_storage ss;
+		socklen_t len;
 
-	return (s);
+		len = sizeof(ss);
+		if (getsockname(s, (struct sockaddr *)&ss, &len) == -1)
+			err(1, "getsockname");
+		report_sock(uflag ? "Bound" : "Listening",
+		    (struct sockaddr *)&ss, len, NULL);
+	}
+
+	freeaddrinfo(res0);
+
+	return s;
 }
 
 /*
@@ -764,64 +945,301 @@ local_listen(char *host, char *port, struct addrinfo hints)
  * Loop that polls on the network file descriptor and stdin.
  */
 void
-readwrite(int nfd)
+readwrite(int net_fd, struct tls *tls_ctx)
 {
-	struct pollfd pfd[2];
-	unsigned char buf[16384];
-	int n, wfd = fileno(stdin);
-	int lfd = fileno(stdout);
-	int plen;
+	struct pollfd pfd[4];
+	int stdin_fd = STDIN_FILENO;
+	int stdout_fd = STDOUT_FILENO;
+	unsigned char netinbuf[BUFSIZE];
+	size_t netinbufpos = 0;
+	unsigned char stdinbuf[BUFSIZE];
+	size_t stdinbufpos = 0;
+	int n, num_fds;
+	ssize_t ret;
 
-	plen = jflag ? 16384 : 2048;
+	/* don't read from stdin if requested */
+	if (dflag)
+		stdin_fd = -1;
 
-	/* Setup Network FD */
-	pfd[0].fd = nfd;
-	pfd[0].events = POLLIN;
+	/* stdin */
+	pfd[POLL_STDIN].fd = stdin_fd;
+	pfd[POLL_STDIN].events = POLLIN;
 
-	/* Set up STDIN FD. */
-	pfd[1].fd = wfd;
-	pfd[1].events = POLLIN;
+	/* network out */
+	pfd[POLL_NETOUT].fd = net_fd;
+	pfd[POLL_NETOUT].events = 0;
 
-	while (pfd[0].fd != -1) {
+	/* network in */
+	pfd[POLL_NETIN].fd = net_fd;
+	pfd[POLL_NETIN].events = POLLIN;
+
+	/* stdout */
+	pfd[POLL_STDOUT].fd = stdout_fd;
+	pfd[POLL_STDOUT].events = 0;
+
+	while (1) {
+		/* both inputs are gone, buffers are empty, we are done */
+		if (pfd[POLL_STDIN].fd == -1 && pfd[POLL_NETIN].fd == -1 &&
+		    stdinbufpos == 0 && netinbufpos == 0)
+			return;
+		/* both outputs are gone, we can't continue */
+		if (pfd[POLL_NETOUT].fd == -1 && pfd[POLL_STDOUT].fd == -1)
+			return;
+		/* listen and net in gone, queues empty, done */
+		if (lflag && pfd[POLL_NETIN].fd == -1 &&
+		    stdinbufpos == 0 && netinbufpos == 0)
+			return;
+
+		/* help says -i is for "wait between lines sent". We read and
+		 * write arbitrary amounts of data, and we don't want to start
+		 * scanning for newlines, so this is as good as it gets */
 		if (iflag)
 			sleep(iflag);
 
-		if ((n = poll(pfd, 2 - dflag, timeout)) < 0) {
-			close(nfd);
-			err(1, "Polling Error");
-		}
+		/* poll */
+		num_fds = poll(pfd, 4, timeout);
 
-		if (n == 0)
+		/* treat poll errors */
+		if (num_fds == -1)
+			err(1, "polling error");
+
+		/* timeout happened */
+		if (num_fds == 0)
 			return;
 
-		if (pfd[0].revents & POLLIN) {
-			if ((n = read(nfd, buf, plen)) < 0)
-				return;
-			else if (n == 0) {
-				shutdown(nfd, SHUT_RD);
-				pfd[0].fd = -1;
-				pfd[0].events = 0;
-			} else {
-				if (tflag)
-					atelnet(nfd, buf, n);
-				if (atomicio(vwrite, lfd, buf, n) != n)
-					return;
+		/* treat socket error conditions */
+		for (n = 0; n < 4; n++) {
+			if (pfd[n].revents & (POLLERR|POLLNVAL)) {
+				pfd[n].fd = -1;
 			}
+		}
+		/* reading is possible after HUP */
+		if (pfd[POLL_STDIN].events & POLLIN &&
+		    pfd[POLL_STDIN].revents & POLLHUP &&
+		    !(pfd[POLL_STDIN].revents & POLLIN))
+			pfd[POLL_STDIN].fd = -1;
+
+		if (pfd[POLL_NETIN].events & POLLIN &&
+		    pfd[POLL_NETIN].revents & POLLHUP &&
+		    !(pfd[POLL_NETIN].revents & POLLIN))
+			pfd[POLL_NETIN].fd = -1;
+
+		if (pfd[POLL_NETOUT].revents & POLLHUP) {
+			if (pfd[POLL_NETOUT].fd != -1 && Nflag)
+				shutdown(pfd[POLL_NETOUT].fd, SHUT_WR);
+			pfd[POLL_NETOUT].fd = -1;
+		}
+		/* if HUP, stop watching stdout */
+		if (pfd[POLL_STDOUT].revents & POLLHUP)
+			pfd[POLL_STDOUT].fd = -1;
+		/* if no net out, stop watching stdin */
+		if (pfd[POLL_NETOUT].fd == -1)
+			pfd[POLL_STDIN].fd = -1;
+		/* if no stdout, stop watching net in */
+		if (pfd[POLL_STDOUT].fd == -1) {
+			if (pfd[POLL_NETIN].fd != -1)
+				shutdown(pfd[POLL_NETIN].fd, SHUT_RD);
+			pfd[POLL_NETIN].fd = -1;
 		}
 
-		if (!dflag && pfd[1].revents & POLLIN) {
-			if ((n = read(wfd, buf, plen)) < 0)
-				return;
-			else if (n == 0) {
-				shutdown(nfd, SHUT_WR);
-				pfd[1].fd = -1;
-				pfd[1].events = 0;
-			} else {
-				if (atomicio(vwrite, nfd, buf, n) != n)
-					return;
+		/* try to read from stdin */
+		if (pfd[POLL_STDIN].revents & POLLIN && stdinbufpos < BUFSIZE) {
+			ret = fillbuf(pfd[POLL_STDIN].fd, stdinbuf,
+			    &stdinbufpos, NULL);
+			if (ret == TLS_WANT_POLLIN)
+				pfd[POLL_STDIN].events = POLLIN;
+			else if (ret == TLS_WANT_POLLOUT)
+				pfd[POLL_STDIN].events = POLLOUT;
+			else if (ret == 0 || ret == -1)
+				pfd[POLL_STDIN].fd = -1;
+			/* read something - poll net out */
+			if (stdinbufpos > 0)
+				pfd[POLL_NETOUT].events = POLLOUT;
+			/* filled buffer - remove self from polling */
+			if (stdinbufpos == BUFSIZE)
+				pfd[POLL_STDIN].events = 0;
+		}
+		/* try to write to network */
+		if (pfd[POLL_NETOUT].revents & POLLOUT && stdinbufpos > 0) {
+			ret = drainbuf(pfd[POLL_NETOUT].fd, stdinbuf,
+			    &stdinbufpos, tls_ctx);
+			if (ret == TLS_WANT_POLLIN)
+				pfd[POLL_NETOUT].events = POLLIN;
+			else if (ret == TLS_WANT_POLLOUT)
+				pfd[POLL_NETOUT].events = POLLOUT;
+			else if (ret == -1)
+				pfd[POLL_NETOUT].fd = -1;
+			/* buffer empty - remove self from polling */
+			if (stdinbufpos == 0)
+				pfd[POLL_NETOUT].events = 0;
+			/* buffer no longer full - poll stdin again */
+			if (stdinbufpos < BUFSIZE)
+				pfd[POLL_STDIN].events = POLLIN;
+		}
+		/* try to read from network */
+		if (pfd[POLL_NETIN].revents & POLLIN && netinbufpos < BUFSIZE) {
+			ret = fillbuf(pfd[POLL_NETIN].fd, netinbuf,
+			    &netinbufpos, tls_ctx);
+			if (ret == TLS_WANT_POLLIN)
+				pfd[POLL_NETIN].events = POLLIN;
+			else if (ret == TLS_WANT_POLLOUT)
+				pfd[POLL_NETIN].events = POLLOUT;
+			else if (ret == -1)
+				pfd[POLL_NETIN].fd = -1;
+			/* eof on net in - remove from pfd */
+			if (ret == 0) {
+				shutdown(pfd[POLL_NETIN].fd, SHUT_RD);
+				pfd[POLL_NETIN].fd = -1;
 			}
+			if (recvlimit > 0 && ++recvcount >= recvlimit) {
+				if (pfd[POLL_NETIN].fd != -1)
+					shutdown(pfd[POLL_NETIN].fd, SHUT_RD);
+				pfd[POLL_NETIN].fd = -1;
+				pfd[POLL_STDIN].fd = -1;
+			}
+			/* read something - poll stdout */
+			if (netinbufpos > 0)
+				pfd[POLL_STDOUT].events = POLLOUT;
+			/* filled buffer - remove self from polling */
+			if (netinbufpos == BUFSIZE)
+				pfd[POLL_NETIN].events = 0;
+			/* handle telnet */
+			if (pfd[POLL_NETIN].fd != -1 && tflag)
+				atelnet(pfd[POLL_NETIN].fd, netinbuf,
+				    netinbufpos);
+		}
+		/* try to write to stdout */
+		if (pfd[POLL_STDOUT].revents & POLLOUT && netinbufpos > 0) {
+			ret = drainbuf(pfd[POLL_STDOUT].fd, netinbuf,
+			    &netinbufpos, NULL);
+			if (ret == TLS_WANT_POLLIN)
+				pfd[POLL_STDOUT].events = POLLIN;
+			else if (ret == TLS_WANT_POLLOUT)
+				pfd[POLL_STDOUT].events = POLLOUT;
+			else if (ret == -1)
+				pfd[POLL_STDOUT].fd = -1;
+			/* buffer empty - remove self from polling */
+			if (netinbufpos == 0)
+				pfd[POLL_STDOUT].events = 0;
+			/* buffer no longer full - poll net in again */
+			if (netinbufpos < BUFSIZE)
+				pfd[POLL_NETIN].events = POLLIN;
+		}
+
+		/* stdin gone and queue empty? */
+		if (pfd[POLL_STDIN].fd == -1 && stdinbufpos == 0) {
+			if (pfd[POLL_NETOUT].fd != -1 && Nflag)
+				shutdown(pfd[POLL_NETOUT].fd, SHUT_WR);
+			pfd[POLL_NETOUT].fd = -1;
+		}
+		/* net in gone and queue empty? */
+		if (pfd[POLL_NETIN].fd == -1 && netinbufpos == 0) {
+			pfd[POLL_STDOUT].fd = -1;
 		}
 	}
+}
+
+ssize_t
+drainbuf(int fd, unsigned char *buf, size_t *bufpos, struct tls *tls)
+{
+	ssize_t n;
+	ssize_t adjust;
+
+	if (fd == -1)
+		return -1;
+
+	(void)tls;
+	n = write(fd, buf, *bufpos);
+	/* don't treat EAGAIN, EINTR as error */
+	if (n == -1 && (errno == EAGAIN || errno == EINTR))
+		n = TLS_WANT_POLLOUT;
+	if (n <= 0)
+		return n;
+	/* adjust buffer */
+	adjust = *bufpos - n;
+	if (adjust > 0)
+		memmove(buf, buf + n, adjust);
+	*bufpos -= n;
+	return n;
+}
+
+ssize_t
+fillbuf(int fd, unsigned char *buf, size_t *bufpos, struct tls *tls)
+{
+	size_t num = BUFSIZE - *bufpos;
+	ssize_t n;
+
+	if (fd == -1)
+		return -1;
+
+	(void)tls;
+	n = read(fd, buf + *bufpos, num);
+	/* don't treat EAGAIN, EINTR as error */
+	if (n == -1 && (errno == EAGAIN || errno == EINTR))
+		n = TLS_WANT_POLLIN;
+	if (n <= 0)
+		return n;
+	*bufpos += n;
+	return n;
+}
+
+/*
+ * fdpass()
+ * Pass the connected file descriptor to stdout and exit.
+ */
+void
+fdpass(int nfd)
+{
+	struct msghdr mh;
+	union {
+		struct cmsghdr hdr;
+		char buf[CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+	struct cmsghdr *cmsg;
+	struct iovec iov;
+	char c = '\0';
+	ssize_t r;
+	struct pollfd pfd;
+
+	/* Avoid obvious stupidity */
+	if (isatty(STDOUT_FILENO))
+		errx(1, "Cannot pass file descriptor to tty");
+
+	memset(&mh, 0, sizeof(mh));
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	memset(&iov, 0, sizeof(iov));
+
+	mh.msg_control = &cmsgbuf.buf;
+	mh.msg_controllen = sizeof(cmsgbuf.buf);
+	cmsg = CMSG_FIRSTHDR(&mh);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	*(int *)CMSG_DATA(cmsg) = nfd;
+
+	iov.iov_base = &c;
+	iov.iov_len = 1;
+	mh.msg_iov = &iov;
+	mh.msg_iovlen = 1;
+
+	memset(&pfd, 0, sizeof(pfd));
+	pfd.fd = STDOUT_FILENO;
+	pfd.events = POLLOUT;
+	for (;;) {
+		r = sendmsg(STDOUT_FILENO, &mh, 0);
+		if (r == -1) {
+			if (errno == EAGAIN || errno == EINTR) {
+				if (poll(&pfd, 1, -1) == -1)
+					err(1, "poll");
+				continue;
+			}
+			err(1, "sendmsg");
+		} else if (r != 1)
+			errx(1, "sendmsg: unexpected return value %zd", r);
+		else
+			break;
+	}
+	exit(0);
 }
 
 /* Deal with RFC 854 WILL/WONT DO/DONT negotiation. */
@@ -855,79 +1273,76 @@ atelnet(int nfd, unsigned char *buf, unsigned int size)
 	}
 }
 
+int
+strtoport(char *portstr, int udp)
+{
+	struct servent *entry;
+	const char *errstr;
+	char *proto;
+	int port = -1;
+
+	proto = udp ? "udp" : "tcp";
+
+	port = strtonum(portstr, 1, PORT_MAX, &errstr);
+	if (errstr == NULL)
+		return port;
+	if (errno != EINVAL)
+		errx(1, "port number %s: %s", errstr, portstr);
+	if ((entry = getservbyname(portstr, proto)) == NULL)
+		errx(1, "service \"%s\" unknown", portstr);
+	return ntohs(entry->s_port);
+}
+
 /*
  * build_ports()
- * Build an array or ports in portlist[], listing each port
+ * Build an array of ports in portlist[], listing each port
  * that we should try to connect to.
  */
 void
 build_ports(char *p)
 {
-	const char *errstr;
 	char *n;
 	int hi, lo, cp;
 	int x = 0;
 
-	if ((n = strchr(p, '-')) != NULL) {
-		if (lflag)
-			errx(1, "Cannot use -l with multiple ports!");
-
+	if (isdigit((unsigned char)*p) && (n = strchr(p, '-')) != NULL) {
 		*n = '\0';
 		n++;
 
 		/* Make sure the ports are in order: lowest->highest. */
-#ifdef ANDROID
-		hi = atoi(n);
-#else
-		hi = strtonum(n, 1, PORT_MAX, &errstr);
-		if (errstr)
-			errx(1, "port number %s: %s", errstr, n);
-#endif
-#ifdef ANDROID
-		lo = atoi(p);
-#else
-		lo = strtonum(p, 1, PORT_MAX, &errstr);
-		if (errstr)
-			errx(1, "port number %s: %s", errstr, p);
-#endif
-
+		hi = strtoport(n, uflag);
+		lo = strtoport(p, uflag);
 		if (lo > hi) {
 			cp = hi;
 			hi = lo;
 			lo = cp;
 		}
 
-		/* Load ports sequentially. */
-		for (cp = lo; cp <= hi; cp++) {
-			portlist[x] = calloc(1, PORT_MAX_LEN);
-			if (portlist[x] == NULL)
-				err(1, NULL);
-			snprintf(portlist[x], PORT_MAX_LEN, "%d", cp);
-			x++;
-		}
-
-		/* Randomly swap ports. */
+		/*
+		 * Initialize portlist with a random permutation.  Based on
+		 * Knuth, as in ip_randomid() in sys/netinet/ip_id.c.
+		 */
 		if (rflag) {
-			int y;
-			char *c;
-
-			for (x = 0; x <= (hi - lo); x++) {
-				y = (arc4random() & 0xFFFF) % (hi - lo);
-				c = portlist[x];
-				portlist[x] = portlist[y];
-				portlist[y] = c;
+			for (x = 0; x <= hi - lo; x++) {
+				cp = arc4random_uniform(x + 1);
+				portlist[x] = portlist[cp];
+				if (asprintf(&portlist[cp], "%d", x + lo) == -1)
+					err(1, "asprintf");
+			}
+		} else { /* Load ports sequentially. */
+			for (cp = lo; cp <= hi; cp++) {
+				if (asprintf(&portlist[x], "%d", cp) == -1)
+					err(1, "asprintf");
+				x++;
 			}
 		}
 	} else {
-#ifdef ANDROID
-		hi = atoi(p);
-#else
-		hi = strtonum(p, 1, PORT_MAX, &errstr);
-		if (errstr)
-			errx(1, "port number %s: %s", errstr, p);
-#endif
-		portlist[0] = strdup(p);
-		if (portlist[0] == NULL)
+		char *tmp;
+
+		hi = strtoport(p, uflag);
+		if (asprintf(&tmp, "%d", hi) != -1)
+			portlist[0] = tmp;
+		else
 			err(1, NULL);
 	}
 }
@@ -935,13 +1350,16 @@ build_ports(char *p)
 /*
  * udptest()
  * Do a few writes to see if the UDP port is there.
- * XXX - Better way of doing this? Doesn't work for IPv6.
- * Also fails after around 100 ports checked.
+ * Fails once PF state table is full.
  */
 int
 udptest(int s)
 {
 	int i, ret;
+
+	/* Only write to the socket in scan mode or interactive mode. */
+	if (!zflag && !isatty(STDIN_FILENO))
+		return 0;
 
 	for (i = 0; i <= 3; i++) {
 		if (write(s, "X", 1) == 1)
@@ -949,38 +1367,68 @@ udptest(int s)
 		else
 			ret = -1;
 	}
-	return (ret);
+	return ret;
 }
 
 void
-set_common_sockopts(int s)
+connection_info(const char *host, const char *port, const char *proto,
+    const char *ipaddr)
+{
+	struct servent *sv;
+	char *service = "*";
+
+	/* Look up service name unless -n. */
+	if (!nflag) {
+		const char *errstr;
+
+		int p = strtonum(port, 1, PORT_MAX, &errstr);
+		if (errstr)
+			errx(1, "port number %s: %s", errstr, port);
+		sv = getservbyport(htons(p), proto);
+		if (sv != NULL)
+			service = sv->s_name;
+	}
+
+	fprintf(stderr, "Connection to %s", host);
+
+	/*
+	 * if we aren't connecting thru a proxy and
+	 * there is something to report, print IP
+	 */
+	if (!nflag && !xflag && strcmp(host, ipaddr) != 0)
+		fprintf(stderr, " (%s)", ipaddr);
+
+	fprintf(stderr, " %s port [%s/%s] succeeded!\n", port, proto, service);
+}
+
+void
+set_common_sockopts(int s, int af)
 {
 	int x = 1;
 
 #ifndef ANDROID
 	if (Sflag) {
 		if (setsockopt(s, IPPROTO_TCP, TCP_MD5SIG,
-			&x, sizeof(x)) == -1)
+		    &x, sizeof(x)) == -1)
 			err(1, NULL);
 	}
-#endif
+#endif /* !ANDROID */
 	if (Dflag) {
 		if (setsockopt(s, SOL_SOCKET, SO_DEBUG,
-			&x, sizeof(x)) == -1)
+		    &x, sizeof(x)) == -1)
 			err(1, NULL);
 	}
 #ifndef ANDROID
-	if (jflag) {
-		if (setsockopt(s, SOL_SOCKET, SO_JUMBO,
-			&x, sizeof(x)) == -1)
-			err(1, NULL);
-	}
 	if (Tflag != -1) {
-		if (setsockopt(s, IPPROTO_IP, IP_TOS,
-		    &Tflag, sizeof(Tflag)) == -1)
+		if (af == AF_INET && setsockopt(s, IPPROTO_IP,
+		    IP_TOS, &Tflag, sizeof(Tflag)) == -1)
 			err(1, "set IP ToS");
+
+		else if (af == AF_INET6 && setsockopt(s, IPPROTO_IPV6,
+		    IPV6_TCLASS, &Tflag, sizeof(Tflag)) == -1)
+			err(1, "set IPv6 traffic class");
 	}
-#endif
+#endif /* !ANDROID */
 	if (Iflag) {
 		if (setsockopt(s, SOL_SOCKET, SO_RCVBUF,
 		    &Iflag, sizeof(Iflag)) == -1)
@@ -991,11 +1439,37 @@ set_common_sockopts(int s)
 		    &Oflag, sizeof(Oflag)) == -1)
 			err(1, "set TCP send buffer size");
 	}
+
+	if (ttl != -1) {
+		if (af == AF_INET && setsockopt(s, IPPROTO_IP,
+		    IP_TTL, &ttl, sizeof(ttl)))
+			err(1, "set IP TTL");
+
+		else if (af == AF_INET6 && setsockopt(s, IPPROTO_IPV6,
+		    IPV6_UNICAST_HOPS, &ttl, sizeof(ttl)))
+			err(1, "set IPv6 unicast hops");
+	}
+
+	if (minttl != -1) {
+#ifdef IP_MINTTL
+		if (af == AF_INET && setsockopt(s, IPPROTO_IP,
+		    IP_MINTTL, &minttl, sizeof(minttl)))
+			err(1, "set IP min TTL");
+		else
+#endif
+#ifdef IPV6_MINHOPCOUNT
+		if (af == AF_INET6 && setsockopt(s, IPPROTO_IPV6,
+		    IPV6_MINHOPCOUNT, &minttl, sizeof(minttl)))
+			err(1, "set IPv6 min hop count");
+		else
+#endif
+			errx(1, "minttl not supported on this platform");
+	}
 }
 
 #ifndef ANDROID
 int
-map_tos(char *s, int *val)
+process_tos_opt(char *s, int *val)
 {
 	/* DiffServ Codepoints and other TOS mappings */
 	const struct toskeywords {
@@ -1029,63 +1503,198 @@ map_tos(char *s, int *val)
 		{ "netcontrol",		IPTOS_PREC_NETCONTROL },
 		{ "reliability",	IPTOS_RELIABILITY },
 		{ "throughput",		IPTOS_THROUGHPUT },
-		{ NULL, 		-1 },
+		{ "va",			IPTOS_DSCP_VA },
+		{ NULL,			-1 },
 	};
 
 	for (t = toskeywords; t->keyword != NULL; t++) {
 		if (strcmp(s, t->keyword) == 0) {
 			*val = t->val;
-			return (1);
+			return 1;
 		}
 	}
 
-	return (0);
+	return 0;
 }
-#endif
+#endif /* !ANDROID */
+
+#ifndef ANDROID
+int
+process_tls_opt(char *s, int *flags)
+{
+	size_t len;
+	char *v;
+
+	const struct tlskeywords {
+		const char	*keyword;
+		int		 flag;
+		char		**value;
+	} *t, tlskeywords[] = {
+		{ "alpn",		-1,			&tls_alpn },
+		{ "ciphers",		-1,			&tls_ciphers },
+		{ "clientcert",		TLS_CCERT,		NULL },
+		{ "muststaple",		TLS_MUSTSTAPLE,		NULL },
+		{ "noname",		TLS_NONAME,		NULL },
+		{ "noverify",		TLS_NOVERIFY,		NULL },
+		{ "protocols",		-1,			&tls_protocols },
+		{ NULL,			-1,			NULL },
+	};
+
+	len = strlen(s);
+	if ((v = strchr(s, '=')) != NULL) {
+		len = v - s;
+		v++;
+	}
+
+	for (t = tlskeywords; t->keyword != NULL; t++) {
+		if (strlen(t->keyword) == len &&
+		    strncmp(s, t->keyword, len) == 0) {
+			if (t->value != NULL) {
+				if (v == NULL)
+					errx(1, "invalid tls value `%s'", s);
+				*t->value = v;
+			} else {
+				if (v != NULL)
+					errx(1, "invalid tls value `%s'", s);
+				*flags |= t->flag;
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+#endif /* !ANDROID */
+
+void
+report_sock(const char *msg, const struct sockaddr *sa, socklen_t salen,
+    char *path)
+{
+	char host[NI_MAXHOST], port[NI_MAXSERV];
+	int herr;
+	int flags = NI_NUMERICSERV;
+
+	if (path != NULL) {
+		fprintf(stderr, "%s on %s\n", msg, path);
+		return;
+	}
+
+	if (nflag)
+		flags |= NI_NUMERICHOST;
+
+	herr = getnameinfo(sa, salen, host, sizeof(host), port, sizeof(port),
+	    flags);
+	switch (herr) {
+	case 0:
+		break;
+	case EAI_SYSTEM:
+		err(1, "getnameinfo");
+	default:
+		errx(1, "getnameinfo: %s", gai_strerror(herr));
+	}
+
+	fprintf(stderr, "%s on %s %s\n", msg, host, port);
+}
 
 void
 help(void)
 {
 	usage(0);
+#ifdef ANDROID
+	/* TLS, SOCKS proxy, ToS, MD5 and rtable options are not built here. */
 	fprintf(stderr, "\tCommand Summary:\n\
 	\t-4		Use IPv4\n\
 	\t-6		Use IPv6\n\
 	\t-D		Enable the debug socket option\n\
 	\t-d		Detach from stdin\n\
+	\t-F		Pass socket fd\n\
 	\t-h		This help text\n\
 	\t-I length	TCP receive buffer length\n\
-	\t-i secs\t	Delay interval for lines sent, ports scanned\n\
+	\t-i interval	Delay interval for lines sent, ports scanned\n\
 	\t-k		Keep inbound sockets open for multiple connects\n\
 	\t-l		Listen mode, for inbound connects\n\
+	\t-M ttl		Outgoing TTL / Hop Limit\n\
+	\t-m minttl	Minimum incoming TTL / Hop Limit\n\
+	\t-N		Shutdown the network socket after EOF on stdin\n\
 	\t-n		Suppress name/port resolutions\n\
 	\t-O length	TCP send buffer length\n\
-	\t-P proxyuser\tUsername for proxy authentication\n\
 	\t-p port\t	Specify local port for remote connects\n\
 	\t-r		Randomize remote ports\n\
+	\t-s sourceaddr	Local source address\n\
+	\t-t		Answer TELNET negotiation\n\
+	\t-U		Use UNIX domain socket\n\
+	\t-u		UDP mode\n\
+	\t-v		Verbose\n\
+	\t-W recvlimit	Terminate after receiving a number of packets\n\
+	\t-w timeout	Timeout for connects and final net reads\n\
+	\t-z		Zero-I/O mode [used for scanning]\n\
+	Port numbers can be individual or ranges: lo-hi [inclusive]\n");
+#else
+	fprintf(stderr, "\tCommand Summary:\n\
+	\t-4		Use IPv4\n\
+	\t-6		Use IPv6\n\
+	\t-C certfile	Public key file\n\
+	\t-c		Use TLS\n\
+	\t-D		Enable the debug socket option\n\
+	\t-d		Detach from stdin\n\
+	\t-e name\t	Required name in peer certificate\n\
+	\t-F		Pass socket fd\n\
+	\t-H hash\t	Hash string of peer certificate\n\
+	\t-h		This help text\n\
+	\t-I length	TCP receive buffer length\n\
+	\t-i interval	Delay interval for lines sent, ports scanned\n\
+	\t-K keyfile	Private key file\n\
+	\t-k		Keep inbound sockets open for multiple connects\n\
+	\t-l		Listen mode, for inbound connects\n\
+	\t-M ttl		Outgoing TTL / Hop Limit\n\
+	\t-m minttl	Minimum incoming TTL / Hop Limit\n\
+	\t-N		Shutdown the network socket after EOF on stdin\n\
+	\t-n		Suppress name/port resolutions\n\
+	\t-O length	TCP send buffer length\n\
+	\t-o staplefile	Staple file\n\
+	\t-P proxyuser\tUsername for proxy authentication\n\
+	\t-p port\t	Specify local port for remote connects\n\
+	\t-R CAfile	CA bundle\n\
+	\t-r		Randomize remote ports\n\
 	\t-S		Enable the TCP MD5 signature option\n\
-	\t-s addr\t	Local source address\n\
-	\t-T toskeyword\tSet IP Type of Service\n\
+	\t-s sourceaddr	Local source address\n\
+	\t-T keyword	TOS value or TLS options\n\
 	\t-t		Answer TELNET negotiation\n\
 	\t-U		Use UNIX domain socket\n\
 	\t-u		UDP mode\n\
 	\t-V rtable	Specify alternate routing table\n\
 	\t-v		Verbose\n\
-	\t-w secs\t	Timeout for connects and final net reads\n\
-	\t-X proto	Proxy protocol: \"4\", \"5\" (SOCKS) or \"connect\"\n\
+	\t-W recvlimit	Terminate after receiving a number of packets\n\
+	\t-w timeout	Timeout for connects and final net reads\n\
+	\t-X proto	Proxy protocol: \"4\", \"4A\", \"5\" (SOCKS) or \"connect\"\n\
 	\t-x addr[:port]\tSpecify proxy address and port\n\
+	\t-Z		Peer certificate file\n\
 	\t-z		Zero-I/O mode [used for scanning]\n\
 	Port numbers can be individual or ranges: lo-hi [inclusive]\n");
+#endif /* ANDROID */
 	exit(1);
 }
 
 void
 usage(int ret)
 {
+#ifdef ANDROID
 	fprintf(stderr,
-	    "usage: nc [-46DdhklnrStUuvz] [-I length] [-i interval] [-O length]\n"
-	    "\t  [-P proxy_username] [-p source_port] [-s source] [-T ToS]\n"
-	    "\t  [-V rtable] [-w timeout] [-X proxy_protocol]\n"
-	    "\t  [-x proxy_address[:port]] [destination] [port]\n");
+	    "usage: nc [-46DdFhklNnruvz] [-I length] [-i interval] [-M ttl]\n"
+	    "\t  [-m minttl] [-O length] [-p source_port] [-s sourceaddr]\n"
+	    "\t  [-W recvlimit] [-w timeout] [destination] [port]\n");
+#else
+	fprintf(stderr,
+	    "usage: nc [-46cDdFhklNnrStUuvz] [-C certfile] [-e name] "
+	    "[-H hash] [-I length]\n"
+	    "\t  [-i interval] [-K keyfile] [-M ttl] [-m minttl] [-O length]\n"
+	    "\t  [-o staplefile] [-P proxy_username] [-p source_port] "
+	    "[-R CAfile]\n"
+	    "\t  [-s sourceaddr] [-T keyword] [-V rtable] [-W recvlimit] "
+	    "[-w timeout]\n"
+	    "\t  [-X proxy_protocol] [-x proxy_address[:port]] "
+	    "[-Z peercertfile]\n"
+	    "\t  [destination] [port]\n");
+#endif /* ANDROID */
 	if (ret)
 		exit(1);
 }

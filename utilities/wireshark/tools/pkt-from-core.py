@@ -48,8 +48,7 @@ class BackTrace:
                 # what we expect it should be.
                 frame_num = int(m.group("num"))
                 if frame_num != frame_will_be:
-                    sys.exit("Found frame %d instead of %d" %
-                            (frame_num, frame_will_be))
+                    sys.exit(f"Found frame {frame_num} instead of {frame_will_be}")
 
                 # Find the function name. XXX - need to handle '???'
                 n = self.re_func1.search(line)
@@ -59,7 +58,7 @@ class BackTrace:
                 if n:
                     func = n.group("func")
                 else:
-                    sys.exit("Function name not found in %s" % (line,))
+                    sys.exit(f"Function name not found in {line}")
 
                 # Save the info
                 self.frames.append(func)
@@ -169,8 +168,7 @@ wtap_name = {
 
 def wtap_to_pcap(wtap):
     if not wtap_to_pcap_map.has_key(wtap):
-        sys.exit("Don't know how to convert wiretap encoding %d to libpcap." % \
-                (wtap))
+        sys.exit(f"Don't know how to convert wiretap encoding {wtap} to libpcap.")
 
     return wtap_to_pcap_map[wtap]
 
@@ -183,8 +181,8 @@ def run_gdb(*commands):
     fname = tempfile.mktemp()
     try:
         fh = open(fname, "w")
-    except IOError, err:
-        sys.exit("Cannot open %s for writing: %s" % (fname, err))
+    except OSError as err:
+        sys.exit(f"Cannot open {fname} for writing: {err}")
 
     # Put the commands in it
     for cmd in commands:
@@ -194,26 +192,26 @@ def run_gdb(*commands):
     fh.write("quit\n")
     try:
         fh.close()
-    except IOError, err:
+    except OSError as err:
         try:
             os.unlink(fname)
-        except Exception:
+        except FileNotFoundError:
             pass
-        sys.exit("Cannot close %s: %s" % (fname, err))
+        sys.exit(f"Cannot close {fname}: {err}")
 
 
     # Run gdb
-    cmd = "gdb --nw --quiet --command=%s %s %s" % (fname, exec_file, core_file)
+    cmd = f"gdb --nw --quiet --command={fname} {exec_file} {core_file}"
     if verbose:
-        print "Invoking %s" % (cmd,)
+        print(f"Invoking {cmd}")
     try:
         pipe = os.popen(cmd)
-    except OSError, err:
+    except OSError as err:
         try:
             os.unlink(fname)
-        except Exception:
+        except FileNotFoundError:
             pass
-        sys.exit("Cannot run gdb: %s" % (err,))
+        sys.exit(f"Cannot run gdb: {err}")
 
     # Get gdb's output
     result = pipe.readlines()
@@ -221,25 +219,25 @@ def run_gdb(*commands):
     if error is not None:
         try:
             os.unlink(fname)
-        except Exception:
+        except FileNotFoundError:
             pass
-        sys.exit("gdb returned an exit value of %s" % (error,))
+        sys.exit(f"gdb returned an exit value of {error}")
 
 
     # Remove the temp file and return the results
     try:
         os.unlink(fname)
-    except Exception:
+    except FileNotFoundError:
         pass
     return result
 
 def get_value_from_frame(frame_num, variable, fmt=""):
     cmds = []
     if frame_num > 0:
-        cmds.append("up %d" % (frame_num,))
+        cmds.append(f"up {frame_num}")
 
-    cmds.append("print %s %s" % (fmt, variable))
-    lines = apply(run_gdb, cmds)
+    cmds.append(f"print {fmt} {variable}")
+    lines = run_gdb(cmds)
 
     LOOKING_FOR_START = 0
     READING_VALUE = 1
@@ -269,20 +267,20 @@ def get_int_from_frame(frame_num, variable):
     try:
         integer = int(text)
     except ValueError:
-        sys.exit("Could not convert '%s' to integer." % (text,))
+        sys.exit(f"Could not convert '{text}' to integer.")
     return integer
 
 
 def get_byte_array_from_frame(frame_num, variable, length):
     cmds = []
     if frame_num > 0:
-        cmds.append("up %d" % (frame_num,))
+        cmds.append(f"up {frame_num}")
 
-    cmds.append("print %s" % (variable,))
-    cmds.append("x/%dxb %s" % (length, variable))
-    lines = apply(run_gdb, cmds)
+    cmds.append(f"print {variable}")
+    cmds.append(f"x/{length}xb {variable}")
+    lines = run_gdb(cmds)
     if debug:
-        print lines
+        print(lines)
 
     bytes = []
 
@@ -300,8 +298,8 @@ def get_byte_array_from_frame(frame_num, variable, length):
             line.rstrip()
             fields = line.split('\t')
             if fields[0][-1] != ":":
-                print "Failed to parse byte array from gdb:"
-                print line
+                print("Failed to parse byte array from gdb:")
+                print(line)
                 sys.exit(1)
 
             for field in fields[1:]:
@@ -320,57 +318,55 @@ def make_cap_file(pkt_data, lnk_t):
     fname = tempfile.mktemp()
     try:
         fh = open(fname, "w")
-    except IOError, err:
-        sys.exit("Cannot open %s for writing: %s" % (fname, err))
+    except OSError as err:
+        sys.exit(f"Cannot open {fname} for writing: {err}")
 
-    print "Packet Data:"
+    print("Packet Data:")
 
     # Put the hex dump in it
     offset = 0
     BYTES_IN_ROW = 16
-    for byte in pkt_data:
+    for offset, byte in enumerate(pkt_data):
         if (offset % BYTES_IN_ROW) == 0:
-            print >> fh, "\n%08X  " % (offset,),
-            print "\n%08X  " % (offset,),
+            print(f"\n{offset:08x}", file=fh)
+            print(f"\n{offset:08x}")
 
-        print >> fh, "%02X " % (byte,),
-        print "%02X " % (byte,),
-        offset += 1
+        print(f"{byte:02x}", file=fh)
+        print(f"{byte:02x}")
 
-    print >> fh, "\n"
-    print "\n"
+    print("\n", file=fh)
+    print("\n")
 
     try:
         fh.close()
-    except IOError, err:
+    except OSError as err:
         try:
             os.unlink(fname)
-        except Exception:
+        except FileNotFoundError:
             pass
-        sys.exit("Cannot close %s: %s" % (fname, err))
+        sys.exit(f"Cannot close {fname}: {err}")
 
 
     # Run text2pcap
-    cmd = "text2pcap -q -l %s %s %s" % (pcap_lnk_t, fname, output_file)
-#       print "Command is %s" % (cmd,)
+    cmd = f"text2pcap -q -l {pcap_lnk_t} {fname} {output_file}"
+#       print f"Command is {cmd}"
     try:
         retval = os.system(cmd)
-    except OSError, err:
+    except OSError as err:
         try:
             os.unlink(fname)
-        except Exception:
+        except FileNotFoundError:
             pass
-        sys.exit("Cannot run text2pcap: %s" % (err,))
+        sys.exit(f"Cannot run text2pcap: {err}")
 
     # Remove the temp file
     try:
         os.unlink(fname)
-    except Exception:
+    except FileNotFoundError:
         pass
 
     if retval == 0:
-        print "%s created with %d bytes in packet, and %s encoding." % \
-                (output_file, len(pkt_data), wtap_name[lnk_t])
+        print(f"{output_file} created with {len(pkt_data)} bytes in packet, and {wtap_name[lnk_t]} encoding.")
     else:
         sys.exit("text2pcap did not run successfully.")
 
@@ -383,10 +379,10 @@ def try_frame(func_text, cap_len_text, lnk_t_text, data_text):
     bt_text = run_gdb("bt")
     bt = BackTrace(bt_text)
     if not bt.HasFunction(func_text):
-        print "%s() not found in backtrace." % (func_text,)
+        print(f"{func_text}() not found in backtrace.")
         return 0
     else:
-        print "%s() found in backtrace." % (func_text,)
+        print(f"{func_text}() found in backtrace.")
 
     # Figure out where the call to epan_dissect_run is.
     frame_num = bt.Frame(func_text)
@@ -401,17 +397,15 @@ def try_frame(func_text, cap_len_text, lnk_t_text, data_text):
     pkt_data = get_byte_array_from_frame(frame_num, data_text, cap_len)
 
     if verbose:
-        print "Length=%d" % (cap_len,)
-        print "Encoding=%d" % (lnk_t,)
-        print "Data (%d bytes) = %s" % (len(pkt_data), pkt_data)
+        print(f"Length={cap_len}")
+        print(f"Encoding={lnk_t}")
+        print(f"Data ({len(pkt_data)} bytes) = {pkt_data}")
     make_cap_file(pkt_data, lnk_t)
     return 1
 
 def run():
     if try_frame("epan_dissect_run",
-            "fd->cap_len", "fd->lnk_t", "data"):
-        return
-    elif try_frame("add_packet_to_packet_list",
+            "fd->cap_len", "fd->lnk_t", "data") or try_frame("add_packet_to_packet_list",
             "fdata->cap_len", "fdata->lnk_t", "buf"):
         return
     else:
@@ -419,14 +413,14 @@ def run():
 
 
 def usage():
-    print "pkt-from-core.py [-v] -w capture_file executable-file (core-file or process-id)"
-    print ""
-    print "\tGiven an executable file and a core file, this tool"
-    print "\tuses gdb to retrieve the packet that was being dissected"
-    print "\tat the time wireshark/tshark stopped running. The packet"
-    print "\tis saved in the capture_file specified by the -w option."
-    print ""
-    print "\t-v : verbose"
+    print("pkt-from-core.py [-v] -w capture_file executable-file (core-file or process-id)")
+    print()
+    print("\tGiven an executable file and a core file, this tool")
+    print("\tuses gdb to retrieve the packet that was being dissected")
+    print("\tat the time wireshark/tshark stopped running. The packet")
+    print("\tis saved in the capture_file specified by the -w option.")
+    print()
+    print("\t-v : verbose")
     sys.exit(1)
 
 def main():

@@ -113,6 +113,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 project(pcap C)
 
 #
+# Export the size of void * as SIZEOF_VOID_P so that it can be
+# tested with #if.
+#
+set(SIZEOF_VOID_P "${CMAKE_SIZEOF_VOID_P}")
+
+#
 # Setting CMAKE_MACOSX_RPATH to FALSE causes the installed
 # libpcap.A.dylib to have just libpcap.A.dylib as the install
 # name;  Apple built libpcap with an install_name of /usr/lib/libpcap.A.dylib
@@ -468,21 +474,23 @@ else()
     set(LIBRARY_NAME pcap)
 endif()
 
-option(INET6 "Enable IPv6" ON)
 if(WIN32)
     option(USE_STATIC_RT "Use static Runtime" ON)
 endif(WIN32)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-set(dpdk_ROOT "" CACHE PATH "Path to directory with include and lib subdirectories for DPDK")
 if(WIN32)
     set(Packet_ROOT "" CACHE PATH "Path to directory with include and lib subdirectories for packet.dll")
-    set(AirPcap_ROOT "" CACHE PATH "Path to directory with include and lib subdirectories for airpcap.dll")
 endif(WIN32)
 
 option(ENABLE_PROFILING "Enable code profiling" OFF)
 
 # To pacify those who hate the protochain instruction
-option(NO_PROTOCHAIN "Disable protochain instruction" OFF)
+option(ENABLE_PROTOCHAIN "Enable protochain instruction" ON)
+if(ENABLE_PROTOCHAIN)
+    set(NO_PROTOCHAIN OFF)
+else()
+    set(NO_PROTOCHAIN ON)
+endif()
 
 #
 # Start out with the capture mechanism type unspecified; the user
@@ -508,14 +516,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(DISABLE_LINUX_USBMON "Disable Linux usbmon USB sniffing support" OFF)
 endif()
 option(DISABLE_BLUETOOTH "Disable Bluetooth sniffing support" OFF)
-option(DISABLE_NETMAP "Disable netmap support" OFF)
 
-#
-# Require that DPDK support be explicitly enabled, as the code is
-# immensely hard to keep compiling for every random API change
-# the DPDK folks make.
-#
-set(DISABLE_DPDK ON)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+   CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
+   CMAKE_SYSTEM_NAME STREQUAL "MidnightBSD" OR
+   CMAKE_SYSTEM_NAME STREQUAL "QNX" OR
+   WIN32)
+    option(DISABLE_NETMAP "Disable netmap support" OFF)
+else()
+    set(DISABLE_NETMAP ON)
+endif()
 
 #
 # We don't support D-Bus sniffing on macOS; see
@@ -527,16 +537,22 @@ if(APPLE)
 else(APPLE)
     option(DISABLE_DBUS "Disable D-Bus sniffing support" OFF)
 endif(APPLE)
-option(DISABLE_RDMA "Disable RDMA sniffing support" OFF)
 
-option(DISABLE_DAG "Disable Endace DAG card support" OFF)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    option(DISABLE_RDMA "Disable RDMA sniffing support" OFF)
 
-option(DISABLE_SEPTEL "Disable Septel card support" OFF)
-set(SEPTEL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../septel" CACHE PATH "Path to directory with include and lib subdirectories for Septel API")
+    option(DISABLE_DAG "Disable Endace DAG card support" OFF)
+    option(ENABLE_DAG_TX "Enable Endace DAG transmit support" OFF)
 
-option(DISABLE_SNF "Disable Myricom SNF support" OFF)
+    option(DISABLE_SNF "Disable Myricom SNF support" OFF)
+else()
+    set(DISABLE_RDMA ON)
 
-option(DISABLE_TC "Disable Riverbed TurboCap support" OFF)
+    set(DISABLE_DAG ON)
+    set(ENABLE_DAG_TX OFF)
+
+    set(DISABLE_SNF ON)
+endif()
 
 #
 # Debugging options.
@@ -546,6 +562,7 @@ option(YYDEBUG "Build parser debugging code" OFF)
 
 ###################################################################
 #   Versioning
+# (and other variables to keep config.h consistent with Autoconf)
 ###################################################################
 
 # Get, parse, format and set pcap's version string from [pcap_root]/VERSION
@@ -572,8 +589,11 @@ if(WIN32)
     set(PACKAGE_VERSION_DLL ${PACKAGE_VERSION_PREDLL},0)
 endif(WIN32)
 
+set(PACKAGE_BUGREPORT "https://github.com/the-tcpdump-group/libpcap/issues")
 set(PACKAGE_NAME "${LIBRARY_NAME}")
 set(PACKAGE_STRING "${LIBRARY_NAME} ${PACKAGE_VERSION}")
+set(PACKAGE_TARNAME "lib${PACKAGE_NAME}")
+set(PACKAGE_URL "https://www.tcpdump.org/")
 
 ######################################
 # Project settings
@@ -643,6 +663,35 @@ else (USE_STATIC_RT)
     message(STATUS "Use DYNAMIC runtime")
 endif(USE_STATIC_RT)
 
+#
+# CMake's definition of "cross-compiling" appears to be "compiling
+# for an *operating system* other than the one on which the build
+# is being done*.
+#
+# This is an inadequate definition, as people build for the same
+# operating system but a different instruction set, e.g. building
+# on an IA-32 or x86-64 Linux box for an Arm embedded Linux box,
+# or building Arm code on an IA-32 or x86-64 Windows box.
+#
+# So just test whether check_c_source_runs() on a trivial program
+# works; if not, it's probably because the generated code won't
+# run on the platform on which we're running.
+#
+include(CheckCSourceRuns)
+if (NOT CMAKE_CROSSCOMPILING)
+    check_c_source_runs("
+    int main()
+    {
+        return 0;
+    }
+    "
+        CHECK_C_SOURCE_RUNS_WORKS
+    )
+    if (NOT CHECK_C_SOURCE_RUNS_WORKS)
+        set(CMAKE_CROSSCOMPILING TRUE)
+    endif()
+endif()
+
 ###################################################################
 #   Detect available platform features
 ###################################################################
@@ -659,60 +708,17 @@ include(CheckTypeSize)
 #
 # Header files.
 #
-check_include_file(inttypes.h HAVE_INTTYPES_H)
-check_include_file(stdint.h HAVE_STDINT_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 if(NOT HAVE_UNISTD_H)
     add_definitions(-DYY_NO_UNISTD_H)
 endif(NOT HAVE_UNISTD_H)
-check_include_file(bitypes.h HAVE_SYS_BITYPES_H)
 if(NOT WIN32)
-    check_include_file(sys/ioccom.h HAVE_SYS_IOCCOM_H)
-    check_include_file(sys/sockio.h HAVE_SYS_SOCKIO_H)
-    check_include_file(sys/select.h HAVE_SYS_SELECT_H)
-
-    check_include_file(netpacket/packet.h HAVE_NETPACKET_PACKET_H)
     check_include_file(netinet/if_ether.h HAVE_NETINET_IF_ETHER_H)
 endif(NOT WIN32)
 
 #
-# Functions.
-#
-# First, check for the __atomic_load_n() and __atomic_store_n()
-# builtins.
-#
-# We can't use check_function_exists(), as it tries to declare
-# the function, and attempting to declare a compiler builtin
-# can produce an error.
-#
-# We don't use check_symbol_exists(), as it expects a header
-# file to be specified to declare the function, but there isn't
-# such a header file.
-#
-# So we use check_c_source_compiles().
-#
-check_c_source_compiles(
-"int
-main(void)
-{
-	int i = 17;
-	return __atomic_load_n(&i, __ATOMIC_RELAXED);
-}
-"
-            HAVE___ATOMIC_LOAD_N)
-check_c_source_compiles(
-"int
-main(void)
-{
-	int i;
-	__atomic_store_n(&i, 17, __ATOMIC_RELAXED);
-	return 0;
-}
-"
-            HAVE___ATOMIC_STORE_N)
-
-#
-# Now check for various system functions.
+# Check for various system functions.  These are not compiler builtins, so it
+# is fine to use check_function_exists() or check_symbol_exists().
 #
 check_function_exists(strerror_r HAVE_STRERROR_R)
 if(HAVE_STRERROR_R)
@@ -744,19 +750,77 @@ else(HAVE_STRERROR_R)
     check_function_exists(_wcserror_s HAVE__WCSERROR_S)
 endif(HAVE_STRERROR_R)
 
-#
-# Make sure we have vsnprintf() and snprintf(); we require them.
-# We use check_symbol_exists(), as they aren't necessarily external
-# functions - in Visual Studio, for example, they're inline functions
-# calling a common external function.
-#
-check_symbol_exists(vsnprintf "stdio.h" HAVE_VSNPRINTF)
-if(NOT HAVE_VSNPRINTF)
-    message(FATAL_ERROR "vsnprintf() is required but wasn't found")
-endif(NOT HAVE_VSNPRINTF)
-check_symbol_exists(snprintf "stdio.h" HAVE_SNPRINTF)
-if(NOT HAVE_SNPRINTF)
-    message(FATAL_ERROR "snprintf() is required but wasn't found")
+if (NOT CMAKE_CROSSCOMPILING)
+    #
+    # Require a proof of suitable snprintf(3), same as in Autoconf.
+    #
+    check_c_source_runs("
+    #include <stdio.h>
+    #include <string.h>
+    #include <inttypes.h>
+    #include <sys/types.h>
+
+    #if defined(_WIN32) && !defined(_SSIZE_T_DEFINED)
+    /*
+     * On UN*Xes, this is a signed integer type of the same size as size_t.
+     *
+     * It's not defined by Visual Studio; we assume that ptrdiff_t will
+     * be a type that is a signed integer type of the same size as size_t.
+     */
+    typedef ptrdiff_t ssize_t;
+    #endif
+
+    /*
+     * Avoid trying to cast negative values to unsigned types, or doing
+     * shifts of signed types, in order not to have the test program fail
+     * if we're building with undefined-behavior sanitizers enabled.
+     */
+    int main()
+    {
+      char buf[100];
+      unsigned int ui = sizeof(buf);
+      int i = sizeof(buf);
+      int64_t i64 = INT64_C(0x100000000);
+      uint64_t ui64 = UINT64_C(0x100000000);
+
+      snprintf(buf, sizeof(buf), \"%zu\", (size_t)ui);
+      if (strncmp(buf, \"100\", sizeof(buf)))
+        return 1;
+
+      snprintf(buf, sizeof(buf), \"%zd\", (ssize_t)(-i));
+      if (strncmp(buf, \"-100\", sizeof(buf)))
+        return 2;
+
+      snprintf(buf, sizeof(buf), \"%\" PRId64, -i64);
+      if (strncmp(buf, \"-4294967296\", sizeof(buf)))
+        return 3;
+
+      snprintf(buf, sizeof(buf), \"0o%\" PRIo64, ui64);
+      if (strncmp(buf, \"0o40000000000\", sizeof(buf)))
+        return 4;
+
+      snprintf(buf, sizeof(buf), \"0x%\" PRIx64, ui64);
+      if (strncmp(buf, \"0x100000000\", sizeof(buf)))
+        return 5;
+
+      snprintf(buf, sizeof(buf), \"%\" PRIu64, ui64);
+      if (strncmp(buf, \"4294967296\", sizeof(buf)))
+        return 6;
+
+      return 0;
+    }
+
+    "
+        SUITABLE_SNPRINTF
+    )
+    if(NOT SUITABLE_SNPRINTF)
+        message(FATAL_ERROR
+    "The snprintf(3) implementation in this libc is not suitable,
+    libpcap would not work correctly even if it managed to compile."
+        )
+    endif()
+else()
+    message(STATUS "Skipped SUITABLE_SNPRINTF because cross-compiling.")
 endif()
 
 check_function_exists(strlcpy HAVE_STRLCPY)
@@ -764,9 +828,6 @@ check_function_exists(strlcat HAVE_STRLCAT)
 check_function_exists(asprintf HAVE_ASPRINTF)
 check_function_exists(vasprintf HAVE_VASPRINTF)
 check_function_exists(strtok_r HAVE_STRTOK_R)
-if(NOT WIN32)
-    check_function_exists(vsyslog HAVE_VSYSLOG)
-endif()
 
 #
 # Look for various networking-related libraries that we may need.
@@ -827,21 +888,21 @@ else(WIN32)
     #
     check_function_exists(getaddrinfo STDLIBS_HAVE_GETADDRINFO)
     if(NOT STDLIBS_HAVE_GETADDRINFO)
-	#
-	# Not found in the standard system libraries.
-	#
-	# In some versions of Solaris, we need to link with libsocket
-	# and libnsl, so check in libsocket and also link with liblnsl
-	# when doing this test.
-	#
-	# Linking with libsocket and libnsl will find all the routines
-	# we need.
-	#
+        #
+        # Not found in the standard system libraries.
+        #
+        # In some versions of Solaris, we need to link with libsocket
+        # and libnsl, so check in libsocket and also link with liblnsl
+        # when doing this test.
+        #
+        # Linking with libsocket and libnsl will find all the routines
+        # we need.
+        #
         cmake_push_check_state()
         set(CMAKE_REQUIRED_LIBRARIES nsl)
-        check_library_exists(socket getaddrinfo "" LIBSOCKET_HAS_GETADDRINFO)
+        check_library_exists(socket getaddrinfo "" LIBSOCKET_LIBNSL_HAVE_GETADDRINFO)
         cmake_pop_check_state()
-        if(LIBSOCKET_HAS_GETADDRINFO)
+        if(LIBSOCKET_LIBNSL_HAVE_GETADDRINFO)
             #
             # OK, we found it in libsocket.
             #
@@ -849,18 +910,18 @@ else(WIN32)
             set(LIBS "-lsocket -lnsl ${LIBS}")
             set(LIBS_STATIC "-lsocket -lnsl ${LIBS_STATIC}")
             set(LIBS_PRIVATE "-lsocket -lnsl ${LIBS_PRIVATE}")
-        else(LIBSOCKET_HAS_GETADDRINFO)
-	    #
-	    # Not found in libsocket; test for it in libnetwork, which
-	    # is where it is in Haiku.
-	    #
-	    # Linking with libnetwork will find all the routines we
-	    # need.
-	    #
+        else(LIBSOCKET_LIBNSL_HAVE_GETADDRINFO)
+            #
+            # Not found in libsocket; test for it in libnetwork, which
+            # is where it is in Haiku.
+            #
+            # Linking with libnetwork will find all the routines we
+            # need.
+            #
             check_library_exists(network getaddrinfo "" LIBNETWORK_HAS_GETADDRINFO)
             if(LIBNETWORK_HAS_GETADDRINFO)
                 #
-		# OK, we found it in libnetwork.
+                # OK, we found it in libnetwork.
                 #
                 set(PCAP_LINK_LIBRARIES network ${PCAP_LINK_LIBRARIES})
                 set(LIBS "-lnetwork ${LIBS}")
@@ -868,38 +929,49 @@ else(WIN32)
                 set(LIBS_PRIVATE "-lnetwork ${LIBS_PRIVATE}")
             else(LIBNETWORK_HAS_GETADDRINFO)
                 #
-                # We didn't find it.
+                # Same as in Autoconf.
                 #
-                message(FATAL_ERROR "getaddrinfo is required, but wasn't found")
+                check_library_exists(socket getaddrinfo "" LIBSOCKET_HAS_GETADDRINFO)
+                if(LIBSOCKET_HAS_GETADDRINFO)
+                    set(PCAP_LINK_LIBRARIES socket ${PCAP_LINK_LIBRARIES})
+                    set(LIBS "-lsocket ${LIBS}")
+                    set(LIBS_STATIC "-lsocket ${LIBS_STATIC}")
+                    set(LIBS_PRIVATE "-lsocket ${LIBS_PRIVATE}")
+                else(LIBSOCKET_HAS_GETADDRINFO)
+                    #
+                    # We didn't find it.
+                    #
+                    message(FATAL_ERROR "getaddrinfo is required, but wasn't found")
+                endif(LIBSOCKET_HAS_GETADDRINFO)
             endif(LIBNETWORK_HAS_GETADDRINFO)
-        endif(LIBSOCKET_HAS_GETADDRINFO)
+        endif(LIBSOCKET_LIBNSL_HAVE_GETADDRINFO)
 
-	#
-	# We require a version of recvmsg() that conforms to the Single
-	# UNIX Specification, so that we can check whether a datagram
-	# received with recvmsg() was truncated when received due to the
-	# buffer being too small.
-	#
-	# On most systems, the version of recvmsg() in the libraries
-	# found above conforms to the SUS.
-	#
-	# On at least some versions of Solaris, it does not conform to
-	# the SUS, and we need the version in libxnet, which does
-	# conform.
-	#
-	# Check whether libxnet exists and has a version of recvmsg();
-	# if it does, link with libxnet before we link with libsocket,
-	# to get that version.
-	#
-	# This test also links with libsocket and libnsl.
-	#
+        #
+        # We require a version of recvmsg() that conforms to the Single
+        # UNIX Specification, so that we can check whether a datagram
+        # received with recvmsg() was truncated when received due to the
+        # buffer being too small.
+        #
+        # On most systems, the version of recvmsg() in the libraries
+        # found above conforms to the SUS.
+        #
+        # On at least some versions of Solaris, it does not conform to
+        # the SUS, and we need the version in libxnet, which does
+        # conform.
+        #
+        # Check whether libxnet exists and has a version of recvmsg();
+        # if it does, link with libxnet before we link with libsocket,
+        # to get that version.
+        #
+        # This test also links with libsocket and libnsl.
+        #
         cmake_push_check_state()
         set(CMAKE_REQUIRED_LIBRARIES socket nsl)
         check_library_exists(xnet recvmsg "" LIBXNET_HAS_RECVMSG)
         cmake_pop_check_state()
         if(LIBXNET_HAS_RECVMSG)
             #
-	    # libxnet has recvmsg(); link with it as well.
+            # libxnet has recvmsg(); link with it as well.
             #
             set(PCAP_LINK_LIBRARIES xnet ${PCAP_LINK_LIBRARIES})
             set(LIBSC "-lxnet ${LIBS_LIBS}")
@@ -908,33 +980,38 @@ else(WIN32)
         endif(LIBXNET_HAS_RECVMSG)
     endif(NOT STDLIBS_HAVE_GETADDRINFO)
 
-    #
-    # DLPI needs putmsg under HP-UX, so test for -lstr while we're at it.
-    #
-    check_function_exists(putmsg STDLIBS_HAVE_PUTMSG)
-    if(NOT STDLIBS_HAVE_PUTMSG)
-        check_library_exists(str putmsg "" LIBSTR_HAS_PUTMSG)
-        if(LIBSTR_HAS_PUTMSG)
-            set(PCAP_LINK_LIBRARIES str ${PCAP_LINK_LIBRARIES})
-            set(LIBS "-lstr ${LIBS}")
-            set(LIBS_STATIC "-lstr ${LIBS_STATIC}")
-            set(LIBS_PRIVATE "-lstr ${LIBS_PRIVATE}")
-        endif(LIBSTR_HAS_PUTMSG)
-    endif(NOT STDLIBS_HAVE_PUTMSG)
+    if(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
+        #
+        # Same as the respective AC_CHECK_MEMBERS() in Autoconf.
+        #
+        check_struct_has_member("struct dl_hp_ppa_info_t" dl_module_id_1 "sys/types.h;sys/dlpi.h;sys/dlpi_ext.h" HAVE_DL_HP_PPA_INFO_T_DL_MODULE_ID_1)
 
-    # Haiku has getpass in libbsd
-    check_function_exists(getpass STDLIBS_HAVE_GETPASS)
-    if(NOT STDLIBS_HAVE_GETPASS)
-        check_library_exists(bsd getpass "" LIBBSD_HAS_GETPASS)
-        if(LIBBSD_HAS_GETPASS)
-            set(PCAP_LINK_LIBRARIES bsd ${PCAP_LINK_LIBRARIES})
-        endif(LIBBSD_HAS_GETPASS)
-    endif(NOT STDLIBS_HAVE_GETPASS)
+        #
+        # Same as the respective AC_SEARCH_LIBS() in Autoconf.
+        #
+        check_function_exists(putmsg STDLIBS_HAVE_PUTMSG)
+        if(NOT STDLIBS_HAVE_PUTMSG)
+            check_library_exists(str putmsg "" LIBSTR_HAS_PUTMSG)
+            if(LIBSTR_HAS_PUTMSG)
+                set(PCAP_LINK_LIBRARIES str ${PCAP_LINK_LIBRARIES})
+                set(LIBS "-lstr ${LIBS}")
+                set(LIBS_STATIC "-lstr ${LIBS_STATIC}")
+                set(LIBS_PRIVATE "-lstr ${LIBS_PRIVATE}")
+            endif(LIBSTR_HAS_PUTMSG)
+        endif(NOT STDLIBS_HAVE_PUTMSG)
+    endif()
+
+    #
+    # Haiku has getpass() in libbsd.
+    #
+    if(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
+        set(PCAP_LINK_LIBRARIES bsd ${PCAP_LINK_LIBRARIES})
+    endif()
 endif(WIN32)
 
 #
 # Check for reentrant versions of getnetbyname_r(), as provided by
-# Linux (glibc), Solaris/IRIX, and AIX (with three different APIs!).
+# Linux (glibc), Solaris, and AIX (with three different APIs!).
 # If we don't find one, we just use getnetbyname(), which uses
 # thread-specific data on many platforms, but doesn't use it on
 # NetBSD or OpenBSD, and may not use it on older versions of other
@@ -977,8 +1054,8 @@ main(void)
     return getnetbyname_r((const char *)0, &netent_buf, buf, (int)sizeof buf) != NULL;
 }
 "
-            HAVE_SOLARIS_IRIX_GETNETBYNAME_R)
-        if(NOT HAVE_SOLARIS_IRIX_GETNETBYNAME_R)
+            HAVE_SOLARIS_GETNETBYNAME_R)
+        if(NOT HAVE_SOLARIS_GETNETBYNAME_R)
             check_c_source_compiles(
 "#include <netdb.h>
 
@@ -992,14 +1069,14 @@ main(void)
 }
 "
                 HAVE_AIX_GETNETBYNAME_R)
-        endif(NOT HAVE_SOLARIS_IRIX_GETNETBYNAME_R)
+        endif(NOT HAVE_SOLARIS_GETNETBYNAME_R)
     endif(NOT HAVE_LINUX_GETNETBYNAME_R)
 endif(NETDB_H_DECLARES_GETNETBYNAME_R)
 cmake_pop_check_state()
 
 #
 # Check for reentrant versions of getprotobyname_r(), as provided by
-# Linux (glibc), Solaris/IRIX, and AIX (with three different APIs!).
+# Linux (glibc), Solaris, and AIX (with three different APIs!).
 # If we don't find one, we just use getprotobyname(), which uses
 # thread-specific data on many platforms, but doesn't use it on
 # NetBSD or OpenBSD, and may not use it on older versions of other
@@ -1041,8 +1118,8 @@ main(void)
     return getprotobyname_r((const char *)0, &protoent_buf, buf, (int)sizeof buf) != NULL;
 }
 "
-            HAVE_SOLARIS_IRIX_GETPROTOBYNAME_R)
-        if(NOT HAVE_SOLARIS_IRIX_GETPROTOBYNAME_R)
+            HAVE_SOLARIS_GETPROTOBYNAME_R)
+        if(NOT HAVE_SOLARIS_GETPROTOBYNAME_R)
             check_c_source_compiles(
 "#include <netdb.h>
 
@@ -1056,7 +1133,7 @@ main(void)
 }
 "
                 HAVE_AIX_GETPROTOBYNAME_R)
-        endif(NOT HAVE_SOLARIS_IRIX_GETPROTOBYNAME_R)
+        endif(NOT HAVE_SOLARIS_GETPROTOBYNAME_R)
     endif(NOT HAVE_LINUX_GETPROTOBYNAME_R)
 endif(NETDB_H_DECLARES_GETPROTOBYNAME_R)
 cmake_pop_check_state()
@@ -1074,7 +1151,6 @@ if(WIN32)
 else(WIN32)
     set(CMAKE_EXTRA_INCLUDE_FILES unistd.h sys/socket.h)
 endif(WIN32)
-check_type_size("struct sockaddr_storage" STRUCT_SOCKADDR_STORAGE)
 check_type_size("socklen_t" SOCKLEN_T)
 cmake_pop_check_state()
 
@@ -1086,20 +1162,6 @@ if(WIN32)
 else(WIN32)
     check_struct_has_member("struct sockaddr" sa_len sys/socket.h HAVE_STRUCT_SOCKADDR_SA_LEN)
 endif(WIN32)
-
-#
-# Do we have ffs(), and is it declared in <strings.h>?
-#
-check_function_exists(ffs HAVE_FFS)
-if(HAVE_FFS)
-    #
-    # OK, we have ffs().  Is it declared in <strings.h>?
-    #
-    # This test fails if we don't have <strings.h> or if we do
-    # but it doesn't declare ffs().
-    #
-    check_symbol_exists(ffs strings.h STRINGS_H_DECLARES_FFS)
-endif()
 
 #
 # This requires the libraries that we require, as ether_hostton might be
@@ -1231,6 +1293,16 @@ endif()
 cmake_pop_check_state()
 
 #
+# Same as in Autoconf.
+#
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    check_symbol_exists(__GLIBC__ features.h HAVE_GLIBC)
+    if(NOT HAVE_GLIBC)
+        check_symbol_exists(__UCLIBC__ features.h HAVE_UCLIBC)
+    endif()
+endif()
+
+#
 # Large file support on UN*X, a/k/a LFS.
 #
 if(NOT WIN32)
@@ -1268,10 +1340,6 @@ elseif(SIZEOF_TIME_T EQUAL 8)
   message(STATUS "64-bit time_t")
 endif()
 cmake_pop_check_state()
-
-if(INET6)
-    message(STATUS "Support IPv6")
-endif(INET6)
 
 #
 # Pthreads.
@@ -1782,6 +1850,7 @@ set(PROJECT_SOURCE_LIST_C
     pcap-common.c
     pcap-util.c
     pcap.c
+    pcap-new.c
     savefile.c
     sf-pcapng.c
     sf-pcap.c
@@ -1865,10 +1934,31 @@ else()
     #
     if(PCAP_TYPE STREQUAL "")
         #
-        # Check for a bunch of headers for various packet capture mechanisms.
+        # No.  Try auto-detecting the obvious types first.
+        #
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+            set(PCAP_TYPE linux)
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
+            set(PCAP_TYPE haiku)
+        elseif(CMAKE_SYSTEM_NAME STREQUAL "GNU")
+            set(PCAP_TYPE hurd)
+        endif()
+    endif()
+
+    if(PCAP_TYPE STREQUAL "")
+        #
+        # It is not one of the above obvious types, let's see if it is BPF.
+        # Check this before DLPI to pick BPF on Solaris 11 and later.
         #
         check_include_files("sys/types.h;net/bpf.h" HAVE_NET_BPF_H)
         if(HAVE_NET_BPF_H)
+            #
+            # HAVE_SYS_IOCCOM_H will be required for a few workarounds until all
+            # supported OSes that use BPF have <net/bpf.h> that includes <sys/ioccom.h>
+            # (this might have already happened).
+            #
+            check_include_file(sys/ioccom.h HAVE_SYS_IOCCOM_H)
+
             #
             # Does it define BIOCSETIF?
             # I.e., is it a header for an LBL/BSD-style capture
@@ -1907,62 +1997,23 @@ else()
                 check_symbol_exists(BIOCSETIF "sys/types.h;sys/time.h;sys/ioctl.h;sys/socket.h;net/bpf.h;net/if.h" BPF_H_DEFINES_BIOCSETIF)
             endif(HAVE_SYS_IOCCOM_H)
         endif(HAVE_NET_BPF_H)
-        check_include_file(net/pfilt.h HAVE_NET_PFILT_H)
-        check_include_file(net/enet.h HAVE_NET_ENET_H)
-        check_include_file(net/nit.h HAVE_NET_NIT_H)
-        check_include_file(sys/net/nit.h HAVE_SYS_NET_NIT_H)
-        check_include_file(linux/socket.h HAVE_LINUX_SOCKET_H)
-        check_include_file(net/raw.h HAVE_NET_RAW_H)
-        check_include_file(sys/dlpi.h HAVE_SYS_DLPI_H)
-        check_include_file(config/HaikuConfig.h HAVE_CONFIG_HAIKUCONFIG_H)
 
         if(BPF_H_DEFINES_BIOCSETIF)
-            #
-            # BPF.
-            # Check this before DLPI, so that we pick BPF on
-            # Solaris 11 and later.
-            #
             set(PCAP_TYPE bpf)
-        elseif(HAVE_LINUX_SOCKET_H)
-            #
-            # No prizes for guessing this one.
-            #
-            set(PCAP_TYPE linux)
-        elseif(HAVE_NET_PFILT_H)
-            #
-            # DEC OSF/1, Digital UNIX, Tru64 UNIX
-            #
-            set(PCAP_TYPE pf)
-        elseif(HAVE_NET_ENET_H)
-            #
-            # Stanford Enetfilter.
-            #
-            set(PCAP_TYPE enet)
-        elseif(HAVE_NET_NIT_H)
-            #
-            # SunOS 4.x STREAMS NIT.
-            #
-            set(PCAP_TYPE snit)
-        elseif(HAVE_SYS_NET_NIT_H)
-            #
-            # Pre-SunOS 4.x non-STREAMS NIT.
-            #
-            set(PCAP_TYPE nit)
-        elseif(HAVE_NET_RAW_H)
-            #
-            # IRIX snoop.
-            #
-            set(PCAP_TYPE snoop)
-        elseif(HAVE_SYS_DLPI_H)
+        endif()
+    endif()
+
+    if(PCAP_TYPE STREQUAL "")
+        #
+        # It is not BPF either, let's see if it is DLPI on pre-Solaris 11
+        # SunOS 5, HP-UX, possibly others.  Otherwise fail properly.
+        #
+        check_include_file(sys/dlpi.h HAVE_SYS_DLPI_H)
+        if(HAVE_SYS_DLPI_H)
             #
             # DLPI on pre-Solaris 11 SunOS 5, HP-UX, possibly others.
             #
             set(PCAP_TYPE dlpi)
-        elseif(HAVE_CONFIG_HAIKUCONFIG_H)
-            #
-            # Haiku.
-            #
-            set(PCAP_TYPE haiku)
         else()
             #
             # We don't have any capture type we know about.
@@ -1982,7 +2033,7 @@ pcap and pcapng files, run cmake with -DPCAP_TYPE=null.")
 endif(WIN32)
 message(STATUS "Packet capture mechanism type: ${PCAP_TYPE}")
 
-find_package(PkgConfig QUIET)
+find_package(PkgConfig)
 
 #
 # Do capture-mechanism-dependent tests.
@@ -2060,6 +2111,10 @@ else(WIN32)
         # not supporting older versions of the Linux kernel;
         # let's drop support for older versions of libnl, too.
         #
+        # Due to lack of testing facilities this block does not
+        # include a branch for libnl-tiny with pkg-config, which
+        # is not consistent with Autoconf.
+        #
         if(BUILD_WITH_LIBNL)
             pkg_check_modules(LIBNL libnl-genl-3.0)
             if(LIBNL_FOUND)
@@ -2076,8 +2131,8 @@ else(WIN32)
                 set(REQUIRES_PRIVATE "${LIBNL_PACKAGE_NAME} ${REQUIRES_PRIVATE}")
             else()
                 cmake_push_check_state()
-                set(CMAKE_REQUIRED_LIBRARIES nl-3)
-                check_function_exists(nl_socket_alloc HAVE_LIBNL)
+                set(CMAKE_REQUIRED_LIBRARIES libnl-genl-3)
+                check_function_exists(genl_connect HAVE_LIBNL)
                 cmake_pop_check_state()
                 if(HAVE_LIBNL)
                     #
@@ -2094,7 +2149,45 @@ else(WIN32)
             unset(HAVE_LIBNL CACHE) # check_function_exists stores results in cache
         endif()
 
-        check_struct_has_member("struct tpacket_auxdata" tp_vlan_tci linux/if_packet.h HAVE_STRUCT_TPACKET_AUXDATA_TP_VLAN_TCI)
+        # This check is for TESTrun purposes, not for the C code.
+        # This and the #cmakedefine01 in cmakeconfig.h.in reproduce exactly the
+        # behaviour of "AC_CHECK_DECLS([SKF_AD_VLAN_TAG_PRESENT], ...".
+        check_symbol_exists(SKF_AD_VLAN_TAG_PRESENT linux/filter.h HAVE_DECL_SKF_AD_VLAN_TAG_PRESENT)
+
+        #
+        # Check for the __atomic_load_n() and __atomic_store_n() builtins,
+        # which are required for the memory-mapped capture code in
+        # pcap-linux.c only.
+        #
+        # We can't use check_function_exists(), as it tries to declare
+        # the function, and attempting to declare a compiler builtin
+        # can produce an error.
+        #
+        # We don't use check_symbol_exists(), as it expects a header
+        # file to be specified to declare the function, but there isn't
+        # such a header file.
+        #
+        # So we use check_c_source_compiles().
+        #
+        check_c_source_compiles(
+"int
+main(void)
+{
+	int i = 17;
+	return __atomic_load_n(&i, __ATOMIC_RELAXED);
+}
+"
+            HAVE___ATOMIC_LOAD_N)
+        check_c_source_compiles(
+"int
+main(void)
+{
+	int i;
+	__atomic_store_n(&i, 17, __ATOMIC_RELAXED);
+	return 0;
+}
+"
+            HAVE___ATOMIC_STORE_N)
     elseif(PCAP_TYPE STREQUAL "bpf")
         #
         # Check whether we have the *BSD-style ioctls.
@@ -2118,33 +2211,45 @@ else(WIN32)
         endif()
         cmake_pop_check_state()
 
-        #
-        # Check whether there's a inet/ipnet.h header and,
-        # if so, whether it defines IPNET_ANY_LINK - if so,
-        # we assume we have the "any" device (that's a
-        # Solaris header, and later versions of Solaris
-        # have an "any" device).
-        #
-        # Attempting to include it at compile time could
-        # be a pain, as it's a kernel header.
-        #
-        message(STATUS "Checking whether the Solaris \"any\" device is supported")
-        if(EXISTS /usr/include/inet/ipnet.h)
-            file(STRINGS /usr/include/inet/ipnet.h IPNET_ANY_LINK_LINES REGEX IPNET_ANY_LINK)
-            if(NOT IPNET_ANY_LINK_LINES STREQUAL "")
-                set(HAVE_SOLARIS_ANY_DEVICE TRUE)
+        if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+            #
+            # Check whether there's a inet/ipnet.h header and,
+            # if so, whether it defines IPNET_ANY_LINK - if so,
+            # we assume we have the "any" device (that's a
+            # Solaris header, and later versions of Solaris
+            # have an "any" device).
+            #
+            # Attempting to include it at compile time could
+            # be a pain, as it's a kernel header.
+            #
+            message(STATUS "Checking whether the Solaris \"any\" device is supported")
+            if(EXISTS /usr/include/inet/ipnet.h)
+                file(STRINGS /usr/include/inet/ipnet.h IPNET_ANY_LINK_LINES REGEX IPNET_ANY_LINK)
+                if(NOT IPNET_ANY_LINK_LINES STREQUAL "")
+                    set(HAVE_SOLARIS_ANY_DEVICE TRUE)
+                endif()
+            endif()
+            if(HAVE_SOLARIS_ANY_DEVICE)
+                message(STATUS "Checking whether the Solaris \"any\" device is supported - supported")
+            else()
+                message(STATUS "Checking whether the Solaris \"any\" device is supported - not supported")
             endif()
         endif()
-        if(HAVE_SOLARIS_ANY_DEVICE)
-            message(STATUS "Checking whether the Solaris \"any\" device is supported - supported")
-        else()
-            message(STATUS "Checking whether the Solaris \"any\" device is supported - not supported")
-        endif()
+
+        #
+        # For the conditional zero-copy BPF support in pcap-bpf.c only.
+        #
+        check_include_file(machine/atomic.h HAVE_MACHINE_ATOMIC_H)
     elseif(PCAP_TYPE STREQUAL "haiku")
+        set(PCAP_SRC pcap-${PCAP_TYPE}.c)
+    elseif(PCAP_TYPE STREQUAL "hurd")
         #
         # Check for some headers just in case.
         #
-        check_include_files("net/if.h;net/if_dl.h;net/if_types.h" HAVE_NET_IF_TYPES_H)
+        set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} rt)
+        set(LIBS "${LIBS} -lrt")
+        set(LIBS_STATIC "${LIBS_STATIC} -lrt")
+        set(LIBS_PRIVATE "${LIBS_PRIVATE} -lrt")
         set(PCAP_SRC pcap-${PCAP_TYPE}.c)
     elseif(PCAP_TYPE STREQUAL "null")
     else()
@@ -2358,51 +2463,6 @@ main(void)
     endif(PCAP_SUPPORT_NETMAP)
 endif()
 
-# Check for DPDK sniffing support
-if(NOT DISABLE_DPDK)
-    find_package(dpdk)
-    if(dpdk_FOUND)
-        #
-        # We call rte_eth_dev_count_avail(), and older versions of DPDK
-        # didn't have it, so check for it.
-        #
-        cmake_push_check_state()
-        set(CMAKE_REQUIRED_INCLUDES ${dpdk_INCLUDE_DIRS})
-        set(CMAKE_REQUIRED_LIBRARIES ${dpdk_LIBRARIES})
-        check_function_exists(rte_eth_dev_count_avail HAVE_RTE_ETH_DEV_COUNT_AVAIL)
-        cmake_pop_check_state()
-        if(HAVE_RTE_ETH_DEV_COUNT_AVAIL)
-            set(DPDK_C_FLAGS "-march=native")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DPDK_C_FLAGS}")
-            include_directories(AFTER ${dpdk_INCLUDE_DIRS})
-            link_directories(AFTER ${dpdk_LIBRARIES})
-            set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${dpdk_LIBRARIES})
-            set(LIBS "${LIBS} ${dpdk_LIBS}")
-            set(LIBS_STATIC "${LIBS_STATIC} ${dpdk_LIBS_STATIC}")
-            set(REQUIRES_PRIVATE "${REQUIRES_PRIVATE} ${dpdk_PACKAGE_NAME}")
-            set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C} pcap-dpdk.c)
-            set(PCAP_SUPPORT_DPDK TRUE)
-
-            #
-            # Check whether the rte_ether.h file defines
-            # struct ether_addr or struct rte_ether_addr.
-            #
-            # ("API compatibility?  That's for losers!")
-            #
-            cmake_push_check_state()
-            set(CMAKE_REQUIRED_INCLUDES ${dpdk_INCLUDE_DIRS})
-            set(CMAKE_EXTRA_INCLUDE_FILES rte_ether.h)
-            check_type_size("struct rte_ether_addr" STRUCT_RTE_ETHER_ADDR)
-            cmake_pop_check_state()
-        endif()
-    else()
-      message(WARNING,
-"We couldn't find DPDK with pkg-config.  If you want DPDK support,
-make sure that pkg-config is installed, that DPDK 18.02.2 or later is
-installed, and that DPDK provides a .pc file.")
-    endif()
-endif()
-
 # Check for Bluetooth sniffing support
 if(NOT DISABLE_BLUETOOTH)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -2484,7 +2544,7 @@ if(NOT DISABLE_DBUS)
         set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${DBUS_LIBRARY_FULLPATHS})
 
         #
-        # Get library information for DPDK.
+        # Get library information for D-Bus.
         #
         pkg_get_link_info(DBUS dbus-1)
         set(LIBS "${LIBS} ${DBUS_LIBS}")
@@ -2580,13 +2640,10 @@ if(NOT DISABLE_DAG)
         cmake_push_check_state()
         set(CMAKE_REQUIRED_INCLUDES ${DAG_INCLUDE_DIRS})
         set(CMAKE_REQUIRED_LIBRARIES ${DAG_LIBRARIES})
-        check_function_exists(dag_attach_stream HAVE_DAG_STREAMS_API)
+        check_function_exists(dag_attach_stream64 HAVE_DAG_STREAMS_API)
         if(NOT HAVE_DAG_STREAMS_API)
-            message(FATAL_ERROR "DAG library lacks streams support")
+            message(FATAL_ERROR "DAG library lacks 64-bit streams support")
         endif()
-        check_function_exists(dag_attach_stream64 HAVE_DAG_LARGE_STREAMS_API)
-        check_function_exists(dag_get_erf_types HAVE_DAG_GET_ERF_TYPES)
-        check_function_exists(dag_get_stream_erf_types HAVE_DAG_GET_STREAM_ERF_TYPES)
         cmake_pop_check_state()
 
         include_directories(AFTER ${DAG_INCLUDE_DIRS})
@@ -2597,38 +2654,19 @@ if(NOT DISABLE_DAG)
         set(LIBS_STATIC "${LIBS_STATIC} ${DAG_LIBS_STATIC}")
         set(LIBS_PRIVATE "${LIBS_PRIVATE} ${DAG_LIBS_PRIVATE}")
 
-        if(HAVE_DAG_LARGE_STREAMS_API)
-            get_filename_component(DAG_LIBRARY_DIR ${DAG_LIBRARY} PATH)
-            check_library_exists(vdag vdag_set_device_info ${DAG_LIBRARY_DIR} HAVE_DAG_VDAG)
-            if(HAVE_DAG_VDAG)
-                set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-                set(LIBS "${LIBS} ${CMAKE_THREAD_LIBS_INIT}")
-                set(LIBS_STATIC "${LIBS_STATIC} ${CMAKE_THREAD_LIBS_INIT}")
-                set(LIBS_PRIVATE "${LIBS_PRIVATE} ${CMAKE_THREAD_LIBS_INIT}")
-            endif()
+        get_filename_component(DAG_LIBRARY_DIR ${DAG_LIBRARY} PATH)
+        check_library_exists(vdag vdag_set_device_info ${DAG_LIBRARY_DIR} HAVE_DAG_VDAG)
+        if(HAVE_DAG_VDAG)
+            set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+            set(LIBS "${LIBS} ${CMAKE_THREAD_LIBS_INIT}")
+            set(LIBS_STATIC "${LIBS_STATIC} ${CMAKE_THREAD_LIBS_INIT}")
+            set(LIBS_PRIVATE "${LIBS_PRIVATE} ${CMAKE_THREAD_LIBS_INIT}")
         endif()
-    endif()
-endif()
 
-# Check for Septel card support.
-set(PROJECT_EXTERNAL_OBJECT_LIST "")
-if(NOT DISABLE_SEPTEL)
-    #
-    # Do we have the msg.h header?
-    #
-    set(SEPTEL_INCLUDE_DIRS "${SEPTEL_ROOT}/INC")
-    cmake_push_check_state()
-    set(CMAKE_REQUIRED_INCLUDES ${SEPTEL_INCLUDE_DIRS})
-    check_include_file(msg.h HAVE_INC_MSG_H)
-    cmake_pop_check_state()
-    if(HAVE_INC_MSG_H)
-        #
-        # Yes.
-        #
-        include_directories(AFTER ${SEPTEL_INCLUDE_DIRS})
-        set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C} pcap-septel.c)
-        set(PROJECT_EXTERNAL_OBJECT_LIST ${PROJECT_EXTERNAL_OBJECT_LIST} "${SEPTEL_ROOT}/asciibin.o ${SEPTEL_ROOT}/bit2byte.o ${SEPTEL_ROOT}/confirm.o ${SEPTEL_ROOT}/fmtmsg.o ${SEPTEL_ROOT}/gct_unix.o ${SEPTEL_ROOT}/hqueue.o ${SEPTEL_ROOT}/ident.o ${SEPTEL_ROOT}/mem.o ${SEPTEL_ROOT}/pack.o ${SEPTEL_ROOT}/parse.o ${SEPTEL_ROOT}/pool.o ${SEPTEL_ROOT}/sdlsig.o ${SEPTEL_ROOT}/strtonum.o ${SEPTEL_ROOT}/timer.o ${SEPTEL_ROOT}/trace.o")
-        set(HAVE_SEPTEL_API TRUE)
+        if(ENABLE_DAG_TX)
+            set(ENABLE_DAG_TX TRUE)
+        endif()
+        message(STATUS "Endace DAG transmit support (EXPERIMENTAL): ${ENABLE_DAG_TX}")
     endif()
 endif()
 
@@ -2656,48 +2694,6 @@ if(NOT DISABLE_SNF)
     endif()
 endif()
 
-# Check for Riverbed AirPcap support.
-if(NOT DISABLE_AIRPCAP)
-    #
-    # Try to find the AirPcap header file and library.
-    #
-    find_package(AirPcap)
-
-    #
-    # Did we succeed?
-    #
-    if(AirPcap_FOUND)
-        #
-        # Yes.
-        #
-        include_directories(AFTER ${AirPcap_INCLUDE_DIRS})
-        set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C} pcap-airpcap.c)
-        set(HAVE_AIRPCAP_API TRUE)
-        set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${AirPcap_LIBRARIES})
-    endif()
-endif()
-
-# Check for Riverbed TurboCap support.
-if(NOT DISABLE_TC)
-    #
-    # Try to find the TurboCap header file and library.
-    #
-    find_package(TC)
-
-    #
-    # Did we succeed?
-    #
-    if(TC_FOUND)
-        #
-        # Yes.
-        #
-        include_directories(AFTER ${TC_INCLUDE_DIRS})
-        set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C} pcap-tc.c)
-        set(HAVE_TC_API TRUE)
-        set(PCAP_LINK_LIBRARIES ${PCAP_LINK_LIBRARIES} ${TC_LIBRARIES} ${CMAKE_USE_PTHREADS_INIT} stdc++)
-    endif()
-endif()
-
 #
 # Remote capture support.
 #
@@ -2720,7 +2716,7 @@ if(ENABLE_REMOTE)
     check_struct_has_member("struct msghdr" msg_flags "ftmacros.h;sys/socket.h" HAVE_STRUCT_MSGHDR_MSG_FLAGS)
     cmake_pop_check_state()
     set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C}
-        pcap-new.c pcap-rpcap.c rpcap-protocol.c sockutils.c)
+        pcap-rpcap.c rpcap-protocol.c sockutils.c)
     if(OPENSSL_FOUND)
         set(PROJECT_SOURCE_LIST_C ${PROJECT_SOURCE_LIST_C} sslutils.c)
     endif()
@@ -2801,6 +2797,12 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.devel OR EXISTS ${CMAKE_BINARY_DIR}/.deve
         # XXX - add /Qspectre if that is really worth doing.
         #
         check_and_add_compiler_option(-wd5045)
+        #
+        # Suppress warning C4204 from MSVC
+        # "nonstandard extension used: non-constant aggregate initializer"
+        # with code that returns a compound literal. This is allowed by C99.
+        #
+        check_and_add_compiler_option(-wd4204)
 
         #
         # Treat all (remaining) warnings as errors.
@@ -2837,6 +2839,54 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.devel OR EXISTS ${CMAKE_BINARY_DIR}/.deve
         check_and_add_compiler_option(-Wused-but-marked-unused)
     endif()
 endif()
+
+#
+# To get a correct builtin test result, the source must be compiled and linked,
+# which in CMake means check_c_source_compiles().
+#
+# Different builtins require different methods of testing, see the comments
+# about HAVE_BUILTIN_BSWAPnn in pcap-util.h and HAVE_BUILTIN_CTZ in optimize.c.
+#
+check_c_source_compiles(
+"int main(int argc, char **argv)
+{
+	switch (argc) {
+	case __builtin_bswap16(0):
+		return 0;
+	default:
+		return 1;
+	}
+}
+"
+    HAVE_BUILTIN_BSWAP16)
+
+check_c_source_compiles(
+"int main(int argc, char **argv)
+{
+	switch (argc) {
+	case __builtin_bswap32(0):
+		return 0;
+	default:
+		return 1;
+	}
+}
+"
+    HAVE_BUILTIN_BSWAP32)
+
+check_c_source_compiles(
+"int main(int argc, char **argv)
+{
+	switch (argc) {
+	case __builtin_bswap64(0):
+		return 0;
+	default:
+		return 1;
+	}
+}
+"
+    HAVE_BUILTIN_BSWAP64)
+
+check_c_source_compiles("int main(void) {return __builtin_ctz(1);}" HAVE_BUILTIN_CTZ)
 
 #
 # Suppress some warnings we get with MSVC even without /Wall.
@@ -3046,8 +3096,6 @@ set(MAN_FILE_FORMATS 5)
 set(MAN_MISC_INFO 7)
 set(MAN_ADMIN_COMMANDS 8)
 if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
-    # Workaround to enable certain features
-    set(_SUN TRUE)
     if(PCAP_TYPE STREQUAL "bpf")
         #
         # If we're using BPF, we need libodm and libcfg, as
@@ -3059,19 +3107,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
         set(LIBS_PRIVATE "${LIBS_PRIVATE} -lodm -lcfg")
     endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
-    if(CMAKE_SYSTEM_VERSION MATCHES "[A-Z.]*9\.[0-9]*")
+    if(
+       CMAKE_SYSTEM_VERSION MATCHES "[A-Z.]*9\.[0-9]*"
+       OR CMAKE_SYSTEM_VERSION MATCHES "[A-Z.]*10\.[01]"
+    )
         #
         # HP-UX 9.x.
-        #
-        set(HAVE_HPUX9 TRUE)
-    elseif(CMAKE_SYSTEM_VERSION MATCHES "[A-Z.]*10\.0")
-        #
         # HP-UX 10.0.
-        #
-    elseif(CMAKE_SYSTEM_VERSION MATCHES "[A-Z.]*10\.1")
-        #
         # HP-UX 10.1.
         #
+        message(FATAL_ERROR \"HP-UX version must be 10.20 or later, not \${CMAKE_SYSTEM_VERSION}\")
     else()
         #
         # HP-UX 10.20 and later.
@@ -3085,24 +3130,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
     set(MAN_ADMIN_COMMANDS 1m)
     set(MAN_FILE_FORMATS 4)
     set(MAN_MISC_INFO 5)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "IRIX" OR CMAKE_SYSTEM_NAME STREQUAL "IRIX64")
-    #
-    # Use IRIX conventions for man pages; they're the same as the
-    # System V conventions, except that they use section 8 for
-    # administrative commands and daemons.
-    #
-    set(MAN_FILE_FORMATS 4)
-    set(MAN_MISC_INFO 5)
-elseif(CMAKE_SYSTEM_NAME STREQUAL "OSF1")
-    #
-    # DEC OSF/1, a/k/a Digital UNIX, a/k/a Tru64 UNIX.
-    # Use Tru64 UNIX conventions for man pages; they're the same as the
-    # System V conventions except that they use section 8 for
-    # administrative commands and daemons.
-    #
-    set(MAN_FILE_FORMATS 4)
-    set(MAN_MISC_INFO 5)
-    set(MAN_DEVICES 7)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "SunOS" AND CMAKE_SYSTEM_VERSION MATCHES "5[.][0-9.]*")
     #
     # SunOS 5.x.
@@ -3418,6 +3445,7 @@ set(MAN3PCAP_NOEXPAND
     pcap_tstamp_type_name_to_val.3pcap
     pcap_tstamp_type_val_to_name.3pcap
 )
+# cbpf-savefile.manfile.in is not ready for a release yet.
 set(MANFILE_EXPAND
     pcap-savefile.manfile.in
 )
@@ -3515,12 +3543,6 @@ if(NOT MSVC)
     # With the HP-UX linker, directories specified with -L are, by
     # default, added to the run-time search path, so we don't need to
     # supply them.
-    #
-    # For Tru64 UNIX, "-rpath" works with DEC's^WCompaq's^WHP's C
-    # compiler for Alpha, but isn't documented as working with GCC, and
-    # no GCC-compatible option is documented as working with the DEC
-    # compiler.  If anybody needs this on Tru64/Alpha, they're welcome
-    # to figure out a way to make it work.
     #
     # This must *not* depend on the compiler, as, on platforms where
     # there's a GCC-compatible compiler and a vendor compiler, we need
@@ -3633,6 +3655,34 @@ configure_file(
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+#
+# libpcap tests
+# We try to find the Perl interpreter and, if we do, we have the check
+# rule run testprogs/TESTrun with it, because just trying to run the TESTrun
+# script as a command won't work on Windows.
+#
+# However, if the PERL environment variable is set, use its value instead of
+# trying to find the interpreter, this implements the same behaviour as in the
+# Makefile.
+#
+if(NOT "$ENV{PERL}" STREQUAL "")
+    set(PERL $ENV{PERL})
+    message(STATUS "Using PERL='${PERL}'")
+else()
+    find_program(PERL perl)
+    if(PERL)
+        message(STATUS "Found perl at ${PERL}")
+    else()
+        message(STATUS "Didn't find perl")
+    endif()
+endif()
+
+if(PERL)
+    add_custom_target(check
+        COMMAND ${PERL} ${CMAKE_SOURCE_DIR}/testprogs/TESTrun
+        DEPENDS testprogs)
+endif()
 
 if(ENABLE_REMOTE)
   message(WARNING "

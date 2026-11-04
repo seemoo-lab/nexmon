@@ -11,10 +11,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef _CONVERSATION_DEBUG_H
-#define _CONVERSATION_DEBUG_H
-
+#pragma once
 #ifdef DEBUG_CONVERSATION
 
 #include <stdio.h>
@@ -52,5 +49,3 @@ g_printerr("\n")
 #define DINSTR(arg) (void)0
 
 #endif /* DEBUG_CONVERSATION */
-
-#endif /* _CONVERSATION_DEBUG_H */

@@ -118,6 +118,7 @@ static const value_string UBX_MSG_CLASS_ID[] = {
     {UBX_MON_IO, "UBX-MON-IO"},
     {UBX_MON_MSGPP, "UBX-MON-MSGPP"},
     {UBX_MON_PATCH, "UBX-MON-PATCH"},
+    {UBX_MON_RF, "UBX-MON-RF"},
     {UBX_MON_RXBUF, "UBX-MON-RXBUF"},
     {UBX_MON_RXR, "UBX-MON-RXR"},
     {UBX_MON_SMGR, "UBX-MON-SMGR"},
@@ -355,6 +356,48 @@ static const value_string UBX_UTC_STD_ID[] = {
     {0, NULL}
 };
 
+/* Carrier Phase Solution Status */
+static const value_string UBX_CARRSOLN[] = {
+    {0, "No Carrier Phase Range Solution"},
+    {1, "Carrier Phase Range Solution with Floating Ambiguities"},
+    {2, "Carrier Phase Range Solution with Fixed Ambiguities"},
+    {0, NULL}
+};
+
+/* RF Block ID */
+static const value_string UBX_RF_BLOCK_ID[] = {
+    {0, "L1 band"},
+    {1, "L2 or L5 band"},
+    {0, NULL}
+};
+
+/* Jamming State */
+static const value_string UBX_JAMMING_STATE[] = {
+    {0, "Unknown or Feature Disabled"},
+    {1, "Ok - no significant jamming"},
+    {2, "Warning - interference visible but fix OK"},
+    {3, "Critical - interference visible and no fix"},
+    {0, NULL}
+};
+
+/* Antenna Status */
+static const value_string UBX_ANTENNA_STATUS[] = {
+    {0, "Init"},
+    {1, "Don't Know"},
+    {2, "Ok"},
+    {3, "Short"},
+    {4, "Open"},
+    {0, NULL}
+};
+
+/* Antenna Power */
+static const value_string UBX_ANTENNA_POWER[] = {
+    {0, "Off"},
+    {1, "On"},
+    {2, "Don't Know"},
+    {0, NULL}
+};
+
 /* Initialize the protocol and registered fields */
 static int proto_ubx;
 
@@ -439,6 +482,31 @@ static int hf_ubx_cfg_sbas_scanmode_prn120;
 static int * const ubx_cfg_sbas_mode_fields[] = {
     &hf_ubx_cfg_sbas_mode_enabled,
     &hf_ubx_cfg_sbas_mode_test,
+    NULL
+};
+
+static int hf_ubx_mon_rf;
+static int hf_ubx_mon_rf_version;
+static int hf_ubx_mon_rf_nblocks;
+static int hf_ubx_mon_rf_reserved0;
+static int hf_ubx_mon_rf_blockid;
+static int hf_ubx_mon_rf_flags;
+static int hf_ubx_mon_rf_jammingstate;
+static int hf_ubx_mon_rf_antstatus;
+static int hf_ubx_mon_rf_antpower;
+static int hf_ubx_mon_rf_poststatus;
+static int hf_ubx_mon_rf_reserved1;
+static int hf_ubx_mon_rf_noiseperms;
+static int hf_ubx_mon_rf_agccnt;
+static int hf_ubx_mon_rf_cwsuppression;
+static int hf_ubx_mon_rf_ofsi;
+static int hf_ubx_mon_rf_magi;
+static int hf_ubx_mon_rf_ofsq;
+static int hf_ubx_mon_rf_magq;
+static int hf_ubx_mon_rf_reserved2;
+
+static int * const ubx_mon_rf_flags_fields[] = {
+    &hf_ubx_mon_rf_jammingstate,
     NULL
 };
 
@@ -537,6 +605,55 @@ static int * const ubx_nav_pvt_flags2_fields[] = {
     &hf_ubx_nav_pvt_confirmedavai,
     &hf_ubx_nav_pvt_confirmeddate,
     &hf_ubx_nav_pvt_confirmedtime,
+    NULL
+};
+
+static int hf_ubx_nav_relposned;
+static int hf_ubx_nav_relposned_version;
+static int hf_ubx_nav_relposned_reserved0;
+static int hf_ubx_nav_relposned_refstationid;
+static int hf_ubx_nav_relposned_itow;
+static int hf_ubx_nav_relposned_relposn;
+static int hf_ubx_nav_relposned_relpose;
+static int hf_ubx_nav_relposned_relposd;
+static int hf_ubx_nav_relposned_relposlength;
+static int hf_ubx_nav_relposned_relposheading;
+static int hf_ubx_nav_relposned_reserved1;
+static int hf_ubx_nav_relposned_relposhpn;
+static int hf_ubx_nav_relposned_relposhpe;
+static int hf_ubx_nav_relposned_relposhpd;
+static int hf_ubx_nav_relposned_relposhplength;
+static int hf_ubx_nav_relposned_accn;
+static int hf_ubx_nav_relposned_acce;
+static int hf_ubx_nav_relposned_accd;
+static int hf_ubx_nav_relposned_acclength;
+static int hf_ubx_nav_relposned_accheading;
+static int hf_ubx_nav_relposned_reserved2;
+static int hf_ubx_nav_relposned_flags;
+static int hf_ubx_nav_relposned_gnssfixok;
+static int hf_ubx_nav_relposned_diffsoln;
+static int hf_ubx_nav_relposned_relposvalid;
+static int hf_ubx_nav_relposned_carrsoln;
+static int hf_ubx_nav_relposned_ismoving;
+static int hf_ubx_nav_relposned_refposmiss;
+static int hf_ubx_nav_relposned_refobsmiss;
+static int hf_ubx_nav_relposned_relposheadingvalid;
+static int hf_ubx_nav_relposned_relposnormalized;
+static int hf_ubx_nav_relposned_relposn_full;
+static int hf_ubx_nav_relposned_relpose_full;
+static int hf_ubx_nav_relposned_relposd_full;
+static int hf_ubx_nav_relposned_relposlength_full;
+
+static int * const ubx_nav_relposned_flags_fields[] = {
+    &hf_ubx_nav_relposned_gnssfixok,
+    &hf_ubx_nav_relposned_diffsoln,
+    &hf_ubx_nav_relposned_relposvalid,
+    &hf_ubx_nav_relposned_carrsoln,
+    &hf_ubx_nav_relposned_ismoving,
+    &hf_ubx_nav_relposned_refposmiss,
+    &hf_ubx_nav_relposned_refobsmiss,
+    &hf_ubx_nav_relposned_relposheadingvalid,
+    &hf_ubx_nav_relposned_relposnormalized,
     NULL
 };
 
@@ -770,6 +887,9 @@ static int ett_ubx_cfg_gnss_block[255];
 static int ett_ubx_cfg_sbas;
 static int ett_ubx_cfg_sbas_mode;
 static int ett_ubx_cfg_sbas_scanmode;
+static int ett_ubx_mon_rf;
+static int ett_ubx_mon_rf_rf_info[255];
+static int ett_ubx_mon_rf_flags;
 static int ett_ubx_nav_dop;
 static int ett_ubx_nav_eoe;
 static int ett_ubx_nav_odo;
@@ -779,6 +899,8 @@ static int ett_ubx_nav_pvt_datetime;
 static int ett_ubx_nav_pvt_valid;
 static int ett_ubx_nav_pvt_flags;
 static int ett_ubx_nav_pvt_flags2;
+static int ett_ubx_nav_relposned;
+static int ett_ubx_nav_relposned_flags;
 static int ett_ubx_nav_sat;
 static int ett_ubx_nav_sat_sv_info[255];
 static int ett_ubx_nav_sat_flags;
@@ -920,6 +1042,29 @@ static void fmt_prstdev(char *label, uint32_t p) {
 /* Format measurement reference time accuracy */
 static void fmt_towacc(char *label, uint32_t p) {
     snprintf(label, ITEM_LABEL_LENGTH, "%d.%04dms", p / 16, (p * 10000 / 16) % 10000);
+}
+
+/* Format high-precision components of relative position vectors in cm between -0.99cm and 0.99cm */
+static void fmt_relpos_hp(char *label, int8_t p) {
+    if (p >= 0) {
+        snprintf(label, ITEM_LABEL_LENGTH, "%d.%02dcm", p / 100, p % 100);
+    }
+    else {
+        snprintf(label, ITEM_LABEL_LENGTH, "-%d.%02dcm", -p / 100, -p % 100);
+    }
+}
+
+static void fmt_relpos_acc(char *label, uint32_t p) {
+    snprintf(label, ITEM_LABEL_LENGTH, "%d.%02dcm", p / 100, p % 100);
+}
+
+static void fmt_relpos_full(char *label, int64_t p) {
+    if (p >= 0) {
+        snprintf(label, ITEM_LABEL_LENGTH, "%"PRId64".%02"PRId64"cm", p / 100, p % 100);
+    }
+    else {
+        snprintf(label, ITEM_LABEL_LENGTH, "-%"PRId64".%02"PRId64"cm", -p / 100, -p % 100);
+    }
 }
 
 /* Dissect UBX message */
@@ -1176,6 +1321,67 @@ static int dissect_ubx_cfg_sbas(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     return tvb_captured_length(tvb);
 }
 
+/* Dissect UBX-MON-RF message */
+static int dissect_ubx_mon_rf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+    uint8_t num_blocks;
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "UBX-MON-RF");
+    col_clear(pinfo->cinfo, COL_INFO);
+
+    num_blocks = tvb_get_uint8(tvb, 1);
+
+    proto_item *ti = proto_tree_add_item(tree, hf_ubx_mon_rf,
+            tvb, 0, 4 + 24 * num_blocks, ENC_NA);
+    proto_tree *ubx_mon_rf_tree = proto_item_add_subtree(ti, ett_ubx_mon_rf);
+
+    // dissect the registered fields
+    proto_tree_add_item(ubx_mon_rf_tree, hf_ubx_mon_rf_version,
+            tvb, 0, 1, ENC_NA);
+    proto_tree_add_item(ubx_mon_rf_tree, hf_ubx_mon_rf_nblocks,
+            tvb, 1, 1, ENC_NA);
+    proto_tree_add_item(ubx_mon_rf_tree, hf_ubx_mon_rf_reserved0,
+            tvb, 2, 2, ENC_LITTLE_ENDIAN);
+
+    for (unsigned i = 0; i < num_blocks; i++) {
+        const uint8_t block_id = tvb_get_uint8(tvb, 4 + 24 * i);
+
+        proto_tree *rf_info_tree = proto_tree_add_subtree_format(ubx_mon_rf_tree,
+            tvb, 4 + 24 * i, 24, ett_ubx_mon_rf_rf_info[i], NULL,
+            "Block ID %3d", block_id);
+
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_blockid,
+            tvb, 4 + (24 * i), 1, ENC_NA);
+        proto_tree_add_bitmask(rf_info_tree, tvb, 5 + (24 * i), hf_ubx_mon_rf_flags,
+            ett_ubx_mon_rf_flags, ubx_mon_rf_flags_fields, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_antstatus,
+            tvb, 6 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_antpower,
+            tvb, 7 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_poststatus,
+            tvb, 8 + (24 * i), 4, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_reserved1,
+            tvb, 12 + (24 * i), 4, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_noiseperms,
+            tvb, 16 + (24 * i), 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_agccnt,
+            tvb, 18 + (24 * i), 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_cwsuppression,
+            tvb, 20 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_ofsi,
+            tvb, 21 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_magi,
+            tvb, 22 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_ofsq,
+            tvb, 23 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_magq,
+            tvb, 24 + (24 * i), 1, ENC_NA);
+        proto_tree_add_item(rf_info_tree, hf_ubx_mon_rf_reserved2,
+            tvb, 25 + (24 * i), 3, ENC_LITTLE_ENDIAN);
+    }
+
+    return tvb_captured_length(tvb);
+}
+
 /* Dissect UBX-NAV-DOP message */
 static int dissect_ubx_nav_dop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "UBX-NAV-DOP");
@@ -1356,6 +1562,79 @@ static int dissect_ubx_nav_pvt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
             tvb, 88, 2, ENC_LITTLE_ENDIAN);
     proto_tree_add_item(ubx_nav_pvt_tree, hf_ubx_nav_pvt_magacc,
             tvb, 90, 2, ENC_LITTLE_ENDIAN);
+
+    return tvb_captured_length(tvb);
+}
+
+static int dissect_ubx_nav_relposned(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "UBX-NAV-RELPOSNED");
+    col_clear(pinfo->cinfo, COL_INFO);
+
+    proto_item *ti = proto_tree_add_item(tree, hf_ubx_nav_relposned,
+            tvb, 0, 64, ENC_NA);
+    proto_tree *ubx_nav_relposned_tree = proto_item_add_subtree(ti, ett_ubx_nav_relposned);
+
+    // dissect the registered fields
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_version,
+            tvb, 0, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_reserved0,
+            tvb, 1, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_refstationid,
+            tvb, 2, 2, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_itow,
+            tvb, 4, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposn,
+            tvb, 8, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relpose,
+            tvb, 12, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposd,
+            tvb, 16, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposlength,
+            tvb, 20, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposheading,
+            tvb, 24, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_reserved1,
+            tvb, 28, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposhpn,
+            tvb, 32, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposhpe,
+            tvb, 33, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposhpd,
+            tvb, 34, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposhplength,
+            tvb, 35, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_accn,
+            tvb, 36, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_acce,
+            tvb, 40, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_accd,
+            tvb, 44, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_acclength,
+            tvb, 48, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_accheading,
+            tvb, 52, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item(ubx_nav_relposned_tree, hf_ubx_nav_relposned_reserved2,
+            tvb, 56, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_bitmask(ubx_nav_relposned_tree, tvb, 60, hf_ubx_nav_relposned_flags,
+            ett_ubx_nav_relposned_flags, ubx_nav_relposned_flags_fields, ENC_LITTLE_ENDIAN);
+
+    gint64 relposn_full = (gint64)tvb_get_int32(tvb, 8, ENC_LITTLE_ENDIAN) * 100 + tvb_get_int8(tvb, 32);
+    gint64 relpose_full = (gint64)tvb_get_int32(tvb, 12, ENC_LITTLE_ENDIAN) * 100 + tvb_get_int8(tvb, 33);
+    gint64 relposd_full = (gint64)tvb_get_int32(tvb, 16, ENC_LITTLE_ENDIAN) * 100 + tvb_get_int8(tvb, 34);
+    gint64 relposlength_full = (gint64)tvb_get_int32(tvb, 20, ENC_LITTLE_ENDIAN) * 100 + tvb_get_int8(tvb, 35);
+
+    proto_item *ti_n;
+    proto_item *ti_e;
+    proto_item *ti_d;
+    proto_item *ti_length;
+    ti_n = proto_tree_add_int64(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposn_full, tvb, 8, 0, relposn_full);
+    proto_item_set_generated(ti_n);
+    ti_e = proto_tree_add_int64(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relpose_full, tvb, 12, 0, relpose_full);
+    proto_item_set_generated(ti_e);
+    ti_d = proto_tree_add_int64(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposd_full, tvb, 16, 0, relposd_full);
+    proto_item_set_generated(ti_d);
+    ti_length = proto_tree_add_int64(ubx_nav_relposned_tree, hf_ubx_nav_relposned_relposlength_full, tvb, 20, 0, relposlength_full);
+    proto_item_set_generated(ti_length);
 
     return tvb_captured_length(tvb);
 }
@@ -2038,6 +2317,65 @@ void proto_register_ubx(void) {
             {"PRN 120", "ubx.cfg.sbas.scanmode.prn120",
                 FT_UINT32, BASE_HEX, NULL, 0x00000001, NULL, HFILL}},
 
+        // UBX-MON-RF
+        {&hf_ubx_mon_rf,
+            {"UBX-MON-RF", "ubx.mon.rf",
+                FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_version,
+            {"Version", "ubx.mon.rf.version",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_nblocks,
+            {"Number of RF blocks", "ubx.mon.rf.nblocks",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_reserved0,
+            {"Reserved 0", "ubx.mon.rf.reserved0",
+                FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_blockid,
+            {"Block ID", "ubx.mon.rf.blockid",
+                FT_UINT8, BASE_DEC, VALS(UBX_RF_BLOCK_ID), 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_flags,
+            {"Flags", "ubx.mon.rf.flags",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_jammingstate,
+            {"Jamming State", "ubx.mon.rf.jammingstate",
+                FT_UINT8, BASE_DEC, VALS(UBX_JAMMING_STATE), 0x3, NULL, HFILL}},
+        {&hf_ubx_mon_rf_antstatus,
+            {"Antenna Status", "ubx.mon.rf.antstatus",
+                FT_UINT8, BASE_DEC, VALS(UBX_ANTENNA_STATUS), 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_antpower,
+            {"Antenna Power", "ubx.mon.rf.antpower",
+                FT_UINT8, BASE_DEC, VALS(UBX_ANTENNA_POWER), 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_poststatus,
+            {"POST Status", "ubx.mon.rf.poststatus",
+                FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_reserved1,
+            {"Reserved 1", "ubx.mon.rf.reserved1",
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_noiseperms,
+            {"Noise Level", "ubx.mon.rf.noiseperms",
+                FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_agccnt,
+            {"AGC Monitor", "ubx.mon.rf.agccnt",
+                FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_cwsuppression,
+            {"CW Suppression", "ubx.mon.rf.cwsuppression",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_ofsi,
+            {"Imbalance of I-part", "ubx.mon.rf.ofsi",
+                FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_magi,
+            {"Magnitude of I-part", "ubx.mon.rf.magi",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_ofsq,
+            {"Imbalance of Q-part", "ubx.mon.rf.ofsq",
+                FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_magq,
+            {"Magnitude of Q-part", "ubx.mon.rf.magq",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_mon_rf_reserved2,
+            {"Reserved 2", "ubx.mon.rf.reserved2",
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+
         // NAV-DOP
         {&hf_ubx_nav_dop,
             {"UBX-NAV-DOP", "ubx.nav.dop",
@@ -2257,6 +2595,113 @@ void proto_register_ubx(void) {
         {&hf_ubx_nav_pvt_magacc,
             {"Magnetic declination accuracy", "ubx.nav.pvt.magacc",
                 FT_UINT16, BASE_CUSTOM, CF_FUNC(&fmt_decl_acc), 0x0, NULL, HFILL}},
+
+        // NAV-RELPOSNED
+        {&hf_ubx_nav_relposned,
+            {"UBX-NAV-RELPOSNED", "ubx.nav.relposned",
+                FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_version,
+            {"Version", "ubx.nav.relposned.version",
+                FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_reserved0,
+            {"Reserved 0", "ubx.nav.relposned.reserved0",
+                FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_refstationid,
+            {"Ref Station ID", "ubx.nav.relposned.refstationid",
+                FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_itow,
+            {"iTOW", "ubx.nav.relposned.itow",
+                FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposn,
+            {"Relative Position North", "ubx.nav.relposned.relposn",
+                FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_centimeters), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relpose,
+            {"Relative Position East", "ubx.nav.relposned.relpose",
+                FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_centimeters), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposd,
+            {"Relative Position Down", "ubx.nav.relposned.relposd",
+                FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_centimeters), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposlength,
+            {"Relative Position Length", "ubx.nav.relposned.relposlength",
+                FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_centimeters), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposheading,
+            {"Relative Position Heading", "ubx.nav.relposned.relposheading",
+                FT_INT32, BASE_CUSTOM, CF_FUNC(&fmt_heading), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_reserved1,
+            {"Reserved 1", "ubx.nav.relposned.reserved1",
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposhpn,
+            {"High-precision Relative Position North", "ubx.nav.relposned.relposhpn",
+                FT_INT8, BASE_CUSTOM, CF_FUNC(&fmt_relpos_hp), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposhpe,
+            {"High-precision Relative Position East", "ubx.nav.relposned.relposhpe",
+                FT_INT8, BASE_CUSTOM, CF_FUNC(&fmt_relpos_hp), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposhpd,
+            {"High-precision Relative Position Down", "ubx.nav.relposned.relposhpd",
+                FT_INT8, BASE_CUSTOM, CF_FUNC(&fmt_relpos_hp), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposhplength,
+            {"High-precision Relative Position Length", "ubx.nav.relposned.relposhplength",
+                FT_INT8, BASE_CUSTOM, CF_FUNC(&fmt_relpos_hp), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_accn,
+            {"Relative Position North Accuracy", "ubx.nav.relposned.accn",
+                FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_relpos_acc), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_acce,
+            {"Relative Position East Accuracy", "ubx.nav.relposned.acce",
+                FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_relpos_acc), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_accd,
+            {"Relative Position Down Accuracy", "ubx.nav.relposned.accd",
+                FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_relpos_acc), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_acclength,
+            {"Relative Position Length Accuracy", "ubx.nav.relposned.acclength",
+                FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_relpos_acc), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_accheading,
+            {"Relative Position Heading Accuracy", "ubx.nav.relposned.accheading",
+                FT_UINT32, BASE_CUSTOM, CF_FUNC(&fmt_heading_acc), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_reserved2,
+            {"Reserved 2", "ubx.nav.relposned.reserved2",
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_flags,
+            {"Flags", "ubx.nav.relposned.flags",
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_gnssfixok,
+            {"Valid Fix", "ubx.nav.relposned.gnssfixok",
+                FT_BOOLEAN, 32, NULL, 0x1, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_diffsoln,
+            {"Differential Corrections Were Applied", "ubx.nav.relposned.diffsoln",
+                FT_BOOLEAN, 32, NULL, 0x2, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposvalid,
+            {"Relative Position Valid", "ubx.nav.relposned.relposvalid",
+                FT_BOOLEAN, 32, NULL, 0x4, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_carrsoln,
+            {"Carrier Phase Range Solution Status", "ubx.nav.relposned.carrsoln",
+                FT_UINT32, BASE_DEC, VALS(UBX_CARRSOLN), 0x18, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_ismoving,
+            {"Is Moving", "ubx.nav.relposned.ismoving",
+                FT_BOOLEAN, 32, NULL, 0x00000020, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_refposmiss,
+            {"Extrapolated Reference Position", "ubx.nav.relposned.refposmiss",
+                FT_BOOLEAN, 32, NULL, 0x00000040, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_refobsmiss,
+            {"Extrapolated Reference Observations", "ubx.nav.relposned.refobsmiss",
+                FT_BOOLEAN, 32, NULL, 0x00000080, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposheadingvalid,
+            {"Relative Position Heading Valid", "ubx.nav.relposned.relposheadingvalid",
+                FT_BOOLEAN, 32, NULL, 0x00000100, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposnormalized,
+            {"Relative Position Normalized", "ubx.nav.relposned.refposnormalized",
+                FT_BOOLEAN, 32, NULL, 0x00000200, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposn_full,
+            {"Relative Position North + High-precision", "ubx.nav.relposned.relposn_full",
+                FT_INT64, BASE_CUSTOM, CF_FUNC(&fmt_relpos_full), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relpose_full,
+            {"Relative Position East + High-precision", "ubx.nav.relposned.relpose_full",
+                FT_INT64, BASE_CUSTOM, CF_FUNC(&fmt_relpos_full), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposd_full,
+            {"Relative Position Down + High-precision", "ubx.nav.relposned.relposd_full",
+                FT_INT64, BASE_CUSTOM, CF_FUNC(&fmt_relpos_full), 0x0, NULL, HFILL}},
+        {&hf_ubx_nav_relposned_relposlength_full,
+            {"Relative Position Length + High-precision", "ubx.nav.relposned.relposlength_full",
+                FT_INT64, BASE_CUSTOM, CF_FUNC(&fmt_relpos_full), 0x0, NULL, HFILL}},
 
         // NAV-SAT
         {&hf_ubx_nav_sat,
@@ -2739,6 +3184,8 @@ void proto_register_ubx(void) {
         &ett_ubx_cfg_sbas,
         &ett_ubx_cfg_sbas_mode,
         &ett_ubx_cfg_sbas_scanmode,
+        &ett_ubx_mon_rf,
+        &ett_ubx_mon_rf_flags,
         &ett_ubx_nav_dop,
         &ett_ubx_nav_eoe,
         &ett_ubx_nav_odo,
@@ -2748,6 +3195,8 @@ void proto_register_ubx(void) {
         &ett_ubx_nav_pvt_valid,
         &ett_ubx_nav_pvt_flags,
         &ett_ubx_nav_pvt_flags2,
+        &ett_ubx_nav_relposned,
+        &ett_ubx_nav_relposned_flags,
         &ett_ubx_nav_sat,
         &ett_ubx_nav_sat_flags,
         &ett_ubx_nav_sbas,
@@ -2770,14 +3219,16 @@ void proto_register_ubx(void) {
         + array_length(ett_ubx_cfg_gnss_block)
         + array_length(ett_ubx_nav_sbas_sv_info)
         + array_length(ett_ubx_rxm_rawx_meas)
-        + array_length(ett_ubx_rxm_measx_meas)];
+        + array_length(ett_ubx_rxm_measx_meas)
+        + array_length(ett_ubx_mon_rf_rf_info)];
 
     // fill ett with elements from ett_part,
     // pointers to ett_ubx_nav_sat_sv_info elements,
     // pointers to ett_ubx_cfg_gnss_block elements,
     // pointers to ett_ubx_nav_sbas_sv_info elements,
-    // pointers to ett_ubx_rxm_rawx_meas elements, and
-    // pointers to ett_ubx_rxm_measx_meas elements
+    // pointers to ett_ubx_rxm_rawx_meas elements,
+    // pointers to ett_ubx_rxm_measx_meas elements, and
+    // pointers to ett_ubx_mon_rf_rf_info elements
     size_t i;
     for (i = 0; i < array_length(ett_part); i++) {
         ett[i] = ett_part[i];
@@ -2807,6 +3258,14 @@ void proto_register_ubx(void) {
             + array_length(ett_ubx_rxm_rawx_meas)]
             = &ett_ubx_rxm_measx_meas[i];
     }
+    for (i = 0; i < array_length(ett_ubx_mon_rf_rf_info); i++) {
+        ett[i + array_length(ett_part) + array_length(ett_ubx_nav_sat_sv_info)
+            + array_length(ett_ubx_cfg_gnss_block)
+            + array_length(ett_ubx_nav_sbas_sv_info)
+            + array_length(ett_ubx_rxm_rawx_meas)
+            + array_length(ett_ubx_rxm_measx_meas)]
+            = &ett_ubx_mon_rf_rf_info[i];
+    }
 
     proto_ubx = proto_register_protocol("UBX Protocol", "UBX", "ubx");
 
@@ -2826,21 +3285,23 @@ void proto_register_ubx(void) {
 }
 
 void proto_reg_handoff_ubx(void) {
-    UBX_REGISTER_DISSECTOR(dissect_ubx_ack_ack,     UBX_ACK_ACK);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_ack_nak,     UBX_ACK_NAK);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_cfg_gnss,    UBX_CFG_GNSS);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_cfg_sbas,    UBX_CFG_SBAS);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_dop,     UBX_NAV_DOP);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_eoe,     UBX_NAV_EOE);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_odo,     UBX_NAV_ODO);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_posecef, UBX_NAV_POSECEF);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_pvt,     UBX_NAV_PVT);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_sat,     UBX_NAV_SAT);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_sbas,    UBX_NAV_SBAS);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_timegps, UBX_NAV_TIMEGPS);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_timeutc, UBX_NAV_TIMEUTC);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_velecef, UBX_NAV_VELECEF);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_measx,   UBX_RXM_MEASX);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_rawx,    UBX_RXM_RAWX);
-    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_sfrbx,   UBX_RXM_SFRBX);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_ack_ack,       UBX_ACK_ACK);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_ack_nak,       UBX_ACK_NAK);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_cfg_gnss,      UBX_CFG_GNSS);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_cfg_sbas,      UBX_CFG_SBAS);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_mon_rf,        UBX_MON_RF);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_dop,       UBX_NAV_DOP);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_eoe,       UBX_NAV_EOE);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_odo,       UBX_NAV_ODO);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_posecef,   UBX_NAV_POSECEF);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_pvt,       UBX_NAV_PVT);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_relposned, UBX_NAV_RELPOSNED);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_sat,       UBX_NAV_SAT);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_sbas,      UBX_NAV_SBAS);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_timegps,   UBX_NAV_TIMEGPS);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_timeutc,   UBX_NAV_TIMEUTC);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_nav_velecef,   UBX_NAV_VELECEF);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_measx,     UBX_RXM_MEASX);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_rawx,      UBX_RXM_RAWX);
+    UBX_REGISTER_DISSECTOR(dissect_ubx_rxm_sfrbx,     UBX_RXM_SFRBX);
 }

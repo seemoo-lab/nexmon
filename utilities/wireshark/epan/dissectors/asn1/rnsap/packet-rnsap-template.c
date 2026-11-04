@@ -26,15 +26,6 @@
 #include "packet-ber.h"
 #include "packet-e212.h"
 
-#ifdef _MSC_VER
-/* disable: "warning C4146: unary minus operator applied to unsigned type, result still unsigned" */
-#pragma warning(disable:4146)
-#endif
-
-#define PNAME  "UTRAN Iur interface Radio Network Subsystem Application Part"
-#define PSNAME "RNSAP"
-#define PFNAME "rnsap"
-
 #define SCCP_SSN_RNSAP 143
 
 #include "packet-rnsap-val.h"
@@ -184,8 +175,8 @@ dissect_sccp_rnsap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
   pdu_type = tvb_get_uint8(tvb, PDU_TYPE_OFFSET);
   if (pdu_type & 0x1F) {
-    /* pdu_type is not 0x00 (initiatingMessage), 0x20 (succesfulOutcome),
-       0x40 (unsuccesfulOutcome) or 0x60 (outcome), ignore extension bit (0x80) */
+    /* pdu_type is not 0x00 (initiatingMessage), 0x20 (successfulOutcome),
+       0x40 (unsuccessfulOutcome) or 0x60 (outcome), ignore extension bit (0x80) */
     return false;
   }
 
@@ -270,7 +261,7 @@ void proto_register_rnsap(void) {
 
 
   /* Register protocol */
-  proto_rnsap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_rnsap = proto_register_protocol("UTRAN Iur interface Radio Network Subsystem Application Part", "RNSAP", "rnsap");
   /* Register fields and subtrees */
   proto_register_field_array(proto_rnsap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

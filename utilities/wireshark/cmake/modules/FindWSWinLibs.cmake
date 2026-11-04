@@ -5,18 +5,22 @@
 #
 #  The function is passed the directory name to search for and the variable
 #  to set in the callers scope.
+#
+# To do:
+# pkgconf has a vcpkg port, and vcpkg ports ship with .pc files. We should
+# add pkgconf to dev-libs and use it instead of this where possible.
 
 function( FindWSWinLibs _WS_LIB_SEARCH_PATH _LIB_HINT_VAR )
   if(USE_REPOSITORY)
     if( ARGN )
       set( _PROJECT_LIB_DIR ${ARGN} )
     else()
-      if( DEFINED ENV{WIRESHARK_LIB_DIR} )
-        # The buildbots set WIRESHARK_LIB_DIR but not WIRESHARK_BASE_DIR.
-        file( TO_CMAKE_PATH "$ENV{WIRESHARK_LIB_DIR}" _PROJECT_LIB_DIR )
+      if (WIRESHARK_BASE_DIR)
+        file( TO_CMAKE_PATH "${WIRESHARK_BASE_DIR}" _ws_base_dir )
+        set( _PROJECT_LIB_DIR "${_ws_base_dir}/wireshark-${WIRESHARK_TARGET_PLATFORM}-libs" )
+	unset(_ws_base_dir)
       else()
-        file( TO_CMAKE_PATH "$ENV{WIRESHARK_BASE_DIR}" _WS_BASE_DIR )
-        set( _PROJECT_LIB_DIR "${_WS_BASE_DIR}/wireshark-${WIRESHARK_TARGET_PLATFORM}-libs-4.6" )
+        file( TO_CMAKE_PATH "$ENV{WIRESHARK_LIB_DIR}" _PROJECT_LIB_DIR )
       endif()
     endif()
 
@@ -58,9 +62,29 @@ function(AddWSWinDLL _PKG_NAME _PKG_HINTS _DLL_GLOB)
       CACHE STRING "${_PKG_NAME} PDB file name"
     )
     mark_as_advanced( ${_PKG_VAR}_DLL_DIR ${_PKG_VAR}_DLL ${_PKG_VAR}_PDB )
+    set ( ${_PKG_VAR}_DLL_DIR_DEBUG "${${_PKG_HINTS}}/debug/bin"
+      CACHE PATH "Path to ${_PKG_NAME} Debug DLL"
+    )
+    file( GLOB _pkg_dll RELATIVE "${${_PKG_VAR}_DLL_DIR_DEBUG}"
+      "${${_PKG_VAR}_DLL_DIR_DEBUG}/${_DLL_GLOB}.dll"
+    )
+    set ( ${_PKG_VAR}_DLL_DEBUG ${_pkg_dll}
+      CACHE STRING "${_PKG_NAME} Debug DLL file name"
+    )
+    file( GLOB _pkg_pdb RELATIVE "${${_PKG_VAR}_DLL_DIR_DEBUG}"
+      "${${_PKG_VAR}_DLL_DIR_DEBUG}/${_DLL_GLOB}.pdb"
+    )
+    set ( ${_PKG_VAR}_PDB_DEBUG ${_pkg_pdb}
+      CACHE STRING "${_PKG_NAME} Debug PDB file name"
+    )
+    mark_as_advanced( ${_PKG_VAR}_DLL_DIR_DEBUG ${_PKG_VAR}_DLL_DEBUG ${_PKG_VAR}_PDB_DEBUG )
   else()
     set( ${_PKG_VAR}_DLL_DIR )
     set( ${_PKG_VAR}_DLL )
+    set( ${_PKG_VAR}_PDB )
+    set( ${_PKG_VAR}_DLL_DIR_DEBUG )
+    set( ${_PKG_VAR}_DLL_DEBUG )
+    set( ${_PKG_VAR}_PDB_DEBUG )
   endif()
 endfunction()
 

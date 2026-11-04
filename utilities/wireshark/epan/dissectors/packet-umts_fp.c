@@ -47,9 +47,9 @@ void proto_reg_handoff_fp(void);
 
 /* Initialize the protocol and registered fields. */
 
-int proto_fp;
-extern int proto_umts_mac;
-extern int proto_umts_rlc;
+static int proto_fp;
+static int proto_umts_mac;
+static int proto_umts_rlc;
 
 static int hf_fp_release;
 static int hf_fp_release_version;
@@ -230,6 +230,7 @@ static expert_field ei_fp_spare_extension;
 static expert_field ei_fp_no_per_frame_info;
 static expert_field ei_fp_no_per_conv_channel_info;
 static expert_field ei_fp_invalid_frame_count;
+static expert_field ei_fp_invalid_ddi_count;
 
 static dissector_handle_t rlc_bcch_handle;
 static dissector_handle_t mac_fdd_dch_handle;
@@ -479,122 +480,122 @@ static const uint8_t fake_lchid_macd_flow[] = {1,9,14,11,0,12,0,0};
 
 /* Dissect message parts */
 static int dissect_tb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                           int offset, struct fp_info *p_fp_info,
+                           unsigned offset, struct fp_info *p_fp_info,
                            dissector_handle_t *data_handle,
                            void *data);
 
 static int dissect_macd_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                 int offset, uint16_t length, uint16_t number_of_pdus, struct fp_info *p_fp_info,
+                                 unsigned offset, uint16_t length, uint16_t number_of_pdus, struct fp_info *p_fp_info,
                                  void *data);
 static int dissect_macd_pdu_data_type_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                        int offset, uint16_t length, uint16_t number_of_pdus, struct fp_info * fpi,
+                                        unsigned offset, uint16_t length, uint16_t number_of_pdus, struct fp_info * fpi,
                                         void *data);
 
 static int dissect_crci_bits(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                             fp_info *p_fp_info, int offset);
+                             fp_info *p_fp_info, unsigned offset);
 static void dissect_spare_extension_and_crc(tvbuff_t *tvb, packet_info *pinfo,
                                             proto_tree *tree, uint8_t dch_crc_present,
-                                            int offset, unsigned header_length);
+                                            unsigned offset, unsigned header_length);
 /* Dissect common control messages */
 static int dissect_common_outer_loop_power_control(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                                                   int offset, struct fp_info *p_fp_info);
+                                                   unsigned offset, struct fp_info *p_fp_info);
 static int dissect_common_timing_adjustment(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                                            int offset, struct fp_info *p_fp_info);
+                                            unsigned offset, struct fp_info *p_fp_info);
 static int dissect_common_dl_node_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                                  tvbuff_t *tvb, int offset);
+                                                  tvbuff_t *tvb, unsigned offset);
 static int dissect_common_ul_node_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                                  tvbuff_t *tvb, int offset);
+                                                  tvbuff_t *tvb, unsigned offset);
 static int dissect_common_dl_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                            tvbuff_t *tvb, int offset,
+                                            tvbuff_t *tvb, unsigned offset,
                                             struct fp_info *p_fp_info);
 static int dissect_common_ul_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                            tvbuff_t *tvb, int offset,
+                                            tvbuff_t *tvb, unsigned offset,
                                             struct fp_info *p_fp_info);
 static int dissect_common_timing_advance(packet_info *pinfo, proto_tree *tree,
-                                         tvbuff_t *tvb, int offset);
+                                         tvbuff_t *tvb, unsigned offset);
 static int dissect_hsdpa_capacity_request(packet_info *pinfo, proto_tree *tree,
-                                          tvbuff_t *tvb, int offset);
+                                          tvbuff_t *tvb, unsigned offset);
 static int dissect_hsdpa_capacity_allocation(packet_info *pinfo, proto_tree *tree,
-                                             tvbuff_t *tvb, int offset,
+                                             tvbuff_t *tvb, unsigned offset,
                                              struct fp_info *p_fp_info);
 static int dissect_hsdpa_capacity_allocation_type_2(packet_info *pinfo, proto_tree *tree,
-                                                    tvbuff_t *tvb, int offset);
+                                                    tvbuff_t *tvb, unsigned offset);
 static void dissect_common_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                   int offset, struct fp_info *p_fp_info);
+                                   unsigned offset, struct fp_info *p_fp_info);
 static int dissect_common_dynamic_pusch_assignment(packet_info *pinfo, proto_tree *tree,
-                                                   tvbuff_t *tvb, int offset);
+                                                   tvbuff_t *tvb, unsigned offset);
 
 /* Dissect common channel types */
 static void dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                      int offset, struct fp_info *p_fp_info,
+                                      unsigned offset, struct fp_info *p_fp_info,
                                       void *data);
 static void dissect_fach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                      int offset, struct fp_info *p_fp_info,
+                                      unsigned offset, struct fp_info *p_fp_info,
                                       void *data);
 static void dissect_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                      int offset, struct fp_info *p_fp_info);
+                                      unsigned offset, struct fp_info *p_fp_info);
 static void dissect_usch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                      int offset, struct fp_info *p_fp_info);
+                                      unsigned offset, struct fp_info *p_fp_info);
 static void dissect_pch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                     int offset, struct fp_info *p_fp_info,
+                                     unsigned offset, struct fp_info *p_fp_info,
                                      void *data);
 static void dissect_cpch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                      int offset, struct fp_info *p_fp_info);
+                                      unsigned offset, struct fp_info *p_fp_info);
 static void dissect_bch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                     int offset, struct fp_info *p_fp_info);
+                                     unsigned offset, struct fp_info *p_fp_info);
 static void dissect_iur_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                          int offset, struct fp_info *p_fp_info);
+                                          unsigned offset, struct fp_info *p_fp_info);
 static void dissect_hsdsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                        int offset, struct fp_info *p_fp_info,
+                                        unsigned offset, struct fp_info *p_fp_info,
                                         void *data);
 static void dissect_hsdsch_type_2_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                               int offset, struct fp_info *p_fp_info,
+                                               unsigned offset, struct fp_info *p_fp_info,
                                                void *data);
 static void dissect_hsdsch_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                               int offset,
+                                               unsigned offset,
                                                struct fp_info *p_fp_info,
                                                void *data);
 
 /* Dissect DCH control messages */
 static int dissect_dch_timing_adjustment(proto_tree *tree, packet_info *pinfo,
-                                         tvbuff_t *tvb, int offset);
-static int dissect_dch_rx_timing_deviation(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset,
+                                         tvbuff_t *tvb, unsigned offset);
+static int dissect_dch_rx_timing_deviation(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, unsigned offset,
                                            struct fp_info *p_fp_info);
 static int dissect_dch_dl_synchronisation(proto_tree *tree, packet_info *pinfo,
-                                          tvbuff_t *tvb, int offset);
+                                          tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_ul_synchronisation(proto_tree *tree, packet_info *pinfo,
-                                          tvbuff_t *tvb, int offset);
+                                          tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_outer_loop_power_control(proto_tree *tree, packet_info *pinfo,
-                                                tvbuff_t *tvb, int offset);
+                                                tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_dl_node_synchronisation(proto_tree *tree, packet_info *pinfo,
-                                               tvbuff_t *tvb, int offset);
+                                               tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_ul_node_synchronisation(proto_tree *tree, packet_info *pinfo,
-                                               tvbuff_t *tvb, int offset);
+                                               tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_radio_interface_parameter_update(proto_tree *tree, packet_info *pinfo,
-                                                        tvbuff_t *tvb, int offset);
+                                                        tvbuff_t *tvb, unsigned offset);
 static int dissect_dch_timing_advance(proto_tree *tree, packet_info *pinfo,
-                                      tvbuff_t *tvb, int offset, struct fp_info *p_fp_info);
+                                      tvbuff_t *tvb, unsigned offset, struct fp_info *p_fp_info);
 static int dissect_dch_tnl_congestion_indication(proto_tree *tree, packet_info *pinfo,
-                                                 tvbuff_t *tvb, int offset);
+                                                 tvbuff_t *tvb, unsigned offset);
 
 
 static void dissect_dch_control_frame(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
-                                      int offset, struct fp_info *p_fp_info);
+                                      unsigned offset, struct fp_info *p_fp_info);
 
 
 /* Dissect a DCH channel */
 static void dissect_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                     int offset, struct fp_info *p_fp_info,
+                                     unsigned offset, struct fp_info *p_fp_info,
                                      void *data);
 
 /* Dissect dedicated channels */
 static void dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                       int offset, struct fp_info *p_fp_info,
+                                       unsigned offset, struct fp_info *p_fp_info,
                                        bool is_common,
                                        void *data);
 
 static void dissect_e_dch_t2_or_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                                    int offset, struct fp_info *p_fp_info,
+                                                    unsigned offset, struct fp_info *p_fp_info,
                                                     int number_of_subframes,
                                                     bool is_common,
                                                     uint16_t header_crc,
@@ -691,12 +692,12 @@ static bool verify_header_crc_edch(tvbuff_t * tvb, packet_info * pinfo, proto_it
 /* Dissect the TBs of a UL data frame*/
 static int
 dissect_tb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                int offset, struct fp_info *p_fp_info,
+                unsigned offset, struct fp_info *p_fp_info,
                 dissector_handle_t *data_handle, void *data)
 {
     int         chan, num_tbs   = 0;
-    int         bit_offset      = 0;
-    int         crci_bit_offset = (offset+1)<<3; /* Current offset + Quality estimate of 1 byte at the end*/
+    unsigned    bit_offset      = 0;
+    unsigned    crci_bit_offset = (offset+1)<<3; /* Current offset + Quality estimate of 1 byte at the end*/
     unsigned    data_bits       = 0;
     uint8_t     crci_bit        = 0;
     proto_item *tree_ti         = NULL;
@@ -821,11 +822,11 @@ dissect_tb_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
    Length is in bits, and payload is offset by 4 bits of padding */
 static int
 dissect_macd_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                      int offset, uint16_t length, uint16_t number_of_pdus,
+                      unsigned offset, uint16_t length, uint16_t number_of_pdus,
                       struct fp_info *p_fp_info, void *data)
 {
     int         pdu;
-    int         bit_offset = 0;
+    unsigned    bit_offset = 0;
     proto_item *pdus_ti    = NULL;
     proto_tree *data_tree  = NULL;
     bool        dissected  = false;
@@ -862,8 +863,8 @@ dissect_macd_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         p_fp_info->cur_tb = pdu;    /*Set TB (PDU) index correctly*/
         if (preferences_call_mac_dissectors) {
             tvbuff_t *next_tvb;
-            next_tvb = tvb_new_subset_length_caplen(tvb, offset + bit_offset/8,
-                                      ((bit_offset % 8) + length + 7)/8, -1);
+            next_tvb = tvb_new_subset_length(tvb, offset + bit_offset/8,
+                                      ((bit_offset % 8) + length + 7)/8);
             call_dissector_with_data(mac_fdd_hsdsch_handle, next_tvb, pinfo, top_level_tree, data);
             dissected = true;
         }
@@ -895,13 +896,13 @@ dissect_macd_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
    Length is in bytes, and payload is byte-aligned (no padding) */
 static int
 dissect_macd_pdu_data_type_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                             int offset, uint16_t length, uint16_t number_of_pdus,
+                             unsigned offset, uint16_t length, uint16_t number_of_pdus,
                              struct fp_info *fpi, void *data)
 {
     int         pdu;
     proto_item *pdus_ti      = NULL;
     proto_tree *data_tree    = NULL;
-    int         first_offset = offset;
+    unsigned    first_offset = offset;
     bool        dissected    = false;
 
     /* Add data subtree */
@@ -954,7 +955,7 @@ dissect_macd_pdu_data_type_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 /* Dissect CRCI bits (uplink) */
 static int
 dissect_crci_bits(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                  fp_info *p_fp_info, int offset)
+                  fp_info *p_fp_info, unsigned offset)
 {
     int         n, num_tbs;
     proto_item *ti         = NULL;
@@ -999,7 +1000,7 @@ dissect_crci_bits(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 static void
 dissect_spare_extension_and_crc(tvbuff_t *tvb, packet_info *pinfo,
                                 proto_tree *tree, uint8_t dch_crc_present,
-                                int offset, unsigned header_length)
+                                unsigned offset, unsigned header_length)
 {
     int         crc_size = 0;
     int         remain   = tvb_reported_length_remaining(tvb, offset);
@@ -1049,7 +1050,7 @@ dissect_spare_extension_and_crc(tvbuff_t *tvb, packet_info *pinfo,
 
 static int
 dissect_common_outer_loop_power_control(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                                        int offset, struct fp_info *p_fp_info _U_)
+                                        unsigned offset, struct fp_info *p_fp_info _U_)
 {
     return dissect_dch_outer_loop_power_control(tree, pinfo, tvb, offset);
 }
@@ -1057,7 +1058,7 @@ dissect_common_outer_loop_power_control(packet_info *pinfo, proto_tree *tree, tv
 
 static int
 dissect_common_timing_adjustment(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                                 int offset, struct fp_info *p_fp_info)
+                                 unsigned offset, struct fp_info *p_fp_info)
 {
     int32_t toa;
     proto_item *toa_ti;
@@ -1100,7 +1101,7 @@ dissect_common_timing_adjustment(packet_info *pinfo, proto_tree *tree, tvbuff_t 
 
 static int
 dissect_common_dl_node_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                       tvbuff_t *tvb, int offset)
+                                       tvbuff_t *tvb, unsigned offset)
 {
     /* T1 (3 bytes) */
     uint32_t encoded = tvb_get_ntoh24(tvb, offset);
@@ -1115,7 +1116,7 @@ dissect_common_dl_node_synchronisation(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_common_ul_node_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                       tvbuff_t *tvb, int offset)
+                                       tvbuff_t *tvb, unsigned offset)
 {
     uint32_t encoded;
     float t1, t2, t3;
@@ -1146,7 +1147,7 @@ dissect_common_ul_node_synchronisation(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_common_dl_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                  tvbuff_t *tvb, int offset, struct fp_info *p_fp_info)
+                                  tvbuff_t *tvb, unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t cfn;
 
@@ -1170,13 +1171,13 @@ dissect_common_dl_synchronisation(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_common_ul_synchronisation(packet_info *pinfo, proto_tree *tree,
-                                  tvbuff_t *tvb, int offset, struct fp_info *p_fp_info)
+                                  tvbuff_t *tvb, unsigned offset, struct fp_info *p_fp_info)
 {
     return dissect_common_timing_adjustment(pinfo, tree, tvb, offset, p_fp_info);
 }
 
 static int
-dissect_common_timing_advance(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset)
+dissect_common_timing_advance(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, unsigned offset)
 {
     uint32_t cfn;
     uint16_t timing_advance;
@@ -1198,19 +1199,17 @@ dissect_common_timing_advance(packet_info *pinfo, proto_tree *tree, tvbuff_t *tv
 
 static int
 dissect_hsdpa_capacity_request(packet_info *pinfo, proto_tree *tree,
-                               tvbuff_t *tvb, int offset)
+                               tvbuff_t *tvb, unsigned offset)
 {
     uint8_t priority;
     uint16_t user_buffer_size;
 
     /* CmCH-PI */
-    priority = (tvb_get_uint8(tvb, offset) & 0x0f);
-    proto_tree_add_item(tree, hf_fp_cmch_pi, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_fp_cmch_pi, tvb, offset, 1, ENC_BIG_ENDIAN, &priority);
     offset++;
 
     /* User buffer size */
-    user_buffer_size = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN, &user_buffer_size);
     offset += 2;
 
     col_append_fstr(pinfo->cinfo, COL_INFO, "      CmCH-PI=%u  User-Buffer-Size=%u",
@@ -1221,7 +1220,7 @@ dissect_hsdpa_capacity_request(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_hsdpa_capacity_allocation(packet_info *pinfo, proto_tree *tree,
-                                  tvbuff_t *tvb, int offset,
+                                  tvbuff_t *tvb, unsigned offset,
                                   struct fp_info *p_fp_info)
 {
     proto_item *ti;
@@ -1269,8 +1268,7 @@ dissect_hsdpa_capacity_allocation(packet_info *pinfo, proto_tree *tree,
     }
 
     /* HS-DSCH Repetition period */
-    repetition_period = tvb_get_uint8(tvb, offset);
-    ti = proto_tree_add_item(tree, hf_fp_hsdsch_repetition_period, tvb, offset, 1, ENC_BIG_ENDIAN);
+    ti = proto_tree_add_item_ret_uint8(tree, hf_fp_hsdsch_repetition_period, tvb, offset, 1, ENC_BIG_ENDIAN, &repetition_period);
     offset++;
     if (repetition_period == 0) {
         proto_item_append_text(ti, " (unlimited repetition period)");
@@ -1299,7 +1297,7 @@ dissect_hsdpa_capacity_allocation(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_hsdpa_capacity_allocation_type_2(packet_info *pinfo, proto_tree *tree,
-                                         tvbuff_t *tvb, int offset)
+                                         tvbuff_t *tvb, unsigned offset)
 {
     proto_item *ti;
     proto_item *rate_ti;
@@ -1347,8 +1345,7 @@ dissect_hsdpa_capacity_allocation_type_2(packet_info *pinfo, proto_tree *tree,
     }
 
     /* HS-DSCH Repetition period */
-    repetition_period = tvb_get_uint8(tvb, offset);
-    ti = proto_tree_add_item(tree, hf_fp_hsdsch_repetition_period, tvb, offset, 1, ENC_BIG_ENDIAN);
+    ti = proto_tree_add_item_ret_uint8(tree, hf_fp_hsdsch_repetition_period, tvb, offset, 1, ENC_BIG_ENDIAN, &repetition_period);
     offset++;
     if (repetition_period == 0) {
         proto_item_append_text(ti, " (unlimited repetition period)");
@@ -1378,20 +1375,18 @@ dissect_hsdpa_capacity_allocation_type_2(packet_info *pinfo, proto_tree *tree,
 
 static int
 dissect_common_dynamic_pusch_assignment(packet_info *pinfo, proto_tree *tree,
-                                        tvbuff_t *tvb, int offset)
+                                        tvbuff_t *tvb, unsigned offset)
 {
     uint8_t pusch_set_id;
     uint8_t activation_cfn;
     uint8_t duration;
 
     /* PUSCH Set Id */
-    pusch_set_id = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(tree, hf_fp_pusch_set_id, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_fp_pusch_set_id, tvb, offset, 1, ENC_BIG_ENDIAN, &pusch_set_id);
     offset++;
 
     /* Activation CFN */
-    activation_cfn = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(tree, hf_fp_activation_cfn, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_fp_activation_cfn, tvb, offset, 1, ENC_BIG_ENDIAN, &activation_cfn);
     offset++;
 
     /* Duration */
@@ -1413,7 +1408,7 @@ dissect_common_dynamic_pusch_assignment(packet_info *pinfo, proto_tree *tree,
 /* Dissect the control part of a common channel message */
 static void
 dissect_common_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                       int offset, struct fp_info *p_fp_info)
+                       unsigned offset, struct fp_info *p_fp_info)
 {
     /* Common control frame type */
     uint8_t control_frame_type = tvb_get_uint8(tvb, offset);
@@ -1474,7 +1469,7 @@ dissect_common_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a RACH channel */
 static void
 dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                          int offset, struct fp_info *p_fp_info, void *data)
+                          unsigned offset, struct fp_info *p_fp_info, void *data)
 {
     uint32_t ft;
     uint32_t header_crc = 0;
@@ -1511,8 +1506,7 @@ dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         /* DATA */
 
         /* CFN */
-        cfn = tvb_get_uint8(tvb, offset);
-        proto_tree_add_item(tree, hf_fp_cfn, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(tree, hf_fp_cfn, tvb, offset, 1, ENC_BIG_ENDIAN, &cfn);
         offset++;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "CFN=%03u ", cfn);
@@ -1525,8 +1519,8 @@ dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             /* Propagation delay */
             encoded = tvb_get_uint8(tvb, offset);
             propagation_delay = encoded * 3;
-            propagation_delay_ti = proto_tree_add_uint_format(tree, hf_fp_propagation_delay, tvb, offset, 1,
-                                               propagation_delay, "Propagation Delay: %u chips (%u)",
+            propagation_delay_ti = proto_tree_add_uint_format_value(tree, hf_fp_propagation_delay, tvb, offset, 1,
+                                               propagation_delay, "%u chips (%u)",
                                                propagation_delay, encoded);
             offset++;
         }
@@ -1534,16 +1528,14 @@ dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         /* Should be TDD 3.84 or 7.68 */
         if (p_fp_info->channel == CHANNEL_RACH_TDD) {
             /* Rx Timing Deviation */
-            rx_timing_deviation = tvb_get_uint8(tvb, offset);
-            rx_timing_deviation_ti = proto_tree_add_item(tree, hf_fp_rx_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN);
+            rx_timing_deviation_ti = proto_tree_add_item_ret_uint16(tree, hf_fp_rx_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN, &rx_timing_deviation);
             offset++;
         }
 
         if (p_fp_info->channel == CHANNEL_RACH_TDD_128) {
             /* Received SYNC UL Timing Deviation */
-            received_sync_ul_timing_deviation = tvb_get_uint8(tvb, offset);
             received_sync_ul_timing_deviation_ti =
-                 proto_tree_add_item(tree, hf_fp_received_sync_ul_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN);
+                 proto_tree_add_item_ret_uint(tree, hf_fp_received_sync_ul_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN, &received_sync_ul_timing_deviation);
             offset++;
         }
 
@@ -1730,7 +1722,7 @@ dissect_rach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a FACH channel */
 static void
 dissect_fach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                          int offset, struct fp_info *p_fp_info, void *data)
+                          unsigned offset, struct fp_info *p_fp_info, void *data)
 {
     uint32_t ft;
     uint32_t header_crc = 0;
@@ -1759,8 +1751,7 @@ dissect_fach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         /* DATA */
 
         /* CFN */
-        cfn = tvb_get_uint8(tvb, offset);
-        proto_tree_add_item(tree, hf_fp_cfn, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(tree, hf_fp_cfn, tvb, offset, 1, ENC_BIG_ENDIAN, &cfn);
         offset++;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "CFN=%03u ", cfn);
@@ -1804,7 +1795,7 @@ dissect_fach_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a DSCH channel */
 static void
 dissect_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                          int offset, struct fp_info *p_fp_info)
+                          unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t ft;
 
@@ -1886,7 +1877,7 @@ dissect_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a USCH channel */
 static void
 dissect_usch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                          int offset, struct fp_info *p_fp_info)
+                          unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t ft;
 
@@ -1964,7 +1955,7 @@ dissect_usch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a PCH channel  */
 static void
 dissect_pch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                         int offset, struct fp_info *p_fp_info, void *data)
+                         unsigned offset, struct fp_info *p_fp_info, void *data)
 {
     uint32_t ft;
     uint16_t pch_cfn;
@@ -1995,8 +1986,7 @@ dissect_pch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         /* DATA */
 
         /* 12-bit CFN value */
-        proto_tree_add_item(tree, hf_fp_pch_cfn, tvb, offset, 2, ENC_BIG_ENDIAN);
-        pch_cfn = (tvb_get_ntohs(tvb, offset) & 0xfff0) >> 4;
+        proto_tree_add_item_ret_uint16(tree, hf_fp_pch_cfn, tvb, offset, 2, ENC_BIG_ENDIAN, &pch_cfn);
         offset++;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "CFN=%04u ", pch_cfn);
@@ -2057,7 +2047,7 @@ dissect_pch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 if(tfi > 0)
                 {
                     /* This frame has RRC payload(s) but the PI info is missing, report to the user*/
-                    proto_tree_add_expert(tree, pinfo, &ei_fp_pch_lost_relevant_pi_frame, tvb, offset, -1);
+                    proto_tree_add_expert_remaining(tree, pinfo, &ei_fp_pch_lost_relevant_pi_frame, tvb, offset);
                 }
             }
         }
@@ -2078,7 +2068,7 @@ dissect_pch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a CPCH channel */
 static void
 dissect_cpch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                          int offset, struct fp_info *p_fp_info)
+                          unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t ft;
 
@@ -2136,7 +2126,7 @@ dissect_cpch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect a BCH channel  */
 static void
 dissect_bch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                         int offset, struct fp_info *p_fp_info)
+                         unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t ft;
 
@@ -2159,7 +2149,7 @@ dissect_bch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect an IUR DSCH channel  */
 static void
 dissect_iur_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                              int offset, struct fp_info *p_fp_info)
+                              unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t ft;
 
@@ -2187,7 +2177,7 @@ dissect_iur_dsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 /* DCH control messages */
 
 static int
-dissect_dch_timing_adjustment(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_timing_adjustment(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     uint32_t    cfn;
     int16_t     toa;
@@ -2212,7 +2202,7 @@ dissect_dch_timing_adjustment(proto_tree *tree, packet_info *pinfo, tvbuff_t *tv
 
 static int
 dissect_dch_rx_timing_deviation(packet_info *pinfo, proto_tree *tree,
-                                tvbuff_t *tvb, int offset,
+                                tvbuff_t *tvb, unsigned offset,
                                 struct fp_info *p_fp_info)
 {
     uint16_t    timing_deviation;
@@ -2224,8 +2214,7 @@ dissect_dch_rx_timing_deviation(packet_info *pinfo, proto_tree *tree,
     offset++;
 
     /* Rx Timing Deviation */
-    timing_deviation = tvb_get_uint8(tvb, offset);
-    timing_deviation_ti = proto_tree_add_item(tree, hf_fp_dch_rx_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN);
+    timing_deviation_ti = proto_tree_add_item_ret_uint16(tree, hf_fp_dch_rx_timing_deviation, tvb, offset, 1, ENC_BIG_ENDIAN, &timing_deviation);
     offset++;
 
     /* May be extended in R7, but in this case there are at least 2 bytes remaining */
@@ -2311,7 +2300,7 @@ dissect_dch_rx_timing_deviation(packet_info *pinfo, proto_tree *tree,
 }
 
 static int
-dissect_dch_dl_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_dl_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     uint32_t cfn;
 
@@ -2325,7 +2314,7 @@ dissect_dch_dl_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *t
 }
 
 static int
-dissect_dch_ul_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_ul_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     uint32_t cfn;
     int16_t toa;
@@ -2346,7 +2335,7 @@ dissect_dch_ul_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *t
 }
 
 static int
-dissect_dch_outer_loop_power_control(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_outer_loop_power_control(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     /* UL SIR target */
     uint8_t encoded = tvb_get_uint8(tvb, offset);
@@ -2360,19 +2349,19 @@ dissect_dch_outer_loop_power_control(proto_tree *tree, packet_info *pinfo, tvbuf
 }
 
 static int
-dissect_dch_dl_node_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_dl_node_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     return dissect_common_dl_node_synchronisation(pinfo, tree, tvb, offset);
 }
 
 static int
-dissect_dch_ul_node_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_ul_node_synchronisation(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     return dissect_common_ul_node_synchronisation(pinfo, tree, tvb, offset);
 }
 
 static int
-dissect_dch_radio_interface_parameter_update(proto_tree *tree, packet_info *pinfo _U_, tvbuff_t *tvb, int offset)
+dissect_dch_radio_interface_parameter_update(proto_tree *tree, packet_info *pinfo _U_, tvbuff_t *tvb, unsigned offset)
 {
     float tpc_po;
     int8_t max_tx_pwr;
@@ -2415,7 +2404,7 @@ dissect_dch_radio_interface_parameter_update(proto_tree *tree, packet_info *pinf
 
 static int
 dissect_dch_timing_advance(proto_tree *tree, packet_info *pinfo,
-                           tvbuff_t *tvb, int offset, struct fp_info *p_fp_info)
+                           tvbuff_t *tvb, unsigned offset, struct fp_info *p_fp_info)
 {
     uint32_t    cfn;
     uint16_t    timing_advance;
@@ -2453,7 +2442,7 @@ dissect_dch_timing_advance(proto_tree *tree, packet_info *pinfo,
 }
 
 static int
-dissect_dch_tnl_congestion_indication(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
+dissect_dch_tnl_congestion_indication(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, unsigned offset)
 {
     uint64_t status;
 
@@ -2474,7 +2463,7 @@ dissect_dch_tnl_congestion_indication(proto_tree *tree, packet_info *pinfo, tvbu
 /* DCH control frame */
 static void
 dissect_dch_control_frame(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
-                          int offset, struct fp_info *p_fp_info)
+                          unsigned offset, struct fp_info *p_fp_info)
 {
     /* Control frame type */
     uint8_t control_frame_type = tvb_get_uint8(tvb, offset);
@@ -2527,7 +2516,7 @@ dissect_dch_control_frame(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
 /* Dissect a DCH channel       */
 static void
 dissect_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                         int offset, struct fp_info *p_fp_info, void *data)
+                         unsigned offset, struct fp_info *p_fp_info, void *data)
 {
     uint32_t ft;
     uint32_t  cfn;
@@ -2594,7 +2583,7 @@ dissect_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect an E-DCH channel       */
 static void
 dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                           int offset, struct fp_info *p_fp_info,
+                           unsigned offset, struct fp_info *p_fp_info,
                            bool is_common,
                            void *data)
 {
@@ -2735,6 +2724,7 @@ dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             for (i=0; i < subframes[n].number_of_mac_es_pdus; i++) {
                 uint64_t ddi;
                 uint64_t n_pdus;    /*Size of the PDU*/
+                int no_ddi_entries = MIN(p_fp_info->no_ddi_entries, MAX_EDCH_DDIS);
 
                 proto_item *ddi_ti;
                 int ddi_size = -1;
@@ -2748,7 +2738,7 @@ dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 /********************************/
                 /* Look up data in higher layers*/
                 /* Look up the size from this DDI value */
-                for (p=0; p < p_fp_info->no_ddi_entries; p++) {
+                for (p=0; p < no_ddi_entries; p++) {
                     if (ddi == p_fp_info->edch_ddi[p]) {
                         ddi_size = p_fp_info->edch_macd_pdu_size[p];
 
@@ -2814,24 +2804,18 @@ dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 proto_item  *ti;
                 int         macd_idx;
                 proto_tree  *maces_tree = NULL;
+                int         no_ddi_entries = MIN(p_fp_info->no_ddi_entries, MAX_EDCH_DDIS);
 
-                /** TODO: Merge these two loops? **/
-                /* Look up mac-d pdu size for this ddi */
-                for (m=0; m < p_fp_info->no_ddi_entries; m++) {
+                /* Look up mac-d pdu size and logicalchannel id for this DDI */
+                for (m=0; m < no_ddi_entries; m++) {
                     if (subframes[n].ddi[i] == p_fp_info->edch_ddi[m]) {
                         size = p_fp_info->edch_macd_pdu_size[m];
-                        break;
-                    }
-                }
-                /* Look up logicalchannel id for this DDI value */
-                for (m=0; m < p_fp_info->no_ddi_entries; m++) {
-                    if (subframes[n].ddi[i] == p_fp_info->edch_ddi[m]) {
                         lchid = p_fp_info->edch_lchId[m];
                         break;
                     }
                 }
 
-                if (m == p_fp_info->no_ddi_entries) {
+                if (m == no_ddi_entries) {
                     /* Not found.  Oops */
                     expert_add_info(pinfo, NULL, &ei_fp_unable_to_locate_ddi_entry);
                     return;
@@ -2952,7 +2936,7 @@ dissect_e_dch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* Dissect the remainder of the T2 or common frame that differs from T1 */
 static void
 dissect_e_dch_t2_or_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                        int offset, struct fp_info *p_fp_info,
+                                        unsigned offset, struct fp_info *p_fp_info,
                                         int number_of_subframes,
                                         bool is_common,
                                         uint16_t header_crc,
@@ -3160,7 +3144,7 @@ dissect_e_dch_t2_or_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto
 /* described in R5 and R6, and frame type 1 in Release 7. */
 static void
 dissect_hsdsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                            int offset, struct fp_info *p_fp_info, void *data)
+                            unsigned offset, struct fp_info *p_fp_info, void *data)
 {
     uint32_t ft;
     unsigned header_length;
@@ -3237,8 +3221,7 @@ dissect_hsdsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         }
 
         /* Num of PDUs */
-        number_of_pdus = tvb_get_uint8(tvb, offset);
-        item = proto_tree_add_item(tree, hf_fp_num_of_pdu, tvb, offset, 1, ENC_BIG_ENDIAN);
+        item = proto_tree_add_item_ret_uint8(tree, hf_fp_num_of_pdu, tvb, offset, 1, ENC_BIG_ENDIAN, &number_of_pdus);
         offset++;
         if (number_of_pdus > MAX_MAC_FRAMES) {
             expert_add_info_format(pinfo, item, &ei_fp_invalid_frame_count, "Invalid number of PDUs (max is %u)", MAX_MAC_FRAMES);
@@ -3246,8 +3229,7 @@ dissect_hsdsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         }
 
         /* User buffer size */
-        user_buffer_size = tvb_get_ntohs(tvb, offset);
-        proto_tree_add_item(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN, &user_buffer_size);
         offset += 2;
 
         header_length = offset;
@@ -3376,7 +3358,7 @@ dissect_hsdsch_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 /* frame type 3 (IuR only?)               */
 static void
 dissect_hsdsch_type_2_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                   int offset, struct fp_info *p_fp_info,
+                                   unsigned offset, struct fp_info *p_fp_info,
                                    void *data)
 {
     uint32_t ft;
@@ -3470,8 +3452,7 @@ dissect_hsdsch_type_2_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree
         offset++;
 
         /* User buffer size */
-        user_buffer_size = tvb_get_ntohs(tvb, offset);
-        proto_tree_add_item(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN, &user_buffer_size);
         offset += 2;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "  User-Buffer-Size=%u", user_buffer_size);
@@ -3637,7 +3618,7 @@ dissect_hsdsch_type_2_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 */
 static
 void dissect_hsdsch_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                                        int offset, struct fp_info *p_fp_info,
+                                        unsigned offset, struct fp_info *p_fp_info,
                                         void *data)
 {
     uint32_t ft;
@@ -3729,8 +3710,7 @@ void dissect_hsdsch_common_channel_info(tvbuff_t *tvb, packet_info *pinfo, proto
         offset++;
 
         /* User buffer size */
-        user_buffer_size = tvb_get_ntohs(tvb, offset);
-        proto_tree_add_item(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint16(tree, hf_fp_user_buffer_size, tvb, offset, 2, ENC_BIG_ENDIAN, &user_buffer_size);
         offset += 2;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "  User-Buffer-Size=%u", user_buffer_size);
@@ -5362,7 +5342,7 @@ static uint8_t fake_map[256];
  * TODO: This need to be fixed!
  * Basically you would want the actual RRC messages, that sooner or later maps
  * transport channel id's to logical id's or RAB IDs
- * to set the proper logical channel/RAB ID, but for now we make syntethic ones.
+ * to set the proper logical channel/RAB ID, but for now we make synthetic ones.
  * */
 
 static uint8_t
@@ -5406,7 +5386,7 @@ static fp_info *
 fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
                                 umts_fp_conversation_info_t *p_conv_data,
                                 tvbuff_t *tvb, packet_info *pinfo,
-                                proto_tree *tree _U_)
+                                proto_tree *tree)
 {
     fp_info  *fpi;
     uint8_t   tfi, c_t, lchid;
@@ -5423,6 +5403,16 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
     fp_fach_channel_info_t* fp_fach_channel_info = NULL;
     fp_rach_channel_info_t* fp_rach_channel_info = NULL;
     bool info_missing = false;
+
+    /* The conversation can have up to FP_maxNrOfDCHs channels in the flow,
+     * but the per-channel arrays in fp_info (and in the MAC and RLC info)
+     * only have MAX_FP_CHANS entries. */
+    if (p_conv_data->num_dch_in_flow > MAX_FP_CHANS) {
+        proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_invalid_frame_count, tvb, offset,
+                                               "Invalid number of channels %d (max is %u)",
+                                               p_conv_data->num_dch_in_flow, MAX_FP_CHANS);
+        return NULL;
+    }
 
     fpi = wmem_new0(wmem_file_scope(), fp_info);
     p_add_proto_data(wmem_file_scope(), pinfo, proto_fp, 0, fpi);
@@ -5466,7 +5456,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
         case CHANNEL_HSDSCH: /* HS-DSCH - High Speed Downlink Shared Channel */
             fp_hsdsch_channel_info = (fp_hsdsch_channel_info_t*)p_conv_data->channel_specific_info;
             if(fp_hsdsch_channel_info == NULL) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset,
                                       "Can't dissect HS-DSCH FP stream because no per-conversation channel info was attached!");
                 info_missing = true;
                 break;
@@ -5507,14 +5497,14 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
         case CHANNEL_EDCH:
             fp_edch_channel_info = (fp_edch_channel_info_t*)p_conv_data->channel_specific_info;
             if(fp_edch_channel_info == NULL) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset,
                                       "Can't dissect E-DCH FP stream because no per-conversation channel info was attached!");
                 info_missing = true;
                 break;
             }
             macinf = wmem_new0(wmem_file_scope(), umts_mac_info);
             rlcinf = wmem_new0(wmem_file_scope(), rlc_info);
-            fpi->no_ddi_entries = fp_edch_channel_info->no_ddi_entries;
+            fpi->no_ddi_entries = MIN(fp_edch_channel_info->no_ddi_entries, MAX_EDCH_DDIS);
             for (i=0; i<fpi->no_ddi_entries; i++) {
                 fpi->edch_ddi[i] = fp_edch_channel_info->edch_ddi[i];    /*Set the DDI value*/
                 fpi->edch_macd_pdu_size[i] = fp_edch_channel_info->edch_macd_pdu_size[i];    /*Set the PDU size*/
@@ -5535,7 +5525,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
         case CHANNEL_PCH:
             fp_pch_channel_info = (fp_pch_channel_info_t*)p_conv_data->channel_specific_info;
             if(fp_pch_channel_info == NULL) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset,
                                       "Can't dissect PCH FP stream because no per-conversation channel info was attached!");
                 info_missing = true;
                 break;
@@ -5616,7 +5606,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
                     }
                     else {
                         /* Unfamiliar DCH format, faking LCHID */
-                        /* Asuming the channel isn't multiplexed (ie. C/T field not present) */
+                        /* Assuming the channel isn't multiplexed (ie. C/T field not present) */
                         macinf->ctmux[j+chan] = false;
 
                         /* TODO: This stuff has to be reworked! */
@@ -5653,7 +5643,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
         case CHANNEL_FACH_FDD:
             fp_fach_channel_info = (fp_fach_channel_info_t*)p_conv_data->channel_specific_info;
             if(fp_fach_channel_info == NULL) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset,
                                       "Can't dissect FACH FP stream because no per-conversation channel info was attached!");
                 info_missing = true;
                 break;
@@ -5685,7 +5675,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
         case CHANNEL_RACH_FDD:
             fp_rach_channel_info = (fp_rach_channel_info_t*)p_conv_data->channel_specific_info;
             if(fp_rach_channel_info == NULL) {
-                proto_tree_add_expert_format(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset, -1,
+                proto_tree_add_expert_format_remaining(tree, pinfo, &ei_fp_no_per_conv_channel_info, tvb, offset,
                                       "Can't dissect RACH FP stream because no per-conversation channel info was attached!");
                 info_missing = true;
                 break;
@@ -5750,7 +5740,7 @@ fp_set_per_packet_inf_from_conv(conversation_t *p_conv,
 
 /* Updates the conversation info of a PCH stream based on information parsed in the current frame*/
 static void
-update_pch_coversation_info(umts_fp_conversation_info_t *p_conv_data, packet_info *pinfo, struct fp_info *p_fp_info)
+update_pch_conversation_info(umts_fp_conversation_info_t *p_conv_data, packet_info *pinfo, struct fp_info *p_fp_info)
 {
     fp_pch_channel_info_t* fp_pch_channel_info;
     /* The channel type MUST be set to PCH */
@@ -5844,7 +5834,7 @@ dissect_fp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
     /* Can't dissect anything without it... */
     if (p_fp_info == NULL) {
-        proto_tree_add_expert(fp_tree, pinfo, &ei_fp_no_per_frame_info, tvb, offset, -1);
+        proto_tree_add_expert_remaining(fp_tree, pinfo, &ei_fp_no_per_frame_info, tvb, offset);
         return 1;
     }
 
@@ -5913,6 +5903,7 @@ dissect_fp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         int n;
         proto_item *ddi_config_ti;
         proto_tree *ddi_config_tree;
+        int no_ddi_entries = MIN(p_fp_info->no_ddi_entries, MAX_EDCH_DDIS);
 
         ddi_config_ti = proto_tree_add_string_format(fp_tree, hf_fp_ddi_config, tvb, offset, 0,
                                                      "", "DDI Config (");
@@ -5920,7 +5911,7 @@ dissect_fp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         ddi_config_tree = proto_item_add_subtree(ddi_config_ti, ett_fp_ddi_config);
 
         /* Add each entry */
-        for (n=0; n < p_fp_info->no_ddi_entries; n++) {
+        for (n=0; n < no_ddi_entries; n++) {
             proto_item_append_text(ddi_config_ti, "%s%u->%ubits",
                                    (n == 0) ? "" : "  ",
                                    p_fp_info->edch_ddi[n], p_fp_info->edch_macd_pdu_size[n]);
@@ -5933,6 +5924,9 @@ dissect_fp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
         }
         proto_item_append_text(ddi_config_ti, ")");
+        if (p_fp_info->no_ddi_entries > MAX_EDCH_DDIS) {
+            expert_add_info_format(pinfo, ddi_config_ti, &ei_fp_invalid_ddi_count, "Invalid Number of E-DCH DDIs (max is %u)", MAX_EDCH_DDIS);
+        }
     }
 
     /*************************************/
@@ -5964,7 +5958,7 @@ dissect_fp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         case CHANNEL_PCH:
             dissect_pch_channel_info(tvb, pinfo, fp_tree, offset, p_fp_info,
                                      data);
-            update_pch_coversation_info(p_conv_data, pinfo, p_fp_info);
+            update_pch_conversation_info(p_conv_data, pinfo, p_fp_info);
             break;
         case CHANNEL_CPCH:
             dissect_cpch_channel_info(tvb, pinfo, fp_tree, offset, p_fp_info);
@@ -7051,6 +7045,7 @@ void proto_register_fp(void)
         { &ei_fp_no_per_frame_info, { "fp.no_per_frame_info", PI_UNDECODED, PI_ERROR, "Can't dissect FP frame because no per-frame info was attached!", EXPFILL }},
         { &ei_fp_no_per_conv_channel_info, { "fp.no_per_conv_channel_info", PI_UNDECODED, PI_ERROR, "Can't dissect this FP stream because no per-conversation channel info was attached!", EXPFILL }},
         { &ei_fp_invalid_frame_count, { "fp.invalid_frame_count", PI_MALFORMED, PI_ERROR, "Invalid frame count", EXPFILL }},
+        { &ei_fp_invalid_ddi_count, { "fp.invalid_ddi_count", PI_MALFORMED, PI_ERROR, "Invalid E-DCH DDI count", EXPFILL }},
     };
 
     module_t *fp_module;
@@ -7104,6 +7099,9 @@ void proto_register_fp(void)
 
 void proto_reg_handoff_fp(void)
 {
+    proto_umts_mac = proto_get_id_by_filter_name("mac");
+    proto_umts_rlc = proto_get_id_by_filter_name("rlc");
+
     rlc_bcch_handle           = find_dissector_add_dependency("rlc.bcch", proto_fp);
     mac_fdd_rach_handle       = find_dissector_add_dependency("mac.fdd.rach", proto_fp);
     mac_fdd_fach_handle       = find_dissector_add_dependency("mac.fdd.fach", proto_fp);

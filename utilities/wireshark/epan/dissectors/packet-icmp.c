@@ -30,11 +30,10 @@
 #include <epan/to_str.h>
 #include <epan/conversation.h>
 #include <epan/tap.h>
-#include <epan/ipproto.h>
 #include <epan/capture_dissectors.h>
 #include <epan/proto_data.h>
-#include <epan/afn.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
 #include <wsutil/pint.h>
 
@@ -176,6 +175,9 @@ static expert_field ei_icmp_type_deprecated;
 static expert_field ei_icmp_resp_not_found;
 static expert_field ei_icmp_checksum;
 static expert_field ei_icmp_ext_checksum;
+static expert_field ei_icmp_code_must_be_zero;
+static expert_field ei_icmp_ext_obj_len_invalid;
+static expert_field ei_icmp_ext_obj_len_truncated;
 
 /* Extended Echo - Probe */
 static int hf_icmp_ext_echo_seq_num;
@@ -938,14 +940,14 @@ dissect_interface_identification_object(tvbuff_t * tvb, packet_info* pinfo, int 
 			proto_tree_add_item(ext_object_tree, hf_icmp_int_ident_reserved, tvb, offset, 1, ENC_NA);
 			offset += 1;
 			switch(afi){
-				case AFNUM_INET: /* IPv4 */
+				case AFNUM_IP: /* IPv4 */
 					while(addr_length >= 4 && tvb_reported_length_remaining(tvb, offset) >= 4) {
 						proto_tree_add_item(ext_object_tree, hf_icmp_int_ident_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
 						offset += 4;
 						addr_length -= 4;
 					}
 					break;
-				case AFNUM_INET6: /* IPv6 */
+				case AFNUM_IP6: /* IPv6 */
 					while(addr_length >= 16 && tvb_reported_length_remaining(tvb, offset) >= 16) {
 						proto_tree_add_item(ext_object_tree, hf_icmp_int_ident_ipv6, tvb, offset, 16, ENC_NA);
 						offset += 16;
@@ -964,7 +966,7 @@ dissect_interface_identification_object(tvbuff_t * tvb, packet_info* pinfo, int 
 static int
 dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data _U_)
 {
-	int offset = 0;
+	int offset = 0, checksum_offset, checksum_object_offset = 0;
 	uint8_t version;
 	uint8_t class_num;
 	uint8_t c_type;
@@ -975,10 +977,12 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 	unsigned reported_length;
 	bool unknown_object;
 	uint8_t int_info_obj_count;
+	bool first_iio_object_found = false;
+	unsigned checksum_object_length;
 
 	int_info_obj_count = 0;
 
-	reported_length = tvb_reported_length_remaining(tvb, offset);
+	checksum_object_length = reported_length = tvb_reported_length_remaining(tvb, offset);
 
 	/* Add a tree for multi-part extensions RFC 4884 */
 	ti = proto_tree_add_none_format(tree, hf_icmp_ext, tvb,
@@ -1000,16 +1004,7 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 	proto_tree_add_item(ext_tree, hf_icmp_ext_reserved,
 				   tvb, offset, 2, ENC_BIG_ENDIAN);
 
-	/* Checksum */
-	checksum = tvb_get_ntohs(tvb, offset + 2);
-	if (checksum == 0) {
-		proto_tree_add_checksum(ext_tree, tvb, offset + 2, hf_icmp_ext_checksum, hf_icmp_ext_checksum_status, &ei_icmp_ext_checksum,
-							pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
-
-	} else {
-		proto_tree_add_checksum(ext_tree, tvb, offset + 2, hf_icmp_ext_checksum, hf_icmp_ext_checksum_status, &ei_icmp_ext_checksum,
-							pinfo, ip_checksum_tvb(tvb, offset, reported_length), ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_IN_CKSUM);
-	}
+	checksum_offset = offset + 2;
 
 	if (version != 1 && version != 2) {
 		/* Unsupported version */
@@ -1037,7 +1032,7 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 						MAX(obj_trunc_length, 4),
 						ett_icmp_ext_object, &tf_object, "Unknown object");
 
-		proto_tree_add_uint(ext_object_tree, hf_icmp_ext_length,
+		proto_item* ti_length = proto_tree_add_uint(ext_object_tree, hf_icmp_ext_length,
 				    tvb, offset, 2, obj_length);
 
 		/* Class */
@@ -1049,10 +1044,18 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 		c_type = tvb_get_uint8(tvb, offset + 3);
 
 		if (obj_length < 4 /* Object header */ ) {
-			/* Thanks doc/README.developer :)) */
-			proto_item_set_text(tf_object,
-					    "Object with bad length");
+			expert_add_info_format(pinfo, ti_length,
+				&ei_icmp_ext_obj_len_invalid,
+				"Invalid ICMP extension object length: %u (minimum 4)",
+				obj_length);
 			break;
+		}
+
+		if (obj_trunc_length < obj_length) {
+			expert_add_info_format(pinfo, ti_length,
+				&ei_icmp_ext_obj_len_truncated,
+				"Truncated ICMP extension object: declared length %u, available %u",
+				obj_length, obj_trunc_length);
 		}
 
 
@@ -1083,6 +1086,13 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 								 tf_object);
 			break;
 		case INTERFACE_IDENTIFICATION_OBJECT_CLASS:
+
+			if (!first_iio_object_found) {
+				checksum_object_offset = offset;
+				checksum_object_length = obj_trunc_length;
+				first_iio_object_found = true;
+			}
+
 			unknown_object =
 			    dissect_interface_identification_object(tvb, pinfo,
 								 offset,
@@ -1121,6 +1131,19 @@ dissect_icmp_extension(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, v
 		offset = obj_end_offset;
 
 	}
+
+	/* Checksum */
+	checksum = tvb_get_ntohs(tvb, checksum_offset);
+	if (checksum == 0) {
+		proto_tree_add_checksum(ext_tree, tvb, checksum_offset, hf_icmp_ext_checksum, hf_icmp_ext_checksum_status, &ei_icmp_ext_checksum,
+			pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
+
+	}
+	else {
+		proto_tree_add_checksum(ext_tree, tvb, checksum_offset, hf_icmp_ext_checksum, hf_icmp_ext_checksum_status, &ei_icmp_ext_checksum,
+			pinfo, ip_checksum_tvb(tvb, 0, checksum_object_offset + checksum_object_length), ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY | PROTO_CHECKSUM_IN_CKSUM);
+	}
+
 	return offset;
 }
 
@@ -1204,8 +1227,7 @@ static icmp_transaction_t *transaction_start(packet_info * pinfo,
 
 			/* Expert info.  TODO: add to _icmp_transaction_t type and sequence number
 			   so can report here (and in taps) */
-			expert_add_info_format(pinfo, it, &ei_icmp_resp_not_found,
-					       "No response seen to ICMP request");
+			expert_add_info(pinfo, it, &ei_icmp_resp_not_found);
 		}
 
 		return NULL;
@@ -1623,6 +1645,29 @@ dissect_icmp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data)
 				 ENC_BIG_ENDIAN);
 	if (code_str) {
 		proto_item_append_text(ti, " (%s)", code_str);
+	}
+
+	/* Code must be 0 for these types:
+	 * RFC 792 (Echo/Echo Reply, Timestamp/Timestamp Reply),
+	 * RFC 1256 (Router Solicitation),
+	 * RFC 950 (Address Mask Request/Reply).
+	 */
+	switch (icmp_type) {
+	case ICMP_ECHO:
+	case ICMP_ECHOREPLY:
+	case ICMP_ALTHOST:
+	case ICMP_TSTAMP:
+	case ICMP_TSTAMPREPLY:
+	case ICMP_RTRSOLICIT:
+	case ICMP_MASKREQ:
+	case ICMP_MASKREPLY:
+	case ICMP_EXTECHO:
+		if (icmp_code != 0) {
+			expert_add_info(pinfo, ti, &ei_icmp_code_must_be_zero);
+		}
+		break;
+	default:
+		break;
 	}
 
 	if (!pinfo->fragmented && captured_length >= reported_length
@@ -2454,9 +2499,16 @@ void proto_register_icmp(void)
 	static ei_register_info ei[] = {
 		{ &ei_icmp_type_error, { "icmp.type.error", PI_RESPONSE_CODE, PI_NOTE, "Type indicates an error", EXPFILL }},
 		{ &ei_icmp_type_deprecated, { "icmp.type.deprecated", PI_DEPRECATED, PI_NOTE, "Type is deprecated", EXPFILL }},
-		{ &ei_icmp_resp_not_found, { "icmp.resp_not_found", PI_SEQUENCE, PI_WARN, "Response not found", EXPFILL }},
+		{ &ei_icmp_resp_not_found, { "icmp.resp_not_found", PI_SEQUENCE, PI_WARN, "No response seen to ICMP request", EXPFILL }},
 		{ &ei_icmp_checksum, { "icmp.checksum_bad", PI_CHECKSUM, PI_WARN, "Bad checksum", EXPFILL }},
 		{ &ei_icmp_ext_checksum, { "icmp.ext.checksum_bad", PI_CHECKSUM, PI_WARN, "Bad checksum", EXPFILL }},
+		{ &ei_icmp_code_must_be_zero, { "icmp.code.must_be_zero", PI_PROTOCOL, PI_WARN, "Invalid code: must be 0 for this ICMP type", EXPFILL }},
+		{ &ei_icmp_ext_obj_len_invalid, { "icmp.ext.obj.len.invalid",
+		    PI_MALFORMED, PI_ERROR,
+		    "Invalid ICMP extension object length", EXPFILL }},
+		{ &ei_icmp_ext_obj_len_truncated, { "icmp.ext.obj.len.truncated",
+		    PI_MALFORMED, PI_WARN,
+		    "Truncated ICMP extension object", EXPFILL }},
 	};
 
 	module_t *icmp_module;
@@ -2479,7 +2531,7 @@ void proto_register_icmp(void)
 
 	prefs_register_bool_preference(icmp_module, "never_timestamp",
 				       "Never interpret ICMP echo data bytes as timestamp",
-				       "Rather then interpreting ICMP echo data as timestamp always treat is as raw data",
+				       "Rather than interpreting ICMP echo data as timestamp, always treat is as raw data",
 				       &never_timestamp);
 
 	register_seq_analysis("icmp", "ICMP Flows", proto_icmp, NULL, TL_REQUIRES_COLUMNS, icmp_seq_analysis_packet);

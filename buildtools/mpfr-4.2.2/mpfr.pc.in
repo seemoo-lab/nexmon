@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: mpfr
+URL: https://www.mpfr.org/
+Description: C library for multiple-precision floating-point computations
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lmpfr -lgmp
+Cflags: -I${includedir}

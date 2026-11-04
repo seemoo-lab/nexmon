@@ -37,20 +37,38 @@ typedef struct _capture_info {
     int             new_packets;    /**< packets since last update */
 } capture_info;
 
+/**
+ * @brief Aggregates packet count statistics and UI state for a live capture info display.
+ */
 typedef struct _info_data {
-    packet_counts     counts;     /* Packet counting */
-    capture_info      ui;         /* user interface data */
+    packet_counts counts; /**< Running tally of packets observed, broken down by type. */
+    capture_info  ui;     /**< User interface state and display data for the capture info dialog. */
 } info_data_t;
 
-/** Create the capture info dialog */
+/**
+ * @brief Create the capture info dialog.
+ *
+ * @param cinfo Pointer to the capture_info structure.
+ * @param cap_session Pointer to the capture_session structure.
+ */
 extern void
 capture_info_ui_create(capture_info *cinfo, capture_session *cap_session);
 
-/** Update the capture info counters in the dialog */
+/**
+ * @brief Updates the UI for a capture session.
+ *
+ * Update the capture info counters in the dialog
+ *
+ * @param cinfo Pointer to the capture_info structure containing UI information.
+ */
 extern void capture_info_ui_update(
 capture_info    *cinfo);
 
-/** Destroy the capture info dialog again */
+/**
+ * @brief Destroy the capture info dialog.
+ *
+ * @param cinfo Pointer to the capture_info structure containing the UI to be destroyed.
+ */
 extern void capture_info_ui_destroy(
 capture_info    *cinfo);
 

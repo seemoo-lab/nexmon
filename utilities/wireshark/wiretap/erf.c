@@ -42,6 +42,7 @@
 #include <wsutil/strtoi.h>
 #include <wsutil/glib-compat.h>
 #include <wsutil/ws_padding_to.h>
+#include <wsutil/nstime.h>
 
 #include "wtap_module.h"
 #include "file_wrappers.h"
@@ -98,7 +99,7 @@ typedef struct {
 
 static erf_dump_t* erf_dump_priv_create(void);
 static void erf_dump_priv_free(erf_dump_t *dump_priv);
-static bool erf_dump_priv_compare_capture_comment(wtap_dumper *wdh, erf_dump_t *dump_priv,const union wtap_pseudo_header *pseudo_header, const uint8_t *pd);
+static bool erf_dump_priv_compare_capture_comment(wtap_dumper *wdh, erf_dump_t *dump_priv,const union wtap_pseudo_header *pseudo_header, const uint8_t *pd, uint32_t captured_len);
 static bool erf_comment_to_sections(wtap_dumper *wdh, uint16_t section_type, uint16_t section_id, char *comment, GPtrArray *sections);
 static bool erf_wtap_info_to_sections(wtap_dumper *wdh, GPtrArray *sections);
 static bool get_user_comment_string(wtap_dumper *wdh, char** user_comment_ptr);
@@ -999,7 +1000,7 @@ static void erf_dump_priv_init_gen_time(erf_dump_t *dump_priv) {
 
   real_time = g_get_real_time();
   /* Convert TimeVal to ERF timestamp */
-  dump_priv->gen_time = ((real_time / G_USEC_PER_SEC) << 32) + ((real_time % G_USEC_PER_SEC) << 32) / 1000 / 1000;
+  dump_priv->gen_time = ((real_time / WS_USECS_PER_SEC) << 32) + ((real_time % WS_USECS_PER_SEC) << 32) / 1000 / 1000;
 }
 
 
@@ -1604,7 +1605,7 @@ static bool erf_write_anchor_meta_update_phdr(wtap_dumper *wdh, erf_dump_t *dump
      * we want to make explicit */
 
     /* XXX: it is important that we know the implicit Host ID here or we end
-     * up semi-permentantly associating the packet with Host 0 (unknown), we should
+     * up semi-permanently associating the packet with Host 0 (unknown), we should
      * pass it through from the reader. In theory we should be on the
      * original capture machine if we have no Host ID extension headers. */
     host_id_src_hdr = erf_host_id_ext_hdr(implicit_host_id, source_id);
@@ -1624,7 +1625,7 @@ static bool erf_write_anchor_meta_update_phdr(wtap_dumper *wdh, erf_dump_t *dump
    * Now construct the metadata Anchor record with the same Anchor ID
    */
 
-  meta_ehdrs = g_array_new(false, false, sizeof(struct erf_ehdr));
+  meta_ehdrs = g_array_new(FALSE, FALSE, sizeof(struct erf_ehdr));
 
   /* We need up to 4 extension headers on the Provenance metadata record */
   /*Required*/
@@ -1676,7 +1677,7 @@ static bool erf_write_meta_record(wtap_dumper *wdh, erf_dump_t *dump_priv, uint6
   struct erf_meta_section *section_ptr;
   unsigned total_wlen = 0;
   unsigned total_rlen = 0;
-  int64_t alignbytes = 0;
+  uint64_t alignbytes = 0;
   unsigned i;
   unsigned num_extra_ehdrs = 0;
 
@@ -1699,7 +1700,7 @@ static bool erf_write_meta_record(wtap_dumper *wdh, erf_dump_t *dump_priv, uint6
      * These will be appended to the first extension header in
      * other_header.erf.ehdr_list.  There are a total of MAX_ERF_EHDR
      * extension headers in that array, so we can append no more than
-     * MAX_ERF_EHDR - 1 extension headeers.
+     * MAX_ERF_EHDR - 1 extension headers.
      */
     num_extra_ehdrs = MIN(extra_ehdrs->len, MAX_ERF_EHDR - 1);
     total_rlen += num_extra_ehdrs * 8;
@@ -1769,7 +1770,7 @@ static erf_dump_t *erf_dump_priv_create(void) {
   dump_priv->prev_erf_type = 0;
   dump_priv->user_comment_ptr = NULL;
   dump_priv->periodic_sections = NULL;
-  dump_priv->periodic_extra_ehdrs = g_array_new(false, false, sizeof(struct erf_ehdr));
+  dump_priv->periodic_extra_ehdrs = g_array_new(FALSE, FALSE, sizeof(struct erf_ehdr));
   dump_priv->rand = g_rand_new();
 
   return dump_priv;
@@ -1785,7 +1786,7 @@ static bool erf_dump(
   union wtap_pseudo_header other_phdr;
   const uint8_t *pd = ws_buffer_start_ptr(&rec->data);
   int      erf_type;
-  int64_t  alignbytes   = 0;
+  uint64_t alignbytes = 0;
   unsigned padbytes   = 0;
   unsigned round_down = 0;
   bool must_add_crc = false;
@@ -1950,7 +1951,7 @@ static bool erf_dump(
   if (erf_type == ERF_TYPE_META) {
     /* Check whether the capture comment string has changed */
     /* Updates write_next_extra_meta */
-    dump_priv->last_meta_periodic = erf_dump_priv_compare_capture_comment(wdh, dump_priv, pseudo_header, pd);
+    dump_priv->last_meta_periodic = erf_dump_priv_compare_capture_comment(wdh, dump_priv, pseudo_header, pd, rec->rec_header.packet_header.caplen);
   } else { /* don't want to insert a new metadata record while looking at another */
     if (dump_priv->prev_erf_type == ERF_TYPE_META && dump_priv->last_meta_periodic) {
       /* Last frame was a periodic (non-comment) metadata record (and this frame is not), check if we
@@ -2328,7 +2329,7 @@ static int erf_update_implicit_host_id(erf_t *erf_priv, wtap *wth, uint64_t impl
         /*
          * XXX: We have duplicate interfaces in this case, but not much else we
          * can do since we have already dissected the earlier packets. Expected
-         * to be unusual as it reqires a mix of explicit and implicit Host ID
+         * to be unusual as it requires a mix of explicit and implicit Host ID
          * (e.g. FlowID extension header only) packets with the same effective
          * Host ID before the first ERF_TYPE_META record.
          */
@@ -2614,9 +2615,9 @@ static int populate_capture_host_info(erf_t *erf_priv, wtap *wth, union wtap_pse
              * displays one. For now just overwrite the comment as we won't
              * pick up all of them yet due to the gen_time check above */
             if (wtap_block_get_nth_string_option_value(shb_hdr, OPT_COMMENT, 0, &existing_comment) == WTAP_OPTTYPE_SUCCESS) {
-              wtap_block_set_nth_string_option_value(shb_hdr, OPT_COMMENT, 0, tag.value, tag.length);
+              wtap_block_set_nth_string_option_value(shb_hdr, OPT_COMMENT, 0, (const char*)tag.value, tag.length);
             } else {
-              wtap_block_add_string_option(shb_hdr, OPT_COMMENT, tag.value, tag.length);
+              wtap_block_add_string_option(shb_hdr, OPT_COMMENT, (const char*)tag.value, tag.length);
             }
             break;
           }
@@ -2643,7 +2644,7 @@ static int populate_capture_host_info(erf_t *erf_priv, wtap *wth, union wtap_pse
             descr = g_strndup((char*) tag.value, tag.length);
             break;
           case ERF_META_TAG_os:
-            wtap_block_set_string_option_value(shb_hdr, OPT_SHB_OS, tag.value, tag.length);
+            wtap_block_set_string_option_value(shb_hdr, OPT_SHB_OS, (const char*)tag.value, tag.length);
             break;
           case ERF_META_TAG_app_name:
             g_free(app_name);
@@ -2678,6 +2679,7 @@ static int populate_capture_host_info(erf_t *erf_priv, wtap *wth, union wtap_pse
      *
      * If we have no app_version, this will just use app_name.
      */
+    // coverity[var_deref_model:false]
     tmp = g_strjoin(" ", app_name ? app_name : "(Unknown application)", app_version, NULL);
     wtap_block_set_string_option_value(shb_hdr, OPT_SHB_USERAPPL, tmp, strlen(tmp));
     g_free(tmp);
@@ -2939,7 +2941,7 @@ static int populate_interface_info(erf_t *erf_priv, wtap *wth, union wtap_pseudo
         }
         break;
       case ERF_META_TAG_comment:
-        wtap_block_add_string_option(int_data, OPT_COMMENT, tag.value, tag.length);
+        wtap_block_add_string_option(int_data, OPT_COMMENT, (const char*)tag.value, tag.length);
         break;
       case ERF_META_TAG_filter:
         if_filter.type = if_filter_pcap;
@@ -2989,8 +2991,8 @@ static int populate_interface_info(erf_t *erf_priv, wtap *wth, union wtap_pseudo
     if_info->set_flags.fcs_len = 1;
   }
 
-  if (state->if_map->module_snaplen != (uint32_t) -1 && !if_info->set_flags.snaplen && tag.value) {
-    int_data_mand->snap_len = pntohu32(tag.value);
+  if (state->if_map->module_snaplen != (uint32_t) -1 && !if_info->set_flags.snaplen) {
+    int_data_mand->snap_len = state->if_map->module_snaplen;
     if_info->set_flags.snaplen = 1;
   }
 
@@ -3301,7 +3303,7 @@ static int populate_summary_info(erf_t *erf_priv, wtap *wth, wtap_rec *rec, uint
         /* TODO: This doesn't work very well for some tags that map to
          * pcapng options where the pcapng specification only allows one
          * instance per block, which is the case for most options.  The
-         * only current exxceptions are:
+         * only current exceptions are:
          *
          *   comments;
          *   IPv4 and IPv6 addresses for an interface;
@@ -3495,7 +3497,7 @@ static bool get_user_comment_string(wtap_dumper *wdh, char** user_comment_ptr) {
   return true;
 }
 
-static bool erf_dump_priv_compare_capture_comment(wtap_dumper *wdh _U_, erf_dump_t *dump_priv, const union wtap_pseudo_header *pseudo_header, const uint8_t *pd){
+static bool erf_dump_priv_compare_capture_comment(wtap_dumper *wdh _U_, erf_dump_t *dump_priv, const union wtap_pseudo_header *pseudo_header _U_, const uint8_t *pd, uint32_t captured_len){
   struct erf_meta_read_state state = {0};
   struct erf_meta_tag tag = {0, 0, NULL};
   uint32_t tagtotallength;
@@ -3503,7 +3505,12 @@ static bool erf_dump_priv_compare_capture_comment(wtap_dumper *wdh _U_, erf_dump
   bool found_normal_section = false;
   char* comment_ptr = NULL;
 
-  state.remaining_len = pseudo_header->erf.phdr.wlen;
+  /* The metadata walk must be bounded by the number of bytes actually
+   * captured (pd points to a caplen-sized buffer), not by the on-wire
+   * length (wlen) from the pseudo-header. A record whose wlen exceeds its
+   * captured payload would otherwise make erf_meta_read_tag() read past
+   * the end of the buffer. */
+  state.remaining_len = captured_len;
   memcpy(&(state.tag_ptr), &pd, sizeof(pd));
 
   while((tagtotallength = erf_meta_read_tag(&tag, state.tag_ptr, state.remaining_len))) {

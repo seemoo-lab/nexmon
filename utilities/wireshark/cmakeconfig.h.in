@@ -40,6 +40,9 @@
 /* Adapt build products for fuzzing (e.g. accepting incorrect checksums or prioritizing determinism). */
 #cmakedefine FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION 1
 
+/* Define to 1 if AF_UNIX (Unix domain sockets address family) is available. */
+#cmakedefine HAVE_AF_UNIX 1
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #cmakedefine HAVE_ARPA_INET_H 1
 
@@ -48,6 +51,9 @@
 
 /* Define to 1 if you have the `timespec_get` function. */
 #cmakedefine HAVE_TIMESPEC_GET 1
+
+/* Define to 1 if you have the C23 `memset_explicit` function. */
+#cmakedefine HAVE_MEMSET_EXPLICIT 1
 
 /* Define to 1 if you have the `localtime_r` function. */
 #cmakedefine HAVE_LOCALTIME_R 1
@@ -60,6 +66,12 @@
 
 /* Define to 1 if you have the `tzset` function. */
 #cmakedefine HAVE_TZSET 1
+
+/* Define to 1 if you have the `memset_s` function. */
+#cmakedefine HAVE_MEMSET_S 1
+
+/* Define to 1 if you have the `explicit_bzero` function. */
+#cmakedefine HAVE_EXPLICIT_BZERO 1
 
 /* Define to use the MaxMind DB library */
 #cmakedefine HAVE_MAXMINDDB 1
@@ -76,6 +88,12 @@
 /* Define to 1 if you have the `getexecname' function. */
 #cmakedefine HAVE_GETEXECNAME 1
 
+/* Define to 1 if you have the `getpeerucred' function. */
+#cmakedefine HAVE_GETPEERUCRED 1
+
+/* Define to 1 if you have the `getpeereid' function. */
+#cmakedefine HAVE_GETPEEREID 1
+
 /* Define to 1 if you have the `getifaddrs' function. */
 #cmakedefine HAVE_GETIFADDRS 1
 
@@ -88,7 +106,7 @@
 /* Define to 1 if you have the <grp.h> header file. */
 #cmakedefine HAVE_GRP_H 1
 
-/* Define to use heimdal kerberos */
+/* Define to use heimdal kerberos. Deprecated; use MIT instead. */
 #cmakedefine HAVE_HEIMDAL_KERBEROS 1
 
 /* Define to 1 if you have the `krb5_pac_verify' function. */
@@ -144,6 +162,9 @@
 
 /* Define to 1 if libsmi exports a version string (and that symbol is visible). */
 #cmakedefine HAVE_SMI_VERSION_STRING 1
+
+/* Define to use the cpuinfo library */
+#cmakedefine HAVE_CPUINFO 1
 
 /* Define to use xxhash library */
 #cmakedefine HAVE_XXHASH 1
@@ -234,6 +255,9 @@
 /* Define to 1 if you have the macOS CFPropertyListCreateWithStream function */
 #cmakedefine HAVE_CFPROPERTYLISTCREATEWITHSTREAM 1
 
+/* Define to 1 if you have the `pcap_init' function. */
+#cmakedefine HAVE_PCAP_INIT 1
+
 /* Define to 1 if you have the `pcap_open' function. */
 #cmakedefine HAVE_PCAP_OPEN 1
 
@@ -258,6 +282,9 @@
 /* Define to 1 if you have the opencore-amrnb library. */
 #cmakedefine HAVE_AMRNB 1
 
+/* Define to 1 if you have the opencore-amrwb library. */
+#cmakedefine HAVE_AMRWB 1
+
 /* Define to 1 if you have the ilbc library. */
 #cmakedefine HAVE_ILBC 1
 
@@ -270,8 +297,11 @@
 /* Define to 1 if you have the `setresuid' function. */
 #cmakedefine HAVE_SETRESUID 1
 
-/* Define to 1 if you have the Sparkle or WinSparkle library */
+/* Define to 1 if you have the Sparkle, WinSparkle or PackageKit library */
 #cmakedefine HAVE_SOFTWARE_UPDATE 1
+
+/* Define to 1 if PackageKit is 1.1.x and needs the unstable API acknowledgement */
+#cmakedefine PACKAGEKIT_REQUIRES_API_ACK 1
 
 /* Define if you have the 'strptime' function. */
 #cmakedefine HAVE_STRPTIME 1
@@ -281,6 +311,9 @@
 
 /* Define if you have the 'memrchr' function. */
 #cmakedefine HAVE_MEMRCHR 1
+
+/* Define if you have the 'strchrnul' function. */
+#cmakedefine HAVE_STRCHRNUL 1
 
 /* Define if you have the 'strerrorname_np' function. */
 #cmakedefine HAVE_STRERRORNAME_NP 1
@@ -303,6 +336,9 @@
 /* Define to 1 if you have the <sys/time.h> header file. */
 #cmakedefine HAVE_SYS_TIME_H 1
 
+/* Define to 1 if you have the <sys/ucred.h> header file. */
+#cmakedefine HAVE_SYS_UCRED_H 1
+
 /* Define to 1 if you have the <sys/utsname.h> header file. */
 #cmakedefine HAVE_SYS_UTSNAME_H 1
 
@@ -321,11 +357,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
-/* Define if we have QtMultimedia */
-#cmakedefine QT_MULTIMEDIA_LIB 1
-
-/* Define if we have QtDBus */
-#cmakedefine QT_DBUS_LIB 1
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#cmakedefine HAVE_VALGRIND_H 1
 
 /* Build androiddump with libpcap instead of wireshark stuff */
 #cmakedefine ANDROIDDUMP_USE_LIBPCAP 1
@@ -337,6 +370,9 @@
 
 /* Define to 1 if the 'ssize_t' type exists. */
 #cmakedefine HAVE_SSIZE_T 1
+
+/* Define to 1 if the 'struct ucred' type exists. */
+#cmakedefine HAVE_STRUCT_UCRED 1
 
 /* Define to 1 if we are using the msys2 environment to build. */
 #cmakedefine HAVE_MSYSTEM 1
@@ -375,7 +411,7 @@
  * - The VersionNT parts of packaging\wix\Prerequisites.wxi
  */
 #  ifndef NTDDI_VERSION
-#  define NTDDI_VERSION   NTDDI_WIN10_RS5
+#  define NTDDI_VERSION   NTDDI_WIN10_19H1
 #  endif
 
 #  ifndef _WIN32_WINNT

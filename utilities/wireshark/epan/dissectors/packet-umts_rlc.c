@@ -40,9 +40,9 @@
 void proto_register_rlc(void);
 void proto_reg_handoff_rlc(void);
 
-int proto_umts_rlc;
+static int proto_umts_rlc;
 
-extern int proto_fp;
+static int proto_fp;
 
 /* Preference to perform reassembly */
 static bool global_rlc_perform_reassemby = true;
@@ -254,10 +254,10 @@ struct rlc_channel {
 
 /* used for duplicate detection */
 struct rlc_seq {
-    uint32_t frame_num;
     nstime_t arrival;
+    uint32_t frame_num;
     uint16_t seq;
-    uint16_t oc;        /* overflow counter, this is not used? */
+    /* uint16_t oc; */     /* overflow counter, this is not used? */
 };
 
 struct rlc_seqlist {
@@ -534,7 +534,7 @@ static uint16_t getChannelSNModulus(struct rlc_channel * ch_lookup)
  * It frees the GList pointed to by the entry.
  */
 static void
-free_sequence_table_entry_data(void *data)
+free_rlc_seqlist_data(void *data)
 {
     struct rlc_seqlist *list = (struct rlc_seqlist *)data;
     if (list->list != NULL) {
@@ -557,11 +557,11 @@ fragment_table_init(void)
 {
     int i;
     fragment_table = g_hash_table_new_full(rlc_channel_hash, rlc_channel_equal, rlc_channel_delete, NULL);
-    endpoints = g_hash_table_new_full(rlc_channel_hash, rlc_channel_equal, rlc_channel_delete, NULL);
+    endpoints = g_hash_table_new_full(rlc_channel_hash, rlc_channel_equal, rlc_channel_delete, free_rlc_seqlist_data);
     reassembled_table = g_hash_table_new_full(rlc_frag_hash, rlc_frag_equal,
         rlc_frag_delete, rlc_sdu_frags_delete);
     sequence_table = g_hash_table_new_full(rlc_channel_hash, rlc_channel_equal,
-        NULL, free_sequence_table_entry_data);
+        NULL, free_rlc_seqlist_data);
     duplicate_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 
     /*Reset and or clear deciphering variables*/
@@ -955,7 +955,7 @@ reassemble_sequence(struct rlc_frag ** frags, struct rlc_seqlist * endlist,
     /* Remove first endpoint. */
     element = g_list_first(endlist->list);
     if (element) {
-        endlist->list = g_list_remove_link(endlist->list, element);
+        endlist->list = g_list_delete_link(endlist->list, element);
         if (frags[end] != NULL) {
             if (endlist->list) {
                 endlist->list->data = GINT_TO_POINTER((GPOINTER_TO_INT(endlist->list->data) - 1 + snmod) % snmod);
@@ -1006,7 +1006,7 @@ add_fragment(enum rlc_mode mode, tvbuff_t *tvb, packet_info *pinfo,
 {
     struct rlc_channel  ch_lookup;
     struct rlc_frag     frag_lookup, *frag = NULL;
-    gpointer            orig_key = NULL, value = NULL;
+    void               *orig_key = NULL, *value = NULL;
     struct rlc_sdu     *sdu = NULL;
     struct rlc_frag ** frags = NULL;
     struct rlc_seqlist * endlist = NULL;
@@ -1145,7 +1145,7 @@ add_fragment(enum rlc_mode mode, tvbuff_t *tvb, packet_info *pinfo,
         if (start == end && frags[start]->len == 0) {
             element = g_list_first(endlist->list);
             if (element) {
-                endlist->list = g_list_remove_link(endlist->list, element);
+                endlist->list = g_list_delete_link(endlist->list, element);
             }
             frags[start] = frags[start]->next;
 
@@ -1210,7 +1210,7 @@ get_reassembled_data(enum rlc_mode mode, tvbuff_t *tvb, packet_info *pinfo,
              proto_tree *tree, uint16_t seq, uint16_t num_li,
              struct atm_phdr *atm)
 {
-    gpointer         orig_frag, orig_sdu;
+    void            *orig_frag, *orig_sdu;
     struct rlc_sdu  *sdu;
     struct rlc_frag  lookup, *frag;
 
@@ -1312,9 +1312,9 @@ rlc_is_duplicate(enum rlc_mode mode, packet_info *pinfo, uint16_t seq,
     }
     if(is_unseen) {
         /* Add to list for the first time this frame is checked */
+        seq_item.arrival = pinfo->abs_ts; /* Initialize first to please Coverity */
         seq_new = wmem_new0(wmem_file_scope(), struct rlc_seq);
         *seq_new = seq_item;
-        seq_new->arrival = pinfo->abs_ts;
         list->list = g_list_append(list->list, seq_new); /* insert in order of arrival */
     }
     return is_duplicate;
@@ -1425,7 +1425,7 @@ translate_hex_key(char * char_key){
     key_in = wmem_alloc0(pinfo->pool, sizeof(uint8_t)*16);
     j= (int)(strlen(char_key)/2)-1;
     /*Translate "hex-string" into a byte aligned block */
-    for(i = (int)strlen(char_key); i> 0; i-=2 ){
+    for(i = (unsigned)strlen(char_key); i> 0; i-=2 ){
         key_in[j] =  ( (uint8_t)  (strtol( &char_key[i-2], NULL, 16 ) ));
         char_key[i-2] = '\0';
         j--;
@@ -1535,11 +1535,11 @@ iter_same(void *key, void *value, void *data) {
     /*If true we found the correct frame*/
     if ((uint32_t)GPOINTER_TO_INT(key) > *(uint32_t*)data){
         *((uint32_t*)data) = *((uint32_t*)value);
-        return true;
+        return TRUE;
     }
     *((uint32_t*)data) = (uint32_t)GPOINTER_TO_INT(key);
 
-    return true;
+    return TRUE;
 }
 
 /**
@@ -1668,7 +1668,7 @@ rlc_decipher(tvbuff_t *tvb, packet_info * pinfo, proto_tree * tree, fp_info * fp
             ciphered_data_hf = (ext == 1) ? hf_rlc_ciphered_lis_data : hf_rlc_ciphered_data;
             /* Adding ciphered payload field to tree */
             proto_tree_add_item(tree, ciphered_data_hf, tvb, header_size, -1, ENC_NA);
-            proto_tree_add_expert(tree, pinfo, &ei_rlc_ciphered_data, tvb, header_size, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_ciphered_data, tvb, header_size);
             col_append_str(pinfo->cinfo, COL_INFO, "[Ciphered Data]");
             return;
 
@@ -1957,7 +1957,7 @@ dissect_rlc_um(enum rlc_channel_type channel, tvbuff_t *tvb, packet_info *pinfo,
     }
 
     if (!fpinf || !rlcinf) {
-        proto_tree_add_expert(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0);
         return;
     }
 
@@ -1974,7 +1974,7 @@ dissect_rlc_um(enum rlc_channel_type channel, tvbuff_t *tvb, packet_info *pinfo,
             ciphered_data_hf = (ext == 1) ? hf_rlc_ciphered_lis_data : hf_rlc_ciphered_data;
             /* Adding ciphered payload field to tree */
             proto_tree_add_item(tree, ciphered_data_hf, tvb, offs, -1, ENC_NA);
-            proto_tree_add_expert(tree, pinfo, &ei_rlc_ciphered_data, tvb, offs, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_ciphered_data, tvb, offs);
             col_append_str(pinfo->cinfo, COL_INFO, "[Ciphered Data]");
             return;
         }
@@ -2390,7 +2390,7 @@ dissect_rlc_am(enum rlc_channel_type channel, tvbuff_t *tvb, packet_info *pinfo,
     }
 
     if (!fpinf || !rlcinf) {
-        proto_tree_add_expert(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0);
         return;
     }
 
@@ -2409,7 +2409,7 @@ dissect_rlc_am(enum rlc_channel_type channel, tvbuff_t *tvb, packet_info *pinfo,
             ciphered_data_hf = (ext == 0x01) ? hf_rlc_ciphered_lis_data : hf_rlc_ciphered_data;
             /* Adding ciphered payload field to tree */
             proto_tree_add_item(tree, ciphered_data_hf, tvb, offs, -1, ENC_NA);
-            proto_tree_add_expert(tree, pinfo, &ei_rlc_ciphered_data, tvb, offs, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_ciphered_data, tvb, offs);
             col_append_str(pinfo->cinfo, COL_INFO, "[Ciphered Data]");
             return;
         }
@@ -2576,7 +2576,7 @@ dissect_rlc_dcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     rlci = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
 
     if (!fpi || !rlci){
-        proto_tree_add_expert(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0);
         return 1;
     }
 
@@ -2616,7 +2616,7 @@ dissect_rlc_ps_dtch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     rlci = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
 
     if (!fpi || !rlci) {
-        proto_tree_add_expert(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_rlc_no_per_frame_data, tvb, 0);
         return 1;
     }
 
@@ -2683,7 +2683,7 @@ dissect_rlc_dch_unknown(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
 static void
 report_heur_error(proto_tree *tree, packet_info *pinfo, expert_field *eiindex,
-                  tvbuff_t *tvb, int start, int length)
+                  tvbuff_t *tvb, unsigned start, unsigned length)
 {
     proto_item *ti;
     proto_tree *subtree;
@@ -2699,7 +2699,7 @@ report_heur_error(proto_tree *tree, packet_info *pinfo, expert_field *eiindex,
 static bool
 dissect_rlc_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    int         offset             = 0;
+    unsigned    offset             = 0;
     fp_info    *fpi;
     rlc_info   *rlci;
     tvbuff_t   *rlc_tvb;
@@ -2720,15 +2720,15 @@ dissect_rlc_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
        - conditional header bytes
        - tag for data
        - at least one byte of RLC PDU payload */
-    if (tvb_captured_length_remaining(tvb, offset) < (int)(strlen(RLC_START_STRING)+2+2)) {
+    if (tvb_captured_length_remaining(tvb, offset) < (unsigned)(strlen(RLC_START_STRING)+2+2)) {
         return false;
     }
 
     /* OK, compare with signature string */
-    if (tvb_strneql(tvb, offset, RLC_START_STRING, (int)strlen(RLC_START_STRING)) != 0) {
+    if (tvb_strneql(tvb, offset, RLC_START_STRING, (unsigned)strlen(RLC_START_STRING)) != 0) {
         return false;
     }
-    offset += (int)strlen(RLC_START_STRING);
+    offset += (unsigned)strlen(RLC_START_STRING);
 
     /* If redissecting, use previous info struct (if available) */
     fpi = (fp_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_fp, 0);
@@ -3157,6 +3157,8 @@ proto_register_rlc(void)
 void
 proto_reg_handoff_rlc(void)
 {
+    proto_fp = proto_get_id_by_filter_name("fp");
+
     rrc_handle = find_dissector_add_dependency("rrc", proto_umts_rlc);
     ip_handle  = find_dissector_add_dependency("ip", proto_umts_rlc);
     bmc_handle = find_dissector_add_dependency("bmc", proto_umts_rlc);

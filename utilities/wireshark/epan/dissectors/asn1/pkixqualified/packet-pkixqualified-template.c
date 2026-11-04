@@ -16,14 +16,9 @@
 #include <wsutil/array.h>
 
 #include "packet-ber.h"
-#include "packet-pkixqualified.h"
 #include "packet-x509af.h"
 #include "packet-x509ce.h"
 #include "packet-x509sat.h"
-
-#define PNAME  "PKIX Qualified"
-#define PSNAME "PKIXQUALIFIED"
-#define PFNAME "pkixqualified"
 
 void proto_register_pkixqualified(void);
 void proto_reg_handoff_pkixqualified(void);
@@ -55,7 +50,7 @@ void proto_register_pkixqualified(void) {
   };
 
   /* Register protocol */
-  proto_pkixqualified = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_pkixqualified = proto_register_protocol("PKIX Qualified", "PKIXQUALIFIED", "pkixqualified");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_pkixqualified, hf, array_length(hf));

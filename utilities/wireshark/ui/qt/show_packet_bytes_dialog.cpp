@@ -12,9 +12,12 @@
 
 #include "main_window.h"
 #include "main_application.h"
+#include <ui/qt/utils/font_manager.h>
+#include <ui/qt/utils/qt_ui_utils.h>
 #include "ui/qt/widgets/wireshark_file_dialog.h"
 #include "ui/recent.h"
 
+#include <epan/charsets.h>
 #include "epan/strutil.h"
 
 #include "wsutil/utf8_entities.h"
@@ -27,8 +30,8 @@
 #include <QMenu>
 #include <QPrintDialog>
 #include <QPrinter>
-#include <QTextCodec>
 #include <QTextStream>
+#include <glib.h>
 
 // To do:
 // - Add show as custom protocol in a Packet Details view
@@ -89,8 +92,8 @@ ShowPacketBytesDialog::ShowPacketBytesDialog(QWidget &parent, CaptureFile &cf) :
     ui->cbShowAs->addItem(tr("JSON"), SHOW_JSON);
     ui->cbShowAs->addItem(tr("Raw"), SHOW_RAW);
     ui->cbShowAs->addItem(tr("Rust Array"), SHOW_RUSTARRAY);
-    // UTF-8 is guaranteed to exist as a QTextCodec
     ui->cbShowAs->addItem(tr("UTF-8"), SHOW_CODEC);
+    ui->cbShowAs->addItem(tr("UTF-8 Unescaped"), SHOW_UTF8_UNESCAPED);
     ui->cbShowAs->addItem(tr("YAML"), SHOW_YAML);
     ui->cbShowAs->setCurrentIndex(ui->cbShowAs->findData(recent.gui_show_bytes_show));
     ui->cbShowAs->blockSignals(false);
@@ -111,6 +114,10 @@ ShowPacketBytesDialog::ShowPacketBytesDialog(QWidget &parent, CaptureFile &cf) :
 
     connect(ui->buttonBox, SIGNAL(helpRequested()), this, SLOT(helpButton()));
 
+    // XXX - This shouldn't be created if finfo->length == 0 (see
+    // wireshark_main_window_slots and have_packet_bytes), but it might
+    // make sense and simplify some calculations to store the length /
+    // byte location past the end
     setStartAndEnd(0, tvb_reported_length(tvb_) - 1);
     updateFieldBytes(true);
 }
@@ -121,16 +128,16 @@ ShowPacketBytesDialog::~ShowPacketBytesDialog()
     delete ui;
 }
 
-void ShowPacketBytesDialog::addCodecs(const QMap<QString, QTextCodec *> &codecMap)
+void ShowPacketBytesDialog::addCodecs(const QMap<QString, const char *> &codecMap)
 {
     ui->cbShowAs->blockSignals(true);
     // Make the combobox respect max visible items?
     //ui->cbShowAs->setStyleSheet("QComboBox { combobox-popup: 0;}");
     ui->cbShowAs->insertSeparator(ui->cbShowAs->count());
-    for (const auto &codec : codecMap) {
-        // This is already placed in the menu and handled separately
-        if (codec->name() != "US-ASCII" && codec->name() != "UTF-8")
-            ui->cbShowAs->addItem(tr(codec->name()), SHOW_CODEC);
+    for (const auto &encoding : codecMap) {
+        QString name = QString::fromUtf8(encoding);
+        if (name != "US-ASCII" && name != "UTF-8")
+            ui->cbShowAs->addItem(name, SHOW_CODEC);
     }
     ui->cbShowAs->blockSignals(false);
 }
@@ -173,6 +180,7 @@ bool ShowPacketBytesDialog::enableShowSelected()
     // "Show Selected" only works when showing all bytes:
     // - DecodeAs must not alter the number of bytes in the buffer
     // - ShowAs must show all bytes in the buffer
+    // - please update tooltip (minus ROT13) if logic changes
 
     return (((recent.gui_show_bytes_decode == DecodeAsNone) ||
              (recent.gui_show_bytes_decode == DecodeAsROT13)) &&
@@ -321,6 +329,7 @@ void ShowPacketBytesDialog::copyBytes()
     case SHOW_JSON:
     case SHOW_RAW:
     case SHOW_YAML:
+    case SHOW_UTF8_UNESCAPED:
         mainApp->clipboard()->setText(ui->tePacketBytes->toPlainText());
         break;
 
@@ -333,6 +342,8 @@ void ShowPacketBytesDialog::copyBytes()
         break;
 
     case SHOW_CODEC:
+        // XXX - Why toUtf8 here? Doesn't this cause an unnecessary round-trip
+        // conversion when it should already be Unicode?
         mainApp->clipboard()->setText(ui->tePacketBytes->toPlainText().toUtf8());
         break;
     }
@@ -358,6 +369,7 @@ void ShowPacketBytesDialog::saveAs()
     case SHOW_JSON:
     case SHOW_YAML:
     case SHOW_HTML:
+    case SHOW_UTF8_UNESCAPED:
         open_mode |= QFile::Text;
     default:
         break;
@@ -386,6 +398,7 @@ void ShowPacketBytesDialog::saveAs()
     case SHOW_HEXDUMP:
     case SHOW_JSON:
     case SHOW_YAML:
+    case SHOW_UTF8_UNESCAPED:
     {
         QTextStream out(&file);
         out << ui->tePacketBytes->toPlainText();
@@ -587,13 +600,13 @@ void ShowPacketBytesDialog::updateFieldBytes(bool initialization)
     switch (recent.gui_show_bytes_decode) {
 
     case DecodeAsNone:
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
         field_bytes_ = QByteArray((const char *)bytes, length);
         break;
 
     case DecodeAsBASE64:
     {
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
         QByteArray ba = QByteArray::fromRawData((const char *)bytes, length);
         if (ba.contains('-') || ba.contains('_')) {
             field_bytes_ = QByteArray::fromBase64(ba, QByteArray::Base64UrlEncoding);
@@ -619,9 +632,9 @@ void ShowPacketBytesDialog::updateFieldBytes(bool initialization)
 
         for (auto &tvb_uncompress : tvb_uncompress_list) {
             uncompr_tvb = tvb_uncompress.function(tvb_, start_, length);
-            if (uncompr_tvb && tvb_reported_length(uncompr_tvb) > 0) {
-                bytes = tvb_get_ptr(uncompr_tvb, 0, -1);
-                field_bytes_ = QByteArray((const char *)bytes, tvb_reported_length(uncompr_tvb));
+            if (uncompr_tvb && tvb_captured_length(uncompr_tvb) > 0) {
+                bytes = tvb_get_ptr(uncompr_tvb, 0, tvb_captured_length(uncompr_tvb));
+                field_bytes_ = QByteArray((const char *)bytes, tvb_captured_length(uncompr_tvb));
                 decode_as_name_ = tr("compressed %1").arg(tvb_uncompress.name);
                 tvb_free(uncompr_tvb);
                 break;
@@ -634,13 +647,13 @@ void ShowPacketBytesDialog::updateFieldBytes(bool initialization)
     }
 
     case DecodeAsHexDigits:
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
         field_bytes_ = QByteArray::fromHex(QByteArray::fromRawData((const char *)bytes, length));
         break;
 
     case DecodeAsPercentEncoding:
     {
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
 #if GLIB_CHECK_VERSION(2, 66, 0)
         GBytes *ba = g_uri_unescape_bytes((const char*)bytes, length, NULL, NULL);
         if (ba != NULL) {
@@ -659,12 +672,12 @@ void ShowPacketBytesDialog::updateFieldBytes(bool initialization)
     }
 
     case DecodeAsQuotedPrintable:
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
         field_bytes_ = decodeQuotedPrintable(bytes, length);
         break;
 
     case DecodeAsROT13:
-        bytes = tvb_get_ptr(tvb_, start_, -1);
+        bytes = tvb_get_ptr(tvb_, start_, length);
         field_bytes_ = QByteArray((const char *)bytes, length);
         rot13(field_bytes_);
         break;
@@ -687,7 +700,6 @@ void ShowPacketBytesDialog::updatePacketBytes(void)
     static const char hexchars[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
     ui->tePacketBytes->clear();
-    ui->tePacketBytes->setCurrentFont(mainApp->monospaceFont());
 
     switch (recent.gui_show_bytes_show) {
 
@@ -785,15 +797,32 @@ void ShowPacketBytesDialog::updatePacketBytes(void)
 
     case SHOW_CODEC:
     {
-        // The QTextCodecs docs say that there's a flag to cause invalid
-        // characters to be replaced with null. It's unclear what happens
-        // in the default case; it might depend on the codec though it
-        // seems that in practice replacement characters are used.
-        QTextCodec *codec = QTextCodec::codecForName(ui->cbShowAs->currentText().toUtf8());
+        // Invalid characters are replaced with the Unicode replacement
+        // character U+FFFD.
+        QByteArray encName = ui->cbShowAs->currentText().toUtf8();
         QByteArray ba(field_bytes_);
-        QString decoded = codec->toUnicode(ba);
-        ui->tePacketBytes->setLineWrapMode(QTextEdit::WidgetWidth);
-        ui->tePacketBytes->setPlainText(decoded);
+        wmem_strbuf_t *utf8 = get_strbuf_enc_iconv(NULL,
+            reinterpret_cast<const uint8_t*>(ba.constData()), ba.size(),
+            encName.constData());
+        if (utf8) {
+            ui->tePacketBytes->setLineWrapMode(QTextEdit::WidgetWidth);
+            ui->tePacketBytes->setPlainText(QString::fromUtf8(utf8->str, utf8->len));
+            wmem_strbuf_destroy(utf8);
+        }
+        break;
+    }
+
+    case SHOW_UTF8_UNESCAPED:
+    {
+        QByteArray ba(field_bytes_);
+        wmem_strbuf_t *utf8 = ws_unescape_string_len(NULL,
+            reinterpret_cast<const uint8_t*>(ba.constData()), ba.size(),
+            NULL);
+        if (utf8) {
+            ui->tePacketBytes->setLineWrapMode(QTextEdit::WidgetWidth);
+            ui->tePacketBytes->setPlainText(QString::fromUtf8(utf8->str, utf8->len));
+            wmem_strbuf_destroy(utf8);
+        }
         break;
     }
 
@@ -920,6 +949,15 @@ DIAG_ON(stringop-overread)
     }
 }
 
+ShowPacketBytesTextEdit::ShowPacketBytesTextEdit(QWidget *parent) :
+    QTextEdit(parent),
+    show_selected_enabled_(true),
+    menus_enabled_(true)
+{
+    /* Should this pass true to use the current zoom level? */
+    setFont(FontManager::monospaceFont());
+}
+
 void ShowPacketBytesTextEdit::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu *menu = createStandardContextMenu();
@@ -928,13 +966,17 @@ void ShowPacketBytesTextEdit::contextMenuEvent(QContextMenuEvent *event)
     menu->setAttribute(Qt::WA_DeleteOnClose);
     menu->addSeparator();
 
+    QString displayToolTip = tr("<html>Mouse byte selection is enabled when<p>\"Decode as\" = None<p>AND<p>\"Show as\" = ASCII, ASCII & Control, EBCDIC or Raw</html>");
     action = menu->addAction(tr("Show Selected"));
     action->setEnabled(menus_enabled_ && show_selected_enabled_ && textCursor().hasSelection());
+    action->setToolTip(displayToolTip);
     connect(action, SIGNAL(triggered()), this, SLOT(showSelected()));
 
     action = menu->addAction(tr("Show All"));
     action->setEnabled(menus_enabled_);
     connect(action, SIGNAL(triggered()), this, SLOT(showAll()));
+
+    menu->setToolTipsVisible(true);
 
     menu->popup(event->globalPos());
 }

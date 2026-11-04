@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Add arbritrary commands to a GitLab CI compatible (JUnit) test report
+# Add arbitrary commands to a GitLab CI compatible (JUnit) test report
 # SPDX-License-Identifier: MIT
 #
 # Usage:
@@ -32,11 +32,11 @@
 
 import argparse
 import html
-import time
 import pathlib
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 
@@ -87,7 +87,7 @@ def main():
         in_shell = False
 
     start_time = time.perf_counter()
-    proc = subprocess.run(proc_args, shell=in_shell, encoding='UTF-8', errors='replace', capture_output=True)
+    proc = subprocess.run(proc_args, shell=in_shell, encoding='UTF-8', errors='replace', capture_output=True, check=False)
     case_time = time.perf_counter() - start_time
 
     testcase_el.set('time', f'{case_time}')

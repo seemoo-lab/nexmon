@@ -411,7 +411,7 @@ Port-Number TYPE = FT_UINT16 DISPLAY = BASE_DEC
   _offset = offset;
    TRY {
 
-  offset = dissect_per_sequence(tvb, _offset, actx, tree, hf_index,
+  _offset = dissect_per_sequence(tvb, _offset, actx, tree, hf_index,
                                    ett_s1ap_SourceeNB_ToTargeteNB_TransparentContainer, SourceeNB_ToTargeteNB_TransparentContainer_sequence);
   } CATCH_ALL {
     show_exception(tvb, actx->pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
@@ -620,7 +620,7 @@ Port-Number TYPE = FT_UINT16 DISPLAY = BASE_DEC
   if (g_s1ap_dissect_container) {
     struct s1ap_private_data *s1ap_data = s1ap_get_private_data(actx->pinfo);
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_RRCContainer);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
 
     switch(s1ap_data->transparent_container_type){
       case SOURCE_TO_TARGET_TRANSPARENT_CONTAINER:
@@ -700,6 +700,7 @@ Port-Number TYPE = FT_UINT16 DISPLAY = BASE_DEC
       handle = lte_rrc_ue_radio_access_cap_info_handle;
     }
     if (handle) {
+      volatile uint32_t saved_offset = offset;
       TRY {
         call_dissector(handle, parameter_tvb, actx->pinfo, subtree);
       }
@@ -707,6 +708,7 @@ Port-Number TYPE = FT_UINT16 DISPLAY = BASE_DEC
         show_exception(parameter_tvb, actx->pinfo, subtree, EXCEPT_CODE, GET_MESSAGE);
       }
       ENDTRY;
+      offset = saved_offset;
     }
   }
 
@@ -813,6 +815,7 @@ if (gcsna_handle) {
       handle = lte_rrc_ue_radio_paging_info_handle;
     }
     if (handle) {
+      volatile uint32_t saved_offset = offset;
       TRY {
         call_dissector(handle, parameter_tvb, actx->pinfo, subtree);
       }
@@ -820,6 +823,7 @@ if (gcsna_handle) {
         show_exception(parameter_tvb, actx->pinfo, subtree, EXCEPT_CODE, GET_MESSAGE);
       }
       ENDTRY;
+      offset = saved_offset;
     }
   }
 
@@ -834,7 +838,7 @@ if (gcsna_handle) {
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_CELevel);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     if ((s1ap_is_nbiot_ue(actx->pinfo) && (g_s1ap_dissect_lte_container_as == S1AP_LTE_CONTAINER_AUTOMATIC)) ||
         (g_s1ap_dissect_lte_container_as == S1AP_LTE_CONTAINER_NBIOT)) {
       TRY {
@@ -867,7 +871,7 @@ if (gcsna_handle) {
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_UE_RLF_Report_Container);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_lte_rrc_RLF_Report_r9_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -889,7 +893,7 @@ if (gcsna_handle) {
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_UE_RLF_Report_Container_for_extended_bands);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_lte_rrc_RLF_Report_v9e0_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -909,7 +913,7 @@ if (gcsna_handle) {
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_NB_IoT_RLF_Report_Container);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_lte_rrc_RLF_Report_NB_r16_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -931,7 +935,7 @@ if (gcsna_handle) {
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_UE_RLF_Report_Container);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_lte_rrc_RLF_Report_r9_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -1132,7 +1136,7 @@ RecommendedCellItem/timeStayedInCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=U
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_LastVisitedNGRANCellInformation);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_ngap_LastVisitedNGRANCellInformation_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -1152,7 +1156,7 @@ RecommendedCellItem/timeStayedInCell DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=U
 
   if (g_s1ap_dissect_container) {
     subtree = proto_item_add_subtree(actx->created_item, ett_s1ap_LastVisitedUTRANCellInformation);
-    volatile int saved_offset = offset;
+    volatile uint32_t saved_offset = offset;
     TRY {
       dissect_ranap_LastVisitedUTRANCell_Item_PDU(parameter_tvb, actx->pinfo, subtree, NULL);
     }
@@ -1364,13 +1368,23 @@ TAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
 #.FN_BODY TAC VAL_PTR = &parameter_tvb HF_INDEX = -1
   tvbuff_t *parameter_tvb = NULL;
   struct s1ap_private_data *s1ap_data = s1ap_get_private_data(actx->pinfo);
+  uint16_t    tac = 0;
+  const char *tac_name_str = NULL;
+  proto_item *item;
 %(DEFAULT_BODY)s
   if (parameter_tvb) {
     actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
     if (s1ap_data->supported_ta) {
       s1ap_data->supported_ta->tac = tvb_get_ntohs(parameter_tvb, 0);
+      tac = s1ap_data->supported_ta->tac;
     } else if (s1ap_data->tai) {
       s1ap_data->tai->tac = tvb_get_ntohs(parameter_tvb, 0);
+      tac = s1ap_data->tai->tac;
+    }
+
+    if (gbl_resolv_flags.tac_name && tac && (tac_name_str = tac_name_lookup(tac)) != NULL) {
+      item = proto_tree_add_string(tree, hf_s1ap_tAC_Name, parameter_tvb, 0, 2, tac_name_str);
+      proto_item_set_generated(item);
     }
   }
 
@@ -1656,6 +1670,7 @@ id-SecondaryRATDataUsageReport          ProcedureCode
 id-HandoverSuccess                      ProcedureCode
 id-eNBEarlyStatusTransfer               ProcedureCode
 id-MMEEarlyStatusTransfer               ProcedureCode
+id-S1Removal                            ProcedureCode
 
 # ProtocolIE-ID
 id-MME-UE-S1AP-ID                                   ProtocolIE-ID
@@ -1991,6 +2006,8 @@ id-Bearers-SubjectToDLDiscarding-Item               ProtocolIE-ID
 id-Bearers-SubjectToDLDiscardingList                ProtocolIE-ID
 id-CoarseUELocationRequested                        ProtocolIE-ID
 id-CoarseUELocation                                 ProtocolIE-ID
+id-TimeRefDistribution                              ProtocolIE-ID
+id-RequestedTNLInfo                                 ProtocolIE-ID
 
 #.END
 
@@ -2248,6 +2265,7 @@ E-RABToBeUpdatedItem                            N s1ap.ies id-E-RABToBeUpdatedIt
 Bearers-SubjectToDLDiscarding-Item              N s1ap.ies id-Bearers-SubjectToDLDiscarding-Item
 CoarseUELocationRequested                       N s1ap.ies id-CoarseUELocationRequested
 CoarseUELocation                                N s1ap.ies id-CoarseUELocation
+TimeRefDistribution                             N s1ap.ies id-TimeRefDistribution
 
 #S1AP-PROTOCOL-IES-PAIR
 #RAB-SetupOrModifyItemFirst             N s1ap.ies.pair.first id-RAB-SetupOrModifyItem
@@ -2337,6 +2355,7 @@ M6ReportAmountMDT                       N s1ap.extension id-M6ReportAmount
 M7ReportAmountMDT                       N s1ap.extension id-M7ReportAmount
 TimeBasedHandoverInformation            N s1ap.extension id-TimeBasedHandoverInformation
 Bearers-SubjectToDLDiscardingList       N s1ap.extension id-Bearers-SubjectToDLDiscardingList
+RequestedTNLInfo                        N s1ap.extension id-RequestedTNLInfo
 
 #S1AP-ELEMENTARY-PROCEDURE
 HandoverRequired                        N s1ap.proc.imsg id-HandoverPreparation
@@ -2504,6 +2523,9 @@ ENBEarlyStatusTransfer                  N s1ap.proc.imsg id-eNBEarlyStatusTransf
 
 MMEEarlyStatusTransfer                  N s1ap.proc.imsg id-MMEEarlyStatusTransfer
 
+S1RemovalRequest                        N s1ap.proc.imsg id-S1Removal
+S1RemovalResponse                       N s1ap.proc.sout id-S1Removal
+S1RemovalFailure                        N s1ap.proc.uout id-S1Removal
 
 #.FN_HDR HandoverRequired
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "HandoverRequired");
@@ -2701,6 +2723,12 @@ MMEEarlyStatusTransfer                  N s1ap.proc.imsg id-MMEEarlyStatusTransf
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "ENBEarlyStatusTransfer");
 #.FN_HDR MMEEarlyStatusTransfer
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "MMEEarlyStatusTransfer");
+#.FN_HDR S1RemovalRequest
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "S1RemovalRequest");
+#.FN_HDR S1RemovalResponse
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "S1RemovalResponse");
+#.FN_HDR S1RemovalFailure
+  col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "S1RemovalFailure");
 #.END
 
 # Whenever a Cause appears, look up the reason and show it in the Info column

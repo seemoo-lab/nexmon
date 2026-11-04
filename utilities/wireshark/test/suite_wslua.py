@@ -8,13 +8,15 @@
 #
 '''Wireshark Lua scripting tests'''
 
-import sys
 import filecmp
+import logging
 import os.path
 import shutil
 import subprocess
+
 import pytest
-import logging
+
+logger = logging.getLogger('make-wsluarm')
 
 dhcp_pcap = 'dhcp.pcap'
 dns_port_pcap = 'dns_port.pcap'
@@ -38,9 +40,9 @@ def check_lua_script(cmd_tshark, features, dirs, capture_file, test_env):
         tshark_proc = subprocess.run(tshark_cmd, check=True, capture_output=True, encoding='utf-8', env=test_env)
 
         if check_passed:
-            logging.info(tshark_proc.stdout)
-            logging.info(tshark_proc.stderr)
-            if not 'All tests passed!' in tshark_proc.stdout:
+            logger.info(tshark_proc.stdout)
+            logger.info(tshark_proc.stderr)
+            if 'All tests passed!' not in tshark_proc.stdout:
                 pytest.fail("Some test failed, check the logs (eg: pytest --lf --log-cli-level=info)")
 
         return tshark_proc
@@ -54,10 +56,10 @@ def check_lua_script_verify(check_lua_script, result_file):
         optargs = []
 
         if heur_regmode is not None:
-            optargs += ['-X', 'lua_script1:heur_regmode={}'.format(heur_regmode)]
+            optargs += ['-X', f'lua_script1:heur_regmode={heur_regmode}']
 
         if conv_regmode is not None:
-            optargs += ['-X', 'lua_script1:conv_regmode={}'.format(conv_regmode)]
+            optargs += ['-X', f'lua_script1:conv_regmode={conv_regmode}']
 
         tshark_proc = check_lua_script(lua_script, cap_file, check_stage_1, '-V', *optargs)
 
@@ -99,9 +101,9 @@ def check_lua_script_locale(cmd_tshark, features, dirs, capture_file, test_env):
         tshark_proc = subprocess.run(tshark_cmd, check=True, capture_output=True, encoding='utf-8', env=test_env)
 
         if check_passed:
-            logging.info(tshark_proc.stdout)
-            logging.info(tshark_proc.stderr)
-            if not 'All tests passed!' in tshark_proc.stdout:
+            logger.info(tshark_proc.stdout)
+            logger.info(tshark_proc.stderr)
+            if 'All tests passed!' not in tshark_proc.stdout:
                 pytest.fail("Some test failed, check the logs (eg: pytest --lf --log-cli-level=info)")
 
         return tshark_proc
@@ -170,6 +172,10 @@ class TestWslua:
         '''wslua fields'''
         check_lua_script('field.lua', dhcp_pcap, True, '-q', '-c1')
 
+    def test_wslua_request_protocol_fields(self, check_lua_script):
+        '''wslua request_protocol_fields'''
+        check_lua_script('request_protocol_fields.lua', empty_pcap, True, '-q')
+
     # reader, writer, and acme_reader were all under wslua_step_file_test
     # in the Bash version.
     def test_wslua_file_reader(self, check_lua_script, cmd_tshark, capture_file, test_env):
@@ -200,6 +206,13 @@ class TestWslua:
             '-F', 'lua_pcap2',
         )
         assert filecmp.cmp(cap_file_1, cap_file_2), cap_file_1 + ' differs from ' + cap_file_2
+
+    def test_wslua_filehandler_write(self, check_lua_script, result_file):
+        '''wslua FileHandler write: CaptureInfoConst attributes'''
+        check_lua_script('filehandler_write.lua', dhcp_pcap, True,
+            '-w', result_file('fh_write_test.out'),
+            '-F', 'fh_write_test',
+        )
 
     def test_wslua_file_acme_reader(self, check_lua_script, cmd_tshark, capture_file, result_file, test_env):
         '''wslua acme file reader'''
@@ -300,7 +313,7 @@ class TestWslua:
         '''wslua globals'''
         check_lua_script('verify_globals.lua', empty_pcap, True,
             '-X', 'lua_script1:' + os.path.join(dirs.lua_dir, ''),
-            '-X', 'lua_script1:' + os.path.join(dirs.lua_dir, 'globals_4.4.txt'),
+            '-X', 'lua_script1:' + os.path.join(dirs.lua_dir, 'globals_5.0.txt'),
         )
 
     def test_wslua_struct(self, check_lua_script):
@@ -314,6 +327,10 @@ class TestWslua:
     def test_wslua_tvb_no_tree(self, check_lua_script):
         '''wslua tvb without a tree'''
         check_lua_script('tvb.lua', dns_port_pcap, True, '-c1')
+
+    def test_wslua_tree_api(self, check_lua_script):
+        '''wslua tree api'''
+        check_lua_script('tree_api.lua', dns_port_pcap, True, '-V', '-c1')
 
     def test_wslua_try_heuristics(self, check_lua_script):
         '''wslua try_heuristics'''
@@ -336,8 +353,8 @@ class TestWsluaUnicode:
         '''Check handling of unicode paths.'''
         if not features.have_lua:
             pytest.skip('Test requires Lua scripting support.')
-        if sys.platform == 'win32' and not features.have_lua_unicode:
-            pytest.skip('Test requires a patched Lua build with UTF-8 support.')
+#        if sys.platform == 'win32' and not features.have_lua_unicode:
+#            pytest.skip('Test requires a patched Lua build with UTF-8 support.')
 
         # Prepare test environment, put files in the right places.
         uni_script = os.path.join(unicode_env.pluginsdir, 'script-Ф-€-中.lua')
@@ -361,8 +378,16 @@ class TestWsluaUnicode:
             assert f.read() == 'Feedback from Lua: Ф-€-中\n'
 
 class TestWsluaLocale:
-    # Some tests under different a locale, e.g. German uses comma as the decimal
+    # Some tests under a different locale, e.g. German uses comma as the decimal
     # separator (and dot as the thousands separator.)
+    def test_wslua_globals_locale(self, check_lua_script_locale, dirs):
+        '''wslua globals'''
+        check_lua_script_locale('verify_globals.lua', empty_pcap, True,
+            'de_DE.utf-8',
+            '-X', 'lua_script2:' + os.path.join(dirs.lua_dir, ''),
+            '-X', 'lua_script2:' + os.path.join(dirs.lua_dir, 'globals_5.0.txt'),
+        )
+
     def test_wslua_util_locale(self, check_lua_script_locale):
         '''wslua utility functions in a non-English locale'''
         check_lua_script_locale('util.lua', empty_pcap, True, 'de_DE.utf-8')

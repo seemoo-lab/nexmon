@@ -51,6 +51,7 @@ char saved_ccode[2] = {};
 struct nvram_parser {
 	enum nvram_parser_state state;
 	const u8 *data;
+	size_t data_len;
 	u8 *nvram;
 	u32 nvram_len;
 	u32 line;
@@ -166,12 +167,14 @@ brcmf_nvram_handle_value(struct nvram_parser *nvp)
 static enum nvram_parser_state
 brcmf_nvram_handle_comment(struct nvram_parser *nvp)
 {
-	char *eoc, *sol;
+	const char *eoc, *sol;
+	size_t remaining;
 
-	sol = (char *)&nvp->data[nvp->pos];
-	eoc = strchr(sol, '\n');
+	sol = (const char *)&nvp->data[nvp->pos];
+	remaining = nvp->data_len - nvp->pos;
+	eoc = strnchr(sol, remaining, '\n');
 	if (!eoc) {
-		eoc = strchr(sol, '\0');
+		eoc = memchr(sol, '\0', remaining);
 		if (!eoc)
 			return END;
 	}
@@ -205,6 +208,7 @@ static int brcmf_init_nvram_parser(struct nvram_parser *nvp,
 
 	memset(nvp, 0, sizeof(*nvp));
 	nvp->data = data;
+	nvp->data_len = data_len;
 	/* Limit size to MAX_NVRAM_SIZE, some files contain lot of comment */
 	if (data_len > BRCMF_FW_MAX_NVRAM_SIZE)
 		size = BRCMF_FW_MAX_NVRAM_SIZE;
@@ -232,9 +236,9 @@ static void brcmf_fw_strip_multi_v1(struct nvram_parser *nvp, u16 domain_nr,
 				    u16 bus_nr)
 {
 	/* Device path with a leading '=' key-value separator */
-	char pci_path[] = "=pci/?/?";
+	char pci_path[32];
 	size_t pci_len;
-	char pcie_path[] = "=pcie/?/?";
+	char pcie_path[32];
 	size_t pcie_len;
 
 	u32 i, j;
@@ -318,7 +322,7 @@ fail:
 static void brcmf_fw_strip_multi_v2(struct nvram_parser *nvp, u16 domain_nr,
 				    u16 bus_nr)
 {
-	char prefix[BRCMF_FW_NVRAM_PCIEDEV_LEN];
+	char prefix[32];
 	size_t len;
 	u32 i, j;
 	u8 *nvram;

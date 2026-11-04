@@ -25,6 +25,7 @@
 #include <wsutil/utf8_entities.h>
 
 #include "packet-ubx.h"
+#include "packet-ubx-galileo_e1b_inav.h"
 #include "wsutil/wmem/wmem_core.h"
 
 /*
@@ -65,6 +66,133 @@ static const value_string GAL_OSNMA_CPKS_CODE[] = {
     { 0, NULL},
 };
 
+static const value_string GAL_OSNMA_NB_DP_CODE[] = {
+    { 0, "Reserved"},
+    { 1, "Reserved"},
+    { 2, "Reserved"},
+    { 3, "Reserved"},
+    { 4, "Reserved"},
+    { 5, "Reserved"},
+    { 6, "Reserved"},
+    { 7, "13"},
+    { 8, "14"},
+    { 9, "15"},
+    {10, "16"},
+    {11, "Reserved"},
+    {12, "Reserved"},
+    {13, "Reserved"},
+    {14, "Reserved"},
+    {15, "Reserved"},
+    { 0, NULL},
+};
+
+static const value_string GAL_OSNMA_NB_DK_CODE[] = {
+    { 0, "Reserved"},
+    { 1, "7"},
+    { 2, "8"},
+    { 3, "9"},
+    { 4, "10"},
+    { 5, "11"},
+    { 6, "12"},
+    { 7, "13"},
+    { 8, "14"},
+    { 9, "Reserved"},
+    {10, "Reserved"},
+    {11, "Reserved"},
+    {12, "Reserved"},
+    {13, "Reserved"},
+    {14, "Reserved"},
+    {15, "Reserved"},
+    { 0, NULL},
+};
+
+static const value_string GAL_OSNMA_NPKT_CODE[] = {
+    { 0, "Reserved"},
+    { 1, "ECDSA P-256"},
+    { 2, "Reserved"},
+    { 3, "ECDSA P-521"},
+    { 4, "OSNMA Alert Message (OAM)"},
+    { 5, "Reserved"},
+    { 6, "Reserved"},
+    { 7, "Reserved"},
+    { 8, "Reserved"},
+    { 9, "Reserved"},
+    {10, "Reserved"},
+    {11, "Reserved"},
+    {12, "Reserved"},
+    {13, "Reserved"},
+    {14, "Reserved"},
+    {15, "Reserved"},
+    { 0, NULL},
+};
+
+static const value_string GAL_OSNMA_HF_CODE[] = {
+    { 0, "SHA-256"},
+    { 1, "Reserved"},
+    { 2, "SHA3-256"},
+    { 3, "Reserved"},
+    { 0, NULL},
+};
+
+static const value_string GAL_OSNMA_MF_CODE[] = {
+    { 0, "HMAC-SHA-256"},
+    { 1, "CMAC-AES"},
+    { 2, "Reserved"},
+    { 3, "Reserved"},
+    { 0, NULL},
+};
+
+static const value_string GAL_OSNMA_KS_CODE[] = {
+    { 0, "96 bits"},
+    { 1, "104 bits"},
+    { 2, "112 bits"},
+    { 3, "120 bits"},
+    { 4, "128 bits"},
+    { 5, "160 bits"},
+    { 6, "192 bits"},
+    { 7, "224 bits"},
+    { 8, "256 bits"},
+    { 9, "Reserved"},
+    {10, "Reserved"},
+    {11, "Reserved"},
+    {12, "Reserved"},
+    {13, "Reserved"},
+    {14, "Reserved"},
+    {15, "Reserved"},
+    { 0, NULL},
+};
+static uint32_t ks2len(uint32_t ks) {
+    if (ks <= 4) {
+        return 12 + ks;
+    }
+    else if (ks <= 8) {
+        return 20 + (ks-5) * 4;
+    }
+    else {
+        return 0;
+    }
+}
+
+static const value_string GAL_OSNMA_TS_CODE[] = {
+    { 0, "Reserved"},
+    { 1, "Reserved"},
+    { 2, "Reserved"},
+    { 3, "Reserved"},
+    { 4, "Reserved"},
+    { 5, "20 bits"},
+    { 6, "24 bits"},
+    { 7, "28 bits"},
+    { 8, "32 bits"},
+    { 9, "40 bits"},
+    {10, "Reserved"},
+    {11, "Reserved"},
+    {12, "Reserved"},
+    {13, "Reserved"},
+    {14, "Reserved"},
+    {15, "Reserved"},
+    { 0, NULL},
+};
+
 static const value_string GAL_SAR_SHORT_RLM_MSG_CODE[] = {
     { 0, "Spare"},
     { 1, "Acknowledgement Service"},
@@ -86,7 +214,8 @@ static const value_string GAL_SAR_SHORT_RLM_MSG_CODE[] = {
 };
 
 #define CONVERSATION_SAR_RLM 1
-#define CONVERSATION_OSNMA_HKROOT 2
+#define CONVERSATION_OSNMA_HKROOT_MACK 2
+#define CONVERSATION_OSNMA_DSM 3
 
 // Initialize the protocol and registered fields
 static int proto_ubx_gal_inav;
@@ -107,6 +236,66 @@ static int hf_ubx_gal_inav_osnma_reserved;
 static int hf_ubx_gal_inav_osnma_dsm_id;
 static int hf_ubx_gal_inav_osnma_dsm_blk_id;
 static int hf_ubx_gal_inav_osnma_dsm_blk;
+static int hf_ubx_gal_inav_osnma_tag0;
+static int hf_ubx_gal_inav_osnma_macseq;
+static int hf_ubx_gal_inav_osnma_cop;
+static int hf_ubx_gal_inav_osnma_tag;
+static int hf_ubx_gal_inav_osnma_prn_d;
+static int hf_ubx_gal_inav_osnma_adkd;
+static int hf_ubx_gal_inav_osnma_key;
+static int hf_ubx_gal_inav_osnma_padding;
+static int hf_ubx_gal_inav_osnma_dsm_nb_dk;
+static int hf_ubx_gal_inav_osnma_dsm_pkid;
+static int hf_ubx_gal_inav_osnma_dsm_cidkr;
+static int hf_ubx_gal_inav_osnma_dsm_reserved1;
+static int hf_ubx_gal_inav_osnma_dsm_hf;
+static int hf_ubx_gal_inav_osnma_dsm_mf;
+static int hf_ubx_gal_inav_osnma_dsm_ks;
+static int hf_ubx_gal_inav_osnma_dsm_ts;
+static int hf_ubx_gal_inav_osnma_dsm_maclt;
+static int hf_ubx_gal_inav_osnma_dsm_reserved2;
+static int hf_ubx_gal_inav_osnma_dsm_wn_k;
+static int hf_ubx_gal_inav_osnma_dsm_towh_k;
+static int hf_ubx_gal_inav_osnma_dsm_alpha;
+static int hf_ubx_gal_inav_osnma_dsm_kroot;
+static int hf_ubx_gal_inav_osnma_dsm_ds;
+static int hf_ubx_gal_inav_osnma_dsm_p_dk;
+static int hf_ubx_gal_inav_osnma_dsm_nb_dp;
+static int hf_ubx_gal_inav_osnma_dsm_mid;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_0;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_1;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_2;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_3;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_4;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_5;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_6;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_7;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_8;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_9;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_10;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_11;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_12;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_13;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_14;
+static int hf_ubx_gal_inav_osnma_dsm_x_0_15;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_0;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_1;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_2;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_3;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_4;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_5;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_6;
+static int hf_ubx_gal_inav_osnma_dsm_x_1_7;
+static int hf_ubx_gal_inav_osnma_dsm_x_2_0;
+static int hf_ubx_gal_inav_osnma_dsm_x_2_1;
+static int hf_ubx_gal_inav_osnma_dsm_x_2_2;
+static int hf_ubx_gal_inav_osnma_dsm_x_2_3;
+static int hf_ubx_gal_inav_osnma_dsm_x_3_0;
+static int hf_ubx_gal_inav_osnma_dsm_x_3_1;
+static int hf_ubx_gal_inav_osnma_dsm_npkt;
+static int hf_ubx_gal_inav_osnma_dsm_npkid;
+static int hf_ubx_gal_inav_osnma_dsm_npk;
+static int hf_ubx_gal_inav_osnma_dsm_p_dp;
 
 static int hf_ubx_gal_inav_sar_start_bit;
 static int hf_ubx_gal_inav_sar_long_rlm;
@@ -189,6 +378,9 @@ static int ett_ubx_gal_inav_word4;
 static int ett_ubx_gal_inav_word6;
 static int ett_ubx_gal_inav_osnma;
 static int ett_ubx_gal_inav_osnma_hkroot_msg;
+static int ett_ubx_gal_inav_osnma_mack_msg;
+static int ett_ubx_gal_inav_osnma_mack_tag[9];
+static int ett_ubx_gal_inav_osnma_dsm;
 static int ett_ubx_gal_inav_sar;
 static int ett_ubx_gal_inav_sar_rlm;
 
@@ -205,13 +397,23 @@ static const value_string GAL_SSP[] = {
     {0, NULL},
 };
 
-#define OSNMA_HKROOT_MSG_PARTS_NUM 15
-#define OSNMA_HKROOT_MSG_LENGTH OSNMA_HKROOT_MSG_PARTS_NUM * 8 / 8
+#define OSNMA_HKROOT_MACK_MSG_PARTS_NUM 15
+#define OSNMA_HKROOT_MSG_LENGTH OSNMA_HKROOT_MACK_MSG_PARTS_NUM * 8 / 8
+#define OSNMA_MACK_MSG_LENGTH OSNMA_HKROOT_MACK_MSG_PARTS_NUM * 32 / 8
 
-typedef struct osnma_hkroot_msg_part {
+typedef struct osnma_hkroot_mack_msg_part {
     uint32_t frame;
     uint8_t hkroot;
-} osnma_hkroot_msg_part;
+    uint32_t mack;
+} osnma_hkroot_mack_msg_part;
+
+#define OSNMA_DSM_BLK_LENGTH 13
+#define OSNMA_DSM_BLK_NUM 16
+
+typedef struct osnma_dsm_blk {
+    bool set;
+    uint8_t blk[OSNMA_DSM_BLK_LENGTH];
+} osnma_dsm_blk;
 
 #define SAR_LONG_RLM_PARTS_NUM 8
 #define SAR_LONG_RLM_LENGTH (SAR_LONG_RLM_PARTS_NUM * 20 / 8)
@@ -347,13 +549,17 @@ static void fmt_t0e(char *label, uint32_t c) {
 static int dissect_ubx_gal_inav(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
     tvbuff_t *next_tvb;
 
+    bool complete_hkroot_mack = false;
     bool sar_start, sar_long_rlm;
     uint32_t inav_type = 0, even_page_type, odd_page_type, hkroot, sar_rlm_data;
+    uint64_t mack;
+    uint32_t dsm_id, dsm_blk_id, dsm_ks;
     uint64_t data_122_67 = 0, data_66_17 = 0, data_16_1 = 0;
-    uint8_t *word;
-    osnma_hkroot_msg_part *osnma_hkroot_msg_parts = NULL;
+    uint8_t *word, *hkroot_msg, *dsm_buf, *mack_msg;
+    osnma_hkroot_mack_msg_part *osnma_hkroot_mack_msg_parts = NULL;
+    osnma_dsm_blk *osnma_dsm_blks = NULL;
     sar_rlm_part *sar_rlm_parts = NULL;
-    int i;
+    size_t i;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Galileo E1-B I/NAV");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -391,13 +597,13 @@ static int dissect_ubx_gal_inav(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
         proto_tree *osnma_tree = proto_tree_add_subtree(gal_inav_tree, tvb, 18, 6, ett_ubx_gal_inav_osnma, NULL, "OSNMA");
         proto_tree_add_item_ret_uint(osnma_tree, hf_ubx_gal_inav_osnma_hkroot,  tvb, 18, 4, ENC_BIG_ENDIAN, &hkroot);
-        proto_tree_add_item(osnma_tree, hf_ubx_gal_inav_osnma_mack,             tvb, 18, 8, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint64(osnma_tree, hf_ubx_gal_inav_osnma_mack,  tvb, 18, 8, ENC_BIG_ENDIAN, &mack);
 
-        // manage OSNMA HKROOT message via conversations
-        if (svid != NULL && even_page_type == 0) {
+        // manage OSNMA HKROOT & MACK messages via conversations
+        if (svid != NULL && even_page_type == 0 && (hkroot != 0 || mack != 0)) {
             // try to find already existing conversation
             conversation_element_t constellation = {.type = CE_INT, .int_val = GNSS_ID_GALILEO};
-            conversation_element_t type = {.type = CE_INT, .int_val = CONVERSATION_OSNMA_HKROOT};
+            conversation_element_t type = {.type = CE_INT, .int_val = CONVERSATION_OSNMA_HKROOT_MACK};
             conversation_element_t prn = {.type = CE_INT, .int_val = *svid};
             conversation_element_t end = {.type = CE_CONVERSATION_TYPE, .conversation_type_val = CONVERSATION_GNSS};
             conversation_element_t ce[4] = {constellation, type, prn, end};
@@ -409,84 +615,344 @@ static int dissect_ubx_gal_inav(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
                 // TODO: Detect a new sub-frame based on GST (or, at least, cross-check against GST).
                 c = conversation_new_full(pinfo->num, ce);
 
-                osnma_hkroot_msg_parts = (osnma_hkroot_msg_part *) wmem_alloc0_array(wmem_file_scope(), osnma_hkroot_msg_part, OSNMA_HKROOT_MSG_PARTS_NUM);
+                osnma_hkroot_mack_msg_parts = (osnma_hkroot_mack_msg_part *) wmem_alloc0_array(wmem_file_scope(), osnma_hkroot_mack_msg_part, OSNMA_HKROOT_MACK_MSG_PARTS_NUM);
 
-                osnma_hkroot_msg_parts[0].frame = pinfo->num;
-                osnma_hkroot_msg_parts[0].hkroot = hkroot;
+                osnma_hkroot_mack_msg_parts[0].frame = pinfo->num;
+                osnma_hkroot_mack_msg_parts[0].hkroot = hkroot;
+                osnma_hkroot_mack_msg_parts[0].mack = (uint32_t) mack;
 
-                conversation_add_proto_data(c, proto_ubx_gal_inav, osnma_hkroot_msg_parts);
+                conversation_add_proto_data(c, proto_ubx_gal_inav, osnma_hkroot_mack_msg_parts);
             }
             else if (c != NULL && inav_type == 2) {
                 // Check whether the conversation found starts at the current frame.
                 // (If not, a new conversation needs to be created as the Word Type is 2, which nominally indicates a new sub-frame.)
                 // TODO: Detect a new sub-frame based on GST (or, at least, cross-check against GST).
-                osnma_hkroot_msg_parts = (osnma_hkroot_msg_part *) conversation_get_proto_data(c, proto_ubx_gal_inav);
+                osnma_hkroot_mack_msg_parts = (osnma_hkroot_mack_msg_part *) conversation_get_proto_data(c, proto_ubx_gal_inav);
 
-                if (osnma_hkroot_msg_parts != NULL && osnma_hkroot_msg_parts[0].frame != pinfo->num) {
+                if (osnma_hkroot_mack_msg_parts != NULL && osnma_hkroot_mack_msg_parts[0].frame != pinfo->num) {
                     // Separate conversation found, start a new one.
                     c = conversation_new_full(pinfo->num, ce);
 
-                    osnma_hkroot_msg_parts = (osnma_hkroot_msg_part *) wmem_alloc0_array(wmem_file_scope(), osnma_hkroot_msg_part, OSNMA_HKROOT_MSG_PARTS_NUM);
+                    osnma_hkroot_mack_msg_parts = (osnma_hkroot_mack_msg_part *) wmem_alloc0_array(wmem_file_scope(), osnma_hkroot_mack_msg_part, OSNMA_HKROOT_MACK_MSG_PARTS_NUM);
 
-                    osnma_hkroot_msg_parts[0].frame = pinfo->num;
-                    osnma_hkroot_msg_parts[0].hkroot = hkroot;
+                    osnma_hkroot_mack_msg_parts[0].frame = pinfo->num;
+                    osnma_hkroot_mack_msg_parts[0].hkroot = hkroot;
+                    osnma_hkroot_mack_msg_parts[0].mack = (uint32_t) mack;
 
-                    conversation_add_proto_data(c, proto_ubx_gal_inav, osnma_hkroot_msg_parts);
+                    conversation_add_proto_data(c, proto_ubx_gal_inav, osnma_hkroot_mack_msg_parts);
                 }
             }
             else if (c != NULL) {
                 // Check whether packet data still needs to be added to the conversation.
-                osnma_hkroot_msg_parts = (osnma_hkroot_msg_part *) conversation_get_proto_data(c, proto_ubx_gal_inav);
+                osnma_hkroot_mack_msg_parts = (osnma_hkroot_mack_msg_part *) conversation_get_proto_data(c, proto_ubx_gal_inav);
 
-                if (osnma_hkroot_msg_parts) {
-                    // TODO: Detecting the slot of the HKROOT part should be based on GST.
+                if (osnma_hkroot_mack_msg_parts) {
+                    // TODO: Detecting the slot of the HKROOT/MACK part should be based on GST.
                     // TODO: Cross-check whether identified slot matches nominal Word Type schedule.
-                    for (i = 0; i < OSNMA_HKROOT_MSG_PARTS_NUM; i++) {
-                        if (osnma_hkroot_msg_parts[i].frame == 0) {
-                            osnma_hkroot_msg_parts[i].frame = pinfo->num;
-                            osnma_hkroot_msg_parts[i].hkroot = hkroot;
+                    for (i = 0; i < OSNMA_HKROOT_MACK_MSG_PARTS_NUM; i++) {
+                        if (osnma_hkroot_mack_msg_parts[i].frame == 0) {
+                            osnma_hkroot_mack_msg_parts[i].frame = pinfo->num;
+                            osnma_hkroot_mack_msg_parts[i].hkroot = hkroot;
+                            osnma_hkroot_mack_msg_parts[i].mack = (uint32_t) mack;
                             break;
                         }
-                        else if (osnma_hkroot_msg_parts[i].frame == pinfo->num) {
+                        else if (osnma_hkroot_mack_msg_parts[i].frame == pinfo->num) {
                             break;
                         }
                     }
                 }
             }
 
-            // display OSNMA HKROOT message if all parts are available
-            if (c != NULL && osnma_hkroot_msg_parts != NULL) {
-                for (i = 0; i < OSNMA_HKROOT_MSG_PARTS_NUM; i++) {
-                    if (osnma_hkroot_msg_parts[i].frame == 0) {
+            // display OSNMA HKROOT and MACK message if all parts are available
+            if (c != NULL && osnma_hkroot_mack_msg_parts != NULL) {
+                for (i = 0; i < OSNMA_HKROOT_MACK_MSG_PARTS_NUM; i++) {
+                    if (osnma_hkroot_mack_msg_parts[i].frame == 0) {
                         break;
                     }
                 }
 
-                if (i == OSNMA_HKROOT_MSG_PARTS_NUM) {
-                    // All parts of an OSNMA HKROOT message are available in the conversation.
-                    // Now dissect it.
+                if (i == OSNMA_HKROOT_MACK_MSG_PARTS_NUM) {
+                    // All parts of an OSNMA HKROOT & MACK message are available in the conversation.
+                    complete_hkroot_mack = true;
+
+                    // Now dissect them.
 
                     // reserve buffer for OSNMA HKROOT message
-                    uint8_t *buf = wmem_alloc(pinfo->pool, OSNMA_HKROOT_MSG_LENGTH);
+                    hkroot_msg = wmem_alloc(pinfo->pool, OSNMA_HKROOT_MSG_LENGTH);
 
                     // fill buffer with OSNMA HKROOT parts
-                    for (i = 0; i < OSNMA_HKROOT_MSG_PARTS_NUM; i++) {
-                        buf[i] = osnma_hkroot_msg_parts[i].hkroot;
+                    for (i = 0; i < OSNMA_HKROOT_MACK_MSG_PARTS_NUM; i++) {
+                        hkroot_msg[i] = osnma_hkroot_mack_msg_parts[i].hkroot;
                     }
 
-                    tvbuff_t *osnma_hkroot_msg_tvb = tvb_new_child_real_data(tvb, (uint8_t *)buf, OSNMA_HKROOT_MSG_LENGTH, OSNMA_HKROOT_MSG_LENGTH);
+                    tvbuff_t *osnma_hkroot_msg_tvb = tvb_new_child_real_data(tvb, (uint8_t *)hkroot_msg, OSNMA_HKROOT_MSG_LENGTH, OSNMA_HKROOT_MSG_LENGTH);
                     add_new_data_source(pinfo, osnma_hkroot_msg_tvb, "Galileo E1-B I/NAV OSNMA HKROOT Message");
 
                     // dissect OSNMA HKROOT message
                     proto_tree *osnma_hkroot_msg_tree = proto_tree_add_subtree(osnma_tree, osnma_hkroot_msg_tvb, 0, OSNMA_HKROOT_MSG_LENGTH, ett_ubx_gal_inav_osnma_hkroot_msg, NULL, "HKROOT Message (re-assembled)");
 
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_nmas,       osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_cid,        osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_cpks,       osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_reserved,   osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_id,     osnma_hkroot_msg_tvb, 1, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_blk_id, osnma_hkroot_msg_tvb, 1, 1,  ENC_NA);
-                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_blk,    osnma_hkroot_msg_tvb, 2, 13, ENC_NA);
+                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_nmas,                osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
+                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_cid,                 osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
+                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_cpks,                osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
+                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_reserved,            osnma_hkroot_msg_tvb, 0, 1,  ENC_NA);
+                    proto_tree_add_item_ret_uint(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_id,     osnma_hkroot_msg_tvb, 1, 1,  ENC_NA, &dsm_id);
+                    proto_tree_add_item_ret_uint(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_blk_id, osnma_hkroot_msg_tvb, 1, 1,  ENC_NA, &dsm_blk_id);
+                    proto_tree_add_item(osnma_hkroot_msg_tree, hf_ubx_gal_inav_osnma_dsm_blk,             osnma_hkroot_msg_tvb, 2, 13, ENC_NA);
+
+
+                    // reserve buffer for OSNMA MACK message
+                    mack_msg = wmem_alloc(pinfo->pool, OSNMA_MACK_MSG_LENGTH);
+
+                    // fill buffer with OSNMA MACK parts
+                    for (i = 0; i < OSNMA_HKROOT_MACK_MSG_PARTS_NUM; i++) {
+                        phtonu32(&mack_msg[i * 4], osnma_hkroot_mack_msg_parts[i].mack);
+                    }
+
+                    tvbuff_t *osnma_mack_msg_tvb = tvb_new_child_real_data(tvb, (uint8_t *)mack_msg, OSNMA_MACK_MSG_LENGTH, OSNMA_MACK_MSG_LENGTH);
+                    add_new_data_source(pinfo, osnma_mack_msg_tvb, "Galileo E1-B I/NAV OSNMA MACK Message");
+
+                    // dissect OSNMA MACK message
+                    proto_tree *osnma_mack_msg_tree = proto_tree_add_subtree(osnma_tree, osnma_mack_msg_tvb, 0, OSNMA_MACK_MSG_LENGTH, ett_ubx_gal_inav_osnma_mack_msg, NULL, "MACK Message (re-assembled)");
+
+                    // TODO: The key and tag size should be determined based on DSM-KROOT.
+                    // Assuming key size of 128 bits and tag size of 40 bits for now (being the sizes used by GAL).
+                    uint32_t key_size = 128;
+                    uint32_t tag_size = 40;
+                    proto_tree_add_item(osnma_mack_msg_tree, hf_ubx_gal_inav_osnma_tag0,   osnma_mack_msg_tvb, 0,              tag_size/8, ENC_NA);
+                    proto_tree_add_item(osnma_mack_msg_tree, hf_ubx_gal_inav_osnma_macseq, osnma_mack_msg_tvb, tag_size/8,     2,          ENC_BIG_ENDIAN);
+                    proto_tree_add_item(osnma_mack_msg_tree, hf_ubx_gal_inav_osnma_cop,    osnma_mack_msg_tvb, tag_size/8 + 1, 1,          ENC_NA);
+
+                    uint32_t no_tags = (480 - key_size) / (tag_size + 16);
+                    for (i = 0; i < no_tags - 1; i++) {
+                        proto_tree *osnma_mack_tag_tree = proto_tree_add_subtree(osnma_mack_msg_tree, osnma_mack_msg_tvb, (((uint32_t)i + 1) * (tag_size + 16))/8, (tag_size + 16) / 8, ett_ubx_gal_inav_osnma_mack_tag[i], NULL, "MACK Tag");
+                        proto_tree_add_item(osnma_mack_tag_tree, hf_ubx_gal_inav_osnma_tag,   osnma_mack_msg_tvb, (((uint32_t)i + 1) * (tag_size + 16))/8,                tag_size/8, ENC_NA);
+                        proto_tree_add_item(osnma_mack_tag_tree, hf_ubx_gal_inav_osnma_prn_d, osnma_mack_msg_tvb, (((uint32_t)i + 1) * (tag_size + 16) + tag_size)/8,     1,          ENC_NA);
+                        proto_tree_add_item(osnma_mack_tag_tree, hf_ubx_gal_inav_osnma_adkd,  osnma_mack_msg_tvb, (((uint32_t)i + 1) * (tag_size + 16) + tag_size)/8 + 1, 1,          ENC_NA);
+                        proto_tree_add_item(osnma_mack_tag_tree, hf_ubx_gal_inav_osnma_cop,   osnma_mack_msg_tvb, (((uint32_t)i + 1) * (tag_size + 16) + tag_size)/8 + 1, 1,          ENC_NA);
+                    }
+
+                    proto_tree_add_item(osnma_mack_msg_tree, hf_ubx_gal_inav_osnma_key,     osnma_mack_msg_tvb, (no_tags * (tag_size + 16))/8,            key_size/8, ENC_NA);
+                    proto_tree_add_item(osnma_mack_msg_tree, hf_ubx_gal_inav_osnma_padding, osnma_mack_msg_tvb, (no_tags * (tag_size + 16) + key_size)/8, OSNMA_MACK_MSG_LENGTH - (no_tags * (tag_size + 16) + key_size)/8, ENC_NA);
+                }
+            }
+        }
+
+        // manage OSNMA DSM via conversations (if a HKROOT message was re-assembled)
+        if (complete_hkroot_mack) {
+            // try to find already existing conversation
+            conversation_element_t constellation = {.type = CE_INT, .int_val = GNSS_ID_GALILEO};
+            conversation_element_t type = {.type = CE_INT, .int_val = CONVERSATION_OSNMA_DSM};
+            conversation_element_t dsm = {.type = CE_INT, .int_val = dsm_id};
+            conversation_element_t end = {.type = CE_CONVERSATION_TYPE, .conversation_type_val = CONVERSATION_GNSS};
+            conversation_element_t ce[4] = {constellation, type, dsm, end};
+            conversation_t *c = find_conversation_full(pinfo->num, ce);
+
+            // TODO: Add logic to detect and manage DSM ID roll-over
+            if (c == NULL) {
+                // No conversation found. Start a new one.
+                c = conversation_new_full(pinfo->num, ce);
+
+                osnma_dsm_blks = (osnma_dsm_blk *) wmem_alloc0_array(wmem_file_scope(), osnma_dsm_blk, OSNMA_DSM_BLK_NUM);
+
+                conversation_add_proto_data(c, proto_ubx_gal_inav, osnma_dsm_blks);
+            }
+            else {
+                osnma_dsm_blks = (osnma_dsm_blk *) conversation_get_proto_data(c, proto_ubx_gal_inav);
+            }
+
+            if (osnma_dsm_blks != NULL) {
+
+                // store block
+                osnma_dsm_blks[dsm_blk_id].set = true;
+                memcpy(osnma_dsm_blks[dsm_blk_id].blk, &hkroot_msg[2], OSNMA_DSM_BLK_LENGTH);
+
+                // If first block of a DSM has been received, continue processing.
+                if (osnma_dsm_blks[0].set && 0 < osnma_dsm_blks[0].blk[0]) {
+
+                    // Count the number of sequential blocks received.
+                    uint8_t dsm_blk_count = 0;
+                    for (i = 0; i < OSNMA_DSM_BLK_NUM; i++) {
+                        if (osnma_dsm_blks[i].set) {
+                            dsm_blk_count++;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+
+                    // Compare number of received blocks against NB_DP / NB_DK in block 0.
+                    if (dsm_blk_count == (osnma_dsm_blks[0].blk[0] >> 4) + 6) {
+                        // All blocks for a DSM have been received.
+                        // Now dissect it.
+
+                        dsm_buf = wmem_alloc(pinfo->pool, dsm_blk_count * OSNMA_DSM_BLK_LENGTH);
+                        for (i = 0; i < dsm_blk_count; i++) {
+                            memcpy(&dsm_buf[i * OSNMA_DSM_BLK_LENGTH], osnma_dsm_blks[i].blk, OSNMA_DSM_BLK_LENGTH);
+                        }
+                        tvbuff_t *osnma_dsm_tvb = tvb_new_child_real_data(tvb, (uint8_t *)dsm_buf, dsm_blk_count * OSNMA_DSM_BLK_LENGTH, dsm_blk_count * OSNMA_DSM_BLK_LENGTH);
+                        add_new_data_source(pinfo, osnma_dsm_tvb, "Galileo E1-B I/NAV OSNMA DSM");
+
+
+                        if (dsm_id < 12) {
+                            // dissect DSM-KROOT
+                            uint32_t dk_len = dsm_blk_count * OSNMA_DSM_BLK_LENGTH;
+
+                            proto_tree *osnma_dsm_tree = proto_tree_add_subtree(osnma_tree, osnma_dsm_tvb, 0, dk_len, ett_ubx_gal_inav_osnma_dsm, NULL, "DSM-KROOT (re-assembled)");
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_nb_dk,     osnma_dsm_tvb,  0,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_pkid,      osnma_dsm_tvb,  0,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_cidkr,     osnma_dsm_tvb,  1,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_reserved1, osnma_dsm_tvb,  1,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_hf,        osnma_dsm_tvb,  1,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_mf,        osnma_dsm_tvb,  1,  1, ENC_NA);
+                            proto_tree_add_item_ret_uint(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_ks, osnma_dsm_tvb, 2, 1, ENC_NA, &dsm_ks);
+                            uint32_t ks_len = ks2len(dsm_ks);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_ts,        osnma_dsm_tvb,  2,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_maclt,     osnma_dsm_tvb,  3,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_reserved2, osnma_dsm_tvb,  4,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_wn_k,      osnma_dsm_tvb,  4,  2, ENC_BIG_ENDIAN);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_towh_k,    osnma_dsm_tvb,  6,  1, ENC_NA);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_alpha,     osnma_dsm_tvb,  7,  6, ENC_NA);
+                            if (ks_len > 0) {
+                                // TODO: The length of the digital signature should be derived from the DSM-PKR NPKT with matching PKID.
+                                uint32_t ds_len = 64;
+                                uint32_t p_dk_len = dk_len - 13 - ks_len - ds_len;
+
+                                proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_kroot, osnma_dsm_tvb, 13,                   ks_len,   ENC_NA);
+                                proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_ds,    osnma_dsm_tvb, 13 + ks_len,          ds_len,   ENC_NA);
+                                proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_p_dk,  osnma_dsm_tvb, 13 + ks_len + ds_len, p_dk_len, ENC_NA);
+                            }
+                        }
+                        else {
+                            // dissect DSM-PKR
+                            uint32_t dsm_nb_dp, dsm_mid, dsm_npkt, l_npk, l_pdp;
+
+                            proto_tree *osnma_dsm_tree = proto_tree_add_subtree(osnma_tree, osnma_dsm_tvb, 0, dsm_blk_count * OSNMA_DSM_BLK_LENGTH, ett_ubx_gal_inav_osnma_dsm, NULL, "DSM-PKR (re-assembled)");
+                            proto_tree_add_item_ret_uint(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_nb_dp, osnma_dsm_tvb, 0, 1, ENC_NA, &dsm_nb_dp);
+                            proto_tree_add_item_ret_uint(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_mid,   osnma_dsm_tvb, 0, 1, ENC_NA, &dsm_mid);
+
+                            switch (dsm_mid) {
+                                case 0:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_1,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_1,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_1,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 1:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_0,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_1,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_1,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 2:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_3,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_0,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_1,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 3:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_2,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_0,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_1,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 4:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_5,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_3,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_0,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 5:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_4,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_3,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_0,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 6:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_7,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_2,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_0,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 7:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_6,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_2,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_0,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_1,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 8:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_9,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_5,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_3,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 9:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_8,  osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_5,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_3,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 10:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_11, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_4,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_3,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 11:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_10, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_4,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_3,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 12:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_13, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_7,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_2,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 13:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_12, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_7,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_2,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 14:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_15, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_6,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_2,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                case 15:
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_0_14, osnma_dsm_tvb,  1, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_1_6,  osnma_dsm_tvb, 33, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_2_2,  osnma_dsm_tvb, 65, 32, ENC_NA);
+                                    proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_x_3_0,  osnma_dsm_tvb, 97, 32, ENC_NA);
+                                    break;
+                                default:
+                                    break;
+                            }
+
+                            proto_tree_add_item_ret_uint(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_npkt,  osnma_dsm_tvb, 129, 1, ENC_NA, &dsm_npkt);
+                            proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_npkid, osnma_dsm_tvb, 129, 1, ENC_NA);
+
+                            // compute field lengths
+                            if (7 <= dsm_nb_dp && dsm_nb_dp <= 10 && (dsm_npkt == 1 || dsm_npkt == 3 || dsm_npkt == 4)) {
+                                if (dsm_npkt == 1) { // ECDSA P-256
+                                    l_npk = 264;
+                                }
+                                else if (dsm_npkt == 4) { // ECDSA P-521
+                                    l_npk = 536;
+                                }
+                                else { // OSNMA Alert Message
+                                    l_npk = ((dsm_nb_dp + 6) * 104) - 1040; // = l_PK_OAM
+                                }
+
+                                l_pdp = ((dsm_nb_dp + 6) * 104) - 1040 - l_npk;
+
+                                proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_npk,  osnma_dsm_tvb, 130,               l_npk / 8, ENC_NA);
+                                proto_tree_add_item(osnma_dsm_tree, hf_ubx_gal_inav_osnma_dsm_p_dp, osnma_dsm_tvb, 130 + (l_npk / 8), l_pdp / 8, ENC_NA);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -742,30 +1208,91 @@ static int dissect_ubx_gal_inav_word6(tvbuff_t *tvb, packet_info *pinfo _U_, pro
 void proto_register_ubx_gal_inav(void) {
 
     static hf_register_info hf[] = {
-        {&hf_ubx_gal_inav_even_odd,      {"Even/Odd",      "gal_inav.even_odd",    FT_BOOLEAN, 8,         TFS(&tfs_odd_even),  0x80,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_page_type,     {"Page Type",     "gal_inav.page_type",   FT_UINT8,   BASE_DEC,  VALS(GAL_PAGE_TYPE), 0x40,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_type,          {"Type",          "gal_inav.type",        FT_UINT8,   BASE_DEC,  NULL,                0x3f,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_data_122_67,   {"Data (122-67)", "gal_inav.data_122_67", FT_UINT64,  BASE_HEX,  NULL,                0x00ffffffffffffff, NULL, HFILL}},
-        {&hf_ubx_gal_inav_data_66_17,    {"Data (66-17)",  "gal_inav.data_66_17",  FT_UINT64,  BASE_HEX,  NULL,                0xffffffffffffc000, NULL, HFILL}},
-        {&hf_ubx_gal_inav_data_16_1,     {"Data (16-1)",   "gal_inav.data_16_1",   FT_UINT64,  BASE_HEX,  NULL,                0x3fffc00000000000, NULL, HFILL}},
+        {&hf_ubx_gal_inav_even_odd,      {"Even/Odd",      "gal_inav.even_odd",    FT_BOOLEAN, 8,         TFS(&tfs_odd_even),  0x80,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_page_type,     {"Page Type",     "gal_inav.page_type",   FT_UINT8,   BASE_DEC,  VALS(GAL_PAGE_TYPE), 0x40,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_type,          {"Type",          "gal_inav.type",        FT_UINT8,   BASE_DEC,  NULL,                0x3f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_data_122_67,   {"Data (122-67)", "gal_inav.data_122_67", FT_UINT64,  BASE_HEX,  NULL,                UINT64_C(0x00ffffffffffffff), NULL, HFILL}},
+        {&hf_ubx_gal_inav_data_66_17,    {"Data (66-17)",  "gal_inav.data_66_17",  FT_UINT64,  BASE_HEX,  NULL,                UINT64_C(0xffffffffffffc000), NULL, HFILL}},
+        {&hf_ubx_gal_inav_data_16_1,     {"Data (16-1)",   "gal_inav.data_16_1",   FT_UINT64,  BASE_HEX,  NULL,                UINT64_C(0x3fffc00000000000), NULL, HFILL}},
 
         // OSNMA
-        {&hf_ubx_gal_inav_osnma_hkroot,     {"HKROOT",                             "gal_inav.osnma.hkroot",     FT_UINT32,     BASE_HEX,       NULL,                      0x3fc00000,         NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_mack,       {"MACK",                               "gal_inav.osnma.mack",       FT_UINT64,     BASE_HEX,       NULL,                      0x003fffffffc00000, NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_nmas,       {"NMA Status (NMAS)",                  "gal_inav.osnma.nmas",       FT_UINT8,      BASE_HEX,       VALS(GAL_OSNMA_NMAS_CODE), 0xc0,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_cid,        {"Chain ID (CID)",                     "gal_inav.osnma.cid",        FT_UINT8,      BASE_DEC,       NULL,                      0x30,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_cpks,       {"Chain and Public Key Status (CPKS)", "gal_inav.osnma.cpks",       FT_UINT8,      BASE_DEC,       VALS(GAL_OSNMA_CPKS_CODE), 0x0e,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_reserved,   {"Reserved",                           "gal_inav.osnma.reserved",   FT_UINT8,      BASE_HEX,       NULL,                      0x01,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_dsm_id,     {"DSM ID",                             "gal_inav.osnma.dsm_id",     FT_UINT8,      BASE_DEC,       NULL,                      0xf0,               NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_dsm_blk_id, {"DSM Block ID",                       "gal_inav.osnma.dsm_blk_id", FT_UINT8,      BASE_DEC,       NULL,                      0x0f,                NULL, HFILL}},
-        {&hf_ubx_gal_inav_osnma_dsm_blk,    {"DSM Block",                          "gal_inav.osnma.dsm_blk",    FT_BYTES, BASE_NONE|SEP_COLON, NULL,                      0x0,                 NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_hkroot,        {"HKROOT",                                   "gal_inav.osnma.hkroot",         FT_UINT32,     BASE_HEX,                  NULL,                       0x3fc00000,                   NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_mack,          {"MACK",                                     "gal_inav.osnma.mack",           FT_UINT64,     BASE_HEX,                  NULL,                       UINT64_C(0x003fffffffc00000), NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_nmas,          {"NMA Status (NMAS)",                        "gal_inav.osnma.nmas",           FT_UINT8,      BASE_HEX,                  VALS(GAL_OSNMA_NMAS_CODE),  0xc0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_cid,           {"Chain ID (CID)",                           "gal_inav.osnma.cid",            FT_UINT8,      BASE_DEC,                  NULL,                       0x30,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_cpks,          {"Chain and Public Key Status (CPKS)",       "gal_inav.osnma.cpks",           FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_CPKS_CODE),  0x0e,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_reserved,      {"Reserved",                                 "gal_inav.osnma.reserved",       FT_UINT8,      BASE_HEX,                  NULL,                       0x01,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_id,        {"DSM ID",                                   "gal_inav.osnma.dsm_id",         FT_UINT8,      BASE_DEC,                  NULL,                       0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_blk_id,    {"DSM Block ID",                             "gal_inav.osnma.dsm_blk_id",     FT_UINT8,      BASE_DEC,                  NULL,                       0x0f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_blk,       {"DSM Block",                                "gal_inav.osnma.dsm_blk",        FT_BYTES,      BASE_NONE|SEP_COLON,       NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_tag0,          {"Tag 0",                                    "gal_inav.osnma.tag0",           FT_BYTES,      BASE_NONE|SEP_COLON,       NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_macseq,        {"MACSEQ",                                   "gal_inav.osnma.macseq",         FT_UINT16,     BASE_DEC,                  NULL,                       0xfff0,                       NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_cop,           {"Data Cut-Off Point (COP)",                 "gal_inav.osnma.cop",            FT_UINT8,      BASE_DEC,                  NULL,                       0x0f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_tag,           {"Tag",                                      "gal_inav.osnma.tag",            FT_BYTES,      BASE_NONE|SEP_COLON,       NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_prn_d,         {"PRN_D",                                    "gal_inav.osnma.prn_d",          FT_UINT8,      BASE_DEC,                  NULL,                       0xff,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_adkd,          {"Authentication Data and Key Delay (ADKD)", "gal_inav.osnma.adkd",           FT_UINT8,      BASE_DEC,                  NULL,                       0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_key,           {"TESLA Chain Key",                          "gal_inav.osnma.key",            FT_BYTES,      BASE_NONE|SEP_COLON,       NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_padding,       {"MACK Padding",                             "gal_inav.osnma.mack_padding",   FT_BYTES,      BASE_NONE|SEP_COLON,       NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_nb_dk,     {"Number of DSM-KROOT Blocks (NB_DK)",       "gal_inav.osnma.dsm.nb_dk",      FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_NB_DK_CODE), 0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_pkid,      {"Public Key ID (PKID)",                     "gal_inav.osnma.dsm.pkid",       FT_UINT8,      BASE_DEC,                  NULL,                       0x0f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_cidkr,     {"KROOT Chain ID (CIDKR)",                   "gal_inav.osnma.dsm.cidkr",      FT_UINT8,      BASE_DEC,                  NULL,                       0xc0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_reserved1, {"Reserved 1",                               "gal_inav.osnma.dsm.reserved1",  FT_UINT8,      BASE_HEX,                  NULL,                       0x30,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_hf,        {"Hash Function (HF)",                       "gal_inav.osnma.dsm.hf",         FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_HF_CODE),    0x0c,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_mf,        {"MAC Function (MF)",                        "gal_inav.osnma.dsm.mf",         FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_MF_CODE),    0x03,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_ks,        {"Key Size (KS)",                            "gal_inav.osnma.dsm.ks",         FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_KS_CODE),    0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_ts,        {"Tag Size (TS)",                            "gal_inav.osnma.dsm.ts",         FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_TS_CODE),    0x0f,                         NULL, HFILL}},
+        // TODO: show the meaning of MACLT entries
+        {&hf_ubx_gal_inav_osnma_dsm_maclt,     {"MAC Look-up Table (MACLT)",                "gal_inav.osnma.dsm.maclt",      FT_UINT8,      BASE_DEC,                  NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_reserved2, {"Reserved 2",                               "gal_inav.osnma.dsm.reserved2",  FT_UINT8,      BASE_HEX,                  NULL,                       0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_wn_k,      {"KROOT Week Number (WN_K)",                 "gal_inav.osnma.dsm.wn_k",       FT_UINT16,     BASE_DEC,                  NULL,                       0x0fff,                       NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_towh_k,    {"KROOT Time of Week (TOWH_K)",              "gal_inav.osnma.dsm.towh_k",     FT_UINT8,      BASE_DEC|BASE_UNIT_STRING, UNS(&units_hours),          0xff,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_alpha,     {"Random Pattern (α)",                       "gal_inav.osnma.dsm.alpha",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_kroot,     {"KROOT",                                    "gal_inav.osnma.dsm.kroot",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_ds,        {"Digital Signature (DS)",                   "gal_inav.osnma.dsm.ds",         FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_p_dk,      {"DSM-KROOT Padding (P_DK)",                 "gal_inav.osnma.dsm.p_dk",       FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_nb_dp,     {"Number of DSM-PKR Blocks (NB_DP)",         "gal_inav.osnma.dsm.nb_dp",      FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_NB_DP_CODE), 0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_mid,       {"Message ID (MID)",                         "gal_inav.osnma.dsm.mid",        FT_UINT8,      BASE_DEC,                  NULL,                       0x0f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_0,     {"x_0_0",                                    "gal_inav.osnma.dsm.x_0_0",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_1,     {"x_0_1",                                    "gal_inav.osnma.dsm.x_0_1",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_2,     {"x_0_2",                                    "gal_inav.osnma.dsm.x_0_2",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_3,     {"x_0_3",                                    "gal_inav.osnma.dsm.x_0_3",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_4,     {"x_0_4",                                    "gal_inav.osnma.dsm.x_0_4",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_5,     {"x_0_5",                                    "gal_inav.osnma.dsm.x_0_5",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_6,     {"x_0_6",                                    "gal_inav.osnma.dsm.x_0_6",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_7,     {"x_0_7",                                    "gal_inav.osnma.dsm.x_0_7",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_8,     {"x_0_8",                                    "gal_inav.osnma.dsm.x_0_8",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_9,     {"x_0_9",                                    "gal_inav.osnma.dsm.x_0_9",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_10,    {"x_0_10",                                   "gal_inav.osnma.dsm.x_0_10",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_11,    {"x_0_11",                                   "gal_inav.osnma.dsm.x_0_11",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_12,    {"x_0_12",                                   "gal_inav.osnma.dsm.x_0_12",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_13,    {"x_0_13",                                   "gal_inav.osnma.dsm.x_0_13",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_14,    {"x_0_14",                                   "gal_inav.osnma.dsm.x_0_14",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_0_15,    {"x_0_15",                                   "gal_inav.osnma.dsm.x_0_15",     FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_0,     {"x_1_0",                                    "gal_inav.osnma.dsm.x_1_0",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_1,     {"x_1_1",                                    "gal_inav.osnma.dsm.x_1_1",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_2,     {"x_1_2",                                    "gal_inav.osnma.dsm.x_1_2",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_3,     {"x_1_3",                                    "gal_inav.osnma.dsm.x_1_3",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_4,     {"x_1_4",                                    "gal_inav.osnma.dsm.x_1_4",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_5,     {"x_1_5",                                    "gal_inav.osnma.dsm.x_1_5",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_6,     {"x_1_6",                                    "gal_inav.osnma.dsm.x_1_6",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_1_7,     {"x_1_7",                                    "gal_inav.osnma.dsm.x_1_7",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_2_0,     {"x_2_0",                                    "gal_inav.osnma.dsm.x_2_0",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_2_1,     {"x_2_1",                                    "gal_inav.osnma.dsm.x_2_1",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_2_2,     {"x_2_2",                                    "gal_inav.osnma.dsm.x_2_2",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_2_3,     {"x_2_3",                                    "gal_inav.osnma.dsm.x_2_3",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_3_0,     {"x_3_0",                                    "gal_inav.osnma.dsm.x_3_0",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_x_3_1,     {"x_3_1",                                    "gal_inav.osnma.dsm.x_3_1",      FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_npkt,      {"New Public Key Type (NPKT)",               "gal_inav.osnma.dsm.npkt",       FT_UINT8,      BASE_DEC,                  VALS(GAL_OSNMA_NPKT_CODE),  0xf0,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_npkid,     {"New Public Key ID (NPKID)",                "gal_inav.osnma.dsm.npkid",      FT_UINT8,      BASE_DEC,                  NULL,                       0x0f,                         NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_npk,       {"New Public Key (NPK)",                     "gal_inav.osnma.dsm.npk",        FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_osnma_dsm_p_dp,      {"DSM-PKR Padding (P_DP)",                   "gal_inav.osnma.dsm.p_dp",       FT_BYTES,      BASE_NONE,                 NULL,                       0x0,                          NULL, HFILL}},
 
         // SAR
-        {&hf_ubx_gal_inav_sar_start_bit, {"Start bit",                          "gal_inav.sar.start_bit", FT_BOOLEAN, 32,        NULL,                             0x20000000,         NULL, HFILL}},
-        {&hf_ubx_gal_inav_sar_long_rlm,  {"Long RLM",                           "gal_inav.sar.long_rlm",  FT_BOOLEAN, 32,        NULL,                             0x10000000,         NULL, HFILL}},
-        {&hf_ubx_gal_inav_sar_rlm_data,  {"RLM data",                           "gal_inav.sar.rlm_data",  FT_UINT32,  BASE_HEX,  NULL,                             0x0fffff00,         NULL, HFILL}},
-        {&hf_ubx_gal_inav_sar_beacon_id, {"Beacon ID",                          "gal_inav.sar.beacon_id", FT_UINT64,  BASE_HEX,  NULL,                             0xfffffffffffffff0, NULL, HFILL}},
-        {&hf_ubx_gal_inav_sar_msg_code,  {"Message code",                       "gal_inav.sar.msg_code",  FT_UINT32,  BASE_HEX,  VALS(GAL_SAR_SHORT_RLM_MSG_CODE), 0x000f0000,         NULL, HFILL}},
+        {&hf_ubx_gal_inav_sar_start_bit, {"Start bit",                          "gal_inav.sar.start_bit", FT_BOOLEAN, 32,        NULL,                             0x20000000,         NULL,     HFILL}},
+        {&hf_ubx_gal_inav_sar_long_rlm,  {"Long RLM",                           "gal_inav.sar.long_rlm",  FT_BOOLEAN, 32,        NULL,                             0x10000000,         NULL,     HFILL}},
+        {&hf_ubx_gal_inav_sar_rlm_data,  {"RLM data",                           "gal_inav.sar.rlm_data",  FT_UINT32,  BASE_HEX,  NULL,                             0x0fffff00,         NULL,     HFILL}},
+        {&hf_ubx_gal_inav_sar_beacon_id, {"Beacon ID",                          "gal_inav.sar.beacon_id", FT_UINT64,  BASE_HEX,  NULL,                             UINT64_C(0xfffffffffffffff0), NULL, HFILL}},
+        {&hf_ubx_gal_inav_sar_msg_code,  {"Message code",                       "gal_inav.sar.msg_code",  FT_UINT32,  BASE_HEX,  VALS(GAL_SAR_SHORT_RLM_MSG_CODE), 0x000f0000,         NULL,     HFILL}},
 
         {&hf_ubx_gal_inav_spare,      {"Spare",      "gal_inav.spare",      FT_UINT8,  BASE_HEX,  NULL,          0xc0,       NULL, HFILL}},
         {&hf_ubx_gal_inav_reserved_1, {"Reserved 1", "gal_inav.reserved_1", FT_NONE,   BASE_NONE, NULL,          0x0,        NULL, HFILL}},
@@ -785,13 +1312,13 @@ void proto_register_ubx_gal_inav(void) {
         {&hf_ubx_gal_inav_word0_tow,     {"Time of Week",        "gal_inav.word0.tow",     FT_UINT32,     BASE_DEC,  NULL, 0x000fffff,  NULL, HFILL}},
 
         // Word 1
-        {&hf_ubx_gal_inav_word1,         {"Word 1 (Ephemeris (1/4))",                                   "gal_inav.word1",          FT_NONE,   BASE_NONE,   NULL,                       0x0,                NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_iodnav,  {"IOD_nav",                                                    "gal_inav.word1.iod_nav",  FT_UINT16, BASE_DEC,    NULL,                       0x03ff,             NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_t0e,     {"Ephemeris reference time (t_0e)",                            "gal_inav.word1.t_0e",     FT_UINT16, BASE_CUSTOM, CF_FUNC(&fmt_t0e),          0xfffc,             NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_m0,      {"Mean anomaly at reference time (M" UTF8_SUBSCRIPT_ZERO ")",  "gal_inav.word1.m_0",      FT_INT64,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles), 0x03fffffffc000000, NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_e,       {"Eccentricity (e)",                                           "gal_inav.word1.e",        FT_UINT64, BASE_CUSTOM, CF_FUNC(&fmt_e),            0x03fffffffc000000, NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_sqrta,   {"Square root of the semi-major axis (" UTF8_SQUARE_ROOT "a)", "gal_inav.word1.sqrt_a",   FT_UINT64, BASE_CUSTOM, CF_FUNC(&fmt_sqrt_a),       0x00000003fffffffc, NULL, HFILL}},
-        {&hf_ubx_gal_inav_word1_reserved,{"Reserved",                                                   "gal_inav.word1.reserved", FT_UINT8,  BASE_HEX,    NULL,                       0x03,               NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1,         {"Word 1 (Ephemeris (1/4))",                                   "gal_inav.word1",          FT_NONE,   BASE_NONE,   NULL,                       0x0,                          NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_iodnav,  {"IOD_nav",                                                    "gal_inav.word1.iod_nav",  FT_UINT16, BASE_DEC,    NULL,                       0x03ff,                       NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_t0e,     {"Ephemeris reference time (t_0e)",                            "gal_inav.word1.t_0e",     FT_UINT16, BASE_CUSTOM, CF_FUNC(&fmt_t0e),          0xfffc,                       NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_m0,      {"Mean anomaly at reference time (M" UTF8_SUBSCRIPT_ZERO ")",  "gal_inav.word1.m_0",      FT_INT64,  BASE_CUSTOM, CF_FUNC(&fmt_semi_circles), UINT64_C(0x03fffffffc000000), NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_e,       {"Eccentricity (e)",                                           "gal_inav.word1.e",        FT_UINT64, BASE_CUSTOM, CF_FUNC(&fmt_e),            UINT64_C(0x03fffffffc000000), NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_sqrta,   {"Square root of the semi-major axis (" UTF8_SQUARE_ROOT "a)", "gal_inav.word1.sqrt_a",   FT_UINT64, BASE_CUSTOM, CF_FUNC(&fmt_sqrt_a),       UINT64_C(0x00000003fffffffc), NULL, HFILL}},
+        {&hf_ubx_gal_inav_word1_reserved,{"Reserved",                                                   "gal_inav.word1.reserved", FT_UINT8,  BASE_HEX,    NULL,                       0x03,                         NULL, HFILL}},
 
         // Word 2
         {&hf_ubx_gal_inav_word2,                 {"Word 2 (Ephemeris (2/4))",                                                                                  "gal_inav.word2",          FT_NONE,   BASE_NONE,   NULL,                            0x0,        NULL, HFILL}},
@@ -849,6 +1376,17 @@ void proto_register_ubx_gal_inav(void) {
         &ett_ubx_gal_inav_word6,
         &ett_ubx_gal_inav_osnma,
         &ett_ubx_gal_inav_osnma_hkroot_msg,
+        &ett_ubx_gal_inav_osnma_mack_msg,
+        &ett_ubx_gal_inav_osnma_mack_tag[0],
+        &ett_ubx_gal_inav_osnma_mack_tag[1],
+        &ett_ubx_gal_inav_osnma_mack_tag[2],
+        &ett_ubx_gal_inav_osnma_mack_tag[3],
+        &ett_ubx_gal_inav_osnma_mack_tag[4],
+        &ett_ubx_gal_inav_osnma_mack_tag[5],
+        &ett_ubx_gal_inav_osnma_mack_tag[6],
+        &ett_ubx_gal_inav_osnma_mack_tag[7],
+        &ett_ubx_gal_inav_osnma_mack_tag[8],
+        &ett_ubx_gal_inav_osnma_dsm,
         &ett_ubx_gal_inav_sar,
         &ett_ubx_gal_inav_sar_rlm,
     };

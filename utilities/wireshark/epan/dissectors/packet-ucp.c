@@ -734,14 +734,13 @@ check_ucp(tvbuff_t *tvb, int *endpkt)
     unsigned     offset = 1;
     unsigned     checksum = 0;
     int          pkt_check, tmp;
-    int          length;
+    unsigned     length;
 
-    length = tvb_find_uint8(tvb, offset, -1, UCP_ETX);
-    if (length == -1) {
+    if (!tvb_find_uint8_remaining(tvb, offset, UCP_ETX, &length)) {
         *endpkt = tvb_reported_length_remaining(tvb, offset);
         return UCP_MALFORMED;
     }
-    for (; offset < (unsigned) (length - 2); offset++)
+    for (; offset < (length - 2); offset++)
         checksum += tvb_get_uint8(tvb, offset);
     checksum &= 0xFF;
     tmp = tvb_get_uint8(tvb, offset++);
@@ -814,13 +813,14 @@ ucp_mktime(const int len, const char *datestr)
  *
  */
 static proto_item*
-ucp_handle_string(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_string(proto_tree *tree, tvbuff_t *tvb, int field, unsigned *offset)
 {
     proto_item  *ti = NULL;
-    int          idx, len;
+    unsigned     idx, len;
+    bool idx_found;
 
-    idx = tvb_find_uint8(tvb, *offset, -1, '/');
-    if (idx == -1) {
+    idx_found = tvb_find_uint8_remaining(tvb, *offset, '/', &idx);
+    if (!idx_found) {
         /* Force the appropriate exception to be thrown. */
         len = tvb_captured_length_remaining(tvb, *offset);
         tvb_ensure_bytes_exist(tvb, *offset, len + 1);
@@ -829,31 +829,31 @@ ucp_handle_string(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
     if (len > 0)
         ti = proto_tree_add_item(tree, field, tvb, *offset, len, ENC_ASCII|ENC_NA);
     *offset += len;
-    if (idx != -1)
+    if (idx_found)
         *offset += 1;   /* skip terminating '/' */
     return ti;
 }
 
 static void
-ucp_handle_IRAstring(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_IRAstring(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, unsigned *offset)
 {
     GByteArray    *bytes;
     wmem_strbuf_t *strbuf;
     char          *strval = NULL;
-    int           idx, len;
-    int           tmpoff;
+    unsigned      idx, len;
+    bool          idx_found;
+    unsigned      tmpoff;
 
-    idx = tvb_find_uint8(tvb, *offset, -1, '/');
-    if (idx == -1) {
+    idx_found = tvb_find_uint8_remaining(tvb, *offset, '/', &idx);
+    if (!idx_found) {
         /* Force the appropriate exception to be thrown. */
-        len = tvb_captured_length_remaining(tvb, *offset);
-        tvb_ensure_bytes_exist(tvb, *offset, len + 1);
-    } else {
-        len = idx - *offset;
+        tvb_ensure_bytes_exist(tvb, *offset, idx);
     }
+
+    len = idx - *offset;
     bytes = g_byte_array_sized_new(len);
     if (tvb_get_string_bytes(tvb, *offset, len, ENC_ASCII|ENC_STR_HEX|ENC_SEP_NONE, bytes, &tmpoff)) {
-        strval = get_ts_23_038_7bits_string_unpacked(pinfo->pool, bytes->data, bytes->len);
+        strval = (char*)get_ts_23_038_7bits_string_unpacked(pinfo->pool, bytes->data, bytes->len);
     }
     strbuf = wmem_strbuf_new(pinfo->pool, strval);
     while ((tmpoff + 1) < idx) {
@@ -862,7 +862,7 @@ ucp_handle_IRAstring(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int fi
         if ((tmpoff + 1) >= idx) break;
         bytes = g_byte_array_set_size(bytes, 0);
         if (tvb_get_string_bytes(tvb, tmpoff, idx-tmpoff, ENC_ASCII|ENC_STR_HEX|ENC_SEP_NONE, bytes, &tmpoff)) {
-            strval = get_ts_23_038_7bits_string_unpacked(pinfo->pool, bytes->data, bytes->len);
+            strval = (char*)get_ts_23_038_7bits_string_unpacked(pinfo->pool, bytes->data, bytes->len);
             wmem_strbuf_append(strbuf, strval);
         }
     }
@@ -876,12 +876,11 @@ ucp_handle_IRAstring(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int fi
                               len, wmem_strbuf_finalize(strbuf));
     }
     *offset += len;
-    if (idx != -1)
-        *offset += 1;   /* skip terminating '/' */
+    *offset += 1;   /* skip terminating '/' */
 }
 
 static unsigned
-ucp_handle_byte(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_byte(proto_tree *tree, tvbuff_t *tvb, int field, unsigned *offset)
 {
     unsigned     intval = 0;
 
@@ -893,22 +892,24 @@ ucp_handle_byte(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
 }
 
 static unsigned
-ucp_handle_int(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_int(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, unsigned *offset)
 {
-    int           idx, len;
+    unsigned      idx, len;
+    bool          idx_found;
     const char   *strval;
     unsigned      intval = 0;
     bool          intval_valid;
     proto_item   *pi;
 
-    idx = tvb_find_uint8(tvb, *offset, -1, '/');
-    if (idx == -1) {
+    idx_found = tvb_find_uint8_remaining(tvb, *offset, '/', &idx);
+    if (!idx_found) {
         /* Force the appropriate exception to be thrown. */
         len = tvb_captured_length_remaining(tvb, *offset);
         tvb_ensure_bytes_exist(tvb, *offset, len + 1);
-    } else
+    } else {
         len = idx - *offset;
-    strval = tvb_get_string_enc(pinfo->pool, tvb, *offset, len, ENC_ASCII);
+    }
+    strval = (char*)tvb_get_string_enc(pinfo->pool, tvb, *offset, len, ENC_ASCII);
     if (len > 0) {
         intval_valid = ws_strtou32(strval, NULL, &intval);
         pi = proto_tree_add_uint(tree, field, tvb, *offset, len, intval);
@@ -917,27 +918,29 @@ ucp_handle_int(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, i
                 "Invalid integer string: %s", strval);
     }
     *offset += len;
-    if (idx != -1)
+    if (idx_found)
         *offset += 1;   /* skip terminating '/' */
     return intval;
 }
 
 static void
-ucp_handle_time(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_time(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, unsigned *offset)
 {
-    int         idx, len;
+    unsigned    idx, len;
+    bool        idx_found;
+
     const char *strval;
     time_t      tval;
     nstime_t    tmptime;
 
-    idx = tvb_find_uint8(tvb, *offset, -1, '/');
-    if (idx == -1) {
+    idx_found = tvb_find_uint8_remaining(tvb, *offset, '/', &idx);
+    if (!idx_found) {
         /* Force the appropriate exception to be thrown. */
         len = tvb_captured_length_remaining(tvb, *offset);
         tvb_ensure_bytes_exist(tvb, *offset, len + 1);
     } else
         len = idx - *offset;
-    strval = tvb_get_string_enc(pinfo->pool, tvb, *offset, len, ENC_ASCII);
+    strval = (char*)tvb_get_string_enc(pinfo->pool, tvb, *offset, len, ENC_ASCII);
     if (len > 0) {
         tval = ucp_mktime(len, strval);
         tmptime.secs  = tval;
@@ -945,12 +948,12 @@ ucp_handle_time(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int field, 
         proto_tree_add_time(tree, field, tvb, *offset, len, &tmptime);
     }
     *offset += len;
-    if (idx != -1)
+    if (idx_found)
         *offset += 1;   /* skip terminating '/' */
 }
 
 static void
-ucp_handle_data(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_data(proto_tree *tree, tvbuff_t *tvb, int field, unsigned *offset)
 {
     int          tmpoff = *offset;
 
@@ -963,7 +966,7 @@ ucp_handle_data(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
 }
 
 static void
-ucp_handle_data_string(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_data_string(proto_tree *tree, tvbuff_t *tvb, int field, unsigned *offset)
 {
     int          tmpoff = *offset;
 
@@ -990,7 +993,7 @@ ucp_handle_data_string(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
  *                      of next field.
  */
 static void
-ucp_handle_mt(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int *offset)
+ucp_handle_mt(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset)
 {
     unsigned             intval;
 
@@ -1034,7 +1037,7 @@ ucp_handle_mt(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, int *offset)
 static void
 ucp_handle_XSer(proto_tree *tree, tvbuff_t *tvb)
 {
-    int          offset = 0;
+    unsigned     offset = 0;
     unsigned     intval;
     int          service;
     int          len;
@@ -1055,26 +1058,23 @@ ucp_handle_XSer(proto_tree *tree, tvbuff_t *tvb)
 }
 
 static proto_item*
-ucp_handle_alphanum_OAdC(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int field, int *offset)
+ucp_handle_alphanum_OAdC(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int field, unsigned *offset)
 {
     proto_item    *ti = NULL;
     GByteArray    *bytes;
     char          *strval = NULL;
-    int           idx, len;
-    int           tmpoff;
+    unsigned      idx, len;
+    unsigned      tmpoff;
 
-    idx = tvb_find_uint8(tvb, *offset, -1, '/');
-    if (idx == -1) {
+    if (!tvb_find_uint8_remaining(tvb, *offset, '/', &idx)) {
         /* Force the appropriate exception to be thrown. */
-        len = tvb_captured_length_remaining(tvb, *offset);
-        tvb_ensure_bytes_exist(tvb, *offset, len + 1);
-    } else {
-        len = idx - *offset;
+        tvb_ensure_bytes_exist(tvb, *offset, idx);
     }
 
+    len = idx - *offset;
+
     if (len == 0) {
-        if (idx != -1)
-            *offset += 1;   /* skip terminating '/' */
+        *offset += 1;   /* skip terminating '/' */
         return ti;
     }
 
@@ -1090,7 +1090,7 @@ ucp_handle_alphanum_OAdC(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, in
             proto_tree_add_expert(tree, pinfo, &ei_ucp_short_data, tvb, *offset, len);
             no_of_chars = ((bytes->len - 1) << 3) / 7;
         }
-        strval = get_ts_23_038_7bits_string_packed(pinfo->pool, &bytes->data[1], 0, no_of_chars);
+        strval = (char*)get_ts_23_038_7bits_string_packed(pinfo->pool, &bytes->data[1], 0, no_of_chars);
     }
     g_byte_array_free(bytes, true);
     ti = proto_tree_add_string(tree, field, tvb, *offset,
@@ -1102,8 +1102,7 @@ ucp_handle_alphanum_OAdC(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, in
         expert_add_info(pinfo, ti, &ei_ucp_hexstring_invalid);
     }
     *offset += len;
-    if (idx != -1)
-        *offset += 1;   /* skip terminating '/' */
+    *offset += 1;   /* skip terminating '/' */
 
     return ti;
 }
@@ -1134,7 +1133,7 @@ ucp_handle_alphanum_OAdC(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, in
 static void
 add_00O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Enquiry      */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_OAdC);
@@ -1144,7 +1143,7 @@ add_00O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_00R(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
 
     intval = UcpHandleByte(hf_ucp_parm_ACK);
@@ -1172,7 +1171,7 @@ add_00R(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_01O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 {                                               /* Call input   */
-    int          offset = 1;
+    unsigned offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_OAdC);
@@ -1183,7 +1182,7 @@ add_01O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 static void
 add_01R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned offset = 1;
     unsigned     intval;
 
     intval = UcpHandleByte(hf_ucp_parm_ACK);
@@ -1197,7 +1196,7 @@ add_01R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_02O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Multiple address call input*/
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1215,7 +1214,7 @@ add_02O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_03O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Call input with SS   */
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1244,7 +1243,7 @@ add_03O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_04O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Address list information */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_GAdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1255,7 +1254,7 @@ add_04O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_04R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1274,7 +1273,7 @@ add_04R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_05O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Change address list */
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1293,7 +1292,7 @@ add_05O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_06O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Advice of accum. charges */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1302,7 +1301,7 @@ add_06O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_06R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
 
     intval = UcpHandleByte(hf_ucp_parm_ACK);
@@ -1318,7 +1317,7 @@ add_06R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_07O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Password management  */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1330,7 +1329,7 @@ add_07O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_08O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Leg. code management */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1348,7 +1347,7 @@ add_08O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_09O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Standard text information */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_LNo);
     UcpHandleString(hf_ucp_parm_LST);
@@ -1357,7 +1356,7 @@ add_09O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_09R(proto_tree *tree, packet_info *pinfo,tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1375,7 +1374,7 @@ add_09R(proto_tree *tree, packet_info *pinfo,tvbuff_t *tvb, ucp_tap_rec_t *tap_r
 static void
 add_10O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Change standard text */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1392,7 +1391,7 @@ add_10O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_11R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1410,7 +1409,7 @@ add_11R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_12O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Change roaming       */
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1430,7 +1429,7 @@ add_12O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_14O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Message retrieval    */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1441,7 +1440,7 @@ add_14O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_14R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1464,7 +1463,7 @@ add_14R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_15O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 {                                               /* Request call barring */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1481,7 +1480,7 @@ add_15O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 static void
 add_17O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 {                                               /* Request call diversion */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1499,7 +1498,7 @@ add_17O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 static void
 add_19O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 {                                               /* Request deferred delivery*/
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1520,7 +1519,7 @@ add_19O(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb)
 static void
 add_22O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* Call input w. add. CS */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_OAdC);
@@ -1534,7 +1533,7 @@ add_22O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_23O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* UCP version status   */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_IVR5x);
     UcpHandleByte(hf_ucp_parm_REQ_OT);
@@ -1543,7 +1542,7 @@ add_23O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_23R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1562,7 +1561,7 @@ add_23R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_24O(proto_tree *tree, tvbuff_t *tvb)
 {                                               /* Mobile subs. feature stat*/
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_AC);
@@ -1572,7 +1571,7 @@ add_24O(proto_tree *tree, tvbuff_t *tvb)
 static void
 add_24R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
     unsigned     idx;
 
@@ -1645,7 +1644,7 @@ add_24R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_30O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* SMS message transfer */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleString(hf_ucp_parm_OAdC);
@@ -1662,7 +1661,7 @@ add_30O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_30R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_rec)
 {
-    int          offset = 1;
+    unsigned     offset = 1;
     unsigned     intval;
 
     intval = UcpHandleByte(hf_ucp_parm_ACK);
@@ -1678,7 +1677,7 @@ add_30R(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, ucp_tap_rec_t *tap_
 static void
 add_31O(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* SMT alert            */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_AdC);
     UcpHandleInt(hf_ucp_parm_PID);
@@ -1690,8 +1689,8 @@ static void
 add_5xO(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 {                                               /* 50-series operations */
     unsigned     intval;
-    int          offset = 1;
-    int          tmpoff, oadc_offset;
+    unsigned     offset = 1;
+    unsigned     tmpoff, oadc_offset;
     proto_item  *ti, *oadc_item;
     tvbuff_t    *tmptvb;
 
@@ -1766,7 +1765,7 @@ add_5xO(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb)
 static void
 add_6xO(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, uint8_t OT)
 {                                               /* 60-series operations */
-    int          offset = 1;
+    unsigned     offset = 1;
 
     UcpHandleString(hf_ucp_parm_OAdC);
     UcpHandleByte(hf_ucp_parm_OTON);
@@ -1849,7 +1848,7 @@ dissect_ucp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
     col_clear(pinfo->cinfo, COL_INFO);
 
     if (tvb_get_uint8(tvb, 0) != UCP_STX){
-        proto_tree_add_expert(tree, pinfo, &ei_ucp_stx_missing, tvb, 0, -1);
+        proto_tree_add_expert_remaining(tree, pinfo, &ei_ucp_stx_missing, tvb, 0);
         return tvb_captured_length(tvb);
     }
 

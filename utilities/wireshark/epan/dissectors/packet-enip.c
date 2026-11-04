@@ -36,7 +36,8 @@
 #include <epan/decode_as.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
-#include <ipproto.h>
+#include <epan/iana-info.h>
+#include <epan/to_str.h>
 
 #include "packet-tcp.h"
 #include "packet-cip.h"
@@ -230,6 +231,18 @@ static int hf_tcpip_admin_capability_configurable;
 static int hf_tcpip_admin_capability_reset_required;
 static int hf_tcpip_admin_capability_reserved;
 
+static int hf_tcpip_protocol_count;
+static int hf_tcpip_protocol_name;
+static int hf_tcpip_protocol_number;
+static int hf_tcpip_protocol_admin_state;
+static int hf_tcpip_protocol_admin_capability;
+static int hf_tcpip_protocol_admin_capability_configurable;
+static int hf_tcpip_protocol_admin_capability_reset_required;
+static int hf_tcpip_protocol_admin_capability_reserved;
+
+static int hf_tcpip_active_tcp_connections;
+static int hf_tcpip_non_cip_encp_msg_per_s;
+
 static int hf_elink_interface_flags;
 static int hf_elink_iflags_link_status;
 static int hf_elink_iflags_duplex;
@@ -289,6 +302,9 @@ static int hf_elink_hc_icount_out_mcast;
 static int hf_elink_hc_icount_out_broadcast;
 static int hf_elink_ethernet_errors;
 static int hf_elink_link_down_counter;
+static int hf_elink_t1s_phy_mode;
+static int hf_elink_t1s_phy_node_id;
+static int hf_elink_t1s_phy_commissioning_status;
 static int hf_elink_hc_mcount_stats_align_errors;
 static int hf_elink_hc_mcount_stats_fcs_errors;
 static int hf_elink_hc_mcount_stats_internal_mac_transmit_errors;
@@ -305,6 +321,13 @@ static int hf_qos_dscp_scheduled;
 static int hf_qos_dscp_high;
 static int hf_qos_dscp_low;
 static int hf_qos_dscp_explicit;
+static int hf_qos_pcp_ptp_event;
+static int hf_qos_pcp_ptp_general;
+static int hf_qos_pcp_ptp_urgent;
+static int hf_qos_pcp_ptp_scheduled;
+static int hf_qos_pcp_ptp_high;
+static int hf_qos_pcp_ptp_low;
+static int hf_qos_pcp_ptp_explicit;
 
 static int hf_dlr_network_topology;
 static int hf_dlr_network_status;
@@ -315,6 +338,9 @@ static int hf_dlr_rsc_beacon_interval;
 static int hf_dlr_rsc_beacon_timeout;
 static int hf_dlr_rsc_dlr_vlan_id;
 static int hf_dlr_ring_faults_count;
+static int hf_dlr_port_1_elink;
+static int hf_dlr_port_2_elink;
+static int hf_dlr_enable;
 static int hf_dlr_lanp1_dev_ip_addr;
 static int hf_dlr_lanp1_dev_physical_address;
 static int hf_dlr_lanp2_dev_ip_addr;
@@ -404,6 +430,67 @@ static int hf_prp_node_name;
 static int hf_prp_version_name;
 static int hf_prp_hsr_nodes_tables_count;
 
+static int hf_lldp_mngmt_enable_array_length;
+static int hf_lldp_mngmt_enable_array;
+static int hf_lldp_mngmt_global_enable;
+static int hf_lldp_mngmt_port_tx_enable;
+static int hf_lldp_mngmt_enable_reserved;
+static int hf_lldp_mngmt_msg_tx_interval;
+static int hf_lldp_mngmt_msg_tx_hold;
+static int hf_lldp_mngmt_datastore;
+static int hf_lldp_mngmt_datastore_data_table;
+static int hf_lldp_mngmt_datastore_snmp;
+static int hf_lldp_mngmt_datastore_netconf_yang;
+static int hf_lldp_mngmt_datastore_reserved;
+static int hf_lldp_mngmt_last_change;
+
+static int hf_lldp_datatbl_elink_instance;
+static int hf_lldp_datatbl_mac_address;
+static int hf_lldp_datatbl_interface_label;
+static int hf_lldp_datatbl_time_to_time;
+static int hf_lldp_datatbl_system_capabilities;
+static int hf_lldp_datatbl_syscap_other;
+static int hf_lldp_datatbl_syscap_repeater;
+static int hf_lldp_datatbl_syscap_bridge;
+static int hf_lldp_datatbl_syscap_access_point;
+static int hf_lldp_datatbl_syscap_router;
+static int hf_lldp_datatbl_syscap_telephone;
+static int hf_lldp_datatbl_syscap_docsis;
+static int hf_lldp_datatbl_syscap_end_station;
+static int hf_lldp_datatbl_syscap_cvlan;
+static int hf_lldp_datatbl_syscap_svlan;
+static int hf_lldp_datatbl_syscap_two_port_mac_relay;
+static int hf_lldp_datatbl_syscap_reserved;
+static int hf_lldp_datatbl_enabled_capabilities;
+static int hf_lldp_datatbl_encap_other;
+static int hf_lldp_datatbl_encap_repeater;
+static int hf_lldp_datatbl_encap_bridge;
+static int hf_lldp_datatbl_encap_access_point;
+static int hf_lldp_datatbl_encap_router;
+static int hf_lldp_datatbl_encap_telephone;
+static int hf_lldp_datatbl_encap_docsis;
+static int hf_lldp_datatbl_encap_end_station;
+static int hf_lldp_datatbl_encap_cvlan;
+static int hf_lldp_datatbl_encap_svlan;
+static int hf_lldp_datatbl_encap_two_port_mac_relay;
+static int hf_lldp_datatbl_encap_reserved;
+static int hf_lldp_datatbl_mngmt_addr_count;
+static int hf_lldp_datatbl_mngmt_addr;
+static int hf_lldp_datatbl_cip_id_vendor_id;
+static int hf_lldp_datatbl_cip_id_device_type;
+static int hf_lldp_datatbl_cip_id_product_code;
+static int hf_lldp_datatbl_cip_id_major_revision;
+static int hf_lldp_datatbl_cip_id_minor_revision;
+static int hf_lldp_datatbl_cip_id_serial_number;
+static int hf_lldp_datatbl_ethcap_preemption_support;
+static int hf_lldp_datatbl_ethcap_preemption_status;
+static int hf_lldp_datatbl_ethcap_preemption_active;
+static int hf_lldp_datatbl_ethcap_add_frag_size;
+static int hf_lldp_datatbl_last_change;
+static int hf_lldp_datatbl_position_id;
+static int hf_lldp_datatbl_phy_mode;
+static int hf_lldp_datatbl_phy_node_id;
+
 /* Initialize the subtree pointers */
 static int ett_enip;
 static int ett_cip_io_generic;
@@ -415,6 +502,7 @@ static int ett_sockadd;
 static int ett_lsrcf;
 static int ett_tcpip_status;
 static int ett_tcpip_admin_capability;
+static int ett_tcpip_protocol_admin_capability;
 static int ett_tcpip_config_cap;
 static int ett_tcpip_config_control;
 static int ett_elink_interface_flags;
@@ -433,6 +521,10 @@ static int ett_eip_cert_num_certs;
 static int ett_security_profiles;
 static int ett_ingress_egress_apply_behavior;
 static int ett_iana_port_state_flags;
+static int ett_lldp_mngmt_enable;
+static int ett_lldp_mngmt_datastore;
+static int ett_lldp_datatbl_system_capabilities;
+static int ett_lldp_datatbl_enabled_capabilities;
 static int ett_connection_info;
 static int ett_connection_path_info;
 static int ett_cmd_data;
@@ -468,6 +560,13 @@ static expert_field ei_mal_eip_security_crl;
 static expert_field ei_mal_eip_cert_capability_flags;
 static expert_field ei_mal_cpf_item_length_mismatch;
 static expert_field ei_mal_cpf_item_minimum_size;
+static expert_field ei_mal_lldp_mngmt_datastore;
+static expert_field ei_mal_datatbl_system_capabilities;
+static expert_field ei_mal_datatbl_management_address;
+static expert_field ei_mal_datatbl_cip_identification;
+static expert_field ei_mal_datatbl_eth_capabilities;
+static expert_field ei_mal_datatbl_last_change;
+static expert_field ei_mal_datatbl_t1s_phy_config;
 
 static expert_field ei_cip_request_no_response;
 static expert_field ei_cip_io_heartbeat;
@@ -696,6 +795,13 @@ static const value_string enip_elink_admin_state_vals[] = {
    { 0,  NULL              }
 };
 
+static const value_string enip_elink_phy_mode_vals[] = {
+   { 0,  "CSMA/CD"         },
+   { 1,  "PLCA"            },
+
+   { 0,  NULL              }
+};
+
 static const value_string enip_dlr_network_topology_vals[] = {
    { 0,  "Linear"    },
    { 1,  "Ring"      },
@@ -853,9 +959,30 @@ static const value_string cip_data_direction[] = {
    { 0, NULL }
 };
 
+static const value_string lldp_datatbl_add_frag_size_vals[] = {
+   { 0, "64 octets" },
+   { 1, "128 octets" },
+   { 2, "192 octets" },
+   { 3, "256 octets" },
+
+   { 0, NULL }
+};
+
+static const value_string lldp_datatbl_phy_mode_vals[] = {
+   { 0, "CSMA/CD" },
+   { 1, "PLCA" },
+
+   { 0, NULL }
+};
+
 static const true_false_string dlr_lnknbrstatus_frame_type_vals = {
     "Neighbor_Status Frame",
     "Link_Status Frame"
+};
+
+static const true_false_string tfs_true_false = {
+    "True",
+    "False"
 };
 
 static void enip_prompt(packet_info *pinfo _U_, char* result)
@@ -1849,6 +1976,16 @@ dissect_elink_interface_control(packet_info *pinfo, proto_tree *tree, proto_item
 }
 
 static int
+dissect_elink_t1s_phy_configuration(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb,
+   int offset, int total_len _U_)
+{
+   proto_tree_add_item(tree, hf_elink_t1s_phy_mode,    tvb, offset,     1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item(tree, hf_elink_t1s_phy_node_id, tvb, offset + 1, 1, ENC_LITTLE_ENDIAN);
+
+   return 2;
+}
+
+static int
 dissect_dlr_ring_supervisor_config(packet_info *pinfo, proto_tree *tree, proto_item *item, tvbuff_t *tvb,
                                    int offset, int total_len)
 
@@ -2452,7 +2589,7 @@ static int dissect_tcpip_port_information(packet_info *pinfo, proto_tree *tree, 
       if (attribute_version == true)
       {
          uint8_t length = tvb_get_uint8(tvb, offset);
-         const char* port_name = tvb_get_string_enc(pinfo->pool, tvb, offset + 1, length, ENC_ASCII);
+         const char* port_name = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + 1, length, ENC_ASCII);
 
          offset += dissect_cip_string_type(pinfo, port_tree, item, tvb, offset, hf_tcpip_port_name, CIP_SHORT_STRING_TYPE);
 
@@ -2505,12 +2642,317 @@ static int dissect_tcpip_set_port_admin_state(packet_info *pinfo, proto_tree *tr
    }
 }
 
+// Most of the information for the IANA Protocol Admin attribute and Set_Protocol_Admin_State service is the same.
+static int dissect_tcpip_protocol_information(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, bool attribute_version)
+{
+   int start_offset = offset;
+
+   uint32_t protocol_count;
+   proto_tree_add_item_ret_uint(tree, hf_tcpip_protocol_count, tvb, offset, 1, ENC_LITTLE_ENDIAN, &protocol_count);
+   offset++;
+
+   for (uint32_t i = 0; i < protocol_count; ++i)
+   {
+      proto_item* protocol_item;
+      proto_tree* protocol_tree = proto_tree_add_subtree(tree, tvb, offset, 0, ett_cmd_data, &protocol_item, "Protocol: ");
+
+      if (attribute_version == true)
+      {
+         uint8_t length = tvb_get_uint8(tvb, offset);
+         const char* protocol_name = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset + 1, length, ENC_ASCII);
+
+         offset += dissect_cip_string_type(pinfo, protocol_tree, item, tvb, offset, hf_tcpip_protocol_name, CIP_SHORT_STRING_TYPE);
+
+         proto_item_append_text(protocol_item, "Name: %s: ", protocol_name);
+      }
+
+      uint32_t protocol_number;
+      proto_tree_add_item_ret_uint(protocol_tree, hf_tcpip_protocol_number, tvb, offset, 2, ENC_LITTLE_ENDIAN, &protocol_number);
+      offset += 2;
+      proto_item_append_text(protocol_item, "Number: %d", protocol_number);
+
+      proto_tree_add_item(protocol_tree, hf_tcpip_protocol_admin_state, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+      offset++;
+
+      if (attribute_version == true)
+      {
+         static int* const capability[] = {
+            &hf_tcpip_protocol_admin_capability_configurable,
+            &hf_tcpip_protocol_admin_capability_reset_required,
+            &hf_tcpip_protocol_admin_capability_reserved,
+            NULL
+         };
+
+         proto_tree_add_bitmask(protocol_tree, tvb, offset, hf_tcpip_protocol_admin_capability, ett_tcpip_protocol_admin_capability, capability, ENC_LITTLE_ENDIAN);
+         offset++;
+      }
+   }
+
+   return offset - start_offset;
+}
+
+static int dissect_tcpip_protocol_admin(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb,
+   int offset, int total_len _U_)
+{
+   return dissect_tcpip_protocol_information(pinfo, tree, item, tvb, offset, true);
+}
+
+static int dissect_tcpip_set_protocol_admin_state(packet_info* pinfo, proto_tree* tree, proto_item* item, tvbuff_t* tvb, int offset, bool request)
+{
+   if (request)
+   {
+      return dissect_tcpip_protocol_information(pinfo, tree, item, tvb, offset, false);
+   }
+   else
+   {
+      return 0;
+   }
+}
+
 int dissect_cip_mac_address(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb,
     int offset, int total_len _U_)
 {
     proto_tree_add_item(tree, hf_cip_mac_address, tvb, offset, 6, ENC_NA);
 
     return 6;
+}
+
+static int dissect_lldp_mngmt_enable(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   uint16_t bit_length;
+   uint16_t byte_length;
+
+   bit_length = tvb_get_letohs(tvb, offset);
+   byte_length = (bit_length + 7) / 8;
+
+   proto_tree_add_uint_format_value(tree, hf_lldp_mngmt_enable_array_length, tvb, offset, 2, bit_length, "%u bits (%u bytes)", bit_length, byte_length);
+   offset += 2;
+
+   /* Loop over each byte in the "enable array" */
+   for (uint16_t byte_idx = 0; byte_idx < byte_length; byte_idx++) {
+      uint8_t byte = tvb_get_uint8(tvb, offset + byte_idx);
+
+      proto_item* byte_item = proto_tree_add_uint_format(tree, hf_lldp_mngmt_enable_array, tvb, offset + byte_idx, 1, byte, "LLDP Enable Array %u", byte_idx + 1);
+      proto_tree* byte_tree =  proto_item_add_subtree(byte_item, ett_lldp_mngmt_enable);
+
+      /* Loop over the "enable bits" in this byte */
+      for (uint8_t bit = 0; bit < 8; bit++) {
+         uint16_t global_bit_index = byte_idx * 8 + bit;
+         bool bit_val = (byte >> bit) & 0x01;
+
+         if (global_bit_index >= bit_length) {
+            proto_tree_add_boolean_format(byte_tree, hf_lldp_mngmt_enable_reserved, tvb, offset + byte_idx, 1, bit_val, "Reserved (bit %u): %s", global_bit_index, bit_val ? tfs_true_false.true_string : tfs_true_false.false_string);
+            continue;
+         }
+
+         if (global_bit_index == 0) {
+            proto_tree_add_boolean_format(byte_tree, hf_lldp_mngmt_global_enable, tvb, offset + byte_idx, 1, bit_val, "Global Enable: %s", bit_val ? tfs_enabled_disabled.true_string : tfs_enabled_disabled.false_string);
+         }
+         else {
+            proto_tree_add_boolean_format(byte_tree, hf_lldp_mngmt_port_tx_enable, tvb, offset + byte_idx, 1, bit_val, "Port %u Tx Enable: %s", global_bit_index, bit_val ? tfs_enabled_disabled.true_string : tfs_enabled_disabled.false_string);
+
+         }
+      }
+   }
+
+   return offset + byte_length;
+}
+
+static int dissect_lldp_mngmt_datastore(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb,
+   int offset, int total_len _U_)
+{
+   static int* const datastore[] = {
+      &hf_lldp_mngmt_datastore_data_table,
+      &hf_lldp_mngmt_datastore_snmp,
+      &hf_lldp_mngmt_datastore_netconf_yang,
+      &hf_lldp_mngmt_datastore_reserved,
+      NULL
+   };
+
+   if (total_len < 2)
+   {
+      expert_add_info(pinfo, item, &ei_mal_lldp_mngmt_datastore);
+      return total_len;
+   }
+
+   proto_tree_add_bitmask(tree, tvb, offset, hf_lldp_mngmt_datastore, ett_lldp_mngmt_datastore, datastore, ENC_LITTLE_ENDIAN);
+   return 2;
+}
+
+static int dissect_lldp_datatbl_system_capabilities(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   static int* const system_capability_bits[] = {
+       &hf_lldp_datatbl_syscap_other,
+       &hf_lldp_datatbl_syscap_repeater,
+       &hf_lldp_datatbl_syscap_bridge,
+       &hf_lldp_datatbl_syscap_access_point,
+       &hf_lldp_datatbl_syscap_router,
+       &hf_lldp_datatbl_syscap_telephone,
+       &hf_lldp_datatbl_syscap_docsis,
+       &hf_lldp_datatbl_syscap_end_station,
+       &hf_lldp_datatbl_syscap_cvlan,
+       &hf_lldp_datatbl_syscap_svlan,
+       &hf_lldp_datatbl_syscap_two_port_mac_relay,
+       &hf_lldp_datatbl_syscap_reserved,
+       NULL
+   };
+
+   static int* const enabled_capability_bits[] = {
+       &hf_lldp_datatbl_encap_other,
+       &hf_lldp_datatbl_encap_repeater,
+       &hf_lldp_datatbl_encap_bridge,
+       &hf_lldp_datatbl_encap_access_point,
+       &hf_lldp_datatbl_encap_router,
+       &hf_lldp_datatbl_encap_telephone,
+       &hf_lldp_datatbl_encap_docsis,
+       &hf_lldp_datatbl_encap_end_station,
+       &hf_lldp_datatbl_encap_cvlan,
+       &hf_lldp_datatbl_encap_svlan,
+       &hf_lldp_datatbl_encap_two_port_mac_relay,
+       &hf_lldp_datatbl_encap_reserved,
+       NULL
+   };
+
+   if (total_len < 4)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_system_capabilities);
+      return total_len;
+   }
+
+   proto_tree_add_bitmask(tree, tvb, offset, hf_lldp_datatbl_system_capabilities, ett_lldp_datatbl_system_capabilities, system_capability_bits, ENC_LITTLE_ENDIAN);
+   offset += 2;
+
+   proto_tree_add_bitmask(tree, tvb, offset, hf_lldp_datatbl_enabled_capabilities, ett_lldp_datatbl_enabled_capabilities, enabled_capability_bits, ENC_LITTLE_ENDIAN);
+   offset += 2;
+
+   return offset;
+}
+
+static int dissect_lldp_datatbl_management_address(packet_info* pinfo, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   uint32_t addr_count;
+
+   if (total_len < 1)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_management_address);
+      return total_len;
+   }
+
+   proto_tree_add_item_ret_uint(tree, hf_lldp_datatbl_mngmt_addr_count, tvb, offset, 1, ENC_LITTLE_ENDIAN, &addr_count);
+   offset += 1;
+
+   for (uint32_t i = 0; i < addr_count; i++) {
+      proto_tree_add_ipv4_format(tree, hf_lldp_datatbl_mngmt_addr, tvb, offset, 4, tvb_get_ipv4(tvb, offset), "Management Address %u: %s", i + 1, tvb_ip_to_str(pinfo->pool, tvb, offset));
+      offset += 4;
+   }
+
+   return offset;
+}
+
+static int dissect_lldp_datatbl_cip_identification(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   if (total_len < 12)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_cip_identification);
+      return total_len;
+   }
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_vendor_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   offset += 2;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_device_type, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   offset += 2;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_product_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   offset += 2;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_major_revision, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_minor_revision, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_cip_id_serial_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+   offset += 4;
+
+   return offset;
+}
+
+static int dissect_lldp_datatbl_eth_capabilities(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   uint8_t frag_size;
+
+   if (total_len < 4)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_eth_capabilities);
+      return total_len;
+   }
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_ethcap_preemption_support, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_ethcap_preemption_status, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_ethcap_preemption_active, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   frag_size = tvb_get_uint8(tvb, offset);
+   if (frag_size >= 4) {
+      proto_tree_add_uint_format_value(tree, hf_lldp_datatbl_ethcap_add_frag_size, tvb, offset, 1, frag_size, "%u (Reserved)", frag_size);
+   }
+   else {
+      proto_tree_add_item(tree, hf_lldp_datatbl_ethcap_add_frag_size, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   }
+   offset += 1;
+
+   return offset;
+}
+
+static int dissect_lldp_datatbl_last_change(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   uint32_t centiseconds;
+   double  seconds;
+
+   if (total_len < 4)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_last_change);
+      return total_len;
+   }
+
+   centiseconds = tvb_get_letohl(tvb, offset);
+   seconds = centiseconds / 100.0;
+
+   proto_tree_add_uint_format_value(tree, hf_lldp_datatbl_last_change, tvb, offset, 4, centiseconds, "%.2f seconds (%u hundredths of a second)", seconds, centiseconds);
+   offset += 4;
+
+   return offset;
+}
+
+static int dissect_lldp_datatbl_t1s_phy_config(packet_info* pinfo _U_, proto_tree* tree, proto_item* item _U_, tvbuff_t* tvb, int offset, int total_len _U_)
+{
+   uint8_t phy_mode;
+
+   if (total_len < 2)
+   {
+      expert_add_info(pinfo, item, &ei_mal_datatbl_t1s_phy_config);
+      return total_len;
+   }
+
+   phy_mode = tvb_get_uint8(tvb, offset);
+   if (phy_mode >= 2) {
+      proto_tree_add_uint_format_value(tree, hf_lldp_datatbl_phy_mode, tvb, offset, 1, phy_mode, "%u (Reserved)", phy_mode);
+   }
+   else {
+      proto_tree_add_item(tree, hf_lldp_datatbl_phy_mode, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   }
+   offset += 1;
+
+   proto_tree_add_item(tree, hf_lldp_datatbl_phy_node_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+   offset += 1;
+
+   return offset;
 }
 
 const attribute_info_t enip_attribute_vals[] = {
@@ -2525,20 +2967,23 @@ const attribute_info_t enip_attribute_vals[] = {
    {0xF5, true, 7, 6, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
 
    /* TCP/IP object (instance attributes) */
-   {0xF5, false,  1, 0, "Status",                    cip_dissector_func,   NULL, dissect_tcpip_status},
-   {0xF5, false,  2, 1, "Configuration Capability",  cip_dissector_func,   NULL, dissect_tcpip_config_cap},
-   {0xF5, false,  3, 2, "Configuration Control",     cip_dissector_func,   NULL, dissect_tcpip_config_control},
-   {0xF5, false,  4, 3, "Physical Link Object",      cip_dissector_func,   NULL, dissect_tcpip_physical_link},
-   {0xF5, false,  5, 4, "Interface Configuration",   cip_dissector_func,   NULL, dissect_tcpip_interface_config},
-   {0xF5, false,  6, 5, "Host Name",                 cip_dissector_func,   NULL, dissect_tcpip_hostname},
-   {0xF5, false,  7, 6, "Safety Network Number", cip_dissector_func,   NULL, dissect_tcpip_snn},
-   {0xF5, false,  8, 7, "TTL Value", cip_usint,      &hf_tcpip_ttl_value,  NULL},
-   {0xF5, false,  9, 8, "Multicast Configuration",   cip_dissector_func,   NULL, dissect_tcpip_mcast_config},
-   {0xF5, false, 10, 9, "Select ACD", cip_bool,      &hf_tcpip_select_acd, NULL},
-   {0xF5, false, 11, 10, "Last Conflict Detected",    cip_dissector_func,   NULL, dissect_tcpip_last_conflict},
-   {0xF5, false, 12, 11, "EtherNet/IP Quick Connect", cip_bool,             &hf_tcpip_quick_connect, NULL},
-   {0xF5, false, 13, 12, "Encapsulation Inactivity Timeout", cip_uint,      &hf_tcpip_encap_inactivity, NULL},
-   {0xF5, false, 14, -1, "IANA Port Admin",           cip_dissector_func,   NULL, dissect_tcpip_port_admin },
+   {0xF5, false,  1, 0, "Status",                             cip_dissector_func,   NULL, dissect_tcpip_status},
+   {0xF5, false,  2, 1, "Configuration Capability",           cip_dissector_func,   NULL, dissect_tcpip_config_cap},
+   {0xF5, false,  3, 2, "Configuration Control",              cip_dissector_func,   NULL, dissect_tcpip_config_control},
+   {0xF5, false,  4, 3, "Physical Link Object",               cip_dissector_func,   NULL, dissect_tcpip_physical_link},
+   {0xF5, false,  5, 4, "Interface Configuration",            cip_dissector_func,   NULL, dissect_tcpip_interface_config},
+   {0xF5, false,  6, 5, "Host Name",                          cip_dissector_func,   NULL, dissect_tcpip_hostname},
+   {0xF5, false,  7, 6, "Safety Network Number",              cip_dissector_func,   NULL, dissect_tcpip_snn},
+   {0xF5, false,  8, 7, "TTL Value",                          cip_usint,            &hf_tcpip_ttl_value,  NULL},
+   {0xF5, false,  9, 8, "Multicast Configuration",            cip_dissector_func,   NULL, dissect_tcpip_mcast_config},
+   {0xF5, false, 10, 9, "Select ACD",                         cip_bool,             &hf_tcpip_select_acd, NULL},
+   {0xF5, false, 11, 10, "Last Conflict Detected",            cip_dissector_func,   NULL, dissect_tcpip_last_conflict},
+   {0xF5, false, 12, 11, "EtherNet/IP Quick Connect",         cip_bool,             &hf_tcpip_quick_connect, NULL},
+   {0xF5, false, 13, 12, "Encapsulation Inactivity Timeout",  cip_uint,             &hf_tcpip_encap_inactivity, NULL},
+   {0xF5, false, 14, -1, "IANA Port Admin",                   cip_dissector_func,   NULL, dissect_tcpip_port_admin },
+   {0xF5, false, 15, -1, "IANA Protocol Admin",               cip_dissector_func,   NULL, dissect_tcpip_protocol_admin },
+   {0xF5, false, 16, 13, "Active TCP Connections",            cip_uint,             &hf_tcpip_active_tcp_connections, NULL },
+   {0xF5, false, 17, 14, "Non-CIP Encap Messages Per Second", cip_udint,            &hf_tcpip_non_cip_encp_msg_per_s, NULL },
 
     /* Ethernet Link Object (class attributes) */
    {0xF6, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -2550,21 +2995,23 @@ const attribute_info_t enip_attribute_vals[] = {
    {0xF6, true, 7, 6, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
 
    /* Ethernet Link object (instance attributes) */
-   {0xF6, false,  1, 0, "Interface Speed",           cip_dword,            &hf_elink_interface_speed,  NULL},
-   {0xF6, false,  2, 1, "Interface Flags",           cip_dissector_func,   NULL, dissect_elink_interface_flags},
-   {0xF6, false,  3, 2, "Physical Address",          cip_dissector_func,   NULL, dissect_elink_physical_address },
-   {0xF6, false,  4, 3, "Interface Counters",        cip_dissector_func,   NULL, dissect_elink_interface_counters},
-   {0xF6, false,  5, 4, "Media Counters",            cip_dissector_func,   NULL, dissect_elink_media_counters},
-   {0xF6, false,  6, 5, "Interface Control",         cip_dissector_func,   NULL, dissect_elink_interface_control},
-   {0xF6, false,  7, 6, "Interface Type",            cip_usint,            &hf_elink_interface_type,  NULL},
-   {0xF6, false,  8, 7, "Interface State",           cip_usint,            &hf_elink_interface_state, NULL},
-   {0xF6, false,  9, 8, "Admin State",               cip_usint,            &hf_elink_admin_state,     NULL},
-   {0xF6, false, 10, 9, "Interface Label",           cip_short_string,     &hf_elink_interface_label, NULL},
-   {0xF6, false, 11, 10, "Interface Capability",     cip_dissector_func,   NULL, dissect_elink_interface_capability},
-   {0xF6, false, 12, 11, "HC Interface Counters",    cip_dissector_func,   NULL, dissect_elink_hc_interface_counters},
-   {0xF6, false, 13, 12, "HC Media Counters",        cip_dissector_func,   NULL, dissect_elink_hc_media_counters},
-   {0xF6, false, 14, 13, "Ethernet Errors",          cip_udint,            &hf_elink_ethernet_errors,   NULL},
-   {0xF6, false, 15, 14, "Link_Down Counter",        cip_udint,            &hf_elink_link_down_counter, NULL},
+   {0xF6, false,  1, 0, "Interface Speed",              cip_dword,            &hf_elink_interface_speed,  NULL},
+   {0xF6, false,  2, 1, "Interface Flags",              cip_dissector_func,   NULL, dissect_elink_interface_flags},
+   {0xF6, false,  3, 2, "Physical Address",             cip_dissector_func,   NULL, dissect_elink_physical_address },
+   {0xF6, false,  4, 3, "Interface Counters",           cip_dissector_func,   NULL, dissect_elink_interface_counters},
+   {0xF6, false,  5, 4, "Media Counters",               cip_dissector_func,   NULL, dissect_elink_media_counters},
+   {0xF6, false,  6, 5, "Interface Control",            cip_dissector_func,   NULL, dissect_elink_interface_control},
+   {0xF6, false,  7, 6, "Interface Type",               cip_usint,            &hf_elink_interface_type,  NULL},
+   {0xF6, false,  8, 7, "Interface State",              cip_usint,            &hf_elink_interface_state, NULL},
+   {0xF6, false,  9, 8, "Admin State",                  cip_usint,            &hf_elink_admin_state,     NULL},
+   {0xF6, false, 10, 9, "Interface Label",              cip_short_string,     &hf_elink_interface_label, NULL},
+   {0xF6, false, 11, 10, "Interface Capability",        cip_dissector_func,   NULL, dissect_elink_interface_capability},
+   {0xF6, false, 12, 11, "HC Interface Counters",       cip_dissector_func,   NULL, dissect_elink_hc_interface_counters},
+   {0xF6, false, 13, 12, "HC Media Counters",           cip_dissector_func,   NULL, dissect_elink_hc_media_counters},
+   {0xF6, false, 14, 13, "Ethernet Errors",             cip_udint,            &hf_elink_ethernet_errors,   NULL},
+   {0xF6, false, 15, 14, "Link_Down Counter",           cip_udint,            &hf_elink_link_down_counter, NULL},
+   {0xF6, false, 16, -1, "T1S PHY Configuration",       cip_dissector_func,   NULL, dissect_elink_t1s_phy_configuration},
+   {0xF6, false, 17, -1, "T1S PHY Commissioning Staus", cip_usint,            &hf_elink_t1s_phy_commissioning_status, NULL},
 
     /* QoS Object (class attributes) */
    {0x48, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -2576,14 +3023,21 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x48, true, 7, 6, CLASS_ATTRIBUTE_7_NAME, cip_uint, &hf_attr_class_num_inst_attr, NULL },
 
    /* QoS object (instance attributes) */
-   {0x48, false,  1, -1, "802.1Q Tag Enable",         cip_bool,             &hf_qos_8021q_enable,     NULL},
-   {0x48, false,  2, -1, "DSCP PTP Event",            cip_usint,            &hf_qos_dscp_ptp_event,   NULL},
-   {0x48, false,  3, -1, "DSCP PTP General",          cip_usint,            &hf_qos_dscp_ptp_general, NULL},
-   {0x48, false,  4, -1, "DSCP Urgent",               cip_usint,            &hf_qos_dscp_urgent,      NULL},
-   {0x48, false,  5, -1, "DSCP Scheduled",            cip_usint,            &hf_qos_dscp_scheduled,   NULL},
-   {0x48, false,  6, -1, "DSCP High",                 cip_usint,            &hf_qos_dscp_high,        NULL},
-   {0x48, false,  7, -1, "DSCP Low",                  cip_usint,            &hf_qos_dscp_low,         NULL},
-   {0x48, false,  8, -1, "DSCP Explicit",             cip_usint,            &hf_qos_dscp_explicit,    NULL},
+   {0x48, false,  1, -1, "802.1Q Tag Enable",         cip_bool,             &hf_qos_8021q_enable,      NULL},
+   {0x48, false,  2, -1, "DSCP PTP Event",            cip_usint,            &hf_qos_dscp_ptp_event,    NULL},
+   {0x48, false,  3, -1, "DSCP PTP General",          cip_usint,            &hf_qos_dscp_ptp_general,  NULL},
+   {0x48, false,  4, -1, "DSCP Urgent",               cip_usint,            &hf_qos_dscp_urgent,       NULL},
+   {0x48, false,  5, -1, "DSCP Scheduled",            cip_usint,            &hf_qos_dscp_scheduled,    NULL},
+   {0x48, false,  6, -1, "DSCP High",                 cip_usint,            &hf_qos_dscp_high,         NULL},
+   {0x48, false,  7, -1, "DSCP Low",                  cip_usint,            &hf_qos_dscp_low,          NULL},
+   {0x48, false,  8, -1, "DSCP Explicit",             cip_usint,            &hf_qos_dscp_explicit,     NULL},
+   {0x48, false,  9, -1, "PCP PTP Event",             cip_usint,            &hf_qos_pcp_ptp_event,     NULL},
+   {0x48, false, 10, -1, "PCP PTP General",           cip_usint,            &hf_qos_pcp_ptp_general,   NULL},
+   {0x48, false, 11, -1, "PCP PTP Urgent",            cip_usint,            &hf_qos_pcp_ptp_urgent,    NULL},
+   {0x48, false, 12, -1, "PCP PTP Scheduled",         cip_usint,            &hf_qos_pcp_ptp_scheduled, NULL},
+   {0x48, false, 13, -1, "PCP PTP High",              cip_usint,            &hf_qos_pcp_ptp_high,      NULL},
+   {0x48, false, 14, -1, "PCP PTP Low",               cip_usint,            &hf_qos_pcp_ptp_low,       NULL},
+   {0x48, false, 15, -1, "PCP PTP Explicit",          cip_usint,            &hf_qos_pcp_ptp_explicit,  NULL},
 
     /* DLR Object (class attributes) */
    {0x47, true, 1, 0, CLASS_ATTRIBUTE_1_NAME, cip_uint, &hf_attr_class_revision, NULL },
@@ -2596,8 +3050,8 @@ const attribute_info_t enip_attribute_vals[] = {
 
    /* DLR object (instance attributes) */
    /* Get Attributes All is not fully parsed here because there are multiple formats. */
-   {0x47, false, 1, 0, "Network Topology",                 cip_usint, &hf_dlr_network_topology, NULL},
-   {0x47, false, 2, 1, "Network Status",                   cip_usint, &hf_dlr_network_status, NULL},
+   {0x47, false, 1, 0, "Network Topology",                  cip_usint, &hf_dlr_network_topology, NULL},
+   {0x47, false, 2, 1, "Network Status",                    cip_usint, &hf_dlr_network_status, NULL},
    {0x47, false, 3, -1, "Ring Supervisor Status",           cip_usint, &hf_dlr_ring_supervisor_status, NULL},
    {0x47, false, 4, -1, "Ring Supervisor Config",           cip_dissector_func, NULL, dissect_dlr_ring_supervisor_config},
    {0x47, false, 5, -1, "Ring Faults Count",                cip_uint,      &hf_dlr_ring_faults_count, NULL},
@@ -2612,6 +3066,9 @@ const attribute_info_t enip_attribute_vals[] = {
    {0x47, false, 14, -1, "Redundant Gateway Status",        cip_usint, &hf_dlr_redundant_gateway_status, NULL},
    {0x47, false, 15, -1, "Active Gateway Address",          cip_dissector_func, NULL, dissect_dlr_active_gateway_address},
    {0x47, false, 16, -1, "Active Gateway Precedence",       cip_usint, &hf_dlr_active_gateway_precedence, NULL},
+   {0x47, false, 17, -1, "Port 1 Ethernet Link Instance",   cip_uint, &hf_dlr_port_1_elink, NULL },
+   {0x47, false, 18, -1, "Port 2 Ethernet Link Instance",   cip_uint, &hf_dlr_port_2_elink, NULL },
+   {0x47, false, 19, -1, "DLR Enable",                      cip_bool, &hf_dlr_enable,       NULL },
 
    // PRP/HSR Protocol
    {0x56, CIP_ATTR_INSTANCE, 1, 0, "LRE Enable", cip_bool, &hf_prp_lre_enable, NULL},
@@ -2622,6 +3079,26 @@ const attribute_info_t enip_attribute_vals[] = {
 
    // PRP/HSR Nodes Table
    {0x57, CIP_ATTR_INSTANCE, 1, 0, "PRP/HSR Nodes Table(s) Count", cip_udint, &hf_prp_hsr_nodes_tables_count, NULL},
+
+   // LLDP Management Object
+   {0x109, CIP_ATTR_INSTANCE, 1, 0, "LLDP Enable", cip_dissector_func, NULL, dissect_lldp_mngmt_enable},
+   {0x109, CIP_ATTR_INSTANCE, 2, 1, "msgTxInterval", cip_uint, &hf_lldp_mngmt_msg_tx_interval, NULL},
+   {0x109, CIP_ATTR_INSTANCE, 3, 2, "msgTxHold", cip_usint, &hf_lldp_mngmt_msg_tx_hold, NULL},
+   {0x109, CIP_ATTR_INSTANCE, 4, 3, "LLDP Datastore", cip_dissector_func, NULL, dissect_lldp_mngmt_datastore},
+   {0x109, CIP_ATTR_INSTANCE, 5, 4, "Last Change", cip_udint, &hf_lldp_mngmt_last_change, NULL},
+
+   // LLDP Data Table Object
+   {0x10A, CIP_ATTR_INSTANCE, 1, 0, "Ethernet Link Instance Number", cip_uint, &hf_lldp_datatbl_elink_instance, NULL},
+   {0x10A, CIP_ATTR_INSTANCE, 2, 1, "MAC Address", cip_dissector_func, NULL, dissect_cip_mac_address},
+   {0x10A, CIP_ATTR_INSTANCE, 3, 2, "Interface Label", cip_short_string, &hf_lldp_datatbl_interface_label, NULL},
+   {0x10A, CIP_ATTR_INSTANCE, 4, 3, "Time to Live", cip_uint, &hf_lldp_datatbl_time_to_time, NULL},
+   {0x10A, CIP_ATTR_INSTANCE, 5, 4, "System Capabilities TLV", cip_dissector_func, NULL, dissect_lldp_datatbl_system_capabilities},
+   {0x10A, CIP_ATTR_INSTANCE, 6, 5, "IPv4 Management Addresses", cip_dissector_func, NULL, dissect_lldp_datatbl_management_address},
+   {0x10A, CIP_ATTR_INSTANCE, 7, 6, "CIP Identification", cip_dissector_func, NULL, dissect_lldp_datatbl_cip_identification},
+   {0x10A, CIP_ATTR_INSTANCE, 8, 7, "Additional Ethernet Capabilities", cip_dissector_func, NULL, dissect_lldp_datatbl_eth_capabilities},
+   {0x10A, CIP_ATTR_INSTANCE, 9, 8, "Last Change", cip_dissector_func, NULL, dissect_lldp_datatbl_last_change},
+   {0x10A, CIP_ATTR_INSTANCE, 10, 9, "Position ID", cip_uint, &hf_lldp_datatbl_position_id, NULL},
+   { 0x10A, CIP_ATTR_INSTANCE, 11, 10, "T1S PHY Configuration", cip_dissector_func, NULL, dissect_lldp_datatbl_t1s_phy_config},
 
    /* CIP Security Object (instance attributes) */
    {0x5D, CIP_ATTR_INSTANCE, 1, 0, "State", cip_usint, &hf_cip_security_state, NULL},
@@ -2680,12 +3157,17 @@ const attribute_info_t enip_attribute_vals[] = {
    /* Ingress Egress Object (instance attributes) */
    {0x63, false, 1, 0, "Ingress Rules", cip_dissector_func, NULL, dissect_ingress_egress_rules},
    {0x63, false, 2, 1, "Egress Rules", cip_dissector_func, NULL, dissect_ingress_egress_rules},
-
 };
 
 // Table of CIP services defined by this dissector.
 static cip_service_info_t enip_obj_spec_service_table[] = {
-    // CIP Security
+   // DLR Object
+   { 0x47, 0x4B, "Verify_Fault_Location", NULL },
+   { 0x47, 0x4C, "Clear_Rapid_Faults", NULL },
+   { 0x47, 0x4D, "Restart_Sign_On", NULL },
+   { 0x47, 0x4E, "Clear_Gateway_Partial_Fault", NULL },
+
+   // CIP Security
     { 0x5D, 0x4B, "Begin_Config", NULL },
     { 0x5D, 0x4C, "Kick_Timer", NULL },
     { 0x5D, 0x4D, "End_Config", NULL },
@@ -2707,7 +3189,9 @@ static cip_service_info_t enip_obj_spec_service_table[] = {
 
     // TCP/IP Interface
     { 0xF5, 0x4C, "Set_Port_Admin_State", dissect_tcpip_set_port_admin_state },
+    { 0xF5, 0x4D, "Set_Protocol_Admin_State", dissect_tcpip_set_protocol_admin_state },
 };
+//static_assert(array_length(enip_attribute_vals) == ENIP_ATTRIBUTE_VALS_LEN, "enip_attribute_vals size mismatch - update ENIP_ATTRIBUTE_VALS_LEN in packet-enip.h");
 
 // Look up a given CIP service from this dissector.
 cip_service_info_t* cip_get_service_enip(uint32_t class_id, uint8_t service_id)
@@ -3278,7 +3762,7 @@ dissect_cpf(enip_request_key_t *request_key, int command, tvbuff_t *tvb,
 
       // Check if the declared item length is more bytes than we have available. But, don't exit early
       //    so maybe it will be more obvious where the problem is.
-      if ((int)item_length > tvb_reported_length_remaining(tvb, offset))
+      if (item_length > tvb_reported_length_remaining(tvb, offset))
       {
           expert_add_info_format(pinfo, type_item, &ei_mal_cpf_item_length_mismatch,
               "%s: Item Length %d, Remaining Data Length: %d",
@@ -3849,6 +4333,11 @@ static int dissect_cip_class1(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
    return dissect_cip_io_generic(tvb, pinfo, tree, &io_data_input);
 }
 
+static void enip_lldp_mngmnt_last_change(char* s, uint32_t value)
+{
+   snprintf(s, ITEM_LABEL_LENGTH, "%.3f seconds", value / 100.0);
+}
+
 /* Register the protocol with Wireshark */
 
 /* this format is require because a script is used to build the C function
@@ -4112,6 +4601,67 @@ proto_register_enip(void)
       { &hf_prp_node_name, { "Node Name", "cip.prp.node_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
       { &hf_prp_version_name, { "Version Name", "cip.prp.version_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
       { &hf_prp_hsr_nodes_tables_count, { "PRP/HSR Nodes Table(s) Count", "cip.prp.prp_hsr_nodes_table_count", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL } },
+
+      { &hf_lldp_mngmt_enable_array_length, { "LLDP Enable Array Length", "cip.lldpmngmnt.enable.array_length", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_enable_array,{ "LLDP Enable Array", "cip.lldpmngmnt.enable_array", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_global_enable, { "Global Enable", "cip.lldpmngmnt.enable.global", FT_BOOLEAN, 8, NULL, 0x01, NULL, HFILL } },
+      { &hf_lldp_mngmt_port_tx_enable, { "Port Tx Enable", "cip.lldpmngmnt.enable.port_tx", FT_BOOLEAN, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_enable_reserved, { "Reserved", "cip.lldpmngmnt.enable.reserved", FT_BOOLEAN, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_msg_tx_interval, { "msgTxInterval", "cip.lldpmngmnt.msg_tx_interval", FT_UINT16, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_msg_tx_hold, { "msgTxHold", "cip.lldpmngmnt.msg_tx_hold", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_datastore, { "LLDP Datastore", "cip.lldpmngmnt.lldp_datastore", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_mngmt_datastore_data_table, { "LLDP Data Table Object", "cip.lldpmngmnt.lldp_datastore.data_table", FT_BOOLEAN, 16, NULL, 0x0001, NULL, HFILL } },
+      { &hf_lldp_mngmt_datastore_snmp, { "SNMP", "cip.lldpmngmnt.lldp_datastore.snmp", FT_BOOLEAN, 16, NULL, 0x0002, NULL, HFILL } },
+      { &hf_lldp_mngmt_datastore_netconf_yang, { "NETCONF YANG", "cip.lldpmngmnt.lldp_datastore.netconf_yang", FT_BOOLEAN, 16, NULL, 0x0004, NULL, HFILL } },
+      { &hf_lldp_mngmt_datastore_reserved, { "Reserved", "cip.lldpmngmnt.lldp_datastore.reserved", FT_UINT16, BASE_HEX, NULL, 0xFFF8, NULL, HFILL } },
+      { &hf_lldp_mngmt_last_change, { "Last Change", "cip.lldpmngmnt.last_change", FT_UINT32, BASE_CUSTOM, CF_FUNC(enip_lldp_mngmnt_last_change), 0, NULL, HFILL}},
+
+      { &hf_lldp_datatbl_elink_instance, { "Ethernet Link Instance Number", "cip.lldpdatatbl.elink_instance", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+      { &hf_lldp_datatbl_mac_address, { "MAC Address", "cip.lldpdatatbl.mac_address", FT_ETHER, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_datatbl_interface_label, { "Interface Label", "cip.lldpdatatbl.interface_label", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_lldp_datatbl_time_to_time, { "Time to Live", "cip.lldpdatatbl.time_to_live", FT_UINT16, BASE_DEC | BASE_UNIT_STRING, UNS(&units_second_seconds), 0, NULL, HFILL } },
+      { &hf_lldp_datatbl_system_capabilities, { "System Capabilities", "cip.lldpdatatbl.system_capabilities", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_other, { "Other", "cip.lldpdatatbl.syscap.other", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0001, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_repeater, { "Repeater", "cip.lldpdatatbl.syscap.repeater", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0002, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_bridge, { "Bridge", "cip.lldpdatatbl.syscap.bridge", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0004, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_access_point, { "Access Point", "cip.lldpdatatbl.syscap.access_point", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0008, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_router, { "Router", "cip.lldpdatatbl.syscap.router", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0010, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_telephone, { "Telephone", "cip.lldpdatatbl.syscap.telephone", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0020, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_docsis, { "DOCSIS Cable Device", "cip.lldpdatatbl.syscap.docsis", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0040, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_end_station, { "End Station", "cip.lldpdatatbl.syscap.end_station", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0080, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_cvlan, { "C-VLAN Component", "cip.lldpdatatbl.syscap.cvlan", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0100, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_svlan, { "S-VLAN Component", "cip.lldpdatatbl.syscap.svlan", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0200, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_two_port_mac_relay, { "Two-port MAC Relay Component", "cip.lldpdatatbl.syscap.two_port_mac_relay", FT_BOOLEAN, 16, TFS(&tfs_capable_not_capable), 0x0400, NULL, HFILL } },
+      { &hf_lldp_datatbl_syscap_reserved, { "Reserved", "cip.lldpdatatbl.syscap.reserved", FT_BOOLEAN, 16, NULL, 0xF800, NULL, HFILL } },
+      { &hf_lldp_datatbl_enabled_capabilities, { "Enabled Capabilities", "cip.lldpdatatbl.enabled_capabilities", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_other, { "Other", "cip.lldpdatatbl.encap.other", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0001, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_repeater, { "Repeater", "cip.lldpdatatbl.encap.repeater", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0002, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_bridge, { "Bridge", "cip.lldpdatatbl.encap.bridge", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0004, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_access_point, { "Access Point", "cip.lldpdatatbl.encap.access_point", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0008, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_router, { "Router", "cip.lldpdatatbl.encap.router", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0010, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_telephone, { "Telephone", "cip.lldpdatatbl.encap.telephone", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0020, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_docsis, { "DOCSIS Cable Device", "cip.lldpdatatbl.encap.docsis", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0040, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_end_station, { "End Station", "cip.lldpdatatbl.encap.end_station", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0080, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_cvlan, { "C-VLAN Component", "cip.lldpdatatbl.encap.cvlan", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0100, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_svlan, { "S-VLAN Component", "cip.lldpdatatbl.encap.svlan", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0200, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_two_port_mac_relay, { "Two-port MAC Relay Component", "cip.lldpdatatbl.encap.two_port_mac_relay", FT_BOOLEAN, 16, TFS(&tfs_enabled_disabled), 0x0400, NULL, HFILL } },
+      { &hf_lldp_datatbl_encap_reserved, { "Reserved", "cip.lldpdatatbl.encap.reserved", FT_BOOLEAN, 16, NULL, 0xF800, NULL, HFILL } },
+      { &hf_lldp_datatbl_mngmt_addr_count, { "Management Address Count", "cip.lldpdatatbl.mngmt_addr_count", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_mngmt_addr, { "Management Address", "cip.lldpdatatbl.mngmt_addr", FT_IPv4, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_vendor_id,{ "Vendor ID", "cip.lldpdatatbl.cip_id.vendor_id", FT_UINT16, BASE_HEX | BASE_EXT_STRING, &cip_vendor_vals_ext, 0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_device_type, { "Device Type", "cip.lldpdatatbl.cip_id.device_type", FT_UINT16, BASE_HEX | BASE_EXT_STRING, &cip_devtype_vals_ext, 0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_product_code, { "Product Code", "cip.lldpdatatbl.cip_id.product_code", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_major_revision, { "Major Revision", "cip.lldpdatatbl.cip_id.major_revision", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_minor_revision, { "Minor Revision", "cip.lldpdatatbl.cip_id.minor_revision", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_cip_id_serial_number, { "CIP Serial Number", "cip.lldpdatatbl.cip_id.serial_number", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_ethcap_preemption_support, { "Preemption Support", "cip.lldpdatatbl.ethcap.preemption_support", FT_BOOLEAN, BASE_NONE, TFS(&tfs_supported_not_supported), 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_ethcap_preemption_status, { "Preemption Status", "cip.lldpdatatbl.ethcap.preemption_status", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_ethcap_preemption_active, { "Preemption Active", "cip.lldpdatatbl.ethcap.preemption_active", FT_BOOLEAN, BASE_NONE, TFS(&tfs_active_inactive), 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_ethcap_add_frag_size, { "Additional Fragment Size", "cip.lldpdatatbl.ethcap.add_frag_size", FT_UINT8, BASE_DEC, VALS(lldp_datatbl_add_frag_size_vals), 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_last_change, { "Last Change", "cip.lldpdatatbl.last_change", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_position_id, { "Position ID", "cip.lldpdatatbl.position_id", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_phy_mode, { "PHY Mode", "cip.lldpdatatbl.t1s.phy_mode", FT_UINT8, BASE_DEC, VALS(lldp_datatbl_phy_mode_vals), 0x0, NULL, HFILL } },
+      { &hf_lldp_datatbl_phy_node_id, { "PHY Node ID for PLCA", "cip.lldpdatatbl.t1s.phy_node_id", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
 
       { &hf_enip_iana_port_state_flags,
         { "IANA Port State", "enip.iana_port_state_flags",
@@ -4487,6 +5037,26 @@ proto_register_enip(void)
       { &hf_tcpip_admin_capability_reset_required, { "Reset Required", "cip.tcpip.admin_capability.reset_required", FT_BOOLEAN, 8, NULL, 0x02, NULL, HFILL } },
       { &hf_tcpip_admin_capability_reserved, { "Reserved", "cip.tcpip.admin_capability_reserved", FT_UINT8, BASE_HEX, NULL, 0xFC, NULL, HFILL } },
 
+      { &hf_tcpip_protocol_count, { "Protocol Count", "cip.tcpip.protocol_count", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_tcpip_protocol_name, { "Protocol Name", "cip.tcpip.protocol_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+      { &hf_tcpip_protocol_number, { "Protocol Number", "cip.tcpip.protocol_number", FT_UINT16, BASE_PT_TCP, NULL, 0, NULL, HFILL } },
+      { &hf_tcpip_protocol_admin_state, { "Admin State", "cip.tcpip.protocol_admin_state", FT_BOOLEAN, BASE_NONE, TFS(&tfs_open_closed), 0, NULL, HFILL } },
+
+      { &hf_tcpip_protocol_admin_capability, { "Admin Capability", "cip.tcpip.protocol_admin_capability", FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+      { &hf_tcpip_protocol_admin_capability_configurable, { "Configurable", "cip.tcpip.protocol_admin_capability.configurable", FT_BOOLEAN, 8, NULL, 0x01, NULL, HFILL } },
+      { &hf_tcpip_protocol_admin_capability_reset_required, { "Reset Required", "cip.tcpip.protocol_admin_capability.reset_required", FT_BOOLEAN, 8, NULL, 0x02, NULL, HFILL } },
+      { &hf_tcpip_protocol_admin_capability_reserved, { "Reserved", "cip.tcpip.protocol_admin_capability_reserved", FT_UINT8, BASE_HEX, NULL, 0xFC, NULL, HFILL } },
+
+      { &hf_tcpip_active_tcp_connections,
+        { "Active TCP Connections", "cip.tcpip.active_tcp_connections",
+          FT_UINT16, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_tcpip_non_cip_encp_msg_per_s,
+        { "Non-CIP Encapsulation Messages Per Second", "cip.tcpip.non_cip_packets",
+          FT_UINT32, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
       { &hf_elink_interface_speed,
         { "Interface Speed", "cip.elink.interface_speed",
           FT_UINT32, BASE_DEC, NULL, 0,
@@ -4804,6 +5374,9 @@ proto_register_enip(void)
 
       { &hf_elink_ethernet_errors, { "Ethernet Errors", "cip.elink.ethernet_errors", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_elink_link_down_counter, { "Link_Down Counter", "cip.elink.link_down_counter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_elink_t1s_phy_mode, { "PHY Mode", "cip.elink.t1s_config.phy_mode", FT_UINT8, BASE_DEC, VALS(enip_elink_phy_mode_vals), 0, NULL, HFILL } },
+      { &hf_elink_t1s_phy_node_id, { "PHY Node ID for PLCA", "cip.elink.t1s_config.phy_node_id", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
+      { &hf_elink_t1s_phy_commissioning_status, { "T1S PHT Commissioning Status", "cip.elink.t1s_commissioning_status", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
       { &hf_cip_mac_address, { "MAC Address", "cip.mac_address", FT_ETHER, BASE_NONE, NULL, 0x0, NULL, HFILL } },
 
       { &hf_qos_8021q_enable,
@@ -4845,6 +5418,41 @@ proto_register_enip(void)
         { "DSCP Explicit", "cip.qos.explicit",
           FT_UINT8, BASE_DEC, NULL, 0,
           NULL, HFILL }},
+
+      { &hf_qos_pcp_ptp_event,
+        { "PCP PTP Event", "cip.qos.pcp_ptp_event",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_general,
+        { "PCP PTP General", "cip.qos.pcp_ptp_general",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_urgent,
+        { "PCP PTP Urgent", "cip.qos.pcp_ptp_urgent",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_scheduled,
+        { "PCP PTP Scheduled", "cip.qos.pcp_ptp_scheduled",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_high,
+        { "PCP PTP High", "cip.qos.pcp_ptp_high",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_low,
+        { "PCP PTP Low", "cip.qos.pcp_ptp_low",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_qos_pcp_ptp_explicit,
+        { "PCP PTP Explicit", "cip.qos.pcp_ptp_explicit",
+          FT_UINT8, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
 
       { &hf_dlr_network_topology,
         { "Network Topology", "cip.dlr.network_topology",
@@ -4890,6 +5498,21 @@ proto_register_enip(void)
         { "Ring Faults Count", "cip.dlr.ring_faults_count",
           FT_UINT16, BASE_DEC, NULL, 0,
           NULL, HFILL }},
+
+      { &hf_dlr_port_1_elink,
+        { "Port 1 Ethernet Link Instance", "cip.dlr.port1_eth_link",
+          FT_UINT16, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_dlr_port_2_elink,
+        { "Port 2 Ethernet Link Instance", "cip.dlr.port2_eth_link",
+          FT_UINT16, BASE_DEC, NULL, 0,
+          NULL, HFILL } },
+
+      { &hf_dlr_enable,
+        { "DLR Enable", "cip.dlr.dlr_enable",
+          FT_BOOLEAN, 8, TFS(&tfs_enabled_disabled), 0x1,
+          NULL, HFILL } },
 
       { &hf_dlr_lanp1_dev_ip_addr,
         { "Device IP Address", "cip.dlr.lanp1.ip_addr",
@@ -5134,7 +5757,7 @@ proto_register_enip(void)
       { &hf_eip_security_apply_behavior_flags, { "Apply Behavior Flags", "cip.eip_security.apply_behavior_flags", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
       { &hf_eip_security_check_subject_alternative_name, { "Check Subject Alternative Name", "cip.eip_security.check_subject_alternative_name", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0, NULL, HFILL } },
       { &hf_eip_security_close_delay, { "Close Delay", "cip.eip_security.close_delay", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0, NULL, HFILL } },
-      { &hf_eip_security_dtls_timeout, { "DTLS Timeout", "cip.eip_security.dtls_timeout", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0, NULL, HFILL } },
+      { &hf_eip_security_dtls_timeout, { "DTLS Timeout", "cip.eip_security.dtls_timeout", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_seconds), 0, NULL, HFILL } },
       { &hf_eip_security_pull_model_enable, { "Pull Model Enable", "cip.eip_security.pull_model_enable", FT_BOOLEAN, BASE_NONE, TFS(&tfs_enabled_disabled), 0, NULL, HFILL } },
       { &hf_eip_security_pull_model_status, { "Pull Model Status", "cip.eip_security.pull_model_status", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
 
@@ -5219,6 +5842,7 @@ proto_register_enip(void)
       &ett_lsrcf,
       &ett_tcpip_status,
       &ett_tcpip_admin_capability,
+      &ett_tcpip_protocol_admin_capability,
       &ett_tcpip_config_cap,
       &ett_tcpip_config_control,
       &ett_elink_interface_flags,
@@ -5237,6 +5861,10 @@ proto_register_enip(void)
       &ett_security_profiles,
       &ett_ingress_egress_apply_behavior,
       &ett_iana_port_state_flags,
+      &ett_lldp_mngmt_datastore,
+      &ett_lldp_mngmt_enable,
+      &ett_lldp_datatbl_system_capabilities,
+      &ett_lldp_datatbl_enabled_capabilities,
       &ett_connection_info,
       &ett_connection_path_info,
       &ett_cmd_data
@@ -5274,6 +5902,13 @@ proto_register_enip(void)
       { &ei_mal_eip_cert_capability_flags, { "cip.malformed.eip_cert.capability_flags", PI_MALFORMED, PI_ERROR, "Malformed EIP Certificate Management Capability Flags", EXPFILL }},
       { &ei_mal_cpf_item_length_mismatch, { "enip.malformed.cpf_item_length_mismatch", PI_MALFORMED, PI_ERROR, "CPF Item Length Mismatch", EXPFILL } },
       { &ei_mal_cpf_item_minimum_size, { "enip.malformed.cpf_item_minimum_size", PI_MALFORMED, PI_ERROR, "CPF Item Minimum Size is 4", EXPFILL } },
+      { &ei_mal_lldp_mngmt_datastore, { "cip.malformed.lldp.lldp_datastore", PI_MALFORMED, PI_ERROR, "Malformed LLDP Datastore", EXPFILL }},
+      { &ei_mal_datatbl_system_capabilities, { "cip.malformed.lldp.system_capabilities", PI_MALFORMED, PI_ERROR, "Malformed LLDP System Capabilities", EXPFILL }},
+      { &ei_mal_datatbl_management_address, { "cip.malformed.lldp.management_address", PI_MALFORMED, PI_ERROR, "Malformed LLDP Management Address", EXPFILL }},
+      { &ei_mal_datatbl_cip_identification, { "cip.malformed.lldp.cip_identification", PI_MALFORMED, PI_ERROR, "Malformed LLDP CIP Identification", EXPFILL }},
+      { &ei_mal_datatbl_eth_capabilities, { "cip.malformed.lldp.eth_capabilities", PI_MALFORMED, PI_ERROR, "Malformed LLDP ETH Capabilities", EXPFILL }},
+      { &ei_mal_datatbl_last_change, { "cip.malformed.lldp.last_change", PI_MALFORMED, PI_ERROR, "Malformed LLDP Last Change", EXPFILL }},
+      { &ei_mal_datatbl_t1s_phy_config, { "cip.malformed.lldp.t1s_phy_config", PI_MALFORMED, PI_ERROR, "Malformed LLDP T1S PHY Config", EXPFILL }},
 
       // Analysis Checks
       { &ei_cip_request_no_response, { "cip.analysis.request_no_response", PI_PROTOCOL, PI_NOTE, "CIP request without a response", EXPFILL } },

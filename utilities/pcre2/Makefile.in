@@ -1386,6 +1386,7 @@ EXTRA_DIST = m4/ax_pthread.m4 m4/pcre2_check_vscript.m4 \
 	patches/pcre2-10.48-Fix-scan-prefix-repeat-reset.patch \
 	patches/pcre2-10.48-Keep-escape-error-offset-in-pattern.patch \
 	patches/pcre2-10.48-Write-serialization-padding.patch \
+	patches/pcre2-10.49-Fix-large-stack-allocation.patch \
 	BUILD.bazel MODULE.bazel build.zig build.zig.zon \
 	vms/configure.com vms/openvms_readme.txt vms/pcre2.h_patch \
 	vms/stdint.h src/pcre2.h.generic src/config.h.generic \

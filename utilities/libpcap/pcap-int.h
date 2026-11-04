@@ -35,15 +35,12 @@
 #define	pcap_int_h
 
 #include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include <signal.h>
 
 #include <pcap/pcap.h>
-
-#ifdef MSDOS
-  #include <fcntl.h>
-  #include <io.h>
-#endif
 
 #include "varattrs.h"
 #include "fmtutils.h"
@@ -60,7 +57,7 @@
  *
  * XXX - verify that we have at least C99 support on UN*Xes?
  *
- * What about MinGW or various DOS toolchains?  We're currently assuming
+ * What about MinGW?  We're currently assuming
  * sufficient C99 support there.
  */
 #if defined(_MSC_VER)
@@ -128,17 +125,9 @@ extern int pcapint_new_api;
 extern int pcapint_utf_8_mode;
 
 /*
- * Swap byte ordering of unsigned long long timestamp on a big endian
- * machine.
+ * Map packet buffers with 32-bit addresses.
  */
-#define SWAPLL(ull)  ((ull & 0xff00000000000000ULL) >> 56) | \
-                      ((ull & 0x00ff000000000000ULL) >> 40) | \
-                      ((ull & 0x0000ff0000000000ULL) >> 24) | \
-                      ((ull & 0x000000ff00000000ULL) >> 8)  | \
-                      ((ull & 0x00000000ff000000ULL) << 8)  | \
-                      ((ull & 0x0000000000ff0000ULL) << 24) | \
-                      ((ull & 0x000000000000ff00ULL) << 40) | \
-                      ((ull & 0x00000000000000ffULL) << 56)
+extern int pcapint_mmap_32bit;
 
 /*
  * Maximum snapshot length.
@@ -169,6 +158,17 @@ extern int pcapint_utf_8_mode;
 #define MAXIMUM_SNAPLEN		262144
 
 /*
+ * Do not enable this feature!  rpcap_doauth_userinfo() is subject to a stack
+ * buffer overflow and must be either reimplemented or removed.  Specifically,
+ * here "reimplemented" besides the obvious buffer management matters means
+ * rejecting an URL with malformed credentials as soon as possible rather than
+ * after establishing the TCP connection.  That would require to resolve the
+ * current layering violation between the URL parsing code and the network
+ * protocol code.
+ */
+#define RPCAP_USE_USERINFO 0
+
+/*
  * Locale-independent macros for testing character types.
  * These can be passed any integral value, without worrying about, for
  * example, sign-extending char values, unlike the C macros.
@@ -176,9 +176,17 @@ extern int pcapint_utf_8_mode;
 #define PCAP_ISDIGIT(c) \
 	((c) >= '0' && (c) <= '9')
 #define PCAP_ISXDIGIT(c) \
-	(((c) >= '0' && (c) <= '9') || \
+	(PCAP_ISDIGIT(c) || \
 	 ((c) >= 'A' && (c) <= 'F') || \
 	 ((c) >= 'a' && (c) <= 'f'))
+#define PCAP_ISUPPER(c) \
+	((c) >= 'A' && (c) <= 'Z')
+#define PCAP_ISLOWER(c) \
+	((c) >= 'a' && (c) <= 'z')
+#define PCAP_ISALPHA(c) \
+	(PCAP_ISUPPER(c) || PCAP_ISLOWER(c))
+#define PCAP_ISALNUM(c) \
+	(PCAP_ISALPHA(c) || PCAP_ISDIGIT(c))
 
 struct pcap_opt {
 	char	*device;
@@ -227,7 +235,6 @@ typedef u_int	(*sendqueue_transmit_op_t)(pcap_t *, pcap_send_queue *, int);
 typedef int	(*setuserbuffer_op_t)(pcap_t *, int);
 typedef int	(*live_dump_op_t)(pcap_t *, char *, int, int);
 typedef int	(*live_dump_ended_op_t)(pcap_t *, int);
-typedef PAirpcapHandle	(*get_airpcap_handle_op_t)(pcap_t *);
 #endif
 typedef void	(*cleanup_op_t)(pcap_t *);
 
@@ -256,9 +263,9 @@ struct pcap {
 	 * Read buffer.
 	 */
 	u_int bufsize;
-	void *buffer;
+	u_char *buffer;
 	u_char *bp;
-	int cc;
+	u_int cc;
 
 	sig_atomic_t break_loop; /* flag set to force break from packet-reading loop */
 
@@ -285,7 +292,7 @@ struct pcap {
 	int snapshot;
 	int linktype;		/* Network linktype */
 	int linktype_ext;	/* Extended information stored in the linktype field of a file */
-	int offset;		/* offset for proper alignment */
+	u_int offset;		/* offset for proper alignment */
 	int activated;		/* true if the capture is really started */
 	int oldstyle;		/* if we're opening with pcap_open_live() */
 
@@ -308,7 +315,7 @@ struct pcap {
 	 */
 	int bpf_codegen_flags;
 
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 	int selectable_fd;	/* FD on which select()/poll()/epoll_wait()/kevent()/etc. can be done */
 
 	/*
@@ -379,7 +386,6 @@ struct pcap {
 	setuserbuffer_op_t setuserbuffer_op;
 	live_dump_op_t live_dump_op;
 	live_dump_ended_op_t live_dump_ended_op;
-	get_airpcap_handle_op_t get_airpcap_handle_op;
 #endif
 	cleanup_op_t cleanup_op;
 };
@@ -388,6 +394,18 @@ struct pcap {
  * BPF code generation flags.
  */
 #define BPF_SPECIAL_VLAN_HANDLING	0x00000001	/* special VLAN handling for Linux */
+/*
+ * Special handling of packet type and ifindex, which are some of the auxiliary
+ * data items available in Linux >= 2.6.27.  Disregard protocol and netlink
+ * attributes for now.
+ */
+#define BPF_SPECIAL_BASIC_HANDLING	0x00000002
+/*
+ * Generate tests for both byte orders for multi-byte
+ * AF_ values and for all known AF_INET6 values; this is used when
+ * reading a savefile rather than doing a live capture.
+ */
+#define BPF_OFFLINE_AF_HANDLING	0x00000004
 
 /*
  * User data structure for the one-shot callback used for pcap_next()
@@ -402,6 +420,9 @@ struct oneshot_userdata {
 #ifndef min
 #define min(a, b) ((a) > (b) ? (b) : (a))
 #endif
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
 int	pcapint_offline_read(pcap_t *, int, pcap_handler, u_char *);
 
@@ -414,7 +435,7 @@ int	pcapint_offline_read(pcap_t *, int, pcap_handler, u_char *);
 /*
  * Routines that most pcap implementations can use for non-blocking mode.
  */
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 int	pcapint_getnonblock_fd(pcap_t *);
 int	pcapint_setnonblock_fd(pcap_t *p, int);
 #endif
@@ -475,7 +496,7 @@ void	pcapint_breakloop_common(pcap_t *);
  *
  * "pcapint_add_dev()" adds an entry to a pcap_if_list_t.
  *
- * "pcap_add_any_dev()" adds an entry for the "any" device to a pcap_if_list_t.
+ * "pcapint_add_any_dev()" adds an entry for the "any" device to a pcap_if_list_t.
  *
  * "pcapint_find_dev()" tries to find a device, by name, in a pcap_if_list_t.
  *
@@ -486,7 +507,7 @@ struct pcap_if_list;
 typedef struct pcap_if_list pcap_if_list_t;
 typedef int (*get_if_flags_func)(const char *, bpf_u_int32 *, char *);
 int	pcapint_platform_finddevs(pcap_if_list_t *, char *);
-#if !defined(_WIN32) && !defined(MSDOS)
+#if !defined(_WIN32)
 int	pcapint_findalldevs_interfaces(pcap_if_list_t *, char *,
 	    int (*)(const char *), get_if_flags_func);
 #endif
@@ -495,7 +516,7 @@ pcap_if_t *pcapint_find_or_add_dev(pcap_if_list_t *, const char *, bpf_u_int32,
 pcap_if_t *pcapint_find_dev(pcap_if_list_t *, const char *);
 pcap_if_t *pcapint_add_dev(pcap_if_list_t *, const char *, bpf_u_int32,
 	    const char *, char *);
-pcap_if_t *pcap_add_any_dev(pcap_if_list_t *, char *);
+pcap_if_t *pcapint_add_any_dev(pcap_if_list_t *, char *);
 int	pcapint_add_addr_to_dev(pcap_if_t *, struct sockaddr *, size_t,
 	    struct sockaddr *, size_t, struct sockaddr *, size_t,
 	    struct sockaddr *dstaddr, size_t, char *errbuf);
@@ -595,6 +616,8 @@ u_int	pcapint_filter(const struct bpf_insn *, const u_int, const u_char *,
 int	pcapint_validate_filter(const struct bpf_insn *, int);
 uint8_t pcapint_valid_insn(const struct bpf_insn *);
 
+bool pcapint_opcode_without_k(const uint16_t);
+
 /*
  * Internal interfaces for both "pcap_create()" and routines that
  * open savefiles.
@@ -614,9 +637,32 @@ int	pcapint_strcasecmp(const char *, const char *);
  * rpcaps://).
  */
 int	pcapint_createsrcstr_ex(char *, int, const char *, const char *,
-    const char *, unsigned char, char *);
+    const char *, const char *, unsigned char, char *);
 int	pcapint_parsesrcstr_ex(const char *, int *, char *, char *,
-    char *, unsigned char *, char *);
+    char *, char *, unsigned char *, char *);
+
+/*
+ * Routine to parse a string containing an unsigned decimal integer,
+ * which catches some errors that strtoul() doesn't (strtoul() appears
+ * to parse numbers according to the way a C compiler does, so it skips
+ * leading white space and will happily allow an unsigned number with
+ * a negative sign), and also can treat the string not being completely
+ * numeric as an error and will treat values that don't fit into
+ * an unsigned int as an error.
+ *
+ * If the second argument is non-null, the string may have additional text
+ * after the number; if it is null, any additional text after the number
+ * is treated as an error.
+ *
+ * On success, it returns 0 and sets the item pointed to by the third
+ * argument to the integer value and, if the second argument is not null,
+ * sets the item pointed to by it to a pointer to the character following
+ * the number.
+ *
+ * On error, it returns EINVAL for an invalid number or ERANGE for a
+ * value that's too large to fit in an unsigned int.
+ */
+int	pcapint_get_decuint(const char *, char **, unsigned *);
 
 #ifdef YYDEBUG
 extern int pcap_debug;

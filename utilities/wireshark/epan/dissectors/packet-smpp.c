@@ -38,6 +38,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 
 #include <epan/packet.h>
 #include <epan/expert.h>
@@ -242,7 +243,15 @@ static int hf_huawei_smpp_operation_result;
 static int hf_huawei_smpp_notify_mode;
 static int hf_huawei_smpp_delivery_result;
 
+/*
+ * Request/response tracking
+ */
+static int hf_smpp_response_in;
+static int hf_smpp_request_in;
+static int hf_smpp_response_time;
+
 static expert_field ei_smpp_message_payload_duplicate;
+static expert_field ei_smpp_date_time_decoding_failed;
 
 /* Initialize the subtree pointers */
 static int ett_smpp;
@@ -1053,6 +1062,34 @@ static int * const submit_msg_fields[] = {
     NULL
 };
 
+/* Structures for request/response tracking */
+typedef struct _smpp_session_t {
+        wmem_multimap_t *rr_map;    /* Multimap to track request/response pairs
+                                       as sequence numbers _might_ be reused
+                                       according to SMPP 5.0 section 2.6.2 */
+} smpp_session_t;
+
+/*
+ * A data structure to track a SMPP request/response pair.
+ * Note: The protocol spec doesn't use the term "transaction", but we are using
+ * it here anyway...
+ */
+typedef struct _smpp_txn_t {
+        uint32_t req_frame;       /* Frame number in which request was seen */
+        uint32_t res_frame;       /* Frame number in which response was seen */
+        nstime_t req_time;        /* Time when request was seen */
+        nstime_t res_time;        /* Time when response was seen */
+} smpp_txn_t;
+
+/* The same sequence number might be used in either direction in the same
+ * session. So, we need to track the sequence numbers by direction.
+ */
+typedef struct _smpp_txn_key_t {
+        address src_addr;
+        address dst_addr;
+        unsigned sequence_number;
+} smpp_txn_key_t;
+
 static dissector_handle_t gsm_sms_handle;
 
 static smpp_data_t *
@@ -1114,22 +1151,36 @@ smpp_stats_tree_per_packet(stats_tree *st, /* st as it was passed to us */
 /*!
  * SMPP equivalent of mktime() (3). Convert date to standard 'time_t' format
  *
- * \param       datestr The SMPP-formatted date to convert
- * \param       secs    Returns the 'time_t' equivalent
- * \param       nsecs   Returns the additional nano-seconds
+ * \param      datestr  The SMPP-formatted date to convert
+ * \param      nstime   Returns the 'nstime_t' equivalent
+ * \param      relative Returns whether time is specified relative or absolute
  *
- * \return              Whether time is specified relative (true) or absolute (false)
- *                      If invalid abs time: return *secs = (time_t)(-1) and *nsecs=0
+ * \return              Whether the time parsed validly.
  */
 
-/* XXX: This function needs better error checking and handling */
-
 static bool
-smpp_mktime(const char *datestr, time_t *secs, int *nsecs)
+smpp_mktime(const char *datestr, nstime_t *nstime, bool *relative)
 {
     struct tm    r_time;
     time_t       t_diff;
-    bool         relative = (datestr[15] == 'R') ? true : false;
+
+    for (int i = 0; i < 15; ++i) {
+        if (!g_ascii_isdigit(datestr[i])) {
+            return false;
+        }
+    }
+
+    switch (datestr[15]) {
+    case 'R':
+        *relative = true;
+        break;
+    case '+':
+    case '-':
+        *relative = false;
+        break;
+    default:
+        return false;
+    }
 
     r_time.tm_year = 10 * (datestr[0] - '0') + (datestr[1] - '0');
     /*
@@ -1145,30 +1196,40 @@ smpp_mktime(const char *datestr, time_t *secs, int *nsecs)
     r_time.tm_sec  = 10 * (datestr[10] - '0') + (datestr[11] - '0');
     r_time.tm_isdst = -1;
 
-    if (relative == false) {
-        *secs = mktime_utc(&r_time);
-        *nsecs = 0;
-        if (*secs == (time_t)(-1)) {
-            return relative;
+    /* Some implementations of timegm, mktime, etc. happily convert
+     * October 40 to November 9, etc. Don't allow that. */
+    if (!tm_is_valid(&r_time)) {
+        return false;
+    }
+
+    if (*relative == false) {
+        nstime->secs = mktime_utc(&r_time);
+        if (errno == EINVAL) {
+            return false;
         }
-        *nsecs = (datestr[12] - '0') * 100000000;
+        nstime->nsecs = (datestr[12] - '0') * 100000000;
 
         t_diff = (10 * (datestr[13] - '0') + (datestr[14] - '0')) * 900;
         if (datestr[15] == '-')
             /* Represented time is behind UTC, shift it forward to UTC */
-            *secs += t_diff;
+            nstime->secs += t_diff;
         else if (datestr[15] == '+')
             /* Represented time is ahead of UTC, shift it backward to UTC */
-            *secs -= t_diff;
+            nstime->secs -= t_diff;
     } else {
-        *secs = r_time.tm_sec + 60 *
+        /* The SMPP standard gives examples of a relative time using years
+         * and months, but that can't be converted into a FT_RELATIVE_TIME
+         * without knowing the start time. In practice it shouldn't happen.
+         * XXX - Either fail or use some kind of contractual average month?
+         */
+        nstime->secs = r_time.tm_sec + 60 *
             (r_time.tm_min + 60 *
              (r_time.tm_hour + 24 *
               r_time.tm_mday));
-        *nsecs = 0;
+        nstime->nsecs = 0;
     }
 
-    return relative;
+    return true;
 }
 
 /*!
@@ -1196,7 +1257,7 @@ smpp_handle_string(proto_tree *tree, tvbuff_t *tvb, int field, int *offset)
 static const char *
 smpp_handle_string_return(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int field, int *offset)
 {
-    int          len;
+    unsigned     len;
     const char* str = (const char *)tvb_get_stringz_enc(pinfo->pool, tvb, *offset, &len, ENC_ASCII);
 
     if (len > 0)
@@ -1225,25 +1286,27 @@ static void
 smpp_handle_time(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo,
                  int field, int field_R, int *offset)
 {
+    proto_item *ti;
     char     *strval;
-    int       len;
-    nstime_t  tmptime;
+    unsigned  len;
+    nstime_t  tmptime = NSTIME_INIT_ZERO;
+    bool relative;
 
     strval = (char *) tvb_get_stringz_enc(pinfo->pool, tvb, *offset, &len, ENC_ASCII);
     if (*strval)
     {
-        if (len >= 16)
+        if (len >= 16 && smpp_mktime(strval, &tmptime, &relative))
         {
-            if (smpp_mktime(strval, &tmptime.secs, &tmptime.nsecs))
+            if (relative) {
                 proto_tree_add_time(tree, field_R, tvb, *offset, len, &tmptime);
-            else
+            } else {
                 proto_tree_add_time(tree, field, tvb, *offset, len, &tmptime);
+            }
         }
         else
         {
-            tmptime.secs = 0;
-            tmptime.nsecs = 0;
-            proto_tree_add_time_format_value(tree, field_R, tvb, *offset, len, &tmptime, "%s", strval);
+            ti = proto_tree_add_time_format_value(tree, field_R, tvb, *offset, len, &tmptime, "%s", strval);
+            expert_add_info(pinfo, ti, &ei_smpp_date_time_decoding_failed);
         }
     }
     *offset += len;
@@ -1462,20 +1525,17 @@ smpp_handle_tlv(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, int *offset
                 (*offset) += 1;
                 break;
             case  0x020A:       /* source_port  */
-                proto_tree_add_item(sub_tree, hf_smpp_source_port, tvb, *offset, 2, ENC_BIG_ENDIAN);
-                source_port = tvb_get_ntohs(tvb, *offset);
+                proto_tree_add_item_ret_uint16(sub_tree, hf_smpp_source_port, tvb, *offset, 2, ENC_BIG_ENDIAN, &source_port);
                 source_port_found = true;
                 (*offset) += 2;
                 break;
             case  0x020B:       /* destination_port     */
-                proto_tree_add_item(sub_tree, hf_smpp_destination_port, tvb, *offset, 2, ENC_BIG_ENDIAN);
-                dest_port = tvb_get_ntohs(tvb, *offset);
+                proto_tree_add_item_ret_uint16(sub_tree, hf_smpp_destination_port, tvb, *offset, 2, ENC_BIG_ENDIAN, &dest_port);
                 dest_port_found = true;
                 (*offset) += 2;
                 break;
             case  0x020C:       /* sar_msg_ref_num      */
-                proto_tree_add_item(sub_tree, hf_smpp_sar_msg_ref_num, tvb, *offset, 2, ENC_BIG_ENDIAN);
-                sm_id = tvb_get_ntohs(tvb, *offset);
+                proto_tree_add_item_ret_uint16(sub_tree, hf_smpp_sar_msg_ref_num, tvb, *offset, 2, ENC_BIG_ENDIAN, &sm_id);
                 sm_id_found = true;
                 (*offset) += 2;
                 break;
@@ -2425,6 +2485,59 @@ export_smpp_pdu(packet_info *pinfo, tvbuff_t *tvb)
     tap_queue_packet(exported_pdu_tap, pinfo, exp_pdu_data);
 }
 
+static unsigned
+smpp_txn_key_hash(const void *k)
+{
+    const smpp_txn_key_t *key = (const smpp_txn_key_t *)k;
+    unsigned hash_val = 0;
+
+    hash_val = add_address_to_hash(hash_val, &key->src_addr);
+    hash_val = add_address_to_hash(hash_val, &key->dst_addr);
+    hash_val ^= key->sequence_number * 2654435761u;
+    return hash_val;
+}
+
+static gboolean
+smpp_txn_key_equal(const void *a, const void *b)
+{
+    const smpp_txn_key_t *key_a = (const smpp_txn_key_t *)a;
+    const smpp_txn_key_t *key_b = (const smpp_txn_key_t *)b;
+
+    return addresses_equal(&key_a->src_addr, &key_b->src_addr) &&
+           addresses_equal(&key_a->dst_addr, &key_b->dst_addr) &&
+           key_a->sequence_number == key_b->sequence_number;
+}
+
+static smpp_txn_key_t*
+get_smpp_txn_key(packet_info *pinfo, unsigned command_id, unsigned sequence_number, wmem_allocator_t *wma)
+{
+    smpp_txn_key_t *txn_key = wmem_new0(wma, smpp_txn_key_t);
+    txn_key->sequence_number = sequence_number;
+    if (command_id & SMPP_COMMAND_ID_RESPONSE_MASK) {
+        /* PDU is a response; key direction reversed */
+        copy_address_wmem(wma, &txn_key->src_addr, &pinfo->dst);
+        copy_address_wmem(wma, &txn_key->dst_addr, &pinfo->src);
+        return txn_key;
+    } else {
+        copy_address_wmem(wma, &txn_key->src_addr, &pinfo->src);
+        copy_address_wmem(wma, &txn_key->dst_addr, &pinfo->dst);
+        return txn_key;
+    }
+}
+
+static smpp_session_t*
+find_or_create_smpp_session(packet_info *pinfo)
+{
+    conversation_t *conversation = find_or_create_conversation(pinfo);
+    smpp_session_t *smpp_session = conversation_get_proto_data(conversation, proto_smpp);
+    if (!smpp_session) {
+        smpp_session = wmem_new0(wmem_file_scope(), smpp_session_t);
+        smpp_session->rr_map = wmem_multimap_new(wmem_file_scope(), smpp_txn_key_hash, smpp_txn_key_equal);
+        conversation_add_proto_data(conversation, proto_smpp, smpp_session);
+    }
+    return smpp_session;
+}
+
 /* Dissect a single SMPP PDU contained within "tvb". */
 static int
 dissect_smpp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -2440,6 +2553,12 @@ dissect_smpp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item     *ti;
     proto_tree     *smpp_tree;
+
+    /* Request/response tracking */
+    smpp_session_t *smpp_session = NULL;
+    smpp_txn_t     *smpp_txn = NULL;
+    smpp_txn_key_t *txn_key = NULL;
+    nstime_t       ns;
 
     /*
      * Safety: don't even try to dissect the PDU
@@ -2460,6 +2579,30 @@ dissect_smpp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     }
     offset += 4;
     sequence_number = tvb_get_ntohl(tvb, offset);
+
+    /* Request/response tracking */
+    smpp_session = find_or_create_smpp_session(pinfo);
+    if (!PINFO_FD_VISITED(pinfo)) {
+        if ((command_id & SMPP_COMMAND_ID_RESPONSE_MASK) == 0) {
+            /* This is a request. We assume that it will always be seen before the response. */
+            txn_key = get_smpp_txn_key(pinfo, command_id, sequence_number, wmem_file_scope());
+            smpp_txn = wmem_new0(wmem_file_scope(), smpp_txn_t);
+            wmem_multimap_insert32(smpp_session->rr_map, txn_key, pinfo->num, smpp_txn);
+            smpp_txn->req_frame = pinfo->num;
+            smpp_txn->req_time = pinfo->fd->abs_ts;
+        } else {
+            /* This is a response. */
+            txn_key = get_smpp_txn_key(pinfo, command_id, sequence_number, pinfo->pool);
+            smpp_txn = (smpp_txn_t *)wmem_multimap_lookup32_le(smpp_session->rr_map, txn_key, pinfo->num);
+            if (smpp_txn) {
+                smpp_txn->res_frame = pinfo->num;
+                smpp_txn->res_time = pinfo->fd->abs_ts;
+            }
+        }
+    } else {
+        txn_key = get_smpp_txn_key(pinfo, command_id, sequence_number, pinfo->pool);
+        smpp_txn = (smpp_txn_t *)wmem_multimap_lookup32_le(smpp_session->rr_map, txn_key, pinfo->num);
+    }
 
     if (have_tap_listener(exported_pdu_tap)){
         export_smpp_pdu(pinfo,tvb);
@@ -2523,6 +2666,26 @@ dissect_smpp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     }
     proto_tree_add_uint(smpp_tree, hf_smpp_sequence_number, tvb, 12, 4, sequence_number);
     proto_item_append_text(smpp_tree, ", Seq: %u, Len: %u", sequence_number, command_length);
+
+    /* Set the conversation related fields */
+    if (smpp_txn) {
+        if (command_id & SMPP_COMMAND_ID_RESPONSE_MASK) {
+            /* Fill info about request frame and response time, but only if both req/res seen */
+            if (smpp_txn->req_frame > 0 && smpp_txn->res_frame > 0) {
+                ti =  proto_tree_add_uint(smpp_tree, hf_smpp_request_in, tvb, 0, 0, smpp_txn->req_frame);
+                proto_item_set_generated(ti);
+
+                nstime_delta(&ns, &smpp_txn->res_time, &smpp_txn->req_time);
+                ti = proto_tree_add_time(smpp_tree, hf_smpp_response_time, tvb, 0, 0, &ns);
+                proto_item_set_generated(ti);
+            }
+        } else {
+            if (smpp_txn->res_frame > 0) {
+                ti =  proto_tree_add_uint(smpp_tree, hf_smpp_response_in, tvb, 0, 0, smpp_txn->res_frame);
+                proto_item_set_generated(ti);
+            }
+        }
+    }
 
     if (command_length <= tvb_reported_length(tvb))
     {
@@ -2670,7 +2833,7 @@ dissect_smpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     else {                            /* no? probably X.25            */
         uint32_t offset = 0;
         while (tvb_reported_length_remaining(tvb, offset) > 0) {
-            uint16_t pdu_len = tvb_get_ntohl(tvb, offset);
+            uint32_t pdu_len = tvb_get_ntohl(tvb, offset);
             int pdu_real_len = tvb_captured_length_remaining(tvb, offset);
             tvbuff_t *pdu_tvb;
 
@@ -2679,9 +2842,7 @@ dissect_smpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
             if (pdu_real_len <= 0)
                 return offset;
-            if (pdu_real_len > pdu_len)
-                pdu_real_len = pdu_len;
-            pdu_tvb = tvb_new_subset_length_caplen(tvb, offset, pdu_real_len, pdu_len);
+            pdu_tvb = tvb_new_subset_length(tvb, offset, pdu_len);
             dissect_smpp_pdu(pdu_tvb, pinfo, tree, data);
             offset += pdu_len;
         }
@@ -2732,8 +2893,10 @@ dissect_smpp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
             return false;
 
         //address must be NULL-terminated string of up to 65 ascii characters
-        int end = tvb_find_uint8(tvb, 18, -1, 0);
-        if ((end <= 0) || (end > 65))
+        unsigned end;
+        bool found;
+        found = tvb_find_uint8_remaining(tvb, 18, 0, &end);
+        if ((found == false) ||(end == 0) || (end > 65))
             return false;
 
         if (!tvb_ascii_isprint(tvb, 18, end - 18))
@@ -3763,6 +3926,23 @@ proto_register_smpp(void)
                         FT_UINT32, BASE_DEC, VALS(vals_delivery_result), 0x00,
                         "SMPP+: Indicates the Delivery result of SMS", HFILL
                 }
+        },
+        /* Conversation tracking */
+        {       &hf_smpp_response_in,
+                {       "Response In", "smpp.response_in",
+                        FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+                        "The response to this SMPP request is in this frame", HFILL
+                }
+        },
+        {       &hf_smpp_request_in,
+                {       "Request In", "smpp.request_in", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+                        "This request corresponding to this SMPP response in this frame", HFILL
+                }
+        },
+        {       &hf_smpp_response_time,
+                {       "Response Time", "smpp.response_time", FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,
+                        "The time between the request and the response", HFILL
+                }
         }
     };
 
@@ -3780,6 +3960,11 @@ proto_register_smpp(void)
         { &ei_smpp_message_payload_duplicate,
           { "smpp.message_payload.duplicate", PI_PROTOCOL, PI_WARN,
             "short_message field and message_payload TLV can only appear once in total",
+            EXPFILL }
+        },
+        { &ei_smpp_date_time_decoding_failed,
+          { "smpp.date_time.decoding.failed", PI_PROTOCOL, PI_WARN,
+            "Failed to decode date and time from string",
             EXPFILL }
         }
     };

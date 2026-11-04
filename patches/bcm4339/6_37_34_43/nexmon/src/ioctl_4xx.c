@@ -140,10 +140,12 @@ wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 int bytes_used = 0;
                 struct inject_frame *frm = (struct inject_frame *) arg;
 
-                while ((frm->len > 0) && (bytes_used + frm->len <= len)) {
+                while ((frm->len >= 4) && (bytes_used + frm->len <= len)) {
                     // add a dummy radiotap header if frame does not contain one
                     if (frm->type == 0) {
                         p = pkt_buf_get_skb(wlc->osh, frm->len + 202 + 8 - 4);
+                        if (!p)
+                            break;
                         skb_pull(p, 202);
                         struct ieee80211_radiotap_header *radiotap = 
                             (struct ieee80211_radiotap_header *) p->data;
@@ -157,6 +159,8 @@ wlc_ioctl_4xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                         skb_push(p, 8);
                     } else {
                         p = pkt_buf_get_skb(wlc->osh, frm->len + 202 - 4);
+                        if (!p)
+                            break;
                         skb_pull(p, 202);
 
                         memcpy(p->data, frm->data, frm->len - 4);

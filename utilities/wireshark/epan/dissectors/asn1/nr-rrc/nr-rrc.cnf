@@ -1,6 +1,6 @@
 # nr-rrc.cnf
 # nr-rrc conformation file
-# Copyright 2018-2025 Pascal Quantin
+# Copyright 2018-2026 Pascal Quantin
 
 #.OPT
 PER
@@ -53,6 +53,9 @@ T-Reassembly
 T-StatusProhibit
 UL-DataSplitThreshold
 UTRA-FDD-Q-OffsetRange-r16
+PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item
+SL-PosSIB-ReqInfo-r18/posSibType-r18
+PosSIB-ReqInfo-r16/posSibType-r16
 
 #.EXPORTS
 BandCombinationIndex_PDU
@@ -70,10 +73,24 @@ FeatureSetEntryIndex_PDU
 FreqBandList_PDU
 HandoverCommand_PDU
 HandoverPreparationInformation_PDU
+IntendedServiceAreaInfo-areaCoordinates-r19_PDU
 LocationMeasurementInfo_PDU
+LTM-CSI-IM-ResourceSetToAddModList-r19_PDU
+LTM-CSI-IM-ResourceSetToReleaseList-r19_PDU
+LTM-CSI-IM-ResourceToAddModList-r19_PDU
+LTM-CSI-IM-ResourceToReleaseList-r19_PDU
+LTM-CSI-ReportConfig-r18_PDU
+LTM-CSI-ReportConfigId-r18_PDU
 LTM-CSI-ResourceConfigToAddModList-r18_PDU
 LTM-CSI-ResourceConfigToReleaseList-r18_PDU
+LTM-NoSecurityChangeId-r19_PDU
+LTM-NZP-CSI-RS-ResourceSetToAddModList-r19_PDU
+LTM-NZP-CSI-RS-ResourceSetToReleaseList-r19_PDU
+LTM-NZP-CSI-RS-ResourceToAddModList-r19_PDU
+LTM-NZP-CSI-RS-ResourceToReleaseList-r19_PDU
+LTM-ReferenceConfiguration-r18_PDU
 LTM-TCI-Info-r18_PDU
+LTM-UE-MeasuredTA-ID-r18_PDU
 MBS-NeighbourCellList-r17_PDU
 MBSInterestIndication-r17_PDU
 MBSMulticastConfiguration-r18_PDU
@@ -82,6 +99,7 @@ MeasGapConfig_PDU
 MeasGapSharingConfig_PDU
 MeasObjectToAddMod_PDU
 MeasResultSCG-Failure_PDU
+MeasTiming_PDU
 MeasurementTimingConfiguration_PDU
 MIB_PDU
 MRB-PDCP-ConfigBroadcast-r17_PDU
@@ -94,6 +112,8 @@ NeedForGapNCSG-InfoNR-r17_PDU
 NeedForInterruptionInfoNR-r18_PDU
 NonCellDefiningSSB-r17_PDU
 NZP-CSI-RS-Resource_PDU
+NZP-CSI-RS-ResourceSet_PDU
+OD-SIB1-Config-r19_PDU
 OverheatingAssistance_PDU
 OverheatingAssistance-r17_PDU
 P-Max_PDU
@@ -112,6 +132,7 @@ RLC-BearerConfig_PDU
 RRCReconfiguration_PDU
 RRCReconfigurationComplete_PDU
 SchedulingRequestResourceConfig_PDU
+SBFD-Subband-Allocation-r19_PDU
 SDT-MAC-PHY-CG-Config-r17_PDU
 SIB1_PDU
 SIB2_PDU
@@ -139,6 +160,9 @@ SIB22-r18_PDU
 SIB23-r18_PDU
 SIB24-r18_PDU
 SIB25-r18_PDU
+SIB26-r19_PDU
+SIB27-r19_PDU
+SIB28-r19_PDU
 SidelinkParametersNR-r16_PDU
 SidelinkUEInformationNR-r16_PDU
 SL-ConfigDedicatedEUTRA-Info-r16_PDU
@@ -148,8 +172,10 @@ SL-PHY-MAC-RLC-Config-v1700_PDU
 SL-RLC-ChannelToAddModList-r17_PDU
 SRS-PosRRC-InactiveConfig-r17_PDU
 SRS-PosRRC-InactiveValidityAreaConfig-r18_PDU
+SRS-Resource_PDU
 SuccessHO-Report-r17_PDU
 SuccessPSCell-Report-r18_PDU
+Tag-Id-ptr-r18_PDU
 TCI-StateId_PDU
 TCI-UL-StateId-r17_PDU
 TDD-UL-DL-ConfigCommon_PDU
@@ -187,10 +213,24 @@ FeatureSetEntryIndex
 FreqBandList
 HandoverCommand
 HandoverPreparationInformation
+IntendedServiceAreaInfo-areaCoordinates-r19
 LocationMeasurementInfo
+LTM-CSI-IM-ResourceSetToAddModList-r19
+LTM-CSI-IM-ResourceSetToReleaseList-r19
+LTM-CSI-IM-ResourceToAddModList-r19
+LTM-CSI-IM-ResourceToReleaseList-r19
+LTM-CSI-ReportConfig-r18
+LTM-CSI-ReportConfigId-r18
 LTM-CSI-ResourceConfigToAddModList-r18
 LTM-CSI-ResourceConfigToReleaseList-r18
+LTM-NoSecurityChangeId-r19
+LTM-NZP-CSI-RS-ResourceSetToAddModList-r19
+LTM-NZP-CSI-RS-ResourceSetToReleaseList-r19
+LTM-NZP-CSI-RS-ResourceToAddModList-r19
+LTM-NZP-CSI-RS-ResourceToReleaseList-r19
+LTM-ReferenceConfiguration-r18
 LTM-TCI-Info-r18
+LTM-UE-MeasuredTA-ID-r18
 MBS-NeighbourCellList-r17
 MBSInterestIndication-r17
 MBSMulticastConfiguration-r18
@@ -200,6 +240,7 @@ MeasGapConfig
 MeasGapSharingConfig
 MeasObjectToAddMod
 MeasResultSCG-Failure
+MeasTiming
 MeasurementTimingConfiguration
 MIB
 MRB-PDCP-ConfigBroadcast-r17
@@ -213,6 +254,8 @@ NeedForGapNCSG-InfoNR-r17
 NeedForInterruptionInfoNR-r18
 NonCellDefiningSSB-r17
 NZP-CSI-RS-Resource
+NZP-CSI-RS-ResourceSet
+OD-SIB1-Config-r19
 OverheatingAssistance
 OverheatingAssistance-r17
 P-Max
@@ -234,6 +277,7 @@ RRCReconfigurationComplete         @rrc_reconf_compl
 SBCCH-SL-BCH-Message               @sbcch.sl.bch
 SCCH-Message                       @scch
 SchedulingRequestResourceConfig
+SBFD-Subband-Allocation-r19
 SDT-MAC-PHY-CG-Config-r17
 SidelinkParametersNR-r16
 SidelinkUEInformationNR-r16
@@ -267,6 +311,9 @@ SIB24-r18                          @sib24
 SIB25-r18                          @sib25
 SIB17bis-r18                       @sib17bis
 SIB17bis-IEs-r18                   @sib17bis.ies
+SIB26-r19                          @sib26
+SIB27-r19                          @sib27
+SIB28-r19                          @sib28
 SL-ConfigDedicatedEUTRA-Info-r16
 SL-ConfigDedicatedNR-r16
 SL-MeasResultListRelay-r17
@@ -276,8 +323,10 @@ SL-PHY-MAC-RLC-Config-v1700
 SL-RLC-ChannelToAddModList-r17
 SRS-PosRRC-InactiveConfig-r17
 SRS-PosRRC-InactiveValidityAreaConfig-r18
+SRS-Resource
 SuccessHO-Report-r17
 SuccessPSCell-Report-r18
+Tag-Id-ptr-r18
 TCI-StateId
 TCI-UL-StateId-r17
 TDD-UL-DL-ConfigCommon
@@ -586,10 +635,16 @@ SCellConfig/eag_3/sCellSIB20-r17/setup setup-SCellSIB20-r17
 ConditionalReconfiguration-r16/eag_1/scpac-ReferenceConfiguration-r18/setup setup-ReferenceConfiguration-r18
 PDSCH-ServingCellConfig/eag_2/pdsch-CodeBlockGroupTransmissionList-r16/setup setup-PDSCH-CodeBlockGroupTransmissionList-r16
 PDSCH-ServingCellConfig/eag_3/downlinkHARQ-FeedbackDisabled-r17/setup setup-DownlinkHARQ-FeedbackDisabled-r17
-LTM-Config-r18/ltm-ReferenceConfiguration-r18/setup setup-ReferenceConfiguration-r18
+LTM-ReferenceConfiguration-r18/setup setup-ReferenceConfiguration-r18
 PUSCH-ServingCellConfig/codeBlockGroupTransmission/setup setup-PUSCH-CodeBlockGroupTransmission
 PUSCH-ServingCellConfig/eag_2/maxMIMO-LayersDCI-0-2-r16/setup setup-MaxMIMO-LayersDCI-0-2-r16
 PUSCH-ServingCellConfig/eag_3/uplinkHARQ-mode-r17/setup setup-UplinkHARQ-mode-r17
+LowPowerConfig-r19/lpwus-AvailableSlot-r19/n10 lpwus-AvailableSlot-r19-n10
+LowPowerConfig-r19/lpwus-AvailableSlot-r19/n20 lpwus-AvailableSlot-r19-n20
+LowPowerConfig-r19/lpwus-AvailableSlot-r19/n40 lpwus-AvailableSlot-r19-n40
+LPWUS-Config-r19/lpwus-AvailableSlot-r19/n10 lpwus-AvailableSlot-r19-n10
+LPWUS-Config-r19/lpwus-AvailableSlot-r19/n20 lpwus-AvailableSlot-r19-n20
+LPWUS-Config-r19/lpwus-AvailableSlot-r19/n40 lpwus-AvailableSlot-r19-n40
 
 #.FIELD_ATTR
 RRM-Config/eag_1/candidateCellInfoListSN-EUTRA                                 ABBREV=rRM_Config.eag_1.candidateCellInfoListSN_EUTRA
@@ -748,6 +803,7 @@ BandSidelink-r16/sl-TransmissionMode1-r16/scs-CP-PatternTxSidelinkModeOne-r16/fr
 BandSidelinkPC5-r16/sl-Reception-r16/scs-CP-PatternRxSidelink-r16/fr2-r16/scs-120kHz-r16            ABBREV=bandSidelinkPC5_r16.sl_Reception_r16.scs_CP_PatternRxSidelink_r16.fr2_r16.scs_120kHz_r16
 SL-MeasReportQuantity-r16/sl-RSRP-r16                                                               ABBREV=sL_MeasReportQuantity_r16.sl_RSRP_r16
 MasterInformationBlockSidelink/slotIndex-r16                                                        ABBREV=bmasterInformationBlockSidelink.slotIndex_r16
+MIMO-ParametersPerBand/eag_13/aiml-BM-Case2-v1920/timeGap-r19                                       ABBREV=aiml_BM_Case2_v1920.timeGap_r19
 
 #.NO_EMIT ONLY_VALS
 
@@ -947,6 +1003,15 @@ RAT-Type TYPE_PREFIX
 
 #.FN_HDR SIB17bis-r18
   col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB17bis ");
+
+#.FN_HDR SIB26-r19
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB26 ");
+
+#.FN_HDR SIB27-r19
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB27 ");
+
+#.FN_HDR SIB28-r19
+  col_append_str(actx->pinfo->cinfo, COL_INFO, "SIB28 ");
 
 #.FN_HDR SIB1
   col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "SIB1 ");
@@ -1344,6 +1409,9 @@ ElapsedTimeSCG-Failure-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_
 #.TYPE_ATTR
 TimeSinceSHR-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
+#.TYPE_ATTR
+TimeSinceSdt-Execution-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
+
 #.FN_BODY ULInformationTransferIRAT-r16-IEs/ul-DCCH-MessageEUTRA-r16 VAL_PTR = &ul_dcch_msg_eutra_tvb
   tvbuff_t *ul_dcch_msg_eutra_tvb = NULL;
 %(DEFAULT_BODY)s
@@ -1617,6 +1685,48 @@ SIB9/timeInfo/leapSeconds DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_s
 #.TYPE_ATTR
 SIB9/timeInfo/localTimeOffset DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_localTimeOffset_fmt)
 
+#.FN_BODY CondTriggerConfig-r16/condEventId/condEventT1-r17/t1-Threshold-r17 VAL_PTR=&val
+  uint64_t val;
+  proto_tree *subtree;
+  nstime_t ts;
+  uint32_t old_offset = offset;
+%(DEFAULT_BODY)s
+
+#.FN_FTR CondTriggerConfig-r16/condEventId/condEventT1-r17/t1-Threshold-r17
+  subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_t1_Threshold_r17);
+  ts.secs = (time_t)(val/100)-EPOCH_DELTA_1900_01_01_00_00_00_UTC; /* epoch is 00:00:00 (midnight) UTC on 1900-01-01 */
+  ts.nsecs = (int)(val%100)*10000000;
+  proto_tree_add_time(subtree, hf_nr_rrc_utc_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+  proto_tree_add_time(subtree, hf_nr_rrc_local_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+
+#.FN_BODY SIB19-r17/t-Service-r17 VAL_PTR=&val
+  uint64_t val;
+  proto_tree *subtree;
+  nstime_t ts;
+  uint32_t old_offset = offset;
+%(DEFAULT_BODY)s
+
+#.FN_FTR SIB19-r17/t-Service-r17
+  subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_t_Service_r17);
+  ts.secs = (time_t)(val/100)-EPOCH_DELTA_1900_01_01_00_00_00_UTC; /* epoch is 00:00:00 (midnight) UTC on 1900-01-01 */
+  ts.nsecs = (int)(val%100)*10000000;
+  proto_tree_add_time(subtree, hf_nr_rrc_utc_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+  proto_tree_add_time(subtree, hf_nr_rrc_local_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+
+#.FN_BODY SatSwitchWithReSync-r18/t-ServiceStart-r18 VAL_PTR=&val
+  uint64_t val;
+  proto_tree *subtree;
+  nstime_t ts;
+  uint32_t old_offset = offset;
+%(DEFAULT_BODY)s
+
+#.FN_FTR SatSwitchWithReSync-r18/t-ServiceStart-r18
+  subtree = proto_item_add_subtree(actx->created_item, ett_nr_rrc_t_ServiceStart_r18);
+  ts.secs = (time_t)(val/100)-EPOCH_DELTA_1900_01_01_00_00_00_UTC; /* epoch is 00:00:00 (midnight) UTC on 1900-01-01 */
+  ts.nsecs = (int)(val%100)*10000000;
+  proto_tree_add_time(subtree, hf_nr_rrc_utc_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+  proto_tree_add_time(subtree, hf_nr_rrc_local_time, tvb, old_offset>>3, (old_offset&0x07) ? 6 : 5, &ts);
+
 #.TYPE_ATTR
 CLI-RSSI-Range-r16 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSSI_Range_r16_fmt)
 
@@ -1774,6 +1884,9 @@ Q-RxLevMin DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_Q_RxLevMin_fmt)
 RACH-ConfigGeneric/preambleReceivedTargetPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
+RACH-ConfigGeneric/sbfd-RACH-SingleConfig-preambleReceivedTargetPower-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
+
+#.TYPE_ATTR
 RSRP-RangeEUTRA DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_RSRP_RangeEUTRA_fmt)
 
 #.TYPE_ATTR
@@ -1814,6 +1927,12 @@ ServingCellConfigCommon/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STR
 
 #.TYPE_ATTR
 ServingCellConfigCommonSIB/ss-PBCH-BlockPower DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
+
+#.TYPE_ATTR
+OD-SIB1-Config-r19/ss-PBCH-BlockPower-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
+
+#.TYPE_ATTR
+OD-SSB-r19/od-SSB-PBCH-BlockPower-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_dbm)
 
 #.TYPE_ATTR
 SINR-Range DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_SINR_Range_fmt)
@@ -1981,6 +2100,9 @@ VisitedCellInfo-r16/timeSpent-r16 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(
 
 #.TYPE_ATTR
 VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
+
+#.TYPE_ATTR
+VisitedPSCellInfo-r17/scgActiveDuration-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_seconds)
 
 #.FN_HDR PosSystemInformation-r16-IEs/posSIB-TypeAndInfo-r16/_item
   nr_rrc_get_private_data(actx)->pos_sib_type = LPP_POS_SIB_TYPE_UNKNOWN;
@@ -2223,11 +2345,13 @@ VisitedPSCellInfo-r17/timeSpent-r17 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UN
   }
 
 #.FN_BODY RLC-Config VAL_PTR=&value
-  uint32_t value;
+  int32_t value;
   nr_drb_mac_rlc_mapping_t *mapping = &nr_rrc_get_private_data(actx)->drb_rlc_mapping;
 %(DEFAULT_BODY)s
-  mapping->rlcMode = (value==0) ? RLC_AM_MODE : RLC_UM_MODE;
-  mapping->rlcMode_present = true;
+  if (value != -1) {
+    mapping->rlcMode = (value==0) ? RLC_AM_MODE : RLC_UM_MODE;
+    mapping->rlcMode_present = true;
+  }
 
 #.FN_BODY LogicalChannelIdentity VAL_PTR=&value
   uint32_t value;
@@ -2599,7 +2723,11 @@ LCG-DSR-Config-r18/remainingTimeThreshold-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING 
       reassembled_tvb = process_reassembled_data(nr_priv->dcch_segment, 0, actx->pinfo, "Reassembled DL Dedicated Message",
                                                  frag_data, &nr_rrc_dcch_segment_frag_items, NULL, tree);
       if (reassembled_tvb) {
+        /* The reassembled message can itself be a segment, which would
+         * reassemble and dissect recursively, so bound the depth. */
+        increment_dissection_depth(actx->pinfo);
         dissect_DL_DCCH_Message_PDU(reassembled_tvb, actx->pinfo, tree, NULL);
+        decrement_dissection_depth(actx->pinfo);
       }
     }
   }
@@ -2665,7 +2793,11 @@ LCG-DSR-Config-r18/remainingTimeThreshold-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING 
       reassembled_tvb = process_reassembled_data(nr_priv->dcch_segment, 0, actx->pinfo, "Reassembled UL Dedicated Message",
                                                  frag_data, &nr_rrc_dcch_segment_frag_items, NULL, tree);
       if (reassembled_tvb) {
+        /* The reassembled message can itself be a segment, which would
+         * reassemble and dissect recursively, so bound the depth. */
+        increment_dissection_depth(actx->pinfo);
         dissect_nr_rrc_UL_DCCH_Message_PDU(reassembled_tvb, actx->pinfo, tree, NULL);
+        decrement_dissection_depth(actx->pinfo);
       }
     }
   }
@@ -2684,6 +2816,44 @@ LCG-DSR-Config-r18/remainingTimeThreshold-r18 DISPLAY=BASE_DEC|BASE_UNIT_STRING 
   uint32_t value;
 %(DEFAULT_BODY)s
   nr_rrc_get_private_data(actx)->dcch_segment_last = (value > 0) ? true : false;
+
+#.FN_BODY AreaConfigurationNTN-r19/areaCoordinates-r19/polygonArea-r19 VAL_PTR = &polygon_tvb
+  tvbuff_t *polygon_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (polygon_tvb) {
+    dissect_lpp_Polygon_PDU(polygon_tvb, actx->pinfo, tree, NULL);
+  }
+
+#.TYPE_ATTR
+AreaConfigurationNTN-r19/areaCoordinates-r19/circleArea-r19/circularAreaRadius-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_50m_r19_fmt)
+
+#.TYPE_ATTR
+RLF-Report-r16/nr-RLF-Report-r16/distanceFromReference1-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_50m_r19_fmt)
+
+#.TYPE_ATTR
+RefLocOffset-r19/offsetLon-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_50m_r19_fmt)
+
+#.TYPE_ATTR
+RefLocOffset-r19/offsetLat-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_50m_r19_fmt)
+
+#.FN_BODY IntendedServiceAreaInfo-areaCoordinates-r19/polygonArea-r19 VAL_PTR = &polygon_tvb
+  tvbuff_t *polygon_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (polygon_tvb) {
+    dissect_lpp_Polygon_PDU(polygon_tvb, actx->pinfo, tree, NULL);
+  }
+
+#.TYPE_ATTR
+IntendedServiceAreaInfo-r19/areaCoordinates-r19/circleArea-r19/radius-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_50m_r19_fmt)
+
+#.TYPE_ATTR
+RLC-AM-RemainingTimeThreshold-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_milliseconds)
+
+#.TYPE_ATTR
+ThresholdP-LR-r19 DISPLAY=BASE_CUSTOM STRINGS=CF_FUNC(nr_rrc_Q_RxLevMin_fmt)
+
+#.TYPE_ATTR
+ThresholdQ-LR-r19 DISPLAY=BASE_DEC|BASE_UNIT_STRING STRINGS=UNS(&units_decibels)
 
 #.FN_HDR SBCCH-SL-BCH-Message
   proto_item *ti;

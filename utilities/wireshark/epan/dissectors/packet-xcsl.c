@@ -69,15 +69,15 @@ static ws_mempbrk_pattern pbrk_param_end;
 static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
 
     unsigned     offset = 0;
-    int          length_remaining;
+    unsigned     length_remaining;
     uint8_t      idx;
     bool         request;
     uint8_t      par;
-    uint8_t     *str;
+    char        *str;
     uint8_t      result;
     const char *code;
     unsigned     len;
-    int          next_offset;
+    unsigned     next_offset;
     proto_tree  *xcsl_tree = NULL;
 
     /* color support */
@@ -103,8 +103,7 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     while ((length_remaining = tvb_reported_length_remaining(tvb, offset)) > 0) {
 
         /* get next item */
-        next_offset = tvb_ws_mempbrk_pattern_uint8(tvb, offset, length_remaining, &pbrk_param_end, NULL);
-        if (next_offset == -1) {
+        if (!tvb_ws_mempbrk_uint8_length(tvb, offset, length_remaining, &pbrk_param_end, &next_offset, NULL)) {
             len = length_remaining;
             next_offset = offset + len;
         } else {
@@ -117,7 +116,7 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
             continue;
         }
 
-        str = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
+        str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
 
         /* Xcsl (Call Specification Language) protocol in brief :
          *
@@ -227,10 +226,10 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 /* This function determines whether the first 4 octets equals to xcsl and the fifth is an ; or - */
 static bool dissect_xcsl_tcp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
 
-    uint8_t *protocol;
+    char *protocol;
 
     if (tvb_captured_length (tvb) >= 5) {
-        protocol = tvb_get_string_enc(pinfo->pool, tvb, 0, 5, ENC_ASCII);
+        protocol = (char*)tvb_get_string_enc(pinfo->pool, tvb, 0, 5, ENC_ASCII);
 
         if (strncmp(protocol,"xcsl",4) == 0 && (protocol[4] == ';' || protocol[4] == '-')) {
 

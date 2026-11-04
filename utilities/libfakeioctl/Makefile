@@ -1,7 +1,8 @@
-all: libs/armeabi/libfakeioctl.so
+all: Android.mk fakeioctl.c
+	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 $(if $(APP_ABI),APP_ABI=$(APP_ABI))
 
-libs/armeabi/libfakeioctl.so libs/arm64-v8a/libfakeioctl.so: Android.mk fakeioctl.c ../libnexio/local/armeabi/libnexio.a
-	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
+libs/armeabi/libfakeioctl.so libs/armeabi-v7a/libfakeioctl.so libs/arm64-v8a/libfakeioctl.so: Android.mk fakeioctl.c
+	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21 $(if $(APP_ABI),APP_ABI=$(APP_ABI))
 
 ../libnexio/local/armeabi/libnexio.a: FORCE
 	cd ../libnexio && $(MAKE) $(if $(APP_ABI),APP_ABI=$(APP_ABI))

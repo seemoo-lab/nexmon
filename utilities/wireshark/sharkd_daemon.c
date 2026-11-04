@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_MAIN
 
 #include <glib.h>
@@ -31,9 +31,11 @@
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
 #include <wsutil/ws_getopt.h>
+#include <app/application_flavor.h>
 
 #ifndef _WIN32
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <netinet/tcp.h>
 #endif
 
@@ -44,20 +46,26 @@
 
 #ifdef _WIN32
 /*
- * TCP sockets can work on Linux and other systems, but is disabled by default
+ * TCP sockets can work on Linux and other systems, but are disabled by default
  * because we do not want to encourage insecure setups. Unfiltered access to
  * sharkd could potentially result in arbitrary command execution.
- * On Windows, Unix sockets are not supported, so we enable it there.
+ * We enable them on Windows because Unix sockets are not traditionally
+ * supported, but all currently-supported Windows versions support them,
+ * so we might disable them by default whenever Unix sockets are supported.
  */
 # define SHARKD_TCP_SUPPORT
 #endif
 
-#ifndef _WIN32
+#ifdef HAVE_AF_UNIX
+# ifdef _WIN32
+#  include <afunix.h>
+# endif
 # define SHARKD_UNIX_SUPPORT
 #endif
 
 static int mode;
 static socket_handle_t _server_fd = INVALID_SOCKET;
+static bool abstract_socket;
 
 static socket_handle_t
 socket_init(char *path)
@@ -98,8 +106,11 @@ socket_init(char *path)
 
         s_un_len = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + strlen(s_un.sun_path));
 
-        if (s_un.sun_path[0] == '@')
+        if (s_un.sun_path[0] == '@') {
+            // Linux-only, but just let bind fail on other OSes.
             s_un.sun_path[0] = '\0';
+            abstract_socket = true;
+        }
 
         if (bind(fd, (struct sockaddr *) &s_un, s_un_len))
         {
@@ -113,32 +124,56 @@ socket_init(char *path)
 #endif
     } else if (!strncmp(path, "tcp:", 4)) {
 #ifdef SHARKD_TCP_SUPPORT
-        struct sockaddr_in s_in;
+        struct sockaddr_storage s_in;
+        struct sockaddr_in  *s_in4;
+        struct sockaddr_in6 *s_in6;
         int one = 1;
-        char *port_sep;
+        socklen_t addrlen;
         uint16_t port;
+        uint32_t host_ip;
+        bool is_loopback;
 
         path += 4;
 
-        port_sep = strchr(path, ':');
-        if (!port_sep) {
-            fputs("Missing port number in socket path.\n", stderr);
+        if (ws_socket_ptoa(&s_in, path, 0) != 0) {
+            fprintf(stderr, "Invalid socket address and port: \"%s\"\n", path);
             return INVALID_SOCKET;
         }
 
-        *port_sep = '\0';
+        switch(s_in.ss_family) {
+        case AF_INET:
+            s_in4 = (struct sockaddr_in *)&s_in;
+            port = s_in4->sin_port;
+            addrlen = sizeof(struct sockaddr_in);
+            host_ip = g_ntohl(s_in4->sin_addr.s_addr);
+            is_loopback = ((host_ip >> 24) & 0xFF) == 0x7f;
+            break;
+        case AF_INET6:
+            s_in6 = (struct sockaddr_in6 *)&s_in;
+            port = s_in6->sin6_port;
+            addrlen = sizeof(struct sockaddr_in6);
+            is_loopback = IN6_IS_ADDR_LOOPBACK(&s_in6->sin6_addr);
+            break;
+        default:
+            ws_assert_not_reached();
+        }
 
-        if (ws_strtou16(port_sep + 1, NULL, &port) == false) {
-            fputs("Invalid port number.\n", stderr);
+        if (port == 0) {
+            fputs("Missing or invalid port number.\n", stderr);
+            return INVALID_SOCKET;
+        }
+
+        if (!is_loopback) {
+            fputs("For security reasons, only loopback addresses are supported.\n", stderr);
             return INVALID_SOCKET;
         }
 
 #ifdef _WIN32
         /* Need to use WSASocket() to disable overlapped I/O operations,
             this way on windows SOCKET can be used as HANDLE for stdin/stdout */
-        fd = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
+        fd = WSASocket(s_in.ss_family, SOCK_STREAM, 0, NULL, 0, 0);
 #else
-        fd = socket(AF_INET, SOCK_STREAM, 0);
+        fd = socket(s_in.ss_family, SOCK_STREAM, 0);
 #endif
         if (fd == INVALID_SOCKET) {
             fprintf(stderr, "Failed to open socket: %s\n",
@@ -151,14 +186,9 @@ socket_init(char *path)
             return INVALID_SOCKET;
         }
 
-        s_in.sin_family = AF_INET;
-        ws_inet_pton4(path, (ws_in4_addr *)&(s_in.sin_addr.s_addr));
-        s_in.sin_port = g_htons(port);
-        *port_sep = ':';
-
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
 
-        if (bind(fd, (struct sockaddr *) &s_in, sizeof(struct sockaddr_in)))
+        if (bind(fd, (struct sockaddr *) &s_in, addrlen))
         {
             fprintf(stderr, "Failed to bind socket: %s\n", g_strerror(errno));
             closesocket(fd);
@@ -211,7 +241,8 @@ print_usage(FILE* output)
     fprintf(output, "    (Unix domain sockets are unavailable on this platform.)\n");
 #endif
 #ifdef SHARKD_TCP_SUPPORT
-    fprintf(output, "    tcp:127.0.0.1:4446    - listen on TCP port 4446\n");
+    fprintf(output, "    tcp:127.0.0.1:4446    - listen on TCP IPv4 loopback port 4446\n");
+    fprintf(output, "    tcp:[::1]:5678        - listen on TCP IPv6 loopback port 5678\n");
 #else
     fprintf(output, "    (TCP sockets are disabled in this build)\n");
 #endif
@@ -313,7 +344,7 @@ sharkd_init(int argc, char **argv)
 
             switch (opt) {
                 case 'C':        /* Configuration Profile */
-                    if (profile_exists(ws_optarg, false)) {
+                    if (profile_exists(application_configuration_environment_prefix(), ws_optarg, false)) {
                         set_profile_name(ws_optarg);  // In Daemon Mode, we may need to do this again in the child process
                     }
                     else {
@@ -419,8 +450,30 @@ sharkd_loop(int argc _U_, char* argv[])
             continue;
         }
 
+        if (abstract_socket)
+        {
+            if (!ws_verify_peercred(fd)) {
+                fprintf(stderr, "Unauthorized access. Terminating connection.\n");
+                closesocket(fd);
+                continue;
+            }
+        }
+
         /* wireshark is not ready for handling multiple capture files in single process, so fork(), and handle it in separate process */
 #ifndef _WIN32
+        /* wait for completed child processes to avoid zombie processes consuming slots in the kernel process table */
+        while (1)
+        {
+            pid_t current_pid;
+            current_pid = waitpid(-1, NULL, WNOHANG);
+            /* if a child was successfully waited for, current_pid will be a positive value indicated the pid of the child process */
+            /* other values indicate either an error, or that no child is available to be waited for */
+            if (current_pid < 1)
+            {
+                break;
+            }
+        }
+
         pid = fork();
         if (pid == 0)
         {

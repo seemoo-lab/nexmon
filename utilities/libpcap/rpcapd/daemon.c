@@ -111,7 +111,7 @@ struct session {
 	PCAP_SOCKET sockctrl;
 	PCAP_SOCKET sockdata;
 	SSL *ctrl_ssl, *data_ssl; // optional SSL handlers for sockctrl and sockdata.
-	uint8 protocol_version;
+	uint8_t protocol_version;
 	pcap_t *fp;
 	unsigned int TotCapt;
 	int	have_thread;
@@ -123,31 +123,31 @@ struct session {
 };
 
 // Locally defined functions
-static int daemon_msg_err(PCAP_SOCKET sockctrl, SSL *, uint32 plen);
-static int daemon_msg_auth_req(struct daemon_slpars *pars, uint32 plen);
+static int daemon_msg_err(PCAP_SOCKET sockctrl, SSL *, uint32_t plen);
+static int daemon_msg_auth_req(struct daemon_slpars *pars, uint32_t plen);
 static int daemon_AuthUserPwd(char *username, char *password, char *errbuf);
 
-static int daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars,
-    uint32 plen);
+static int daemon_msg_findallif_req(uint8_t ver, struct daemon_slpars *pars,
+    uint32_t plen);
 
-static int daemon_msg_open_req(uint8 ver, struct daemon_slpars *pars,
-    uint32 plen, char *source, size_t sourcelen);
-static int daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars,
-    uint32 plen, char *source, struct session **sessionp,
-    struct rpcap_sampling *samp_param, int uses_ssl);
-static int daemon_msg_endcap_req(uint8 ver, struct daemon_slpars *pars,
+static int daemon_msg_open_req(uint8_t ver, struct daemon_slpars *pars,
+    uint32_t plen, char *source, size_t sourcelen);
+static int daemon_msg_startcap_req(uint8_t ver, struct daemon_slpars *pars,
+    uint32_t plen, const char *source, const char *data_port,
+    struct session **sessionp, struct rpcap_sampling *samp_param, int uses_ssl);
+static int daemon_msg_endcap_req(uint8_t ver, struct daemon_slpars *pars,
     struct session *session);
 
-static int daemon_msg_updatefilter_req(uint8 ver, struct daemon_slpars *pars,
-    struct session *session, uint32 plen);
-static int daemon_unpackapplyfilter(PCAP_SOCKET sockctrl, SSL *, struct session *session, uint32 *plenp, char *errbuf);
+static int daemon_msg_updatefilter_req(uint8_t ver, struct daemon_slpars *pars,
+    struct session *session, uint32_t plen);
+static int daemon_unpackapplyfilter(PCAP_SOCKET sockctrl, SSL *, struct session *session, uint32_t *plenp, char *errbuf);
 
-static int daemon_msg_stats_req(uint8 ver, struct daemon_slpars *pars,
-    struct session *session, uint32 plen, struct pcap_stat *stats,
+static int daemon_msg_stats_req(uint8_t ver, struct daemon_slpars *pars,
+    struct session *session, uint32_t plen, struct pcap_stat *stats,
     unsigned int svrcapt);
 
-static int daemon_msg_setsampling_req(uint8 ver, struct daemon_slpars *pars,
-    uint32 plen, struct rpcap_sampling *samp_param);
+static int daemon_msg_setsampling_req(uint8_t ver, struct daemon_slpars *pars,
+    uint32_t plen, struct rpcap_sampling *samp_param);
 
 static void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *sockaddrout);
 #ifdef _WIN32
@@ -158,8 +158,8 @@ static void noop_handler(int sign);
 #endif
 
 static int rpcapd_recv_msg_header(PCAP_SOCKET sock, SSL *, struct rpcap_header *headerp);
-static int rpcapd_recv(PCAP_SOCKET sock, SSL *, char *buffer, size_t toread, uint32 *plen, char *errmsgbuf);
-static int rpcapd_discard(PCAP_SOCKET sock, SSL *, uint32 len);
+static int rpcapd_recv(PCAP_SOCKET sock, SSL *, char *buffer, size_t toread, uint32_t *plen, char *errmsgbuf);
+static int rpcapd_discard(PCAP_SOCKET sock, SSL *, uint32_t len);
 static void session_close(struct session *);
 
 //
@@ -167,14 +167,14 @@ static void session_close(struct session *);
 // the client, in case we aren't doing TLS but they are.
 //
 struct tls_record_header {
-	uint8 type;		// ContentType - will be 22, for Handshake
-	uint8 version_major;	// TLS protocol major version
-	uint8 version_injor;	// TLS protocol minor version
+	uint8_t type;		// ContentType - will be 22, for Handshake
+	uint8_t version_major;	// TLS protocol major version
+	uint8_t version_injor;	// TLS protocol minor version
 	// This is *not* aligned on a 2-byte boundary; we just
 	// declare it as two bytes.  Don't assume any particular
 	// compiler's mechanism for saying "packed"!
-	uint8 length_hi;	// Upper 8 bits of payload length
-	uint8 length_lo;	// Low 8 bits of payload length
+	uint8_t length_hi;	// Upper 8 bits of payload length
+	uint8_t length_lo;	// Low 8 bits of payload length
 };
 
 #define TLS_RECORD_HEADER_LEN	5	// Don't use sizeof in case it's padded
@@ -186,8 +186,8 @@ struct tls_record_header {
 // TLS alert message.
 //
 struct tls_alert {
-	uint8 alert_level;
-	uint8 alert_description;
+	uint8_t alert_level;
+	uint8_t alert_description;
 };
 
 #define TLS_ALERT_LEN			2
@@ -210,9 +210,9 @@ static int is_url(const char *source);
 
 int
 daemon_serviceloop(PCAP_SOCKET sockctrl, int isactive, char *passiveClients,
-    int nullAuthAllowed, int uses_ssl)
+    int nullAuthAllowed, const char *data_port, int uses_ssl)
 {
-	uint8 first_octet;
+	uint8_t first_octet;
 	struct tls_record_header tls_header;
 	struct tls_alert tls_alert;
 	struct daemon_slpars pars;		// service loop parameters
@@ -222,7 +222,7 @@ daemon_serviceloop(PCAP_SOCKET sockctrl, int isactive, char *passiveClients,
 	SSL *ssl = NULL;
 	int nrecv;
 	struct rpcap_header header;		// RPCAP message general header
-	uint32 plen;				// payload length from header
+	uint32_t plen;				// payload length from header
 	int authenticated = 0;			// 1 if the client has successfully authenticated
 	char source[PCAP_BUF_SIZE+1];		// keeps the string that contains the interface to open
 	int got_source = 0;			// 1 if we've gotten the source from an open request
@@ -899,8 +899,8 @@ daemon_serviceloop(PCAP_SOCKET sockctrl, int isactive, char *passiveClients,
 				}
 
 				if (daemon_msg_startcap_req(header.ver, &pars,
-				    plen, source, &session, &samp_param,
-				    uses_ssl) == -1)
+				    plen, source, data_port, &session,
+				    &samp_param, uses_ssl) == -1)
 				{
 					// Fatal error; a message has
 					// been logged, so just give up.
@@ -1136,7 +1136,7 @@ end:
  * This handles the RPCAP_MSG_ERR message.
  */
 static int
-daemon_msg_err(PCAP_SOCKET sockctrl, SSL *ssl, uint32 plen)
+daemon_msg_err(PCAP_SOCKET sockctrl, SSL *ssl, uint32_t plen)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	char remote_errbuf[PCAP_ERRBUF_SIZE];
@@ -1215,7 +1215,7 @@ daemon_msg_err(PCAP_SOCKET sockctrl, SSL *ssl, uint32 plen)
  * unrecoverable error or for the authentication failure.
  */
 static int
-daemon_msg_auth_req(struct daemon_slpars *pars, uint32 plen)
+daemon_msg_auth_req(struct daemon_slpars *pars, uint32_t plen)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
 	char errmsgbuf[PCAP_ERRBUF_SIZE];	// buffer for errors to send to the client
@@ -1259,7 +1259,7 @@ daemon_msg_auth_req(struct daemon_slpars *pars, uint32 plen)
 		case RPCAP_RMTAUTH_PWD:
 		{
 			char *username, *passwd;
-			uint32 usernamelen, passwdlen;
+			uint32_t usernamelen, passwdlen;
 
 			usernamelen = ntohs(auth.slen1);
 			username = (char *) malloc (usernamelen + 1);
@@ -1596,10 +1596,10 @@ daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 		    sizeof (errmsgbuf)); \
 		goto error; \
 	} \
-	replylen += (uint32)(itemlen)
+	replylen += (uint32_t)(itemlen)
 
 static int
-daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
+daemon_msg_findallif_req(uint8_t ver, struct daemon_slpars *pars, uint32_t plen)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
 	char errmsgbuf[PCAP_ERRBUF_SIZE];	// buffer for errors to send to the client
@@ -1608,8 +1608,8 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 	pcap_if_t *alldevs = NULL;		// pointer to the header of the interface chain
 	pcap_if_t *d;				// temp pointer needed to scan the interface chain
 	struct pcap_addr *address;		// pcap structure that keeps a network address of an interface
-	uint32 replylen;			// length of reply payload
-	uint16 nif = 0;				// counts the number of interface listed
+	uint32_t replylen;			// length of reply payload
+	uint16_t nif = 0;			// counts the number of interface listed
 
 	// Discard the rest of the message; there shouldn't be any payload.
 	if (rpcapd_discard(pars->sockctrl, pars->ssl, plen) == -1)
@@ -1675,9 +1675,7 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 			switch (address->addr->sa_family)
 			{
 			case AF_INET:
-#ifdef AF_INET6
 			case AF_INET6:
-#endif
 				CHECK_AND_INCREASE_REPLY_LEN(sizeof(struct rpcap_sockaddr) * 4);
 				if (naddrs == UINT16_MAX) {
 					pcapint_strlcpy(errmsgbuf,
@@ -1706,7 +1704,7 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 	// send the interface list
 	for (d = alldevs; d != NULL; d = d->next)
 	{
-		uint16 lname, ldescr;
+		uint16_t lname, ldescr;
 
 		// Note: the findalldevs_if entries are *not* neatly
 		// aligned on 4-byte boundaries, because they're
@@ -1725,11 +1723,11 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 		 * fit in 16 bits.
 		 */
 		if (d->description)
-			ldescr = (uint16) strlen(d->description);
+			ldescr = (uint16_t) strlen(d->description);
 		else
 			ldescr = 0;
 		if (d->name)
-			lname = (uint16) strlen(d->name);
+			lname = (uint16_t) strlen(d->name);
 		else
 			lname = 0;
 
@@ -1746,9 +1744,7 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 			switch (address->addr->sa_family)
 			{
 			case AF_INET:
-#ifdef AF_INET6
 			case AF_INET6:
-#endif
 				naddrs++;
 				break;
 
@@ -1785,9 +1781,7 @@ daemon_msg_findallif_req(uint8 ver, struct daemon_slpars *pars, uint32 plen)
 			switch (address->addr->sa_family)
 			{
 			case AF_INET:
-#ifdef AF_INET6
 			case AF_INET6:
-#endif
 				sockaddr = (struct rpcap_sockaddr *) &sendbuf[sendbufidx];
 				if (sock_bufferize(NULL, sizeof(struct rpcap_sockaddr), NULL,
 				    &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errmsgbuf, PCAP_ERRBUF_SIZE) == -1)
@@ -1849,7 +1843,7 @@ error:
 	to discard excess data in the message, if present)
 */
 static int
-daemon_msg_open_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
+daemon_msg_open_req(uint8_t ver, struct daemon_slpars *pars, uint32_t plen,
     char *source, size_t sourcelen)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -1951,8 +1945,8 @@ error:
 	to discard excess data in the message, if present)
 */
 static int
-daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
-    char *source, struct session **sessionp,
+daemon_msg_startcap_req(uint8_t ver, struct daemon_slpars *pars, uint32_t plen,
+    const char *source, const char *data_port, struct session **sessionp,
     struct rpcap_sampling *samp_param _U_, int uses_ssl)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -2095,9 +2089,18 @@ daemon_msg_startcap_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
 	{
 		hints.ai_flags = AI_PASSIVE;
 
-		// Make the server socket pick up a free network port for us
-		addrinfo = sock_initaddress(NULL, NULL, &hints, errmsgbuf,
-		    PCAP_ERRBUF_SIZE);
+		if (data_port != NULL && data_port[0] != '\0')
+		{
+			// Use the specified network port
+			addrinfo = sock_initaddress(NULL, data_port, &hints,
+			    errmsgbuf, PCAP_ERRBUF_SIZE);
+		}
+		else
+		{
+			// Make the server socket pick up a free network port for us
+			addrinfo = sock_initaddress(NULL, NULL, &hints,
+			    errmsgbuf, PCAP_ERRBUF_SIZE);
+		}
 		if (addrinfo == NULL)
 			goto error;
 
@@ -2293,7 +2296,7 @@ fatal_error:
 }
 
 static int
-daemon_msg_endcap_req(uint8 ver, struct daemon_slpars *pars,
+daemon_msg_endcap_req(uint8_t ver, struct daemon_slpars *pars,
     struct session *session)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -2331,7 +2334,7 @@ daemon_msg_endcap_req(uint8 ver, struct daemon_slpars *pars,
 #define RPCAP_BPF_MAXINSNS	8192
 
 static int
-daemon_unpackapplyfilter(PCAP_SOCKET sockctrl, SSL *ctrl_ssl, struct session *session, uint32 *plenp, char *errmsgbuf)
+daemon_unpackapplyfilter(PCAP_SOCKET sockctrl, SSL *ctrl_ssl, struct session *session, uint32_t *plenp, char *errmsgbuf)
 {
 	int status;
 	struct rpcap_filter filter;
@@ -2413,8 +2416,8 @@ free_and_return_status:
 }
 
 static int
-daemon_msg_updatefilter_req(uint8 ver, struct daemon_slpars *pars,
-    struct session *session, uint32 plen)
+daemon_msg_updatefilter_req(uint8_t ver, struct daemon_slpars *pars,
+    struct session *session, uint32_t plen)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	char errmsgbuf[PCAP_ERRBUF_SIZE];	// buffer for errors to send to the client
@@ -2467,7 +2470,7 @@ error:
 	\brief Received the sampling parameters from remote host and it stores in the pcap_t structure.
 */
 static int
-daemon_msg_setsampling_req(uint8 ver, struct daemon_slpars *pars, uint32 plen,
+daemon_msg_setsampling_req(uint8_t ver, struct daemon_slpars *pars, uint32_t plen,
     struct rpcap_sampling *samp_param)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -2526,8 +2529,8 @@ error:
 }
 
 static int
-daemon_msg_stats_req(uint8 ver, struct daemon_slpars *pars,
-    struct session *session, uint32 plen, struct pcap_stat *stats,
+daemon_msg_stats_req(uint8_t ver, struct daemon_slpars *pars,
+    struct session *session, uint32_t plen, struct pcap_stat *stats,
     unsigned int svrcapt)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -2548,7 +2551,7 @@ daemon_msg_stats_req(uint8 ver, struct daemon_slpars *pars,
 		goto error;
 
 	rpcap_createhdr((struct rpcap_header *) sendbuf, ver,
-	    RPCAP_MSG_STATS_REPLY, 0, (uint16) sizeof(struct rpcap_stats));
+	    RPCAP_MSG_STATS_REPLY, 0, (uint16_t) sizeof(struct rpcap_stats));
 
 	netstats = (struct rpcap_stats *) &sendbuf[sendbufidx];
 
@@ -2676,7 +2679,7 @@ daemon_thrdatamain(void *ptr)
 	//
 	// Set the signal set to include just SIGUSR1, and block that
 	// signal; we only want it unblocked when we're reading
-	// packets - we dn't want any other system calls, such as
+	// packets - we don't want any other system calls, such as
 	// ones being used to send to the client or to log messages,
 	// to be interrupted.
 	//
@@ -2721,7 +2724,7 @@ daemon_thrdatamain(void *ptr)
 
 		rpcap_createhdr((struct rpcap_header *) sendbuf,
 		    session->protocol_version, RPCAP_MSG_PACKET, 0,
-		    (uint16) (sizeof(struct rpcap_pkthdr) + pkt_header->caplen));
+		    (uint16_t) (sizeof(struct rpcap_pkthdr) + pkt_header->caplen));
 
 		net_pkt_header = (struct rpcap_pkthdr *) &sendbuf[sendbufidx];
 
@@ -2743,8 +2746,8 @@ daemon_thrdatamain(void *ptr)
 		// This protocol needs to be updated with a new version
 		// before 2038-01-19 03:14:07 UTC.
 		//
-		net_pkt_header->timestamp_sec = htonl((uint32)pkt_header->ts.tv_sec);
-		net_pkt_header->timestamp_usec = htonl((uint32)pkt_header->ts.tv_usec);
+		net_pkt_header->timestamp_sec = htonl((uint32_t)pkt_header->ts.tv_sec);
+		net_pkt_header->timestamp_usec = htonl((uint32_t)pkt_header->ts.tv_usec);
 
 		// Bufferize the pkt data
 		if (sock_bufferize((char *) pkt_data, pkt_header->caplen,
@@ -2862,7 +2865,6 @@ daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *socka
 		break;
 		}
 
-#ifdef AF_INET6
 	case AF_INET6:
 		{
 		struct sockaddr_in6 *sockaddrin_ipv6;
@@ -2878,7 +2880,6 @@ daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *socka
 		memcpy(sockaddrout, &sockaddrout_ipv6, sizeof(struct rpcap_sockaddr_in6));
 		break;
 		}
-#endif
 	}
 }
 
@@ -2886,9 +2887,14 @@ daemon_seraddr(struct sockaddr_storage *sockaddrin, struct rpcap_sockaddr *socka
 /*!
 	\brief Suspends a thread for secs seconds.
 */
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+/* Stub this out when fuzzing, so it doesn't slow the fuzzing process. */
+void sleep_secs(int secs _U_)
+{
+}
+#else
 void sleep_secs(int secs)
 {
-#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 #ifdef _WIN32
 	Sleep(secs*1000);
 #else
@@ -2900,8 +2906,8 @@ void sleep_secs(int secs)
 	while (secs_remaining != 0)
 		secs_remaining = sleep(secs_remaining);
 #endif
-#endif
 }
+#endif
 
 /*
  * Read the header of a message.
@@ -2931,7 +2937,7 @@ rpcapd_recv_msg_header(PCAP_SOCKET sock, SSL *ssl, struct rpcap_header *headerp)
 
 /*
  * Read data from a message.
- * If we're trying to read more data that remains, puts an error
+ * If we're trying to read more data than remains, puts an error
  * message into errmsgbuf and returns -2.  Otherwise, tries to read
  * the data and, if that succeeds, subtracts the amount read from
  * the number of bytes of data that remains.
@@ -2939,7 +2945,7 @@ rpcapd_recv_msg_header(PCAP_SOCKET sock, SSL *ssl, struct rpcap_header *headerp)
  * error.
  */
 static int
-rpcapd_recv(PCAP_SOCKET sock, SSL *ssl, char *buffer, size_t toread, uint32 *plen, char *errmsgbuf)
+rpcapd_recv(PCAP_SOCKET sock, SSL *ssl, char *buffer, size_t toread, uint32_t *plen, char *errmsgbuf)
 {
 	int nread;
 	char errbuf[PCAP_ERRBUF_SIZE];		// buffer for network errors
@@ -2968,7 +2974,7 @@ rpcapd_recv(PCAP_SOCKET sock, SSL *ssl, char *buffer, size_t toread, uint32 *ple
  * error.
  */
 static int
-rpcapd_discard(PCAP_SOCKET sock, SSL *ssl, uint32 len)
+rpcapd_discard(PCAP_SOCKET sock, SSL *ssl, uint32_t len)
 {
 	char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printed
 
@@ -3089,7 +3095,7 @@ static void session_close(struct session *session)
 static int
 is_url(const char *source)
 {
-	char *colonp;
+	const char *colonp;
 
 	/*
 	 * RFC 3986 says:
@@ -3111,7 +3117,7 @@ is_url(const char *source)
 	 * include colons (e.g., I think some Solaris interfaces
 	 * might).
 	 */
-	colonp = strchr(source, ':');
+	colonp = (const char *)strchr(source, ':');
 	if (colonp == NULL)
 	{
 		/*

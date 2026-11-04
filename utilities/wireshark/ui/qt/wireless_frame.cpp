@@ -18,6 +18,10 @@
 #include <capture/ws80211_utils.h>
 
 #include "ui/ws_ui_util.h"
+#include "ui/capture_opts.h"
+#if defined(HAVE_LIBNL) && defined(HAVE_NL80211) && defined(HAVE_LIBPCAP)
+#include "ui/capture_globals.h"
+#endif
 #include <wsutil/utf8_entities.h>
 #include <wsutil/802_11-utils.h>
 #include "main_application.h"
@@ -72,10 +76,8 @@ public:
         m_band = band;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
         endFilterChange(QSortFilterProxyModel::Direction::Rows);
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        invalidateRowsFilter();
 #else
-        invalidateFilter();
+        invalidateRowsFilter();
 #endif
     }
     void addItem(const QString& text, enum ws80211_band_type band, const QVariant &data = QVariant())
@@ -133,10 +135,8 @@ public:
         m_mask = mask;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
         endFilterChange(QSortFilterProxyModel::Direction::Rows);
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        invalidateRowsFilter();
 #else
-        invalidateFilter();
+        invalidateRowsFilter();
 #endif
     }
 
@@ -189,18 +189,10 @@ WirelessFrame::WirelessFrame(QWidget *parent) :
     proxy = new ChanTypeProxyModel(this);
     ui->channelTypeComboBox->setModel(proxy);
 
-#if QT_VERSION_CHECK < QT_VERSION_CHECK(6, 0, 0)
-    connect(ui->bandComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-#else
     connect(ui->bandComboBox, &QComboBox::currentIndexChanged,
-#endif
             this, &WirelessFrame::bandComboBoxIndexChanged);
 
-#if QT_VERSION_CHECK < QT_VERSION_CHECK(6, 0, 0)
-    connect(ui->channelComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-#else
     connect(ui->channelComboBox, &QComboBox::currentIndexChanged,
-#endif
             this, &WirelessFrame::channelComboBoxIndexChanged);
 
     updateInterfaceList();

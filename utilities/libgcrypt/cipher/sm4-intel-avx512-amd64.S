@@ -23,7 +23,7 @@
 #ifdef __x86_64
 #if (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
      defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS)) && \
-    defined(ENABLE_AVX512_SUPPORT) && defined(HAVE_GCC_INLINE_ASM_SM4)
+    defined(ENABLE_AVX512_SUPPORT) && defined(HAVE_GCC_INLINE_ASM_SM4_AVX512)
 
 #include "asm-common-amd64.h"
 
@@ -164,5 +164,5 @@ ELF(.size __sm4_intel_crypt_blk32,.-__sm4_intel_crypt_blk32;)
 #define SM4_CRYPT_BLK32 __sm4_intel_crypt_blk32
 #include "sm4-avx512-amd64.h"
 
-#endif /*defined(ENABLE_AVX512_SUPPORT) && defined(HAVE_GCC_INLINE_ASM_SM4)*/
+#endif /*ENABLE_AVX512_SUPPORT && HAVE_GCC_INLINE_ASM_SM4_AVX512*/
 #endif /*__x86_64*/

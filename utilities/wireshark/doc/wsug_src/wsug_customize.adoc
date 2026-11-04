@@ -386,6 +386,9 @@ packet list window. The format can be one of:
 r:: Relative, which specifies timestamps are
 displayed relative to the first packet captured.
 
+rc:: Relative to Capture Start, which specifies timestamps are
+displayed relative to the start of the capturing.
+
 a:: Absolute, which specifies that actual times
 be displayed for all packets.
 
@@ -398,7 +401,7 @@ actual dates and times be displayed for all packets.
 d:: Delta, which specifies that timestamps
 are relative to the previous packet.
 
-dd: Delta,  which specifies that timestamps
+dd:: Delta,  which specifies that timestamps
 are relative to the previous displayed packet.
 
 e:: Epoch, which specifies that timestamps
@@ -415,7 +418,7 @@ actual dates and times be displayed for all packets in UTC.
 --
 
 -u <s | hms>::
-Show timesamps as seconds (“s”, the default) or hours, minutes, and seconds (“hms”)
+Show timestamps as seconds (“s”, the default) or hours, minutes, and seconds (“hms”)
 
 -v::
 --version::
@@ -544,6 +547,62 @@ was applied, along with the matching filter.
 [#ChCustColorFilterMany]
 .Using color filters with Wireshark
 image::images/ws-coloring-fields.png[{screenshot-attrs}]
+
+
+[#ChCustTaggingSection]
+
+=== Packet tagging
+
+Similar to coloring rules, Wireshark can tag packets that match a display
+filter, showing a short label (typically an emoji) in a dedicated "Tag"
+column and setting the `frame.tag` field so tagged packets can be filtered
+on (for example, `frame.tag == "HTTP errors"`).
+
+Unlike coloring rules, which only change how a packet looks, a tagging rule
+can also carry an optional URL. Clicking a tag opens that URL, which is
+useful for linking a packet directly to an external ticket, runbook, or wiki
+page.
+
+To manage tagging rules, select menu:View[Tagging Rules...]. Wireshark will
+display the "Tagging Rules" dialog box.
+
+Tagging rules are stored in the current configuration profile, the same way
+coloring rules are, so different profiles can have different sets of tags.
+
+You can create a new rule by clicking on the btn:[+] button. You can delete
+one or more rules by clicking the btn:[-] button. The "copy" button will
+duplicate a rule.
+
+Each rule has a name (also the value stored in `frame.tag`), a display
+filter, the tag content shown in the packet list (typically an emoji, but
+any short text works), an optional link, and an optional comment. The
+btn:[Copy to Coloring Rule] button saves the current rule and opens the
+Coloring Rules dialog with the same name and filter already filled in, so
+you can give the same packets a background color as well as a tag.
+
+Three settings at the top of the dialog apply to every tag in the current
+profile:
+
+Follow Link::
+How clicking a tag's link opens it: `Ctrl+Shift+Click`, a plain `Click`, or
+`Right-click only` (which disables click-to-open and requires using the
+right-click "Tag Links" menu instead).
+
+Size::
+The tag's size as a percentage of the packet list row height.
+
+Separator::
+A single character shown between tags when more than one rule matches the
+same packet.
+
+[NOTE]
+.The first match wins for filtering, but every match is shown
+====
+If more than one rule matches a packet, all of the matching tags are shown
+in the Tag column (separated by the Separator character above), but
+`frame.tag` is set to every matching rule's name, so a filter like
+`frame.tag == "HTTP errors"` still works even if other rules also matched.
+====
 
 
 [#ChCustProtocolDissectionSection]
@@ -813,14 +872,6 @@ The _Width_ is the width of the column.
 
 The _Alignment_ is the alignment of the text in the column.
 
-==== Font and Colors
-
-These preferences give you the option to select the font and colors used in the various packet panes.
-Most usable is to select a mono spaced font, which allows for a cleaner presentation, but using a proportional font is possible too.
-
-.Font and colors preferences
-image::images/ws-pref-appearance-fonts-and-colors.png[{screenshot-attrs}]
-
 ==== Layout
 
 These preferences allow you to define the layout of the GUI once a capture file is loaded.
@@ -852,6 +903,54 @@ Selecting _Show file load time_ adds the time it took to load the capture file t
 
 The button _Restore Defaults_ allows you to get back to a working basic configuration.
 
+==== Theme and Font
+
+These preferences let you choose the application theme, the light or dark appearance mode, and the font used in the packet panes.
+
+.Theme and font preferences
+image::images/ws-pref-appearance-theme-and-font.png[{screenshot-attrs}]
+
+The _Main window font_ button opens a font chooser for the font used in the packet list, the packet details and the other packet panes.
+A mono spaced font usually gives the cleanest presentation, but a proportional font can be used as well.
+The sample text below the button previews the currently selected font.
+
+The _Appearance mode_ setting controls whether Wireshark uses a light or a dark color scheme.
+_System_ follows the operating system setting, while _Light_ and _Dark_ force the respective scheme regardless of the system setting.
+
+The _Theme_ setting selects the color theme applied to the application.
+Themes bundle the colors used throughout the GUI — including the packet list selection, marked and ignored packets, the “Follow Stream” client and server text, and valid and invalid display filter highlighting — so these colors are no longer configured individually.
+When the selected theme declares an author, it is shown below the preview.
+
+[NOTE]
+====
+The individual color settings from earlier versions of Wireshark (for example marked and ignored packets, the “Follow Stream” client and server text, display filter validity, and the selected packet) have been removed.
+These colors now come from the selected theme.
+====
+
+The preview shows a mockup of a capture window rendered with the selected theme and appearance mode, so you can see how the combination will look before applying it.
+Changes to the appearance mode and theme take effect once you accept the preferences dialog with btn:[OK]; the preview itself updates immediately as you try different combinations.
+
+[#ChCustPersonalThemes]
+===== Personal themes
+
+In addition to the themes bundled with the application, Wireshark looks for user-supplied themes in a personal themes directory:
+
+* On Unix-like systems: _$HOME/.local/lib/wireshark/themes_
+* On Windows: _%APPDATA%\Wireshark\themes_
+
+(For Stratoshark, replace _wireshark_ / _Wireshark_ with _stratoshark_ / _Stratoshark_.)
+
+Personal themes are single _.jsonc_ files dropped directly into that directory — there is no per-theme subdirectory.
+The filename (without the _.jsonc_ extension) becomes the theme's internal name and is what appears in the _Theme_ dropdown.
+For example, _midnight.jsonc_ shows up as a selectable theme named _midnight_.
+
+The exact path can also be seen under menu:Help[About Wireshark] in the _Folders_ tab, labelled _Personal Themes_.
+
+The file format is identical to the bundled themes; see the _README.md_ next to the built-in _default_ theme in the source distribution for the schema and the list of supported color tokens.
+
+If a personal theme file shares a name with a built-in theme (for example _default.jsonc_), the built-in copy wins and the personal file is ignored with a warning on stderr.
+This guarantees that core themes the application falls back to can never be accidentally shadowed by a broken override.
+
 ==== Welcome Page
 
 These preferences allow you to define the layout of the GUI welcome page, before a capture file is loaded.
@@ -876,6 +975,10 @@ Results may vary, depending on the actual capabilities of the operating system, 
 Selecting _Capture packets in pcapng format_ causes the Next-Generation packet capture file format to be used when capturing.
 This much more capable packet capture file format has many advantages over the original format, although not every external tool may be capable of handling packet captures in this format.
 
+_Record the processes that packets belong to_ sets what is recorded, in pcapng files, of the processes on your computer that sent or received each packet: nothing, their IDs and names, or their executable paths, command lines and users as well.
+The latter can be sensitive: a command line can contain a password.
+The same choice is in the “Output” tab of the “Capture Options” dialog.
+
 Selecting _Update list of packets in real time_ causes the packet list to fill up and possibly scroll up during the packet capture process.
 This does give an insight in the packets captured, although it takes processing power to dissect the capture packets.
 
@@ -888,6 +991,31 @@ The interface list can always be populated after Wireshark is started via menu:C
 
 Selecting _Disable external capture interfaces_ prevents Wireshark from spawning extcap programs to list off their capture interfaces.
 This might be a time consuming operation delaying the start of the program, however on most systems this is not an issue.
+
+[#ChCustPrefsAggregationSection]
+
+==== Aggregation Fields
+
+These preferences allow you to configure the aggregation fields.
+
+.Aggregation fields preferences
+image::images/ws-aggregation-view-example.png[{screenshot-attrs}]
+
+The preference _Aggregation fields_ lets you choose which packet fields Wireshark uses to group packets in the Aggregation View. Packets with the same frame key appear in the same row. For example, on a CAN bus, you can use the CAN ID as the frame key. This way, all frames with the same CAN ID are grouped together, and the Aggregation View will show the most recently received frame for each CAN ID.
+
+btn:[+]:: Add new entry to the list.
+
+btn:[-]:: Remove the selected entry.
+
+btn:[Copy]:: Copy the selected entry.
+
+btn:[⌃]:: Move the selected entry up in the list.
+
+btn:[⌄]:: Move the selected entry down in the list.
+
+btn:[Clear]:: Clear the list of user specified aggregation fields.
+
+btn:[Copy from]:: Copy the list of user specified aggregation fields from another profile.
 
 [#ChCustPrefsExpertSection]
 
@@ -966,7 +1094,7 @@ Selecting _Resolve transport names_ causes the UDP and TCP port numbers to be tr
 
 Selecting _Resolve network (IP) addresses_ causes IPv4, IPv6 and IPX addresses to be translated into their corresponding host name.
 To do this Wireshark reaches out to DNS servers to request names for addresses it finds in packets.
-There are several way to do this, which can be controlled through the following preferences.
+There are several ways to do this, which can be controlled through the following preferences.
 
 Selecting _Use captured DNS packet data for name resolution_ causes DNS response packets in the capture file to fill the network address resolution table.
 These can then be used to resolve addresses found in the packets.
@@ -1146,7 +1274,7 @@ Configuration files stored in each profile include:
 
 * Display Filter Macros (dmacros) (<<ChWorkDefineFilterMacrosSection>>)
 
-* Coloring Rules (colorfilters) (<<ChCustColorizationSection>>)
+* Coloring Rules (coloring_rules.jsonc) (<<ChCustColorizationSection>>)
 
 * Disabled Protocols (disabled_protos) (<<ChAdvEnabledProtocols>>)
 
@@ -1176,7 +1304,13 @@ Type selection::
 Profiles can be filtered between displaying "All profiles", "Personal profiles"
 and "Global profiles"
 * Personal profiles - these are profiles stored in the user's configuration directory
-* Global profiles - these are profiles provided with Wireshark
+* Global profiles - these are profiles provided with Wireshark, such as
+  “Bluetooth”, “No Reassembly” and “Processes”, which adds the “PID” and
+  “Proc Name” columns and two filter buttons for captures that record
+  which process on the capturing host sent or received each packet (see
+  <<ChCapCaptureOptionsOutputDialog>>). To switch to it automatically
+  whenever a capture has that information, set its “Auto Switch Filter”
+  to `frame.process.pid` (see <<ChCustProfileAutoSwitch>>).
 
 New (+)::
 Create a new profile. The name of the created profile is “New profile”
@@ -1219,6 +1353,7 @@ added and deleted profiles will not be deleted.
 btn:[Help]::
 Show this help page.
 
+[#ChCustProfileAutoSwitch]
 ==== Automatic Profile Switching
 
 You can configure Wireshark to automatically change configuration profiles by adding a display filter to the "Auto Switch Filter" setting for a profile.
@@ -1330,7 +1465,7 @@ The textual representation for the value.
 
 === MaxMind Database Paths
 
-If your copy of Wireshark supports https://www.maxmind.com/[MaxMind’s] MaxMindDB library, you can use their databases to match IP addresses to countries, cites, autonomous system numbers, and other bits of information.
+If your copy of Wireshark supports https://www.maxmind.com/[MaxMind’s] MaxMindDB library, you can use their databases to match IP addresses to countries, cities, autonomous system numbers, and other bits of information.
 Some databases are https://dev.maxmind.com/geoip/geoip2/geolite2/[available at no cost for registered users], while others require a licensing fee.
 See https://www.maxmind.com/[the MaxMind web site] for more information.
 
@@ -1483,9 +1618,8 @@ WPA and WPA2 use keys derived from an EAPOL handshake, which occurs when a machi
 
 In order to capture the handshake for a machine, you will need to force the machine to (re-)join the network while the capture is in progress. One way to do this is to put the machine to sleep (for smartphones and tablets, "turning off" the machine puts it to sleep) before you start the capture, start the capture, and then wake the machine up. You will need to do this for all machines whose traffic you want to see.
 
-If a TK is provided as a key, then the EAPOL 4-way handshake is not necessary,
-as the TK is what the handshake derives. However, all available TKs will be
-tried agi
+Note that if a TK is provided as a key, then the EAPOL 4-way handshake is not necessary,
+as the entire reason the 4-way handshake is needed is to derive the TK.
 
 ===== Too Many Associations
 
@@ -1888,5 +2022,42 @@ For example:
 ----
 
 the `helloworld` is package name, `HelloRequest` is message type.
+
+[#ChCustWelcomeSlides]
+
+=== Welcome Page Banner Slides
+
+The welcome page displays a rotating banner carousel with slides for events,
+sponsorship information, and tips. These slides are loaded from JSON resource
+files embedded in the application at build time.
+
+==== Slide Types
+
+Each slide has a type that determines its color scheme and category:
+
+[cols="1,2"]
+|===
+|Type |Description
+
+|Events
+|Conference announcements, meetups, and other community events.
+
+|Sponsorship
+|Information about supporting the Wireshark project.
+
+|Tips
+|Usage tips and feature highlights.
+|===
+
+Slide visibility can be toggled per type in the welcome page sidebar
+preferences.
+
+==== Time-Limited Slides
+
+Slides can be configured with start and end dates. Event-specific slides (such
+as conference announcements) automatically appear and disappear based on these
+dates. Slides without date constraints are always visible.
+
+
 
 // End of WSUG Chapter Customizing

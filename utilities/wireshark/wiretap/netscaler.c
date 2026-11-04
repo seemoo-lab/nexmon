@@ -1083,7 +1083,7 @@ nstrace_set_start_time_ver(20)
 /*
 ** Set the start time of the trace file. We look for the first ABSTIME record. We use that
 ** to set the start time. Apart from that we also make sure that we remember the position of
-** the next record after the ABSTIME record. Inorder to report correct time values, all trace
+** the next record after the ABSTIME record. In order to report correct time values, all trace
 ** records before the ABSTIME record are ignored.
 */
 static bool nstrace_set_start_time(wtap *wth, int file_version, int *err,
@@ -2158,7 +2158,7 @@ static bool nstrace_add_signature(wtap_dumper *wdh, int *err)
     if (nstrace->version == NSTRACE_1_0)
     {
         uint16_t val16b;
-        nspr_signature_v10_t sig10;
+        nspr_signature_v10_t sig10 = {0};
 
         /* populate the record */
         val16b = GUINT16_TO_LE(NSPR_SIGNATURE_V10);
@@ -2178,7 +2178,7 @@ static bool nstrace_add_signature(wtap_dumper *wdh, int *err)
 
     } else if (nstrace->version == NSTRACE_2_0)
     {
-        nspr_signature_v20_t sig20;
+        nspr_signature_v20_t sig20 = {0};
 
         sig20.sig_RecordType = NSPR_SIGNATURE_V20;
         sig20.sig_RecordSize = nspr_signature_v20_s;
@@ -2194,7 +2194,7 @@ static bool nstrace_add_signature(wtap_dumper *wdh, int *err)
 
     } else if (nstrace->version == NSTRACE_3_0)
     {
-        nspr_signature_v30_t sig30;
+        nspr_signature_v30_t sig30 = {0};
 
         sig30.sig_RecordType = NSPR_SIGNATURE_V30;
         sig30.sig_RecordSize = nspr_signature_v30_s;
@@ -2209,7 +2209,7 @@ static bool nstrace_add_signature(wtap_dumper *wdh, int *err)
         nstrace->page_offset += (uint16_t) sig30.sig_RecordSize;
     } else if (nstrace->version == NSTRACE_3_5)
     {
-        nspr_signature_v35_t sig35;
+        nspr_signature_v35_t sig35 = {0};
 
         sig35.sig_RecordType = NSPR_SIGNATURE_V35;
         sig35.sig_RecordSize = nspr_signature_v35_s;
@@ -2243,7 +2243,7 @@ nstrace_add_abstime(wtap_dumper *wdh, const wtap_rec *rec,
     {
         uint16_t val16;
         uint32_t reltime;
-        uint64_t abstime;
+        uint32_t abstime;
         nspr_abstime_v10_t abs10;
 
         /* populate the record */
@@ -2270,7 +2270,7 @@ nstrace_add_abstime(wtap_dumper *wdh, const wtap_rec *rec,
         (nstrace->version == NSTRACE_3_0) ||
         (nstrace->version == NSTRACE_3_5))    {
         uint32_t reltime;
-        uint64_t abstime;
+        uint32_t abstime;
         nspr_abstime_v20_t abs20;
 
         abs20.abs_RecordType = NSPR_ABSTIME_V20;
@@ -2281,7 +2281,7 @@ nstrace_add_abstime(wtap_dumper *wdh, const wtap_rec *rec,
 
         memset(abs20.abs_RelTime, 0, sizeof abs20.abs_RelTime);
         abstime = GUINT32_TO_LE((uint32_t)rec->ts.secs - (uint32_t)(nsg_creltime/1000000000));
-        memcpy(abs20.abs_RelTime, &abstime, sizeof abs20.abs_RelTime);
+        memcpy(abs20.abs_Time, &abstime, sizeof abs20.abs_Time);
 
         /* Write the record into the file */
         if (!wtap_dump_file_write(wdh, &abs20, nspr_abstime_v20_s, err))

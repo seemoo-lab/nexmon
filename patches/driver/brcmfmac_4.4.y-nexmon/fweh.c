@@ -29,7 +29,7 @@
  * struct brcm_ethhdr - broadcom specific ether header.
  *
  * @subtype: subtype for this packet.
- * @length: TODO: length of appended data.
+ * @length: length of appended data (variable, per event type).
  * @version: version indication.
  * @oui: OUI of this packet.
  * @usr_subtype: subtype for this OUI.

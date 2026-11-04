@@ -16,7 +16,7 @@
 #include <epan/packet.h>
 #include <wsutil/file_util.h>
 #include <gcrypt.h>
-#include "cfile.h"
+#include <epan/cfile.h>
 #include "ui/summary.h"
 
 // Strongest to weakest
@@ -123,26 +123,33 @@ summary_fill_in(capture_file *cf, summary_tally *st)
     size_t hash_bytes;
 
     st->packet_count_ts = 0;
-    st->start_time = 0;
-    st->stop_time = 0;
+    st->start_time = DBL_MAX;
+    st->stop_time = DBL_MIN;
     st->bytes = 0;
     st->filtered_count = 0;
     st->filtered_count_ts = 0;
-    st->filtered_start = 0;
+    st->filtered_start = DBL_MAX;
     st->filtered_stop = 0;
     st->filtered_bytes = 0;
     st->marked_count = 0;
     st->marked_count_ts = 0;
-    st->marked_start = 0;
+    st->marked_start = DBL_MAX;
     st->marked_stop = 0;
     st->marked_bytes = 0;
     st->ignored_count = 0;
 
+    const nstime_t *cap_start = cap_file_provider_get_start_ts(&(cf->provider));
+    const nstime_t *cap_end = cap_file_provider_get_end_ts(&(cf->provider));
+    st->cap_start_time = (cap_start == NULL || nstime_is_unset(cap_start)) ? DBL_MAX : nstime_to_sec(cap_start);
+    st->cap_end_time = (cap_end == NULL || nstime_is_unset(cap_end)) ? DBL_MIN : nstime_to_sec(cap_end);
+
     /* initialize the tally */
     if (cf->count != 0) {
         first_frame = frame_data_sequence_find(cf->provider.frames, 1);
-        st->start_time = nstime_to_sec(&first_frame->abs_ts);
-        st->stop_time = nstime_to_sec(&first_frame->abs_ts);
+        if (first_frame->has_ts) {
+            st->start_time = nstime_to_sec(&first_frame->abs_ts);
+            st->stop_time = nstime_to_sec(&first_frame->abs_ts);
+        }
 
         for (framenum = 1; framenum <= cf->count; framenum++) {
             cur_frame = frame_data_sequence_find(cf->provider.frames, framenum);

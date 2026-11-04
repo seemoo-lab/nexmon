@@ -16,10 +16,10 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
 #include <epan/in_cksum.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
+#include <epan/iana-info.h>
 
 void proto_register_vrrp(void);
 void proto_reg_handoff_vrrp(void);
@@ -130,7 +130,7 @@ dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         proto_tree_add_item(vrrp_tree, hf_vrrp_virt_rtr_id, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
 
-        proto_tree_add_uint_format(vrrp_tree, hf_vrrp_prio, tvb, offset, 1, priority, "Priority: %u (%s)",
+        proto_tree_add_uint_format_value(vrrp_tree, hf_vrrp_prio, tvb, offset, 1, priority, "%u (%s)",
                                    priority,
                                    val_to_str_const(priority, vrrp_prio_vals, "Non-default backup priority"));
         offset += 1;
@@ -149,8 +149,7 @@ dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         case 2:
         default:
             /* 1 byte auth type + 1 byte interval */
-            auth_type = tvb_get_uint8(tvb, offset);
-            proto_tree_add_item(vrrp_tree, hf_vrrp_auth_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint8(vrrp_tree, hf_vrrp_auth_type, tvb, offset, 1, ENC_BIG_ENDIAN, &auth_type);
             offset += 1;
 
             proto_tree_add_item(vrrp_tree, hf_vrrp_adver_int, tvb, offset, 1, ENC_BIG_ENDIAN);

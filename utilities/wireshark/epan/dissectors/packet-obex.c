@@ -27,6 +27,7 @@
 
 /* Initialize the protocol and registered fields */
 static int proto_obex;
+static int proto_btavrcp;
 static int hf_opcode;
 static int hf_response_code;
 static int hf_final_flag;
@@ -225,6 +226,8 @@ static int hf_ctn_application_parameter_data_cse_time;
 static int hf_ctn_application_parameter_data_recurrent;
 static int hf_ctn_application_parameter_data_attach_id;
 static int hf_ctn_application_parameter_data_last_update;
+static int hf_bip_user_defined_header_image_handle;
+static int hf_bip_user_defined_header_image_descriptor;
 static int hf_profile;
 static int hf_type;
 static int hf_object_class;
@@ -354,13 +357,14 @@ static int ett_obex_fragment;
 static int ett_obex_fragments;
 
 static dissector_handle_t obex_handle;
-static dissector_handle_t raw_application_parameters_handle;
-static dissector_handle_t bt_bpp_application_parameters_handle;
-static dissector_handle_t bt_bip_application_parameters_handle;
-static dissector_handle_t bt_gpp_application_parameters_handle;
-static dissector_handle_t bt_ctn_application_parameters_handle;
-static dissector_handle_t bt_map_application_parameters_handle;
-static dissector_handle_t bt_pbap_application_parameters_handle;
+static dissector_handle_t raw_profile_handle;
+static dissector_handle_t bt_bpp_profile_handle;
+static dissector_handle_t bt_bip_profile_handle;
+static dissector_handle_t bt_avrcp_profile_handle;
+static dissector_handle_t bt_gpp_profile_handle;
+static dissector_handle_t bt_ctn_profile_handle;
+static dissector_handle_t bt_map_profile_handle;
+static dissector_handle_t bt_pbap_profile_handle;
 
 static reassembly_table obex_reassembly_table;
 
@@ -396,6 +400,7 @@ static int ett_obex_authentication_parameters;
 static wmem_tree_t *obex_path;
 static wmem_tree_t *obex_profile;
 static wmem_tree_t *obex_last_opcode;
+static wmem_tree_t *obex_fragment;
 
 static dissector_handle_t http_handle;
 static dissector_handle_t xml_handle;
@@ -463,6 +468,14 @@ typedef struct _obex_last_opcode_data_t {
     } data;
 } obex_last_opcode_data_t;
 
+typedef struct _obex_fragment_data_t {
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t chandle;
+    uint32_t channel;
+/* TODO: add OBEX ConnectionId */
+    uint32_t fragment_start;
+} obex_fragment_data_t;
 
 #define PROFILE_UNKNOWN  0
 #define PROFILE_OPP      1
@@ -475,6 +488,7 @@ typedef struct _obex_last_opcode_data_t {
 #define PROFILE_SYNC     8
 #define PROFILE_CTN      9
 #define PROFILE_GPP     10
+#define PROFILE_AVRCP   11
 
 #define PROTO_DATA_MEDIA_TYPE       0x00
 #define PROTO_DATA_OBEX_PROFILE     0x01
@@ -491,6 +505,7 @@ static const value_string profile_vals[] = {
     { PROFILE_SYNC,    "SYNC" },
     { PROFILE_CTN,     "CTN" },
     { PROFILE_GPP,     "GPP" },
+    { PROFILE_AVRCP,   "AVRCP" },
     { 0,               NULL }
 };
 static value_string_ext(profile_vals_ext) = VALUE_STRING_EXT_INIT(profile_vals);
@@ -508,6 +523,7 @@ static const ext_value_string target_vals[] = {
     {   { 0x94, 0xC7, 0xCD, 0x20, 0x46, 0x08, 0x11, 0xD5, 0x84, 0x1A, 0x00, 0x02, 0xA5, 0x32, 0x5B, 0x4E }, 16, "Basic Imaging Profile - Remote Display" },
     {   { 0x8E, 0x61, 0xF9, 0x5D, 0x1A, 0x79, 0x11, 0xD4, 0x8E, 0xA4, 0x00, 0x80, 0x5F, 0x9B, 0x98, 0x34 }, 16, "Basic Imaging Profile- Referenced Objects" },
     {   { 0x8E, 0x61, 0xF9, 0x5D, 0x1A, 0x79, 0x11, 0xD4, 0x8E, 0xA4, 0x00, 0x80, 0x5F, 0x9B, 0x98, 0x34 }, 16, "Basic Imaging Profile - Archived Objects" },
+    {   { 0x71, 0x63, 0xDD, 0x54, 0x4A, 0x7E, 0x11, 0xE2, 0xB4, 0x7C, 0x00, 0x50, 0xC2, 0x49, 0x00, 0x48 }, 16, "Audio/Video Remote Control Profile - Cover Art" },
     {   { 0xbb, 0x58, 0x2b, 0x40, 0x42, 0x0c, 0x11, 0xdb, 0xb0, 0xde, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 }, 16, "Message Access Profile - Message Access Service" },
     {   { 0xbb, 0x58, 0x2b, 0x41, 0x42, 0x0c, 0x11, 0xdb, 0xb0, 0xde, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 }, 16, "Message Access Profile - Message Notification Service" },
     {   { 0x00, 0x00, 0x11, 0x18, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB }, 16, "Basic Printing Profile - Direct Printing Service" },
@@ -533,6 +549,7 @@ static const int target_to_profile[] = {
     PROFILE_BIP,
     PROFILE_BIP,
     PROFILE_BIP,
+    PROFILE_AVRCP,
     PROFILE_MAP,
     PROFILE_MAP,
     PROFILE_BPP,
@@ -703,11 +720,43 @@ static const value_string header_id_vals[] = {
     { 0x50, "WAN UUID" },
     { 0x51, "Object Class" },
     { 0x52, "Session Parameter" },
+    { 0x70, "User Defined" },
+    { 0x71, "User Defined" },
+    { 0x72, "User Defined" },
+    { 0x73, "User Defined" },
+    { 0x74, "User Defined" },
+    { 0x75, "User Defined" },
+    { 0x76, "User Defined" },
+    { 0x77, "User Defined" },
+    { 0x78, "User Defined" },
+    { 0x79, "User Defined" },
+    { 0x7a, "User Defined" },
+    { 0x7b, "User Defined" },
+    { 0x7c, "User Defined" },
+    { 0x7d, "User Defined" },
+    { 0x7e, "User Defined" },
+    { 0x7f, "User Defined" },
 /* 0x80 - 0xBF - 1 byte quantity */
     { 0x93, "Session Sequence Number" },
     { 0x94, "Action" },
     { 0x97, "Single Response Mode" },
     { 0x98, "Single Response Mode Parameter" },
+    { 0xb0, "User Defined" },
+    { 0xb1, "User Defined" },
+    { 0xb2, "User Defined" },
+    { 0xb3, "User Defined" },
+    { 0xb4, "User Defined" },
+    { 0xb5, "User Defined" },
+    { 0xb6, "User Defined" },
+    { 0xb7, "User Defined" },
+    { 0xb8, "User Defined" },
+    { 0xb9, "User Defined" },
+    { 0xba, "User Defined" },
+    { 0xbb, "User Defined" },
+    { 0xbc, "User Defined" },
+    { 0xbd, "User Defined" },
+    { 0xbe, "User Defined" },
+    { 0xbf, "User Defined" },
 /* 0xC0 - 0xFF - 4 byte quantity (network order) */
     { 0xc0, "Count" },
     { 0xc3, "Length" },
@@ -715,6 +764,22 @@ static const value_string header_id_vals[] = {
     { 0xcb, "Connection Id" },
     { 0xcf, "Creator" },
     { 0xd6, "Permissions" },
+    { 0xf0, "User Defined" },
+    { 0xf1, "User Defined" },
+    { 0xf2, "User Defined" },
+    { 0xf3, "User Defined" },
+    { 0xf4, "User Defined" },
+    { 0xf5, "User Defined" },
+    { 0xf6, "User Defined" },
+    { 0xf7, "User Defined" },
+    { 0xf8, "User Defined" },
+    { 0xf9, "User Defined" },
+    { 0xfa, "User Defined" },
+    { 0xfb, "User Defined" },
+    { 0xfc, "User Defined" },
+    { 0xfd, "User Defined" },
+    { 0xfe, "User Defined" },
+    { 0xff, "User Defined" },
     { 0,      NULL }
 };
 static value_string_ext header_id_vals_ext = VALUE_STRING_EXT_INIT(header_id_vals);
@@ -986,6 +1051,28 @@ static const value_string ctn_application_parameter_data_status_value_vals[] = {
     { 0,    NULL }
 };
 
+static const value_string bip_user_defined_header_vals[] = {
+    { 0x30, "Image Handle" },
+    { 0x71, "Image Descriptor" },
+    { 0,    NULL }
+};
+
+/* This table must map profiles to value_string arrays for user defined headers */
+static const value_string * const profile_to_user_defined_headers[] = {
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    bip_user_defined_header_vals,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    bip_user_defined_header_vals
+};
+
 static value_string_ext map_application_parameters_vals_ext = VALUE_STRING_EXT_INIT(map_application_parameters_vals);
 static value_string_ext pbap_application_parameters_vals_ext = VALUE_STRING_EXT_INIT(pbap_application_parameters_vals);
 static value_string_ext bpp_application_parameters_vals_ext = VALUE_STRING_EXT_INIT(bpp_application_parameters_vals);
@@ -1033,14 +1120,14 @@ save_path(packet_info *pinfo, const char *current_path, const char *name,
             if (current_path != path_unknown && current_path != path_root) {
                 char *i_path;
 
-                i_path = g_strrstr(current_path, "/");
+                i_path = strrchr(current_path, '/');
                 if (!i_path) {
                     current_path = path_unknown;
                 } else {
                     if (i_path == current_path)
                         path = current_path = path_root;
                     else
-                        path = current_path = wmem_strndup(wmem_epan_scope(), current_path, i_path - current_path - 1);
+                        path = current_path = wmem_strndup(wmem_epan_scope(), current_path, i_path - current_path);
                 }
             }
         }
@@ -1162,6 +1249,23 @@ dissect_obex_application_parameter_raw(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 }
 
 static int
+dissect_obex_header_raw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_raw(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_bpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_item  *item;
@@ -1218,16 +1322,33 @@ dissect_obex_application_parameter_bt_bpp(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 static int
+dissect_obex_header_bt_bpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_bpp(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_bip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_item  *item;
-    proto_item  *parameter_item;
-    proto_tree  *parameter_tree;
-    uint8_t      parameter_id;
-    int          offset = 0;
-    int          parameters_length;
-    int          parameter_length;
-    static int   required_length_map[] = {0, 2, 2, 1, 4, 4, 4, 1, 1, 16, 1};
+    proto_item      *item;
+    proto_item      *parameter_item;
+    proto_tree      *parameter_tree;
+    uint8_t          parameter_id;
+    int              offset = 0;
+    int              parameters_length;
+    int              parameter_length;
+    static const int required_length_map[] = {0, 2, 2, 1, 4, 4, 4, 1, 1, 16, 1};
 
     parameters_length = tvb_reported_length(tvb);
 
@@ -1295,16 +1416,78 @@ dissect_obex_application_parameter_bt_bip(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 static int
+dissect_obex_user_defined_bt_bip(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint8_t hdr_id)
+{
+    int offset = 0;
+    int length = tvb_reported_length(tvb);
+
+    switch (hdr_id) {
+        case 0x30: /* Image Handle */
+            proto_tree_add_item(tree, hf_bip_user_defined_header_image_handle, tvb, offset, length, ENC_UCS_2 | ENC_BIG_ENDIAN);
+            offset += length;
+            break;
+        case 0x71: /* Image Descriptor */
+            proto_tree_add_item(tree, hf_bip_user_defined_header_image_descriptor, tvb, offset, length, ENC_NA);
+            if (!tvb_strneql(tvb, offset, "<?xml", 5)) {
+                call_dissector(xml_handle, tvb, pinfo, tree);
+            }
+            offset += length;
+            break;
+        default:
+            break;
+    }
+
+    return offset;
+}
+
+static int
+dissect_obex_header_bt_bip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_bip(tvb, pinfo, tree, NULL);
+    } else if (hdr_id & 0x30) {
+        offset += dissect_obex_user_defined_bt_bip(tvb, pinfo, tree, hdr_id);
+    }
+
+    return offset;
+}
+
+static int
+dissect_obex_header_bt_avrcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    /* AVRCP cover art re-uses BIP user defined headers */
+    if (hdr_id & 0x30) {
+        offset += dissect_obex_user_defined_bt_bip(tvb, pinfo, tree, hdr_id);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_item  *item;
-    proto_item  *parameter_item;
-    proto_tree  *parameter_tree;
-    uint8_t      parameter_id;
-    int          offset = 0;
-    int          parameters_length;
-    int          parameter_length;
-    static int   required_length_map[] = {0, 1, -1, 1, 2, 2, 8, 1, 2, 1, 16, 16, 8, 16, 1, 1};
+    proto_item      *item;
+    proto_item      *parameter_item;
+    proto_tree      *parameter_tree;
+    uint8_t          parameter_id;
+    int              offset = 0;
+    int              parameters_length;
+    int              parameter_length;
+    static const int required_length_map[] = {0, 1, -1, 1, 2, 2, 8, 1, 2, 1, 16, 16, 8, 16, 1, 1};
 
     parameters_length = tvb_reported_length(tvb);
 
@@ -1393,16 +1576,33 @@ dissect_obex_application_parameter_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, pr
 }
 
 static int
+dissect_obex_header_bt_pbap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_pbap(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_item  *item;
-    proto_item  *parameter_item;
-    proto_tree  *parameter_tree;
-    uint8_t      parameter_id;
-    int          offset = 0;
-    int          parameters_length;
-    int          parameter_length;
-    static int   required_length_map[] = {0, 2, 2, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 4, 2, 2, 1, 1, 1, 1, 1, 1, -1};
+    proto_item      *item;
+    proto_item      *parameter_item;
+    proto_tree      *parameter_tree;
+    uint8_t          parameter_id;
+    int              offset = 0;
+    int              parameters_length;
+    int              parameter_length;
+    static const int required_length_map[] = {0, 2, 2, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 4, 2, 2, 1, 1, 1, 1, 1, 1, -1};
 
     parameters_length = tvb_reported_length(tvb);
 
@@ -1551,16 +1751,33 @@ dissect_obex_application_parameter_bt_map(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 static int
+dissect_obex_header_bt_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_map(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_item  *item;
-    proto_item  *parameter_item;
-    proto_tree  *parameter_tree;
-    uint8_t      parameter_id;
-    int          offset = 0;
-    int          parameters_length;
-    int          parameter_length;
-    static int   required_length_map[] = {2, 2, 1, 1, 0, 2};
+    proto_item      *item;
+    proto_item      *parameter_item;
+    proto_tree      *parameter_tree;
+    uint8_t          parameter_id;
+    int              offset = 0;
+    int              parameters_length;
+    int              parameter_length;
+    static const int required_length_map[] = {2, 2, 1, 1, 0, 2};
 
     parameters_length = tvb_reported_length(tvb);
 
@@ -1615,17 +1832,34 @@ dissect_obex_application_parameter_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 static int
+dissect_obex_header_bt_gpp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_gpp(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    proto_item  *item;
-    proto_item  *parameter_item;
-    proto_tree  *parameter_tree;
-    uint8_t      parameter_id;
-    int          offset = 0;
-    int          parameters_length;
-    int          parameter_length;
-    static int   required_length_map[] = {0, 1, 1, 1, -1, -1, 4, 1, 1, 4, -1, -1, 1, 1, -1};
-    static int   required_length_map_gpp[] = {2, 2, 1, 1, -1, 2};
+    proto_item      *item;
+    proto_item      *parameter_item;
+    proto_tree      *parameter_tree;
+    uint8_t          parameter_id;
+    int              offset = 0;
+    int              parameters_length;
+    int              parameter_length;
+    static const int required_length_map[] = {0, 1, 1, 1, -1, -1, 4, 1, 1, 4, -1, -1, 1, 1, -1};
+    static const int required_length_map_gpp[] = {2, 2, 1, 1, -1, 2};
 
     parameters_length = tvb_reported_length(tvb);
 
@@ -1731,6 +1965,23 @@ dissect_obex_application_parameter_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, pro
 }
 
 static int
+dissect_obex_header_bt_ctn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    int     offset = 0;
+    uint8_t hdr_id = 0;
+
+    if (data) {
+        hdr_id = *(uint8_t *)data;
+    }
+
+    if (hdr_id == 0x4c) {
+        offset += dissect_obex_application_parameter_bt_ctn(tvb, pinfo, tree, NULL);
+    }
+
+    return offset;
+}
+
+static int
 dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
         int profile, obex_last_opcode_data_t *obex_last_opcode_data,
         obex_proto_data_t *obex_proto_data)
@@ -1747,6 +1998,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
     uint32_t    value;
     uint32_t    frame_number;
     uint8_t     tag;
+    const char *user_defined_hdr_str = NULL;
     char       *str = NULL;
 
     if (tvb_reported_length_remaining(tvb, offset) > 0) {
@@ -1781,8 +2033,18 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                 break;
         }
 
+        /* user defined headers have low bits in the range 0x30 - 0x3F */
+        if (0x30 & hdr_id && (unsigned)profile < array_length(profile_to_user_defined_headers)) {
+            /* if the profile dissector has been changed via "Decode As" or the profile dissector is disabled,
+               use the standard header name */
+            if (!dissector_is_uint_changed(obex_profile_table, profile) &&
+                    proto_is_protocol_enabled(find_protocol_by_id(dissector_handle_get_protocol_index(dissector_get_uint_handle(obex_profile_table, profile))))) {
+                user_defined_hdr_str = try_val_to_str(hdr_id, profile_to_user_defined_headers[profile]);
+            }
+        }
+
         hdr = proto_tree_add_none_format(hdrs_tree, hf_header, tvb, offset, item_length, "%s",
-                                  val_to_str_ext_const(hdr_id, &header_id_vals_ext, "Unknown"));
+                                  user_defined_hdr_str ? user_defined_hdr_str : val_to_str_ext_const(hdr_id, &header_id_vals_ext, "Unknown"));
         hdr_tree = proto_item_add_subtree(hdr, ett_obex_hdr);
 
         proto_tree_add_bitmask_with_flags(hdr_tree, tvb, offset, hf_hdr_id, ett_obex_hdr_id,  hfx_hdr_id, ENC_NA, BMT_NO_APPEND);
@@ -1800,15 +2062,36 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     proto_tree_add_item(hdr_tree, hf_name, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                     if (!pinfo->fd->visited && obex_last_opcode_data) {
                         if (obex_last_opcode_data->code == OBEX_CODE_VALS_SET_PATH)
-                            obex_last_opcode_data->data.set_data.name = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
+                            obex_last_opcode_data->data.set_data.name = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                         else if (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT)
-                            obex_last_opcode_data->data.get_put.name = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
+                            obex_last_opcode_data->data.get_put.name = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                     }
                     break;
+                case 0x30: /* User Defined */
+                case 0x31:
+                case 0x32:
+                case 0x33:
+                case 0x34:
+                case 0x35:
+                case 0x36:
+                case 0x37:
+                case 0x38:
+                case 0x39:
+                case 0x3a:
+                case 0x3b:
+                case 0x3c:
+                case 0x3d:
+                case 0x3e:
+                case 0x3f:
+                    next_tvb = tvb_new_subset_length(tvb, offset, value_length);
+                    if (dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, &hdr_id)) {
+                        break;
+                    }
+                /* FALLTHROUGH */
                 default:
                     proto_tree_add_item(hdr_tree, hf_hdr_val_unicode, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                 }
-                str = tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
+                str = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_UCS_2 | ENC_BIG_ENDIAN);
                 proto_item_append_text(hdr_tree, ": \"%s\"", str);
 
                 col_append_fstr(pinfo->cinfo, COL_INFO, " \"%s\"", str);
@@ -1822,8 +2105,8 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                 switch (hdr_id) {
                 case 0x4c: /* Application Parameters */
                     next_tvb = tvb_new_subset_length(tvb, offset, value_length);
-                    if (!(new_offset = dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, NULL))) {
-                        new_offset = call_dissector(raw_application_parameters_handle, next_tvb, pinfo, hdr_tree);
+                    if (!(new_offset = dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, &hdr_id))) {
+                        new_offset = call_dissector_with_data(raw_profile_handle, next_tvb, pinfo, hdr_tree, &hdr_id);
                     }
                     offset += new_offset;
 
@@ -1843,8 +2126,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                                 authentication_challenge_tag_vals, "Unknown"));
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_authentication_parameters);
 
-                        proto_tree_add_item(parameter_tree, hf_authentication_challenge_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_uint8(tvb, offset);
+                        proto_tree_add_item_ret_uint8(parameter_tree, hf_authentication_challenge_tag, tvb, offset, 1, ENC_BIG_ENDIAN, &tag);
                         offset += 1;
 
                         proto_tree_add_item(parameter_tree, hf_authentication_length, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1890,8 +2172,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                                 authentication_response_tag_vals, "Unknown"));
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_authentication_parameters);
 
-                        proto_tree_add_item(parameter_tree, hf_authentication_response_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_uint8(tvb, offset);
+                        proto_tree_add_item_ret_uint8(parameter_tree, hf_authentication_response_tag, tvb, offset, 1, ENC_BIG_ENDIAN, &tag);
                         offset += 1;
 
                         proto_tree_add_item(parameter_tree, hf_authentication_length, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1925,7 +2206,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     proto_tree_add_item(hdr_tree, hf_type, tvb, offset, value_length, ENC_ASCII);
                     proto_item_append_text(hdr_tree, ": \"%s\"", tvb_get_string_enc(pinfo->pool, tvb, offset, value_length, ENC_ASCII));
                     if (!pinfo->fd->visited && obex_last_opcode_data && (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT)) {
-                        obex_last_opcode_data->data.get_put.type = tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_ASCII | ENC_NA);
+                        obex_last_opcode_data->data.get_put.type = (char*)tvb_get_string_enc(wmem_file_scope(), tvb, offset, value_length, ENC_ASCII | ENC_NA);
                     }
                     if (p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE) == NULL) {
                         uint8_t *value_data;
@@ -1954,7 +2235,7 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     if (value_length > 0 && obex_last_opcode_data &&
                             (obex_last_opcode_data->code == OBEX_CODE_VALS_GET || obex_last_opcode_data->code == OBEX_CODE_VALS_PUT) &&
                             p_get_proto_data(pinfo->pool, pinfo, proto_obex, PROTO_DATA_MEDIA_TYPE) == NULL) {
-                        uint8_t *value_data;
+                        char *value_data;
 
                         value_data = obex_last_opcode_data->data.get_put.type;
 
@@ -2061,12 +2342,10 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                                 session_tag_vals, "Unknown"));
                         parameter_tree = proto_item_add_subtree(parameter_item, ett_obex_session_parameters);
 
-                        proto_tree_add_item(parameter_tree, hf_session_parameter_tag, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        tag = tvb_get_uint8(tvb, offset);
+                        proto_tree_add_item_ret_uint8(parameter_tree, hf_session_parameter_tag, tvb, offset, 1, ENC_BIG_ENDIAN, &tag);
                         offset += 1;
 
-                        proto_tree_add_item(parameter_tree, hf_session_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-                        sub_parameter_length = tvb_get_uint8(tvb, offset);
+                        proto_tree_add_item_ret_uint8(parameter_tree, hf_session_parameter_length, tvb, offset, 1, ENC_BIG_ENDIAN, &sub_parameter_length);
                         offset += 1;
 
                         switch (tag) {
@@ -2150,6 +2429,28 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                         value_length -= 2 + sub_parameter_length;
                     }
                     break;
+                case 0x70: /* User Defined */
+                case 0x71:
+                case 0x72:
+                case 0x73:
+                case 0x74:
+                case 0x75:
+                case 0x76:
+                case 0x77:
+                case 0x78:
+                case 0x79:
+                case 0x7a:
+                case 0x7b:
+                case 0x7c:
+                case 0x7d:
+                case 0x7e:
+                case 0x7f:
+                    next_tvb = tvb_new_subset_length(tvb, offset, value_length);
+                    if ((new_offset = dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, &hdr_id))) {
+                        offset += new_offset;
+                        break;
+                    }
+                /* FALLTHROUGH */
                 default:
                     proto_tree_add_item(hdr_tree, hf_hdr_val_byte_seq, tvb, offset, value_length, ENC_NA);
                     offset += value_length;
@@ -2175,7 +2476,29 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     proto_item_append_text(hdr_tree, ": %s", val_to_str_const(value, single_response_mode_parameter_vals, "Unknown"));
 
                     break;
+                case 0xb0: /* User Defined */
+                case 0xb1:
+                case 0xb2:
+                case 0xb3:
+                case 0xb4:
+                case 0xb5:
+                case 0xb6:
+                case 0xb7:
+                case 0xb8:
+                case 0xb9:
+                case 0xba:
+                case 0xbb:
+                case 0xbc:
+                case 0xbd:
+                case 0xbe:
+                case 0xbf:
+                    next_tvb = tvb_new_subset_length(tvb, offset, 1);
+                    if (dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, &hdr_id)) {
+                        break;
+                    }
+                /* FALLTHROUGH */
                 case 0x93: /* Session Sequence Number */
+                    /* TODO: Add dissection for this header to allow for numerical ordering */
                 default:
                     proto_tree_add_item(hdr_tree, hf_hdr_val_byte, tvb, offset, 1, ENC_NA);
                     proto_item_append_text(hdr_tree, ": %i", value);
@@ -2201,6 +2524,28 @@ dissect_headers(proto_tree *tree, tvbuff_t *tvb, int offset, packet_info *pinfo,
                     proto_tree_add_item(hdr_tree, hf_connection_id, tvb, offset, 4, ENC_BIG_ENDIAN);
 
                     break;
+                case 0xF0: /* User Defined */
+                case 0xF1:
+                case 0xF2:
+                case 0xF3:
+                case 0xF4:
+                case 0xF5:
+                case 0xF6:
+                case 0xF7:
+                case 0xF8:
+                case 0xF9:
+                case 0xFA:
+                case 0xFB:
+                case 0xFC:
+                case 0xFD:
+                case 0xFE:
+                case 0xFF:
+                    next_tvb = tvb_new_subset_length(tvb, offset, 4);
+                    if (dissector_try_uint_with_data(obex_profile_table, profile, next_tvb, pinfo, hdr_tree, true, &hdr_id)) {
+                        break;
+                    }
+                /* FALLTHROUGH */
+                /* TODO: Add dissection for these headers to allow for numerical ordering */
                 case 0xC4: /* Time */
                 case 0xCF: /* Creator */
                 case 0xD6: /* Permissions */
@@ -2240,15 +2585,17 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     uint32_t                  frame_number;
     obex_last_opcode_data_t  *obex_last_opcode_data;
     obex_path_data_t         *obex_path_data;
+    obex_fragment_data_t     *obex_fragment_data;
     uint32_t                  length;
     uint8_t                  *profile_data;
+    uint32_t                  fragment_id = 0;
     dissector_handle_t        current_handle;
     dissector_handle_t        default_handle;
     int                       previous_proto;
     obex_proto_data_t         obex_proto_data;
 
     previous_proto = (GPOINTER_TO_INT(wmem_list_frame_data(wmem_list_frame_prev(wmem_list_tail(pinfo->layers)))));
-    if (previous_proto == proto_btl2cap) {
+    if (previous_proto == proto_btl2cap || previous_proto == proto_btavrcp) {
         btl2cap_data_t  *l2cap_data;
 
         l2cap_data = (btl2cap_data_t *) data;
@@ -2256,7 +2603,7 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         obex_proto_data.interface_id = l2cap_data->interface_id;
         obex_proto_data.adapter_id   = l2cap_data->adapter_id;
         obex_proto_data.chandle      = l2cap_data->chandle;
-        obex_proto_data.channel      = l2cap_data->cid;
+        obex_proto_data.channel      = l2cap_data->local_cid;
     } else if (previous_proto == proto_btrfcomm) {
         btrfcomm_data_t  *rfcomm_data;
 
@@ -2336,7 +2683,16 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     complete = false;
 
     if (tvb_captured_length(tvb) == tvb_reported_length(tvb)) {
-        frag_msg = fragment_get_reassembled_id(&obex_reassembly_table, pinfo, pinfo->p2p_dir);
+        obex_fragment_data = (obex_fragment_data_t *)wmem_tree_lookup32_array_le(obex_fragment, key);
+        if (obex_fragment_data && obex_fragment_data->interface_id == obex_proto_data.interface_id &&
+                obex_fragment_data->adapter_id == obex_proto_data.adapter_id &&
+                obex_fragment_data->chandle == obex_proto_data.chandle &&
+                obex_fragment_data->channel == obex_proto_data.channel &&
+                obex_fragment_data->fragment_start <= frame_number) {
+            fragment_id = obex_fragment_data->fragment_start;
+        }
+
+        frag_msg = fragment_get_reassembled_id(&obex_reassembly_table, pinfo, fragment_id);
         if (frag_msg && pinfo->num != frag_msg->reassembled_in) {
             /* reassembled but not last */
 
@@ -2348,20 +2704,20 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             new_tvb = process_reassembled_data(tvb, 0, pinfo,
                     "Reassembled Obex packet", frag_msg, &obex_frag_items, NULL, main_tree);
         } else {
-            frag_msg = fragment_get(&obex_reassembly_table, pinfo, pinfo->p2p_dir, NULL);
+            frag_msg = fragment_get(&obex_reassembly_table, pinfo, fragment_id, NULL);
 
             if (frag_msg) {
                 /* not the first fragment */
 
-                /* packet stream is guaranted to be sequence of fragments, one by one,
+                /* packet stream is guaranteed to be sequence of fragments, one by one,
                    so find last fragment for its offset and length */
                 for (frag = frag_msg->next; frag->next; frag = frag->next) {}
 
                 frag_msg = fragment_add_check(&obex_reassembly_table,
-                        tvb, 0, pinfo, pinfo->p2p_dir, NULL,
+                        tvb, 0, pinfo, fragment_id, NULL,
                         frag->offset + frag->len, tvb_reported_length(tvb),
                                 ((frag->offset + frag->len + tvb_reported_length(tvb)) <
-                                    fragment_get_tot_len(&obex_reassembly_table, pinfo, pinfo->p2p_dir, NULL)) ? true : false);
+                                    fragment_get_tot_len(&obex_reassembly_table, pinfo, fragment_id, NULL)) ? true : false);
 
                 new_tvb = process_reassembled_data(tvb, 0, pinfo,
                         "Reassembled Obex packet", frag_msg, &obex_frag_items, NULL, main_tree);
@@ -2376,12 +2732,37 @@ dissect_obex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     return tvb_reported_length(tvb);
                 } else if (tvb_reported_length(tvb) >= 3 && tvb_reported_length(tvb) < tvb_get_ntohs(tvb, offset+1)) {
                     /* first fragment in a sequence */
+                    frame_number = pinfo->num;
+
+                    key[0].length = 1;
+                    key[0].key = &obex_proto_data.interface_id;
+                    key[1].length = 1;
+                    key[1].key = &obex_proto_data.adapter_id;
+                    key[2].length = 1;
+                    key[2].key = &obex_proto_data.chandle;
+                    key[3].length = 1;
+                    key[3].key = &obex_proto_data.channel;
+                    key[4].length = 1;
+                    key[4].key = &frame_number;
+                    key[5].length = 0;
+                    key[5].key = NULL;
+
+                    obex_fragment_data = wmem_new(wmem_file_scope(), obex_fragment_data_t);
+                    obex_fragment_data->interface_id   = obex_proto_data.interface_id;
+                    obex_fragment_data->adapter_id     = obex_proto_data.adapter_id;
+                    obex_fragment_data->chandle        = obex_proto_data.chandle;
+                    obex_fragment_data->channel        = obex_proto_data.channel;
+                    obex_fragment_data->fragment_start = frame_number;
+
+                    wmem_tree_insert32_array(obex_fragment, key, obex_fragment_data);
+
+                    fragment_id = obex_fragment_data->fragment_start;
                     frag_msg = fragment_add_check(&obex_reassembly_table,
-                                        tvb, 0, pinfo, pinfo->p2p_dir, NULL,
+                                        tvb, 0, pinfo, fragment_id, NULL,
                                         0, tvb_reported_length(tvb), true);
 
                     fragment_set_tot_len(&obex_reassembly_table,
-                                        pinfo, pinfo->p2p_dir, NULL,
+                                        pinfo, fragment_id, NULL,
                                         tvb_get_ntohs(tvb, offset + 1));
 
                     new_tvb = process_reassembled_data(tvb, 0, pinfo,
@@ -2599,6 +2980,7 @@ proto_register_obex(void)
     int              proto_raw;
     int              proto_bpp;
     int              proto_bip;
+    int              proto_avrcp;
     int              proto_map;
     int              proto_bt_gpp;
     int              proto_bt_ctn;
@@ -3661,6 +4043,17 @@ proto_register_obex(void)
             FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL}
         },
+        /* user defined headers for BIP */
+        { &hf_bip_user_defined_header_image_handle,
+            { "Image Handle", "obex.user_defined_header.value.image_handle",
+            FT_STRING, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_bip_user_defined_header_image_descriptor,
+            { "Image Descriptor", "obex.user_defined_header.value.image_descriptor",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
         /* for fragmentation */
         { &hf_obex_fragment_overlap,
           { "Fragment overlap",   "obex.fragment.overlap", FT_BOOLEAN, BASE_NONE, NULL, 0x0,
@@ -3785,18 +4178,19 @@ proto_register_obex(void)
     static build_valid_func obex_profile_da_build_value[1] = {obex_profile_value};
     static decode_as_value_t obex_profile_da_values = {obex_profile_prompt, 1, obex_profile_da_build_value};
     static decode_as_t obex_profile_da = {"obex", "obex.profile", 1, 0, &obex_profile_da_values, NULL, NULL,
-            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     static build_valid_func media_type_da_build_value[1] = {media_type_value};
     static decode_as_value_t media_type_da_values = {media_type_prompt, 1, media_type_da_build_value};
     static decode_as_t media_type_da = {"obex", "media_type",
             1, 0, &media_type_da_values, NULL, NULL,
-            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+            decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
 
     obex_path        = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
     obex_profile     = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
     obex_last_opcode = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
+    obex_fragment    = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 
     proto_obex = proto_register_protocol("OBEX Protocol", "OBEX", "obex");
 
@@ -3815,32 +4209,35 @@ proto_register_obex(void)
 
     register_decode_as(&obex_profile_da);
 
-    proto_raw = proto_register_protocol("OBEX Raw Application Parameters", "Raw Application Parameters", "obex.parameter.raw");
-    raw_application_parameters_handle  = register_dissector("obex.parameter.raw",  dissect_obex_application_parameter_raw, proto_raw);
+    proto_raw = proto_register_protocol("OBEX Raw Application Parameters", "Raw Application Parameters", "obex.profile.raw");
+    raw_profile_handle = register_dissector("obex.profile.raw", dissect_obex_header_raw, proto_raw);
 
-    proto_bpp = proto_register_protocol("Bluetooth OBEX BPP Application Parameters", "BT BPP Application Parameters", "obex.parameter.bt.bpp");
-    bt_bpp_application_parameters_handle  = register_dissector("obex.parameter.bt.bpp",  dissect_obex_application_parameter_bt_bpp, proto_bpp);
+    proto_bpp = proto_register_protocol("Bluetooth OBEX BPP Application Parameters", "BT BPP Application Parameters", "obex.profile.bt.bpp");
+    bt_bpp_profile_handle = register_dissector("obex.profile.bt.bpp", dissect_obex_header_bt_bpp, proto_bpp);
 
-    proto_bip = proto_register_protocol("Bluetooth OBEX BIP Application Parameters", "BT BIP Application Parameters", "obex.parameter.bt.bip");
-    bt_bip_application_parameters_handle  = register_dissector("obex.parameter.bt.bip",  dissect_obex_application_parameter_bt_bip, proto_bip);
+    proto_bip = proto_register_protocol("Bluetooth OBEX BIP Application Parameters and User Defined Headers", "BT BIP Application Parameters and User Defined Headers", "obex.profile.bt.bip");
+    bt_bip_profile_handle = register_dissector("obex.profile.bt.bip", dissect_obex_header_bt_bip, proto_bip);
 
-    proto_map = proto_register_protocol("Bluetooth OBEX MAP Application Parameters", "BT MAP Application Parameters", "obex.parameter.bt.map");
-    bt_map_application_parameters_handle  = register_dissector("obex.parameter.bt.map",  dissect_obex_application_parameter_bt_map, proto_map);
+    proto_avrcp = proto_register_protocol("Bluetooth OBEX AVRCP User Defined Headers", "BT AVRCP User Defined Headers", "obex.profile.bt.avrcp");
+    bt_avrcp_profile_handle = register_dissector("obex.profile.bt.avrcp", dissect_obex_header_bt_avrcp, proto_avrcp);
 
-    proto_bt_gpp = proto_register_protocol("Bluetooth OBEX GPP Application Parameters", "BT GPP Application Parameters", "obex.parameter.bt.gpp");
-    bt_gpp_application_parameters_handle  = register_dissector("obex.parameter.bt.gpp",  dissect_obex_application_parameter_bt_gpp, proto_bt_gpp);
+    proto_map = proto_register_protocol("Bluetooth OBEX MAP Application Parameters", "BT MAP Application Parameters", "obex.profile.bt.map");
+    bt_map_profile_handle = register_dissector("obex.profile.bt.map", dissect_obex_header_bt_map, proto_map);
 
-    proto_bt_ctn = proto_register_protocol("Bluetooth OBEX CTN Application Parameters", "BT CTN Application Parameters", "obex.parameter.bt.ctn");
-    bt_ctn_application_parameters_handle  = register_dissector("obex.parameter.bt.ctn",  dissect_obex_application_parameter_bt_ctn, proto_bt_ctn);
+    proto_bt_gpp = proto_register_protocol("Bluetooth OBEX GPP Application Parameters", "BT GPP Application Parameters", "obex.profile.bt.gpp");
+    bt_gpp_profile_handle = register_dissector("obex.profile.bt.gpp", dissect_obex_header_bt_gpp, proto_bt_gpp);
 
-    proto_bt_pbap = proto_register_protocol("Bluetooth OBEX PBAP Application Parameters", "BT PBAP Application Parameters", "obex.parameter.bt.pbap");
-    bt_pbap_application_parameters_handle = register_dissector("obex.parameter.bt.pbap", dissect_obex_application_parameter_bt_pbap, proto_bt_pbap);
+    proto_bt_ctn = proto_register_protocol("Bluetooth OBEX CTN Application Parameters", "BT CTN Application Parameters", "obex.profile.bt.ctn");
+    bt_ctn_profile_handle = register_dissector("obex.profile.bt.ctn", dissect_obex_header_bt_ctn, proto_bt_ctn);
+
+    proto_bt_pbap = proto_register_protocol("Bluetooth OBEX PBAP Application Parameters", "BT PBAP Application Parameters", "obex.profile.bt.pbap");
+    bt_pbap_profile_handle = register_dissector("obex.profile.bt.pbap", dissect_obex_header_bt_pbap, proto_bt_pbap);
 
     register_decode_as(&media_type_da);
 
     module = prefs_register_protocol(proto_obex, NULL);
     prefs_register_static_text_preference(module, "supported_bluetooth_profiles",
-            "Protocol OBEX support Bluetooth profiles: BIP 1.2, BPP 1.2, CTN 1.0, FTP 1.3, GOEP 1.3, GPP 1.0, MAP 1.2, OPP 1.2, PBAP 1.2, SYNCH 1.2",
+            "Protocol OBEX support Bluetooth profiles: AVRCP 1.6, BIP 1.2, BPP 1.2, CTN 1.0, FTP 1.3, GOEP 1.3, GPP 1.0, MAP 1.2, OPP 1.2, PBAP 1.2, SYNCH 1.2",
             "Versions of Bluetooth profiles supported by this dissector.");
 }
 
@@ -3873,18 +4270,21 @@ proto_reg_handoff_obex(void)
     data_handle = find_dissector("data");
     data_text_lines_handle = find_dissector("data-text-lines");
 
-    dissector_add_uint("obex.profile", PROFILE_UNKNOWN,  raw_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_BPP,      bt_bpp_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_BIP,      bt_bip_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_CTN,      bt_ctn_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_GPP,      bt_gpp_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_MAP,      bt_map_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_PBAP,     bt_pbap_application_parameters_handle);
+    proto_btavrcp = proto_get_id_by_filter_name("btavrcp");
 
-    dissector_add_uint("obex.profile", PROFILE_OPP,      raw_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_FTP,      raw_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_SYNCML,   raw_application_parameters_handle);
-    dissector_add_uint("obex.profile", PROFILE_SYNC,     raw_application_parameters_handle);
+    dissector_add_uint("obex.profile", PROFILE_UNKNOWN,  raw_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_BPP,      bt_bpp_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_BIP,      bt_bip_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_AVRCP,    bt_avrcp_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_CTN,      bt_ctn_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_GPP,      bt_gpp_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_MAP,      bt_map_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_PBAP,     bt_pbap_profile_handle);
+
+    dissector_add_uint("obex.profile", PROFILE_OPP,      raw_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_FTP,      raw_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_SYNCML,   raw_profile_handle);
+    dissector_add_uint("obex.profile", PROFILE_SYNC,     raw_profile_handle);
 
     dissector_add_for_decode_as("btrfcomm.dlci", obex_handle);
     dissector_add_for_decode_as("btl2cap.psm", obex_handle);

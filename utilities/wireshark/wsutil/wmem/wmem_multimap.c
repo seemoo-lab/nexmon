@@ -90,7 +90,7 @@ wmem_multimap_new_autoreset(wmem_allocator_t *metadata_scope, wmem_allocator_t *
 }
 
 wmem_list_t*
-wmem_multimap_get_keys(wmem_allocator_t *list_allocator, wmem_multimap_t *map)
+wmem_multimap_get_keys(wmem_allocator_t *list_allocator, const wmem_multimap_t *map)
 {
     return wmem_map_get_keys(list_allocator, map->map);
 }
@@ -103,18 +103,28 @@ count_nodes(void * key _U_, void * value, void * user_data)
 }
 
 unsigned
-wmem_multimap_size(wmem_multimap_t *map)
+wmem_multimap_size(const wmem_multimap_t *map)
 {
     unsigned count = 0;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return 0;
+    }
 
     wmem_map_foreach(map->map, count_nodes, &count);
     return count;
 }
 
 unsigned
-wmem_multimap_count(wmem_multimap_t *map, const void *key)
+wmem_multimap_count(const wmem_multimap_t *map, const void *key)
 {
     wmem_tree_t *tree;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return 0;
+    }
 
     if ((tree = wmem_map_lookup(map->map, key)) == NULL) {
         return 0;
@@ -139,9 +149,14 @@ wmem_multimap_insert32(wmem_multimap_t *map, const void *key, uint32_t frame_num
 }
 
 void *
-wmem_multimap_lookup32(wmem_multimap_t *map, const void *key, uint32_t frame_num)
+wmem_multimap_lookup32(const wmem_multimap_t *map, const void *key, uint32_t frame_num)
 {
     wmem_tree_t *tree;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return NULL;
+    }
 
     if ((tree = wmem_map_lookup(map->map, key)) == NULL) {
         return NULL;
@@ -150,9 +165,14 @@ wmem_multimap_lookup32(wmem_multimap_t *map, const void *key, uint32_t frame_num
 }
 
 void *
-wmem_multimap_lookup32_le(wmem_multimap_t *map, const void *key, uint32_t frame_num)
+wmem_multimap_lookup32_le(const wmem_multimap_t *map, const void *key, uint32_t frame_num)
 {
     wmem_tree_t *tree;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return NULL;
+    }
 
     if ((tree = wmem_map_lookup(map->map, key)) == NULL) {
         return NULL;
@@ -161,9 +181,30 @@ wmem_multimap_lookup32_le(wmem_multimap_t *map, const void *key, uint32_t frame_
 }
 
 void *
+wmem_multimap_lookup32_le_full(const wmem_multimap_t *map, const void *key, uint32_t frame_num, uint32_t *orig_frame_num)
+{
+    wmem_tree_t *tree;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return NULL;
+    }
+
+    if ((tree = wmem_map_lookup(map->map, key)) == NULL) {
+        return NULL;
+    }
+    return wmem_tree_lookup32_le_full(tree, frame_num, orig_frame_num);
+}
+
+void *
 wmem_multimap_remove32(wmem_multimap_t *map, const void *key, const uint32_t frame_num)
 {
     wmem_tree_t *tree;
+
+    /* Make sure we have map and a multimap */
+    if (map == NULL || map->map == NULL) {
+        return NULL;
+    }
 
     if ((tree = wmem_map_lookup(map->map, key)) == NULL) {
         return NULL;

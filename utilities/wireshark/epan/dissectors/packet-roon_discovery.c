@@ -27,8 +27,8 @@
 
 // Transaction tracking structure
 typedef struct _roon_transaction_t {
-    guint32 rqst_frame;
-    guint32 resp_frame;
+    uint32_t rqst_frame;
+    uint32_t resp_frame;
     nstime_t rqst_time;
     nstime_t resp_time;
 } roon_transaction_t;
@@ -71,6 +71,7 @@ static int roon_tap;
 
 // Initialize the protocol and registered fields
 static int proto_roon_discover;
+static int hf_roon_disco_code_signing_keys;
 static int hf_roon_disco_config_version;
 static int hf_roon_disco_device_type;
 static int hf_roon_disco_device_class;
@@ -106,7 +107,7 @@ static int hf_roon_disco_no_resp;
 #define ROON_QUERY 0x0251 // Q(uery)
 #define ROON_REPLY 0x0252 // R(eply)
 #define ROON_DISCOVERY_UDP_PORT 9003 // Not IANA-assigned
-#define ROON_DISCOVERY_MIN_LENGTH 98 // empirically defined
+#define ROON_DISCOVERY_MIN_LENGTH 96 // empirically defined
 
 // Initialize the subtree pointers
 static int ett_roon_discover;
@@ -115,6 +116,7 @@ static int ett_roon_discover;
 // must be sorted by they key field.
 static const roon_map roon_disco_string_fields[] = {
     { "_tid"             , "TransactionID"    , &hf_roon_disco_tid }              ,
+    { "code_signing_keys", "Code Signing Keys", &hf_roon_disco_code_signing_keys },
     { "config_version"   , "Config Version"   , &hf_roon_disco_config_version }   ,
     { "device_class"     , "Device Class"     , &hf_roon_disco_device_class }     ,
     { "device_type"      , "Device Type"      , &hf_roon_disco_device_type }      ,
@@ -243,7 +245,7 @@ dissect_roon_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         return 0;
 
     // Must start with SOOD
-    char *marker = tvb_get_string_enc(pinfo->pool, tvb, 0, 4, ENC_ASCII);
+    const char *marker = (char*)tvb_get_string_enc(pinfo->pool, tvb, 0, 4, ENC_ASCII);
     if (strcmp(ROON_DISCOVERY_ID, marker) != 0)
         return 0;
 
@@ -282,12 +284,12 @@ dissect_roon_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
         key_len = tvb_get_uint8(tvb, i);
         offset = i + 1;
-        key = tvb_get_string_enc(pinfo->pool, tvb, offset, key_len, ENC_ASCII);
+        key = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, key_len, ENC_ASCII);
 
         offset += key_len + 1;
         value_len = tvb_get_uint8(tvb, offset);
         offset += 1;
-        value = tvb_get_string_enc(pinfo->pool, tvb, offset, value_len, ENC_ASCII);
+        value = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, value_len, ENC_ASCII);
 
         next = key_len + value_len + 3;
 
@@ -363,7 +365,7 @@ proto_register_roon_discover(void)
      *                                          typically converted by VALS(), RVALS() or TFS().
      *                                          If this is an FT_PROTOCOL or BASE_PROTOCOL_INFO then it points to the
      *                                          associated protocol_t structure
-     *  guint64            bitmask;           **< [BITMASK] bitmask of interesting bits
+     *  uint64_t           bitmask;           **< [BITMASK] bitmask of interesting bits
      *  const char        *blurb;             **< [FIELDDESCR] Brief description of field
     */
     static hf_register_info hf[] = {
@@ -459,6 +461,10 @@ proto_register_roon_discover(void)
           { "UniqueID", "roon_disco.unique_id",
               FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
 
+        { &hf_roon_disco_code_signing_keys,
+            { "Code Signing Keys", "roon_disco.code_signing_keys",
+                FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+
         // Transaction tracking fields
         { &hf_roon_disco_resp_in,
           { "Response frame", "roon_disco.resp_in",
@@ -478,7 +484,7 @@ proto_register_roon_discover(void)
         { &hf_roon_disco_resptime,
           { "Response time", "roon_disco.resptime",
             FT_DOUBLE, BASE_NONE, NULL, 0x0,
-            "The time between the request and the response, in ms.", HFILL } },
+            "The time between the request and the response, in ms", HFILL } },
     };
 
     // Setup protocol subtree array
@@ -547,11 +553,11 @@ transaction_start(packet_info *pinfo, proto_tree *tree, char *tid, bool ephemera
     roon_transaction_t *roon_trans;
     wmem_tree_key_t roon_key[3];
     proto_item *it;
-    guint32 tid_hash;
+    uint32_t tid_hash;
 
 
     // Create a hash of the TID string for use as key
-    tid_hash = wmem_strong_hash((const guint8*)tid, (size_t)strlen(tid));
+    tid_hash = wmem_strong_hash((const uint8_t*)tid, (size_t)strlen(tid));
 
     // Handle the conversation tracking
     conversation = roon_find_or_create_conversation(pinfo, ephemeral);
@@ -580,7 +586,7 @@ transaction_start(packet_info *pinfo, proto_tree *tree, char *tid, bool ephemera
                                (void *) roon_trans);
     } else {
         // Already visited this frame
-        guint32 frame_num = pinfo->num;
+        uint32_t frame_num = pinfo->num;
 
         roon_key[0].length = 1;
         roon_key[0].key = &tid_hash;
@@ -632,10 +638,10 @@ transaction_end(packet_info *pinfo, proto_tree *tree, char *tid)
     proto_item *it;
     nstime_t ns;
     double resp_time;
-    guint32 tid_hash;
+    uint32_t tid_hash;
 
     // Create a hash of the TID string for use as key
-    tid_hash = wmem_strong_hash((const guint8*)tid, (size_t)strlen(tid));
+    tid_hash = wmem_strong_hash((const uint8_t*)tid, (size_t)strlen(tid));
 
     // don't use the source address as it may not exist in the list of conversations
     // since the original query may have been sent to a broadcast/multicast address.
@@ -653,7 +659,7 @@ transaction_end(packet_info *pinfo, proto_tree *tree, char *tid)
 
     // first time visiting this frame?
     if (!PINFO_FD_VISITED(pinfo)) {
-        guint32 frame_num;
+        uint32_t frame_num;
 
         roon_key[0].length = 1;
         roon_key[0].key = &tid_hash;
@@ -688,7 +694,7 @@ transaction_end(packet_info *pinfo, proto_tree *tree, char *tid)
         wmem_tree_insert32_array(roon_info->matched_pdus, roon_key, (void *) roon_trans);
     } else {
         // Already visited this frame
-        guint32 frame_num = pinfo->num;
+        uint32_t frame_num = pinfo->num;
 
         roon_key[0].length = 1;
         roon_key[0].key = &tid_hash;

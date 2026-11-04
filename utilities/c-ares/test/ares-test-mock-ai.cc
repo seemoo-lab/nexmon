@@ -617,6 +617,29 @@ TEST_P(MockChannelTestAI, FamilyV6) {
   EXPECT_THAT(result.ai_, IncludesV6Address("2121:0000:0000:0000:0000:0000:0000:0303"));
 }
 
+// A numeric host with a "/bits" prefix length is a network, not an address.
+// It used to be accepted, returning uninitialized stack memory as the address.
+TEST_P(MockChannelTestAI, NumericHostRejectsPrefixLength) {
+  struct ares_addrinfo_hints hints = {0, 0, 0, 0};
+  hints.ai_family = AF_INET6;
+  hints.ai_flags  = ARES_AI_NUMERICHOST;
+
+  AddrInfoResult result;
+  ares_getaddrinfo(channel_, "::1/0", NULL, &hints, AddrInfoCallback, &result);
+  Process();
+  EXPECT_TRUE(result.done_);
+  EXPECT_NE(ARES_SUCCESS, result.status_);
+
+  AddrInfoResult result2;
+  ares_getaddrinfo(channel_, "::1", NULL, &hints, AddrInfoCallback, &result2);
+  Process();
+  EXPECT_TRUE(result2.done_);
+  EXPECT_EQ(ARES_SUCCESS, result2.status_);
+  EXPECT_THAT(result2.ai_, IncludesNumAddresses(1));
+  EXPECT_THAT(result2.ai_,
+              IncludesV6Address("0000:0000:0000:0000:0000:0000:0000:0001"));
+}
+
 // Test case for Issue #662
 TEST_P(MockChannelTestAI, PartialQueryCancel) {
   std::vector<byte> nothing;

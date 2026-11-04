@@ -8,10 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __RTD_TABLE_H__
-#define __RTD_TABLE_H__
-
+#pragma once
 #include "tap.h"
 #include "timestats.h"
 #include <wsutil/value_string.h>
@@ -21,20 +18,25 @@
 extern "C" {
 #endif /* __cplusplus */
 
+/**
+ * @brief Holds response time delay (RTD) statistics for a single request/response category.
+ */
 typedef struct _rtd_timestat {
-	unsigned num_timestat;              /**< number of elements on rtd array */
-	timestat_t* rtd;
-	uint32_t open_req_num;
-	uint32_t disc_rsp_num;
-	uint32_t req_dup_num;
-	uint32_t rsp_dup_num;
+    unsigned    num_timestat;  /**< Number of elements in the rtd array. */
+    timestat_t* rtd;           /**< Array of timestat_t entries accumulating RTD measurements for each subcategory. */
+    uint32_t    open_req_num;  /**< Number of requests for which no matching response has yet been seen. */
+    uint32_t    disc_rsp_num;  /**< Number of responses received without a matching request (discarded responses). */
+    uint32_t    req_dup_num;   /**< Number of duplicate requests detected. */
+    uint32_t    rsp_dup_num;   /**< Number of duplicate responses detected. */
 } rtd_timestat;
 
-/** Statistics table */
+/**
+ * @brief Aggregates RTD statistics across all tracked request/response categories for a single protocol tap.
+ */
 typedef struct _rtd_stat_table {
-	char *filter;
-	unsigned num_rtds;              /**< number of elements on time_stats array */
-	rtd_timestat* time_stats;
+    char*         filter;      /**< Optional display filter string applied when collecting these statistics; NULL if unfiltered. */
+    unsigned      num_rtds;    /**< Number of elements in the time_stats array. */
+    rtd_timestat* time_stats;  /**< Array of rtd_timestat entries, one per tracked request/response category. */
 } rtd_stat_table;
 
 /** tap data
@@ -47,6 +49,10 @@ typedef struct _rtd_data_t {
 /** Structure for information about a registered service response table */
 struct register_rtd;
 typedef struct register_rtd register_rtd_t;
+
+/** Initialize the response time delay system.
+ */
+extern void rtd_table_init(void);
 
 typedef void (*rtd_gui_init_cb)(rtd_stat_table* rtd, void* gui_data);
 typedef void (*rtd_filter_check_cb)(const char *opt_arg, const char **filter, char** err);
@@ -118,7 +124,7 @@ WS_DLL_PUBLIC void free_rtd_table(rtd_stat_table* table);
  */
 WS_DLL_PUBLIC void reset_rtd_table(rtd_stat_table* table);
 
-/** Interator to walk RTD tables and execute func
+/** Iterator to walk RTD tables and execute func
  * Used for initialization
  *
  * @param func action to be performed on all conversation tables
@@ -155,8 +161,6 @@ WS_DLL_PUBLIC char* rtd_table_get_tap_string(register_rtd_t* rtd);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __RTD_TABLE_H__ */
 
 /*
  * Editor modelines

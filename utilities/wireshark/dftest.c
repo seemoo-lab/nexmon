@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <stdlib.h>
@@ -37,14 +37,15 @@
 #include <wsutil/wslog.h>
 #include <wsutil/ws_getopt.h>
 #include <wsutil/utf8_entities.h>
+#include <app/application_flavor.h>
 
 #include <wiretap/wtap.h>
 
 #include "ui/util.h"
-#include "wsutil/cmdarg_err.h"
 #include "ui/failure_message.h"
+#include "wsutil/cmdarg_err.h"
+#include "wsutil/report_message.h"
 #include "wsutil/version_info.h"
-#include "cli_main.h"
 
 static int opt_verbose;
 static int opt_debug_level; /* currently up to 2 */
@@ -340,6 +341,12 @@ main(int argc, char **argv)
         { NULL,       0,                0,  0   }
     };
     int opt;
+    const struct file_extension_info* file_extensions;
+    unsigned num_extensions;
+    epan_app_data_t app_data;
+
+    /* Future proof by zeroing out all data */
+    memset(&app_data, 0, sizeof(app_data));
 
     /* Set the program name. */
     g_set_prgname("dftest");
@@ -357,7 +364,7 @@ main(int argc, char **argv)
     cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early for startup. */
-    ws_log_init(vcmdarg_err);
+    ws_log_init(vcmdarg_err, "DFTest Debug Console");
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -373,7 +380,7 @@ main(int argc, char **argv)
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    configuration_init_error = configuration_init(argv[0]);
+    configuration_init_error = configuration_init(argv[0], "wireshark");
     if (configuration_init_error != NULL) {
         fprintf(stderr, "Error: Can't get pathname of directory containing "
                         "the dftest program: %s.\n",
@@ -381,7 +388,7 @@ main(int argc, char **argv)
         g_free(configuration_init_error);
     }
 
-    ws_init_version_info("DFTest", NULL, NULL);
+    ws_init_version_info("DFTest", NULL, application_get_vcs_version_info, NULL, NULL);
 
     for (;;) {
         opt = ws_getopt_long(argc, argv, optstring, long_options, NULL);
@@ -403,7 +410,7 @@ main(int argc, char **argv)
                 opt_show_types = 1;
                 break;
             case 'C':   /* Configuration Profile */
-                if (profile_exists (ws_optarg, false)) {
+                if (profile_exists (application_configuration_environment_prefix(), ws_optarg, false)) {
                     set_profile_name (ws_optarg);
                 } else {
                     cmdarg_err("Configuration Profile \"%s\" does not exist", ws_optarg);
@@ -501,13 +508,20 @@ main(int argc, char **argv)
      * dissection-time handlers for file-type-dependent blocks can
      * register using the file type/subtype value for the file type.
      */
-    wtap_init(true);
+    application_file_extensions(&file_extensions, &num_extensions);
+    wtap_init(true, application_configuration_environment_prefix(), file_extensions, num_extensions);
+
 
     /* Register all dissectors; we must do this before checking for the
        "-g" flag, as the "-g" flag dumps a list of fields registered
        by the dissectors, and we must do it before we read the preferences,
        in case any dissectors register preferences. */
-    if (!epan_init(NULL, NULL, true))
+    app_data.env_var_prefix = application_configuration_environment_prefix();
+    app_data.col_fmt = application_columns();
+    app_data.num_cols = application_num_columns();
+    app_data.register_func = register_all_protocols;
+    app_data.handoff_func = register_all_protocol_handoffs;
+    if (!epan_init(NULL, NULL, true, &app_data))
         goto out;
 
     /* Load libwireshark settings from the current profile. */
@@ -542,7 +556,7 @@ main(int argc, char **argv)
         } else {
             filter_p = ws_fopen(path, "r");
             if (filter_p == NULL) {
-                open_failure_message(path, errno, false);
+                report_open_failure(path, errno, false);
                 exit_status = WS_EXIT_INVALID_FILE;
                 goto out;
             }

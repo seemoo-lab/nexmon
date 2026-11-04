@@ -40,7 +40,10 @@ object_list_get_entry(void *gui_data, int row) {
 } // extern "C"
 
 
-
+size_t qHash(const ExportObjectEntry& entry, size_t)
+{
+    return qHash(entry.Data());
+}
 
 ExportObjectModel::ExportObjectModel(register_eo_t* eo, QObject *parent) :
     QAbstractTableModel(parent),
@@ -62,11 +65,12 @@ ExportObjectModel::~ExportObjectModel()
 
 QVariant ExportObjectModel::data(const QModelIndex &index, int role) const
 {
-    if ((!index.isValid()) || ((role != Qt::DisplayRole) && (role != Qt::UserRole))) {
+    if (!index.isValid()) {
         return QVariant();
     }
 
-    if (role == Qt::DisplayRole)
+    switch (role) {
+    case Qt::DisplayRole:
     {
         export_object_entry_t *entry = VariantPointer<export_object_entry_t>::asPtr(objects_.value(index.row()));
         if (entry == NULL)
@@ -85,10 +89,21 @@ QVariant ExportObjectModel::data(const QModelIndex &index, int role) const
         case colFilename:
             return QString::fromUtf8(entry->filename);
         }
+        break;
     }
-    else if (role == Qt::UserRole)
-    {
+    case Qt::UserRole:
         return objects_.value(index.row());
+    case Qt::UserRole + 1:
+    {
+        ExportObjectEntry entry = ExportObjectEntry(VariantPointer<export_object_entry_t>::asPtr(objects_.value(index.row())));
+        auto iter = object_set_.constFind(entry);
+        if (iter == object_set_.cend() || iter->PacketNum() != entry.PacketNum()) {
+            return QVariant(false);
+        }
+        return QVariant(true);
+    }
+    default:
+        return QVariant();
     }
 
     return QVariant();
@@ -138,6 +153,7 @@ void ExportObjectModel::addObjectEntry(export_object_entry_t *entry)
     int count = static_cast<int>(objects_.count());
     beginInsertRows(QModelIndex(), count, count);
     objects_.append(VariantPointer<export_object_entry_t>::asQVariant(entry));
+    object_set_.insert(ExportObjectEntry(entry));
     endInsertRows();
 }
 
@@ -146,7 +162,7 @@ export_object_entry_t* ExportObjectModel::objectEntry(int row)
     return VariantPointer<export_object_entry_t>::asPtr(objects_.value(row));
 }
 
-bool ExportObjectModel::saveEntry(QModelIndex &index, QString filename)
+bool ExportObjectModel::saveEntry(const QModelIndex &index, QString filename)
 {
     if (!index.isValid() || filename.isEmpty())
         return false;
@@ -160,6 +176,47 @@ bool ExportObjectModel::saveEntry(QModelIndex &index, QString filename)
     }
 
     return true;
+}
+
+void ExportObjectModel::saveEntries(const QModelIndexList &indices, QString path)
+{
+    if (path.isEmpty())
+        return;
+
+    QDir save_dir(path);
+    export_object_entry_t *entry;
+
+    for (const QModelIndex &index : indices)
+    {
+        entry = VariantPointer<export_object_entry_t>::asPtr(index.data(Qt::UserRole));
+        if (entry == NULL)
+            continue;
+
+        unsigned count = 0;
+        QString filename;
+
+        do {
+            GString *safe_filename;
+
+            if (entry->filename)
+                safe_filename = eo_massage_str(entry->filename,
+                    EXPORT_OBJECT_MAXFILELEN, count);
+            else {
+                char generic_name[EXPORT_OBJECT_MAXFILELEN+1];
+                const char *ext;
+                ext = eo_ct2ext(entry->content_type);
+                snprintf(generic_name, sizeof(generic_name),
+                    "object%u%s%s", entry->pkt_num, ext ? "." : "",
+                    ext ? ext : "");
+                safe_filename = eo_massage_str(generic_name,
+                    EXPORT_OBJECT_MAXFILELEN, count);
+            }
+            filename = QString::fromUtf8(safe_filename->str);
+            g_string_free(safe_filename, TRUE);
+        } while (save_dir.exists(filename) && ++count < prefs.gui_max_export_objects);
+        write_file_binary_mode(qUtf8Printable(save_dir.filePath(filename)),
+                               entry->payload_data, entry->payload_len);
+    }
 }
 
 void ExportObjectModel::saveAllEntries(QString path)
@@ -208,7 +265,11 @@ void ExportObjectModel::resetObjects()
     export_object_gui_reset_cb reset_cb = get_eo_reset_func(eo_);
 
     beginResetModel();
+    foreach (QVariant v, objects_) {
+        eo_free_entry(VariantPointer<export_object_entry_t>::asPtr(v));
+    }
     objects_.clear();
+    object_set_.clear();
     endResetModel();
 
     if (reset_cb)
@@ -248,7 +309,8 @@ void ExportObjectModel::removeTap()
 
 
 ExportObjectProxyModel::ExportObjectProxyModel(QObject * parent)
-    : QSortFilterProxyModel(parent)
+    : QSortFilterProxyModel(parent),
+    uniqueFilter_(false)
 {
 
 }
@@ -300,6 +362,19 @@ void ExportObjectProxyModel::setTextFilterString(QString filter_)
 #endif
 }
 
+void ExportObjectProxyModel::setUniqueFilter(bool unique)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    beginFilterChange();
+#endif
+    uniqueFilter_ = unique;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else
+    invalidateFilter();
+#endif
+}
+
 bool ExportObjectProxyModel::filterAcceptsRow(int source_row, const QModelIndex &/*source_parent*/) const
 {
     if (contentFilter_.length() > 0)
@@ -323,6 +398,13 @@ bool ExportObjectProxyModel::filterAcceptsRow(int source_row, const QModelIndex 
         QString file = fileIdx.data().toString();
 
         if (!host.contains(textFilter_) && !file.contains(textFilter_))
+            return false;
+    }
+
+    if (uniqueFilter_)
+    {
+        QModelIndex idx = sourceModel()->index(source_row, ExportObjectModel::colFilename);
+        if (!sourceModel()->data(idx, Qt::UserRole + 1).toBool())
             return false;
     }
 

@@ -22,6 +22,8 @@ if [ "$maj" = "" ] || [ "$min" = "" ] || \
 	exit 1
 fi
 
+echo "$AUTORECONF identification: $AUTORECONFVERSION"
+
 # On Linux, if Autoconf version >= 2.72 and GNU C Library version >= 2.34,
 # s/AC_SYS_LARGEFILE/AC_SYS_YEAR2038_RECOMMENDED/ to ensure time_t
 # is Y2038-safe.
@@ -43,8 +45,6 @@ if [ "$BUILD_YEAR2038" = yes ] && [ "`uname -s`" = Linux ]; then
 		fi
 	fi
 fi
-
-echo "$AUTORECONF identification: $AUTORECONFVERSION"
 
 # configure.ac is an Autoconf 2.69 file, but it works as expected even with
 # Autoconf 2.72.  However, in Autoconf versions 2.70 and later obsolete

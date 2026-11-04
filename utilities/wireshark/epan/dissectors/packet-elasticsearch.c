@@ -133,7 +133,7 @@ static const value_string status_flag_message_type[] = {
 };
 
 static void elasticsearch_format_version(char *buf, uint32_t value) {
-    snprintf(buf, ELASTICSEARCH_VERSION_LABEL_LENGTH, "%d.%d.%d (%d)", (value / 1000000) % 100,
+    snprintf(buf, ELASTICSEARCH_VERSION_LABEL_LENGTH, "%d.%d.%d (%u)", (value / 1000000) % 100,
             (value / 10000) % 100, (value/ 100) % 100, value);
 }
 
@@ -179,7 +179,7 @@ static vstring_t read_vstring(wmem_allocator_t *scope, tvbuff_t *tvb, int offset
     string_starting_offset = offset + vstring.vint_length.length;
     string_length = vstring.vint_length.value;
 
-    vstring.value = tvb_get_string_enc(scope, tvb, string_starting_offset, string_length, ENC_UTF_8);
+    vstring.value = (char*)tvb_get_string_enc(scope, tvb, string_starting_offset, string_length, ENC_UTF_8);
     vstring.length = string_length + vstring.vint_length.length;
 
     return vstring;
@@ -211,14 +211,12 @@ static int elasticsearch_partial_dissect_address(tvbuff_t *tvb, packet_info *pin
     }
 
     /* Address format */
-    es_address_format = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(address_tree, hf_elasticsearch_address_format, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8(address_tree, hf_elasticsearch_address_format, tvb, offset, 1, ENC_BIG_ENDIAN, &es_address_format);
     offset += 1;
 
     switch(es_address_format) {
         case ADDRESS_FORMAT_NUEMRIC:
-            address_length = tvb_get_uint8(tvb, offset);
-            proto_tree_add_item(address_tree, hf_elasticsearch_address_length, tvb, offset, 1, ENC_BIG_ENDIAN);
+            proto_tree_add_item_ret_uint8(address_tree, hf_elasticsearch_address_length, tvb, offset, 1, ENC_BIG_ENDIAN, &address_length);
             offset += 1;
             /* Its either IPv4 or IPv6 depending on the length */
             if (address_length == IPv4_ADDRESS_LENGTH) {
@@ -268,7 +266,7 @@ static version_t elasticsearch_parse_version(tvbuff_t *tvb, int offset){
 }
 
 static int dissect_elasticsearch_zen_ping(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_){
-    int offset = 0;
+    unsigned offset = 0;
     version_t version;
     vstring_t cluster_name;
     vstring_t node_name;
@@ -426,7 +424,7 @@ static void elasticsearch_decode_binary_response(tvbuff_t *tvb, packet_info *pin
 static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_){
 
     int i, j;
-    int offset = 0;
+    unsigned offset = 0;
     int8_t transport_status_flags;
     uint32_t version;
     uint64_t request_id;
@@ -456,8 +454,7 @@ static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info 
     offset += 4;
 
     /* Request ID */
-    proto_tree_add_item(tree, hf_elasticsearch_header_request_id, tvb, offset, 8, ENC_BIG_ENDIAN);
-    request_id = tvb_get_ntoh64(tvb, offset);
+    proto_tree_add_item_ret_uint64(tree, hf_elasticsearch_header_request_id, tvb, offset, 8, ENC_BIG_ENDIAN, &request_id);
     offset += 8;
 
     /* Transport status: org.elasticsearch.transport.support.TransportStatus */
@@ -552,7 +549,7 @@ static unsigned elasticsearch_get_binary_message_len(packet_info *pinfo _U_, tvb
 
 static int dissect_elasticsearch_binary(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data) {
 
-    int offset = 0;
+    unsigned offset = 0;
     proto_item *root_elasticsearch_item;
     proto_tree *elasticsearch_tree;
 

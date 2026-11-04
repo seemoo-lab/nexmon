@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynexmon"
+version = "0.2.0"
+description = "Nexmon Python SDK and CLI tools for firmware manipulation and CSI extraction"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Nexmon Team"}
+]
+dependencies = [
+    "capstone>=4.0",
+]
+
+[project.optional-dependencies]
+analysis = [
+    "numpy>=1.20",
+]
+dev = [
+    "ruff>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.ruff]
+target-version = "py311"
+extend-exclude = ["utilities", "buildtools/b43*", "buildtools/isl-*", "buildtools/mpfr-*", "buildtools/gcc-*", "buildtools/legacy", "app", "ios_utilities", "firmwares"]
+
+[tool.ruff.lint]
+select = ["E9", "F", "E722", "B006", "B008", "B012", "B023"]
+extend-select = ["S", "B9"]
+ignore = ["S101", "S603", "S607", "B007", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+"audits/**/*.py" = ["S603", "S607", "S108"]
+"tests/**/*.py" = ["S101", "S104", "S108", "S110", "S112", "S311", "S324"]
+"patches/**/validate_build.py" = ["S324"]
+"buildtools/scripts/*.py" = ["S603", "S607", "S108", "S110", "S310", "S324", "S311"]
+"nexfirmware.py" = ["S104", "S108", "S110", "S112", "S310", "S324"]
+"python/pynexmon/csi.py" = ["S104", "S110"]

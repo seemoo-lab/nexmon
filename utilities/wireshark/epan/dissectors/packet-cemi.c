@@ -3297,7 +3297,7 @@ static int dissect_cemi( tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, vo
 
   /* Only add cEMI information to the info column (not replacing it).
     This means that we do not have to clear that column here, but
-    are adding a seperator here.
+    are adding a separator here.
   */
   col_append_str( cinfo, COL_INFO, " " );
 
@@ -3427,7 +3427,7 @@ void proto_register_cemi( void )
     { &hf_cemi_ext_dt, { "Description Type", "cemi.dt", FT_UINT8, BASE_DEC, NULL, 0xF0, NULL, HFILL } },
     { &hf_cemi_ext_px, { "Property Index", "cemi.px", FT_UINT16, BASE_DEC, NULL, 0x0FFF, NULL, HFILL } },
     { &hf_cemi_ext_memory_length, { "Memory Length", "cemi.n", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL } },
-    { &hf_cemi_ext_memory_address, { "Memory Address", "cemi.x", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+    { &hf_cemi_ext_memory_address, { "Memory Address", "cemi.x", FT_UINT24, BASE_HEX, NULL, 0, NULL, HFILL } },
     { &hf_cemi_memory_length, { "Memory Length", "cemi.n", FT_UINT8, BASE_DEC, NULL, 0x0F, NULL, HFILL } },
     { &hf_cemi_memory_address, { "Memory Address", "cemi.x", FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
     { &hf_cemi_memory_address_ext, { "Memory Address Extension", "cemi.xx", FT_UINT8, BASE_HEX, NULL, 0xF0, NULL, HFILL } },

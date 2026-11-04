@@ -747,7 +747,7 @@ static bool get_fid_and_frame(packet_info *pinfo, uint32_t *fid, unsigned *frame
 
 static struct message_data *find_or_create_message_data(struct mswsp_ct *conv_data, packet_info *pinfo, uint16_t msg_id, bool is_request, void *data)
 {
-	struct message_data to_find;
+	struct message_data to_find = {0};
 	struct message_data* msg_data = NULL;
 	GSList *result = NULL;
 	int *p_smb_level = (int*)p_get_proto_data(wmem_file_scope(), pinfo, proto_mswsp, 0);
@@ -3761,10 +3761,10 @@ static int vvalue_tvb_blob(tvbuff_t *tvb, packet_info* pinfo, int offset, void *
 static int vvalue_tvb_lpstr(tvbuff_t *tvb, packet_info* pinfo, int offset, void *val)
 {
 	struct data_str *str = (struct data_str*)val;
-	int len;
+	unsigned len;
 
 	str->len = tvb_get_letohl(tvb, offset);
-	str->str = tvb_get_stringz_enc(pinfo->pool, tvb, offset + 4, &len,
+	str->str = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset + 4, &len,
 								   ENC_ASCII|ENC_LITTLE_ENDIAN);
 	/* XXX test str->len == len */
 	return 4 + len;
@@ -3778,10 +3778,10 @@ static int vvalue_tvb_lpwstr_len(tvbuff_t *tvb, packet_info* pinfo, int offset, 
 
 	if (length == 0) {
 		/* we don't know the length */
-		ptr = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &len,
+		ptr = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, (unsigned*)&len,
 								  ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	} else {
-		ptr =  tvb_get_string_enc(pinfo->pool, tvb, offset, length,
+		ptr = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length,
 								  ENC_UTF_16|ENC_LITTLE_ENDIAN);
 		len = length;
 	}
@@ -4169,7 +4169,7 @@ static int parse_CDbColId(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_t
 	if (eKind == DBKIND_GUID_NAME) {
 		char *name;
 		int len = ulId;
-		name = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_LITTLE_ENDIAN | ENC_UCS_2);
+		name = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_LITTLE_ENDIAN | ENC_UCS_2);
 		proto_item_append_text(tree_item, " \"%s\"", name);
 		proto_tree_add_string_format_value(tree, hf_mswsp_cdbcolid_vstring, tvb, offset, len, name, "\"%s\"", name);
 		offset += len;

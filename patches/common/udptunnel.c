@@ -47,7 +47,7 @@
 //#include <sendframe.h>          // sendframe functionality
 //#include <securitycookie.h>     // related to securtiy cookie
 
-struct ethernet_ip_udp_header ethernet_ipv4_udp_header = {
+static const struct ethernet_ip_udp_header ethernet_ipv4_udp_header = {
   .ethernet = {
     .dst = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
     .src = { 'N', 'E', 'X', 'M', 'O', 'N' },
@@ -84,30 +84,57 @@ struct ethernet_ip_udp_header ethernet_ipv4_udp_header = {
 static inline uint16_t
 calc_checksum(uint16_t total_len)
 {
-    return ~(23078 + total_len);
+    uint32_t sum = 23078 + total_len;
+    while (sum >> 16)
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    return ~sum;
 }
 
 void
 prepend_ethernet_ipv4_udp_header(struct sk_buff *p)
 {
-    ethernet_ipv4_udp_header.ip.total_length = htons(p->len + sizeof(struct ip_header) + sizeof(struct udp_header));
-    ethernet_ipv4_udp_header.ip.header_checksum = htons(calc_checksum(p->len + sizeof(struct ip_header) + sizeof(struct udp_header)));
-    ethernet_ipv4_udp_header.udp.len_chk_cov.length = htons(p->len + sizeof(struct udp_header));
+    uint16_t payload_len;
+    uint16_t ip_total_len;
+    uint16_t udp_len;
+    struct ethernet_ip_udp_header *hdr;
 
-   	skb_push(p, sizeof(ethernet_ipv4_udp_header));
-    memcpy(p->data, &ethernet_ipv4_udp_header, sizeof(ethernet_ipv4_udp_header));
+    if (!p)
+        return;
+
+    payload_len = (uint16_t) p->len;
+    ip_total_len = (uint16_t) (payload_len + sizeof(struct ip_header) + sizeof(struct udp_header));
+    udp_len = (uint16_t) (payload_len + sizeof(struct udp_header));
+    hdr = (struct ethernet_ip_udp_header *) skb_push(p, sizeof(ethernet_ipv4_udp_header));
+    if (!hdr)
+        return;
+
+    memcpy(hdr, (void *) &ethernet_ipv4_udp_header, sizeof(ethernet_ipv4_udp_header));
+    hdr->ip.total_length = htons(ip_total_len);
+    hdr->ip.header_checksum = htons(calc_checksum(ip_total_len));
+    hdr->udp.len_chk_cov.length = htons(udp_len);
 }
 
 void
 udpvnprintf(struct wl_info *wl, unsigned int n, const char *format, va_list args)
 {
     int len = 0;
-    struct sk_buff *p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + n);
+    struct sk_buff *p;
+
+    if (n == 0)
+        return;
+
+    p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + n);
 
     if (p != 0) {
         skb_pull(p, sizeof(struct ethernet_ip_udp_header));
 
         len = vsnprintf(p->data, n, format, args);
+        if (len < 0) {
+            pkt_buf_free_skb(wl->wlc->osh, p, 0);
+            return;
+        }
+        if ((unsigned int) len >= n)
+            len = (int) (n - 1);
 
         p->len = len;
 
@@ -121,42 +148,18 @@ void
 udpnprintf(struct wl_info *wl, unsigned int n, const char *format, ...)
 {
     va_list args;
-    int len = 0;
-    struct sk_buff *p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + n);
 
-    if (p != 0) {
-        skb_pull(p, sizeof(struct ethernet_ip_udp_header));
-
-        va_start(args, format);
-        len = vsnprintf(p->data, n, format, args);
-        va_end(args);
-
-        p->len = len;
-
-        prepend_ethernet_ipv4_udp_header(p);
-
-        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
-    }
+    va_start(args, format);
+    udpvnprintf(wl, n, format, args);
+    va_end(args);
 }
 
 void
 udpprintf(struct wl_info *wl, const char *format, ...)
 {
     va_list args;
-    int len = 0;
-    struct sk_buff *p = pkt_buf_get_skb(wl->wlc->osh, sizeof(struct ethernet_ip_udp_header) + 1000);
 
-    if (p != 0) {
-        skb_pull(p, sizeof(struct ethernet_ip_udp_header));
-
-        va_start(args, format);
-        len = vsnprintf(p->data, 1000, format, args);
-        va_end(args);
-
-        p->len = len;
-
-        prepend_ethernet_ipv4_udp_header(p);
-
-        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p);
-    }
+    va_start(args, format);
+    udpvnprintf(wl, 1000, format, args);
+    va_end(args);
 }

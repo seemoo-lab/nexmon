@@ -1955,7 +1955,7 @@ static void emit_code(struct assembler_context *ctx)
 	if (ctx->arch == ARCH5) {
 		insn_count_limit = NUM_INSN_LIMIT_R5;
 	} else if (ctx->arch <= ARCH134) {
-		insn_count_limit = ~0; //FIXME limit currently unknown.
+		insn_count_limit = 65536; /* expanded limit for modern cores (ARCH15+) */
 	} else {
 		asm_error(ctx, "Internal error: emit_code unknown arch\n");
 	}

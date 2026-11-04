@@ -40,23 +40,23 @@ const int ws_utf8_seqlen[256] = {
  * a unit. (I.e., given a sequence of 2 or 3 bytes which are a
  * truncated version of a 3 or 4 byte UTF-8 character, but the next
  * byte does not continue the character, the set of 2 or 3 bytes
- * are replaced with one REPLACMENT CHARACTER.)
+ * are replaced with one REPLACEMENT CHARACTER.)
  */
 static inline size_t
-utf_8_validate(const uint8_t *start, ssize_t length, const uint8_t **end)
+utf_8_validate(const uint8_t *start, ssize_t length, const uint8_t **endp)
 {
     const uint8_t *ptr = start;
     uint8_t ch;
     size_t unichar_len, valid_bytes = 0;
+    const uint8_t *end = start + length;
 
-    while (length > 0) {
+    while (ptr < end) {
 
         ch = *ptr;
 
         if (ch < 0x80) {
             valid_bytes++;
             ptr++;
-            length--;
             continue;
         }
 
@@ -64,8 +64,7 @@ utf_8_validate(const uint8_t *start, ssize_t length, const uint8_t **end)
 
         if (ch < 0xc2 || ch > 0xf4) {
             ptr++;
-            length--;
-            *end = ptr;
+            *endp = ptr;
             return valid_bytes;
         }
 
@@ -74,86 +73,81 @@ utf_8_validate(const uint8_t *start, ssize_t length, const uint8_t **end)
         } else if (ch < 0xf0) { /* 1110xxxx, 3 byte char */
             unichar_len = 3;
             ptr++;
-            length--;
-            if (length < 1) {
-                *end = ptr;
+            if (ptr == end) {
+                *endp = ptr;
                 return valid_bytes;
             }
             switch (ch) {
                 case 0xe0:
                     if (*ptr < 0xa0 || *ptr > 0xbf) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
                     break;
                 case 0xed:
                     if (*ptr < 0x80 || *ptr > 0x9f) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
                     break;
                 default:
                     if (*ptr < 0x80 || *ptr > 0xbf) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
             }
         } else { /* 11110xxx, 4 byte char - > 0xf4 excluded above */
             unichar_len = 4;
             ptr++;
-            length--;
-            if (length < 1) {
-                *end = ptr;
+            if (ptr == end) {
+                *endp = ptr;
                 return valid_bytes;
             }
             switch (ch) {
                 case 0xf0:
                     if (*ptr < 0x90 || *ptr > 0xbf) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
                     break;
                 case 0xf4:
                     if (*ptr < 0x80 || *ptr > 0x8f) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
                     break;
                 default:
                     if (*ptr < 0x80 || *ptr > 0xbf) {
-                        *end = ptr;
+                        *endp = ptr;
                         return valid_bytes;
                     }
             }
             ptr++;
-            length--;
-            if (length < 1) {
-                *end = ptr;
+            if (ptr == end) {
+                *endp = ptr;
                 return valid_bytes;
             }
             if (*ptr < 0x80 || *ptr > 0xbf) {
-                *end = ptr;
+                *endp = ptr;
                 return valid_bytes;
             }
         }
 
         ptr++;
-        length--;
-        if (length < 1) {
-            *end = ptr;
+        if (ptr == end) {
+            *endp = ptr;
             return valid_bytes;
         }
         if (*ptr < 0x80 || *ptr > 0xbf) {
-            *end = ptr;
+            *endp = ptr;
             return valid_bytes;
         } else {
             ptr++;
-            length--;
             valid_bytes += unichar_len;
         }
 
     }
-    *end = ptr;
+    *endp = ptr;
     return valid_bytes;
 }
 
@@ -173,7 +167,7 @@ utf_8_validate(const uint8_t *start, ssize_t length, const uint8_t **end)
  * be added later.
  *
  * Compared with g_utf8_make_valid(), this function does not consider
- * internal NUL bytes as invalid and replace them with replacment characters.
+ * internal NUL bytes as invalid and replace them with replacement characters.
  * It also replaces maximal subparts as a unit; i.e., a sequence of 2 or 3
  * bytes which are a truncated version of a valid 3 or 4 byte character (but
  * the next byte does not continue the character) are replaced with a single
@@ -206,7 +200,7 @@ ws_utf8_make_valid_strbuf(wmem_allocator_t *scope, const uint8_t *ptr, ssize_t l
         size_t valid_bytes = utf_8_validate(prev, length, &ptr);
 
         if (valid_bytes) {
-            wmem_strbuf_append_len(str, prev, valid_bytes);
+            wmem_strbuf_append_len(str, (const char*)prev, valid_bytes);
         }
         length -= ptr - prev;
         prev += valid_bytes;
@@ -222,7 +216,7 @@ uint8_t *
 ws_utf8_make_valid(wmem_allocator_t *scope, const uint8_t *ptr, ssize_t length)
 {
     wmem_strbuf_t *str = ws_utf8_make_valid_strbuf(scope, ptr, length);
-    return wmem_strbuf_finalize(str);
+    return (uint8_t*)wmem_strbuf_finalize(str);
 }
 
 #ifdef _WIN32

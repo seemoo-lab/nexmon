@@ -22,10 +22,6 @@
 #include "packet-x509if.h"
 #include "packet-cmip.h"
 
-#define PNAME  "X711 CMIP"
-#define PSNAME "CMIP"
-#define PFNAME "cmip"
-
 void proto_register_cmip(void);
 void proto_reg_handoff_cmip(void);
 
@@ -87,7 +83,7 @@ dissect_cmip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	session = (struct SESSION_DATA_STRUCTURE*)data;
 
 	if(session->spdu_type == 0 ) {
-		proto_tree_add_expert_format(parent_tree, pinfo, &ei_wrong_spdu_type, tvb, 0, -1,
+		proto_tree_add_expert_format_remaining(parent_tree, pinfo, &ei_wrong_spdu_type, tvb, 0,
 			"Internal error: wrong spdu type %x from session dissector.", session->spdu_type);
 		return 0;
 	}
@@ -158,7 +154,7 @@ void proto_register_cmip(void) {
   expert_module_t* expert_cmip;
 
   /* Register protocol */
-  proto_cmip = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_cmip = proto_register_protocol("X711 CMIP", "CMIP", "cmip");
   cmip_handle = register_dissector("cmip", dissect_cmip, proto_cmip);
 
   /* Register fields and subtrees */

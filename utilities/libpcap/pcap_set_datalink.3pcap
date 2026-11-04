@@ -44,7 +44,7 @@ on success,
 .B PCAP_ERROR_NOT_ACTIVATED
 if called on a capture handle that has been created but not activated, or
 .B PCAP_ERROR
-on other errors. If
+on other errors.  If
 .B PCAP_ERROR
 is returned,
 .BR pcap_geterr (3PCAP)
@@ -55,4 +55,6 @@ may be called with
 as an argument to fetch or display the error text.
 .SH SEE ALSO
 .BR pcap (3PCAP),
+.BR pcap_datalink (3PCAP),
+.BR pcap_list_datalinks (3PCAP),
 .BR pcap_datalink_name_to_val (3PCAP)

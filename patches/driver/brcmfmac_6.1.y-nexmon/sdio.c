@@ -621,7 +621,7 @@ BRCMF_FW_DEF(43430A0, "brcmfmac43430a0-sdio");
 BRCMF_FW_CLM_DEF(43430A1, "brcmfmac43430-sdio");
 BRCMF_FW_DEF(43430B0, "brcmfmac43430b0-sdio");
 BRCMF_FW_CLM_DEF(43455, "brcmfmac43455-sdio");
-BRCMF_FW_DEF(43456, "brcmfmac43456-sdio");
+BRCMF_FW_CLM_DEF(43456, "brcmfmac43456-sdio");
 BRCMF_FW_CLM_DEF(4354, "brcmfmac4354-sdio");
 BRCMF_FW_CLM_DEF(4356, "brcmfmac4356-sdio");
 BRCMF_FW_DEF(4359, "brcmfmac4359-sdio");
@@ -679,15 +679,10 @@ static void pkt_align(struct sk_buff *p, int len, int align)
 /* To check if there's window offered */
 static bool data_ok(struct brcmf_sdio *bus)
 {
-	u8 tx_rsv = 0;
-
-	/* Reserve TXCTL_CREDITS credits for txctl when it is ready to send */
-	if (bus->ctrl_frame_stat)
-		tx_rsv = TXCTL_CREDITS;
-
-	return (bus->tx_max - bus->tx_seq - tx_rsv) != 0 &&
-	       ((bus->tx_max - bus->tx_seq - tx_rsv) & 0x80) == 0;
-
+	/* Unconditionally reserve TXCTL_CREDITS credits for control frames
+	 * so data frames can never starve the control path of SDPCM credits. */
+	return (bus->tx_max - bus->tx_seq) > TXCTL_CREDITS &&
+	       ((bus->tx_max - bus->tx_seq) & 0x80) == 0;
 }
 
 /* To check if there's window offered */
@@ -1830,17 +1825,18 @@ gotpkt:
 	if (bus->rxctl) {
 		brcmf_err("last control frame is being processed.\n");
 		spin_unlock_bh(&bus->rxctl_lock);
-		vfree(buf);
 		goto done;
 	}
 	bus->rxctl = buf + doff;
 	bus->rxctl_orig = buf;
 	bus->rxlen = len - doff;
 	spin_unlock_bh(&bus->rxctl_lock);
+	buf = NULL;
 
 done:
 	/* Awake any waiters */
 	brcmf_sdio_dcmd_resp_wake(bus);
+	vfree(buf);
 }
 
 /* Pad read to blocksize for efficiency */
@@ -2348,9 +2344,14 @@ static uint brcmf_sdio_sendfromq(struct brcmf_sdio *bus, uint maxframes)
 	/* Send frames until the limit or some other event */
 	for (cnt = 0; (cnt < maxframes) && data_ok(bus);) {
 		pkt_num = 1;
-		if (bus->txglom)
-			pkt_num = min_t(u8, bus->tx_max - bus->tx_seq,
-					bus->sdiodev->txglomsz);
+		if (bus->txglom) {
+			u8 avail = bus->tx_max - bus->tx_seq;
+			if (avail > TXCTL_CREDITS)
+				avail -= TXCTL_CREDITS;
+			else
+				avail = 0;
+			pkt_num = min_t(u8, avail, bus->sdiodev->txglomsz);
+		}
 		pkt_num = min_t(u32, pkt_num,
 				brcmu_pktq_mlen(&bus->txq, ~bus->flowcontrol));
 		__skb_queue_head_init(&pktq);

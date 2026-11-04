@@ -9,10 +9,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __COLUMN_INFO_H__
-#define __COLUMN_INFO_H__
-
+#pragma once
 #include <epan/column-utils.h>
 
 #ifdef __cplusplus
@@ -61,7 +58,7 @@ typedef struct {
 /** Column info */
 struct epan_column_info {
   const struct epan_session *epan;
-  int                 num_cols;             /**< Number of columns */
+  unsigned            num_cols;             /**< Number of columns */
   col_item_t         *columns;              /**< All column data */
   int                *col_first;            /**< First column number with a given format */
   int                *col_last;             /**< Last column number with a given format */
@@ -70,17 +67,32 @@ struct epan_column_info {
   GRegex             *prime_regex;          /**< Used to prime custom columns */
 };
 
-/** Allocate all the data structures for constructing column data, given
- * the number of columns.
+/**
+ * @brief Allocate and initialize column‑handling structures.
+ *
+ * Prepares a column_info structure for use by the column subsystem by
+ * allocating the internal data structures required to
+ * store, format, and update column values during dissection.
+ *
+ * @param cinfo     The column_info structure to initialize.
+ * @param num_cols  The number of columns to allocate space for.
  */
 WS_DLL_PUBLIC void col_setup(column_info *cinfo, const int num_cols);
 
-/** Cleanup all the data structures for constructing column data;
+/**
+ * @brief Release all column‑handling data structures.
+ *
+ * Cleanup all the data structures for constructing column data;
  * undoes the allocations that col_setup() does.
+ * @param cinfo  The column_info structure whose resources should be freed.
  */
 WS_DLL_PUBLIC void col_cleanup(column_info *cinfo);
 
-/** Initialize the data structures for constructing column data.
+/**
+ * @brief Initialize the data structures for constructing column data.
+ *
+ * @param cinfo  The column_info structure to initialize.
+ * @param epan   The epan_session providing context and preferences.
  */
 extern void col_init(column_info *cinfo, const struct epan_session *epan);
 
@@ -102,36 +114,88 @@ WS_DLL_PUBLIC void col_fill_in_error(column_info *cinfo, frame_data *fdata, cons
  */
 WS_DLL_PUBLIC bool      col_data_changed(void);
 
+/**
+ * @brief Set custom data type for a column in an epan_dissect structure.
+ *
+ * This function updates the custom data type for each custom column in the provided column_info structure.
+ *
+ * @param edt Pointer to the epan_dissect structure containing the dissector information.
+ * @param cinfo Pointer to the column_info structure containing the column information.
+ */
 void col_custom_set_edt(struct epan_dissect *edt, column_info *cinfo);
 
+/**
+ * @brief Prime custom columns in an epan_dissect structure.
+ *
+ * @param edt Pointer to the epan_dissect structure containing the dissector information.
+ * @param cinfo Pointer to the column_info structure containing the column information.
+ */
 WS_DLL_PUBLIC
 void col_custom_prime_edt(struct epan_dissect *edt, column_info *cinfo);
 
 /** Get a filter expression for a custom column. This string must be g_free'd.
  */
 WS_DLL_PUBLIC
-char* col_custom_get_filter(struct epan_dissect *edt, column_info *cinfo, const int col);
+char* col_custom_get_filter(struct epan_dissect *edt, column_info *cinfo, const unsigned col);
 
+/**
+ * @brief Checks if there are custom columns in the given column_info structure.
+ *
+ * @param cinfo Pointer to the column_info structure to check.
+ * @return true if there are custom columns, false otherwise.
+ */
 WS_DLL_PUBLIC
 bool have_custom_cols(column_info *cinfo);
 
+/**
+ * @brief Checks if field extractors are available.
+ *
+ * @return true if field extractors are available, false otherwise.
+ */
 WS_DLL_PUBLIC
 bool have_field_extractors(void);
 
+/**
+ * @brief Check if a column has any time format.
+ *
+ * @param cinfo Pointer to the column information structure.
+ * @param col Column index to check.
+ * @return true If the column has any time format, false otherwise.
+ */
 WS_DLL_PUBLIC
-bool col_has_time_fmt(column_info *cinfo, const int col);
+bool col_has_time_fmt(column_info *cinfo, const unsigned col);
 
+/**
+ * @brief Determines if a column is based on frame data.
+ *
+ * @param cinfo Pointer to the column information structure.
+ * @param col Column index.
+ * @return true If the column is based on frame data, false otherwise.
+ */
 WS_DLL_PUBLIC
-bool col_based_on_frame_data(column_info *cinfo, const int col);
+bool col_based_on_frame_data(column_info *cinfo, const unsigned col);
 
+/**
+ * @brief Registers the protocol columns for Wireshark.
+ *
+ * This function initializes and registers the protocol columns used in Wireshark's packet display.
+ */
 void
 col_register_protocol(void);
 
+/**
+ * @brief Dissects and populates columns in a packet display tree.
+ *
+ * This function processes a tvbuff_t containing packet data, extracts relevant information,
+ * and populates the specified proto_tree with column data based on the packet's protocol and content.
+ *
+ * @param tvb Pointer to the tvbuff_t containing the packet data.
+ * @param pinfo Pointer to the packet_info structure containing metadata about the packet.
+ * @param tree Pointer to the proto_tree where column data will be added.
+ */
 extern
 void col_dissect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* __COLUMN_INFO_H__ */

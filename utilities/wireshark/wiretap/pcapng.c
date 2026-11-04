@@ -25,7 +25,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <wsutil/application_flavor.h>
 #include <wsutil/wslog.h>
 #include <wsutil/strtoi.h>
 #include <wsutil/glib-compat.h>
@@ -42,6 +41,7 @@
 #include "pcapng_module.h"
 #include "secrets-types.h"
 #include "pcapng-darwin-custom.h"
+#include "pcapng-wireshark-custom.h"
 
 #define NS_PER_S 1000000000U
 
@@ -120,12 +120,6 @@ typedef struct pcapng_custom_block_s {
     uint32_t pen;
     /* Custom data and options */
 } pcapng_custom_block_t;
-
-/* pcapng: legacy DPEB (Darwin Process Event Block) file encoding */
-typedef struct pcapng_legacy_darwin_process_event_block_s {
-    uint32_t process_id;
-    /* Options */
-}  pcapng_legacy_darwin_process_event_block_t;
 
 
 /*
@@ -461,7 +455,7 @@ pcapng_get_cb_section_info_data(section_info_t *section_info, uint32_t pen,
          * No entry found - create a new one, and add it to the
          * hash table.
          */
-        data = funcs->new();
+        data = funcs->provision();
         g_hash_table_insert(section_info->custom_block_data,
                             GUINT_TO_POINTER(pen), data);
     }
@@ -515,7 +509,7 @@ pcapng_get_lb_section_info_data(section_info_t *section_info,
          * No entry found - create a new one, and add it to the
          * hash table.
          */
-        data = funcs->new();
+        data = funcs->provision();
         g_hash_table_insert(section_info->local_block_data,
                             GUINT_TO_POINTER(block_type), data);
     }
@@ -553,7 +547,7 @@ pcapng_process_uint32_option(wtapng_block_t *wblock,
          *
          * XXX - options are aligned on 32-bit boundaries, so, while
          * it may be true that 64-bit options aren't guaranteed to be
-         * aligned on 64-bit bounaries, it shouldn't be true that 32-bit
+         * aligned on 64-bit boundaries, it shouldn't be true that 32-bit
          * options aren't guaranteed to be aligned on 32-bit boundaries.
          */
         memcpy(&uint32, option_content, sizeof(uint32_t));
@@ -761,12 +755,12 @@ void
 pcapng_process_string_option(wtapng_block_t *wblock, uint16_t option_code,
                              uint16_t option_length, const uint8_t *option_content)
 {
-    const char *opt = (const char *)option_content;
+    const uint8_t *opt = (const uint8_t*)option_content;
     size_t optlen = option_length;
     char *str;
 
     /* Validate UTF-8 encoding. */
-    str = ws_utf8_make_valid(NULL, opt, optlen);
+    str = (char*)ws_utf8_make_valid(NULL, opt, optlen);
 
     /*
      * If this option can appear only once in a block, this call
@@ -782,7 +776,7 @@ void
 pcapng_process_bytes_option(wtapng_block_t *wblock, uint16_t option_code,
                             uint16_t option_length, const uint8_t *option_content)
 {
-    wtap_block_add_bytes_option(wblock->block, option_code, (const char *)option_content, option_length);
+    wtap_block_add_bytes_option(wblock->block, option_code, option_content, option_length);
 }
 
 static bool
@@ -848,7 +842,7 @@ pcapng_process_custom_string_option(wtapng_block_t *wblock,
                                              &pen, err, err_info)) {
         return false;
     }
-    ret = wtap_block_add_custom_string_option(wblock->block, option_code, pen, option_content + 4, option_length - 4) == WTAP_OPTTYPE_SUCCESS;
+    ret = wtap_block_add_custom_string_option(wblock->block, option_code, pen, (const char*)(option_content + 4), option_length - 4) == WTAP_OPTTYPE_SUCCESS;
     ws_debug("returning %d", ret);
     return ret;
 }
@@ -863,7 +857,7 @@ pcapng_process_custom_binary_option(wtapng_block_t *wblock,
                                     int *err, char **err_info)
 {
     uint32_t pen;
-    pcapng_custom_block_enterprise_handler_t* pen_handler;
+    pcapng_custom_block_enterprise_handler_t const *pen_handler;
     bool ret;
 
     if (!pcapng_process_custom_option_common(section_info, option_length,
@@ -872,9 +866,9 @@ pcapng_process_custom_binary_option(wtapng_block_t *wblock,
         return false;
     }
 
-    pen_handler = (pcapng_custom_block_enterprise_handler_t*)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(pen));
+    pen_handler = (pcapng_custom_block_enterprise_handler_t const *)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(pen));
 
-    if (pen_handler != NULL)
+    if (pen_handler != NULL && pen_handler->processor != NULL)
     {
         ret = pen_handler->processor(wblock, section_info, option_code, option_content + 4, option_length - 4);
     }
@@ -888,7 +882,6 @@ pcapng_process_custom_binary_option(wtapng_block_t *wblock,
     return ret;
 }
 
-#ifdef HAVE_PLUGINS
 static bool
 pcapng_process_unhandled_option(wtapng_block_t *wblock,
                                 section_info_t *section_info,
@@ -918,17 +911,6 @@ pcapng_process_unhandled_option(wtapng_block_t *wblock,
     }
     return true;
 }
-#else
-static bool
-pcapng_process_unhandled_option(wtapng_block_t *wblock _U_,
-                                section_info_t *section_info _U_,
-                                uint16_t option_code _U_, uint16_t option_length _U_,
-                                const uint8_t *option_content _U_,
-                                int *err _U_, char **err_info _U_)
-{
-    return true;
-}
-#endif
 
 bool
 pcapng_process_options(FILE_T fh, wtapng_block_t *wblock,
@@ -1013,6 +995,7 @@ pcapng_process_options(FILE_T fh, wtapng_block_t *wblock,
             *err = WTAP_ERR_INTERNAL;
             *err_info = ws_strdup_printf("pcapng: invalid byte order %d passed to pcapng_process_options()",
                                         byte_order);
+            g_free(option_content);
             return false;
         }
         option_ptr += sizeof (*oh); /* 4 bytes, so it remains aligned */
@@ -1241,7 +1224,7 @@ pcapng_read_section_header_block(FILE_T fh, pcapng_block_header_t *bh,
 
        Version 1.2 is written by some programs that write additional
        block types (which can be read by any code that handles them,
-       regarless of whether the minor version if 0 or 2, so that's
+       regardless of whether the minor version if 0 or 2, so that's
        not a reason to change the minor version number).
 
        XXX - the pcapng specification says that readers should
@@ -2005,11 +1988,19 @@ pcapng_process_packet_block_option(wtapng_block_t *wblock,
                 /* XXX - free anything? */
                 return false;
             }
-            // XXX - It's two concatenated 32 bit unsigned integers
-            pcapng_process_uint64_option(wblock, section_info,
-                                         OPT_SECTION_BYTE_ORDER,
-                                         option_code, option_length,
-                                         option_content);
+            /*
+             * This is two concatenated 32-bit unsigned integers, the
+             * process ID followed by the thread ID, each in the byte
+             * order of the section.  Process it the same way as the
+             * two 32-bit halves of a timestamp, so that the process ID
+             * ends up in the upper 32 bits of the 64-bit option value
+             * and the thread ID in the lower 32 bits, regardless of
+             * the byte order of the section or of the host.
+             */
+            pcapng_process_timestamp_option(wblock, section_info,
+                                            OPT_SECTION_BYTE_ORDER,
+                                            option_code, option_length,
+                                            option_content);
             break;
         default:
             if (!pcapng_process_unhandled_option(wblock, section_info,
@@ -2200,8 +2191,20 @@ pcapng_read_packet_block(wtap *wth _U_, FILE_T fh, uint32_t block_type,
         return false;
     }
     block_read += pseudo_header_len;
-    wblock->rec->rec_header.packet_header.caplen = packet.cap_len - pseudo_header_len;
-    wblock->rec->rec_header.packet_header.len = packet.packet_len - pseudo_header_len;
+    if (ckd_sub(&wblock->rec->rec_header.packet_header.caplen, packet.cap_len, pseudo_header_len)) {
+        /* pcap_process_pseudo_header should never return a length greater
+         * than the cap_len it is given. */
+        *err = WTAP_ERR_INTERNAL;
+        *err_info = ws_strdup_printf("pcapng: pseudo_header_len (%u) > cap_len (%u)",
+                                    pseudo_header_len, packet.cap_len);
+        return false;
+    }
+    if (ckd_sub(&wblock->rec->rec_header.packet_header.len, packet.packet_len, pseudo_header_len)) {
+        /* This means that the reported length was less than the captured
+         * length. Set it to zero, and let the frame dissector fix it, which
+         * will add an expert warning. */
+        wblock->rec->rec_header.packet_header.len = 0;
+    }
 
     /* Combine the two 32-bit pieces of the timestamp into one 64-bit value */
     ts = (((uint64_t)packet.ts_high) << 32) | ((uint64_t)packet.ts_low);
@@ -2421,8 +2424,20 @@ pcapng_read_simple_packet_block(wtap *wth _U_, FILE_T fh,
     if (pseudo_header_len < 0) {
         return false;
     }
-    wblock->rec->rec_header.packet_header.caplen = simple_packet.cap_len - pseudo_header_len;
-    wblock->rec->rec_header.packet_header.len = simple_packet.packet_len - pseudo_header_len;
+    if (ckd_sub(&wblock->rec->rec_header.packet_header.caplen, simple_packet.cap_len, pseudo_header_len)) {
+        /* pcap_process_pseudo_header should never return a length greater
+         * than the cap_len it is given. */
+        *err = WTAP_ERR_INTERNAL;
+        *err_info = ws_strdup_printf("pcapng: pseudo_header_len (%u) > cap_len (%u)",
+                                    pseudo_header_len, simple_packet.cap_len);
+        return false;
+    }
+    if (ckd_sub(&wblock->rec->rec_header.packet_header.len, simple_packet.packet_len, pseudo_header_len)) {
+        /* This means that the reported length was less than the captured
+         * length. Set it to zero, and let the frame dissector fix it, which
+         * will add an expert warning. */
+        wblock->rec->rec_header.packet_header.len = 0;
+    }
 
     /* "Simple Packet Block" read capture data */
     if (!wtap_read_bytes_buffer(fh, &wblock->rec->data,
@@ -2921,9 +2936,9 @@ pcapng_read_interface_statistics_block(wtap *wth _U_, FILE_T fh,
 }
 
 void
-register_pcapng_custom_block_enterprise_handler(unsigned enterprise_number, pcapng_custom_block_enterprise_handler_t* handler)
+register_pcapng_custom_block_enterprise_handler(unsigned enterprise_number, pcapng_custom_block_enterprise_handler_t const *handler)
 {
-    g_hash_table_insert(custom_enterprise_handlers, GUINT_TO_POINTER(enterprise_number), handler);
+    g_hash_table_insert(custom_enterprise_handlers, GUINT_TO_POINTER(enterprise_number), (void *)handler);
 }
 
 static bool
@@ -2934,7 +2949,7 @@ pcapng_read_custom_block(wtap *wth _U_, FILE_T fh, uint32_t block_type,
 {
     pcapng_custom_block_t cb;
     uint32_t pen;
-    pcapng_custom_block_enterprise_handler_t* pen_handler;
+    pcapng_custom_block_enterprise_handler_t const *pen_handler;
 
     /* Is this block long enough to be an CB? */
     if (block_content_length < sizeof cb) {
@@ -2965,19 +2980,31 @@ pcapng_read_custom_block(wtap *wth _U_, FILE_T fh, uint32_t block_type,
     wtap_setup_custom_block_rec(wblock->rec, pen, block_payload_length,
                                 (block_type == BLOCK_TYPE_CB_COPY));
 
-    pen_handler = (pcapng_custom_block_enterprise_handler_t*)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(pen));
+    pen_handler = (pcapng_custom_block_enterprise_handler_t const *)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(pen));
 
     if (pen_handler != NULL)
     {
+        /*
+         * The parser may replace the block with one to be processed
+         * internally, in which case it sets wblock->internal and
+         * there's nothing to return to the caller.
+         */
+        wblock->internal = false;
         if (!pen_handler->parser(fh, section_info, wblock, err, err_info)) {
             if (*err == WTAP_ERR_REC_MALFORMED) {
                 /* Allow the packet to be kept */
                 wblock->rec->rec_header.packet_header.pkt_encap = WTAP_ENCAP_NULL;
+                *err = 0;
+                g_free(*err_info);
+                *err_info = NULL;
             }
             else {
                 return false;
             }
          }
+        if (wblock->internal) {
+            return true;
+        }
     }
     else
     {
@@ -3091,7 +3118,7 @@ pcapng_read_systemd_journal_export_block(wtap *wth, FILE_T fh,
 }
 
 static bool
-pcapng_read_unknown_block(FILE_T fh, guint32 block_content_length,
+pcapng_read_unknown_block(FILE_T fh, uint32_t block_content_length,
     section_info_t *section_info _U_, wtapng_block_t *wblock,
     int *err, char **err_info)
 {
@@ -3212,11 +3239,6 @@ pcapng_read_block(wtap *wth, FILE_T fh,
          */
         section_info = new_section_info;
 
-        /*
-         * Get information for this block type, for use when setting the
-         * internal flag.
-         */
-        handler = g_hash_table_lookup(block_handlers, GUINT_TO_POINTER(bh.block_type));
     } else {
         /*
          * Not an SHB.
@@ -3287,6 +3309,7 @@ pcapng_read_block(wtap *wth, FILE_T fh,
          * Do we have a handler for this block type?
          */
         handler = g_hash_table_lookup(block_handlers, GUINT_TO_POINTER(bh.block_type));
+
         if (handler != NULL) {
             /* Yes - call it to read this block type. */
             if (!handler->reader(wth, fh, bh.block_type,
@@ -3434,6 +3457,34 @@ pcapng_process_dsb(wtap *wth, section_info_t *section_info _U_,
     g_array_append_val(wth->dsbs, wblock->block);
 
     /* Do not free wblock->block, it is consumed above */
+
+    return true;
+}
+
+/*
+ * Process a custom block that we have just read and that its enterprise
+ * handler turned into a block to be processed internally.
+ */
+static bool
+pcapng_process_cb(wtap *wth, section_info_t *section_info _U_,
+                  wtapng_block_t *wblock)
+{
+    switch (wtap_block_get_type(wblock->block)) {
+
+    case WTAP_BLOCK_PROCESS_INFORMATION:
+        /*
+         * Store it such that it can be looked up and saved by the dumper;
+         * where it ends tells which packets it precedes.
+         */
+        wtap_add_pib(wth, wblock->block, file_tell(wth->fh));
+        /* Do not free wblock->block, it is consumed above */
+        break;
+
+    default:
+        /* Not a block we keep. */
+        wtap_block_unref(wblock->block);
+        break;
+    }
 
     return true;
 }
@@ -3664,13 +3715,13 @@ pcapng_open(wtap *wth, int *err, char **err_info)
     wth->file_type_subtype = pcapng_file_type_subtype;
 
     /* Always initialize the lists of Decryption Secret Blocks, Name
-     * Resolution Blocks, Sysdig meta event blocks, and Darwin Process Event Blocks,
-     * such that a wtap_dumper can refer to them right after
+     * Resolution Blocks, Sysdig meta event blocks, and process information
+     * blocks, such that a wtap_dumper can refer to them right after
      * opening the capture file. */
     wth->dsbs = g_array_new(false, false, sizeof(wtap_block_t));
     wth->nrbs = g_array_new(false, false, sizeof(wtap_block_t));
     wth->meta_events = g_array_new(false, false, sizeof(wtap_block_t));
-    wth->dpibs = g_array_new(false, false, sizeof(wtap_block_t));
+    wth->pibs = g_array_new(false, false, sizeof(wtap_block_t));
 
     /* Most other capture types (such as pcap) support a single link-layer
      * type, indicated in the header, and don't support WTAP_ENCAP_PER_PACKET.
@@ -3709,7 +3760,9 @@ pcapng_open(wtap *wth, int *err, char **err_info)
         }
 
         /* go back to where we were */
-        file_seek(wth->fh, saved_offset, SEEK_SET, err);
+        if (file_seek(wth->fh, saved_offset, SEEK_SET, err) == -1) {
+            return WTAP_OPEN_ERROR;
+        }
 
         /*
          * Get a pointer to the current section's section_info_t.
@@ -5001,7 +5054,13 @@ static bool write_wtap_epb_option(wtap_dumper *wdh, wtap_block_t block _U_,
             return false;
         break;
     case OPT_PKT_PROCIDTHRDID:
-        if (!pcapng_write_uint64_option(wdh, OPT_PKT_PROCIDTHRDID, optval, err))
+        /*
+         * Two 32-bit unsigned integers, the process ID (the upper 32
+         * bits of the option value) followed by the thread ID (the
+         * lower 32 bits); write them the same way as the two halves
+         * of a timestamp.
+         */
+        if (!pcapng_write_timestamp_option(wdh, OPT_PKT_PROCIDTHRDID, optval, err))
             return false;
         break;
     default: {
@@ -5246,7 +5305,7 @@ static bool
 pcapng_write_custom_block_copy(wtap_dumper *wdh, const wtap_rec *rec,
                                int *err, char **err_info _U_)
 {
-    pcapng_custom_block_enterprise_handler_t *pen_handler;
+    pcapng_custom_block_enterprise_handler_t const *pen_handler;
     uint32_t block_content_length;
     pcapng_custom_block_t cb;
     uint32_t pad_len;
@@ -5256,8 +5315,8 @@ pcapng_write_custom_block_copy(wtap_dumper *wdh, const wtap_rec *rec,
         return true;
     }
 
-    pen_handler = (pcapng_custom_block_enterprise_handler_t*)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(rec->rec_header.custom_block_header.pen));
-    if (pen_handler != NULL)
+    pen_handler = (pcapng_custom_block_enterprise_handler_t const *)g_hash_table_lookup(custom_enterprise_handlers, GUINT_TO_POINTER(rec->rec_header.custom_block_header.pen));
+    if (pen_handler != NULL && pen_handler->writer != NULL)
     {
         if (!pen_handler->writer(wdh, rec, err, err_info))
             return false;
@@ -6034,7 +6093,8 @@ static bool pcapng_add_idb(wtap_dumper *wdh, wtap_block_t idb,
     return pcapng_write_if_descr_block(wdh, idb, err, err_info);
 }
 
-static bool pcapng_write_internal_blocks(wtap_dumper *wdh, int *err)
+static bool pcapng_write_internal_blocks(wtap_dumper *wdh, int *err,
+                                         char **err_info)
 {
 
     /* Write (optional) Decryption Secrets Blocks that were collected while
@@ -6123,18 +6183,24 @@ static bool pcapng_write_internal_blocks(wtap_dumper *wdh, int *err)
         }
     }
 
-    /* Write (optional) Darwin Process Event Blocks that were collected while
-     * reading packet blocks. */
-     if (wdh->dpibs_growing) {
-        ws_noisy("writing internal blocks: dpibs_growing: written: %u len: %u",
-            wdh->dpibs_growing_written, wdh->dpibs_growing->len);
-        for (unsigned i = wdh->dpibs_growing_written; i < wdh->dpibs_growing->len; i++) {
+    /* Write (optional) process information blocks that were collected
+     * while reading packet blocks, each in the form in which it was read. */
+    if (wdh->pibs_growing) {
+        for (unsigned i = wdh->pibs_growing_written; i < wdh->pibs_growing->len; i++) {
+            ws_debug("writing PIB %u", i);
+            wtap_block_t pib = g_array_index(wdh->pibs_growing, wtap_block_t, i);
+            wtapng_process_info_mandatory_t *pib_mand = (wtapng_process_info_mandatory_t *)wtap_block_get_mandatory_data(pib);
+            bool ok;
 
-            wtap_block_t dpib = g_array_index(wdh->dpibs_growing, wtap_block_t, i);
-            if (!pcapng_write_legacy_darwin_process_event_block(wdh, dpib, err)) {
+            if (pib_mand->block_type == BLOCK_TYPE_LEGACY_DPIB) {
+                ok = pcapng_write_legacy_darwin_process_info_block(wdh, pib, err, err_info);
+            } else {
+                ok = pcapng_write_wireshark_process_info_block(wdh, pib, err, err_info);
+            }
+            if (!ok) {
                 return false;
             }
-            ++wdh->dpibs_growing_written;
+            ++wdh->pibs_growing_written;
         }
     }
 
@@ -6147,7 +6213,7 @@ static bool pcapng_dump(wtap_dumper *wdh, const wtap_rec *rec,
     uint32_t block_type;
     pcapng_block_type_information_t* handler;
 
-    if (!pcapng_write_internal_blocks(wdh, err)) {
+    if (!pcapng_write_internal_blocks(wdh, err, err_info)) {
         return false;
     }
 
@@ -6272,7 +6338,7 @@ static bool pcapng_dump_finish(wtap_dumper *wdh, int *err, char **err_info)
     unsigned i, j;
 
     /* Flush any hostname resolution or decryption secrets info we may have */
-    if (!pcapng_write_internal_blocks(wdh, err)) {
+    if (!pcapng_write_internal_blocks(wdh, err, err_info)) {
         return false;
     }
 
@@ -6492,7 +6558,7 @@ static const struct supported_option_type packet_block_options_supported[] = {
     { OPT_PKT_PACKETID, ONE_OPTION_SUPPORTED },
     { OPT_PKT_QUEUE, ONE_OPTION_SUPPORTED },
     { OPT_PKT_VERDICT, MULTIPLE_OPTIONS_SUPPORTED },
-    { OPT_PKT_PROCIDTHRDID, ONE_OPTION_SUPPORTED },
+    { OPT_PKT_PROCIDTHRDID, MULTIPLE_OPTIONS_SUPPORTED },
     { OPT_CUSTOM_STR_COPY, MULTIPLE_OPTIONS_SUPPORTED },
     { OPT_CUSTOM_BIN_COPY, MULTIPLE_OPTIONS_SUPPORTED },
     { OPT_CUSTOM_STR_NO_COPY, MULTIPLE_OPTIONS_SUPPORTED },
@@ -6529,8 +6595,23 @@ static const struct supported_option_type systemd_journal_export_block_options_s
 /* Options for file-type-specific information. */
 static const struct supported_option_type ftr_specific_information_block_options_supported[] = {
     { OPT_COMMENT, MULTIPLE_OPTIONS_SUPPORTED },
-    { OPT_DPIB_NAME, ONE_OPTION_SUPPORTED },
-    { OPT_DPIB_UUID, ONE_OPTION_SUPPORTED },
+};
+
+/* Options for process information blocks. */
+static const struct supported_option_type process_information_block_options_supported[] = {
+    { OPT_COMMENT, MULTIPLE_OPTIONS_SUPPORTED },
+    { OPT_PIB_NAME, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_PATH, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_CMDLINE, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_PPID, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_UID, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_USER, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_UUID, ONE_OPTION_SUPPORTED },
+    { OPT_PIB_STARTTIME, ONE_OPTION_SUPPORTED },
+    { OPT_CUSTOM_STR_COPY, MULTIPLE_OPTIONS_SUPPORTED },
+    { OPT_CUSTOM_BIN_COPY, MULTIPLE_OPTIONS_SUPPORTED },
+    { OPT_CUSTOM_STR_NO_COPY, MULTIPLE_OPTIONS_SUPPORTED },
+    { OPT_CUSTOM_BIN_NO_COPY, MULTIPLE_OPTIONS_SUPPORTED }
 };
 
 static const struct supported_block_type pcapng_blocks_supported[] = {
@@ -6551,6 +6632,9 @@ static const struct supported_block_type pcapng_blocks_supported[] = {
 
     /* Multiple blocks of meta evens.. */
     { WTAP_BLOCK_META_EVENT, MULTIPLE_BLOCKS_SUPPORTED, OPTION_TYPES_SUPPORTED(meta_events_block_options_supported) },
+
+    /* Multiple blocks of process information. */
+    { WTAP_BLOCK_PROCESS_INFORMATION, MULTIPLE_BLOCKS_SUPPORTED, OPTION_TYPES_SUPPORTED(process_information_block_options_supported) },
 
     /* And, obviously, multiple packets. */
     { WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, OPTION_TYPES_SUPPORTED(packet_block_options_supported) },
@@ -6583,12 +6667,21 @@ static const struct file_type_subtype_info stratoshark_pcapng_info = {
     pcapng_dump_can_write_encap, pcapng_dump_open, NULL
 };
 
-void register_pcapng(void)
+void register_pcapng(const char* app_env_var_prefix)
 {
-    if (application_flavor_is_wireshark()) {
-        pcapng_file_type_subtype = wtap_register_file_type_subtype(&wireshark_pcapng_info);
-    } else {
-        pcapng_file_type_subtype = wtap_register_file_type_subtype(&stratoshark_pcapng_info);
+    if (app_env_var_prefix != NULL) {
+        /* XXX - It would be great if this could be refactored out of the wiretap library,
+          but dependencies currently look daunting */
+
+        if (strcmp(app_env_var_prefix, "WIRESHARK") == 0)
+            pcapng_file_type_subtype = wtap_register_file_type_subtype(&wireshark_pcapng_info);
+        else if (strcmp(app_env_var_prefix, "STRATOSHARK") == 0)
+            pcapng_file_type_subtype = wtap_register_file_type_subtype(&stratoshark_pcapng_info);
+        else
+        {
+            /* XXX - Allow support of applications that use wiretap, but not pcapNG */
+            return;
+        }
     }
 
     wtap_register_backwards_compatibility_lua_name("PCAPNG",
@@ -6644,11 +6737,11 @@ void register_pcapng(void)
     DSB.option_handlers = pcapng_create_option_handler_table();
     register_pcapng_block_type_information(&DSB);
 
-    static pcapng_block_type_information_t CB_COPY = { BLOCK_TYPE_CB_COPY, pcapng_read_custom_block, NULL, pcapng_write_custom_block_copy, false, NULL };
+    static pcapng_block_type_information_t CB_COPY = { BLOCK_TYPE_CB_COPY, pcapng_read_custom_block, pcapng_process_cb, pcapng_write_custom_block_copy, false, NULL };
     CB_COPY.option_handlers = pcapng_create_option_handler_table();
     register_pcapng_block_type_information(&CB_COPY);
 
-    static pcapng_block_type_information_t CB_NO_COPY = { BLOCK_TYPE_CB_NO_COPY, pcapng_read_custom_block, NULL, pcapng_write_custom_block_no_copy, false, NULL };
+    static pcapng_block_type_information_t CB_NO_COPY = { BLOCK_TYPE_CB_NO_COPY, pcapng_read_custom_block, pcapng_process_cb, pcapng_write_custom_block_no_copy, false, NULL };
     /* Copy and no-copy and CBs have the same options. */
     CB_NO_COPY.option_handlers = CB_COPY.option_handlers;
     register_pcapng_block_type_information(&CB_NO_COPY);

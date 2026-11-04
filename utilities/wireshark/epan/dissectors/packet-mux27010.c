@@ -729,7 +729,7 @@ getFrameInformation(tvbuff_t *tvb, packet_info *pinfo, proto_tree *field_tree,
                     int offset, uint32_t length_info){
 
     /*Get the data from information field as string*/
-    char *information_field = tvb_get_string_enc(pinfo->pool, tvb,offset,length_info, ENC_ASCII);
+    char *information_field = (char*)tvb_get_string_enc(pinfo->pool, tvb,offset,length_info, ENC_ASCII);
 
     /*delete unneeded signs out of info field -> for info column: CR (0x0d) and LF (0x0a)*/
     information_field = g_strdelimit(information_field, "\r\n", ' ');
@@ -751,11 +751,11 @@ dissect_mux27010(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 {
     proto_item *ti, *tf, *tf_extended_header, *tf_addr, *tf_ctr;
     proto_tree *mux27010_tree, *field_tree, *field_tree_extended_header, *field_tree_addr, *field_tree_ctr;
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t length_info;
     bool save_fragmented;
     /*Address DLCI*/
-    int8_t dlci_number = 0;
+    uint8_t dlci_number = 0;
     uint8_t frame_type;
     /*private MUX frame header (PPP)*/
     uint8_t sizeMuxPPPHeader;

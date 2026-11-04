@@ -73,6 +73,9 @@ Ensures that individual arguments don't wrap in order to improve readability.
 wsbuglink-inline-macro::
 Links an issue number to gitlab.org/wireshark/wireshark/-/issues.
 
+wsrepolink-inline-macro::
+Links to a file or directory in the Wireshark repository on gitlab.org.
+
 wssalink-inline-macro::
 Links a security advisory to www.wireshark.org.
 

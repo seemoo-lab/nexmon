@@ -12,6 +12,7 @@
 set(WIX_GENERATED_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/Diameter.wxs
+	${CMAKE_CURRENT_BINARY_DIR}/Qualcomm.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/QtDependentComponents.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/QtTranslation.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/RadiusDict.wxs
@@ -44,6 +45,7 @@ set(WIX_FILES
 set(WIX_OUT_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/Diameter.wixobj
+	${CMAKE_CURRENT_BINARY_DIR}/Qualcomm.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/QtDependentComponents.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/QtTranslation.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/RadiusDict.wixobj
@@ -69,28 +71,6 @@ file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/doc" DOC_DIR)
 set (VERSION "${PROJECT_VERSION}")
 set(PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
 
-# Starting with Visual Studio 2019 merge modules are deprecated but
-# are available as an individual component.
-# https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes#-deprecations
-set(MERGE_MODULE "Microsoft_VC${MSVC_TOOLSET_VERSION}_CRT_${WIRESHARK_TARGET_PLATFORM}.msm")
-set (PF86_ENV "ProgramFiles(x86)")
-
-set(VC_TOOLS_MERGE_MODULES_DIR)
-if (DEFINED ENV{VCToolsRedistDir})
-	set(VC_TOOLS_MERGE_MODULES_DIR "$ENV{VCToolsRedistDir}/MergeModules")
-endif()
-
-find_path(MERGE_MODULE_DIR ${MERGE_MODULE}
-	PATHS
-		#"$ENV{VCINSTALLDIR}/VC/Redist/MSVC/how-do-we-get-this-version/Merge Modules"
-		${VC_TOOLS_MERGE_MODULES_DIR}
-		"$ENV{${PF86_ENV}}/Common Files/Merge Modules"
-		"$ENV{PROGRAMFILES}/Common Files/Merge Modules"
-	NO_DEFAULT_PATH
-)
-file(TO_NATIVE_PATH "${MERGE_MODULE_DIR}/${MERGE_MODULE}" MSM_NATIVE_PATH)
-message(STATUS "Using ${MSM_NATIVE_PATH} for the WiX installer")
-
 # DependentComponents.wxi. Can be created at configure time.
 set(_all_manifest_wix "${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wxs")
 file(WRITE "${_all_manifest_wix}" "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
@@ -115,11 +95,11 @@ foreach(_dll ${GLIB2_DLLS_RELEASE})
 endforeach()
 file(APPEND "${_all_manifest_wix}" "      <?endif?>\n")
 SET(unique_component "")
-set (_dll_list ${AMRNB_DLL} ${CARES_DLL} ${PCRE2_RELEASE_DLL} ${GCRYPT_DLLS}
+set (_dll_list ${AMRNB_DLL} ${AMRWB_DLL} ${CARES_DLL} ${PCRE2_RELEASE_DLL} ${GCRYPT_DLLS}
 	${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LIBSSH_DLLS} ${LUA_DLL}
 	${LZ4_DLL} ${MINIZIP_DLL} ${MINIZIPNG_DLLS} ${NGHTTP2_DLL} ${NGHTTP3_DLL} ${SBC_DLL} ${SMI_DLL}
 	${SNAPPY_DLL} ${SPANDSP_DLL} ${BCG729_DLL} ${LIBXML2_DLLS} ${WINSPARKLE_DLL}
-	${XXHASH_DLL} ${ZLIB_DLL} ${ZLIBNG_DLL} ${BROTLI_DLLS} ${ZSTD_DLL} ${ILBC_DLL} ${OPUS_DLL}
+	${XXHASH_DLL} ${ZLIB_DLLS_RELEASE} ${ZLIBNG_DLL} ${BROTLI_DLLS} ${ZSTD_DLL} ${ILBC_DLL} ${OPUS_DLL}
 	${SPEEXDSP_DLL}
 	# Required for mmdbresolve
 	${MAXMINDDB_DLL}
@@ -170,6 +150,15 @@ if (MAXMINDDB_FOUND)
 	set(d_mmdbresolve_exe "-dMMDBRESOLVE_EXE")
 endif()
 
+# The Visual C++ Redistributable installed on the target machine must be at
+# least as new as the one that shipped with the toolset used to build
+# Wireshark. VCToolsVersion is set by the Visual Studio developer
+# environment, e.g. "14.38.33135".
+set(d_vcredist_min_version)
+if(DEFINED ENV{VCToolsVersion} AND "$ENV{VCToolsVersion}" MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+	set(d_vcredist_min_version "-dVCRedistMinVersion=$ENV{VCToolsVersion}")
+endif()
+
 set(WIX_CANDLE_DEFINES
 	-v
 	-sw1076
@@ -181,15 +170,15 @@ set(WIX_CANDLE_DEFINES
 	-dAssetDir=${CMAKE_SOURCE_DIR}/packaging/wix
 	-dBuildOutputDir=${EXECUTABLE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}
 	-dDiameterDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/diameter
+	-dQualcommDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/qualcomm
 	-dIconDir=${CMAKE_SOURCE_DIR}/resources/icons
 	-dQtTranslationDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/translations
 	-dRadiusDictDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/radius
 	-dSnmpMibDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/snmp/mibs
 	-dUsersGuideDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/doc/wsug_html_chunked
-	-dVCRedistVersion=VC${MSVC_TOOLSET_VERSION}
-	-dVCRedistDir=${MERGE_MODULE_DIR}
 	${d_smi_dir}
 	${d_mmdbresolve_exe}
+	${d_vcredist_min_version}
 	-arch ${WIRESHARK_TARGET_PLATFORM}
 	-ext WixUIExtension
 	-I${CMAKE_SOURCE_DIR}/packaging/wix
@@ -270,6 +259,14 @@ macro( ADD_WIX_PACKAGE_TARGET )
 					-out ${_wix_binary_dir}/Diameter.wxs
 		)
 
+		# Qualcomm.wxs. Collects all Qualcomm XML dictionary files
+		# in "output" qualcomm directory. Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/Qualcomm.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/qualcomm
+					${WIX_HEAT_FLAGS} -cg CG.Qualcomm -dr dirQualcomm -var var.QualcommDir
+					-out ${_wix_binary_dir}/Qualcomm.wxs
+		)
+
 		# QtTranslation.wxs. Collects all Qt translation files in
 		# "output" translations directory. Generated with heat.exe
 		add_custom_command(OUTPUT ${_wix_binary_dir}/QtTranslation.wxs
@@ -323,6 +320,7 @@ set(CLEAN_FILES
 	SNMPMibs.wxs
 	RadiusDict.wxs
 	Diameter.wxs
+	Qualcomm.wxs
 	QtTranslation.wxs
 	wireshark-${VERSION}-${WIRESHARK_TARGET_PLATFORM}.msi
 )

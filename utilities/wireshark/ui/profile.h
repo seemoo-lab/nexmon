@@ -1,6 +1,6 @@
 /** @file
  *
- * Definitions for dialog box for profiles editing.
+ * Storage of profile information
  * Stig Bjorlykke <stig@bjorlykke.org>, 2008
  *
  * Wireshark - Network traffic analyzer
@@ -19,108 +19,80 @@
 extern "C" {
 #endif /* __cplusplus */
 
-/** @file
- * "Configuration Profiles" dialog box
- * @ingroup dialog_group
+/**
+ * @brief Describes a single Wireshark configuration profile and its associated settings.
  */
-
-#define PROF_STAT_DEFAULT  1
-#define PROF_STAT_EXISTS   2
-#define PROF_STAT_NEW      3
-#define PROF_STAT_CHANGED  4
-#define PROF_STAT_COPY     5
-#define PROF_STAT_IMPORT   6
-
 typedef struct {
-    char     *name;             /* profile name */
-    char     *reference;        /* profile reference */
-    int       status;
-    bool      is_global;
-    bool      from_global;
-    bool      is_import;
-    // Settings
-    bool      prefs_changed;
-    char     *auto_switch_filter;
+    char *name;                  /**< Display name of the profile. */
+    char *reference;             /**< Reference identifier or path for the profile. */
+    bool is_global;              /**< True if this is a global (read-only) profile; false if user-defined. */
+
+    /* Settings */
+    char *auto_switch_filter;    /**< Display filter expression that triggers automatic switching to this profile. */
 } profile_def;
 
-/** @file
- * "Configuration Profiles" utility routines
- * @ingroup utility_group
+/**
+ * @brief Initialize the profile list. Can be called more than once.
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
  */
+void profile_init(const char* app_env_var_prefix);
 
-/** Initialize the profile list. Can be called more than once.
+/**
+ * @brief Initialize the profile list. Can be called more than once.
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
  */
-void init_profile_list(void);
+void profile_sync(const char* app_env_var_prefix);
 
-/** User requested the "Configuration Profiles" popup menu.
- *
+/**
+ * @brief Add a profile to the profile list
  * @param name Profile name
  * @param parent Parent profile name
- * @param status Current status
  * @param is_global Profile is in the global configuration directory
- * @param from_global Profile is copied from the global configuration directory
- * @param is_import Profile has been imported and no directory has to be created
+ * @param auto_switch_filter Filter to use for auto switching profiles
  *
  * @return A pointer to the new profile list
  */
-GList *add_to_profile_list(const char *name, const char *parent, int status,
-                           bool is_global, bool from_global, bool is_import);
+GList* profile_add_profile(const char *name, const char *parent, bool is_global, const char* auto_switch_filter);
 
-/** Refresh the current (non-edited) profile list.
+/**
+ * @brief Clear out the profile list
  */
-void copy_profile_list(void);
+void profile_empty_list(void);
 
-/** Clear out the profile list
- *
- * @param edit_list Remove edited entries
- */
-void empty_profile_list(bool edit_list);
-
-/** Remove an entry from the profile list.
- *
- * @param fl_entry Profile list entry
- */
-void remove_from_profile_list(GList *fl_entry);
-
-/** Current profile list
- *
- * @return The head of the current profile list
- */
-GList *current_profile_list(void);
-
-/** Edited profile list
- *
+/**
+ * @brief Get the edited profile list
  * @return The head of the edited profile list
  */
-GList * edited_profile_list(void);
+GList* profile_get_list(void);
 
-/** Apply the changes in the edited profile list
- * @return NULL if the operation was successful or an error message otherwise.
- * The error message must be freed by the caller.
+/**
+ * @brief Determine if a string is a valid profile name
+ * @param name Profile name to check
+ * @return true if profile name is valid, false otherwise
  */
-char *apply_profile_changes(void);
+bool profile_name_is_valid(const char* name);
 
-/** Given a profile name, return the name of its parent profile.
- *
- * @param profilename Child profile name
- *
- * @return Parent profile name
- */
-const char *get_profile_parent(const char *profilename);
-
-/** Check the validity of a profile name.
- *
+/**
+ * @brief Save the profile settings to disk
  * @param name Profile name
- * @return NULL if the name is valid or an error message otherwise.
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
+ * @param app_name Proper name of the application (used in file comment strings)
+ * @param err_info Optional error info string.
+ *
+ * @return true if the profiles were successfully saved or false otherwise.
  */
-char *profile_name_is_valid(const char *name);
+bool profile_save_settings(const char* name, const char* app_env_var_prefix, const char* app_name, char** err_info);
 
-/** Remove the current profile.
+/**
+ * @brief Remove the current profile.
+ *
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
+ * @param err_info Optional error info string.
  *
  * @return true if the current profile exists and was successfully deleted
  * or false otherwise.
  */
-bool delete_current_profile(void);
+bool profile_delete_current(const char* app_env_var_prefix, char** err_info);
 
 #ifdef __cplusplus
 }

@@ -145,6 +145,45 @@ TEST_F(LibraryTest, ParseMalformedAReply) {
                                               &host, info, &count));
 }
 
+TEST_F(LibraryTest, ParseAReplyTtlClamp) {
+  std::vector<byte> data = {
+    0x12, 0x34,  // qid
+    0x84,        // response + query + AA
+    0x00,        // rc=NoError
+    0x00, 0x01,  // num questions
+    0x00, 0x01,  // num answer RRs
+    0x00, 0x00,  // num authority RRs
+    0x00, 0x00,  // num additional RRs
+    // Question
+    0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e',
+    0x03, 'c', 'o', 'm',
+    0x00,
+    0x00, 0x01,  // type A
+    0x00, 0x01,  // class IN
+    // Answer: TTL 0xFFFFFFFF (server-controlled, high bit set)
+    0x07, 'e', 'x', 'a', 'm', 'p', 'l', 'e',
+    0x03, 'c', 'o', 'm',
+    0x00,
+    0x00, 0x01,  // RR type A
+    0x00, 0x01,  // class IN
+    0xFF, 0xFF, 0xFF, 0xFF,  // TTL
+    0x00, 0x04,  // rdlength
+    0x02, 0x03, 0x04, 0x05, // address
+  };
+  struct hostent *host = nullptr;
+  struct ares_addrttl info[2];
+  int count = 2;
+  EXPECT_EQ(ARES_SUCCESS,
+            ares_parse_a_reply(data.data(), (int)data.size(),
+                               &host, info, &count));
+  EXPECT_NE(nullptr, host);
+  ares_free_hostent(host);
+  EXPECT_EQ(1, count);
+  // A server-controlled TTL with the high bit set must not surface as a
+  // negative TTL through the public API.
+  EXPECT_EQ(INT_MAX, info[0].ttl);
+}
+
 TEST_F(LibraryTest, ParseAReplyNoData) {
   DNSPacket pkt;
   pkt.set_qid(0x1234).set_response().set_aa()
@@ -358,6 +397,30 @@ TEST_F(LibraryTest, ParseAReplyErrors) {
     EXPECT_EQ(ARES_EBADRESP, ares_parse_a_reply(data.data(), (int)len,
                                                 nullptr, info, &count));
   }
+}
+
+TEST_F(LibraryTest, ParseAReplyNegativeTtlCount) {
+  // Issue #1300: a negative *naddrttls used to wrap to SIZE_MAX, so every
+  // record in the reply was written into the caller's array regardless of
+  // its size.  Up to 1.20.1 a negative count stored nothing; keep it that
+  // way.  The reply carries more A records than info[] can hold so the
+  // pre-fix code overruns the array (caught under ASan).
+  DNSPacket pkt;
+  pkt.set_qid(0x1234).set_response().set_aa()
+    .add_question(new DNSQuestion("example.com", T_A))
+    .add_answer(new DNSARR("example.com", 100, {0x02, 0x03, 0x04, 0x05}))
+    .add_answer(new DNSARR("example.com", 100, {0x02, 0x03, 0x04, 0x06}))
+    .add_answer(new DNSARR("example.com", 100, {0x02, 0x03, 0x04, 0x07}));
+  std::vector<byte> data = pkt.data();
+
+  struct hostent *host = nullptr;
+  struct ares_addrttl info[2];
+  int count = -1;
+  EXPECT_EQ(ARES_SUCCESS, ares_parse_a_reply(data.data(), (int)data.size(),
+                                             &host, info, &count));
+  EXPECT_EQ(0, count);
+  ASSERT_NE(nullptr, host);
+  ares_free_hostent(host);
 }
 
 TEST_F(LibraryTest, ParseAReplyAllocFail) {

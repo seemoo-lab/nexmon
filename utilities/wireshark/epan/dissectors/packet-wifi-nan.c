@@ -264,7 +264,7 @@ static int hf_nan_attr_ndpe_ctrl_confirm;
 static int hf_nan_attr_ndpe_ctrl_security_pres;
 static int hf_nan_attr_ndpe_ctrl_publish_id_pres;
 static int hf_nan_attr_ndpe_ctrl_responder_ndi_pres;
-static int hf_nan_attr_ndpe_ctrl_gtk_requried;
+static int hf_nan_attr_ndpe_ctrl_gtk_required;
 static int hf_nan_attr_ndp_control;
 static int hf_nan_attr_ndpe_control;
 static int hf_nan_attr_ndp_responder_ndi;
@@ -379,7 +379,7 @@ static int hf_nan_attr_pairing_bootstrapping_dialog_token;
 static int hf_nan_attr_pairing_bootstrapping_type_status;
 static int hf_nan_attr_pairing_bootstrapping_type;
 static int hf_nan_attr_pairing_bootstrapping_status;
-static int hf_nan_attr_pairing_bootstrapping_resaon_code;
+static int hf_nan_attr_pairing_bootstrapping_reason_code;
 static int hf_nan_attr_pairing_bootstrapping_comeback_after;
 static int hf_nan_attr_pairing_bootstrapping_comeback_cookie_len;
 static int hf_nan_attr_pairing_bootstrapping_comeback_cookie;
@@ -1584,7 +1584,7 @@ dissect_attr_ndpe(proto_tree* attr_tree, tvbuff_t* tvb, int offset, uint16_t att
         &hf_nan_attr_ndpe_ctrl_security_pres,
         &hf_nan_attr_ndpe_ctrl_publish_id_pres,
         &hf_nan_attr_ndpe_ctrl_responder_ndi_pres,
-        &hf_nan_attr_ndpe_ctrl_gtk_requried,
+        &hf_nan_attr_ndpe_ctrl_gtk_required,
         NULL
     };
 
@@ -2491,7 +2491,7 @@ dissect_attr_vendor_specific(proto_tree* attr_tree, tvbuff_t* tvb, int offset, u
     }
 
     unsigned sub_offset = offset + 3;
-    tvbuff_t* ie_tvb = tvb_new_subset_length(tvb, sub_offset, -1);
+    tvbuff_t* ie_tvb = tvb_new_subset_remaining(tvb, sub_offset);
     ieee80211_tagged_field_data_t field_data = { 0 };
     field_data.item_tag = attr_tree;
     dissector_try_uint_with_data(ie_handle_table, TAG_VENDOR_SPECIFIC_IE, ie_tvb, pinfo, attr_tree, true, &field_data);
@@ -2578,11 +2578,11 @@ dissect_attr_nan_pairing_bootstrapping(proto_tree* attr_tree, tvbuff_t* tvb, int
         ett_nan_pairing_bootstrapping_type_status, type_and_status_fields, ENC_LITTLE_ENDIAN);
     npba_local_offset += 1;
 
-    /* Resaon code
+    /* reason code
      * Indicate the reject reason when Type = 2 (Response) and Status = 1 (Rejected); otherwise, reserved */
     if ((type == 2) && (status == 1))
     {
-        proto_tree_add_item(attr_tree, hf_nan_attr_pairing_bootstrapping_resaon_code, tvb,
+        proto_tree_add_item(attr_tree, hf_nan_attr_pairing_bootstrapping_reason_code, tvb,
             npba_local_offset, 1, ENC_LITTLE_ENDIAN);
     }
     else
@@ -2592,9 +2592,9 @@ dissect_attr_nan_pairing_bootstrapping(proto_tree* attr_tree, tvbuff_t* tvb, int
     }
     npba_local_offset += 1;
 
-    /* Comeback, if any. Presetned if,
+    /* Comeback, if any. Presented if,
      * a) type is 2 and status is 2, or
-     * b) type is 1 and status is 2, and cookie is requried (based on attribute length)
+     * b) type is 1 and status is 2, and cookie is required (based on attribute length)
      */
     bool comeback_presented = (attr_len > NAN_PAIRING_BOOTSTRAPPING_LEN);
 
@@ -2655,7 +2655,7 @@ find_attribute_field(proto_tree* nan_tree, tvbuff_t* tvb, unsigned tvb_len, unsi
 {
     if ((tvb_len - *offset) < 3)
     {
-        proto_tree_add_expert_format(nan_tree, pinfo, &ei_nan_elem_len_invalid, tvb, *offset, -1,
+        proto_tree_add_expert_format_remaining(nan_tree, pinfo, &ei_nan_elem_len_invalid, tvb, *offset,
             "Insufficient remaining packet bytes for NAN attribute");
         *offset = tvb_len;
         return;
@@ -2666,7 +2666,7 @@ find_attribute_field(proto_tree* nan_tree, tvbuff_t* tvb, unsigned tvb_len, unsi
 
     if ((*offset + 3 + attr_len) > tvb_len)
     {
-        proto_tree_add_expert_format(nan_tree, pinfo, &ei_nan_elem_len_invalid, tvb, *offset, -1,
+        proto_tree_add_expert_format_remaining(nan_tree, pinfo, &ei_nan_elem_len_invalid, tvb, *offset,
             "Attribute length (%u) exceeds remaining packet length. Attribute id: %u", attr_len, attr_id);
         *offset = tvb_len;
         return;
@@ -3871,7 +3871,7 @@ proto_register_nan(void)
              FT_BOOLEAN, 8, NULL, 0x10, NULL, HFILL
              }
         },
-        { &hf_nan_attr_ndpe_ctrl_gtk_requried,
+        { &hf_nan_attr_ndpe_ctrl_gtk_required,
              {
              "GTK Required",
              "wifi_nan.ndpe.ctrl.gtk_required",
@@ -4653,6 +4653,14 @@ proto_register_nan(void)
                 "Status",
                 "wifi_nan.nan_pairing_bootstrapping.status",
                 FT_UINT8, BASE_HEX_DEC, VALS(nan_pairing_bootstrapping_pairing_bootstrapping_status), 0xf0, NULL, HFILL
+            }
+        },
+        /* TODO: add a VALS() for this */
+        { &hf_nan_attr_pairing_bootstrapping_reason_code,
+            {
+                "Reason code",
+                "wifi_nan.nan_pairing_bootstrapping.reason_code",
+                FT_UINT8, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL
             }
         },
         { &hf_nan_attr_pairing_bootstrapping_comeback_after,

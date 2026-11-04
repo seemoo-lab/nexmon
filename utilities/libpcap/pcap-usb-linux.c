@@ -42,10 +42,6 @@
 
 #include "extract.h"
 
-#ifdef NEED_STRERROR_H
-#include "strerror.h"
-#endif
-
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -126,7 +122,7 @@ struct mon_bin_mfetch {
 struct pcap_usb_linux {
 	u_char *mmapbuf;	/* memory-mapped region pointer */
 	size_t mmapbuflen;	/* size of region */
-	int bus_index;
+	unsigned bus_index;
 	u_int packets_read;
 };
 
@@ -145,7 +141,7 @@ usb_dev_add(pcap_if_list_t *devlistp, int n, char *err_str)
 {
 	char dev_name[10];
 	char dev_descr[30];
-	snprintf(dev_name, 10, USB_IFACE"%d", n);
+	snprintf(dev_name, sizeof(dev_name), USB_IFACE"%d", n);
 	/*
 	 * XXX - is there any notion of "up" and "running"?
 	 */
@@ -166,7 +162,7 @@ usb_dev_add(pcap_if_list_t *devlistp, int n, char *err_str)
 		 * PCAP_IF_CONNECTION_STATUS_CONNECTED or
 		 * PCAP_IF_CONNECTION_STATUS_DISCONNECTED?
 		 */
-		snprintf(dev_descr, 30, "Raw USB traffic, bus number %d", n);
+		snprintf(dev_descr, sizeof(dev_descr), "Raw USB traffic, bus number %d", n);
 		if (pcapint_add_dev(devlistp, dev_name, 0, dev_descr, err_str) == NULL)
 			return -1;
 	}
@@ -418,14 +414,11 @@ pcap_t *
 usb_create(const char *device, char *ebuf, int *is_ours)
 {
 	const char *cp;
-	char *cpend;
-	long devnum;
+	unsigned bus_index;
 	pcap_t *p;
 
 	/* Does this look like a USB monitoring device? */
-	cp = strrchr(device, '/');
-	if (cp == NULL)
-		cp = device;
+	cp = device;
 	/* Does it begin with USB_IFACE? */
 	if (strncmp(cp, USB_IFACE, sizeof USB_IFACE - 1) != 0) {
 		/* Nope, doesn't begin with USB_IFACE */
@@ -434,14 +427,8 @@ usb_create(const char *device, char *ebuf, int *is_ours)
 	}
 	/* Yes - is USB_IFACE followed by a number? */
 	cp += sizeof USB_IFACE - 1;
-	devnum = strtol(cp, &cpend, 10);
-	if (cpend == cp || *cpend != '\0') {
-		/* Not followed by a number. */
-		*is_ours = 0;
-		return NULL;
-	}
-	if (devnum < 0) {
-		/* Followed by a non-valid number. */
+	if (pcapint_get_decuint(cp, NULL, &bus_index) != 0) {
+		/* Not followed by a valid number */
 		*is_ours = 0;
 		return NULL;
 	}
@@ -453,7 +440,10 @@ usb_create(const char *device, char *ebuf, int *is_ours)
 	if (p == NULL)
 		return (NULL);
 
+	struct pcap_usb_linux *handlep = p->priv;
+
 	p->activate_op = usb_activate;
+	handlep->bus_index = bus_index;
 	return (p);
 }
 
@@ -485,14 +475,6 @@ usb_activate(pcap_t* handle)
 	handle->set_datalink_op = NULL;	/* can't change data link type */
 	handle->getnonblock_op = pcapint_getnonblock_fd;
 	handle->setnonblock_op = pcapint_setnonblock_fd;
-
-	/*get usb bus index from device name */
-	if (sscanf(handle->opt.device, USB_IFACE"%d", &handlep->bus_index) != 1)
-	{
-		snprintf(handle->errbuf, PCAP_ERRBUF_SIZE,
-			"Can't get USB bus index from %s", handle->opt.device);
-		return PCAP_ERROR;
-	}
 
 	/*
 	 * We require 2.6.27 or later kernels, so we have binary-mode support.
@@ -669,7 +651,7 @@ usb_read_linux_bin(pcap_t *handle, int max_packets _U_, pcap_handler callback, u
 
 	/* the usb header is going to be part of 'packet' data*/
 	info.hdr = (pcap_usb_header*) handle->buffer;
-	info.data = (u_char *)handle->buffer + sizeof(pcap_usb_header);
+	info.data = handle->buffer + sizeof(pcap_usb_header);
 	info.data_len = clen;
 
 	/* ignore interrupt system call errors */
@@ -729,7 +711,7 @@ usb_read_linux_bin(pcap_t *handle, int max_packets _U_, pcap_handler callback, u
 		 */
 		pkth.len = sizeof(pcap_usb_header) + info.hdr->urb_len;
 	}
-	pkth.ts.tv_sec = (time_t)info.hdr->ts_sec;
+	pkth.ts.tv_sec = (time_t)pcap_4_byte_aligned_int64_val(info.hdr->ts_sec);
 	pkth.ts.tv_usec = info.hdr->ts_usec;
 
 	if (handle->fcode.bf_insns == NULL ||
@@ -917,7 +899,7 @@ usb_read_linux_mmap(pcap_t *handle, int max_packets, pcap_handler callback, u_ch
 					    hdr->urb_len);
 				}
 			}
-			pkth.ts.tv_sec = (time_t)hdr->ts_sec;
+			pkth.ts.tv_sec = (time_t)pcap_4_byte_aligned_int64_val(hdr->ts_sec);
 			pkth.ts.tv_usec = hdr->ts_usec;
 
 			if (handle->fcode.bf_insns == NULL ||

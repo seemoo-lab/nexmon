@@ -167,6 +167,8 @@ static const struct tok ieee80211_mgt_subtypes[] = {
 	{ 0, NULL }
 };
 static const struct tok ieee80211_ctl_subtypes[] = {
+	{ IEEE80211_FC0_SUBTYPE_BAR, "bar" },
+	{ IEEE80211_FC0_SUBTYPE_BA, "ba" },
 	{ IEEE80211_FC0_SUBTYPE_PS_POLL, "ps-poll" },
 	{ IEEE80211_FC0_SUBTYPE_RTS, "rts" },
 	{ IEEE80211_FC0_SUBTYPE_CTS, "cts" },
@@ -388,7 +390,7 @@ DIAG_OFF_BISON_BYACC
 %token  LEN
 %token  IPV6 ICMPV6 AH ESP
 %token	VLAN MPLS
-%token	PPPOED PPPOES GENEVE
+%token	PPPOED PPPOES GENEVE VXLAN
 %token  ISO ESIS CLNP ISIS L1 L2 IIH LSP SNP CSNP PSNP
 %token  STP
 %token  IPX
@@ -420,8 +422,8 @@ prog:	  null expr
 	/*
 	 * I'm not sure we have a reason to use yynerrs, but it's
 	 * declared, and incremented, whether we need it or not,
-	 * which means that Clang 15 will give a "used but not
-	 * set" warning.  This should suppress the warning for
+	 * which means that Clang 15 will give a "set but not
+	 * used" warning.  This should suppress the warning for
 	 * yynerrs without suppressing it for other variables.
 	 */
 	(void) yynerrs;
@@ -432,10 +434,10 @@ prog:	  null expr
 null:	  /* null */		{ $$.q = qerr; }
 	;
 expr:	  term
-	| expr and term		{ gen_and($1.b, $3.b); $$ = $3; }
-	| expr and id		{ gen_and($1.b, $3.b); $$ = $3; }
-	| expr or term		{ gen_or($1.b, $3.b); $$ = $3; }
-	| expr or id		{ gen_or($1.b, $3.b); $$ = $3; }
+	| expr and term		{ $3.b = gen_and($1.b, $3.b); $$ = $3; }
+	| expr and id		{ $3.b = gen_and($1.b, $3.b); $$ = $3; }
+	| expr or term		{ $3.b = gen_or($1.b, $3.b); $$ = $3; }
+	| expr or id		{ $3.b = gen_or($1.b, $3.b); $$ = $3; }
 	;
 and:	  AND			{ $$ = $<blk>0; }
 	;
@@ -452,16 +454,16 @@ nid:	  ID			{ CHECK_PTR_VAL($1); CHECK_PTR_VAL(($$.b = gen_scode(cstate, $1, $$.
 				  /* Check whether HID/NUM is being used when appropriate */
 				  $$.q = $<blk>0.q;
 				  if ($$.q.addr == Q_PORT) {
-					bpf_set_error(cstate, "'port' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'port' qualifier applied to IPv4 address and prefix length");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PORTRANGE) {
-					bpf_set_error(cstate, "'portrange' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'portrange' qualifier applied to IPv4 address and prefix length");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTO) {
-					bpf_set_error(cstate, "'proto' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'proto' qualifier applied to IPv4 address and prefix length");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTOCHAIN) {
-					bpf_set_error(cstate, "'protochain' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'protochain' qualifier applied to IPv4 address and prefix length");
 					YYABORT;
 				  }
 				  CHECK_PTR_VAL(($$.b = gen_mcode(cstate, $1, NULL, $3, $$.q)));
@@ -472,16 +474,16 @@ nid:	  ID			{ CHECK_PTR_VAL($1); CHECK_PTR_VAL(($$.b = gen_scode(cstate, $1, $$.
 				  /* Check whether HID mask HID is being used when appropriate */
 				  $$.q = $<blk>0.q;
 				  if ($$.q.addr == Q_PORT) {
-					bpf_set_error(cstate, "'port' modifier applied to IP address and netmask");
+					bpf_set_error(cstate, "'port' qualifier applied to IPv4 address and netmask");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PORTRANGE) {
-					bpf_set_error(cstate, "'portrange' modifier applied to IP address and netmask");
+					bpf_set_error(cstate, "'portrange' qualifier applied to IPv4 address and netmask");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTO) {
-					bpf_set_error(cstate, "'proto' modifier applied to IP address and netmask");
+					bpf_set_error(cstate, "'proto' qualifier applied to IPv4 address and netmask");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTOCHAIN) {
-					bpf_set_error(cstate, "'protochain' modifier applied to IP address and netmask");
+					bpf_set_error(cstate, "'protochain' qualifier applied to IPv4 address and netmask");
 					YYABORT;
 				  }
 				  CHECK_PTR_VAL(($$.b = gen_mcode(cstate, $1, $3, 0, $$.q)));
@@ -491,69 +493,57 @@ nid:	  ID			{ CHECK_PTR_VAL($1); CHECK_PTR_VAL(($$.b = gen_scode(cstate, $1, $$.
 				  /* Check whether HID is being used when appropriate */
 				  $$.q = $<blk>0.q;
 				  if ($$.q.addr == Q_PORT) {
-					bpf_set_error(cstate, "'port' modifier applied to IP address");
+					bpf_set_error(cstate, "'port' qualifier applied to IPv4 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PORTRANGE) {
-					bpf_set_error(cstate, "'portrange' modifier applied to IP address");
+					bpf_set_error(cstate, "'portrange' qualifier applied to IPv4 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTO) {
-					bpf_set_error(cstate, "'proto' modifier applied to IP address");
+					bpf_set_error(cstate, "'proto' qualifier applied to IPv4 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTOCHAIN) {
-					bpf_set_error(cstate, "'protochain' modifier applied to IP address");
+					bpf_set_error(cstate, "'protochain' qualifier applied to IPv4 address");
 					YYABORT;
 				  }
 				  CHECK_PTR_VAL(($$.b = gen_ncode(cstate, $1, 0, $$.q)));
 				}
 	| HID6 '/' NUM		{
 				  CHECK_PTR_VAL($1);
-#ifdef INET6
 				  /* Check whether HID6/NUM is being used when appropriate */
 				  $$.q = $<blk>0.q;
 				  if ($$.q.addr == Q_PORT) {
-					bpf_set_error(cstate, "'port' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'port' qualifier applied to IPv6 address and prefix length");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PORTRANGE) {
-					bpf_set_error(cstate, "'portrange' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'portrange' qualifier applied to IPv6 address and prefix length");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTO) {
-					bpf_set_error(cstate, "'proto' modifier applied to IP address and prefix length ");
+					bpf_set_error(cstate, "'proto' qualifier applied to IPv6 address and prefix length ");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTOCHAIN) {
-					bpf_set_error(cstate, "'protochain' modifier applied to IP address and prefix length");
+					bpf_set_error(cstate, "'protochain' qualifier applied to IPv6 address and prefix length");
 					YYABORT;
 				  }
 				  CHECK_PTR_VAL(($$.b = gen_mcode6(cstate, $1, $3, $$.q)));
-#else
-				  bpf_set_error(cstate, "IPv6 addresses not supported "
-					"in this configuration");
-				  YYABORT;
-#endif /*INET6*/
 				}
 	| HID6			{
 				  CHECK_PTR_VAL($1);
-#ifdef INET6
 				  /* Check whether HID6 is being used when appropriate */
 				  $$.q = $<blk>0.q;
 				  if ($$.q.addr == Q_PORT) {
-					bpf_set_error(cstate, "'port' modifier applied to IP address");
+					bpf_set_error(cstate, "'port' qualifier applied to IPv6 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PORTRANGE) {
-					bpf_set_error(cstate, "'portrange' modifier applied to IP address");
+					bpf_set_error(cstate, "'portrange' qualifier applied to IPv6 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTO) {
-					bpf_set_error(cstate, "'proto' modifier applied to 'ip6addr/prefixlen");
+					bpf_set_error(cstate, "'proto' qualifier applied to IPv6 address");
 					YYABORT;
 				  } else if ($$.q.addr == Q_PROTOCHAIN) {
-					bpf_set_error(cstate, "'protochain' modifier applied to IP address");
+					bpf_set_error(cstate, "'protochain' qualifier applied to IPv6 address");
 					YYABORT;
 				  }
 				  CHECK_PTR_VAL(($$.b = gen_mcode6(cstate, $1, 128, $$.q)));
-#else
-				  bpf_set_error(cstate, "IPv6 addresses not supported "
-					"in this configuration");
-				  YYABORT;
-#endif /*INET6*/
 				}
 	| EID			{ CHECK_PTR_VAL($1); CHECK_PTR_VAL(($$.b = gen_ecode(cstate, $1, $$.q = $<blk>0.q))); }
 	| AID			{ CHECK_PTR_VAL($1); CHECK_PTR_VAL(($$.b = gen_acode(cstate, $1, $$.q = $<blk>0.q))); }
@@ -564,8 +554,8 @@ not:	  '!'			{ $$ = $<blk>0; }
 paren:	  '('			{ $$ = $<blk>0; }
 	;
 pid:	  nid
-	| qid and id		{ gen_and($1.b, $3.b); $$ = $3; }
-	| qid or id		{ gen_or($1.b, $3.b); $$ = $3; }
+	| qid and id		{ $3.b = gen_and($1.b, $3.b); $$ = $3; }
+	| qid or id		{ $3.b = gen_or($1.b, $3.b); $$ = $3; }
 	;
 qid:	  pnum			{ CHECK_PTR_VAL(($$.b = gen_ncode(cstate, NULL, $1,
 						   $$.q = $<blk>0.q))); }
@@ -674,8 +664,8 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_VAL(($$ = gen_broadcast(cstate, $1))); }
 	| LESS NUM		{ CHECK_PTR_VAL(($$ = gen_less(cstate, $2))); }
 	| GREATER NUM		{ CHECK_PTR_VAL(($$ = gen_greater(cstate, $2))); }
 	| CBYTE NUM byteop NUM	{ CHECK_PTR_VAL(($$ = gen_byteop(cstate, $3, $2, $4))); }
-	| INBOUND		{ CHECK_PTR_VAL(($$ = gen_inbound(cstate, 0))); }
-	| OUTBOUND		{ CHECK_PTR_VAL(($$ = gen_inbound(cstate, 1))); }
+	| INBOUND		{ CHECK_PTR_VAL(($$ = gen_inbound_outbound(cstate, 0))); }
+	| OUTBOUND		{ CHECK_PTR_VAL(($$ = gen_inbound_outbound(cstate, 1))); }
 	| IFINDEX NUM		{ CHECK_PTR_VAL(($$ = gen_ifindex(cstate, $2))); }
 	| VLAN pnum		{ CHECK_PTR_VAL(($$ = gen_vlan(cstate, $2, 1))); }
 	| VLAN			{ CHECK_PTR_VAL(($$ = gen_vlan(cstate, 0, 0))); }
@@ -686,6 +676,8 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_VAL(($$ = gen_broadcast(cstate, $1))); }
 	| PPPOES		{ CHECK_PTR_VAL(($$ = gen_pppoes(cstate, 0, 0))); }
 	| GENEVE pnum		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, $2, 1))); }
 	| GENEVE		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, 0, 0))); }
+	| VXLAN pnum		{ CHECK_PTR_VAL(($$ = gen_vxlan(cstate, $2, 1))); }
+	| VXLAN			{ CHECK_PTR_VAL(($$ = gen_vxlan(cstate, 0, 0))); }
 	| pfvar			{ $$ = $1; }
 	| pqual p80211		{ $$ = $2; }
 	| pllc			{ $$ = $1; }
@@ -803,7 +795,12 @@ pllc:	LLC			{ CHECK_PTR_VAL(($$ = gen_llc(cstate))); }
 	| LLC PF_RNR		{ CHECK_PTR_VAL(($$ = gen_llc_s_subtype(cstate, LLC_RNR))); }
 	;
 
-dir:	  NUM			{ $$ = (int)$1; }
+dir:	  NUM			{ if (($1 & (~IEEE80211_FC1_DIR_MASK)) != 0) {
+					bpf_set_error(cstate, "invalid 802.11 direction value 0x%x", $1);
+					YYABORT;
+				  }
+				  $$ = (int)$1;
+				}
 	| ID			{ CHECK_PTR_VAL($1);
 				  if (pcapint_strcasecmp($1, "nods") == 0)
 					$$ = IEEE80211_FC1_DIR_NODS;
@@ -893,7 +890,7 @@ atmfieldvalue: NUM {
 	}
 	;
 atmlistvalue: atmfieldvalue
-	| atmlistvalue or atmfieldvalue { gen_or($1.b, $3.b); $$ = $3; }
+	| atmlistvalue or atmfieldvalue { $3.b = gen_or($1.b, $3.b); $$ = $3; }
 	;
 	/* MTP2 types quantifier */
 mtp2type: FISU			{ $$ = M_FISU; }
@@ -932,6 +929,6 @@ mtp3fieldvalue: NUM {
 	}
 	;
 mtp3listvalue: mtp3fieldvalue
-	| mtp3listvalue or mtp3fieldvalue { gen_or($1.b, $3.b); $$ = $3; }
+	| mtp3listvalue or mtp3fieldvalue { $3.b = gen_or($1.b, $3.b); $$ = $3; }
 	;
 %%

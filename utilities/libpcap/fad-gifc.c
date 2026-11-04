@@ -37,13 +37,7 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#ifdef HAVE_SYS_SOCKIO_H
-#include <sys/sockio.h>
-#endif
-#include <sys/time.h>				/* concession to AIX */
 
-struct mbuf;		/* Squelch compiler warnings on some platforms for */
-struct rtentry;		/* declarations in <net/if.h> */
 #include <net/if.h>
 #include <netinet/in.h>
 
@@ -137,8 +131,8 @@ int
 pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
     int (*check_usable)(const char *), get_if_flags_func get_flags_func)
 {
-	register int fd;
-	register struct ifreq *ifrp, *ifend, *ifnext;
+	int fd;
+	struct ifreq *ifrp, *ifend, *ifnext;
 	size_t n;
 	struct ifconf ifc;
 	char *buf = NULL;
@@ -180,17 +174,16 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 			(void)close(fd);
 			return (-1);
 		}
-		buf = malloc(buf_size);
+		buf = calloc(1, buf_size);
 		if (buf == NULL) {
 			pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
-			    errno, "malloc");
+			    errno, "calloc");
 			(void)close(fd);
 			return (-1);
 		}
 
 		ifc.ifc_len = buf_size;
 		ifc.ifc_buf = buf;
-		memset(buf, 0, buf_size);
 		if (ioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0
 		    && errno != EINVAL) {
 			pcapint_fmt_errmsg_for_errno(errbuf, PCAP_ERRBUF_SIZE,
@@ -241,14 +234,6 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 			break;
 
 		/*
-		 * Skip entries that begin with "dummy".
-		 * XXX - what are these?  Is this Linux-specific?
-		 * Are there platforms on which we shouldn't do this?
-		 */
-		if (strncmp(ifrp->ifr_name, "dummy", 5) == 0)
-			continue;
-
-		/*
 		 * Can we capture on this device?
 		 */
 		if (!(*check_usable)(ifrp->ifr_name)) {
@@ -261,7 +246,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		/*
 		 * Get the flags for this interface.
 		 */
-		strncpy(ifrflags.ifr_name, ifrp->ifr_name,
+		pcapint_strlcpy(ifrflags.ifr_name, ifrp->ifr_name,
 		    sizeof(ifrflags.ifr_name));
 		if (ioctl(fd, SIOCGIFFLAGS, (char *)&ifrflags) < 0) {
 			if (errno == ENXIO)
@@ -277,7 +262,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		/*
 		 * Get the netmask for this address on this interface.
 		 */
-		strncpy(ifrnetmask.ifr_name, ifrp->ifr_name,
+		pcapint_strlcpy(ifrnetmask.ifr_name, ifrp->ifr_name,
 		    sizeof(ifrnetmask.ifr_name));
 		memcpy(&ifrnetmask.ifr_addr, &ifrp->ifr_addr,
 		    sizeof(ifrnetmask.ifr_addr));
@@ -307,7 +292,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		 * interface (if any).
 		 */
 		if (ifrflags.ifr_flags & IFF_BROADCAST) {
-			strncpy(ifrbroadaddr.ifr_name, ifrp->ifr_name,
+			pcapint_strlcpy(ifrbroadaddr.ifr_name, ifrp->ifr_name,
 			    sizeof(ifrbroadaddr.ifr_name));
 			memcpy(&ifrbroadaddr.ifr_addr, &ifrp->ifr_addr,
 			    sizeof(ifrbroadaddr.ifr_addr));
@@ -346,7 +331,7 @@ pcapint_findalldevs_interfaces(pcap_if_list_t *devlistp, char *errbuf,
 		 * interface (if any).
 		 */
 		if (ifrflags.ifr_flags & IFF_POINTOPOINT) {
-			strncpy(ifrdstaddr.ifr_name, ifrp->ifr_name,
+			pcapint_strlcpy(ifrdstaddr.ifr_name, ifrp->ifr_name,
 			    sizeof(ifrdstaddr.ifr_name));
 			memcpy(&ifrdstaddr.ifr_addr, &ifrp->ifr_addr,
 			    sizeof(ifrdstaddr.ifr_addr));

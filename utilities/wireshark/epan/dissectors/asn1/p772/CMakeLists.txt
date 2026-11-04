@@ -28,7 +28,6 @@ set( ASN_FILE_LIST
 set( EXTRA_DIST
 	${ASN_FILE_LIST}
 	packet-${PROTOCOL_NAME}-template.c
-	packet-${PROTOCOL_NAME}-template.h
 	${PROTOCOL_NAME}.cnf
 )
 
@@ -37,7 +36,7 @@ set( SRC_FILES
 	${EXT_ASN_FILE_LIST}
 )
 
-set( A2W_FLAGS -b -C )
+set( A2W_FLAGS -b )
 
 set( EXTRA_CNF
 	"${CMAKE_CURRENT_BINARY_DIR}/../p1/p1-exp.cnf"

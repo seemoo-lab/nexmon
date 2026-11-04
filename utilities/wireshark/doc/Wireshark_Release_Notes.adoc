@@ -7,6 +7,8 @@ include::attributes.adoc[]
 // Asciidoctor Syntax Quick Reference:
 // https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/
 
+This is an experimental release intended to test new features for Wireshark 5.0.
+
 == What is Wireshark?
 
 Wireshark is the world’s most popular network protocol analyzer.
@@ -16,455 +18,331 @@ Wireshark is hosted by the Wireshark Foundation, a nonprofit which promotes prot
 Wireshark and the foundation depend on your contributions in order to do their work.
 If you or your organization would like to contribute or become a sponsor, please visit https://wiresharkfoundation.org[wiresharkfoundation.org].
 
-If you use Wireshark professionally or you just want to learn more about protocol analysis, you should join us at https://sharkfest.wireshark.org/[SharkFest], the Wireshark developer and user conference.
-
-You can also become a Wireshark Certified Analyst! Official Wireshark training and certification are available from
-https://www.wireshark.org/certifications[the Wireshark Foundation].
-
 == What’s New
 
-// Uncomment for the last release(s) of this branch.
-// This is the last release with official support for Windows 10 and Windows Server 2016.
+// Add a summary of **major** changes here.
+// Add other changes to "New and Updated Features" below.
 
-=== Bug Fixes
+The following changes have been made since version 4.7.4:
 
-The following vulnerabilities have been fixed:
+// https://developer.apple.com/news/?id=w4atic4c
+// https://developer.apple.com/help/account/certificates/replace-developer-id-certificates
+* macOS disk images and applications are now signed using certificates issued by Apple's Developer ID Certification Authority (G2).
+  The previous certificate was issued by Apple's Developer ID Certification Authority, which expires in early 2027.
 
-* wssalink:2026-64[]
-sharkd crash.
-wsbuglink:21395[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 178939f126
-// Fixed in release-4.6: 51d0eea79f
-// Fixed in release-4.4: 5b56712fb9
-// CVSS AV:N/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:L
-// CWE-825
-// Credit: Claude and Ada Logics
+The following changes have been made since version 4.7.3:
 
-* wssalink:2026-65[]
-sharkd crash.
-wsbuglink:21399[].
-// cveidlink:2026-xxx[].
-// Fixed in master: d43d89d201
-// Fixed in release-4.6: c40bdd55da
-// Fixed in release-4.4: 560ec98247
-// CVSS AV:N/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:L
-// CWE-825
-// Credit: Claude and Ada Logics
+* You can now https://www.wireshark.org/docs/wsug_html/#ChCustTaggingSection[tag packets] with emojis, text, or URLs similar to coloring rules.
+* The user interface icons have been refreshed, and now scale with the menu:View[] zoom settings.
+* The packet bytes pane can show text as UTF-8. Multi-byte characters are
+  drawn over the column of their first byte with a “]” over their last byte,
+  and hovering over any of those bytes highlights the whole character.
+* Holding down kbd:[↓] and kbd:[↑] will move rapidly through the packet list.
+* Coloring rules are now saved as a https://jsonc.org/[JSONC] (JSON with comments) file.
+  The legacy file format is still supported, but support will be removed in a future release.
+* Support for automatic update notification and updates on Linux distributions supporting PackageKit >= 1.1.12.
 
-* wssalink:2026-66[] {notable}
-UMTS FP protocol dissector crash.
-wsbuglink:21413[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 5c5d3d5381
-// Fixed in release-4.6: 67b2d8b865
-// Fixed in release-4.4: f95f229f4e
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Jaime Cavero
+The following changes have been made since version 4.7.2:
 
-* wssalink:2026-67[] {notable}
-RDP protocol dissector crash.
-wsbuglink:21396[].
-// cveidlink:2026-xxx[].
-// Fixed in master: d50d557d84
-// Fixed in release-4.6: 26edba6065
-// Fixed in release-4.4: d28eaacbad
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Claude and Ada Logics
+* The minimum supported Windows version is Windows 10 21H2 (build 19044) or
+  Windows Server 2022.
+* Display filter operators' English forms like "and" and "or" are case-insensitive.
+* Display filter string literals can be surrounded by appropriate pairs of
+  directional ("smart" or "curly") double quotes instead of straight double
+  quotes.
+* The Export Packet Dissections CSV output is UTF-8 CSV (with optional BOM) by
+  default; the previous format which escapes non-ASCII characters is still
+  available.
+* The Export Packet Dissections C Arrays output gained an option to add an index
+  array for the arrays of data sources. Also, there is an option to omit secondary
+  data sources like reassembled data or decrypted data. wsbuglink:19616[].
+* Extcap interfaces now support "bookmarks," which let you have multiple configurations
+  for the same interfaces. Extcap configurations are now shared across profiles, and
+  existing per-profile configurations will be migrated to bookmarks. wsbuglink:14224[].
+* Extcap interfaces support graceful shutdown on Windows (already supported on
+  other platforms) via using the control pipe. Third-party extcap interfaces should
+  be updated to take advantage of this capability; see below under Plugin Development
+  Changes. wsbuglink:17131[].
+* MSI packages no longer include Visual C++ Redistributable assets.
+  You must now install them separately.
 
-* wssalink:2026-68[] {notable}
-TTX Logger file parser crash.
-wsbuglink:21389[].
-// cveidlink:2026-xxx[].
-// Fixed in master: f9fdd24295
-// Fixed in release-4.6: ea96071839
-// Fixed in release-4.4: n/a
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Claude and Ada Logics
+The following changes have been made since version 4.7.1:
 
-* wssalink:2026-69[] {notable}
-Dissection engine reassembly crash.
-wsbuglink:21423[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 9f68da57d3
-// Fixed in release-4.6: 1df97a20fb
-// Fixed in release-4.4: c1378c3314
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Daniel Birtwhistle
+* The Follow Stream window is more responsive and has more filtering options.
 
-* wssalink:2026-70[] {notable}
-BUSMASTER file parser abnormal exit.
-wsbuglink:21435[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 8e984f1f83
-// Fixed in release-4.6: 6aba0a890f
-// Fixed in release-4.4: 32c63e1b62
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-703
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* HTTP/3 improvements:
+  Reassembly is implemented.
+  Decompression is implemented for gzip/deflate, brotli, and zstd.
+  Media type dissectors are called for the Content-Type.
+  Follow Stream is implemented. wsbuglink:20610[].
+  Export Objects is implemented.
+  Request/response tracking is implemented.
 
-* wssalink:2026-71[] {notable}
-Tektronix K12xx file parser crash.
-wsbuglink:21414[].
-// cveidlink:2026-xxx[].
-// Fixed in master: c517aedc99
-// Fixed in release-4.6: 349750c199a
-// Fixed in release-4.4: 6f812cbb50
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-126
-// Credit: Jaime Cavero
+The following changes have been made since version 4.7.0:
 
-* wssalink:2026-72[] {notable}
-ERF file parser crash.
-wsbuglink:21415[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 4e030d2b17
-// Fixed in release-4.6: b8a7c24b534
-// Fixed in release-4.4: 82c0b871be
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-126
-// Credit: Jaime Cavero
+The following issues have been fixed:
+* Wireshark appears in German where Systemlanguage is Dutch. wsbuglink:20347[].
+* If you double-click an interface in the welcome screen interface list, and have typed nothing in the capture filter box, the system reports an invalid capture filter. wsbuglink:21303[].
+* Qt: Appearance mode is stored per-profile while theme name is global — theme flips on profile switch. wsbuglink:21311[].
+* Qt: 'Recent filters' arrow button gives no hover/pressed feedback. wsbuglink:21322[].
+* Qt: Hidden interfaces (Welcome page right-click) not persisted across profile switch or restart. wsbuglink:21325[].
+* Qt: Preferences dialog left category tree cannot be resized (labels truncated, only horizontal scrollbar) wsbuglink:21327[].
+* Qt: Make theme preview resemble a real Wireshark window (mini packet-list mockup) wsbuglink:21329[].
+* stratoshark -D lists a bunch of *network* capture devices. wsbuglink:21332[].
 
-* wssalink:2026-73[] {notable}
-Bluetooth Attribute Protocol dissector crash.
-wsbuglink:21424[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 6e2dfd4f0b
-// Fixed in release-4.6: dec594457c7
-// Fixed in release-4.4: 40ab60fce7
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-125
-// Credit: Yazan Balawneh - CyStack Security Team
+The following changes have been made since version 4.6.0:
 
-* wssalink:2026-74[] {notable}
-Catapult DCT2000 file parser crash.
-wsbuglink:21427[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 46c813e7ad
-// Fixed in release-4.6: c91e5e16339
-// Fixed in release-4.4: f8edcd3db2
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Yazan Balawneh - CyStack Security Team
+* Welcome Page Overhaul
+  The welcome page has been redesigned to be more informative and easier to navigate. It now highlights the learning sections better and includes a new sidebar with tips and tricks for using Wireshark effectively. The welcome page is now also more accessible, with improved keyboard navigation and screen reader support.
 
-* wssalink:2026-75[] {notable}
-C12.22 protocol dissector crash.
-wsbuglink:21439[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 360bdc60fe
-// Fixed in release-4.6: 2a7ea46648f
-// Fixed in release-4.4: d53b33eabd
-// CVSS AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H
-// CWE-122
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* Lua Debugger
+  A built-in Lua script debugger has been added. It supports breakpoints, single-stepping, variable inspection, expression evaluation, and stack traces. The debugger can be opened from the menu:Tools[Lua Debugger] menu.
 
-* wssalink:2026-76[] {notable}
-CMS protocol dissector crash.
-wsbuglink:21446[].
-// cveidlink:2026-xxx[].
-// Fixed in master: ​​02dd1e7af0
-// Fixed in release-4.6: ​​fdcae73419f
-// Fixed in release-4.4: 920cb47359
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-476
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* Themes
+  Wireshark now drives the colors used throughout the GUI from a single theme instead of many individual color preferences. The renamed menu:Appearance[Theme and Font] preferences page lets you pick a theme, switch between Light, Dark, and System appearance, set the packet pane font, and preview the result on a mockup of a capture window. A built-in default theme ships with Wireshark, and additional themes can be installed as JSONC (JSON with Comments) files. The previous per-color settings (marked and ignored packets, "Follow Stream" client and server text, display filter validity, and the selected packet) are now provided by the active theme.
+  Personal themes can now be dropped as single `.jsonc` files into _$HOME/.local/lib/wireshark/themes_ (Unix) or _%APPDATA%\Wireshark\themes_ (Windows); the filename becomes the theme's name in the dropdown. The exact path is shown in the About dialog's _Folders_ tab.
+  On first launch after the upgrade, Wireshark checks the Default profile's preferences for customized values of the removed per-color settings. If any are found, a personal theme named _Personal (Migrated)_ is created automatically in the personal themes directory, the legacy keys are removed from the Default profile's preferences file, and the theme is activated so the original visual customizations are preserved. The migration runs once: the generated _personal.jsonc_ can be edited, renamed, or deleted by hand at any time.
+  The welcome page section headers ("Open", "Capture", "Learn") and the filter validity tints have been restored to the historical Classic look (Tango sky_blue brand, saturated GTK-era dark green / dark red filter backgrounds).
 
-* wssalink:2026-77[] {notable}
-H.245 protocol dissector {crash,infinite loop,memory leak}.
-wsbuglink:21447[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 86df5f3b40
-// Fixed in release-4.6: 73467571b0e
-// Fixed in release-4.4: de13f9ff4c
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-476
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* The Default profile now has additional column "Delta", showing the delta time from the previous displayed packet.
 
-* wssalink:2026-78[] {notable}
-Kerberos protocol dissector crash.
-wsbuglink:21449[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 78d67418e8
-// Fixed in release-4.6: 848f415af2b
-// Fixed in release-4.4: a1d6efed38
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-125
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* Wireshark ships a “Processes” configuration profile, which adds the new "PID" and "Proc Name" columns, showing the process on the capturing host that sent or received each packet when that was recorded.
 
-* wssalink:2026-79[] {notable}
-Bluetooth HFP Profile protocol dissector crash.
-wsbuglink:21451[].
-// cveidlink:2026-xxx[].
-// Fixed in master: fc4171f4dd
-// Fixed in release-4.6: 068d179d5f6
-// Fixed in release-4.4: a1cc189664
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-125
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* Name Resolution
+  SMI paths are now searched recursively. This makes it easier to use MIBs provided by libsmi.
 
-* wssalink:2026-80[] {notable}
-Bluetooth BR/EDR FHS protocol dissector crash.
-wsbuglink:21452[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 0e191266dd
-// Fixed in release-4.6: 907c6ab2200
-// Fixed in release-4.4: 5520cc92a8
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-476
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+Many other improvements have been made.
+See the “New and Updated Features” section below for more details.
 
-* wssalink:2026-81[] {notable}
-3gpp phone log file parser crash.
-wsbuglink:21454[].
-// cveidlink:2026-xxx[].
-// Fixed in master: c5f900e922
-// Fixed in release-4.6: f41e4d1ecfa
-// Fixed in release-4.4: 5119ed263f
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-787
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+//=== Bug Fixes
 
-* wssalink:2026-82[] {notable}
-Ixia IxVeriWave and Vector Informatik BLF file parser crashes on Windows.
-wsbuglink:21455[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 86336b8332
-// Fixed in release-4.6: 663e527ddcc
-// Fixed in release-4.4: n/a
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:H
-// CWE-787
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
+* wsbuglink:21115[Wireshark Profile Import RCE via Zip-Slip Vulnerability ] - A critical issue that caused Wireshark to crash when importing malformed zip files has been fixed. This bug was reported by Joohyun Park, Hyuk Kwon, Yonghwa Lee, Taisic Yun, Sangjun Song (Theori), with Xint and has been resolved in this release.
 
-* wssalink:2026-83[] {notable}
-CMS protocol dissector crash.
-wsbuglink:21457[], wsbuglink:21458[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 70b341567a
-// Fixed in release-4.6: e6320512dc3
-// Fixed in release-4.4: da9204174b
-// CVSS AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-416
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-84[] {notable}
-Pcapng file parser crash.
-wsbuglink:21460[].
-// cveidlink:2026-xxx[].
-// Fixed in master: c72babdb03
-// Fixed in release-4.6: 8a3cbd7b91f
-// Fixed in release-4.4: 930f2f39c4
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-125
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-85[] {notable}
-SSH protocol dissector crash.
-wsbuglink:21465[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 3f38ce6c37
-// Fixed in release-4.6: ccd12dd4920
-// Fixed in release-4.4: 04dc6b2af4
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: BreachX Zero Day Labs
-
-* wssalink:2026-86[] {notable}
-ESS protocol dissector crash.
-wsbuglink:21467[].
-// cveidlink:2026-xxx[].
-// Fixed in master: affa11c625
-// Fixed in release-4.6: d77dcfd071a
-// Fixed in release-4.4: ed1294055c
-// CVSS AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L
-// CWE-457
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-87[] {notable}
-X.509IF protocol dissector crash.
-wsbuglink:21469[].
-cveidlink:2026-xxx[].
-// Fixed in master: 340b45bcb2
-// Fixed in release-4.6: 179c1d24c03
-// Fixed in release-4.4: ff9f1bc138
-// CVSS AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
-// CWE-476
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-88[] {notable}
-RRC protocol dissector crash.
-wsbuglink:21478[].
-// cveidlink:2026-xxx[].
-// Fixed in master: a44c8dc01c
-// Fixed in release-4.6: a29767a9e89
-// Fixed in release-4.4: 32ecb4ce4e
-// CVSS AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
-// CWE-787
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-89[] {notable}
-C12.22 protocol dissector crash.
-wsbuglink:21480[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 94a0319ec2
-// Fixed in release-4.6: 71528302b11
-// Fixed in release-4.4: a7c97b297d
-// CVSS AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H
-// CWE-121
-// Credit: Aisle Research (Dmitrijs Trizna, Luigino Camastra, Ze Sheng (O2Lab & TAMU), Igor Morgenstern)
-
-* wssalink:2026-90[] {notable}
-Gammu DCT3 trace file parser crash.
-wsbuglink:21475[].
-// cveidlink:2026-xxx[].
-// Fixed in master: c3e931321e
-// Fixed in release-4.6: 7a868d2c7a6
-// Fixed in release-4.4: n/a
-// CVSS AV:L/AC:H/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-121
-// Credit: Pedro Pinho
-
-* wssalink:2026-91[] {notable}
-Bluetooth AVRCP Profile protocol dissector crash.
-wsbuglink:21488[].
-// cveidlink:2026-xxx[].
-// Fixed in master: 1b59980832
-// Fixed in release-4.6: b302764efd2
-// Fixed in release-4.4: 539e5ba4c6
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-122
-// Credit: Feng Xue
-
-
-// * wssalink:2026-92[] {notable}
-// Foo protocol dissector {crash,infinite loop,memory leak}.
-// wsbuglink:xxx[].
-// cveidlink:2026-xxx[].
-// Fixed in master: xxx
-// Fixed in release-4.6: xxx
-// Fixed in release-4.4: xxx
-// CVSS AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H
-// CWE-???
-
-The following bugs have been fixed:
-
+//The following bugs have been fixed:
 //* wsbuglink:5000[]
 //* wsbuglink:6000[Wireshark bug]
 //* cveidlink:2014-2486[]
-// Bugs with the {notable} attribute show up in the "What's Changed" box on the download page.
-//* Wireshark contains traces of nuts. What kind of nuts? The kind you're allergic to. wsbuglink:5000[] {notable}
-
-* Fuzz job crash: randpkt-2026-05-22-14496207576.pcap. wsbuglink:21266[].
-* Wireshark Version 4.6.6 - File Capture Properties is excessively slow and hangs Wireshark on Windows. wsbuglink:21337[].
-* TCP Preference 'Analyze TCP sequence numbers' SEGFAULTs when toggled. wsbuglink:21380[].
-* Wireshark misdecodes S-NSSAI location validity information IE (5G NAS) wsbuglink:21411[].
-* Wireshark misdecodes NSAG information IE (5G NAS) wsbuglink:21412[].
-* Fuzz job UTF-8 encoding issue: fuzz-2026-07-17-15393056954.pcap. wsbuglink:21419[].
-* Wireshark misdecodes UE security capability IE (5G NAS) wsbuglink:21431[].
-* Wireshark misdecodes Registration wait range IE (5G NAS) wsbuglink:21432[].
-* Wireshark misdecodes Extended CAG information IE (5G NAS) wsbuglink:21433[].
-* Stack buffer overflow in K12/RF5 writer. wsbuglink:21436[].
-* Security issues fixed in 4.6.8 and 4.4.18 Tracker. wsbuglink:21437[].
-* BLF writer out-of-bounds read on truncated VLAN-tagged Ethernet frames. wsbuglink:21441[].
-* DLMS/COSEM compact-array TypeDescription recursion bypass can exhaust the stack. wsbuglink:21442[].
-* packet-knxip: Secure Wrapper size-offset causes NULL deref / SEGV when decrypting. wsbuglink:21444[].
-* wiretap/rtpdump: swapped caplen/len on truncated samples. wsbuglink:21445[].
-* H.245 returnedFunction nested GenericMessage dereferences NULL packet state. wsbuglink:21447[].
-* X.509 export-object tap dereferences missing certificate subject. wsbuglink:21448[].
-* Sniffer REC_HEADER2 error path over-reads stack buffer. wsbuglink:21461[].
-* Deep NetLog JSON nesting exhausts the native stack. wsbuglink:21462[].
-* androiddump signed btsnoop length causes global out-of-bounds read. wsbuglink:21464[].
-* ERF writer underflows payload length for tiny truncated packets. wsbuglink:21466[].
-* Wireshark misdecodes SOR transparent container IE (5G NAS) wsbuglink:21472[].
-* Unbounded Daintree timestamp fraction causes signed integer overflow. wsbuglink:21473[].
-* Wireshark misdecodes SOR-CMCI of SOR transparent container IE (5G NAS) wsbuglink:21477[].
-* Wireshark misdecodes Service level AA container (5GSM NAS) wsbuglink:21479[].
-
-// == Known Bugs
+//* Wireshark keeps waving its finger about an inch from you and saying "I'm not touching you."
 
 === New and Updated Features
 
-//  * The Windows installers now ship with Npcap 1.88.
-//    They previously shipped with Npcap 1.87.
+The following features are either new or have been significantly updated since version 4.6.0:
 
-// * The Windows installers now ship with Qt 6.10.3.
-//   They previously shipped with Qt 6.9.3.
+* Capture files can be saved with Zstandard compression. The Save Capture File As
+  and Export Specified Packets dialogs offer a Zstandard option, and command-line
+  tools accept `--compress zstd` when built with Zstandard support.
+  The Advanced preference `capture.zstd_compression_level` sets the level for
+  Wireshark saves and exports and for TShark capture-file rewrites.
+  Negative levels select fast compression when built with Zstandard 1.4.0 or newer.
+  Output uses independent frames with up to 4 MiB of uncompressed data to support
+  fast seeking when the capture is reopened.
 
-// === Removed Features and Support
+* Dumpcap, TShark and Wireshark can record which processes on the capturing host sent or received each packet, with the new `--process-info[=basic|full]` capture option: the process IDs go in the pcapng epb_processid_threadid packet option and the processes are described in process information blocks, shown as the `frame.process` fields. By default (`basic`) a process is described by its ID, name and start time; with `full` its path, command line, parent and user are recorded as well, which can be sensitive. In Wireshark it is set in the “Output” tab of the “Capture Options” dialog and in the capture preferences (`capture.process_info`), and IDs and names are recorded by default. A packet that several processes could have sent or received, such as a multicast datagram and its sender and receivers, is attributed to all of them. Supported on Windows, Linux and macOS. `editcap --discard-process-info` removes the process information from a capture file, e.g. before sharing it.
+
+* New IMSI List dialog (menu:Telephony[IMSI List]) scans all packets in a capture and lists
+  every unique IMSI with packet count, first/last frame, and protocols.
+  Double-click an IMSI to apply a display filter for that subscriber.
+  Multi-select and "Prepare Filter" combines multiple IMSIs.
+
+* New `tshark -z imsi` statistics lists all unique IMSIs found in a capture
+  with packet counts, first/last frame numbers, and protocols.
+  A new "imsi" tap is registered by the E.212 dissector.
+
+* UDX conversations and endpoints are now listed per stream, in
+  menu:Statistics[Conversations] and menu:Statistics[Endpoints] as well as
+  `tshark -z conv,udx` and `tshark -z endpoints,udx`.
+  Several UDX streams can share one UDP socket pair, which the UDP tables count
+  as a single conversation.
+  A new "udx" tap is registered by the UDX dissector.
+
+* New compact JSON output option omits indentation and whitespace,
+  significantly reducing output size and improving performance.
+  Available as `tshark --json-compact` (with `-T json` or `-T jsonraw`)
+  and as a "Compact (no indentation)" checkbox in the GUI JSON export dialog.
+
+* Process information stored in pcapng captures, in Wireshark custom blocks
+  or in Apple's Darwin process information blocks, is now shown under
+  "Process information" in the Frame tree as the `frame.process` fields
+  (process and thread ID, name, executable path, command line, parent
+  process ID, user ID and name, executable UUID and start time), fills the
+  "User name" column, and can be used through the "Process" conversation
+  filter.
+
+* On Linux, Wireshark can check whether the distribution offers a newer version
+  of the package it was installed from. The check uses PackageKit and never
+  contacts wireshark.org; the update itself is installed through the desktop's
+  software center (e.g. GNOME Software or KDE Discover). Self-compiled builds
+  and Flatpak, Snap or AppImage installations are not checked.
+  Building with this support requires the optional packagekit-glib2 library,
+  version 1.1.12 or later.
+
+* The Windows installers now ship with Npcap 1.88.
+  They previously shipped with Npcap 1.83.
+
+* The Windows and macOS installers now ship with Qt 6.11.1.
+  They previously shipped with Qt 6.9.3.
+
+// XXX This should just describe what changed.
+// * The capture and display filter fields have a refreshed, consistent look and
+//   feel. As you type, the field colors itself to show at a glance whether the
+//   filter is valid, invalid, or uses deprecated syntax, and that feedback now
+//   appears immediately in place. Each field carries the same set of in-line
+//   buttons — a bookmark to save and manage your filters, a clear button, an
+//   apply button, and a drop-down listing your recently used filters — and as you
+//   type it suggests completions drawn from field names together with your recent
+//   and saved filters. Recent display filters are now reached from that drop-down
+//   rather than from a combo box. The colors follow the active theme and adapt to
+//   the Light and Dark appearances. (When a capture filter names a host, the field
+//   may pause briefly while the name is resolved.)
+
+* Zooming (menu:View[Zoom In] / menu:View[Zoom Out]) now scales the whole window, including the capture and display filter fields and other window elements.
+  Previously only the text size in the three main window panes (packet list, details, and bytes) changed.
+  The new behavior should be much more useful for demos and presentations.
+
+* The keyboard shortcuts dialog (menu:About Wireshark[Keyboard Shortcuts]) has been moved out of of the About dialog to the menu:View[Internals,Keyboard Shortcuts] menu and now has a button to print the list of keyboard shortcuts to an HTML file.
+
+* The application icons have been updated and refreshed.
+  The macOS icon now supports Liquid Glass and is sized according to Apple's specifications on older macOS versions.
+  wsbuglink:18131[]
+
+* The RTP Player now supports AMR-WB and 24-bit linear encoded audio.
+
+* The protocol dissection API has been updated to more safely handle packet data offsets and lengths.
+  See the <<Major API Changes>> section below for details.
+
+* The welcome screen's interface activity sparklines now keep their history for the whole session.
+  Previously the sparklines, and the activity-first ordering of the interface list, were reset whenever you
+  started or stopped a capture or returned to the welcome screen, so the list re-shuffled each time.
+  Now the history persists, the ordering stays stable, and a break in a sparkline marks the interval during
+  which a capture was running (interface statistics are not sampled while capturing).
+  When an interface is dropping packets, the drops are shown as a separate line.
+  The Capture Options dialog's interface list now shares the same statistics, so its sparklines match the
+  welcome screen exactly, including the capture-interval gap and the dropped-packet line.
+  wsbuglink:21318[]
+
+* Interfaces hidden from the welcome screen's right-click menu are now remembered
+  across profile switches and application restarts. wsbuglink:21325[]
+
+* Editcap has a new `--sctp-split` option that splits SCTP packets containing
+  multiple bundled DATA chunks into individual packets, one per DATA chunk.
+  Each split packet includes a comment indicating its original frame number.
+
+* Sharkd supports Unix domain sockets where supported on Windows, which includes
+  all Windows versions supported by Wireshark 4.6 and later. (Windows 10 versions
+  1803 and later, including Windows Server 2019 and later, all support Unix domain
+  sockets.)
+
+* The OPC UA dissector can decode ExtensionObjects of custom datatypes described
+  in an information model, a UANodeSet XML file set in the new
+  `opcua.information_model` preference, in client/server and PubSub messages.
+  The new `opcua.ns_offset` preference maps the namespace indexes of the file
+  to those in the packets.
+
+=== Removed Features and Support
+
+Dumpcap's TCP@host:port interface has been removed. Tools like `socat`, `ncat`,
+`netcat`, `nc`, and others can be used to redirect network interfaces to
+FIFOs and named pipes on UN*X and Windows to achieve the same interface. Many
+of those tools have additional security features like enabling TLS encryption.
+
+Sharkd only supports binding to a loopback IPv4 or IPv6 address when listening
+on a TCP socket. (TCP sockets are only available by default on Windows systems,
+and are deprecated, since UNIX domain sockets are now supported. IPv6 support
+is new.) Sharkd now rejects connecting to a Linux abstract domain socket from
+peer processes with effective UID other than that of the sharkd process.
+
+The individual color preferences under menu:Appearance[] (marked and ignored packets, "Follow Stream" client and server text, display filter validity, and the selected packet) have been removed. These colors are now provided by the selected theme; see the "What's New" section above.
+
+Building with Qt 5 is no longer supported.
 
 // === Removed Dissectors
 
+
+=== New File Format Decoding Support
+
+[commaize]
+--
+Bachmann M-Module
+Xiph.org Ogg Stream
+--
+
 === New Protocol Support
 
-There are no new protocols in this release.
+// Add one protocol per line between the -- delimiters in the format
+// “Full protocol name (Abbreviation)”
+// git log --oneline --diff-filter=A --stat v4.7.4rc0.. epan/dissectors plugins
+[commaize]
+--
+Apple Darwin Metadata
+Axia Livewire
+Controller Interface Transport Protocol (CITP)
+DCERPC SCARD_PACK
+DECT NR+
+ESUN
+Generic UDP Encapsulation (GUE)
+HyperDHT / DHT-RPC
+JSON Dictionary
+Linux mac80211_hwsim Netlink
+Linux Open vSwitch Netlink (OVS)
+MCData
+MCTP over SMBus/I2C
+MIDI System Exclusive DigiTech
+Mikrotik RoMON
+Multicast Router Discovery (MRD)
+MySQL X Protocol (MySQLX)
+NATS
+NMEA 2000
+Object Transform Protocol (OTP)
+OPC UA PubSub UADP
+PackClient
+Perforce P4RPC
+PosiStageNet (PSN)
+PROFINET SXP (PN-SXP)
+Qualcomm Diagnostic (QCDIAG)
+RDP Conctrl virtual channel Protocol (CONCTRL)
+RDP Video Capture Virtual Channel Extension (RDPECAM)
+Real-Time Tracking Protocol (RTTrP)
+RTP over QUIC (RoQ)
+SMPTE ST2110-40 (ST291-1 Ancillary Data)
+TCG Storage Interface
+TrueConf Protocol (TrueConf)
+UDX
+Ultra Ethernet Transport (UET)
+XGT
+ZigBee ZCL Generic Tunnel
+--
 
 === Updated Protocol Support
 
-// Add one protocol per line between the -- delimiters.
-// rg -A1 '(define PSNAME|proto_register_protocol[^_])' $(git diff --name-only v4.6.8.. | rg packet- | sort -u)
+Too many protocol updates have been made to list them all here.
+
+Of particular note, "ike" is now preferred to "isakmp" for filtering the
+Internet Key Exchange (IKE) protocol and its fields (both IKEv1 and IKEv2),
+including fields primarily associated with RFC 2408, Internet Security
+Association and Key Management Protocol (ISAKMP) though "isakmp" remains as
+an alias for the protocol and all its fields.
+
+== New and Updated Capture File Support
+
+* pcapng: Process information blocks are now read from and written to
+  Wireshark custom blocks (PEN 32622, block entry type 3) as well as
+  Apple's Darwin process information blocks, and both are preserved when
+  a file is rewritten.
+
 [commaize]
 --
-ANSI_TCAP
-ASTERIX
-ASN.1 BER
-BT ATT
-BT AVRCP
-BT BR/EDR RF
-BT HFP
-C12.22
-CIGI
-CMS
-COSEM
-EBHSCR
-ESS
-FP
-GSM SIM
-GTPv2
-H.245
-Kerberos
-KNX/IP
-LBMSRS
-NAS-5GS
-RELOAD
-Rlogin
-RRC
-SSH
-X.509AF
-X.509IF
 --
 
-=== New and Updated Capture File Support
+=== New and Updated Capture Interface support
 
-// There is no new or updated capture file support in this release.
-// Add one file type per line between the -- delimiters.
-[commaize]
---
-3gpp phone log
-BLF
-Busmaster
-Catapult DCT2000
-Endace ERF
-Daintree SNA
-Gammu DCT3
-pcapng
-RTPDump
-Sniffer
-Tektronix K12xx
-TTTech Computertechnik TTL
---
+* `etwdump` now supports new capture providers, among which:
+  * un-encrypted LDAP messages
+  * un-encrypted SMB client/server messages
+  * un-encrypted HTTPS messages (from both WinInet and WinHTTP)
+  * raw HCI events (similar to Microsoft's btvs.exe)
 
-=== New and Updated File Format Decoding Support
-
-There is no new or updated file format support in this release.
-// Add one file type per line between the -- delimiters.
-// [commaize]
-// --
-// --
-
-// === New and Updated Capture Interfaces support
+* `etwdump` now supports capture options and has a much better support of
+  undecipherable messages.
 
 // [commaize]
 // --
@@ -474,9 +352,48 @@ There is no new or updated file format support in this release.
 
 //_Non-empty section placeholder._
 
-// === Major API Changes
+=== Major API Changes
+
+The tvb new_subset and tvb length_remaining routines now take unsigned offset
+and length arguments. Negative offsets, indicating an offset relative to the
+end of the _captured_ length of the buffer (not reported) are no longer
+permitted, nor is a length of -1 meaning "to the end of the buffer." For
+the latter, use tvb_new_subset_remaining instead. Internally, tvbuffer lengths
+have long been unsigned; this change should simplify dealing with 32-bit
+unsigned length fields and checking for offsets overflowing.
+
+tvb find_line_end, tvb_find_uint8, tvb_find_uint16 and tvb_ws_mempbrk_pattern_uint8
+has been changed in a similar fashion. They now return a boolean, true
+if found.
+
+Functions tvb_get_string_uint[64] were added that can retrieve an unsigned
+integer encoded as an ASCII-like string from packet data similar to strtoul
+but without string copying or otherwise ensuring NUL termination.
+
+Linking with the Heimdal Kerberos library is now deprecated, and support will likely be removed in a future release.
+Linking with the MIT Kerberos library is still supported.
+
+libwiretap's per-file table of Darwin process information blocks has been
+generalised into a table of WTAP_BLOCK_PROCESS_INFORMATION blocks, with a
+32-bit process ID and the options OPT_PIB_NAME, OPT_PIB_PATH,
+OPT_PIB_CMDLINE, OPT_PIB_PPID, OPT_PIB_UID, OPT_PIB_USER, OPT_PIB_UUID and
+OPT_PIB_STARTTIME. wtap_file_get_dpib_lookup_info() has been replaced by
+wtap_file_get_num_pibs() and wtap_file_get_pib(), the dpibs_growing member
+of wtap_dump_params has been renamed pibs_growing, and the OPT_DPIB_NAME
+and OPT_DPIB_UUID option codes have been removed.
+
+libwsutil has a new API, wsutil/process_lookup.h, that finds the processes
+that have a network socket open, from the operating system's socket tables,
+and describes them (name and start time or, if asked to, path, command line,
+parent and user as well). It is implemented for Windows, Linux and macOS; on
+other platforms it reports that it is not supported.
 
 === Plugin Development Changes
+
+The list of installed dissector header files has been reduced and is now restricted to ones that contain the following:
+- Functions marked WS_DLL_PUBLIC
+- Structs whose names contain "tap_"
+- The string "PUBLIC_HEADER"
 
 On UN*X systems (excluding macOS when running from an app bundle, as
 with the official installer) extcap binaries are now searched for under
@@ -492,520 +409,18 @@ do not use a libexec directory, such as Alpine Linux, which does not have
 multilib support. On such systems extcap binaries should be in the same
 location as before.
 
-== Prior Versions
-
-=== Wireshark 4.6.7 included the following changes.
-
-* wssalink:2026-52[] {notable}
-Catapult DCT2000 protocol dissector crash.
-wsbuglink:21270[].
-
-* wssalink:2026-53[] {notable}
-pcapng file parser crash.
-wsbuglink:21285[].
-
-* wssalink:2026-54[] {notable}
-FMP/NOTIFY protocol dissector large loop.
-wsbuglink:21347[].
-
-* wssalink:2026-55[] {notable}
-SSH protocol dissector crash.
-wsbuglink:21378[].
-
-* wssalink:2026-56[] {notable}
-TLS ECH decryption crash.
-wsbuglink:21390[].
-
-* wssalink:2026-57[] {notable}
-IEEE 802.11 protocol dissector crash.
-wsbuglink:21391[].
-
-* wssalink:2026-58[] {notable}
-Z39.50 protocol dissector crash.
-wsbuglink:21397[].
-
-* wssalink:2026-59[] {notable}
-UMTS FP protocol dissector crash.
-wsbuglink:21398[].
-
-* wssalink:2026-60[] {notable}
-BLF file parser information disclosure.
-wsbuglink:21361[].
-
-* wssalink:2026-61[] {notable}
-Multiple protocol dissector infinite loops.
-wsbuglink:21275[],
-wsbuglink:21277[],
-wsbuglink:21330[],
-wsbuglink:21383[].
-
-* wssalink:2026-62[] {notable}
-DBS Etherwatch file parser crash.
-wsbuglink:21352[].
-
-* wssalink:2026-63[] {notable}
-Ciscodump extcap crash.
-wsbuglink:21375[].
-
-* Wireshark appears in German when the system language is Dutch. wsbuglink:20347[].
-* Qt: Capture filter combo box does not enforce minimum size or expanding size policy. wsbuglink:21080[].
-* BACapp: Error parsing you-are request. wsbuglink:21260[].
-* Use-After-Free in Ethernet POWERLINK (EPL) Dissector during profile loading error path. wsbuglink:21267[].
-* Sponsor slides are not properly shown. wsbuglink:21268[].
-* Buffer overlow/segfault in Catapult DCT2000 dissector via not check no_ddi_entries in header. wsbuglink:21270[].
-* Fuzz job issue: fuzz-2026-05-24-14517548985.pcap. wsbuglink:21272[].
-* Fuzz job UTF-8 encoding issue: fuzz-2026-06-07-14732586286.pcap. wsbuglink:21331[].
-* Memory leak in alp-sample1.pcap. wsbuglink:21343[].
-* Memory leak in nspi.pcap. wsbuglink:21344[].
-* Heap-Buffer-Overflow in Wireshark Logcat Parser. wsbuglink:21346[].
-* IPv6 Ping from Debian (among others) is dissected as "HiPerConTracer" wsbuglink:21349[].
-* HEVC (H.265) dissector: bit_offset not advanced after sub_layer_hrd_parameters() causes false Malformed Packet. wsbuglink:21362[].
-* dfilter_compile_full: heap-buffer-overflow READ in ws_strptime on a time literal. wsbuglink:21376[].
-* Wireshark crashes with a HEAP_CORRUPTION error when using the last saved recent_common file. wsbuglink:21379[].
-* Fuzz job issue: fuzz-2026-06-30-15106674620.pcap. wsbuglink:21381[].
-
-=== Wireshark 4.6.6 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.5.html[release notes]
-for details:
-
-* wssalink:2026-51[]
-ROHC protocol dissector crash.
-wsbuglink:21243[].
-
-* Wireshark crashes when run under Visual Studio on Windows. https://gitlab.com/wireshark/wireshark/-/work_items/21251[Work item 24787].
-
-* Welcome page slide preferences are now available in the preferences window.
-
-* vwr: Read of uninitialized memory in pntoh16. wsbuglink:16460[].
-* vwr: Read of uninitialized memory in find_signature. wsbuglink:16461[].
-* Upgrades on Windows do not retain existing optional features unless explicitly requested, resulting in accidental removal of features. wsbuglink:18925[].
-* Wireshark.exe version 4.6.5 is twice as large as version 4.6.4. wsbuglink:21233[].
-* MACsec dissector global-buffer-overflow. wsbuglink:21235[].
-* Wireshark 4.6.5 does not run on Windows 10 version 1809 (including Server 2019 and some LTSC versions) wsbuglink:21237[].
-* Fuzz job issue: fuzz-2026-05-02-14184750352.pcap. wsbuglink:21240[].
-* packet-bacapp: rename aurth-request to auth-request. wsbuglink:21246[].
-* Fuzz job issue: randpkt-2026-05-10-14293434231.pcap. wsbuglink:21253[].
-
-=== Wireshark 4.6.5 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.5.html[release notes]
-for details:
-
-* wssalink:2026-08[]
-Monero dissector crash.
-wsbuglink:21066[].
-cveidlink:2026-5409[].
-
-* wssalink:2026-09[]
-BT-DHT dissector crash.
-wsbuglink:21067[].
-cveidlink:2026-5408[].
-
-* wssalink:2026-10[]
-FC-SWILS dissector crash.
-wsbuglink:21070[].
-cveidlink:2026-5406[].
-
-* wssalink:2026-11[]
-SMB2 dissector infinite loop.
-wsbuglink:21073[].
-cveidlink:2026-5407[].
-
-* wssalink:2026-12[]
-ICMPv6 dissector crash.
-wsbuglink:21077[].
-cveidlink:2026-5299[].
-
-* wssalink:2026-13[]
-AFP dissector crash.
-wsbuglink:21088[].
-cveidlink:2026-5401[].
-
-* wssalink:2026-14[]
-TLS dissector crash and possible code execution.
-wsbuglink:21090[].
-cveidlink:2026-5402[].
-
-* wssalink:2026-15[]
-K12 RF5 file parser crash.
-wsbuglink:21094[].
-cveidlink:2026-5404[].
-
-* wssalink:2026-16[]
-SBC codec crash and possible code execution.
-wsbuglink:21103[].
-cveidlink:2026-5403[].
-
-* wssalink:2026-17[]
-RDP dissector crash and possible code execution.
-wsbuglink:21105[].
-cveidlink:2026-5405[].
-
-* wssalink:2026-18[]
-AMR-NB codec crash.
-wsbuglink:21111[].
-cveidlink:2026-5654[].
-
-* wssalink:2026-19[]
-SDP dissector crash.
-wsbuglink:2111[].
-cveidlink:2026-5655[].
-
-* wssalink:2026-20[]
-iLBC audio codec crash.
-wsbuglink:21113[].
-cveidlink:2026-5657[].
-
-* wssalink:2026-21[]
-Profile import crash and possible code execution.
-wsbuglink:21115[].
-cveidlink:2026-5656[].
-
-* wssalink:2026-22[]
-DCP-ETSI protocol dissector crash.
-wsbuglink:21122[].
-cveidlink:2026-5653[].
-
-* wssalink:2026-23[]
-BEEP protocol dissector crash.
-wsbuglink:21120[].
-cveidlink:2026-6538[].
-
-* wssalink:2026-24[]
-ZigBee protocol dissector crash.
-wsbuglink:21125[].
-cveidlink:2026-6537[].
-
-* wssalink:2026-25[]
-DLMS/COSEM protcol dissector infinite loop.
-wsbuglink:21065[].
-cveidlink:2026-6536[].
-
-* wssalink:2026-26[]
-Dissection engine zlib decompression crash.
-wsbuglink:21097[], wsbuglink:21098[].
-cveidlink:2026-6535[].
-
-* wssalink:2026-27[]
-USB HID protocol dissector infinite loop.
-wsbuglink:21121[].
-cveidlink:2026-6534[].
-
-* wssalink:2026-28[]
-Dissection engine LZ77 decompression crash.
-wsbuglink:21127[].
-cveidlink:2026-6533[].
-
-* wssalink:2026-29[]
-Kismet protocol dissector crash.
-wsbuglink:21129[], wsbuglink:21128[].
-cveidlink:2026-6532[].
-
-* wssalink:2026-30[]
-SANE protocol dissector infinite loop.
-wsbuglink:21139[].
-cveidlink:2026-6531[].
-
-* wssalink:2026-31[]
-DCP-ETSI protocol dissector crash.
-wsbuglink:21144[].
-cveidlink:2026-6530[].
-
-* wssalink:2026-32[]
-iLBC audio codec crash.
-wsbuglink:21145[].
-cveidlink:2026-6529[].
-
-* wssalink:2026-33[]
-TLS dissector infinite loop.
-wsbuglink:21151[].
-cveidlink:2026-6528[].
-
-* wssalink:2026-34[]
-ASN.1 PER protocol dissector crash.
-wsbuglink:21149[].
-cveidlink:2026-6527[].
-
-* wssalink:2026-35[]
-RTSP protocol dissector crash.
-wsbuglink:21173[].
-cveidlink:2026-6526[].
-
-* wssalink:2026-36[]
-IEEE 802.11 protocol dissector crash.
-wsbuglink:21008[].
-cveidlink:2026-6525[].
-
-* wssalink:2026-37[]
-MySQL protocol dissector crash.
-wsbuglink:21172[].
-cveidlink:2026-6524[].
-
-* wssalink:2026-38[]
-GNW protocol dissector infinite loop.
-wsbuglink:21177[].
-cveidlink:2026-6523[].
-
-* wssalink:2026-39[]
-OpenFlow v5 protocol dissector infinite loops.
-wsbuglink:21182[], wsbuglink:21188[].
-cveidlink:2026-6521[].
-
-* wssalink:2026-40[]
-OpenFlow v6 protocol dissector infinite loop.
-wsbuglink:21181[].
-cveidlink:2026-6520[].
-
-* wssalink:2026-41[]
-MBIM dissector infinite loop.
-wsbuglink:21184[].
-cveidlink:2026-6519[].
-
-* wssalink:2026-42[]
-RPKI-Router protocol dissector infinite loop.
-wsbuglink:21186[].
-cveidlink:2026-6522[].
-
-* wssalink:2026-43[]
-GSM RP protocol dissector crash.
-wsbuglink:21189[].
-cveidlink:2026-6870[].
-
-* wssalink:2026-44[]
-WebSocket protocol dissector crash.
-wsbuglink:21190[].
-cveidlink:2026-6869[].
-
-* wssalink:2026-45[]
-SMB2 protocol dissector crash.
-wsbuglink:21191[].
-
-* wssalink:2026-46[]
-HTTP protocol dissector crash.
-wsbuglink:21185[].
-cveidlink:2026-6868[].
-
-* wssalink:2026-47[]
-Sharkd utility memory leak.
-wsbuglink:21214[].
-
-* wssalink:2026-48[]
-Sharkd utility crash.
-wsbuglink:21206[].
-
-* wssalink:2026-49[]
-Sharkd utility crash.
-wsbuglink:21207[].
-
-* wssalink:2026-50[]
-UDS protocol dissector infinite loop.
-wsbuglink:21225[].
-
-* WSUG: Enabled Protocols dialog needs an update. wsbuglink:20871[].
-* Build failure with Qt 6.11 beta. wsbuglink:20965[].
-* BLF: Missing 4 byte alignment makes BLF files incompatible with Vector's tools. wsbuglink:21017[].
-* SMB2 decryption keys in smb2_seskey_list are not loaded on restart. wsbuglink:21036[].
-* Fuzz job issue: fuzz-2026-03-01-13307044520.pcap. wsbuglink:21049[].
-* Window with a message for ssh_strict_fopen. wsbuglink:21051[].
-* IEEE 1722.1 Dissector for Stream Input Counters displays FRAMES_RX as "Stream Packets TX" wsbuglink:21055[].
-* Wireshark 4.6.4 crashes. wsbuglink:21058[].
-* Compilation error with Lua-5.5. wsbuglink:21060[].
-* BSOD issue affecting Npcap 1.86. wsbuglink:21062[].
-* Adding descriptions to BLF interfaces broke the Capture File Properties view. wsbuglink:21069[].
-* Assertion Failure in ws_buffer_remove_start via Malformed Packet Manipulation. wsbuglink:21078[].
-* Modbus/RTU fails to decode broadcast frames. wsbuglink:21091[].
-* Lua not included unless CMake version >= 3.25. wsbuglink:21093[].
-* sshdump: Regression in v4.6.4 – Failed to resolve hostname aliases from .ssh/config on Windows. wsbuglink:21114[].
-* Fuzz job crash: fuzz-2026-03-25-13637733472.pcap. wsbuglink:21117[].
-* dumpcap TCP@ section-header parsing remote heap corruption. wsbuglink:21132[].
-* Netflix BBLog EVENT parsing crash. wsbuglink:21133[].
-* On Windows, the Follow Stream feature output is shown in proportional font after zooming. wsbuglink:21137[].
-* RTP Streams dialog Time of Day inconsistent behavior. wsbuglink:21138[].
-* Sysdig Event Block Integer Underflow. wsbuglink:21140[].
-* RF4CE NWK Dissector Heap Buffer Overflow (crash/OOB) wsbuglink:21150[].
-* NetXray/Sniffer Padding Integer Underflow. wsbuglink:21152[].
-* HTTP/2 ALTSVC/PRIORITY_UPDATE Frame Length Truncation (24-bit to 16-bit) wsbuglink:21155[].
-* Snort config parser 2 buffer overflows. wsbuglink:21165[].
-* ESP NULL Encryption Integer Underflow triggers Heap Overflow. wsbuglink:21166[].
-* Heap buffer overflow in ISO 8583 dissector bin2hex() wsbuglink:21171[].
-* wslua: NULL pointer dereference in get_dissector when passing an invalid GUID string to an FT_GUID table. wsbuglink:21194[].
-* Fuzz job UTF-8 encoding issue: fuzz-2026-04-16-13947406035.pcap. wsbuglink:21199[].
-* Qt: Waterfall bars misisng in conversation overview when "limit to display filter" is active. wsbuglink:21204[].
-* text2pcap: heap-buffer-overflow in memmove when -P"dissector" payload exceeds reserved space. wsbuglink:21208[].
-* text2pcap : Stack overflow via unbounded "g_alloca" in regex "seqno" wsbuglink:21209[].
-* editcap: --novlan integer underflow in sll_remove_vlan_info causes denial of service on short SLL captures. wsbuglink:21210[].
-* NAS-5GS - Mapping issue between IEI 0x7B and "S-NSSAI location validity information" IE. wsbuglink:21218[].
-* RTP-MIDI dissector reports incorrect value for MTC Quarter Frame data. wsbuglink:21231[].
-
-=== Wireshark 4.6.4 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.4.html[release notes]
-for details:
-
-* wssalink:2026-05[]
-USB HID dissector memory exhaustion.
-wsbuglink:20972[].
-cveidlink:2026-3201[].
-
-* wssalink:2026-06[]
-NTS-KE dissector crash.
-wsbuglink:21000[].
-cveidlink:2026-3202[].
-
-* wssalink:2026-07[]
-RF4CE Profile dissector crash.
-wsbuglink:21009[].
-cveidlink:2026-3203[].
-
-* Wireshark doesn't start if Npcap is configured with "Restrict Npcap driver's Access to Administrators only" wsbuglink:20828[].
-* PQC signature algorithm not reported in signature_algorithms. wsbuglink:20953[].
-* Unexpected JA4 ALPN values when space characters sent. wsbuglink:20966[].
-* Expert Info seems to have quadratic performance (gets slower and slower) wsbuglink:20970[].
-* IKEv2 EMERGENCY_CALL_NUMBERS Notify payload cannot be decoded. wsbuglink:20974[].
-* TShark and editcap fails with segmentation fault when output format (-F) set to blf. wsbuglink:20976[].
-* Fuzz job crash: fuzz-2026-02-01-12944805400.pcap [Zigbee Direct Tunneling Zigbee NWK PDUs NULL hash table] wsbuglink:20977[].
-* Wiretap writes pcapng custom options with string values invalidly. wsbuglink:20978[].
-* RDM status in Output Status (GoodOutputB) field incorrectly decoded in Art-Net PollReply dissector. wsbuglink:20980[].
-* Wiretap writes invalid pcapng Darwin option blocks. wsbuglink:20991[].
-* TDS dissector desynchronizes on RPC DATENTYPE (0x28) due to incorrect expectation of TYPE_VARLEN (MaxLen) wsbuglink:21001[].
-* Only first HTTP POST is parsed inside SOCKS with "Decode As". wsbuglink:21006[].
-* TShark: Bogus "Dissector bug" messages generated in pipelines where something after tshark exits before reading all its input. wsbuglink:21011[].
-* New Diameter RAT-Types in TS 29.212 not decoded. wsbuglink:21012[].
-* Malformed packet error on Trigger HE Basic frames. wsbuglink:21032[].
-
-
-=== Wireshark 4.6.3 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.3.html[release notes]
-for details:
-
-* wssalink:2026-01[]
-BLF file parser crash.
-wsbuglink:20880[].
-
-* wssalink:2026-02[]
-IEEE 802.11 dissector crash.
-wsbuglink:20939[].
-
-* wssalink:2026-03[]
-SOME/IP-SD dissector crash.
-wsbuglink:20945[].
-
-* wssalink:2026-04[]
-HTTP3 dissector infinite loop.
-wsbuglink:20944[].
-
-* Wireshark 4.6.0 build fails on Solaris: pcapio.c:441:21: error: request for member '_flag' in something not a structure or union. wsbuglink:20773[].
-* RTP Player streams cannot be stopped. wsbuglink:20879[].
-* Additional ABI/API compatibility fixes. wsbuglink:20881[].
-* Missing data in pinfo->cinfo in HomePlug message CM_ATTEN_CHAR.IND. wsbuglink:20893[].
-* maxmind_db: crash when switching from a profile where it's disabled to one where it's enabled. wsbuglink:20903[].
-* Compilation warning or error if CFLAGS defines _FORTIFY_SOURCE to other than 3 without first undefining it. wsbuglink:20904[].
-* IEEE 802.11: Incorrect parsing of QoS and Mesh Control Field when the frame body contains an A-MSDU. wsbuglink:20905[].
-* OSS-Fuzz 473164101: Heap-buffer-overflow in dissect_idn_laser_data. wsbuglink:20936[].
-* Bug in decoding 5G NAS message - Extended CAG information list IE. wsbuglink:20946[].
-
-=== Wireshark 4.6.2 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.2.html[release notes]
-for details:
-
-This release fixes an API/ABI change that was introduced in Wireshark 4.6.1, which caused a compatibility issue with plugins built for Wireshark 4.6.0. wsbuglink:20881[].
-
-* wssalink:2025-07[]
-HTTP3 dissector crash.
-wsbuglink:20860[].
-
-* wssalink:2025-08[]
-MEGACO dissector infinite loop.
-wsbuglink:20884[].
-
-* ws_base32_decode should be named *_encode ? wsbuglink:20754[].
-* Omnipeek files not working in 4.6.1. wsbuglink:20876[].
-* Stack buffer overflow in wiretap/ber.c (ber_open) wsbuglink:20878[].
-* Plugins incompatibility between 4.6.0 & 4.6.1. wsbuglink:20881[].
-* Fuzz job crash: fuzz-2025-11-30-12266121180.pcap. wsbuglink:20883[].
-
-* The Windows installers now ship with the Visual C++ Redistributable version 14.44.35112.
-  They previously shipped with 14.40.33807.
-
-=== Wireshark 4.6.1 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.1.html[release notes]
-for details:
-
-* wssalink:2025-05[] BPv7 dissector crash. wsbuglink:20770[].
-* wssalink:2025-06[] Kafka dissector crash. wsbuglink:20823[].
-
-* L2CAP dissector doesn't understand retransmission mode. wsbuglink:2241[].
-* DNS HIP dissector labels PK algorithm as HIT length. wsbuglink:20768[].
-* clang-cl error in "packet-zbee-direct.c" wsbuglink:20776[].
-* Writing to an LZ4-compressed output file might fail. wsbuglink:20779[].
-* endian.h conflics with libc for building plugins. wsbuglink:20786[].
-* TShark crash caused by Lua plugin. wsbuglink:20794[].
-* Wireshark stalls for a few seconds when selecting specific messages. wsbuglink:20797[].
-* TLS Abbreviated Handshake Using New Session Ticket. wsbuglink:20802[].
-* Custom websocket dissector does not run. wsbuglink:20803[].
-* WINREG QueryValue triggers dissector bug in packet-dcerpc.c. wsbuglink:20813[].
-* Lua: FileHandler causing crash when reading packets. wsbuglink:20817[].
-* Apply As Filter for field with FT_NONE and BASE_NONE for a single byte does not use the hex value. wsbuglink:20818[].
-* Layout preference Pane 3 problem with selecting Packet Diagram or None. wsbuglink:20819[].
-* TCP dissector creates invalid packet diagram. wsbuglink:20820[].
-* Too many nested VLAN tags when opening as File Format. wsbuglink:20831[].
-* Omnipeek files not working in 4.6.0. wsbuglink:20842[].
-* Support UTF-16 strings in the IsoBus dissector for the string operations. wsbuglink:20845[].
-* SNMP getBulkRequest request-id does not get filtered for correctly. wsbuglink:20849[].
-* Fuzz job issue: fuzz-2025-11-12-12064814316.pcap. wsbuglink:20852[].
-* UDP Port 853 (DoQ) should be decoded as QUIC. wsbuglink:20856[].
-
-=== Wireshark 4.6.0 included the following changes.
-
-See the
-https://www.wireshark.org/docs/relnotes/wireshark-4.6.0.html[release notes]
-for details:
-
-Wireshark can dissect process information, packet metadata, flow IDs, drop information, and other information provided by `tcpdump` on macOS.
-
-We now ship universal macOS installers instead of separate packages for Arm64 and Intel. wsbuglink:17294[]
-
-WinPcap is no longer supported. On Windows, use Npcap instead, uninstalling WinPcap if necessary.
-The final release of WinPcap was version 4.1.3 in 2013.
-It only supports up to Windows 8, which is no longer supported by Microsoft or Wireshark.
-
-A new “Plots” dialog has been added, which provides scatter plots in contrast to the “I/O Graphs” dialog, which provides histograms.
-The Plots dialog window supports multiple plots, markers, and automatic scrolling.
-
-Live captures can be compressed while writing. (Previously there was
-support for compressing when performing multiple file capture, at file
-rotation time.) The `--compress` option in TShark works on live captures
-as well. wsbuglink:9311[]
-
-Wireshark can now decrypt NTP packets using NTS (Network Time Security). To decrypt packets,
-the NTS-KE (Network Time Security Key Establishment Protocol) packets need to be present,
-alongside the TLS client and exporter secrets.
-
-Wireshark’s ability to decrypt MACsec packets has been expanded to either
-use the SAK unwrapped by the MKA dissector, or the PSK configured in the
-MACsec dissector.
-
-The TCP Stream Graph axes now use units with SI prefixes. wsbuglink:20197[]
-
-Display filter functions `float` and `double` are added to allow explicitly
-converting field types like integers and times to single and double precision
-floats.
-
-A menu:Edit[Copy,as HTML] menu item has been added, along with associated context menu items and a keyboard shortcut.
-
-The Conversations and Endpoints dialogs have an option to display byte counts and bit rates in exact counts instead of human-readable numbers with SI units.
-
-The color scheme can be set to Light or Dark mode independently of the current OS default on Windows and macOS, if Wireshark is built with Qt 6.8 or later as the official installers are. wsbuglink:19328[]
+QUIT messages can now be sent over the optional control pipe to extcaps,
+which can be used to gracefully shutdown on all operating systems, not just
+those that support SIGTERM. This uses the existing optional control pipe
+interface, with the message type "Q" (as also supported by dumpcap.)
+Previously extcaps only used this pipe for "T" control messages. Extcaps
+signal support for the control pipe via adding a `{control=N}` entry to the
+interface description returned from `--extcap-interfaces`; `N` is a bitfield
+where `1` indicates support for the "T" toolbar messages and `2` indicates
+support for the "Q" quit message (and `3` indicates support for both.)
+For backwards compatibility, if an extcap describe toolbar controls in
+its interface configuration it will be assumed to have "T" support.
+More information is available in the Developer's Guide.
 
 == Getting Wireshark
 
@@ -1041,6 +456,9 @@ https://gitlab.com/wireshark/wireshark/-/issues[the issue tracker].
 
 You can learn protocol analysis and meet Wireshark’s developers at
 https://sharkfest.wireshark.org[SharkFest].
+
+Official Wireshark training and certification are available from
+https://www.wireshark.org/certifications[the Wireshark Foundation].
 
 == How You Can Help
 

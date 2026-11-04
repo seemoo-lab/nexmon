@@ -28,6 +28,7 @@ editcap: The available encapsulation types for the "-T" flag are:
     dbus - D-Bus
     dct2000 - Catapult DCT2000
     dect_nr - DECT-2020 New Radio (NR) MAC layer
+    dect_nr_tap - DECT-2020 New Radio (NR) TAP header
     docsis - Data Over Cable Service Interface Specification
     docsis31_xra31 - DOCSIS with Excentis XRA pseudo-header
     dpauxmon - DisplayPort AUX channel with Unigraf pseudo-header
@@ -58,6 +59,7 @@ editcap: The available encapsulation types for the "-T" flag are:
     gfp-t - ITU-T G.7041/Y.1303 Generic Framing Procedure Transparent mode
     gprs-llc - GPRS LLC
     gsm_um - GSM Um Interface
+    gsmtap_um - GSMTAP Um
     hhdlc - HiPath HDLC
     i2c-linux - I2C with Linux-specific pseudo-header
     ieee-802-11 - IEEE 802.11 Wireless LAN
@@ -117,6 +119,7 @@ editcap: The available encapsulation types for the "-T" flag are:
     loop - OpenBSD loopback
     loratap - LoRaTap
     ltalk - Localtalk
+    m_module - Bachmann M-Module file
     mdb - MDB (Multi-Drop Bus)
     message_analyzer_wfp_capture2_v4 - Message Analyzer WFP Capture2 v4
     message_analyzer_wfp_capture2_v6 - Message Analyzer WFP Capture2 v6
@@ -156,6 +159,7 @@ editcap: The available encapsulation types for the "-T" flag are:
     ppp - PPP
     ppp-with-direction - PPP with Directional Info
     pppoes - PPP-over-Ethernet session
+    procmon - Microsoft Process Monitor file
     raw-icmp-nettl - Raw ICMP with nettl headers
     raw-icmpv6-nettl - Raw ICMPv6 with nettl headers
     raw-telnet-nettl - Raw telnet with nettl headers
@@ -225,3 +229,4 @@ editcap: The available encapsulation types for the "-T" flag are:
     xeth - Xerox 3MB Ethernet
     zbncp - ZBOSS NCP
     zwave-serial - Z-Wave Serial API packets
+    zwave-tap - Z-Wave Wireless with TAP pseudo-header

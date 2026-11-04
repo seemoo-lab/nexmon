@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Validate the commit message.
+
+msgfile="$1"
+topdir="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# Warn (do not block) if the Assisted-by trailer is missing.
+if [ -f "$msgfile" ] && grep -qv '^#' && ! grep -qi '^Assisted-by:' "$msgfile"; then
+    echo "Warning: Commit message is missing the 'Assisted-by: [tool(s)]' trailer." >&2
+fi
+
+"$topdir/tools/validate-commit.py" --commitmsg "$msgfile"
+
+#
+#  Editor modelines
+#
+#  Local Variables:
+#  c-basic-offset: 4
+#  tab-width: 8
+#  indent-tabs-mode: nil
+#  End:
+#
+#  ex: set shiftwidth=4 tabstop=8 expandtab:
+#  :indentSize=4:tabSize=8:noTabs=true:
+#

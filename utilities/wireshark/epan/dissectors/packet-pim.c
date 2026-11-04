@@ -12,13 +12,12 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
-#include <epan/afn.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/in_cksum.h>
 #include <epan/to_str.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
 #include "packet-igmp.h"
 
@@ -495,7 +494,7 @@ dissect_pimv1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     proto_tree *pim_tree = NULL;
     proto_item *ti;
     proto_tree *pimopt_tree = NULL;
-    int offset = 0;
+    unsigned offset = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "PIMv1");
     col_clear(pinfo->cinfo, COL_INFO);
@@ -796,7 +795,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
     int ja_length_sum = 0;
 
     af = tvb_get_uint8(tvb, offset);
-    if (af != AFNUM_INET && af != AFNUM_INET6) {
+    if (af != AFNUM_IP && af != AFNUM_IP6) {
         /*
          * We don't handle the other formats, and addresses don't include
          * a length field, so we can't even show them as raw bytes.
@@ -819,7 +818,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
     switch (at) {
     case pimv2_unicast:
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             len = 4;
             ipv4 = tvb_get_ipv4(tvb, offset + 2);
             if (label)
@@ -833,7 +832,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
             }
             break;
 
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             len = 16;
             tvb_get_ipv6(tvb, offset + 2, &ipv6);
             if (label)
@@ -851,10 +850,10 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
         proto_tree_add_item(addr_tree, hf_pim_addr_af, tvb, offset, 1, ENC_NA);
         proto_tree_add_item(addr_tree, hf_pim_addr_et, tvb, offset+1, 1, ENC_NA);
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             proto_tree_add_item(addr_tree, hf_pim_unicast_addr_ipv4, tvb, offset+2, 4, ENC_BIG_ENDIAN);
             break;
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             proto_tree_add_item(addr_tree, hf_pim_unicast_addr_ipv6, tvb, offset+2, 16, ENC_NA);
             break;
         }
@@ -878,14 +877,14 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
                     case PIM_JOIN_ATTRIBUTE_TYPE_RLOC:
                         ja_af = tvb_get_uint8(tvb, offset);
                         switch(ja_af) {
-                            case AFNUM_INET:
+                            case AFNUM_IP:
                                 rloc_tree = proto_tree_add_ipv4_format(ja_tree, hf_ip4, tvb, ja_offset, ja_length,
                                                                        ipv4, "RLOC: %s", tvb_ip_to_str(pinfo->pool, tvb, ja_offset+ 1));
                                 rloc_sub_tree = proto_item_add_subtree(rloc_tree, ett_pim);
                                 proto_tree_add_item(rloc_sub_tree, hf_pim_addr_af, tvb, ja_offset, 1, ENC_NA);
                                 proto_tree_add_item(rloc_sub_tree, hf_pim_rloc_addr_ipv4, tvb, ja_offset + 1, 4, ENC_BIG_ENDIAN);
                                 break;
-                            case AFNUM_INET6:
+                            case AFNUM_IP6:
                                 rloc_tree = proto_tree_add_ipv6_format(ja_tree, hf_ip6, tvb, ja_offset, ja_length,
                                                                        &ipv6, "RLOC: %s", tvb_ip_to_str(pinfo->pool, tvb, ja_offset+ 1));
                                 rloc_sub_tree = proto_item_add_subtree(rloc_tree, ett_pim);
@@ -909,7 +908,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
     case pimv2_group:
         mask_len = tvb_get_uint8(tvb, offset + 3);
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             len = 4;
             ipv4 = tvb_get_ipv4(tvb, offset + 4);
             if (label)
@@ -925,7 +924,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
             proto_item_append_text(ti, "/%u", mask_len);
             break;
 
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             len = 16;
             tvb_get_ipv6(tvb, offset + 4, &ipv6);
             if (label)
@@ -947,10 +946,10 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
                 ett_pim_addr_flags, pim_group_addr_flags, ENC_BIG_ENDIAN);
         proto_tree_add_item(addr_tree, hf_pim_mask_len, tvb, offset+3, 1, ENC_NA);
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             proto_tree_add_item(addr_tree, hf_pim_group_ip4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
             break;
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             proto_tree_add_item(addr_tree, hf_pim_group_ip6, tvb, offset+4, 16, ENC_NA);
             break;
         }
@@ -961,7 +960,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
         flags = tvb_get_uint8(tvb, offset + 2);
         mask_len = tvb_get_uint8(tvb, offset + 3);
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             len = 4;
             ipv4 = tvb_get_ipv4(tvb, offset + 4);
             if (label)
@@ -977,7 +976,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
             proto_item_append_text(ti, "/%u", mask_len);
             break;
 
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             len = 16;
             tvb_get_ipv6(tvb, offset + 4, &ipv6);
             if (label)
@@ -1006,10 +1005,10 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
                 ett_pim_addr_flags, pim_source_addr_flags, ENC_BIG_ENDIAN);
         proto_tree_add_item(addr_tree, hf_pim_mask_len, tvb, offset+3, 1, ENC_NA);
         switch (af) {
-        case AFNUM_INET:
+        case AFNUM_IP:
             proto_tree_add_item(addr_tree, hf_pim_source_ip4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
             break;
-        case AFNUM_INET6:
+        case AFNUM_IP6:
             proto_tree_add_item(addr_tree, hf_pim_source_ip6, tvb, offset+4, 16, ENC_NA);
             break;
         }
@@ -1042,14 +1041,14 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
                     case PIM_JOIN_ATTRIBUTE_TYPE_RLOC:
                         ja_af = tvb_get_uint8(tvb, offset);
                         switch(ja_af) {
-                            case AFNUM_INET:
+                            case AFNUM_IP:
                                 rloc_tree = proto_tree_add_ipv4_format(ja_tree, hf_ip4, tvb, ja_offset, ja_length,
                                                                        ipv4, "RLOC: %s", tvb_ip_to_str(pinfo->pool, tvb, ja_offset+ 1));
                                 rloc_sub_tree = proto_item_add_subtree(rloc_tree, ett_pim);
                                 proto_tree_add_item(rloc_sub_tree, hf_pim_addr_af, tvb, ja_offset, 1, ENC_NA);
                                 proto_tree_add_item(rloc_sub_tree, hf_pim_rloc_addr_ipv4, tvb, ja_offset + 1, 4, ENC_BIG_ENDIAN);
                                 break;
-                            case AFNUM_INET6:
+                            case AFNUM_IP6:
                                 rloc_tree = proto_tree_add_ipv6_format(ja_tree, hf_ip6, tvb, ja_offset, ja_length,
                                                                        &ipv6, "RLOC: %s", tvb_ip_to_str(pinfo->pool, tvb, ja_offset+ 1));
                                 rloc_sub_tree = proto_item_add_subtree(rloc_tree, ett_pim);
@@ -1086,7 +1085,7 @@ dissect_pim_addr(packet_info *pinfo, proto_tree* tree, tvbuff_t *tvb, int offset
  */
 static int
 dissect_pim(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
-    int offset = 0;
+    unsigned offset = 0;
     uint8_t pim_typever;
     uint8_t pim_subtype;
     uint8_t pim_bidir_subtype = 0;
@@ -1300,7 +1299,7 @@ dissect_pim(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             case PIM_HELLO_VAR_ADDR_LST: /* address list */
             case PIM_HELLO_ADDR_LST:     /* address list (old implementations) */
             {
-                int i;
+                unsigned i;
                 proto_tree *sub_tree = NULL;
 
                 sub_tree = proto_tree_add_subtree_format(opt_tree, tvb, offset, 4 + opt_len,

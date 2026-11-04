@@ -7,7 +7,9 @@
 	<key>CFBundleExecutable</key>
 	<string>Wireshark</string>
 	<key>CFBundleIconFile</key>
-	<string>Wireshark.icns</string>
+	<string>Wireshark</string>
+	<key>CFBundleIconName</key>
+	<string>Wireshark</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.wireshark.Wireshark</string>
 	<key>CFBundleDocumentTypes</key>

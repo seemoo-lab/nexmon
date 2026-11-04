@@ -1305,10 +1305,15 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           if (!s)
             {
               rc = GPG_ERR_NO_OBJ;
+              sexp_release (list);
               goto leave;
             }
           ctx->saltlen = (unsigned int)strtoul (s, NULL, 10);
+          if (ctx->saltlen > 16384)
+            rc = GPG_ERR_TOO_LARGE;
           sexp_release (list);
+          if (rc)
+            goto leave;
         }
 
       /* Get optional RANDOM-OVERRIDE.  */
@@ -1416,6 +1421,7 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           if (!s)
             {
               rc = GPG_ERR_NO_OBJ;
+              sexp_release (list);
               goto leave;
             }
           ctx->saltlen = (unsigned int)strtoul (s, NULL, 10);

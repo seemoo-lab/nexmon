@@ -1,4 +1,4 @@
-/* packet-silabs_dch.c
+/* packet-silabs-dch.c
  * Routines for Silicon Labs Debug Channel dissection
  * Copyright 2023, Dhruv Chandwani <dhchandw@silabs.com>
  *
@@ -19,20 +19,22 @@
  *
  * Silabs Debug Channel can also be used for other event-based data transfer, but PTI is the primary use case.
  *
- * Spec - https://github.com/SiliconLabs/java_packet_trace_library/blob/master/doc/debug-channel.md
+ * Spec - https://github.com/SiliconLabsSoftware/java-pti/blob/main/doc/debug-channel.md
  */
 
 /* Include files */
 #include "config.h"
+#define WS_LOG_DOMAIN "silabs_dch"
 #include <wireshark.h>
 #include <wiretap/wtap.h>
 #include <wsutil/bitswap.h>
 #include <epan/packet.h> /* Required dissection API header */
+#include <epan/exceptions.h>
+#include <epan/show_exception.h>
 #include <epan/expert.h> /* Include only as needed */
 #include <epan/prefs.h>  /* Include only as needed */
-#include "packet-tls.h"
-
-#define WS_LOG_DOMAIN "silabs_dch"
+#include "packet-ieee802154.h"
+#include "packet-btle.h"
 
 /* Protocol identifier, populated by registration */
 static int proto_silabs_dch;
@@ -58,7 +60,7 @@ static int hf_efr32_syncword;
 static int hf_efr32_radiocfg;
 static int hf_efr32_phyid;
 static int hf_efr32_radiocfg_addedbytes;
-static int hf_ef32_radiocfg_blephyid;
+static int hf_efr32_radiocfg_blephyid;
 static int hf_efr32_radiocfg_regionid;
 static int hf_efr32_radiocfg_2bytephr;
 static int hf_efr32_radiocfg_softmodem;
@@ -128,6 +130,9 @@ static expert_field ei_silabs_dch_invalid_appendedinfolen;
 #define EFR32_APPENDEDINFOCFG_LENGTH_MASK 0x38
 #define EFR32_APPENDEDINFOCFG_VERSION_MASK 0x07
 
+/* BLE advertising PDU types (BT Core Spec Vol 6, Part B, 2.3) */
+#define BLE_ADV_PDU_TYPE_CONNECT_IND 0x05
+
 /* Bit-masks for Wi-SUN PHY Header */
 #define PHR_FSK_MS 0x8000
 #define PHR_FSK_FCS 0x1000
@@ -175,6 +180,7 @@ typedef struct
 {
   uint8_t length;
   uint8_t version;
+  bool isRx;
   bool hasRssi;
   bool hasSyncword;
   bool hasRadioCfg;
@@ -197,7 +203,18 @@ typedef enum
 static dissector_handle_t silabs_dch_handle;
 
 /* Handoff dissector handles */
+static dissector_handle_t ieee802154fcs_handle;
 static dissector_handle_t ieee802154nofcs_handle;
+static dissector_handle_t btle_handle;
+
+/* BLE connection tracking for direction inference */
+typedef struct {
+    uint8_t device_role;  /* BTLE_DIR_CENTRAL_PERIPHERAL or BTLE_DIR_PERIPHERAL_CENTRAL */
+} silabs_ble_connection_info_t;
+
+static wmem_tree_t *silabs_ble_connections;
+
+static bool pref_ble_sniffer_mode;
 
 // Function declarations
 /* Prototypes for required functions. */
@@ -207,16 +224,22 @@ void proto_register_silabs_dch(void);
 /* Dissector functions */
 static int dissect_silabs_dch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_);
 static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
-static int dissect_silabs_wisun_phr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len, int *crc_len);
+static void dissect_silabs_ieee802154_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, int ota_payload_len, int crc_len);
+static void dissect_silabs_ble_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, int ota_payload_len, const Efr32AppendedInfo *appended_info);
+static int dissect_silabs_wisun_phr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len, int *crc_len);
 
 /* Helper functions */
 static const Efr32AppendedInfo *get_efr32_appended_info(wmem_allocator_t *scope, uint8_t appended_info_cfg);
 static const ProtocolInfo *get_protocol_info(wmem_allocator_t *scope, uint8_t protocol_id);
-static int decode_wisun_phr_type(tvbuff_t *tvb, int offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len);
-static int decode_channel_number(tvbuff_t *tvb, proto_tree *tree, int offset, uint8_t radioinfo_channel, uint8_t radiocfg_id, uint8_t protocol_id);
+static int decode_wisun_phr_type(tvbuff_t *tvb, unsigned offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len);
+static int decode_channel_number(tvbuff_t *tvb, proto_tree *tree, unsigned offset, uint8_t radioinfo_channel, uint8_t radiocfg_id, uint8_t protocol_id);
 static uint16_t reverse_bits_uint16(uint16_t value);
 static uint8_t get_phr_length(uint8_t protocol_id, tvbuff_t *tvb, int last_index, uint8_t radioCfgLen);
 static uint8_t get_phy_mode_id(uint8_t protocol_id, tvbuff_t *tvb, int last_index, uint8_t radioCfgLen);
+
+/* BLE direction tracking helpers */
+static void store_ble_connection_role(packet_info *pinfo, uint32_t interface_id, uint32_t access_address, uint8_t device_role);
+static uint8_t lookup_ble_connection_role(uint32_t interface_id, uint32_t access_address);
 // --------------------
 
 /* Debug channel message types*/
@@ -394,7 +417,7 @@ static int dissect_silabs_dch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   proto_item *dch_root = NULL;
   proto_tree *dch_tree = NULL;
   tvbuff_t *next_tvb;
-  int offset = 0;
+  unsigned offset = 0;
   uint32_t dch_version, dch_message_type;
   const char *dch_message_type_str;
 
@@ -451,7 +474,7 @@ static int dissect_silabs_dch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     offset = dissect_silabs_efr32(next_tvb, pinfo, tree);
     break;
   default:
-    proto_tree_add_expert_format(dch_tree, pinfo, &ei_silabs_dch_unsupported_type, tvb, offset, -1, "Debug message type - %s not supported yet", dch_message_type_str);
+    proto_tree_add_expert_format_remaining(dch_tree, pinfo, &ei_silabs_dch_unsupported_type, tvb, offset, "Debug message type - %s not supported yet", dch_message_type_str);
     break;
   }
 
@@ -467,12 +490,11 @@ static int dissect_silabs_dch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
  * @return offset after dissection
  *
  */
-static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
   proto_item *efr32_root;
-  proto_item *efr32_tree;
-  tvbuff_t *next_tvb;
-  int offset = 0;
+  proto_tree *efr32_tree;
+  unsigned offset = 0;
 
   // create the EFR32 subtree
   efr32_root = proto_tree_add_item(tree, hf_efr32, tvb, offset, -1, ENC_NA);
@@ -498,7 +520,7 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
   // check if appended info len is invalid
   if (appended_info->isInvalid)
   {
-    proto_tree_add_expert_format(efr32_tree, pinfo, &ei_silabs_dch_invalid_appendedinfolen, tvb, offset, -1, "Invalid Appended Info Length");
+    proto_tree_add_expert_format_remaining(efr32_tree, pinfo, &ei_silabs_dch_invalid_appendedinfolen, tvb, offset, "Invalid Appended Info Length");
     return offset;
   }
 
@@ -519,6 +541,9 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
   { // Further dissect Wi-SUN PHR
     uint8_t phy_mode_id = get_phy_mode_id(protocol_id, tvb, last_index, appended_info->radioCfgLen);
     phr_len = dissect_silabs_wisun_phr(tvb, pinfo, efr32_tree, offset, phr_len, phy_mode_id, ota_payload_len, &crc_len);
+    // Adjust offset and ota_payload_len after PHR
+    offset += phr_len;
+    ota_payload_len -= phr_len;
     break;
   }
   case 2: // Thread on RAIL
@@ -543,16 +568,11 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
     default:
       break;
     }
+    // Adjust offset and ota_payload_len after PHR
+    offset += phr_len;
+    ota_payload_len -= phr_len;
   }
   }
-  // Adjust offset and ota_payload_len after PHR
-  offset += phr_len;
-  ota_payload_len -= phr_len;
-  // Adjust ota_payload_len for crc
-  ota_payload_len = (ota_payload_len > 0) ? (ota_payload_len - crc_len) : ota_payload_len;
-
-  // create next tvb for ota payload
-  next_tvb = tvb_new_subset_length(tvb, offset, ota_payload_len);
 
   // hand ota payload to protocol dissector
   if (ota_payload_len > 0)
@@ -563,23 +583,22 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
     case 5: // Zigbee on RAIL
     case 7: // Wi-SUN on RAIL
     case 8: // Custom on 802.15.4 built-in PHY
-      call_dissector(ieee802154nofcs_handle, next_tvb, pinfo, tree);
+      dissect_silabs_ieee802154_pdu(tvb, pinfo, tree, offset, ota_payload_len, crc_len);
+      break;
+    case 3: // BLE
+      dissect_silabs_ble_pdu(tvb, pinfo, tree, offset, ota_payload_len, appended_info);
       break;
     default:
-      proto_tree_add_expert_format(efr32_tree, pinfo, &ei_silabs_dch_unsupported_protocol, tvb, offset, -1, "Protocol - %s not supported yet", protocol->title);
-      break;
+      proto_tree_add_expert_format_remaining(efr32_tree, pinfo, &ei_silabs_dch_unsupported_protocol, tvb, offset, "Protocol - %s not supported yet", protocol->title);
       // TODO: add support for the following protocols
       // case 1: // EFR32 EmberPHY (Zigbee/Thread)
-      // case 3: // BLE
       // case 4: // Connect on RAIL
       // case 6: // Z-Wave on RAIL
       // case 9: // Amazon SideWalk
+      break;
     }
     offset += ota_payload_len;
   }
-
-  // account for CRC if present
-  offset = (ota_payload_len > 0) ? offset + crc_len : offset;
 
   // decode hw end, add to subtree
   proto_tree_add_item(efr32_tree, hf_efr32_hwend, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -604,7 +623,7 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
   // decode radio cfg, add to subtree
   static int *const efr32_radiocfg_ble_fields[] = {
       &hf_efr32_radiocfg_addedbytes,
-      &hf_ef32_radiocfg_blephyid,
+      &hf_efr32_radiocfg_blephyid,
       NULL};
   static int *const efr32_radiocfg_zwave_fields[] = {
       &hf_efr32_radiocfg_regionid,
@@ -681,6 +700,135 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 }
 
 /**
+ * Dissect IEEE 802.15.4 OTA payload and hand off to the 802.15.4 dissector.
+ *
+ * @param tvb pointer to buffer containing raw packet.
+ * @param pinfo pointer to packet information fields
+ * @param tree pointer to data tree wireshark uses to display packet.
+ * @param offset offset into tvb where the payload begins
+ * @param ota_payload_len length of the OTA payload
+ * @param crc_len length of the CRC (0 = no FCS, 2 = 16-bit, 4 = 32-bit)
+ *
+ */
+static void
+dissect_silabs_ieee802154_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+                             unsigned offset, int ota_payload_len, int crc_len)
+{
+  tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, ota_payload_len);
+  TRY
+  {
+    if (crc_len > 0)
+    {
+      int fcs_type = crc_len == 2 ? IEEE802154_FCS_16_BIT : IEEE802154_FCS_32_BIT;
+      call_dissector_with_data(ieee802154fcs_handle, next_tvb, pinfo, tree, &fcs_type);
+    }
+    else
+    {
+      call_dissector(ieee802154nofcs_handle, next_tvb, pinfo, tree);
+    }
+  }
+  CATCH_NONFATAL_ERRORS
+  {
+    show_exception(next_tvb, pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
+  }
+  ENDTRY;
+}
+
+/**
+ * Dissect BLE OTA payload and hand off to the BTLE dissector.
+ *
+ * Builds a composite tvb from the syncword (in appended info) and the OTA
+ * payload, infers BLE direction from connection tracking, and passes to
+ * the BTLE dissector.
+ *
+ * @param tvb pointer to buffer containing raw packet.
+ * @param pinfo pointer to packet information fields
+ * @param tree pointer to data tree wireshark uses to display packet.
+ * @param offset offset into tvb where the payload begins
+ * @param ota_payload_len length of the OTA payload
+ * @param appended_info pointer to appended info struct
+ *
+ */
+static void
+dissect_silabs_ble_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+                       unsigned offset, int ota_payload_len,
+                       const Efr32AppendedInfo *appended_info)
+{
+  if (!appended_info->hasSyncword)
+    return;
+
+  bool is_tx = !appended_info->isRx;
+
+  // syncword offset: after OTA payload, hwend (1 byte), and RSSI
+  int syncword_offset = offset + ota_payload_len + 1 + appended_info->rssiLen;
+  uint32_t access_address = tvb_get_letohl(tvb, syncword_offset);
+  uint32_t interface_id = (pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID) ?
+                          pinfo->rec->rec_header.packet_header.interface_id : 0;
+
+  // build composite tvb: syncword + payload (BTLE dissector expects this)
+  tvbuff_t *composite_tvb = tvb_new_composite();
+  tvb_composite_append(composite_tvb, tvb_new_subset_length(tvb, syncword_offset, appended_info->syncwordLen));
+  tvb_composite_append(composite_tvb, tvb_new_subset_length(tvb, offset, ota_payload_len));
+  tvb_composite_finalize(composite_tvb);
+
+  void *volatile dissector_data = NULL;
+  btle_context_t context_storage;
+
+  if (!pref_ble_sniffer_mode)
+  {
+    // track device role from CONNECT_IND for direction inference
+    if (access_address == ACCESS_ADDRESS_ADVERTISING)
+    {
+      uint8_t pdu_type = tvb_get_uint8(composite_tvb, 4) & 0x0F;
+      if (pdu_type == BLE_ADV_PDU_TYPE_CONNECT_IND)
+      {
+        // conn access addr at AA(4)+hdr(2)+InitA(6)+AdvA(6)=18, need +4 to read
+        if (tvb_captured_length(composite_tvb) >= 22)
+        {
+          uint32_t conn_access_addr = tvb_get_letohl(composite_tvb, 18);
+          uint8_t device_role = is_tx ? BTLE_DIR_CENTRAL_PERIPHERAL : BTLE_DIR_PERIPHERAL_CENTRAL;
+          store_ble_connection_role(pinfo, interface_id, conn_access_addr, device_role);
+        }
+      }
+    }
+
+    // pass NULL context for ADV so BTLE uses its default path;
+    // a zero-init context triggers wrong value-table lookups
+    if (access_address != ACCESS_ADDRESS_ADVERTISING)
+    {
+      memset(&context_storage, 0, sizeof(context_storage));
+      uint8_t device_role = lookup_ble_connection_role(interface_id, access_address);
+      if (device_role != BTLE_DIR_UNKNOWN)
+      {
+        if (is_tx)
+        {
+          context_storage.direction = device_role;
+          pinfo->p2p_dir = (device_role == BTLE_DIR_CENTRAL_PERIPHERAL) ? P2P_DIR_SENT : P2P_DIR_RECV;
+        }
+        else
+        {
+          context_storage.direction = (device_role == BTLE_DIR_CENTRAL_PERIPHERAL) ?
+                                     BTLE_DIR_PERIPHERAL_CENTRAL : BTLE_DIR_CENTRAL_PERIPHERAL;
+          pinfo->p2p_dir = (device_role == BTLE_DIR_CENTRAL_PERIPHERAL) ? P2P_DIR_RECV : P2P_DIR_SENT;
+        }
+      }
+      dissector_data = &context_storage;
+    }
+  }
+
+  add_new_data_source(pinfo, composite_tvb, "BLE Packet");
+  TRY
+  {
+    call_dissector_with_data(btle_handle, composite_tvb, pinfo, tree, dissector_data);
+  }
+  CATCH_NONFATAL_ERRORS
+  {
+    show_exception(composite_tvb, pinfo, tree, EXCEPT_CODE, GET_MESSAGE);
+  }
+  ENDTRY;
+}
+
+/**
  * Dissect Wi-SUN PHY Header
  *
  * @param tvb pointer to buffer containing raw packet.
@@ -693,7 +841,7 @@ static int dissect_silabs_efr32(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
  * @return offset after dissection
  *
  */
-static int dissect_silabs_wisun_phr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len, int *crc_len)
+static int dissect_silabs_wisun_phr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len, int *crc_len)
 {
   // First byte after HW Start can be a garbage 0x0b or 0x00 byte
   bool can_be_garbage = (tvb_get_uint8(tvb, offset) == 0x0b) || (tvb_get_uint8(tvb, offset) == 0x00);
@@ -782,7 +930,7 @@ static int dissect_silabs_wisun_phr(tvbuff_t *tvb, packet_info *pinfo, proto_tre
  * @return Wi-SUN PHY Header Type
  *
  */
-static int decode_wisun_phr_type(tvbuff_t *tvb, int offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len)
+static int decode_wisun_phr_type(tvbuff_t *tvb, unsigned offset, uint8_t phr_len, uint8_t phy_mode_id, int ota_payload_len)
 {
   uint8_t phr_type = PHR_RAW;
   if (phr_len == 2)
@@ -822,7 +970,7 @@ static int decode_wisun_phr_type(tvbuff_t *tvb, int offset, uint8_t phr_len, uin
  * @param protocol_id protocol id
  * @return offset
  */
-static int decode_channel_number(tvbuff_t *tvb, proto_tree *tree, int offset, uint8_t radioinfo_channel, uint8_t radiocfg_id, uint8_t protocol_id)
+static int decode_channel_number(tvbuff_t *tvb, proto_tree *tree, unsigned offset, uint8_t radioinfo_channel, uint8_t radiocfg_id, uint8_t protocol_id)
 {
   int center_freq;
   int formatted_channel = radioinfo_channel;
@@ -973,12 +1121,12 @@ static const Efr32AppendedInfo *get_efr32_appended_info(wmem_allocator_t *scope,
 {
   Efr32AppendedInfo *appended_info = wmem_new(scope, Efr32AppendedInfo);
   memset(appended_info, 0, sizeof(Efr32AppendedInfo)); // Initialize all fields to 0 or false
-  bool isRx = (appended_info_cfg & 0x00000040) != 0;
-  uint8_t var_len = (appended_info_cfg & 0x00000038) >> 3;
+  appended_info->isRx = (appended_info_cfg & EFR32_APPENDEDINFOCFG_TXRX_MASK) != 0;
+  uint8_t var_len = (appended_info_cfg & EFR32_APPENDEDINFOCFG_LENGTH_MASK) >> 3;
   appended_info->length = var_len + 3;
-  appended_info->version = (appended_info_cfg & 0x00000007);
+  appended_info->version = (appended_info_cfg & EFR32_APPENDEDINFOCFG_VERSION_MASK);
   appended_info->isInvalid = false;
-  if (isRx)
+  if (appended_info->isRx)
   {
     switch (var_len)
     {
@@ -1066,7 +1214,7 @@ static const Efr32AppendedInfo *get_efr32_appended_info(wmem_allocator_t *scope,
   appended_info->syncwordLen = appended_info->hasSyncword ? 4 : 0;
   if (appended_info->hasRadioCfg)
   {
-    if (isRx)
+    if (appended_info->isRx)
     {
       appended_info->radioCfgLen = (var_len == 3 || var_len == 7) ? 2 : 1;
     }
@@ -1113,6 +1261,9 @@ static uint8_t get_phr_length(uint8_t protocol_id, tvbuff_t *tvb, int last_index
       }
     }
     break;
+    case 3:
+      phr_len = 2;
+      break;
     default:
       phr_len = 1;
     }
@@ -1167,6 +1318,49 @@ static uint16_t reverse_bits_uint16(uint16_t value)
   return value;
 }
 
+/**
+ * Store BLE connection role for direction tracking.
+ * Called when CONNECT_IND is detected to record whether this device is Central or Peripheral.
+ */
+static void store_ble_connection_role(packet_info *pinfo, uint32_t interface_id, uint32_t access_address, uint8_t device_role)
+{
+  if (pinfo->fd->visited)
+    return;
+
+  wmem_tree_key_t key[3];
+  key[0].length = 1;
+  key[0].key = &interface_id;
+  key[1].length = 1;
+  key[1].key = &access_address;
+  key[2].length = 0;
+  key[2].key = NULL;
+
+  silabs_ble_connection_info_t *conn_info = wmem_new(wmem_file_scope(), silabs_ble_connection_info_t);
+  conn_info->device_role = device_role;
+
+  wmem_tree_insert32_array(silabs_ble_connections, key, conn_info);
+}
+
+/**
+ * Lookup BLE connection role for a given access address.
+ * Returns BTLE_DIR_UNKNOWN if the connection hasn't been seen.
+ */
+static uint8_t lookup_ble_connection_role(uint32_t interface_id, uint32_t access_address)
+{
+  wmem_tree_key_t key[3];
+  key[0].length = 1;
+  key[0].key = &interface_id;
+  key[1].length = 1;
+  key[1].key = &access_address;
+  key[2].length = 0;
+  key[2].key = NULL;
+
+  silabs_ble_connection_info_t *conn_info =
+      (silabs_ble_connection_info_t *)wmem_tree_lookup32_array(silabs_ble_connections, key);
+
+  return conn_info ? conn_info->device_role : BTLE_DIR_UNKNOWN;
+}
+
 // ********************************
 
 /* Register the protocol with Wireshark.
@@ -1215,7 +1409,7 @@ void proto_register_silabs_dch(void)
        {"Phy ID", "silabs-dch.phy_id", FT_UINT8, BASE_HEX, NULL, 0x0, "EFR32 Phy ID", HFILL}},
       {&hf_efr32_radiocfg_addedbytes,
        {"Added Bytes", "silabs-dch.radio_cfg_addedbytes", FT_UINT8, BASE_HEX, NULL, EFR32_RADIOCFG_ADDEDBYTES_MASK, "EFR32 Radio Config Added Bytes", HFILL}},
-      {&hf_ef32_radiocfg_blephyid,
+      {&hf_efr32_radiocfg_blephyid,
        {"BLE PHY Id", "silabs-dch.radio_cfg_blephyid", FT_UINT8, BASE_HEX, NULL, EFR32_RADIOCFG_BLEPHYID_MASK, "EFR32 Radio Config BLE PHY Id", HFILL}},
       {&hf_efr32_radiocfg_regionid,
        {"Z-Wave Region ID", "silabs-dch.radio_cfg_regionid", FT_UINT8, BASE_HEX, NULL, EFR32_RADIOCFG_REGIONID_MASK, "EFR32 Radio Config Z-Wave Region ID", HFILL}},
@@ -1311,6 +1505,16 @@ void proto_register_silabs_dch(void)
       "silabs_dch",
       dissect_silabs_dch,
       proto_silabs_dch);
+
+  // Initialize BLE connection tracking tree
+  silabs_ble_connections = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
+
+  module_t *silabs_dch_module = prefs_register_protocol(proto_silabs_dch, NULL);
+  prefs_register_bool_preference(silabs_dch_module, "ble_sniffer_mode",
+      "BLE Sniffer Mode",
+      "Enable when the capture source is a BLE sniffer. "
+      "This disables BLE connection role tracking which doesn't work in a sniffer context.",
+      &pref_ble_sniffer_mode);
 }
 
 /**
@@ -1319,7 +1523,10 @@ void proto_register_silabs_dch(void)
  */
 void proto_reg_handoff_silabs_dch(void)
 {
+  /* FCS is the IEEE 802.15.4 CRC, with a length determined by the protocol ID. */
+  ieee802154fcs_handle = find_dissector("wpan_fcs");
   ieee802154nofcs_handle = find_dissector("wpan_nofcs");
+  btle_handle = find_dissector("btle");
   // Register top-level handoff, so that the toplevel WTAP will be
   // decoded by the silabs dch dissector.
   dissector_add_uint(

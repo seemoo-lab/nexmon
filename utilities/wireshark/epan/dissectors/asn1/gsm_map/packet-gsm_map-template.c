@@ -60,10 +60,6 @@
 #include "packet-ranap.h"
 #include "packet-isup.h"
 
-#define PNAME  "GSM Mobile Application"
-#define PSNAME "GSM_MAP"
-#define PFNAME "gsm_map"
-
 void proto_register_gsm_map(void);
 void proto_reg_handoff_gsm_map(void);
 
@@ -230,9 +226,9 @@ static uint8_t gsm_map_pdu_size;
 static uint8_t sms_encoding;
 
 /* Forward declarations */
-static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx);
-static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx);
-static int dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx);
+static unsigned dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx);
+static unsigned dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx);
+static unsigned dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx);
 static const char* gsm_map_opr_code(uint32_t val, proto_item *item);
 
 typedef struct {
@@ -376,7 +372,7 @@ gsm_map_calc_bitrate(uint8_t value){
 
 static void
 dissect_gsm_map_ext_qos_subscribed(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx){
-  int offset = 0;
+  unsigned offset = 0;
   proto_tree *subtree;
   uint8_t octet;
   uint16_t value;
@@ -534,12 +530,12 @@ qos_calc_ext2_bitrate(uint8_t oct)
 static void
 dissect_gsm_map_ext2_qos_subscribed(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx) {
 
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *subtree;
     const char *str;
     uint8_t oct, tmp_oct;
     uint32_t temp32;
-    int length = tvb_reported_length(tvb);
+    unsigned length = tvb_reported_length(tvb);
 
     subtree = proto_item_add_subtree(actx->created_item, ett_gsm_map_ext2_qos_subscribed);
 
@@ -609,12 +605,12 @@ Ext3-QoS-Subscribed ::= OCTET STRING (SIZE (1..2))
 static void
 dissect_gsm_map_ext3_qos_subscribed(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx) {
 
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *subtree;
     const char *str;
     uint8_t oct;
     uint32_t temp32;
-    int length = tvb_reported_length(tvb);
+    unsigned length = tvb_reported_length(tvb);
 
     subtree = proto_item_add_subtree(actx->created_item, ett_gsm_map_ext3_qos_subscribed);
 
@@ -660,7 +656,7 @@ dissect_gsm_map_ext3_qos_subscribed(tvbuff_t *tvb, packet_info *pinfo _U_, proto
 
 static void
 dissect_gsm_map_ext4_qos_subscribed(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, asn1_ctx_t *actx) {
-    int offset = 0;
+    unsigned offset = 0;
     proto_tree *subtree;
 
     subtree = proto_item_add_subtree(actx->created_item, ett_gsm_map_ext3_qos_subscribed);
@@ -1128,9 +1124,9 @@ const char* gsm_map_opr_code(uint32_t val, proto_item *item) {
 }
 
 /* Prototype for a decoding function */
-typedef int (* dissect_function_t)( bool,
+typedef unsigned (* dissect_function_t)( bool,
                                     tvbuff_t *,
-                                    int ,
+                                    unsigned offset,
                                     asn1_ctx_t *,
                                     proto_tree *,
                                     int);
@@ -1153,8 +1149,8 @@ typedef int (* dissect_function_t)( bool,
  * The analyze of the first ASN1 tag, indicate what kind of decoding should be used,
  * if the decoding function is provided (so not a NULL function)
  */
-static int dissect_mc_message(tvbuff_t *tvb,
-                              int offset,
+static unsigned dissect_mc_message(tvbuff_t *tvb,
+                              unsigned offset,
                               asn1_ctx_t *actx,
                               proto_tree *tree,
                               bool implicit_param _U_, dissect_function_t parameter, int hf_index_param _U_,
@@ -1177,25 +1173,25 @@ static int dissect_mc_message(tvbuff_t *tvb,
     if (sequence3 != NULL) {
       offset= (sequence3) (implicit_seq3, tvb, offset, actx, tree, hf_index_seq3);
     } else {
-      proto_tree_add_expert(tree, actx->pinfo, &ei_gsm_map_unknown_sequence3, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_sequence3, tvb, offset);
     }
   } else if (octet == 0x30) {
     if (sequence != NULL) {
       offset= (sequence) (implicit_seq, tvb, 0, actx, tree, hf_index_seq);
     } else {
-      proto_tree_add_expert(tree, actx->pinfo, &ei_gsm_map_unknown_sequence, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_sequence, tvb, offset);
     }
   } else {
     if (parameter != NULL) {
       offset= (parameter) (implicit_param, tvb, offset, actx, tree, hf_index_param);
     } else {
-      proto_tree_add_expert(tree, actx->pinfo, &ei_gsm_map_unknown_parameter, tvb, offset, -1);
+      proto_tree_add_expert_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_parameter, tvb, offset);
     }
   }
   return offset;
 }
 
-static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx) {
+static unsigned dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx) {
 
   switch(opcode){
   case  2: /*updateLocation*/
@@ -1561,8 +1557,8 @@ static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
     break;
   default:
     if(!dissector_try_uint_with_data(map_prop_arg_opcode_table, (uint8_t)opcode, tvb, actx->pinfo, tree, true, actx->subtree.top_tree)){
-        proto_tree_add_expert_format(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
-                                     tvb, offset, -1, "Unknown invokeData %d", opcode);
+        proto_tree_add_expert_format_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
+                                     tvb, offset, "Unknown invokeData %d", opcode);
     }
     offset+= tvb_reported_length_remaining(tvb,offset);
     break;
@@ -1571,7 +1567,7 @@ static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_
 }
 
 
-static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx) {
+static unsigned dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx) {
 
   switch(opcode){
   case  2: /*updateLocation*/
@@ -1747,7 +1743,7 @@ static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset,
     break;
   case 61: /*unstructuredSS-Notify*/
     /* true ? */
-    proto_tree_add_expert_format(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData, tvb, offset, -1, "Unknown returnResultData blob");
+    proto_tree_add_expert_format_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData, tvb, offset, "Unknown returnResultData blob");
     break;
   case 62: /*AnyTimeSubscriptionInterrogation*/
     offset=dissect_gsm_map_ms_AnyTimeSubscriptionInterrogationRes(false, tvb, offset, actx, tree, -1);
@@ -1876,8 +1872,8 @@ static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset,
 
  default:
    if(!dissector_try_uint_with_data(map_prop_res_opcode_table, (uint8_t)opcode, tvb, actx->pinfo, tree, true, actx->subtree.top_tree)){
-        proto_tree_add_expert_format(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
-                                     tvb, offset, -1, "Unknown returnResultData %d", opcode);
+        proto_tree_add_expert_format_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
+                                     tvb, offset, "Unknown returnResultData %d", opcode);
    }
    offset+= tvb_reported_length_remaining(tvb,offset);
    break;
@@ -1887,7 +1883,7 @@ static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset,
 
 
 
-static int dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx) {
+static unsigned dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx) {
 
   switch(errorCode){
   case 1: /* UnknownSubscriberParam */
@@ -2043,8 +2039,8 @@ static int dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, int offset, 
     break;
   default:
     if(!dissector_try_uint_with_data(map_prop_err_opcode_table, (uint8_t)opcode, tvb, actx->pinfo, tree, true, actx->subtree.top_tree)){
-        proto_tree_add_expert_format(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
-                                     tvb, offset, -1, "Unknown returnErrorData %d", opcode);
+        proto_tree_add_expert_format_remaining(tree, actx->pinfo, &ei_gsm_map_unknown_invokeData,
+                                     tvb, offset, "Unknown returnErrorData %d", opcode);
     }
     offset+= tvb_reported_length_remaining(tvb,offset);
     break;
@@ -2306,8 +2302,8 @@ static int dissect_NokiaMAP_ext_DsdArgExt(tvbuff_t *tvb, packet_info *pinfo, pro
   return dissect_NokiaMAP_Extensions_DsdArgExt(false, tvb, 0, &asn1_ctx, tree, -1);
 }
 
-static int
-dissect_gsm_map_GSMMAPPDU(bool implicit_tag _U_, tvbuff_t *tvb, int offset,
+static unsigned
+dissect_gsm_map_GSMMAPPDU(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset,
                           asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) {
 
   char *version_ptr;
@@ -3398,7 +3394,7 @@ void proto_register_gsm_map(void) {
   };
 
   /* Register protocol */
-  proto_gsm_map_ms = proto_gsm_map_dialogue = proto_gsm_map = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_gsm_map_ms = proto_gsm_map_dialogue = proto_gsm_map = proto_register_protocol("GSM Mobile Application", "GSM_MAP", "gsm_map");
 
   map_handle = register_dissector("gsm_map", dissect_gsm_map, proto_gsm_map);
   register_dissector("gsm_map_sccp", dissect_gsm_map_sccp, proto_gsm_map);

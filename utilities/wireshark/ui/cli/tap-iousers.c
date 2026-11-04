@@ -66,6 +66,7 @@ iousers_draw(void *arg)
 			display_ports ? "            " : "");
 		break;
 	case TS_RELATIVE:
+	case TS_RELATIVE_CAP:
 	case TS_NOT_SET:
 	default:
 		printf("%s                                               |       <-      | |       ->      | |     Total     |    Relative    |   Duration   |\n",
@@ -226,6 +227,7 @@ iousers_draw(void *arg)
 					printf("%20.9f", nstime_to_sec(&iui->start_abs_time));
 					break;
 				case TS_RELATIVE:
+				case TS_RELATIVE_CAP:
 				case TS_NOT_SET:
 				default:
 					printf("%14.9f",
@@ -247,8 +249,11 @@ static void iousers_finish(void *arg)
 		return;
 	conv_hash_t *hash = (conv_hash_t*)arg;
 	io_users_t *iu = (io_users_t *)hash->user_data;
-	if (iu)
+	reset_conversation_table_data(hash);
+	if (iu) {
+		g_free((char *)iu->filter);
 		g_free(iu);
+	}
 }
 
 void init_iousers(struct register_ct *ct, const char *filter)

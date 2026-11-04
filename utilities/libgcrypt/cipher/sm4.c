@@ -87,11 +87,9 @@
 /* USE_INTEL_SM4_AVX512 indicates whether to compile with Intel SM4
  * instructions (VSM4RNDS4) based AVX512 code. */
 #undef USE_INTEL_SM4_AVX512
-#if defined(ENABLE_AVX512_SUPPORT) && defined(HAVE_GCC_INLINE_ASM_SM4)
-# if defined(__x86_64__) && (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
-     defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS))
-#  define USE_INTEL_SM4_AVX512 1
-# endif
+#if defined(USE_INTEL_SM4_AVX2) && defined(ENABLE_AVX512_SUPPORT) && \
+    defined(HAVE_GCC_INLINE_ASM_SM4_AVX512)
+# define USE_INTEL_SM4_AVX512 1
 #endif
 
 /* Assembly implementations use SystemV ABI, ABI conversion and additional

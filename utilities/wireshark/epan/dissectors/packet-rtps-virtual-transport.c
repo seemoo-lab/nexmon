@@ -189,7 +189,7 @@ static int dissect_rtps_virtual_transport(
     uint16_t version;
     uint8_t content_type;
     const char *content_type_label;
-    int offset = 0;
+    unsigned offset = 0;
     int output = 0;
 
     /* Add transport tree, used for the fields of our proto_rtpsvt */
@@ -390,7 +390,7 @@ static int dissect_rtps_virtual_transport_rtps_type(
         return 0;
     }
 
-    advanced_payload = tvb_new_subset_length(tvb, offset, -1);
+    advanced_payload = tvb_new_subset_remaining(tvb, offset);
     advanced_handle = find_dissector("rtpsproc");
     call_dissector_with_data(
             advanced_handle,

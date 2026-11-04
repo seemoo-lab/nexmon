@@ -42,10 +42,6 @@
 void proto_register_p_mul(void);
 void proto_reg_handoff_p_mul(void);
 
-#define PNAME  "P_Mul (ACP142)"
-#define PSNAME "P_MUL"
-#define PFNAME "p_mul"
-
 /* Recommended UDP Port Numbers */
 #define DEFAULT_P_MUL_PORT_RANGE ""
 
@@ -870,8 +866,7 @@ static int dissect_p_mul (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 
   case Data_PDU:
     /* Sequence Number of PDUs */
-    seq_no = tvb_get_ntohs (tvb, offset);
-    en = proto_tree_add_item (p_mul_tree, hf_seq_no, tvb, offset, 2, ENC_BIG_ENDIAN);
+    en = proto_tree_add_item_ret_uint16 (p_mul_tree, hf_seq_no, tvb, offset, 2, ENC_BIG_ENDIAN, &seq_no);
     if (seq_no == 0) {
       expert_add_info(pinfo, en, &ei_illegal_seq_no);
     }
@@ -940,8 +935,7 @@ static int dissect_p_mul (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     offset += 4;
 
     /* Count of Ack Info Entries */
-    count = tvb_get_ntohs (tvb, offset);
-    proto_tree_add_item (p_mul_tree, hf_ack_count, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16 (p_mul_tree, hf_ack_count, tvb, offset, 2, ENC_BIG_ENDIAN, &count);
     offset += 2;
   } else {
     /* Source Id */
@@ -977,8 +971,7 @@ static int dissect_p_mul (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 
   if (pdu_type == FEC_Address_PDU || pdu_type == Extra_FEC_Address_PDU) {
     /* FEC Parameters Length */
-    fec_len = tvb_get_uint8 (tvb, offset);
-    proto_tree_add_item (p_mul_tree, hf_fec_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint8 (p_mul_tree, hf_fec_len, tvb, offset, 1, ENC_BIG_ENDIAN, &fec_len);
     offset += 1;
 
     /* FEC ID */
@@ -1555,9 +1548,9 @@ void proto_register_p_mul (void)
   module_t *p_mul_module;
   expert_module_t* expert_p_mul;
 
-  proto_p_mul = proto_register_protocol (PNAME, PSNAME, PFNAME);
+  proto_p_mul = proto_register_protocol ("P_Mul (ACP142)", "P_MUL", "p_mul");
 
-  p_mul_handle = register_dissector(PFNAME, dissect_p_mul, proto_p_mul);
+  p_mul_handle = register_dissector("p_mul", dissect_p_mul, proto_p_mul);
 
   proto_register_field_array (proto_p_mul, hf, array_length (hf));
   proto_register_subtree_array (ett, array_length (ett));

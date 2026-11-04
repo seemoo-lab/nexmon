@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# Check the mparam.h files. This script is useful as not all mparam.h
+# files may be tested by our tests.
+
+# Copyright 2011-2025 Free Software Foundation, Inc.
+# This script is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# Note: This script must be run from a writable directory (an executable
+# check_mparam will be created in it). Moreover, the source tree that is
+# checked is the one that contains this script, not the one corresponding
+# to the current working directory (the rule for the other scripts in
+# the tools directory may be different).
+
+set -e
+
+dir=$(dirname "$0")
+files=$(cd "$dir/.." && find src/*/ -name mparam.h)
+err=0
+
+for i in $files
+do
+  #output=`echo "#include \"$i\"" | gcc -o /dev/null -c -xc - 2>&1`
+  #if [ -n "$output" ]; then
+  #  printf "Error for file '%s':\n%s\n" "$i" "$output"
+  #  err=1
+  #fi
+  rm -f check_mparam
+  ${CC:-cc} "-DMPARAM=\"../$i\"" -o check_mparam "$dir"/check_mparam.c
+  ./check_mparam
+done
+
+rm -f check_mparam
+
+exit $err

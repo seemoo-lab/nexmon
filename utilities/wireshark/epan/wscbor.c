@@ -128,7 +128,9 @@ static wscbor_head_t * wscbor_head_read(wmem_allocator_t *alloc, tvbuff_t *tvb, 
             break;
     }
 
-    *offset += head->length;
+    if (ckd_add(offset, *offset, head->length)) {
+        THROW(ReportedBoundsError);
+    }
     return head;
 }
 
@@ -149,18 +151,26 @@ struct _wscbor_chunk_priv_t {
 };
 
 /** Get a clamped string length suitable for tvb functions.
- * @param[in,out] chunk The chunk to set errors on.
+ * @param[in,out] chunk The chunk to set errors on if the length is clamped.
+ * @param[in,out] offset The current offset to advance to no more than INT_MAX.
  * @param head_value The value to clamp.
  * @return The clamped length value.
  */
-static int wscbor_get_length(wscbor_chunk_t *chunk, uint64_t head_value) {
+static int wscbor_get_length(wscbor_chunk_t *chunk, int *offset, uint64_t head_value) {
+    int start_offset = *offset;
     int length;
-    if (head_value > INT_MAX) {
+    /* Truncate the length so that the offset doesn't overflow.
+     * This prevents an exception reading this chunk, but will
+     * throw an exception reading the head of the next chunk
+     * at least when advancing the offset there.
+     */
+    if (ckd_add(offset, start_offset, head_value)) {
         wmem_list_append(chunk->errors, wscbor_error_new(
                 chunk->_priv->alloc, &ei_cbor_overflow,
                 NULL
         ));
-        length = INT_MAX;
+        *offset = INT_MAX;
+        length = INT_MAX - start_offset;
     }
     else {
         length = (int) head_value;
@@ -197,6 +207,8 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, int *
     chunk->tags = wmem_list_new(alloc);
     chunk->start = *offset;
 
+    CLEANUP_PUSH(((void (*)(void *))wscbor_chunk_free), chunk);
+
     // Read a sequence of tags followed by an item header
     while (true) {
         // This will break out of the loop if it runs out of buffer
@@ -231,9 +243,8 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, int *
         case CBOR_TYPE_BYTESTRING:
         case CBOR_TYPE_STRING:
             if (chunk->type_minor != 31) {
-                const int datalen = wscbor_get_length(chunk, chunk->head_value);
+                const int datalen = wscbor_get_length(chunk, offset, chunk->head_value);
                 // skip over definite data
-                *offset += datalen;
                 chunk->data_length += datalen;
                 // allow even zero-length strings
                 chunk->_priv->str_value = tvb_new_subset_length(tvb, chunk->start + chunk->head_length, datalen);
@@ -261,10 +272,12 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, int *
                             ));
                         }
                         else {
-                            const int datalen = wscbor_get_length(chunk, head->rawvalue);
-                            *offset += datalen;
+                            const int datalen = wscbor_get_length(chunk, offset, head->rawvalue);
                             chunk->data_length += datalen;
-                            if(datalen) {
+                            if(datalen && tvb_captured_length_remaining(tvb, head->start + head->length)) {
+                                /* tvb_composite_append ignores a zero captured
+                                 * length tvbuff, but we need to avoid creating
+                                 * a new composite in that case. */
                                 if (!chunk->_priv->str_value) {
                                     chunk->_priv->str_value = tvb_new_composite ();
                                 }
@@ -299,6 +312,8 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, int *
         default:
             break;
     }
+
+    CLEANUP_POP;
 
     return chunk;
 }
@@ -458,11 +473,7 @@ bool wscbor_skip_if_errors(wmem_allocator_t *alloc, tvbuff_t *tvb, int *offset, 
 }
 
 void wscbor_init(void) {
-    proto_wscbor = proto_register_protocol(
-        "CBOR Item Decoder",
-        "CBOR Item Decoder",
-        "_ws.wscbor"
-    );
+    proto_wscbor = proto_register_protocol("CBOR Item Decoder", "CBOR Item Decoder", "_ws.wscbor");
 
     expert_module_t *expert_wscbor = expert_register_protocol(proto_wscbor);
     /* This isn't really a protocol, it's an error indication;
@@ -641,41 +652,24 @@ proto_item * proto_tree_add_cbor_int64(proto_tree *tree, int hfindex, packet_inf
     return item;
 }
 
-proto_item * proto_tree_add_cbor_bitmask(proto_tree *tree, int hfindex, const int ett, int *const *fields, packet_info *pinfo, tvbuff_t *tvb, const wscbor_chunk_t *chunk, const uint64_t *value) {
-    const header_field_info *field = proto_registrar_get_nth(hfindex);
-    int flagsize = 0;
-    switch (field->type) {
-        case FT_UINT8:
-            flagsize = 1;
-            break;
-        case FT_UINT16:
-            flagsize = 2;
-            break;
-        case FT_UINT32:
-            flagsize = 4;
-            break;
-        case FT_UINT64:
-            flagsize = 8;
-            break;
-        default:
-            fprintf(stderr, "Unhandled bitmask size: %d", field->type);
-            return NULL;
-    }
+proto_item * proto_tree_add_cbor_bitmask(proto_tree *tree, int hfindex, const int ett,
+                                        int *const *fields, packet_info *pinfo,
+                                        tvbuff_t *tvb, const wscbor_chunk_t *chunk,
+                                        const uint64_t *value)
+{
+    const uint64_t v = value ? *value : 0;
 
-    // Fake TVB data for these functions
-    uint8_t *flags = (uint8_t *) wmem_alloc0(pinfo->pool, flagsize);
-    { // Inject big-endian value directly
-        uint64_t buf = (value ? *value : 0);
-        for (int ix = flagsize - 1; ix >= 0; --ix) {
-            flags[ix] = buf & 0xFF;
-            buf >>= 8;
+    proto_item *ti = proto_tree_add_uint64(tree, hfindex, tvb, chunk->start, chunk->head_length, v);
+    proto_tree *sub = proto_item_add_subtree(ti, ett);
+
+    if (fields) {
+        for (int i = 0; fields[i] != NULL; i++) {
+            proto_tree_add_boolean(sub, *fields[i], tvb, chunk->start, chunk->head_length, v);
         }
     }
-    tvbuff_t *tvb_flags = tvb_new_child_real_data(tvb, flags, flagsize, flagsize);
 
-    proto_item *item = proto_tree_add_bitmask_value(tree, tvb_flags, 0, hfindex, ett, fields, value ? *value : 0);
-    wscbor_chunk_mark_errors(pinfo, item, chunk);
-    return item;
+    wscbor_chunk_mark_errors(pinfo, ti, chunk);
+    return ti;
 }
 
 proto_item * proto_tree_add_cbor_tstr(proto_tree *tree, int hfindex, packet_info *pinfo, tvbuff_t *tvb, const wscbor_chunk_t *chunk) {

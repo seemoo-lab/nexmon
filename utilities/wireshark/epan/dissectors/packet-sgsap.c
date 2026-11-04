@@ -24,11 +24,6 @@
 #include "packet-gsm_a_common.h"
 #include "packet-e212.h"
 
-#define PNAME  "SGs Application Part (SGsAP)"
-#define PSNAME "SGSAP"
-#define PFNAME "sgsap"
-
-
 void proto_register_sgsap(void);
 void proto_reg_handoff_sgsap(void);
 
@@ -331,7 +326,7 @@ de_sgsap_lcs_indic(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint
  * information elements of the MM information message as defined in
  * 3GPP TS 24.008, excluding the Protocol discriminator, Skip
  * indicator and Message type. This field includes the IEI and length
- * indicatior of the other information elements.
+ * indicator of the other information elements.
  */
 static uint16_t
 de_sgsap_mm_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_)
@@ -352,7 +347,7 @@ static uint16_t
 de_sgsap_mme_name(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
     unsigned   name_len;
-    uint8_t *fqdn = NULL;
+    char *fqdn = NULL;
 
     /* The MME name information element specifies the MME name and is coded as shown in figure 9.4.13.1. Octets 3
      * through n contain the name in the form of a fully qualified domain name (FQDN) as specified in 3GPP TS 23.003 [3].
@@ -363,9 +358,9 @@ de_sgsap_mme_name(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint3
         name_len = tvb_get_uint8(tvb, offset);
 
         if (name_len < 0x20) {
-            fqdn = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_APN_STR);
+            fqdn = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_APN_STR);
         } else{
-            fqdn = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
+            fqdn = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
         }
         proto_tree_add_string(tree, hf_sgsap_mme_name, tvb, offset, len, fqdn);
         if (add_string)
@@ -547,7 +542,7 @@ static uint16_t
 de_sgsap_vlr_name(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
     unsigned  name_len;
-    uint8_t *fqdn = NULL;
+    char *fqdn = NULL;
 
     /* The VLR name information element specifies the VLR name and is coded as shown in figure 9.4.22.1.
      * Octets 3 through n contain the VLR name in the form of a fully qualified domain name (FQDN)
@@ -557,9 +552,9 @@ de_sgsap_vlr_name(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint3
         name_len = tvb_get_uint8(tvb, offset);
 
         if (name_len < 0x20) {
-            fqdn = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_APN_STR);
+            fqdn = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_APN_STR);
         } else{
-            fqdn = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
+            fqdn = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
         }
         proto_tree_add_string(tree, hf_sgsap_vlr_name, tvb, offset, len, fqdn);
         if (add_string)
@@ -746,7 +741,7 @@ typedef enum
 sgsap_elem_idx_t;
 #endif /* 0 */
 
-uint16_t (*sgsap_elem_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string, int string_len) = {
+uint16_t (* const sgsap_elem_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string, int string_len) = {
     NULL/*DE_SGSAP_IMSI*/,                                  /* 9.4.6 IMSI*/
     de_sgsap_vlr_name,                                      /* 9.4.22 VLR name*/
     NULL/*DE_SGSAP_TMSI*/,                                  /* 9.4.20 TMSI */
@@ -1435,7 +1430,7 @@ static value_string_ext sgsap_msg_strings_ext = VALUE_STRING_EXT_INIT(sgsap_msg_
 
 #define NUM_SGSAP_MSG array_length(sgsap_msg_strings)
 static int ett_sgsap_msg[NUM_SGSAP_MSG];
-static void (*sgsap_msg_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len) = {
+static void (* const sgsap_msg_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len) = {
     sgsap_paging_req,           /* 0x01,    "SGsAP-PAGING-REQUEST"  8.14 */
     sgsap_paging_rej,           /* 0x02,    "SGsAP-PAGING-REJECT"   8.13 */
 /*
@@ -1520,7 +1515,7 @@ dissect_sgsap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     len = tvb_reported_length(tvb);
 
     /* Make entry in the Protocol column on summary display */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, PSNAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "SGSAP");
 
     item = proto_tree_add_item(tree, proto_sgsap, tvb, 0, -1, ENC_NA);
     sgsap_tree = proto_item_add_subtree(item, ett_sgsap);
@@ -1693,7 +1688,7 @@ void proto_register_sgsap(void) {
     }
 
     /* Register protocol */
-    proto_sgsap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+    proto_sgsap = proto_register_protocol("SGs Application Part (SGsAP)", "SGSAP", "sgsap");
     /* Register fields and subtrees */
     proto_register_field_array(proto_sgsap, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
@@ -1701,7 +1696,7 @@ void proto_register_sgsap(void) {
     expert_register_field_array(expert_sgsap, ei, array_length(ei));
 
     /* Register dissector */
-    sgsap_handle = register_dissector(PFNAME, dissect_sgsap, proto_sgsap);
+    sgsap_handle = register_dissector("sgsap", dissect_sgsap, proto_sgsap);
 
     /* sgsap_module = prefs_register_protocol(proto_sgsap, NULL); */
 

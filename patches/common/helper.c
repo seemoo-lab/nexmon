@@ -53,8 +53,10 @@ schedule_work(void *context, void *data, void *mainfn, int ms, int periodic)
     struct hndrte_timer *task;
     task = hndrte_init_timer(context, data, mainfn, 0);
     if (task) {
-        if(!hndrte_add_timer(task, ms, periodic))
+        if (!hndrte_add_timer(task, ms, periodic)) {
             hndrte_free_timer(task);
+            return 0;
+        }
     }
     return task;
 }
@@ -82,7 +84,10 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
 {
     struct hndrte_timer *task;
     struct delayed_task *delayed_task = malloc(sizeof(struct delayed_task), 0);
-    
+
+    if (!delayed_task)
+        return 0;
+
     delayed_task->context = context;
     delayed_task->data = data;
     delayed_task->mainfn = mainfn;
@@ -90,11 +95,30 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
     delayed_task->periodic = periodic;
 
     task = hndrte_init_timer(context, delayed_task, perform_delayed_task, 0);
-    if (task) {
-        if(!hndrte_add_timer(task, delay_ms, 0))
-            hndrte_free_timer(task);
+    if (!task) {
+        free(delayed_task);
+        return 0;
+    }
+    if (!hndrte_add_timer(task, delay_ms, 0)) {
+        hndrte_free_timer(task);
+        free(delayed_task);
+        return 0;
     }
     return task;
+}
+
+static inline void *
+pkthead(sk_buff *p)
+{
+    if (!p || !p->data)
+        return 0;
+#if defined(NEXMON_CHIP) && (NEXMON_CHIP == CHIP_VER_BCM43455c0 || NEXMON_CHIP == CHIP_VER_BCM4389c1 || NEXMON_CHIP == CHIP_VER_BCM4398d0 || NEXMON_CHIP == CHIP_VER_BCM4378b1 || NEXMON_CHIP == CHIP_VER_BCM43439a0 || NEXMON_CHIP == CHIP_VER_BCM4383a3 || NEXMON_CHIP == CHIP_VER_BCM4375b1)
+    return (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
+#elif defined(NEXMON_CHIP) && (NEXMON_CHIP == CHIP_VER_BCM4339 || NEXMON_CHIP == CHIP_VER_BCM4358 || NEXMON_CHIP == CHIP_VER_BCM4356 || NEXMON_CHIP == CHIP_VER_BCM4335b0 || NEXMON_CHIP == CHIP_VER_BCM4330)
+    return p->head;
+#else
+    return 0;
+#endif
 }
 
 /**
@@ -103,11 +127,17 @@ schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int perio
 void *
 skb_push(sk_buff *p, unsigned int len)
 {
+    void *head;
+
+    if (!p || !p->data)
+        return 0;
+
+    head = pkthead(p);
+    if (head && (unsigned char *) p->data - len < (unsigned char *) head)
+        return 0;
+
     p->data -= len;
     p->len += len;
-
-    //if (p->data < p->head)
-    //    printf("%s: failed", __FUNCTION__);
 
     return p->data;
 }
@@ -118,6 +148,9 @@ skb_push(sk_buff *p, unsigned int len)
 void *
 skb_pull(sk_buff *p, unsigned int len)
 {
+    if (len > p->len)
+        return 0;
+
     p->data += len;
     p->len -= len;
 
@@ -131,9 +164,14 @@ _hexdump(char *desc, void *addr, int len, int (*_printf)(const char *, ...))
     unsigned char buff[17];
     unsigned char *pc = (unsigned char*)addr;
 
+    buff[0] = '\0';
+
     // Output description if given.
     if (desc != 0)
         _printf("%s:\n", desc);
+
+    if (len <= 0 || pc == 0)
+        return;
 
     // Process every byte in the data.
     for (i = 0; i < len; i++) {

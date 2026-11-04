@@ -173,7 +173,7 @@ is_ipv4_format(packet_info *pinfo)
   return true;
 }
 static int
-dissect_bt_tracker_extension(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int offset)
+dissect_bt_tracker_extension(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, unsigned offset)
 {
   proto_item *ti;
   proto_tree *ext_tree;
@@ -181,7 +181,7 @@ dissect_bt_tracker_extension(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *t
   uint32_t extension_length;
   int32_t tot_length;
 
-  while (offset < (int)tvb_reported_length(tvb)) {
+  while (offset < tvb_reported_length(tvb)) {
     extension_type = tvb_get_uint8(tvb, offset);
 
     tot_length = 1;
@@ -202,7 +202,7 @@ dissect_bt_tracker_extension(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *t
         return offset;
       case EXT_NOP:
         /* A special case option that has a fixed-length of one byte. It is not followed by a length field, or associated data.
-           A NOP has no affect on option parsing. It is used only if optional padding is necessary in the future. */
+           A NOP has no effect on option parsing. It is used only if optional padding is necessary in the future. */
         break;
       case EXT_URLDATA:
         proto_tree_add_item_ret_uint(ext_tree, hf_bt_tracker_extension_len, tvb, offset, 1, ENC_BIG_ENDIAN, &extension_length);
@@ -222,7 +222,7 @@ static int
 dissect_bt_tracker_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, unsigned msg_type)
 {
   unsigned node_index = 0;
-  int stride_length;
+  unsigned stride_length;
   proto_item *ti;
   proto_tree *sub_tree;
   bool is_ipv6;
@@ -541,7 +541,7 @@ proto_register_bt_tracker(void)
     },
     { &hf_bt_tracker_tr_port,
       { "(TCP) Port", "bt-tracker.tracker.port",
-      FT_UINT16, BASE_DEC, NULL, 0x00,
+      FT_UINT16, BASE_PT_TCP, NULL, 0x00,
       NULL, HFILL }
     },
     { &hf_bt_tracker_completed,
@@ -598,7 +598,7 @@ proto_register_bt_tracker(void)
 void
 proto_reg_handoff_bt_tracker(void)
 {
-  heur_dissector_add("udp", dissect_bt_tracker_heur, "BitTorrent Tracker over UDP", "bt_tracker_udp", proto_bt_tracker, HEURISTIC_ENABLE);
+  heur_dissector_add("udp", dissect_bt_tracker_heur, "BitTorrent Tracker over UDP", "bt_tracker_udp", proto_bt_tracker, HEURISTIC_DISABLE);
 
   bt_tracker_handle = create_dissector_handle(dissect_bt_tracker, proto_bt_tracker);
   dissector_add_for_decode_as_with_preference("udp.port", bt_tracker_handle);

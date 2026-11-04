@@ -26,8 +26,8 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/etypes.h>
-#include <epan/afn.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include "packet-mpls.h"
 
 
@@ -2109,10 +2109,10 @@ static int sender_id_tlv_chassis_id(proto_tree *cfm_tlv_tree, tvbuff_t *tvb, int
 		proto_tree_add_item(cfm_tlv_tree, hf_tlv_chassis_id_network_address_family, tvb, tlv_data_offset, 1, ENC_NA);
 
 		switch (tvb_get_uint8(tvb, tlv_data_offset)) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			proto_tree_add_item(cfm_tlv_tree, hf_tlv_chassis_id_network_address_ipv4, tvb, tlv_data_offset+1, tlv_chassis_id_length-1, ENC_BIG_ENDIAN);
 			break;
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			proto_tree_add_item(cfm_tlv_tree, hf_tlv_chassis_id_network_address_ipv6, tvb, tlv_data_offset+1, tlv_chassis_id_length-1, ENC_NA);
 			break;
 		default:
@@ -2204,10 +2204,10 @@ static int reply_ing_egr_tlv_port_id(proto_tree *cfm_tlv_tree, tvbuff_t *tvb, in
 		proto_tree_add_item(cfm_tlv_tree, hf_tlv_reply_ing_egr_portid_network_address_family, tvb, tlv_data_offset, 1, ENC_NA);
 
 		switch (tvb_get_uint8(tvb, tlv_data_offset)) {
-		case AFNUM_INET:
+		case AFNUM_IP:
 			proto_tree_add_item(cfm_tlv_tree, hf_tlv_reply_ing_egr_portid_network_address_ipv4, tvb, tlv_data_offset+1, tlv_reply_ingress_portid_length-1, ENC_BIG_ENDIAN);
 			break;
-		case AFNUM_INET6:
+		case AFNUM_IP6:
 			proto_tree_add_item(cfm_tlv_tree, hf_tlv_reply_ing_egr_portid_network_address_ipv6, tvb, tlv_data_offset+1, tlv_reply_ingress_portid_length-1, ENC_NA);
 			break;
 		default:
@@ -2237,7 +2237,7 @@ static int reply_ing_egr_tlv_port_id(proto_tree *cfm_tlv_tree, tvbuff_t *tvb, in
 /* Main CFM EOAM protocol dissector */
 static int dissect_cfm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint32_t cfm_pdu_type;
 	char* str_cfm_pdu_type;
 
@@ -2353,7 +2353,7 @@ static int dissect_cfm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	}
 
 	/* Get the First TLV offset and add the offset of the common CFM header*/
-	int cfm_first_tlv_offset = tvb_get_uint8(tvb, CFM_1ST_TLV_OFFSET) + CFM_COMMON_HEADER_LEN;
+	unsigned cfm_first_tlv_offset = tvb_get_uint8(tvb, CFM_1ST_TLV_OFFSET) + CFM_COMMON_HEADER_LEN;
 
 	/* The TLV offset should be the same as where the PDU left off or we have a problem */
 	if (cfm_first_tlv_offset != offset) {

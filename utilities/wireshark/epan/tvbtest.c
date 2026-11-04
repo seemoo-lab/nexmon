@@ -23,22 +23,22 @@
 
 #include <ws_diag_control.h>
 
-bool failed;
+static bool failed;
 
 typedef struct {
 	struct {
 		uint8_t needle;
-		int offset;
+		unsigned offset;
 	} g8;
 	struct {
 		bool test;
 		uint16_t needle;
-		int offset;
+		unsigned offset;
 	} g16;
 	struct {
 		bool test;
 		ws_mempbrk_pattern pattern;
-		int offset;
+		unsigned offset;
 		unsigned char found_needle;
 	} mempbrk;
 } search_test_params;
@@ -49,14 +49,13 @@ test_searches(tvbuff_t *tvb, int offset, search_test_params *sp)
 	volatile bool ex_thrown = false;
 
 	TRY {
-		sp->g8.offset = tvb_find_uint8(tvb, offset, -1, sp->g8.needle);
+		tvb_find_uint8_remaining(tvb, offset, sp->g8.needle, &sp->g8.offset);
 		if (sp->g16.test) {
-			sp->g16.offset = tvb_find_uint16(tvb, offset, -1, sp->g16.needle);
+			tvb_find_uint16_remaining(tvb, offset, sp->g16.needle, &sp->g16.offset);
 		}
 		if (sp->mempbrk.test) {
-			sp->mempbrk.offset =
-				tvb_ws_mempbrk_pattern_uint8(tvb, offset, -1,
-					&sp->mempbrk.pattern, &sp->mempbrk.found_needle);
+			tvb_ws_mempbrk_uint8_remaining(tvb, offset,
+				&sp->mempbrk.pattern, &sp->mempbrk.offset, &sp->mempbrk.found_needle);
 		}
 	}
 	CATCH_ALL {
@@ -67,7 +66,7 @@ test_searches(tvbuff_t *tvb, int offset, search_test_params *sp)
 }
 
 /* Tests a tvbuff against the expected pattern/length.
- * Returns true if all tests succeeed, false if any test fails */
+ * Returns true if all tests succeed, false if any test fails */
 static bool
 test(tvbuff_t *tvb, const char* name,
      uint8_t* expected_data, unsigned expected_length, unsigned expected_reported_length)
@@ -154,7 +153,9 @@ test(tvbuff_t *tvb, const char* name,
 	/* Test boundary case. A BoundsError exception should be thrown. */
 	ex_thrown = false;
 	TRY {
-		tvb_get_ptr(tvb, -1, 2);
+		tvb_get_ptr(tvb, length - 1, 2);
+		/* Note that length 0 throws a ReportedBoundsError,
+		 * for a slightly different reason (offset overflow.) */
 	}
 	CATCH(BoundsError) {
 		ex_thrown = true;
@@ -163,7 +164,11 @@ test(tvbuff_t *tvb, const char* name,
 		printf("04: Caught wrong exception: FragmentBoundsError\n");
 	}
 	CATCH(ReportedBoundsError) {
-		printf("04: Caught wrong exception: ReportedBoundsError\n");
+		if (length == 0) {
+			ex_thrown = true;
+		} else {
+			printf("04: Caught wrong exception: ReportedBoundsError\n");
+		}
 	}
 	CATCH_ALL {
 		printf("04: Caught wrong exception: %lu\n", exc->except_id.except_code);
@@ -204,29 +209,31 @@ test(tvbuff_t *tvb, const char* name,
 	}
 
 	/* Test boundary case. A BoundsError exception should not be thrown. */
-	ex_thrown = false;
-	TRY {
-		tvb_get_ptr(tvb, -1, length ? 1 : 0);
-	}
-	CATCH(BoundsError) {
-		ex_thrown = true;
-	}
-	CATCH(FragmentBoundsError) {
-		printf("06: Caught wrong exception: FragmentBoundsError\n");
-	}
-	CATCH(ReportedBoundsError) {
-		printf("06: Caught wrong exception: ReportedBoundsError\n");
-	}
-	CATCH_ALL {
-		printf("06: Caught wrong exception: %lu\n", exc->except_id.except_code);
-	}
-	ENDTRY;
+	if (length > 0) {
+		ex_thrown = false;
+		TRY {
+			tvb_get_ptr(tvb, length - 1, 1);
+		}
+		CATCH(BoundsError) {
+			ex_thrown = true;
+		}
+		CATCH(FragmentBoundsError) {
+			printf("06: Caught wrong exception: FragmentBoundsError\n");
+		}
+		CATCH(ReportedBoundsError) {
+			printf("06: Caught wrong exception: ReportedBoundsError\n");
+		}
+		CATCH_ALL {
+			printf("06: Caught wrong exception: %lu\n", exc->except_id.except_code);
+		}
+		ENDTRY;
 
-	if (ex_thrown) {
-		printf("06: Failed TVB=%s BoundsError when retrieving 1 bytes from"
-				" offset -1\n", name);
-		failed = true;
-		return false;
+		if (ex_thrown) {
+			printf("06: Failed TVB=%s BoundsError when retrieving 1 bytes from"
+					" offset -1\n", name);
+			failed = true;
+			return false;
+		}
 	}
 
 
@@ -261,7 +268,7 @@ test(tvbuff_t *tvb, const char* name,
 	if (length >= 4) {
 		ex_thrown = false;
 		TRY {
-			val32 = tvb_get_ntohl(tvb, -4);
+			val32 = tvb_get_ntohl(tvb, length-4);
 		}
 		CATCH_ALL {
 			ex_thrown = true;
@@ -270,7 +277,7 @@ test(tvbuff_t *tvb, const char* name,
 
 		if (ex_thrown) {
 			printf("09: Failed TVB=%s Exception when retrieving "
-					"uint32_t from offset 0\n", name);
+					"uint32_t from offset %u (length - 4)\n", name, length-4);
 			failed = true;
 			return false;
 		}
@@ -302,7 +309,7 @@ test(tvbuff_t *tvb, const char* name,
 	}
 
 	/* One big memdup */
-	ptr = (uint8_t*)tvb_memdup(NULL, tvb, 0, -1);
+	ptr = (uint8_t*)tvb_memdup(NULL, tvb, 0, length);
 	if ((length != 0 && memcmp(ptr, expected_data, length) != 0) ||
 	    (length == 0 && ptr != NULL)) {
 		printf("12: Failed TVB=%s Offset=0 Length=-1 "
@@ -349,7 +356,7 @@ test(tvbuff_t *tvb, const char* name,
 			failed = true;
 			return false;
 		}
-		if ((unsigned)sp.g8.offset != i) {
+		if (sp.g8.offset != i) {
 			printf("13: Failed TVB=%s Wrong offset for uint8_t:%02x,"
 					" got %d, expected %d\n",
 					name, sp.g8.needle, sp.g8.offset, i);
@@ -464,12 +471,12 @@ run_tests(void)
 
 	subset_length[1]	  = 10;
 	subset_reported_length[1] = 11;
-	tvb_subset[1]		  = tvb_new_subset_length_caplen(tvb_large[0], -10, 10, 11);
+	tvb_subset[1]		  = tvb_new_subset_length_caplen(tvb_large[0], 9, 10, 11);
 	subset[1]		  = &large[0][9];
 
 	subset_length[2]	  = 16;
 	subset_reported_length[2] = 17;
-	tvb_subset[2]		  = tvb_new_subset_length_caplen(tvb_small[1], -16, -1, 17);
+	tvb_subset[2]		  = tvb_new_subset_length(tvb_small[1], 0, 17);
 	subset[2]		  = &small[1][0];
 
 	subset_length[3]	  = 3;
@@ -479,7 +486,7 @@ run_tests(void)
 
 	subset_length[4]	  = 5;
 	subset_reported_length[4] = 6;
-	tvb_subset[4]		  = tvb_new_subset_length_caplen(tvb_subset[1], -5, 5, 6);
+	tvb_subset[4]		  = tvb_new_subset_remaining(tvb_subset[1], 5);
 	subset[4]		  = &large[0][14];
 
 	subset_length[5]	  = 8;
@@ -624,7 +631,7 @@ typedef struct
 } varint_test_s;
 
 DIAG_OFF_PEDANTIC
-varint_test_s varint[] = {
+static varint_test_s varint[] = {
 	{0, (const uint8_t *)"", 0, FT_VARINT_MAX_LEN, DissectorError, 0, 0}, // no encoding specified
 	// ENC_VARINT_PROTOBUF
 	{0, (const uint8_t *)"", ENC_VARINT_PROTOBUF, FT_VARINT_MAX_LEN, ReportedBoundsError, 0, 0},
@@ -701,7 +708,7 @@ varint_tests(void)
 	tvb_free_chain(tvb_parent);  /* should free all tvb's and associated data */
 }
 
-#define DATA_AND_LEN(X) .data = X, .len = sizeof(X) - 1
+#define DATA_AND_LEN(X) .data = (const uint8_t*)X, .len = sizeof(X) - 1
 
 static void
 zstd_tests (void) {
@@ -726,7 +733,7 @@ zstd_tests (void) {
 		},
 		{
 			.desc = "Uncompressing too short length",
-			.data = "\x28\xb5\x2f\xfd\x20\x07\x39\x00\x00\x66\x6f\x6f\x62\x61\x72\x00",
+			.data = (const uint8_t*)"\x28\xb5\x2f\xfd\x20\x07\x39\x00\x00\x66\x6f\x6f\x62\x61\x72\x00",
 			.len = 1,
 			.expect = NULL
 		},
@@ -744,7 +751,7 @@ zstd_tests (void) {
 			// data is two frames of compressed data with compression level 1.
 			// the first frame is the string "foo" with no null terminator.
 			// the second frame is the string "bar" with a null terminator.
-			.data ="\x28\xb5\x2f\xfd\x20\x03\x19\x00\x00\x66\x6f\x6f"
+			.data = (const uint8_t*)"\x28\xb5\x2f\xfd\x20\x03\x19\x00\x00\x66\x6f\x6f"
 			       "\x28\xb5\x2f\xfd\x20\x04\x21\x00\x00\x62\x61\x72\x00",
 			.len = 13,
 			.expect = NULL
@@ -760,7 +767,7 @@ zstd_tests (void) {
 		},
 		{
 			.desc = "Uncompressing no data",
-			.data = "\0",
+			.data = (const uint8_t*)"\0",
 			.len = 0,
 			.expect = ""
 		},
@@ -773,7 +780,7 @@ zstd_tests (void) {
 		printf ("ZSTD test: %s ... begin\n", t->desc);
 
 		tvbuff_t *tvb = tvb_new_real_data (t->data, (const unsigned) t->len, (const unsigned) t->len);
-		tvbuff_t *got = tvb_uncompress_zstd (tvb, 0, (int) t->len);
+		tvbuff_t *got = tvb_uncompress_zstd (tvb, 0, (unsigned) t->len);
 		if (!t->expect) {
 			if (got) {
 				fprintf (stderr, "ZSTD test: %s ... FAIL: Expected error, but got non-NULL from uncompress\n", t->desc);
@@ -786,7 +793,7 @@ zstd_tests (void) {
 				failed = true;
 				return;
 			}
-			char * got_str = tvb_get_string_enc (NULL, got, 0, tvb_reported_length (got), ENC_ASCII);
+			char * got_str = (char*)tvb_get_string_enc (NULL, got, 0, tvb_reported_length (got), ENC_ASCII);
 			if (0 != strcmp (got_str, t->expect)) {
 				printf ("ZSTD test: %s ... FAIL: Expected \"%s\", got \"%s\".\n", t->desc, t->expect, got_str);
 				failed = true;

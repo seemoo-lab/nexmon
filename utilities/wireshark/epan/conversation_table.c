@@ -53,12 +53,6 @@ tap_packet_cb get_endpoint_packet_func(register_ct_t* ct)
     return ct->endpoint_func;
 }
 
-/* For backwards source and binary compatibility */
-tap_packet_cb get_hostlist_packet_func(register_ct_t* ct)
-{
-    return get_endpoint_packet_func(ct);
-}
-
 static wmem_tree_t *registered_ct_tables;
 
 static bool
@@ -118,13 +112,6 @@ dissector_endpoint_init(const char* opt_arg, void* userdata)
     dissector_endpoint_init_internal(opt_arg, userdata);
 }
 
-/* For backwards source and binary compatibility */
-void
-dissector_hostlist_init(const char *opt_arg, void* userdata)
-{
-    dissector_endpoint_init(opt_arg, userdata);
-}
-
 /** get conversation from protocol ID
  *
  * @param proto_id protocol ID
@@ -133,6 +120,11 @@ dissector_hostlist_init(const char *opt_arg, void* userdata)
 register_ct_t* get_conversation_by_proto_id(int proto_id)
 {
     return (register_ct_t*)wmem_tree_lookup_string(registered_ct_tables, proto_get_protocol_short_name(find_protocol_by_id(proto_id)), 0);
+}
+
+void conversation_table_init(void)
+{
+    registered_ct_tables = wmem_tree_new(wmem_epan_scope());
 }
 
 void
@@ -148,9 +140,6 @@ register_conversation_table(const int proto_id, bool hide_ports, tap_packet_cb c
     table->endpoint_func = endpoint_packet_func;
     table->conv_gui_init = NULL;
     table->endpoint_gui_init = NULL;
-
-    if (registered_ct_tables == NULL)
-        registered_ct_tables = wmem_tree_new(wmem_epan_scope());
 
     wmem_tree_insert_string(registered_ct_tables, proto_get_protocol_short_name(find_protocol_by_id(proto_id)), table, 0);
 }
@@ -204,12 +193,6 @@ set_endpoint_gui_data(const void *key _U_, void *value, void *userdata)
 void endpoint_table_set_gui_info(endpoint_gui_init_cb init_cb)
 {
     wmem_tree_foreach(registered_ct_tables, set_endpoint_gui_data, (void*)init_cb);
-}
-
-/* For backwards source and binary compatibility */
-void hostlist_table_set_gui_info(endpoint_gui_init_cb init_cb)
-{
-    endpoint_table_set_gui_info(init_cb);
 }
 
 void conversation_table_iterate_tables(wmem_foreach_func func, void* user_data)
@@ -328,12 +311,6 @@ void reset_endpoint_table_data(conv_hash_t *ch)
 
     ch->conv_array=NULL;
     ch->hashtable=NULL;
-}
-
-/* For backwards source and binary compatibility */
-void reset_hostlist_table_data(conv_hash_t *ch)
-{
-    reset_endpoint_table_data(ch);
 }
 
 char *get_conversation_address(wmem_allocator_t *allocator, address *addr, bool resolve_names)
@@ -650,12 +627,6 @@ char *get_endpoint_filter(endpoint_item_t *endpoint_item)
     return str;
 }
 
-/* For backwards source and binary compatibility */
-char *get_hostlist_filter(endpoint_item_t *endpoint_item)
-{
-    return get_endpoint_filter(endpoint_item);
-}
-
 void
 add_conversation_table_data(conv_hash_t *ch, const address *src, const address *dst, uint32_t src_port, uint32_t dst_port, int num_frames, int num_bytes,
         nstime_t *ts, nstime_t *abs_ts, ct_dissector_info_t *ct_info, conversation_type ctype)
@@ -831,7 +802,7 @@ add_conversation_table_data_extended(
      * Relies heavily on frameid to identify the conversation.
      * XXX - Later on, either implement one more find_conversation() function to look for
      * conv_id in the 'addr/port tuple' Htable, or move the conversation to the convid Htable to
-     * build a quickier identification method.
+     * build a quicker identification method.
      */
     conversation_t *ct = find_conversation(frameid, src, dst, ctype, src_port, dst_port, 0);
 
@@ -1070,13 +1041,6 @@ add_endpoint_table_data_ipv4_subnet(
     else {
         add_endpoint_table_data(ch, addr, port, sender, num_frames, num_bytes, et_info, etype);
     }
-}
-
-/* For backwards source and binary compatibility */
-void
-add_hostlist_table_data(conv_hash_t *ch, const address *addr, uint32_t port, bool sender, int num_frames, int num_bytes, et_dissector_info_t *et_info, endpoint_type etype)
-{
-    add_endpoint_table_data(ch, addr, port, sender, num_frames, num_bytes, et_info, etype);
 }
 
 /*

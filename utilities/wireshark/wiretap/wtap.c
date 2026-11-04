@@ -6,8 +6,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <config.h>
-
+#include "config.h"
 #define WS_LOG_DOMAIN LOG_DOMAIN_WIRETAP
 
 #include "wtap.h"
@@ -125,6 +124,18 @@ wtap_file_tsprec(wtap *wth)
 	return wth->file_tsprec;
 }
 
+const nstime_t*
+wtap_file_start_ts(wtap *wth)
+{
+	return &wth->file_start_ts;
+}
+
+const nstime_t*
+wtap_file_end_ts(wtap *wth)
+{
+	return &wth->file_end_ts;
+}
+
 unsigned
 wtap_file_get_num_shbs(wtap *wth)
 {
@@ -193,17 +204,6 @@ wtap_file_get_idb_info(wtap *wth)
 	idb_info->interface_data	= wth->interface_data;
 
 	return idb_info;
-}
-
-wtapng_dpib_lookup_info_t *
-wtap_file_get_dpib_lookup_info(wtap *wth)
-{
-	wtapng_dpib_lookup_info_t *lookup_info;
-
-	lookup_info = g_new(wtapng_dpib_lookup_info_t, 1);
-	lookup_info->dpibs = wth->dpibs;
-
-	return lookup_info;
 }
 
 wtap_block_t
@@ -293,10 +293,123 @@ wtap_add_idb(wtap *wth, wtap_block_t idb)
 	g_array_append_val(wth->interface_data, idb);
 }
 
-void
-wtap_add_dpib(wtap *wth, wtap_block_t dpib)
+unsigned
+wtap_file_get_num_pibs(wtap *wth)
 {
-	g_array_append_val(wth->dpibs, dpib);
+	if (!wth->pibs) {
+		return 0;
+	}
+	return wth->pibs->len;
+}
+
+wtap_block_t
+wtap_file_get_pib(wtap *wth, unsigned pib_num)
+{
+	if ((wth == NULL) || (wth->pibs == NULL) || (pib_num >= wth->pibs->len))
+		return NULL;
+
+	return g_array_index(wth->pibs, wtap_block_t, pib_num);
+}
+
+#define NS_PER_S 1000000000U
+
+static void
+wtap_pib_index_free(void *pib_nums)
+{
+	g_array_free((GArray *)pib_nums, true);
+}
+
+void
+wtap_add_pib(wtap *wth, wtap_block_t pib, int64_t offset)
+{
+	wtapng_process_info_mandatory_t *pib_mand;
+	GArray *pib_nums;
+	unsigned pib_num;
+
+	pib_num = wth->pibs->len;
+	g_array_append_val(wth->pibs, pib);
+	if (wth->pib_offsets == NULL)
+		wth->pib_offsets = g_array_new(false, false, sizeof(int64_t));
+	g_array_append_val(wth->pib_offsets, offset);
+
+	/*
+	 * Index the block by its process ID, as packets refer to a process
+	 * by its ID.
+	 */
+	if (wth->pibs_by_pid == NULL) {
+		wth->pibs_by_pid = g_hash_table_new_full(g_direct_hash,
+		    g_direct_equal, NULL, wtap_pib_index_free);
+	}
+	pib_mand = (wtapng_process_info_mandatory_t *)wtap_block_get_mandatory_data(pib);
+	pib_nums = (GArray *)g_hash_table_lookup(wth->pibs_by_pid,
+	    GUINT_TO_POINTER(pib_mand->process_id));
+	if (pib_nums == NULL) {
+		pib_nums = g_array_new(false, false, sizeof(unsigned));
+		g_hash_table_insert(wth->pibs_by_pid,
+		    GUINT_TO_POINTER(pib_mand->process_id), pib_nums);
+	}
+	g_array_append_val(pib_nums, pib_num);
+}
+
+bool
+wtap_file_find_pib(wtap *wth, uint32_t process_id, const nstime_t *ts,
+    int64_t file_off, unsigned *pib_num)
+{
+	GArray *pib_nums;
+	unsigned i, count, num = 0;
+	wtap_block_t pib;
+	uint64_t start_time;
+	nstime_t start_ts;
+
+	if (wth == NULL || wth->pibs_by_pid == NULL)
+		return false;
+	pib_nums = (GArray *)g_hash_table_lookup(wth->pibs_by_pid,
+	    GUINT_TO_POINTER(process_id));
+	if (pib_nums == NULL)
+		return false;
+
+	/*
+	 * Consider only the blocks that precede the packet in the file: a
+	 * writer describes a process before the first packet it attributes
+	 * to it, so a later block describes a later process with the same
+	 * ID.  If no block precedes the packet, because the writer put them
+	 * at the end or the packet's position is not known, consider them
+	 * all.
+	 */
+	count = pib_nums->len;
+	if (file_off >= 0 && wth->pib_offsets != NULL) {
+		while (count > 0 &&
+		    g_array_index(wth->pib_offsets, int64_t,
+		        g_array_index(pib_nums, unsigned, count - 1)) > file_off)
+			count--;
+		if (count == 0)
+			count = pib_nums->len;
+	}
+
+	/*
+	 * Search backwards, so that the most recent block for a process ID
+	 * that was reused wins, skipping the blocks for processes that
+	 * started after the given time.  If every block has a later start
+	 * time, the clocks probably disagree; take the last of them, as its
+	 * position in the file is the evidence left.
+	 */
+	for (i = count; i > 0; i--) {
+		num = g_array_index(pib_nums, unsigned, i - 1);
+		if (ts == NULL)
+			break;
+		pib = g_array_index(wth->pibs, wtap_block_t, num);
+		if (wtap_block_get_uint64_option_value(pib, OPT_PIB_STARTTIME,
+		    &start_time) != WTAP_OPTTYPE_SUCCESS)
+			break;
+		start_ts.secs = (time_t)(start_time / NS_PER_S);
+		start_ts.nsecs = (int)(start_time % NS_PER_S);
+		if (nstime_cmp(&start_ts, ts) <= 0)
+			break;
+	}
+	if (i == 0)
+		num = g_array_index(pib_nums, unsigned, count - 1);
+	*pib_num = num;
+	return true;
 }
 
 static wtap_block_t
@@ -579,7 +692,7 @@ wtap_dump_params_init(wtap_dump_params *params, wtap *wth)
 	params->nrbs_growing = wth->nrbs;
 	params->dsbs_growing = wth->dsbs;
 	params->mevs_growing = wth->meta_events;
-	params->dpibs_growing = wth->dpibs;
+	params->pibs_growing = wth->pibs;
 	params->dont_copy_idbs = false;
 }
 
@@ -606,7 +719,7 @@ wtap_dump_params_init_no_idbs(wtap_dump_params *params, wtap *wth)
 	params->nrbs_growing = wth->nrbs;
 	params->dsbs_growing = wth->dsbs;
 	params->mevs_growing = wth->meta_events;
-	params->dpibs_growing = wth->dpibs;
+	params->pibs_growing = wth->pibs;
 	params->dont_copy_idbs = true;
 }
 
@@ -627,6 +740,12 @@ void
 wtap_dump_params_discard_meta_events(wtap_dump_params *params)
 {
 	params->mevs_growing = NULL;
+}
+
+void
+wtap_dump_params_discard_process_info(wtap_dump_params *params)
+{
+	params->pibs_growing = NULL;
 }
 
 void
@@ -1328,10 +1447,24 @@ static const struct encap_type_info encap_table_base[] = {
 
 	/* WTAP_ENCAP_DECT_NR */
 	{ "dect_nr", "DECT-2020 New Radio (NR) MAC layer" },
+
+	/* WTAP_ENCAP_MMODULE */
+	{ "m_module", "Bachmann M-Module file" },
+
+	/* WTAP_ENCAP_PROCMON */
+	{ "procmon", "Microsoft Process Monitor file"},
+
+	/* WTAP_ENCAP_ZWAVE_TAP */
+	{ "zwave-tap", "Z-Wave Wireless with TAP pseudo-header" },
+
+	/* WTAP_ENCAP_DECT_NR_TAP */
+	{ "dect_nr_tap", "DECT-2020 New Radio (NR) TAP header" },
+
+	/* WTAP_ENCAP_GSMTAP_UM */
+	{ "gsmtap_um", "GSMTAP Um" },
 };
 
-WS_DLL_LOCAL
-int wtap_num_encap_types = array_length(encap_table_base);
+static int wtap_num_encap_types = array_length(encap_table_base);
 static GArray* encap_table_arr;
 
 #define encap_table_entry(encap)	\
@@ -1500,6 +1633,9 @@ static const char * const wtap_errlist[] = {
 	NULL,
 
 	/* WTAP_ERR_CANT_SEEK_COMPRESSED */
+	/* This indicates a bug in the file format's module, because
+	 * the module should have set writing_must_seek to true in its
+	 * file_type_subtype_info */
 	NULL,
 
 	/* WTAP_ERR_DECOMPRESS */
@@ -1614,7 +1750,11 @@ wtap_close(wtap *wth)
 	wtap_block_array_free(wth->interface_data);
 	wtap_block_array_free(wth->dsbs);
 	wtap_block_array_free(wth->meta_events);
-	wtap_block_array_free(wth->dpibs);
+	wtap_block_array_free(wth->pibs);
+	if (wth->pibs_by_pid != NULL)
+		g_hash_table_destroy(wth->pibs_by_pid);
+	if (wth->pib_offsets != NULL)
+		g_array_free(wth->pib_offsets, true);
 
 	g_free(wth);
 }
@@ -1727,6 +1867,28 @@ wtapng_process_dsb(wtap *wth, wtap_block_t dsb)
 		wth->add_new_secrets(dsb_mand->secrets_type, dsb_mand->secrets_data, dsb_mand->secrets_len);
 }
 
+void wtap_set_cb_pcapng_block(wtap *wth, wtap_pcapng_block_callback_t callback, void *user_data) {
+	if (!wth) {
+		return;
+	}
+
+	wth->pcapng_block_cb = callback;
+	wth->pcapng_block_cb_data = user_data;
+
+	/*
+	 * Replay all meta events that were read so far to the new callback.
+	 */
+	if (wth->meta_events) {
+		for (unsigned i = 0; i < wth->meta_events->len; i++) {
+			wtap_block_t block = g_array_index(wth->meta_events, wtap_block_t, i);
+			const wtapng_meta_event_mandatory_t *mev_mand =
+				(const wtapng_meta_event_mandatory_t*)wtap_block_get_mandatory_data(block);
+			callback(mev_mand->mev_block_type, mev_mand->mev_data,
+			         mev_mand->mev_data_len, user_data);
+		}
+	}
+}
+
 /*
  * Reset a wtap_rec to an initialized state, making it ready for a
  * new record.
@@ -1734,27 +1896,13 @@ wtapng_process_dsb(wtap *wth, wtap_block_t dsb)
 static void
 wtap_reset_rec(wtap *wth, wtap_rec *rec)
 {
+	wtap_rec_reset(rec);
 	/*
 	 * Set the time stamp precision to the file's time stamp
 	 * precision value, as a default. If it's per-packet,
 	 * the read routine must override it.
 	 */
 	rec->tsprec = wth->file_tsprec;
-	rec->block = NULL;
-	rec->block_was_modified = false;
-
-	/*
-	 * Assume the file has only one section; the module for the
-	 * file type needs to indicate the section number if there's
-	 * more than one section.
-	 */
-	rec->section_number = 0;
-
-	/*
-	 * Reset the data buffer to an initialized state.
-	 * XXX - any other buffers?
-	 */
-	ws_buffer_clean(&rec->data);
 }
 
 
@@ -2060,7 +2208,7 @@ wtap_read_so_far(wtap *wth)
 
 /* Perform global/initial initialization */
 void
-wtap_rec_init(wtap_rec *rec, gsize space)
+wtap_rec_init(wtap_rec *rec, size_t space)
 {
 	memset(rec, 0, sizeof *rec);
 	ws_buffer_init(&rec->options_buf, 0);
@@ -2104,6 +2252,28 @@ wtap_rec_reset(wtap_rec *rec)
 	wtap_block_unref(rec->block);
 	rec->block = NULL;
 	rec->block_was_modified = false;
+
+	/*
+	 * Assume the file has only one section; the module for the
+	 * file type needs to indicate the section number if there's
+	 * more than one section.
+	 */
+	rec->section_number = 0;
+
+	/*
+	 * Reset the data buffer to an initialized state.
+	 */
+	ws_buffer_clean(&rec->data);
+
+	/*
+	 * Reset the options buffer to an initialized state.
+	 * (Nothing in the repo uses this currently, but perhaps third
+	 * party code does.)
+	 */
+	ws_buffer_clean(&rec->options_buf);
+
+	/* XXX - Reset rec_type, presence_flags, etc? All the modules
+	 * explicitly set the values. */
 }
 
 /* clean up record metadata */
@@ -2322,7 +2492,7 @@ wtap_buffer_append_epdu_string(Buffer *buf, uint16_t epdu_tag, const char *val)
 	 */
 	if (string_len > UINT16_MAX)
 		string_len = UINT16_MAX;
-	wtap_buffer_append_epdu_tag(buf, epdu_tag, val, (uint16_t) string_len);
+	wtap_buffer_append_epdu_tag(buf, epdu_tag, (const uint8_t*)val, (uint16_t) string_len);
 }
 
 int
@@ -2343,15 +2513,16 @@ wtap_buffer_append_epdu_end(Buffer *buf)
  * Initialize the library.
  */
 void
-wtap_init(bool load_wiretap_plugins)
+wtap_init(bool load_wiretap_plugins, const char* app_env_var_prefix, const struct file_extension_info* file_extensions, unsigned num_extensions)
 {
 	init_open_routines();
 	wtap_opttypes_initialize();
 	wtap_init_encap_types();
-	wtap_init_file_type_subtypes();
+	wtap_init_file_type_subtypes(app_env_var_prefix);
+	wtap_init_file_type_extensions(file_extensions, num_extensions);
 	if (load_wiretap_plugins) {
 #ifdef HAVE_PLUGINS
-		libwiretap_plugins = plugins_init(WS_PLUGIN_WIRETAP);
+		libwiretap_plugins = plugins_init(WS_PLUGIN_WIRETAP, app_env_var_prefix);
 #endif
 		g_slist_foreach(wtap_plugins, call_plugin_register_wtap_module, NULL);
 	}

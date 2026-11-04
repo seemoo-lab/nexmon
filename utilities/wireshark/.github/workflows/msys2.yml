@@ -20,7 +20,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install dependencies
-        run: tools/msys2-setup.sh --install-all --noconfirm
+        run: tools/os_setup/msys2-setup.sh --install-all --noconfirm
       - name: Build
         run: |
           mkdir build && cd build
@@ -40,7 +40,7 @@ jobs:
     needs: msys2-ucrt64
     steps:
       - name: Download installer
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: nsis-installer
           path: downloads
@@ -66,6 +66,7 @@ jobs:
             $versionOutput = & "C:\Wireshark\tshark.exe" --version
             if ($LASTEXITCODE -ne 0) {
               Write-Error "Failed to retrieve TShark version."
+              Write-Output $versionOutput
               exit $LASTEXITCODE
             }
             Write-Output $versionOutput

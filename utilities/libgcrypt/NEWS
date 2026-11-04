@@ -1,4 +1,26 @@
-Noteworthy changes in version 1.12.3 (2026-08-26)  [C28/A8/R0]
+Noteworthy changes in version 1.12.4 (2026-09-11)  [C28/A8/R9]
+-------------------------------------------------
+
+ * Bug fixes:
+
+   * Fix build problem with some compiler versions related to SM4
+     instructions.  [rCf0bc379e0f]
+
+   * Fix padding in cSHAKE found by NIST ACVP conformance vectors.
+     [rCf54ce47180]
+
+   * Fix RSA PSS handling of huge salt lengths.  [T8377]
+
+   * Validate the length of hashed input for RSA PSS.  [T8391]
+
+   * Improve RSA OAEP decoder correctnes by validating an all-zero
+     padding.  [T8390]
+
+
+ Release-info: https://dev.gnupg.org/T8417
+
+
+Noteworthy changes in version 1.12.3 (2026-08-26)  [C28/A8/R8]
 -------------------------------------------------
 
  * Bug fixes:
@@ -24,7 +46,7 @@ Noteworthy changes in version 1.12.3 (2026-08-26)  [C28/A8/R0]
    - Assert 32 KiB input cap in gcm_ctr_encrypt.  [T8387]
 
    - Fix assertion failure in OCB when a buffered block becomes block
-     65536.  [TT8389]
+     65536.  [T8389]
 
    - Fix OOB read in IMIT MAC verify of GOST28147.  [T8388]
 
@@ -81,7 +103,7 @@ Noteworthy changes in version 1.12.3 (2026-08-26)  [C28/A8/R0]
 
    - Add curve "ietf25" as alternative to "Curve25519" with exact
      RFC-8410 semantics.  The name "X25519" was already used as an
-     alias, thus this new name.
+     alias, thus this new name.  [rC997217e600]
 
    - Add straight-line speculation hardening for function ends.
      [rC9b684f4a44]
@@ -91,7 +113,8 @@ Noteworthy changes in version 1.12.3 (2026-08-26)  [C28/A8/R0]
    - Add post-quantum algorithm benchmarking to bench-slope.
 
    - Due to the minor API updates and but with no newer branch
-     released the SO name has been updated.
+     released the SO name has been updated.  Update: Due to a
+     typo the revision part of the LD number is 8 and not 0.
 
  Release-info: https://dev.gnupg.org/T8223
 

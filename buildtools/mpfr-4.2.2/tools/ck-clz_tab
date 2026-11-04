@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Copyright 2016-2025 Free Software Foundation, Inc.
+# This script is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# ck-clz_tab can be run from the tools directory
+dir=`pwd`
+[ -d src ] || [ "`basename \"$dir\"`" != tools ] || cd ..
+
+size1=`sed -n 's/^extern .* __clz_tab\[\([0-9]\+\)\].*/\1/p' \
+        src/mpfr-longlong.h`
+
+size2=`sed -n 's/^.* __clz_tab\[\([0-9]\+\)\].*/\1/p' \
+        src/mp_clz_tab.c`
+
+if [ -n "$size1" ] && [ -n "$size2" ] && [ "$size1" != "$size2" ]; then
+  cat >&2 <<EOF
+The __clz_tab sizes do not match.
+  mpfr-longlong.h  $size1
+  mp_clz_tab.c     $size2
+EOF
+  exit 1
+fi

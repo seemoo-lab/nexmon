@@ -33,8 +33,9 @@ the finished code may make more sense as a built-in dissector.
 [NOTE]
 .Read README.dissector
 ====
-The file _doc/README.dissector_ contains detailed information about writing
-a dissector. In many cases it is more up to date than this document.
+The file wsrepofile:doc/README.dissector[] contains
+detailed information about writing a dissector. In many cases it is more up to
+date than this document.
 ====
 
 [#ChDissectAdd]
@@ -679,7 +680,7 @@ dissect_foo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     proto_item *ti = proto_tree_add_item(tree, proto_foo, tvb, 0, -1, ENC_NA);
     proto_item_append_text(ti, ", Type %s",
-        val_to_str(packet_type, packettypenames, "Unknown (0x%02x)"));
+        val_to_str(pinfo->pool, packet_type, packettypenames, "Unknown (0x%02x)"));
     proto_tree *foo_tree = proto_item_add_subtree(ti, ett_foo);
     proto_tree_add_item(foo_tree, hf_foo_pdu_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
@@ -810,7 +811,7 @@ There's been a slight alteration to the function used to add the sequence number
 dissection. Firstly, `proto_tree_add_item()` has changed to
 `proto_tree_add_item_ret_uint()` so we can store the actual value of the field in the variable
 `sequenceno`.
-We can now use the value of this field to determine wether to add
+We can now use the value of this field to determine whether to add
 the expert item.
 
 Secondly, the `proto_item` returned by the function is saved in previously
@@ -849,9 +850,9 @@ effect.
         uint16_t orig_size = tvb_get_ntohs(tvb, offset);
         unsigned char *decompressed_buffer = (unsigned char*)wmem_alloc(pinfo->pool, orig_size);
         offset += 2;
-        decompress_packet(tvb_memdup(pinfo->pool, tvb, offset, -1),
-                tvb_captured_length_remaining(tvb, offset),
-                decompressed_buffer, orig_size);
+        unsigned compr_size = tvb_captured_length_remaining(tvb, offset);
+        decompress_packet(tvb_memdup(pinfo->pool, tvb, offset, compr_size),
+                compr_size, decompressed_buffer, orig_size);
         /* Now re-setup the tvb buffer to have the new data */
         next_tvb = tvb_new_child_real_data(tvb, decompressed_buffer, orig_size, orig_size);
         add_new_data_source(pinfo, next_tvb, "Decompressed Data");
@@ -870,10 +871,13 @@ work it out for you, in which case the logic would be different.
 
 So armed with the size, a buffer is allocated to receive the uncompressed data
 using `wmem_alloc()` in `pinfo->pool` memory, and the packet is decompressed into
-it. The `tvb_memdup()` function is useful to get a copy of the raw data of
-the packet from the offset onwards. In this case the decompression routine also
-needs to know the length, which is given by the
-`tvb_captured_length_remaining()` function.
+it. The `tvb_memdup()` function gets a copy of the raw data of the packet from
+the offset onwards. The length of the array of bytes has to be specified to
+`tvb_memdup()` and the decompression function; in this case we want the rest of
+the bytes present in tvbuffer, which is given by the `tvb_captured_length_remaining()`
+function. (Using `tvb_reported_length_remaining()` would throw an exception
+on a truncated packet. Sometimes that is desired, but here we assume the
+decompression function can partially decompress truncated data.)
 
 Next we build a new tvb buffer from this data, using the
 `tvb_new_child_real_data()` call. This data is a child of our original data, so
@@ -905,7 +909,7 @@ arrived and then start the dissection.
 
 The following sections will guide you through two common cases. For a
 description of all possible functions, structures and parameters, see
-_epan/reassemble.h_.
+wsrepofile:epan/reassemble.h[].
 
 [#ChDissectReassembleUdp]
 
@@ -1034,12 +1038,12 @@ Now the mysterious data we passed into the `fragment_add_seq_check()`.
 .Reassembling fragments - Initialisation
 [source,c]
 ----
-static reassembly_table reassembly_table;
+static reassembly_table msg_reassembly_table;
 
 static void
 proto_register_msg(void)
 {
-    reassembly_table_register(&msg_reassemble_table,
+    reassembly_table_register(&msg_reassembly_table,
         &addresses_ports_reassembly_table_functions);
 }
 ----
@@ -1071,6 +1075,7 @@ static int hf_msg_fragment_error;
 static int hf_msg_fragment_count;
 static int hf_msg_reassembled_in;
 static int hf_msg_reassembled_length;
+static int hf_msg_reassembled_data;
 ...
 static int ett_msg_fragment;
 static int ett_msg_fragments;
@@ -1092,6 +1097,8 @@ static const fragment_items msg_frag_items = {
     &hf_msg_reassembled_in,
     /* Reassembled length field */
     &hf_msg_reassembled_length,
+    /* Reassembled data field (can be NULL) */
+    &hf_msg_reassembled_data,
     /* Tag */
     "Message fragments"
 };
@@ -1131,6 +1138,9 @@ static hf_register_info hf[] =
 {&hf_msg_reassembled_length,
     {"Reassembled length", "msg.reassembled.length",
     FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL } },
+{&hf_msg_reassembled_data,
+    {"Reassembled data", "msg.reassembled.data",
+    FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL } },
 ...
 static int *ett[] =
 {
@@ -1165,7 +1175,7 @@ so that a message can start at an arbitrary position within a packet.
 
 This sounds complicated, but there is a simple solution.
 `tcp_dissect_pdus()` does all this tcp packet reassembling for you.
-This function is implemented in _epan/dissectors/packet-tcp.h_.
+This function is implemented in wsrepofile:epan/dissectors/packet-tcp.h[].
 
 .Reassembling TCP fragments
 [source,c]
@@ -1517,8 +1527,8 @@ their arguments, return types, and what they do.
 
 === How to use conversations
 
-Some info about how to use conversations in a dissector can be found in the file
-_doc/README.dissector_, chapter 2.2.
+Some info about how to use conversations in a dissector can be found in the
+file wsrepofile:doc/README.dissector[], chapter 2.2.
 
 [#ChDissectIdl2wrs]
 
@@ -1543,10 +1553,10 @@ It consists of 4 main files.
 README.idl2wrs::
 This document
 
-wireshark_be.py::
+idl2wrs_be.py::
 The main compiler backend
 
-wireshark_gen.py::
+idl2wrs_gen.py::
 A helper class, that generates the C code.
 
 idl2wrs::
@@ -1611,13 +1621,13 @@ If you don't want to use the shell script wrapper, then try steps 3 or 4 instead
 +
 --
 ----
-$ omniidl  -p ./ -b wireshark_be <your file.idl>
+$ omniidl  -p ./ -b idl2wrs_be <your file.idl>
 ----
 
 e.g.:
 
 ----
-$ omniidl  -p ./ -b wireshark_be echo.idl
+$ omniidl  -p ./ -b idl2wrs_be echo.idl
 ----
 --
 
@@ -1625,7 +1635,7 @@ $ omniidl  -p ./ -b wireshark_be echo.idl
 +
 --
 ----
-$ omniidl  -p ./ -b wireshark_be echo.idl > packet-test-idl.c
+$ omniidl  -p ./ -b idl2wrs_be echo.idl > packet-test-idl.c
 ----
 
 You may wish to comment out the register_giop_user_module() code and that will
@@ -1706,8 +1716,8 @@ See the TODO list inside _packet-giop.c_
 
 ==== Notes
 
-The `-p ./` option passed to omniidl indicates that the wireshark_be.py and
-wireshark_gen.py are residing in the current directory. This may need tweaking
+The `-p ./` option passed to omniidl indicates that the idl2wrs_be.py and
+idl2wrs_gen.py are residing in the current directory. This may need tweaking
 if you place these files somewhere else.
 
 If it complains about being unable to find some modules (e.g. tempfile.py), you

@@ -23,7 +23,7 @@
  *
  * Some stuff from:
  *
- * GXSNMP -- An snmp mangament application
+ * GXSNMP -- An snmp management application
  * Copyright (C) 1998 Gregory McLean & Jochen Friedrich
  * Beholder RMON ethernet network monitor,Copyright (C) 1993 DNPAP group
  *
@@ -57,10 +57,6 @@
 #include "packet-ber.h"
 #include "packet-snmp.h"
 #include <wsutil/wsgcrypt.h>
-
-#define PNAME  "Simple Network Management Protocol"
-#define PSNAME "SNMP"
-#define PFNAME "snmp"
 
 #define UDP_PORT_SNMP		161
 #define UDP_PORT_SNMP_TRAP	162
@@ -188,9 +184,7 @@ static bool snmp_desegment = true;
 
 /* Global variables */
 
-uint32_t MsgSecurityModel;
-tvbuff_t *oid_tvb=NULL;
-tvbuff_t *value_tvb=NULL;
+static uint32_t MsgSecurityModel;
 
 static dissector_handle_t snmp_handle;
 static dissector_handle_t snmp_tcp_handle;
@@ -360,7 +354,7 @@ static const value_string snmp_procedure_names[] = {
 #define SERR_EOM    2
 
 
-dissector_table_t value_sub_dissectors_table;
+static dissector_table_t value_sub_dissectors_table;
 
 /*
  * Data structure attached to a conversation, request/response information
@@ -586,8 +580,8 @@ dissect_snmp_variable_date_and_time(proto_tree *tree, packet_info *pinfo, int hf
 
 /*
  *  dissect_snmp_VarBind
- *  this routine dissects variable bindings, looking for the oid information in our oid reporsitory
- *  to format and add the value adequatelly.
+ *  this routine dissects variable bindings, looking for the oid information in our oid repository
+ *  to format and add the value adequately.
  *
  * The choice to handwrite this code instead of using the asn compiler is to avoid having tons
  * of uses of global variables distributed in very different parts of the code.
@@ -651,8 +645,8 @@ dissect_snmp_variable_date_and_time(proto_tree *tree, packet_info *pinfo, int hf
 
  */
 
-static int
-dissect_snmp_VarBind(bool implicit_tag _U_, tvbuff_t *tvb, int offset,
+static unsigned
+dissect_snmp_VarBind(bool implicit_tag _U_, tvbuff_t *tvb, unsigned offset,
 		     asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_)
 {
 	int seq_offset, name_offset, value_offset, value_start;
@@ -946,7 +940,7 @@ show_oid_index:
 								switch(k->key_type) {
 									case OID_KEY_TYPE_STRING:
 									case OID_KEY_TYPE_IMPLIED_STRING:
-										proto_tree_add_string(pt_name,k->hfid,tvb,name_offset,buf_len, buf);
+										proto_tree_add_string(pt_name,k->hfid,tvb,name_offset,buf_len, (char*)buf);
 										break;
 									case OID_KEY_TYPE_BYTES:
 									case OID_KEY_TYPE_NSAP:
@@ -1705,8 +1699,8 @@ get_user_assoc(tvbuff_t* engine_tvb, tvbuff_t* user_tvb, packet_info *pinfo)
 	given_username_len = tvb_captured_length(user_tvb);
 	given_engine_len = tvb_captured_length(engine_tvb);
 	if (! ( given_engine_len && given_username_len ) ) return NULL;
-	given_username = (uint8_t*)tvb_memdup(pinfo->pool,user_tvb,0,-1);
-	given_engine = (uint8_t*)tvb_memdup(pinfo->pool,engine_tvb,0,-1);
+	given_username = (uint8_t*)tvb_memdup(pinfo->pool, user_tvb, 0, given_username_len);
+	given_engine = (uint8_t*)tvb_memdup(pinfo->pool, engine_tvb, 0, given_engine_len);
 
 	for (a = localized_ues; a; a = a->next) {
 		if ( localized_match(a, given_username, given_username_len, given_engine, given_engine_len) ) {
@@ -1830,7 +1824,7 @@ snmp_usm_priv_des(snmp_usm_params_t* p, tvbuff_t* encryptedData, packet_info *pi
 		return NULL;
 	}
 
-	cryptgrm = (uint8_t*)tvb_memdup(pinfo->pool,encryptedData,0,-1);
+	cryptgrm = (uint8_t*)tvb_memdup(pinfo->pool, encryptedData, 0, cryptgrm_len);
 
 	cleartext = (uint8_t*)wmem_alloc(pinfo->pool, cryptgrm_len);
 
@@ -1895,7 +1889,7 @@ snmp_usm_priv_aes_common(snmp_usm_params_t* p, tvbuff_t* encryptedData, packet_i
 		*error = "Not enough data remaining";
 		return NULL;
 	}
-	cryptgrm = (uint8_t*)tvb_memdup(pinfo->pool,encryptedData,0,-1);
+	cryptgrm = (uint8_t*)tvb_memdup(pinfo->pool, encryptedData, 0, cryptgrm_len);
 
 	cleartext = (uint8_t*)wmem_alloc(pinfo->pool, cryptgrm_len);
 
@@ -2213,7 +2207,7 @@ dissect_snmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 	/* Loosen the heuristic a bit to handle the case where data has intentionally
 	 * been added after the snmp PDU ( UDP case) (#3684)
 	 * If this is fragmented or carried in ICMP, we don't expect the tvb to
-	 * have the full legnth, so don't check.
+	 * have the full length, so don't check.
 	 */
 	if (!pinfo->fragmented && !pinfo->flags.in_error_pkt) {
 	    if ( pinfo->ptype == PT_UDP ) {
@@ -2281,7 +2275,7 @@ dissect_snmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 static int
 dissect_snmp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	unsigned message_len;
 
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
@@ -2653,7 +2647,7 @@ void proto_register_snmp(void) {
 					    specific_traps_flds);
 
 	/* Register protocol */
-	proto_snmp = proto_register_protocol(PNAME, PSNAME, PFNAME);
+	proto_snmp = proto_register_protocol("Simple Network Management Protocol", "SNMP", "snmp");
 	snmp_handle = register_dissector("snmp", dissect_snmp, proto_snmp);
 
 	/* Register fields and subtrees */

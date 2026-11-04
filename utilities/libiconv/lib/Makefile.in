@@ -49,7 +49,7 @@ SHELL = @SHELL@
 
 # Before making a release, change this according to the libtool documentation,
 # section "Library interface versions".
-LIBICONV_VERSION_INFO = 9:1:7
+LIBICONV_VERSION_INFO = 9:2:7
 
 PACKAGE_VERSION = @VERSION@
 

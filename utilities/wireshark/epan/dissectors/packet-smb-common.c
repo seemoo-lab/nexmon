@@ -44,11 +44,13 @@ const value_string share_type_vals[] = {
 int display_ms_string(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int hf_index, char **data)
 {
 	char *str;
-	int   len;
+	unsigned len;
 
 	/* display a string from the tree and return the new offset */
 
-	str = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &len, ENC_ASCII);
+	/* XXX - This should just use proto_tree_add_item_ret_string_and_length,
+	 * but we need to make sure all the hf_index are FT_STRINGZ. */
+	str = (char*)tvb_get_stringz_enc(pinfo->pool, tvb, offset, &len, ENC_ASCII);
 	proto_tree_add_string(tree, hf_index, tvb, offset, len, str);
 
 	/* Return a copy of the string if requested */
@@ -63,7 +65,7 @@ int display_ms_string(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o
 int display_unicode_string(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int hf_index, char **data)
 {
 	char    *str;
-	int      len;
+	unsigned len;
 
 	/* display a unicode string from the tree and return new offset */
 	proto_tree_add_item_ret_display_string_and_length(tree, hf_index, tvb, offset, -1, ENC_UTF_16 | ENC_LITTLE_ENDIAN, pinfo->pool, &str, &len);

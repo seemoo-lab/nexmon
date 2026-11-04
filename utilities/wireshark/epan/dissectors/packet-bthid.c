@@ -125,8 +125,7 @@ dissect_hid_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
     unsigned int protocol_code;
 
-    proto_tree_add_item(tree, hf_bthid_protocol_code, tvb, offset, 1, ENC_BIG_ENDIAN);
-    protocol_code = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint(tree, hf_bthid_protocol_code, tvb, offset, 1, ENC_BIG_ENDIAN, &protocol_code);
     col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", val_to_str_const(protocol_code, protocol_code_vals, "unknown type"));
     offset += 1;
 
@@ -183,10 +182,8 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             break;
     }
 
-    pitem = proto_tree_add_item(bthid_tree, hf_bthid_transaction_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    transaction_type = tvb_get_uint8(tvb, offset);
-    parameter = transaction_type & 0x0F;
-    transaction_type = transaction_type >> 4;
+    pitem = proto_tree_add_item_ret_uint(bthid_tree, hf_bthid_transaction_type, tvb, offset, 1, ENC_BIG_ENDIAN, &transaction_type);
+    parameter = tvb_get_uint8(tvb, offset) & 0x0F;
 
     col_append_str(pinfo->cinfo, COL_INFO, val_to_str_const(transaction_type, transaction_type_vals, "Unknown TransactionType"));
 
@@ -197,8 +194,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Result Code: %s", val_to_str_const(parameter, result_code_vals, "reserved"));
             break;
         case 0x01: /* HID_CONTROL */
-            pitem = proto_tree_add_item(bthid_tree, hf_bthid_parameter_control_operation, tvb, offset, 1, ENC_BIG_ENDIAN);
-            control_operation = tvb_get_uint8(tvb, offset);
+            pitem = proto_tree_add_item_ret_uint8(bthid_tree, hf_bthid_parameter_control_operation, tvb, offset, 1, ENC_BIG_ENDIAN, &control_operation);
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Control Operation: %s", val_to_str_const(parameter, control_operation_vals, "reserved"));
             if (control_operation < 3 && show_deprecated)
                 expert_add_info(pinfo, pitem, &ei_bthid_parameter_control_operation_deprecated);
@@ -245,8 +241,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             proto_tree_add_item(bthid_tree, hf_bthid_parameter_reserved, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
 
-            proto_tree_add_item(bthid_tree, hf_bthid_protocol, tvb, offset, 1, ENC_BIG_ENDIAN);
-            protocol = tvb_get_uint8(tvb, offset) & 0x01;
+            proto_tree_add_item_ret_uint(bthid_tree, hf_bthid_protocol, tvb, offset, 1, ENC_BIG_ENDIAN, &protocol);
             offset += 1;
 
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Protocol: %s",
@@ -269,8 +264,7 @@ dissect_bthid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             proto_tree_add_item(bthid_tree, hf_bthid_parameter_reserved, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
 
-            pitem = proto_tree_add_item(bthid_tree, hf_bthid_idle_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
-            idle_rate = tvb_get_uint8(tvb, offset);
+            pitem = proto_tree_add_item_ret_uint(bthid_tree, hf_bthid_idle_rate, tvb, offset, 1, ENC_BIG_ENDIAN, &idle_rate);
             proto_item_append_text(pitem, " (%u.%03u ms)", idle_rate * 4 / 1000, idle_rate * 4 % 1000);
             col_append_fstr(pinfo->cinfo, COL_INFO, " - Idle Rate: %u.%03u ms", idle_rate*4/1000, idle_rate*4%1000);
             offset += 1;

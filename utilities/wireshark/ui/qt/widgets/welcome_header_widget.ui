@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WelcomeHeaderWidget</class>
+ <widget class="QWidget" name="WelcomeHeaderWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>832</width>
+    <height>101</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QWidget" name="welcomeHeader" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>64</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>64</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="welcomeHeaderLayout">
+      <property name="spacing">
+       <number>12</number>
+      </property>
+      <property name="leftMargin">
+       <number>24</number>
+      </property>
+      <property name="topMargin">
+       <number>16</number>
+      </property>
+      <property name="rightMargin">
+       <number>24</number>
+      </property>
+      <property name="bottomMargin">
+       <number>16</number>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="layoutTitleVersion">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="headerTitle">
+          <property name="accessibleName">
+           <string>Application Name</string>
+          </property>
+          <property name="accessibleDescription">
+           <string>Application name</string>
+          </property>
+          <property name="text">
+           <string>Wireshark</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="headerVersion">
+          <property name="accessibleName">
+           <string>Version information</string>
+          </property>
+          <property name="accessibleDescription">
+           <string>Version of the application currently running</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="welcomeHeaderSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="headerBuildLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="accessibleName">
+         <string>Variant of the application running</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Build variant of the application currently running</string>
+        </property>
+        <property name="text">
+         <string>Development Build</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="updateHeader" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>37</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>37</height>
+      </size>
+     </property>
+     <layout class="QHBoxLayout" name="updateHeaderLayout">
+      <property name="spacing">
+       <number>8</number>
+      </property>
+      <property name="leftMargin">
+       <number>24</number>
+      </property>
+      <property name="topMargin">
+       <number>9</number>
+      </property>
+      <property name="rightMargin">
+       <number>24</number>
+      </property>
+      <property name="bottomMargin">
+       <number>9</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="updateDot">
+        <property name="toolTip">
+         <string>Update Available</string>
+        </property>
+        <property name="accessibleName">
+         <string>Update Available</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Graphical indicator that an update is available</string>
+        </property>
+        <property name="text">
+         <string>.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="updateText">
+        <property name="accessibleName">
+         <string>Update available</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>A new update is available</string>
+        </property>
+        <property name="text">
+         <string>Update available: %1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="updateHeaderSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="updateReleaseNotes">
+        <property name="accessibleName">
+         <string>Release Notes</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Opens a browser to show the release notes for the available update</string>
+        </property>
+        <property name="text">
+         <string>Release Notes</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="updateDownload">
+        <property name="accessibleName">
+         <string>Download Update</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Starts the download process for the currently available update</string>
+        </property>
+        <property name="text">
+         <string>Download Update</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="updateDismiss">
+        <property name="minimumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Dismiss update notification</string>
+        </property>
+        <property name="accessibleName">
+         <string>Dismiss update notification</string>
+        </property>
+        <property name="accessibleDescription">
+         <string>Dismiss the update notification and show the information about an update again on either next application start or when a new update is available</string>
+        </property>
+        <property name="text">
+         <string notr="true">×</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -180,7 +180,7 @@ get_ilnp_conversation_data(conversation_t *conv, packet_info *pinfo) {
 
     /* Get the data for this conversation */
     ilnpd = (struct ilnp_analysis *) conversation_get_proto_data(conv, proto_ilnp);
-    if (!ilnpd) { // if it doesnt exist, initialise new one
+    if (!ilnpd) { // if it doesn't exist, initialise new one
         ilnpd = init_ilnp_conversation_data(pinfo);
         conversation_add_proto_data(conv, proto_ilnp, ilnpd);
     }
@@ -351,9 +351,9 @@ dissect_ilnp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_
 {
     proto_tree *ilnp_tree;
     proto_item *ilnp_item, *ti;
-    uint8_t *str_ilnp_src_nid, *str_ilnp_src_l64,
-            *str_ilnp_dst_nid, *str_ilnp_dst_l64,
-            *str_ilnp_src_ilv, *str_ilnp_dst_ilv;
+    const char *str_ilnp_src_nid, *str_ilnp_src_l64,
+               *str_ilnp_dst_nid, *str_ilnp_dst_l64,
+               *str_ilnp_src_ilv, *str_ilnp_dst_ilv;
     conversation_t* conv;
     struct ilnp_analysis* ilnpd;
     ilnp_tap_info_t* ilnph;

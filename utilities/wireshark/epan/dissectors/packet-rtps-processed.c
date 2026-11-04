@@ -116,7 +116,7 @@ static int dissect_rtps_processed(
     proto_item *rtpsproc_ti = NULL;
     uint16_t param_id;
     uint16_t param_length;
-    int offset = 0;
+    unsigned offset = 0;
     int offset_version = 4; /* 'R', 'T', 'P', 'S' */
     tvbuff_t *rtps_payload = NULL;
     tvbuff_t *message_payload = NULL;
@@ -389,6 +389,7 @@ static void get_new_colinfo_w_submessages(
     }
     /* Copy the remaining from the RTPS frame */
     wmem_strbuf_append(out, &frame_str[idx]);
+    g_free(submessages_dup);
 }
 
 /* ========================================================================== */

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Copyright 2016-2025 Free Software Foundation, Inc.
+# This script is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+o=$(grep -E '([A-Z]|resp)\)?[.!?]( |$)' mpfr.texi | grep -Ev '^(\* .*::|@c )')
+[ -z "$o" ] && exit
+
+# Note: The default Texinfo rules are heuristics allowing one to get
+# typography correct by default in most cases, but it is also easy to
+# leave errors if one does not check the generated info file. Thus it
+# is better to make typography explicit concerning punctuation marks.
+# The above test checks lines ending with a capital letter possibly
+# followed by a closing parenthesis, followed by one of the concerned
+# punctuation marks; menu items and comments are ignored.
+
+cat <<EOF
+[check-typography] Warning! Possibly incorrect typography.
+Make it explicit to avoid ambiguities:
+  * Punctuation not ending a sentence: use @: after the punctuation
+    (Texinfo manual: Section 12.3.2 "Not Ending a Sentence").
+  * Punctuation ending a sentence: use @ before the punctuation
+    (Texinfo manual: Section 12.3.3 "Ending a Sentence").
+Affected lines in mpfr.texi:
+$o
+[check-typography] End of the warning message.
+EOF
+
+exit 1

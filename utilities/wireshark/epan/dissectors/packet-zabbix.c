@@ -87,6 +87,9 @@ static int hf_zabbix_frontend_mediatest;
 static int hf_zabbix_frontend_reporttest;
 static int hf_zabbix_frontend_expressioneval;
 static int hf_zabbix_frontend_scriptexec;
+static int hf_zabbix_frontend_deviceinit;
+static int hf_zabbix_frontend_deviceoffboard;
+static int hf_zabbix_frontend_ceprulereset;
 static int hf_zabbix_metrics;
 static int hf_zabbix_request;
 static int hf_zabbix_response;
@@ -160,6 +163,9 @@ typedef struct _zabbix_conv_info_t {
 #define ZABBIX_T_METRICS            0x00080000
 #define ZABBIX_T_EXPRESSIONEVAL     0x00100000
 #define ZABBIX_T_SCRIPTEXEC         0x00200000
+#define ZABBIX_T_DEVICEINIT         0x00400000
+#define ZABBIX_T_DEVICEOFFBOARD     0x00800000
+#define ZABBIX_T_CEPRULERESET       0x01000000
 
 #define ADD_ZABBIX_T_FLAGS(flags)       (zabbix_info->oper_flags |= (flags))
 #define CLEAR_ZABBIX_T_FLAGS(flags)     (zabbix_info->oper_flags &= (0xffffffff-(flags)))
@@ -224,7 +230,7 @@ zabbix_add_expert_info_if_too_large(packet_info *pinfo, proto_tree *tree_item,
 static int
 dissect_zabbix_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int agent_hb_freq = 0;
     unsigned oper_response = 0;
     proto_item *ti;
@@ -274,7 +280,7 @@ dissect_zabbix_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
     col_clear(pinfo->cinfo, COL_INFO);
 
     if ((tvb_reported_length(tvb) < ZABBIX_HDR_MIN_LEN) ||
-        (tvb_memeql(tvb, offset, ZABBIX_HDR_SIGNATURE, 4) == -1)) {
+        (tvb_strneql(tvb, offset, ZABBIX_HDR_SIGNATURE, 4) != 0)) {
         /* Encrypted or not Zabbix at all */
         return 0;
     }
@@ -367,7 +373,7 @@ dissect_zabbix_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
      * Note that json_str is modified when using json_get_xxx() functions below!
      * So don't use it to anything else (make a wmem_strdup() if needed, see below)
      */
-    json_str = tvb_get_string_enc(pinfo->pool, next_tvb, offset, (int)datalen, ENC_UTF_8);
+    json_str = (char*)tvb_get_string_enc(pinfo->pool, next_tvb, offset, (int)datalen, ENC_UTF_8);
     /* First check if this is a pre-7.0 passive agent.
      * Note that even pre-7.0 passive agent *responses* can be JSON, so don't just check
      * for JSON validation but check the conversation data!
@@ -626,6 +632,24 @@ dissect_zabbix_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
             proto_item_set_text(ti, "Zabbix Script execution request");
             col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Script execution request");
         }
+        else if (strcmp(request_type, "device.init") == 0) {
+            /* Device initialization from the frontend, since Zabbix 8.0 */
+            ADD_ZABBIX_T_FLAGS(ZABBIX_T_FRONTEND | ZABBIX_T_DEVICEINIT);
+            proto_item_set_text(ti, "Zabbix Device initialization request");
+            col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Device initialization request");
+        }
+        else if (strcmp(request_type, "device.offboard") == 0) {
+            /* Device offboarding from the frontend, since Zabbix 8.0 */
+            ADD_ZABBIX_T_FLAGS(ZABBIX_T_FRONTEND | ZABBIX_T_DEVICEOFFBOARD);
+            proto_item_set_text(ti, "Zabbix Device offboarding request");
+            col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Device offboarding request");
+        }
+        else if (strcmp(request_type, "cep.rule.reset") == 0) {
+            /* CEP rule reset from the frontend, since Zabbix 8.0 */
+            ADD_ZABBIX_T_FLAGS(ZABBIX_T_FRONTEND | ZABBIX_T_CEPRULERESET);
+            proto_item_set_text(ti, "Zabbix CEP rule reset request");
+            col_set_str(pinfo->cinfo, COL_INFO, "Zabbix CEP rule reset request");
+        }
     }
     /* There was no "request" field match, continue with other ways to recognize the packet */
     else if (json_get_object(json_str, tokens, "globalmacro")) {
@@ -772,6 +796,18 @@ dissect_zabbix_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
             else if (IS_ZABBIX_T_FLAGS(ZABBIX_T_SCRIPTEXEC)) {
                 proto_item_set_text(ti, "Zabbix Script execution response");
                 col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Script execution response");
+            }
+            else if (IS_ZABBIX_T_FLAGS(ZABBIX_T_DEVICEINIT)) {
+                proto_item_set_text(ti, "Zabbix Device initialization response");
+                col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Device initialization response");
+            }
+            else if (IS_ZABBIX_T_FLAGS(ZABBIX_T_DEVICEOFFBOARD)) {
+                proto_item_set_text(ti, "Zabbix Device offboarding response");
+                col_set_str(pinfo->cinfo, COL_INFO, "Zabbix Device offboarding response");
+            }
+            else if (IS_ZABBIX_T_FLAGS(ZABBIX_T_CEPRULERESET)) {
+                proto_item_set_text(ti, "Zabbix CEP rule reset response");
+                col_set_str(pinfo->cinfo, COL_INFO, "Zabbix CEP rule reset response");
             }
         }
     }
@@ -1093,7 +1129,7 @@ dissect_zabbix(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         /* Not enough data */
         return 0;
     }
-    if (tvb_memeql(tvb, 0, ZABBIX_HDR_SIGNATURE, 4)) {
+    if (tvb_strneql(tvb, 0, ZABBIX_HDR_SIGNATURE, 4) != 0) {
         /* Encrypted or not Zabbix at all */
         return 0;
     }
@@ -1405,6 +1441,21 @@ proto_register_zabbix(void)
         },
         { &hf_zabbix_frontend_scriptexec,
             { "Script execution", "zabbix.frontend.scriptexec",
+            FT_BOOLEAN, BASE_NONE, TFS(&tfs_yes_no), 0,
+            NULL, HFILL }
+        },
+        { &hf_zabbix_frontend_deviceinit,
+            { "Device initialization", "zabbix.frontend.deviceinit",
+            FT_BOOLEAN, BASE_NONE, TFS(&tfs_yes_no), 0,
+            NULL, HFILL }
+        },
+        { &hf_zabbix_frontend_deviceoffboard,
+            { "Device offboarding", "zabbix.frontend.deviceoffboard",
+            FT_BOOLEAN, BASE_NONE, TFS(&tfs_yes_no), 0,
+            NULL, HFILL }
+        },
+        { &hf_zabbix_frontend_ceprulereset,
+            { "CEP rule reset", "zabbix.frontend.ceprulereset",
             FT_BOOLEAN, BASE_NONE, TFS(&tfs_yes_no), 0,
             NULL, HFILL }
         },

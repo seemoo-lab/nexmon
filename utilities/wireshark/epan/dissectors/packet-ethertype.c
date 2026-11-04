@@ -17,12 +17,12 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/etypes.h>
-#include <epan/ppptypes.h>
 #include <epan/show_exception.h>
 #include <epan/decode_as.h>
 #include <epan/capture_dissectors.h>
 #include <epan/proto_data.h>
 #include "packet-eth.h"
+#include "packet-ppp.h"
 
 void proto_register_ethertype(void);
 
@@ -46,6 +46,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_WOL,                  "Wake on LAN" },
 	{ ETHERTYPE_WMX_M2M,              "WiMax Mac-to-Mac" },
 	{ ETHERTYPE_EPL_V1,               "EPL_V1" },
+	{ ETHERTYPE_TTL,                  "TTX Logger (TTL)" },
 	{ ETHERTYPE_REVARP,               "RARP" },
 	{ ETHERTYPE_DEC_LB,               "DEC LanBridge" },
 	{ ETHERTYPE_ATALK,                "AppleTalk LLAP bridging" },
@@ -171,6 +172,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_NCSI,                 "Network Controller Sideband Interface" },
 	{ ETHERTYPE_PRP,                  "Parallel Redundancy Protocol (PRP) and HSR Supervision (IEC62439 Part 3)" },
 	{ ETHERTYPE_FLIP,                 "Flow Layer Internal Protocol" },
+	{ ETHERTYPE_TTAG,                 "Cisco Timestamp Tag (T-Tag)" },
 	{ ETHERTYPE_ROCE,                 "RDMA over Converged Ethernet" },
 	{ ETHERTYPE_TDMOE,                "Digium TDM over Ethernet Protocol" },
 	{ ETHERTYPE_WAI,                  "WAI Authentication Protocol" },
@@ -189,6 +191,7 @@ const value_string etype_vals[] = {
 	{ ETHERTYPE_AVSP,                 "Arista Vendor Specific Protocol" },
 	{ ETHERTYPE_ECPRI,                "eCPRI" },
 	{ ETHERTYPE_CABLELABS,            "CableLabs Layer-3 Protocol" },
+	{ ETHERTYPE_OPC_UA,               "OPC UA over Ethernet" },
 	{ ETHERTYPE_EXEH,                 "EXos internal Extra Header" },
 	{ ETHERTYPE_ATMF,                 "Allied Telesis Autonomous Management Framework" },
 	{ ETHERTYPE_ATRL,                 "Allied Telesis Resiliency Link" },
@@ -414,7 +417,7 @@ proto_register_ethertype(void)
 	static build_valid_func eth_da_build_value[1] = {eth_value};
 	static decode_as_value_t eth_da_values = {eth_prompt, 1, eth_da_build_value};
 	static decode_as_t ethertype_da = {"ethertype", "ethertype", 1, 0, &eth_da_values, NULL, NULL,
-										decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+										decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
 
 	proto_ethertype = proto_register_protocol("Ethertype", "Ethertype", "ethertype");

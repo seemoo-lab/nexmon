@@ -22,11 +22,6 @@
 #include <wsutil/array.h>
 
 #include "packet-per.h"
-
-#define PNAME  "H.282 Remote Device Control"
-#define PSNAME "RDC"
-#define PFNAME "rdc"
-
 void proto_register_h282(void);
 void proto_reg_handoff_h282(void);
 
@@ -618,8 +613,8 @@ static int ett_h282_IndicationPDU;
 
 
 
-static int
-dissect_h282_H221NonStandardIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_H221NonStandardIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        4, 255, false, NULL);
 
@@ -628,8 +623,8 @@ dissect_h282_H221NonStandardIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_h282_OBJECT_IDENTIFIER(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_OBJECT_IDENTIFIER(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_object_identifier(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -648,8 +643,8 @@ static const per_choice_t Key_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_Key(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Key(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_Key, Key_choice,
                                  NULL);
@@ -659,8 +654,8 @@ dissect_h282_Key(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 
 
 
-static int
-dissect_h282_OCTET_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_OCTET_STRING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        NO_BOUND, NO_BOUND, false, NULL);
 
@@ -674,8 +669,8 @@ static const per_sequence_t NonStandardParameter_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_NonStandardParameter(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NonStandardParameter(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_NonStandardParameter, NonStandardParameter_sequence);
 
@@ -684,8 +679,8 @@ dissect_h282_NonStandardParameter(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_h282_Handle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Handle(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4294967295U, NULL, false);
 
@@ -705,8 +700,8 @@ static const per_choice_t NonStandardIdentifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_NonStandardIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NonStandardIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_NonStandardIdentifier, NonStandardIdentifier_choice,
                                  NULL);
@@ -716,8 +711,8 @@ dissect_h282_NonStandardIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_h282_TextString(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_TextString(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_BMPString(tvb, offset, actx, tree, hf_index,
                                           0, 255, false);
 
@@ -726,8 +721,8 @@ dissect_h282_TextString(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_h282_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NULL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_null(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -756,8 +751,8 @@ static const per_choice_t DeviceClass_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceClass(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceClass(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_DeviceClass, DeviceClass_choice,
                                  NULL);
@@ -767,8 +762,8 @@ dissect_h282_DeviceClass(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_h282_DeviceID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -777,8 +772,8 @@ dissect_h282_DeviceID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_h282_StreamID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_StreamID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -787,8 +782,8 @@ dissect_h282_StreamID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_h282_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_BOOLEAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -796,8 +791,8 @@ dissect_h282_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 
-static int
-dissect_h282_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -817,8 +812,8 @@ static const per_sequence_t DeviceProfile_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceProfile(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceProfile(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceProfile, DeviceProfile_sequence);
 
@@ -834,8 +829,8 @@ static const per_sequence_t StreamProfile_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_StreamProfile(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_StreamProfile(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_StreamProfile, StreamProfile_sequence);
 
@@ -844,8 +839,8 @@ dissect_h282_StreamProfile(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_h282_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_65535(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -865,8 +860,8 @@ static const per_choice_t CapabilityID_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CapabilityID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CapabilityID(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CapabilityID, CapabilityID_choice,
                                  NULL);
@@ -879,8 +874,8 @@ static const per_sequence_t SET_SIZE_0_127_OF_DeviceProfile_set_of[1] = {
   { &hf_h282_deviceList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_DeviceProfile },
 };
 
-static int
-dissect_h282_SET_SIZE_0_127_OF_DeviceProfile(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_0_127_OF_DeviceProfile(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_0_127_OF_DeviceProfile, SET_SIZE_0_127_OF_DeviceProfile_set_of,
                                              0, 127, false);
@@ -893,8 +888,8 @@ static const per_sequence_t SET_SIZE_0_127_OF_StreamProfile_set_of[1] = {
   { &hf_h282_streamList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_StreamProfile },
 };
 
-static int
-dissect_h282_SET_SIZE_0_127_OF_StreamProfile(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_0_127_OF_StreamProfile(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_0_127_OF_StreamProfile, SET_SIZE_0_127_OF_StreamProfile_set_of,
                                              0, 127, false);
@@ -915,8 +910,8 @@ static const per_choice_t T_applicationData_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_applicationData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_applicationData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_applicationData, T_applicationData_choice,
                                  NULL);
@@ -931,8 +926,8 @@ static const per_sequence_t NonCollapsingCapabilities_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_NonCollapsingCapabilities_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NonCollapsingCapabilities_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_NonCollapsingCapabilities_item, NonCollapsingCapabilities_item_sequence);
 
@@ -944,8 +939,8 @@ static const per_sequence_t NonCollapsingCapabilities_set_of[1] = {
   { &hf_h282_NonCollapsingCapabilities_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_NonCollapsingCapabilities_item },
 };
 
-static int
-dissect_h282_NonCollapsingCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NonCollapsingCapabilities(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_set_of(tvb, offset, actx, tree, hf_index,
                                  ett_h282_NonCollapsingCapabilities, NonCollapsingCapabilities_set_of);
 
@@ -954,8 +949,8 @@ dissect_h282_NonCollapsingCapabilities(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_h282_Day(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Day(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 31U, NULL, false);
 
@@ -964,8 +959,8 @@ dissect_h282_Day(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 
 
 
-static int
-dissect_h282_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Month(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 12U, NULL, false);
 
@@ -974,8 +969,8 @@ dissect_h282_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 
 
-static int
-dissect_h282_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Year(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1980U, 2999U, NULL, false);
 
@@ -984,8 +979,8 @@ dissect_h282_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 
 
 
-static int
-dissect_h282_Hour(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Hour(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 23U, NULL, false);
 
@@ -994,8 +989,8 @@ dissect_h282_Hour(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 
 
 
-static int
-dissect_h282_Minute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Minute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 59U, NULL, false);
 
@@ -1004,8 +999,8 @@ dissect_h282_Minute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 
 
 
-static int
-dissect_h282_DeviceText(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceText(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        0, 32, false, NULL);
 
@@ -1014,8 +1009,8 @@ dissect_h282_DeviceText(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_h282_PanPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PanPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -18000, 18000U, NULL, false);
 
@@ -1024,8 +1019,8 @@ dissect_h282_PanPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 
 
-static int
-dissect_h282_TiltPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_TiltPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -18000, 18000U, NULL, false);
 
@@ -1034,8 +1029,8 @@ dissect_h282_TiltPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_ZoomPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ZoomPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1023, 1023U, NULL, false);
 
@@ -1044,8 +1039,8 @@ dissect_h282_ZoomPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_IrisPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_IrisPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -127, 127U, NULL, false);
 
@@ -1054,8 +1049,8 @@ dissect_h282_IrisPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_FocusPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_FocusPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -127, 127U, NULL, false);
 
@@ -1064,8 +1059,8 @@ dissect_h282_FocusPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_h282_CameraPanSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraPanSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 18000U, NULL, false);
 
@@ -1074,8 +1069,8 @@ dissect_h282_CameraPanSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_h282_CameraTiltSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraTiltSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 18000U, NULL, false);
 
@@ -1084,8 +1079,8 @@ dissect_h282_CameraTiltSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_h282_BackLight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_BackLight(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -1094,8 +1089,8 @@ dissect_h282_BackLight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_h282_WhiteBalance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_WhiteBalance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -1104,8 +1099,8 @@ dissect_h282_WhiteBalance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_PresetNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PresetNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -1141,8 +1136,8 @@ static const per_choice_t StreamPlayerState_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_StreamPlayerState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_StreamPlayerState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_StreamPlayerState, StreamPlayerState_choice,
                                  NULL);
@@ -1158,8 +1153,8 @@ static const per_sequence_t T_presetCapability_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_presetCapability_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_presetCapability_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_presetCapability_item, T_presetCapability_item_sequence);
 
@@ -1171,8 +1166,8 @@ static const per_sequence_t T_presetCapability_set_of[1] = {
   { &hf_h282_presetCapability_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_presetCapability_item },
 };
 
-static int
-dissect_h282_T_presetCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_presetCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_presetCapability, T_presetCapability_set_of,
                                              0, 255, false);
@@ -1187,8 +1182,8 @@ static const per_sequence_t DevicePresetCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DevicePresetCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DevicePresetCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DevicePresetCapability, DevicePresetCapability_sequence);
 
@@ -1197,8 +1192,8 @@ dissect_h282_DevicePresetCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_h282_INTEGER_2_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_2_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             2U, 255U, NULL, false);
 
@@ -1207,8 +1202,8 @@ dissect_h282_INTEGER_2_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_h282_INTEGER_1_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_1_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -1222,8 +1217,8 @@ static const per_sequence_t T_filterTextLabel_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_filterTextLabel_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_filterTextLabel_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_filterTextLabel_item, T_filterTextLabel_item_sequence);
 
@@ -1235,8 +1230,8 @@ static const per_sequence_t T_filterTextLabel_set_of[1] = {
   { &hf_h282_filterTextLabel_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_filterTextLabel_item },
 };
 
-static int
-dissect_h282_T_filterTextLabel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_filterTextLabel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_filterTextLabel, T_filterTextLabel_set_of,
                                              0, 255, false);
@@ -1251,8 +1246,8 @@ static const per_sequence_t CameraFilterCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CameraFilterCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraFilterCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CameraFilterCapability, CameraFilterCapability_sequence);
 
@@ -1266,8 +1261,8 @@ static const per_sequence_t T_accessoryTextLabel_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_accessoryTextLabel_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_accessoryTextLabel_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_accessoryTextLabel_item, T_accessoryTextLabel_item_sequence);
 
@@ -1279,8 +1274,8 @@ static const per_sequence_t T_accessoryTextLabel_set_of[1] = {
   { &hf_h282_accessoryTextLabel_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_accessoryTextLabel_item },
 };
 
-static int
-dissect_h282_T_accessoryTextLabel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_accessoryTextLabel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_accessoryTextLabel, T_accessoryTextLabel_set_of,
                                              0, 255, false);
@@ -1295,8 +1290,8 @@ static const per_sequence_t CameraLensCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CameraLensCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraLensCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CameraLensCapability, CameraLensCapability_sequence);
 
@@ -1305,8 +1300,8 @@ dissect_h282_CameraLensCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_h282_INTEGER_1_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_1_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 10U, NULL, false);
 
@@ -1320,8 +1315,8 @@ static const per_sequence_t T_lightTextLabel_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_lightTextLabel_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_lightTextLabel_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_lightTextLabel_item, T_lightTextLabel_item_sequence);
 
@@ -1333,8 +1328,8 @@ static const per_sequence_t T_lightTextLabel_set_of[1] = {
   { &hf_h282_lightTextLabel_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_lightTextLabel_item },
 };
 
-static int
-dissect_h282_T_lightTextLabel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_lightTextLabel(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_lightTextLabel, T_lightTextLabel_set_of,
                                              0, 10, false);
@@ -1349,8 +1344,8 @@ static const per_sequence_t ExternalCameraLightCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_ExternalCameraLightCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ExternalCameraLightCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_ExternalCameraLightCapability, ExternalCameraLightCapability_sequence);
 
@@ -1365,8 +1360,8 @@ static const per_sequence_t CameraPanSpeedCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CameraPanSpeedCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraPanSpeedCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CameraPanSpeedCapability, CameraPanSpeedCapability_sequence);
 
@@ -1381,8 +1376,8 @@ static const per_sequence_t CameraTiltSpeedCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CameraTiltSpeedCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraTiltSpeedCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CameraTiltSpeedCapability, CameraTiltSpeedCapability_sequence);
 
@@ -1391,8 +1386,8 @@ dissect_h282_CameraTiltSpeedCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 
-static int
-dissect_h282_MaxBacklight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MaxBacklight(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -1401,8 +1396,8 @@ dissect_h282_MaxBacklight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_MaxWhiteBalance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MaxWhiteBalance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -1411,8 +1406,8 @@ dissect_h282_MaxWhiteBalance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_h282_MinZoomPositionSetSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MinZoomPositionSetSize(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1023U, NULL, false);
 
@@ -1421,8 +1416,8 @@ dissect_h282_MinZoomPositionSetSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_h282_MinFocusPositionStepSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MinFocusPositionStepSize(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 127U, NULL, false);
 
@@ -1431,8 +1426,8 @@ dissect_h282_MinFocusPositionStepSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 
 
 
-static int
-dissect_h282_MinIrisPositionStepSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MinIrisPositionStepSize(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 127U, NULL, false);
 
@@ -1441,8 +1436,8 @@ dissect_h282_MinIrisPositionStepSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_h282_INTEGER_M18000_0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_M18000_0(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -18000, 0U, NULL, false);
 
@@ -1451,8 +1446,8 @@ dissect_h282_INTEGER_M18000_0(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_h282_INTEGER_0_18000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_18000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 18000U, NULL, false);
 
@@ -1461,8 +1456,8 @@ dissect_h282_INTEGER_0_18000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_h282_INTEGER_1_18000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_1_18000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 18000U, NULL, false);
 
@@ -1477,8 +1472,8 @@ static const per_sequence_t PanPositionCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_PanPositionCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PanPositionCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_PanPositionCapability, PanPositionCapability_sequence);
 
@@ -1493,8 +1488,8 @@ static const per_sequence_t TiltPositionCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_TiltPositionCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_TiltPositionCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_TiltPositionCapability, TiltPositionCapability_sequence);
 
@@ -1503,8 +1498,8 @@ dissect_h282_TiltPositionCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 
 
 
-static int
-dissect_h282_MinZoomMagnificationStepSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MinZoomMagnificationStepSize(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1000U, NULL, false);
 
@@ -1513,8 +1508,8 @@ dissect_h282_MinZoomMagnificationStepSize(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_h282_MaxNumberOfSlides(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MaxNumberOfSlides(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1024U, NULL, false);
 
@@ -1523,8 +1518,8 @@ dissect_h282_MaxNumberOfSlides(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_h282_MaxSlideDisplayTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MaxSlideDisplayTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -1533,8 +1528,8 @@ dissect_h282_MaxSlideDisplayTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_h282_MaxNumberOfPrograms(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_MaxNumberOfPrograms(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1023U, NULL, false);
 
@@ -1543,8 +1538,8 @@ dissect_h282_MaxNumberOfPrograms(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_h282_INTEGER_10_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_10_1000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             10U, 1000U, NULL, false);
 
@@ -1556,8 +1551,8 @@ static const per_sequence_t T_multiplierFactors_set_of[1] = {
   { &hf_h282_multiplierFactors_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_INTEGER_10_1000 },
 };
 
-static int
-dissect_h282_T_multiplierFactors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_multiplierFactors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_multiplierFactors, T_multiplierFactors_set_of,
                                              1, 64, false);
@@ -1570,8 +1565,8 @@ static const per_sequence_t T_divisorFactors_set_of[1] = {
   { &hf_h282_divisorFactors_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_INTEGER_10_1000 },
 };
 
-static int
-dissect_h282_T_divisorFactors(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_divisorFactors(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_divisorFactors, T_divisorFactors_set_of,
                                              1, 64, false);
@@ -1586,8 +1581,8 @@ static const per_sequence_t PlayBackSpeedCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_PlayBackSpeedCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PlayBackSpeedCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_PlayBackSpeedCapability, PlayBackSpeedCapability_sequence);
 
@@ -1596,8 +1591,8 @@ dissect_h282_PlayBackSpeedCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_h282_INTEGER_2_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_2_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             2U, 64U, NULL, false);
 
@@ -1606,8 +1601,8 @@ dissect_h282_INTEGER_2_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_INTEGER_1_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_1_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 64U, NULL, false);
 
@@ -1621,8 +1616,8 @@ static const per_sequence_t T_availableDevices_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_availableDevices_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_availableDevices_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_availableDevices_item, T_availableDevices_item_sequence);
 
@@ -1634,8 +1629,8 @@ static const per_sequence_t T_availableDevices_set_of[1] = {
   { &hf_h282_availableDevices_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_availableDevices_item },
 };
 
-static int
-dissect_h282_T_availableDevices(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_availableDevices(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_availableDevices, T_availableDevices_set_of,
                                              2, 64, false);
@@ -1651,8 +1646,8 @@ static const per_sequence_t VideoInputsCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_VideoInputsCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_VideoInputsCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_VideoInputsCapability, VideoInputsCapability_sequence);
 
@@ -1666,8 +1661,8 @@ static const per_sequence_t T_availableDevices_item_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_availableDevices_item_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_availableDevices_item_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_availableDevices_item_01, T_availableDevices_item_01_sequence);
 
@@ -1679,8 +1674,8 @@ static const per_sequence_t T_availableDevices_01_set_of[1] = {
   { &hf_h282_availableDevices_item_01, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_availableDevices_item_01 },
 };
 
-static int
-dissect_h282_T_availableDevices_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_availableDevices_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_availableDevices_01, T_availableDevices_01_set_of,
                                              2, 64, false);
@@ -1695,8 +1690,8 @@ static const per_sequence_t AudioInputsCapability_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_AudioInputsCapability(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_AudioInputsCapability(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_AudioInputsCapability, AudioInputsCapability_sequence);
 
@@ -1778,6 +1773,8 @@ static const value_string h282_DeviceAttribute_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext h282_DeviceAttribute_vals_ext = VALUE_STRING_EXT_INIT(h282_DeviceAttribute_vals);
+
 static const per_choice_t DeviceAttribute_choice[] = {
   {   0, &hf_h282_deviceStateSupported, ASN1_EXTENSION_ROOT    , dissect_h282_NULL },
   {   1, &hf_h282_deviceDateSupported, ASN1_EXTENSION_ROOT    , dissect_h282_NULL },
@@ -1852,8 +1849,8 @@ static const per_choice_t DeviceAttribute_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_DeviceAttribute, DeviceAttribute_choice,
                                  NULL);
@@ -1874,8 +1871,8 @@ static const per_choice_t DeviceState_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_DeviceState, DeviceState_choice,
                                  NULL);
@@ -1891,8 +1888,8 @@ static const per_sequence_t DeviceDate_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceDate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceDate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceDate, DeviceDate_sequence);
 
@@ -1906,8 +1903,8 @@ static const per_sequence_t DeviceTime_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceTime, DeviceTime_sequence);
 
@@ -1927,8 +1924,8 @@ static const per_choice_t T_mode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_mode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_mode, T_mode_choice,
                                  NULL);
@@ -1943,8 +1940,8 @@ static const per_sequence_t DevicePreset_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DevicePreset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DevicePreset(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DevicePreset, DevicePreset_sequence);
 
@@ -1964,8 +1961,8 @@ static const per_choice_t Mode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_Mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_Mode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_Mode, Mode_choice,
                                  NULL);
@@ -1988,8 +1985,8 @@ static const per_choice_t PointingToggle_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_PointingToggle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PointingToggle(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_PointingToggle, PointingToggle_choice,
                                  NULL);
@@ -2010,8 +2007,8 @@ static const per_choice_t SelectExternalLight_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_SelectExternalLight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SelectExternalLight(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_SelectExternalLight, SelectExternalLight_choice,
                                  NULL);
@@ -2036,8 +2033,8 @@ static const per_choice_t T_panDirection_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_panDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_panDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_panDirection, T_panDirection_choice,
                                  NULL);
@@ -2047,8 +2044,8 @@ dissect_h282_T_panDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 
 
-static int
-dissect_h282_INTEGER_50_1000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_50_1000(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             50U, 1000U, NULL, false);
 
@@ -2062,8 +2059,8 @@ static const per_sequence_t PanContinuous_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_PanContinuous(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PanContinuous(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_PanContinuous, PanContinuous_sequence);
 
@@ -2087,8 +2084,8 @@ static const per_choice_t T_tiltDirection_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_tiltDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_tiltDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_tiltDirection, T_tiltDirection_choice,
                                  NULL);
@@ -2103,8 +2100,8 @@ static const per_sequence_t TiltContinuous_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_TiltContinuous(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_TiltContinuous(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_TiltContinuous, TiltContinuous_sequence);
 
@@ -2128,8 +2125,8 @@ static const per_choice_t T_zoomDirection_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_zoomDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_zoomDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_zoomDirection, T_zoomDirection_choice,
                                  NULL);
@@ -2144,8 +2141,8 @@ static const per_sequence_t ZoomContinuous_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_ZoomContinuous(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ZoomContinuous(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_ZoomContinuous, ZoomContinuous_sequence);
 
@@ -2169,8 +2166,8 @@ static const per_choice_t T_focusDirection_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_focusDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_focusDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_focusDirection, T_focusDirection_choice,
                                  NULL);
@@ -2185,8 +2182,8 @@ static const per_sequence_t FocusContinuous_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_FocusContinuous(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_FocusContinuous(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_FocusContinuous, FocusContinuous_sequence);
 
@@ -2206,8 +2203,8 @@ static const per_choice_t PositioningMode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_PositioningMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PositioningMode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_PositioningMode, PositioningMode_choice,
                                  NULL);
@@ -2217,8 +2214,8 @@ dissect_h282_PositioningMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_h282_CameraLensNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraLensNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -2227,8 +2224,8 @@ dissect_h282_CameraLensNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_h282_CameraFilterNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraFilterNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -2242,8 +2239,8 @@ static const per_sequence_t SetZoomPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SetZoomPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SetZoomPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SetZoomPosition, SetZoomPosition_sequence);
 
@@ -2257,8 +2254,8 @@ static const per_sequence_t SetFocusPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SetFocusPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SetFocusPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SetFocusPosition, SetFocusPosition_sequence);
 
@@ -2272,8 +2269,8 @@ static const per_sequence_t SetIrisPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SetIrisPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SetIrisPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SetIrisPosition, SetIrisPosition_sequence);
 
@@ -2287,8 +2284,8 @@ static const per_sequence_t SetPanPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SetPanPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SetPanPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SetPanPosition, SetPanPosition_sequence);
 
@@ -2302,8 +2299,8 @@ static const per_sequence_t SetTiltPosition_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SetTiltPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SetTiltPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SetTiltPosition, SetTiltPosition_sequence);
 
@@ -2312,8 +2309,8 @@ dissect_h282_SetTiltPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_h282_ZoomMagnification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ZoomMagnification(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             10U, 1000U, NULL, false);
 
@@ -2322,8 +2319,8 @@ dissect_h282_ZoomMagnification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_h282_PanView(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PanView(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1000, 1000U, NULL, false);
 
@@ -2332,8 +2329,8 @@ dissect_h282_PanView(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 
-static int
-dissect_h282_TiltView(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_TiltView(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             -1000, 1000U, NULL, false);
 
@@ -2342,8 +2339,8 @@ dissect_h282_TiltView(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_h282_SlideNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SlideNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1023U, NULL, false);
 
@@ -2363,8 +2360,8 @@ static const per_choice_t SelectDirection_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_SelectDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SelectDirection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_SelectDirection, SelectDirection_choice,
                                  NULL);
@@ -2387,8 +2384,8 @@ static const per_choice_t AutoSlideShowControl_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_AutoSlideShowControl(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_AutoSlideShowControl(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_AutoSlideShowControl, AutoSlideShowControl_choice,
                                  NULL);
@@ -2398,8 +2395,8 @@ dissect_h282_AutoSlideShowControl(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_h282_AutoSlideDisplayTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_AutoSlideDisplayTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 255U, NULL, false);
 
@@ -2408,8 +2405,8 @@ dissect_h282_AutoSlideDisplayTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_h282_ProgramNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ProgramNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             1U, 1023U, NULL, false);
 
@@ -2418,8 +2415,8 @@ dissect_h282_ProgramNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_h282_INTEGER_0_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_24(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 24U, NULL, false);
 
@@ -2428,8 +2425,8 @@ dissect_h282_INTEGER_0_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_INTEGER_0_59(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_59(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 59U, NULL, false);
 
@@ -2438,8 +2435,8 @@ dissect_h282_INTEGER_0_59(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_h282_INTEGER_0_99999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_INTEGER_0_99999(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 99999U, NULL, false);
 
@@ -2455,8 +2452,8 @@ static const per_sequence_t ProgramDuration_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_ProgramDuration(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ProgramDuration(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_ProgramDuration, ProgramDuration_sequence);
 
@@ -2470,8 +2467,8 @@ static const per_sequence_t PlaybackSpeed_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_PlaybackSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_PlaybackSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_PlaybackSpeed, PlaybackSpeed_sequence);
 
@@ -2486,8 +2483,8 @@ static const per_sequence_t RecordForDuration_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_RecordForDuration(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_RecordForDuration(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_RecordForDuration, RecordForDuration_sequence);
 
@@ -2501,8 +2498,8 @@ static const per_sequence_t T_inputDevices_item_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_T_inputDevices_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_inputDevices_item(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_T_inputDevices_item, T_inputDevices_item_sequence);
 
@@ -2514,8 +2511,8 @@ static const per_sequence_t T_inputDevices_set_of[1] = {
   { &hf_h282_inputDevices_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_T_inputDevices_item },
 };
 
-static int
-dissect_h282_T_inputDevices(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_inputDevices(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_T_inputDevices, T_inputDevices_set_of,
                                              2, 64, false);
@@ -2529,8 +2526,8 @@ static const per_sequence_t DeviceInputs_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceInputs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceInputs(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceInputs, DeviceInputs_sequence);
 
@@ -2656,8 +2653,8 @@ static const per_choice_t ControlAttribute_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_ControlAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ControlAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_ControlAttribute, ControlAttribute_choice,
                                  NULL);
@@ -2742,8 +2739,8 @@ static const per_choice_t StatusAttributeIdentifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_StatusAttributeIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_StatusAttributeIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_StatusAttributeIdentifier, StatusAttributeIdentifier_choice,
                                  NULL);
@@ -2764,8 +2761,8 @@ static const per_choice_t CurrentDeviceState_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentDeviceState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentDeviceState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentDeviceState, CurrentDeviceState_choice,
                                  NULL);
@@ -2786,8 +2783,8 @@ static const per_choice_t T_currentDay_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_currentDay(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_currentDay(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_currentDay, T_currentDay_choice,
                                  NULL);
@@ -2808,8 +2805,8 @@ static const per_choice_t T_currentMonth_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_currentMonth(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_currentMonth(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_currentMonth, T_currentMonth_choice,
                                  NULL);
@@ -2830,8 +2827,8 @@ static const per_choice_t T_currentYear_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_currentYear(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_currentYear(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_currentYear, T_currentYear_choice,
                                  NULL);
@@ -2847,8 +2844,8 @@ static const per_sequence_t CurrentDeviceDate_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentDeviceDate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentDeviceDate(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CurrentDeviceDate, CurrentDeviceDate_sequence);
 
@@ -2868,8 +2865,8 @@ static const per_choice_t T_currentHour_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_currentHour(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_currentHour(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_currentHour, T_currentHour_choice,
                                  NULL);
@@ -2890,8 +2887,8 @@ static const per_choice_t T_currentMinute_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_currentMinute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_currentMinute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_currentMinute, T_currentMinute_choice,
                                  NULL);
@@ -2906,8 +2903,8 @@ static const per_sequence_t CurrentDeviceTime_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentDeviceTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentDeviceTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_CurrentDeviceTime, CurrentDeviceTime_sequence);
 
@@ -2927,8 +2924,8 @@ static const per_choice_t CurrentDevicePreset_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentDevicePreset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentDevicePreset(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentDevicePreset, CurrentDevicePreset_choice,
                                  NULL);
@@ -2949,8 +2946,8 @@ static const per_choice_t CurrentMode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentMode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentMode, CurrentMode_choice,
                                  NULL);
@@ -2973,8 +2970,8 @@ static const per_choice_t CurrentPointingMode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentPointingMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentPointingMode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentPointingMode, CurrentPointingMode_choice,
                                  NULL);
@@ -2995,8 +2992,8 @@ static const per_choice_t CurrentCameraLensNumber_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentCameraLensNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentCameraLensNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentCameraLensNumber, CurrentCameraLensNumber_choice,
                                  NULL);
@@ -3017,8 +3014,8 @@ static const per_choice_t CurrentCameraFilterNumber_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentCameraFilterNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentCameraFilterNumber(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentCameraFilterNumber, CurrentCameraFilterNumber_choice,
                                  NULL);
@@ -3041,8 +3038,8 @@ static const per_choice_t CurrentExternalLight_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentExternalLight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentExternalLight(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentExternalLight, CurrentExternalLight_choice,
                                  NULL);
@@ -3063,8 +3060,8 @@ static const per_choice_t CurrentCameraPanSpeed_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentCameraPanSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentCameraPanSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentCameraPanSpeed, CurrentCameraPanSpeed_choice,
                                  NULL);
@@ -3085,8 +3082,8 @@ static const per_choice_t CurrentCameraTiltSpeed_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentCameraTiltSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentCameraTiltSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentCameraTiltSpeed, CurrentCameraTiltSpeed_choice,
                                  NULL);
@@ -3107,8 +3104,8 @@ static const per_choice_t CurrentBackLight_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentBackLight(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentBackLight(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentBackLight, CurrentBackLight_choice,
                                  NULL);
@@ -3129,8 +3126,8 @@ static const per_choice_t CurrentWhiteBalance_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentWhiteBalance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentWhiteBalance(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentWhiteBalance, CurrentWhiteBalance_choice,
                                  NULL);
@@ -3151,8 +3148,8 @@ static const per_choice_t CurrentZoomPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentZoomPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentZoomPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentZoomPosition, CurrentZoomPosition_choice,
                                  NULL);
@@ -3173,8 +3170,8 @@ static const per_choice_t CurrentFocusPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentFocusPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentFocusPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentFocusPosition, CurrentFocusPosition_choice,
                                  NULL);
@@ -3195,8 +3192,8 @@ static const per_choice_t CurrentIrisPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentIrisPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentIrisPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentIrisPosition, CurrentIrisPosition_choice,
                                  NULL);
@@ -3217,8 +3214,8 @@ static const per_choice_t CurrentPanPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentPanPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentPanPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentPanPosition, CurrentPanPosition_choice,
                                  NULL);
@@ -3239,8 +3236,8 @@ static const per_choice_t CurrentTiltPosition_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentTiltPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentTiltPosition(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentTiltPosition, CurrentTiltPosition_choice,
                                  NULL);
@@ -3261,8 +3258,8 @@ static const per_choice_t CurrentSlide_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentSlide(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentSlide(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentSlide, CurrentSlide_choice,
                                  NULL);
@@ -3283,8 +3280,8 @@ static const per_choice_t CurrentAutoSlideDisplayTime_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentAutoSlideDisplayTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentAutoSlideDisplayTime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentAutoSlideDisplayTime, CurrentAutoSlideDisplayTime_choice,
                                  NULL);
@@ -3305,8 +3302,8 @@ static const per_choice_t CurrentSelectedProgram_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentSelectedProgram(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentSelectedProgram(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentSelectedProgram, CurrentSelectedProgram_choice,
                                  NULL);
@@ -3327,8 +3324,8 @@ static const per_choice_t CurrentStreamPlayerState_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentStreamPlayerState(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentStreamPlayerState(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentStreamPlayerState, CurrentStreamPlayerState_choice,
                                  NULL);
@@ -3349,8 +3346,8 @@ static const per_choice_t CurrentPlaybackSpeed_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentPlaybackSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentPlaybackSpeed(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentPlaybackSpeed, CurrentPlaybackSpeed_choice,
                                  NULL);
@@ -3371,8 +3368,8 @@ static const per_choice_t CurrentAudioOutputMute_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CurrentAudioOutputMute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CurrentAudioOutputMute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CurrentAudioOutputMute, CurrentAudioOutputMute_choice,
                                  NULL);
@@ -3455,8 +3452,8 @@ static const per_choice_t StatusAttribute_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_StatusAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_StatusAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_StatusAttribute, StatusAttribute_choice,
                                  NULL);
@@ -3493,8 +3490,8 @@ static const per_choice_t DeviceEventIdentifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceEventIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceEventIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_DeviceEventIdentifier, DeviceEventIdentifier_choice,
                                  NULL);
@@ -3515,8 +3512,8 @@ static const per_choice_t CameraPannedToLimit_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CameraPannedToLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraPannedToLimit(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CameraPannedToLimit, CameraPannedToLimit_choice,
                                  NULL);
@@ -3537,8 +3534,8 @@ static const per_choice_t CameraTiltedToLimit_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CameraTiltedToLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraTiltedToLimit(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CameraTiltedToLimit, CameraTiltedToLimit_choice,
                                  NULL);
@@ -3559,8 +3556,8 @@ static const per_choice_t CameraZoomedToLimit_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CameraZoomedToLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraZoomedToLimit(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CameraZoomedToLimit, CameraZoomedToLimit_choice,
                                  NULL);
@@ -3581,8 +3578,8 @@ static const per_choice_t CameraFocusedToLimit_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_CameraFocusedToLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_CameraFocusedToLimit(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_CameraFocusedToLimit, CameraFocusedToLimit_choice,
                                  NULL);
@@ -3619,8 +3616,8 @@ static const per_choice_t DeviceEvent_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceEvent(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceEvent(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_DeviceEvent, DeviceEvent_choice,
                                  NULL);
@@ -3637,8 +3634,8 @@ static const per_sequence_t SourceSelectRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SourceSelectRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SourceSelectRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SourceSelectRequest, SourceSelectRequest_sequence);
 
@@ -3666,8 +3663,8 @@ static const per_choice_t T_result_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result, T_result_choice,
                                  NULL);
@@ -3682,8 +3679,8 @@ static const per_sequence_t SourceSelectResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SourceSelectResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SourceSelectResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SourceSelectResponse, SourceSelectResponse_sequence);
 
@@ -3698,8 +3695,8 @@ static const per_sequence_t SourceEventsRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SourceEventsRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SourceEventsRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SourceEventsRequest, SourceEventsRequest_sequence);
 
@@ -3721,8 +3718,8 @@ static const per_choice_t T_result_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_01, T_result_01_choice,
                                  NULL);
@@ -3739,8 +3736,8 @@ static const per_sequence_t SourceEventsResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SourceEventsResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SourceEventsResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SourceEventsResponse, SourceEventsResponse_sequence);
 
@@ -3754,8 +3751,8 @@ static const per_sequence_t SourceChangeEventIndication_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_SourceChangeEventIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SourceChangeEventIndication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_SourceChangeEventIndication, SourceChangeEventIndication_sequence);
 
@@ -3770,8 +3767,8 @@ static const per_sequence_t DeviceAttributeRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceAttributeRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceAttributeRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceAttributeRequest, DeviceAttributeRequest_sequence);
 
@@ -3783,8 +3780,8 @@ static const per_sequence_t SET_OF_DeviceAttribute_set_of[1] = {
   { &hf_h282_deviceAttributeList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_DeviceAttribute },
 };
 
-static int
-dissect_h282_SET_OF_DeviceAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_OF_DeviceAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_set_of(tvb, offset, actx, tree, hf_index,
                                  ett_h282_SET_OF_DeviceAttribute, SET_OF_DeviceAttribute_set_of);
 
@@ -3806,8 +3803,8 @@ static const per_choice_t T_result_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_02, T_result_02_choice,
                                  NULL);
@@ -3823,8 +3820,8 @@ static const per_sequence_t DeviceAttributeResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceAttributeResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceAttributeResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceAttributeResponse, DeviceAttributeResponse_sequence);
 
@@ -3840,8 +3837,8 @@ static const per_sequence_t DeviceLockRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceLockRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceLockRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceLockRequest, DeviceLockRequest_sequence);
 
@@ -3867,8 +3864,8 @@ static const per_choice_t T_result_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_03, T_result_03_choice,
                                  NULL);
@@ -3883,8 +3880,8 @@ static const per_sequence_t DeviceLockResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceLockResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceLockResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceLockResponse, DeviceLockResponse_sequence);
 
@@ -3899,8 +3896,8 @@ static const per_sequence_t DeviceLockEnquireRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceLockEnquireRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceLockEnquireRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceLockEnquireRequest, DeviceLockEnquireRequest_sequence);
 
@@ -3922,8 +3919,8 @@ static const per_choice_t T_result_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_04, T_result_04_choice,
                                  NULL);
@@ -3938,8 +3935,8 @@ static const per_sequence_t DeviceLockEnquireResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceLockEnquireResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceLockEnquireResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceLockEnquireResponse, DeviceLockEnquireResponse_sequence);
 
@@ -3953,8 +3950,8 @@ static const per_sequence_t DeviceLockTerminatedIndication_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceLockTerminatedIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceLockTerminatedIndication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceLockTerminatedIndication, DeviceLockTerminatedIndication_sequence);
 
@@ -3966,8 +3963,8 @@ static const per_sequence_t SET_SIZE_1_8_OF_ControlAttribute_set_of[1] = {
   { &hf_h282_controlAttributeList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_ControlAttribute },
 };
 
-static int
-dissect_h282_SET_SIZE_1_8_OF_ControlAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_1_8_OF_ControlAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_1_8_OF_ControlAttribute, SET_SIZE_1_8_OF_ControlAttribute_set_of,
                                              1, 8, false);
@@ -3984,8 +3981,8 @@ static const per_sequence_t DeviceControlRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceControlRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceControlRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceControlRequest, DeviceControlRequest_sequence);
 
@@ -3997,8 +3994,8 @@ static const per_sequence_t SET_SIZE_1_16_OF_StatusAttributeIdentifier_set_of[1]
   { &hf_h282_statusAttributeIdentifierList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_StatusAttributeIdentifier },
 };
 
-static int
-dissect_h282_SET_SIZE_1_16_OF_StatusAttributeIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_1_16_OF_StatusAttributeIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_1_16_OF_StatusAttributeIdentifier, SET_SIZE_1_16_OF_StatusAttributeIdentifier_set_of,
                                              1, 16, false);
@@ -4015,8 +4012,8 @@ static const per_sequence_t DeviceStatusEnquireRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceStatusEnquireRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceStatusEnquireRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceStatusEnquireRequest, DeviceStatusEnquireRequest_sequence);
 
@@ -4028,8 +4025,8 @@ static const per_sequence_t SET_SIZE_1_16_OF_StatusAttribute_set_of[1] = {
   { &hf_h282_statusAttributeList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_StatusAttribute },
 };
 
-static int
-dissect_h282_SET_SIZE_1_16_OF_StatusAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_1_16_OF_StatusAttribute(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_1_16_OF_StatusAttribute, SET_SIZE_1_16_OF_StatusAttribute_set_of,
                                              1, 16, false);
@@ -4056,8 +4053,8 @@ static const per_choice_t T_result_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_05, T_result_05_choice,
                                  NULL);
@@ -4073,8 +4070,8 @@ static const per_sequence_t DeviceStatusEnquireResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceStatusEnquireResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceStatusEnquireResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceStatusEnquireResponse, DeviceStatusEnquireResponse_sequence);
 
@@ -4086,8 +4083,8 @@ static const per_sequence_t SET_OF_DeviceEventIdentifier_set_of[1] = {
   { &hf_h282_deviceEventIdentifierList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_DeviceEventIdentifier },
 };
 
-static int
-dissect_h282_SET_OF_DeviceEventIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_OF_DeviceEventIdentifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_set_of(tvb, offset, actx, tree, hf_index,
                                  ett_h282_SET_OF_DeviceEventIdentifier, SET_OF_DeviceEventIdentifier_set_of);
 
@@ -4103,8 +4100,8 @@ static const per_sequence_t ConfigureDeviceEventsRequest_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_ConfigureDeviceEventsRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ConfigureDeviceEventsRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_ConfigureDeviceEventsRequest, ConfigureDeviceEventsRequest_sequence);
 
@@ -4130,8 +4127,8 @@ static const per_choice_t T_result_06_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_T_result_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_T_result_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_T_result_06, T_result_06_choice,
                                  NULL);
@@ -4146,8 +4143,8 @@ static const per_sequence_t ConfigureDeviceEventsResponse_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_ConfigureDeviceEventsResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ConfigureDeviceEventsResponse(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_ConfigureDeviceEventsResponse, ConfigureDeviceEventsResponse_sequence);
 
@@ -4159,8 +4156,8 @@ static const per_sequence_t SET_SIZE_1_8_OF_DeviceEvent_set_of[1] = {
   { &hf_h282_deviceEventList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_h282_DeviceEvent },
 };
 
-static int
-dissect_h282_SET_SIZE_1_8_OF_DeviceEvent(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_SET_SIZE_1_8_OF_DeviceEvent(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_set_of(tvb, offset, actx, tree, hf_index,
                                              ett_h282_SET_SIZE_1_8_OF_DeviceEvent, SET_SIZE_1_8_OF_DeviceEvent_set_of,
                                              1, 8, false);
@@ -4176,8 +4173,8 @@ static const per_sequence_t DeviceEventNotifyIndication_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_DeviceEventNotifyIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_DeviceEventNotifyIndication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_DeviceEventNotifyIndication, DeviceEventNotifyIndication_sequence);
 
@@ -4190,8 +4187,8 @@ static const per_sequence_t NonStandardPDU_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_h282_NonStandardPDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_NonStandardPDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_h282_NonStandardPDU, NonStandardPDU_sequence);
 
@@ -4225,8 +4222,8 @@ static const per_choice_t RequestPDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_RequestPDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_RequestPDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   int32_t msg_type = -1;
   const char *p = NULL;
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
@@ -4264,8 +4261,8 @@ static const per_choice_t ResponsePDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_ResponsePDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_ResponsePDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   int32_t msg_type = -1;
   const char *p = NULL;
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
@@ -4295,8 +4292,8 @@ static const per_choice_t IndicationPDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_IndicationPDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_IndicationPDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   int32_t msg_type = -1;
   const char *p = NULL;
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
@@ -4324,8 +4321,8 @@ static const per_choice_t RDCPDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_h282_RDCPDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_h282_RDCPDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_h282_RDCPDU, RDCPDU_choice,
                                  NULL);
@@ -4336,7 +4333,7 @@ dissect_h282_RDCPDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 /*--- PDUs ---*/
 
 static int dissect_NonCollapsingCapabilities_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_h282_NonCollapsingCapabilities(tvb, offset, &asn1_ctx, tree, hf_h282_NonCollapsingCapabilities_PDU);
@@ -4344,7 +4341,7 @@ static int dissect_NonCollapsingCapabilities_PDU(tvbuff_t *tvb _U_, packet_info 
   return offset;
 }
 static int dissect_RDCPDU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_h282_RDCPDU(tvb, offset, &asn1_ctx, tree, hf_h282_RDCPDU_PDU);
@@ -4359,7 +4356,7 @@ dissect_h282(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
   proto_item  *ti = NULL;
   proto_tree  *h282_tree = NULL;
 
-  col_set_str(pinfo->cinfo, COL_PROTOCOL, PSNAME);
+  col_set_str(pinfo->cinfo, COL_PROTOCOL, "RDC");
 
   ti = proto_tree_add_item(tree, proto_h282, tvb, 0, -1, ENC_NA);
   h282_tree = proto_item_add_subtree(ti, ett_h282);
@@ -5914,7 +5911,7 @@ void proto_register_h282(void) {
         "SET_OF_DeviceAttribute", HFILL }},
     { &hf_h282_deviceAttributeList_item,
       { "DeviceAttribute", "h282.DeviceAttribute",
-        FT_UINT32, BASE_DEC, VALS(h282_DeviceAttribute_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &h282_DeviceAttribute_vals_ext, 0,
         NULL, HFILL }},
     { &hf_h282_result_02,
       { "result", "h282.result",
@@ -6255,14 +6252,14 @@ void proto_register_h282(void) {
   };
 
   /* Register protocol */
-  proto_h282 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_h282 = proto_register_protocol("H.282 Remote Device Control", "RDC", "rdc");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_h282, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  register_dissector(PFNAME, dissect_h282, proto_h282);
-  register_dissector(PFNAME".device_list", dissect_NonCollapsingCapabilities_PDU, proto_h282);
+  register_dissector("rdc", dissect_h282, proto_h282);
+  register_dissector("rdc.device_list", dissect_NonCollapsingCapabilities_PDU, proto_h282);
 
 }
 

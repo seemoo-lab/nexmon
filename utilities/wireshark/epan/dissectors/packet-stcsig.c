@@ -10,11 +10,11 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-/* The logic is based on the dissassembly of libwireshark.dll which was
+/* The logic is based on the disassembly of libwireshark.dll which was
  * part of wireshark-win64-1.10.3-spirent-2.exe, distributed by Spirent
  * to customers of their Spirent Test Center.
  * As the installer displays the normal GPLv2+ license the choice was
- * made to go with dissassembly instead of finding out who to ask for
+ * made to go with disassembly instead of finding out who to ask for
  * the source code.
  *
  * Please report errors or missing features when compared to the original.
@@ -34,9 +34,6 @@
 
 void proto_register_stcsig(void);
 void proto_reg_handoff_stcsig(void);
-
-#define PROTO_SHORT_NAME "STCSIG"
-#define PROTO_LONG_NAME "Spirent Test Center Signature"
 
 static int proto_stcsig;
 
@@ -63,7 +60,7 @@ static const true_false_string tfs_hard_soft = { "Hard", "Soft" };
 
 /*
  * For the last 20 bytes of the data section to be a Spirent Signature
- * the fist byte (offset 0) plus the 11th byte (offset 10) of the deocded
+ * the first byte (offset 0) plus the 11th byte (offset 10) of the decoded
  * signature must add up to 255
  */
 static bool
@@ -219,14 +216,14 @@ dissect_stcsig(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
 #if 0
 	/* Maybe make this a preference */
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-	col_set_str(pinfo->cinfo, COL_INFO, PROTO_LONG_NAME);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "STCSIG");
+	col_set_str(pinfo->cinfo, COL_INFO, "Spirent Test Center Signature");
 #endif
 
 	real_stcsig = (uint8_t *)tvb_memdup(pinfo->pool, tvb, sig_offset, 20);
 	decode_signature(real_stcsig);
 	stcsig_tvb = tvb_new_child_real_data(tvb, real_stcsig, 20, 20);
-	add_new_data_source(pinfo, stcsig_tvb, PROTO_LONG_NAME);
+	add_new_data_source(pinfo, stcsig_tvb, "Spirent Test Center Signature");
 
 	ti = proto_tree_add_item(tree, proto_stcsig, tvb, sig_offset, 20, ENC_NA);
 	stcsig_tree = proto_item_add_subtree(ti, ett_stcsig);
@@ -339,7 +336,7 @@ proto_register_stcsig(void)
 
 	dissector_handle_t stcsig_handle;
 
-	proto_stcsig = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "stcsig");
+	proto_stcsig = proto_register_protocol("Spirent Test Center Signature", "STCSIG", "stcsig");
 
 	proto_register_field_array(proto_stcsig, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));

@@ -15,7 +15,7 @@ local n_frames = 4
 local taptests = {
     [FRAME]=n_frames,
     [DENIED]=n_frames*32,
-    [GETTER]=n_frames*39,
+    [GETTER]=n_frames*40,
     [SETTER]=n_frames*16,
     [ADDR]=n_frames*6,
     [OTHER]=n_frames*2,
@@ -44,7 +44,7 @@ function tap.packet(pinfo,tvb)
 
     testlib.test(OTHER,"typeof-1", typeof(pinfo) == "Pinfo")
 
-    testlib.test(OTHER,"tostring-1", tostring(pinfo) == "a Pinfo")
+    testlib.test(OTHER,"tostring-1", string.match(tostring(pinfo), "^Pinfo: frame=%d+ ") ~= nil)
 
     testlib.testing(FRAME,"negative tests")
 
@@ -115,11 +115,13 @@ function tap.packet(pinfo,tvb)
     testlib.test(GETTER,"Pinfo.port_type-get-1",pinfo.port_type == 3)
     testlib.test(GETTER,"Pinfo.match-get-1",pinfo.match == 0)
     testlib.test(GETTER,"Pinfo.curr_proto-get-1",tostring(pinfo.curr_proto) == "<Missing Protocol Name>")
-    testlib.test(GETTER,"Pinfo.columns-get-1",tostring(pinfo.columns) == "Columns")
+    testlib.test(GETTER,"Pinfo.columns-get-1",string.match(tostring(pinfo.columns), "^Columns: number=\"") ~= nil)
     testlib.test(GETTER,"Pinfo.columns-get-2",typeof(pinfo.columns) == "Columns")
-    testlib.test(GETTER,"Pinfo.cols-get-1",tostring(pinfo.cols) == "Columns")
+    testlib.test(GETTER,"Pinfo.cols-get-1",string.match(tostring(pinfo.cols), "^Columns: number=\"") ~= nil)
     testlib.test(GETTER,"Pinfo.cols-get-2",typeof(pinfo.cols) == "Columns")
     testlib.test(GETTER,"Pinfo.private-get-1",type(pinfo.private) == "userdata")
+    testlib.test(GETTER,"PrivateTable.__tostring",
+        string.match(tostring(pinfo.private), "^PrivateTable:") ~= nil)
     testlib.test(GETTER,"Pinfo.fragmented-get-1",pinfo.fragmented == false)
 
     testlib.test(GETTER,"Pinfo.in_error_pkt-get-1",pinfo.in_error_pkt == false)

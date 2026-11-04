@@ -26,7 +26,6 @@
 
 #include "capture/capture-wpcap.h"
 #include <wsutil/feature_list.h>
-#include <wsutil/application_flavor.h>
 
 bool has_npcap;
 
@@ -45,6 +44,7 @@ bool has_npcap;
 #include <wsutil/ws_assert.h>
 
 #define MAX_WIN_IF_NAME_LEN 511
+static bool use_utf8;
 
 static void    (*p_pcap_close) (pcap_t *);
 static int     (*p_pcap_stats) (pcap_t *, struct pcap_stat *);
@@ -108,6 +108,8 @@ static void     (*p_pcap_free_tstamp_types)(int *);
 static int      (*p_pcap_tstamp_type_name_to_val)(const char *);
 static const char * (*p_pcap_tstamp_type_val_to_name)(int);
 static const char * (*p_pcap_tstamp_type_val_to_description)(int);
+
+static int	(*p_pcap_init)(unsigned int, char *);
 
 typedef struct {
 	const char	*name;
@@ -183,6 +185,7 @@ load_wpcap(void)
 		SYM(pcap_tstamp_type_name_to_val, true),
 		SYM(pcap_tstamp_type_val_to_name, true),
 		SYM(pcap_tstamp_type_val_to_description, true),
+		SYM(pcap_init, true), /* libpcap 1.10.0 */
 		{ NULL, NULL, false }
 	};
 
@@ -216,6 +219,17 @@ load_wpcap(void)
 
 
 	has_npcap = true;
+
+#ifdef HAVE_PCAP_INIT
+	char errbuf[PCAP_ERRBUF_SIZE + 1];
+
+	/* If we have pcap_init, call it. */
+	if (p_pcap_init != NULL) {
+		if (pcap_init(PCAP_CHAR_ENC_UTF_8, errbuf) != 0) {
+			/* This shouldn't happen. */
+		}
+	}
+#endif
 }
 
 bool
@@ -311,6 +325,9 @@ static void
 convert_errbuf_to_utf8(char *errbuf)
 {
 	char *utf8_err;
+	if (use_utf8) {
+		return;
+	}
 	if (errbuf[0] == '\0') {
 		return;
 	}
@@ -348,6 +365,28 @@ cant_load_npcap_err(const char *app_name)
 	}
 	return g_string_free(err, FALSE);
 }
+
+#ifdef HAVE_PCAP_INIT
+int
+pcap_init(unsigned opts, char *errbuf)
+{
+	if (!has_npcap) {
+		snprintf(errbuf, PCAP_ERRBUF_SIZE,
+			   "unable to load Npcap (wpcap.dll); can't initialize it");
+		return PCAP_ERROR;
+	}
+	if (p_pcap_init != NULL) {
+		int ret = p_pcap_init(opts, errbuf);
+		if (ret == 0 && opts == PCAP_CHAR_ENC_UTF_8) {
+			use_utf8 = true;
+		}
+		return ret;
+	}
+	snprintf(errbuf, PCAP_ERRBUF_SIZE,
+		   "The Npcap DLL (wpcap.dll) doesn't have pcap_init");
+	return PCAP_ERROR;
+}
+#endif
 
 void
 pcap_close(pcap_t *a)
@@ -763,10 +802,11 @@ int pcap_next_ex(pcap_t *a, struct pcap_pkthdr **b, const u_char **c)
 #ifdef HAVE_PCAP_REMOTE
 GList *
 get_remote_interface_list(const char *hostname, const char *port,
+			  bool wireshark_remote,
 			  int auth_type, const char *username,
 			  const char *passwd, int *err, char **err_str)
 {
-	if (!has_npcap && application_flavor_is_wireshark()) {
+	if (!has_npcap && wireshark_remote) {
 		/*
 		 * We don't have Npcap, so we can't get a list of interfaces.
 		 */
@@ -776,15 +816,15 @@ get_remote_interface_list(const char *hostname, const char *port,
 		return NULL;
 	}
 
-	return get_interface_list_findalldevs_ex(hostname, port, auth_type,
+	return get_remote_interface_list_common(hostname, port, auth_type,
 	    username, passwd, err, err_str);
 }
 #endif
 
 GList *
-get_interface_list(int *err, char **err_str)
+get_local_interface_list_ws(int *err, char **err_str)
 {
-	if (!has_npcap && application_flavor_is_wireshark()) {
+	if (!has_npcap) {
 		/*
 		 * We don't have Npcap, so we can't get a list of interfaces.
 		 */
@@ -794,7 +834,7 @@ get_interface_list(int *err, char **err_str)
 		return NULL;
 	}
 
-	return get_interface_list_findalldevs(err, err_str);
+	return get_local_interface_list(err, err_str);
 }
 
 /*

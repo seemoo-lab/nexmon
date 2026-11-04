@@ -429,7 +429,7 @@ static void analyze_gop(mate_config* mc, mate_gop* gop) {
 
 static void analyze_pdu(mate_config* mc, mate_pdu* pdu) {
 	/* TODO:
-	return a g_boolean to tell we've destroyed the pdu when the pdu is unnassigned
+	return a g_boolean to tell we've destroyed the pdu when the pdu is unassigned
 	destroy the unassigned pdu
 	*/
 	const mate_cfg_gop* cfg = NULL;
@@ -457,9 +457,7 @@ static void analyze_pdu(mate_config* mc, mate_pdu* pdu) {
 	if ((gopkey_match = new_avpl_pairs_match("gop_key_match", pdu->avpl, cfg->key, true, true))) {
 		gop_key = avpl_to_str(gopkey_match);
 
-		g_hash_table_lookup_extended(gop_rd->gop_index,(const void *)gop_key,(void * *)&orig_gop_key,(void * *)&gop);
-
-		if ( gop ) {
+		if (g_hash_table_lookup_extended(gop_rd->gop_index,(const void *)gop_key,(void * *)&orig_gop_key,(void * *)&gop)) {
 			g_free(gop_key);
 
 			/* is the gop dead ? */
@@ -753,11 +751,11 @@ static mate_pdu* new_pdu(const mate_cfg_pdu* cfg, uint32_t framenum, field_info*
 	mate_range* proto_range;
 	tmp_pdu_data data;
 	unsigned i,j;
-	int min_dist;
+	unsigned min_dist;
 	field_info* range_fi;
-	int32_t last_start;
-	int32_t first_end;
-	int32_t curr_end;
+	unsigned last_start;
+	uint32_t first_end;
+	uint32_t curr_end;
 	int hfid;
 
 	dbg_print (dbg_pdu,1,dbg_facility,"new_pdu: type=%s framenum=%i",cfg->name,framenum);

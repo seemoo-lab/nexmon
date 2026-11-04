@@ -49,17 +49,17 @@ typedef struct {
 /*
  * List of disabled protocols
  */
-static GList *global_disabled_protos;
+/* Use the same list for Global and personal disabled protocols */
 static GList *disabled_protos;
 /*
  * List of enabled protocols (that are disabled by default)
+ * Use the same list for Global and personal files
  */
-static GList *global_enabled_protos;
 static GList *enabled_protos;
 /*
  * List of disabled heuristics
+ * Use the same list for Global and personal files
  */
-static GList *global_disabled_heuristics;
 static GList *disabled_heuristics;
 
 static bool unsaved_changes;
@@ -114,7 +114,7 @@ heur_discard_existing_list (GList **flp)
  * Enable/Disable protocols as per the stored configuration
  */
 static void
-set_protos_list(GList *protos_list, GList *global_protos_list, bool enable)
+set_protos_list(GList *protos_list, bool enable)
 {
   int i;
   GList *fl_ent;
@@ -124,7 +124,7 @@ set_protos_list(GList *protos_list, GList *global_protos_list, bool enable)
    * Assume no protocols disabled by default wants to be enabled
    */
   if (protos_list == NULL)
-    goto skip;
+    return;
 
   fl_ent = g_list_first(protos_list);
 
@@ -136,27 +136,6 @@ set_protos_list(GList *protos_list, GList *global_protos_list, bool enable)
     } else {
       if (proto_can_toggle_protocol(i))
         proto_set_decoding(i, enable);
-    }
-
-    fl_ent = fl_ent->next;
-  }
-
-skip:
-  if (global_protos_list == NULL)
-    return;
-
-  fl_ent = g_list_first(global_protos_list);
-
-  while (fl_ent != NULL) {
-    prot = (protocol_def *) fl_ent->data;
-    i = proto_get_id_by_filter_name(prot->name);
-    if (i == -1) {
-      /* XXX - complain here? */
-    } else {
-      if (proto_can_toggle_protocol(i)) {
-        proto_set_decoding(i, enable);
-        proto_set_cant_toggle(i);
-      }
     }
 
     fl_ent = fl_ent->next;
@@ -173,7 +152,7 @@ skip:
  */
 static void
 save_protos_list(char **pref_path_return, int *errno_return, const char* filename,
-                const char* header_comment, bool (*protocol_check)(protocol_t  *protocol))
+                const char* header_comment, const char* app_env_var_prefix, bool (*protocol_check)(protocol_t  *protocol))
 {
   char        *ff_path, *ff_path_new;
   FILE        *ff;
@@ -184,7 +163,7 @@ save_protos_list(char **pref_path_return, int *errno_return, const char* filenam
 
   *pref_path_return = NULL;     /* assume no error */
 
-  ff_path = get_persconffile_path(filename, true);
+  ff_path = get_persconffile_path(filename, true, app_env_var_prefix);
 
   /* Write to "XXX.new", and rename if that succeeds.
      That means we don't trash the file if we fail to write it out
@@ -397,24 +376,24 @@ read_protos_list(char **gpath_return, int *gopen_errno_return,
                  int *gread_errno_return,
                  char **path_return, int *open_errno_return,
                  int *read_errno_return,
-                 const char* filename,
-                 GList **global_protos_list, GList **protos_list)
+                 const char* filename, const char* app_env_var_prefix,
+                 GList **protos_list)
 {
   int         err;
   char       *gff_path, *ff_path;
   FILE       *ff;
 
   /* Construct the pathname of the global disabled protocols file. */
-  gff_path = get_datafile_path(filename);
+  gff_path = get_datafile_path(filename, app_env_var_prefix);
 
   /* If we already have a list of protocols, discard it. */
-  discard_existing_list (global_protos_list);
+  discard_existing_list (protos_list);
 
   /* Read the global disabled protocols file, if it exists. */
   *gpath_return = NULL;
   if ((ff = ws_fopen(gff_path, "r")) != NULL) {
     /* We succeeded in opening it; read it. */
-    err = read_protos_list_file(gff_path, ff, global_protos_list);
+    err = read_protos_list_file(gff_path, ff, protos_list);
     if (err != 0) {
       /* We had an error reading the file; return the errno and the
          pathname, so our caller can report the error. */
@@ -437,10 +416,7 @@ read_protos_list(char **gpath_return, int *gopen_errno_return,
   }
 
   /* Construct the pathname of the user's disabled protocols file. */
-  ff_path = get_persconffile_path(filename, true);
-
-  /* If we already have a list of protocols, discard it. */
-  discard_existing_list (protos_list);
+  ff_path = get_persconffile_path(filename, true, app_env_var_prefix);
 
   /* Read the user's disabled protocols file, if it exists. */
   *path_return = NULL;
@@ -564,7 +540,7 @@ set_disabled_heur_dissector_list(void)
   heur_dtbl_entry_t* h;
 
   if (disabled_heuristics == NULL)
-    goto skip;
+    return;
 
   fl_ent = g_list_first(disabled_heuristics);
 
@@ -578,22 +554,6 @@ set_disabled_heur_dissector_list(void)
     fl_ent = fl_ent->next;
   }
 
-skip:
-  if (global_disabled_heuristics == NULL)
-    return;
-
-  fl_ent = g_list_first(global_disabled_heuristics);
-
-  while (fl_ent != NULL) {
-    heur = (heur_protocol_def *) fl_ent->data;
-
-    h = find_heur_dissector_by_unique_short_name(heur->name);
-    if (h != NULL) {
-      h->enabled = heur->enabled;
-    }
-
-    fl_ent = fl_ent->next;
-  }
 }
 
 static int
@@ -714,7 +674,7 @@ error:
 }
 
 static void
-read_heur_dissector_list(char **gpath_return, int *gopen_errno_return,
+read_heur_dissector_list(const char* app_env_var_prefix, char **gpath_return, int *gopen_errno_return,
 			 int *gread_errno_return,
 			 char **path_return, int *open_errno_return,
 			 int *read_errno_return)
@@ -724,17 +684,17 @@ read_heur_dissector_list(char **gpath_return, int *gopen_errno_return,
   FILE       *ff;
 
   /* If we already have a list of protocols, discard it. */
-  heur_discard_existing_list(&global_disabled_heuristics);
+  heur_discard_existing_list(&disabled_heuristics);
 
   /* Construct the pathname of the global disabled heuristic dissectors file. */
-  gff_path = get_datafile_path(HEURISTICS_FILE_NAME);
+  gff_path = get_datafile_path(HEURISTICS_FILE_NAME, app_env_var_prefix);
 
   /* Read the global disabled protocols file, if it exists. */
   *gpath_return = NULL;
   if ((ff = ws_fopen(gff_path, "r")) != NULL) {
     /* We succeeded in opening it; read it. */
     err = read_heur_dissector_list_file(gff_path, ff,
-                                        &global_disabled_heuristics);
+                                        &disabled_heuristics);
     if (err != 0) {
       /* We had an error reading the file; return the errno and the
          pathname, so our caller can report the error. */
@@ -757,10 +717,7 @@ read_heur_dissector_list(char **gpath_return, int *gopen_errno_return,
   }
 
   /* Construct the pathname of the user's disabled protocols file. */
-  ff_path = get_persconffile_path(HEURISTICS_FILE_NAME, true);
-
-  /* If we already have a list of protocols, discard it. */
-  heur_discard_existing_list (&disabled_heuristics);
+  ff_path = get_persconffile_path(HEURISTICS_FILE_NAME, true, app_env_var_prefix);
 
   /* Read the user's disabled protocols file, if it exists. */
   *path_return = NULL;
@@ -823,7 +780,7 @@ sort_heur_dissector_tables(const char *table_name, struct heur_dissector_list *l
 }
 
 static void
-save_disabled_heur_dissector_list(char **pref_path_return, int *errno_return)
+save_disabled_heur_dissector_list(const char* app_env_var_prefix, char **pref_path_return, int *errno_return)
 {
   char        *ff_path, *ff_path_new;
   GSList      *sorted_heur_list = NULL;
@@ -831,7 +788,7 @@ save_disabled_heur_dissector_list(char **pref_path_return, int *errno_return)
 
   *pref_path_return = NULL;     /* assume no error */
 
-  ff_path = get_persconffile_path(HEURISTICS_FILE_NAME, true);
+  ff_path = get_persconffile_path(HEURISTICS_FILE_NAME, true, app_env_var_prefix);
 
   /* Write to "XXX.new", and rename if that succeeds.
      That means we don't trash the file if we fail to write it out
@@ -933,7 +890,7 @@ disabled_protos_free(void *p, void *user_data _U_)
  * dissectors.  Report errors through the UI.
  */
 void
-read_enabled_and_disabled_lists(void)
+read_enabled_and_disabled_lists(const char* app_env_var_prefix)
 {
   char *gpath, *path;
   int gopen_errno, gread_errno;
@@ -944,8 +901,8 @@ read_enabled_and_disabled_lists(void)
    */
   read_protos_list(&gpath, &gopen_errno, &gread_errno,
                    &path, &open_errno, &read_errno,
-                   DISABLED_PROTOCOLS_FILE_NAME,
-                   &global_disabled_protos, &disabled_protos);
+                   DISABLED_PROTOCOLS_FILE_NAME, app_env_var_prefix,
+                   &disabled_protos);
   if (gpath != NULL) {
     if (gopen_errno != 0) {
       report_warning("Could not open global disabled protocols file\n\"%s\": %s.",
@@ -976,8 +933,8 @@ read_enabled_and_disabled_lists(void)
    */
   read_protos_list(&gpath, &gopen_errno, &gread_errno,
                    &path, &open_errno, &read_errno,
-                   ENABLED_PROTOCOLS_FILE_NAME,
-                   &global_enabled_protos, &enabled_protos);
+                   ENABLED_PROTOCOLS_FILE_NAME, app_env_var_prefix,
+                   &enabled_protos);
   if (gpath != NULL) {
     if (gopen_errno != 0) {
       report_warning("Could not open global enabled protocols file\n\"%s\": %s.",
@@ -1006,7 +963,7 @@ read_enabled_and_disabled_lists(void)
   /*
    * Read the global and personal heuristic dissector list files.
    */
-  read_heur_dissector_list(&gpath, &gopen_errno, &gread_errno,
+  read_heur_dissector_list(app_env_var_prefix, &gpath, &gopen_errno, &gread_errno,
                            &path, &open_errno, &read_errno);
   if (gpath != NULL) {
     if (gopen_errno != 0) {
@@ -1037,8 +994,8 @@ read_enabled_and_disabled_lists(void)
    * Enable/disable protocols and heuristic dissectors as per the
    * contents of the files we just read.
    */
-  set_protos_list(disabled_protos, global_disabled_protos, false);
-  set_protos_list(enabled_protos, global_enabled_protos, true);
+  set_protos_list(disabled_protos, false);
+  set_protos_list(enabled_protos, true);
   set_disabled_heur_dissector_list();
   unsaved_changes = false;
 }
@@ -1048,7 +1005,7 @@ read_enabled_and_disabled_lists(void)
  * dissectors to the corresponding files.  Report errors through the UI.
  */
 void
-save_enabled_and_disabled_lists(void)
+save_enabled_and_disabled_lists(const char* app_env_var_prefix)
 {
   char *pf_dir_path;
   char *pf_path;
@@ -1057,7 +1014,7 @@ save_enabled_and_disabled_lists(void)
 
   /* Create the directory that holds personal configuration files, if
      necessary.  */
-  if (create_persconffile_dir(&pf_dir_path) == -1) {
+  if (create_persconffile_dir(app_env_var_prefix, &pf_dir_path) == -1) {
     report_failure("Can't create directory\n\"%s\"\nfor disabled protocols file: %s.",
                    pf_dir_path, g_strerror(errno));
     g_free(pf_dir_path);
@@ -1065,7 +1022,7 @@ save_enabled_and_disabled_lists(void)
   }
 
   save_protos_list(&pf_path, &pf_save_errno, DISABLED_PROTOCOLS_FILE_NAME,
-                   NULL, disable_proto_list_check);
+                   NULL, app_env_var_prefix, disable_proto_list_check);
   if (pf_path != NULL) {
     report_failure("Could not save to your disabled protocols file\n\"%s\": %s.",
                    pf_path, g_strerror(pf_save_errno));
@@ -1075,6 +1032,7 @@ save_enabled_and_disabled_lists(void)
 
   save_protos_list(&pf_path, &pf_save_errno, ENABLED_PROTOCOLS_FILE_NAME,
                    "#This file is for enabling protocols that are disabled by default",
+                   app_env_var_prefix,
                    enable_proto_list_check);
   if (pf_path != NULL) {
     report_failure("Could not save to your enabled protocols file\n\"%s\": %s.",
@@ -1083,7 +1041,7 @@ save_enabled_and_disabled_lists(void)
     ok = false;
   }
 
-  save_disabled_heur_dissector_list(&pf_path, &pf_save_errno);
+  save_disabled_heur_dissector_list(app_env_var_prefix, &pf_path, &pf_save_errno);
   if (pf_path != NULL) {
     report_failure("Could not save to your disabled heuristic protocol file\n\"%s\": %s.",
                    pf_path, g_strerror(pf_save_errno));
@@ -1098,12 +1056,8 @@ save_enabled_and_disabled_lists(void)
 void
 cleanup_enabled_and_disabled_lists(void)
 {
-  g_list_foreach(global_disabled_heuristics, disabled_protos_free, NULL);
-  g_list_free(global_disabled_heuristics);
   g_list_foreach(disabled_heuristics, disabled_protos_free, NULL);
   g_list_free(disabled_heuristics);
-  g_list_foreach(global_disabled_protos, disabled_protos_free, NULL);
-  g_list_free(global_disabled_protos);
   g_list_foreach(disabled_protos, disabled_protos_free, NULL);
   g_list_free(disabled_protos);
 }

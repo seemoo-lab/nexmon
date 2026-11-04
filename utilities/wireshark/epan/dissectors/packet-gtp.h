@@ -134,7 +134,9 @@ typedef struct _gtp_hdr {
 #define GTP_MSG_END_MARKER          0xFE /* 254 */
 #define GTP_MSG_TPDU                0xFF
 
-/* Used by custom dissector */
+/* This is used by custom dissectors and should be in the "install" target */
+/* PUBLIC_HEADER */
+
 extern value_string_ext cause_type_ext;
 
 static const value_string gtp_sel_mode_vals[] = {
@@ -146,7 +148,7 @@ static const value_string gtp_sel_mode_vals[] = {
 };
 
 /** GTP header extension info
-* This structure is used to transfer infotmation to users of the "gtp.hdr_ext" dissector table
+* This structure is used to transfer information to users of the "gtp.hdr_ext" dissector table
 */
 
 typedef struct gtp_hdr_ext_info {
@@ -179,7 +181,17 @@ extern wmem_map_t* session_imsi;
 /* Relation between <teid,ip> -> frame */
 extern wmem_map_t* frame_map;
 
+/* Relation between <teid,convid,ip> -> frame,
+ * similar to frame_map but involved when deinterlacing is enabled
+ */
+extern wmem_map_t* frame_map_deint;
+
 uint32_t get_frame(address ip, uint32_t teid, uint32_t *frame);
+
+/* Similar to get_frame() but relies on the deinterlacer Map (frame_map_deint)
+ * XXX - For now GTP ignores deinterlacing, and GTPv2 supports it.
+ */
+uint32_t get_gtp_session_frame(address ip, uint32_t teid, uint32_t convid, uint32_t *frame, bool ignore_conv);
 
 void remove_frame_info(uint32_t f);
 
@@ -189,7 +201,10 @@ bool teid_exists(uint32_t teid, wmem_list_t *teid_list);
 
 bool ip_exists(address ip, wmem_list_t *ip_list);
 
-void fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame);
+/**
+ * Fills the frame_map or frame_map_deint according to the deinterlacing mode
+ */
+void fill_map(wmem_list_t *teid_list, wmem_list_t *ip_list, uint32_t frame, uint32_t convid, bool ignore_conv);
 
 bool is_cause_accepted(uint8_t cause, uint32_t version);
 
@@ -197,9 +212,9 @@ bool is_cause_accepted(uint8_t cause, uint32_t version);
 void gtp_add_teid_imsi(uint32_t teid, const char* imsi);
 
 WS_DLL_PUBLIC
-int decode_qos_umts(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, const char * qos_str, uint8_t type);
+unsigned decode_qos_umts(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree, const char * qos_str, uint8_t type);
 
 WS_DLL_PUBLIC
-void dissect_gtp_uli(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, session_args_t * args _U_);
+void dissect_gtp_uli(tvbuff_t * tvb, unsigned offset, packet_info * pinfo, proto_tree * tree, session_args_t * args _U_);
 
 #endif /* __PACKET_GTP_H*/

@@ -71,6 +71,9 @@ channel2freq(struct wl_info *wl, unsigned int channel)
 
 static void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+    if (!p || p->len <= PLCP_HDR_LEN)
+        return;
+
     void *head = (void *) (((uint32_t) p->data & 0xFFE00000) + p->head_off);
 
     /* Verify there will be room for the radiotap header (after the PLCP header
@@ -98,8 +101,15 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
         | (1<<IEEE80211_RADIOTAP_CHANNEL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTNOISE);
+    static uint32_t fw_tsf_high = 0;
+    static uint32_t fw_last_mactime = 0;
+
+    if (fw_last_mactime >= 0x80000000 && sts->mactime < 0x80000000)
+        fw_tsf_high++;
+    fw_last_mactime = sts->mactime;
+
     frame->tsf.tsf_l = sts->mactime;
-    frame->tsf.tsf_h = 0;
+    frame->tsf.tsf_h = fw_tsf_high;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
 
@@ -157,6 +167,8 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     } else if (monitor & MONITOR_RADIOTAP) {
         wl_monitor_radiotap(wl, sts, p);
     } else if (monitor & MONITOR_IEEE80211) {
+        if (!p || p->len <= PLCP_HDR_LEN)
+            return;
         skb_pull(p, PLCP_HDR_LEN);
         p->flags |= 0x80u;
         wl_sendup_multiif(wl, p);

@@ -22,7 +22,7 @@ void proto_register_nv(void);
 void proto_reg_handoff_nv(void);
 
 /* Define the nv proto */
-int proto_nv;
+static int proto_nv;
 
 static dissector_handle_t nv_handle;
 
@@ -113,8 +113,7 @@ static int dissect_nv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
       proto_item_set_text(ti, "%s", szText);
       offset+=((int)sizeof(uint8_t)*6);
 
-      proto_tree_add_item(nv_header_tree, hf_nv_count, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      nv_count = tvb_get_letohs(tvb, offset);
+      proto_tree_add_item_ret_uint16(nv_header_tree, hf_nv_count, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN, &nv_count);
       offset+=(int)sizeof(uint16_t);
 
       proto_tree_add_item(nv_header_tree, hf_nv_cycleindex, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);

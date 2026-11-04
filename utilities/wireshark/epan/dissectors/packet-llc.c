@@ -15,11 +15,6 @@
 #include <epan/capture_dissectors.h>
 #include <wsutil/pint.h>
 #include <epan/oui.h>
-#include <epan/llcsaps.h>
-#include <epan/bridged_pids.h>
-#include <epan/ppptypes.h>
-#include <epan/arcnet_pids.h>
-#include <epan/nlpid.h>
 #include <epan/addr_resolv.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
@@ -27,6 +22,9 @@
 #include "packet-sll.h"
 #include "packet-juniper.h"
 #include "packet-xdlc.h"
+#include "packet-osi.h"
+#include "packet-ppp.h"
+#include "packet-arcnet.h"
 
 #include "packet-llc.h"
 

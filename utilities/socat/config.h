@@ -529,6 +529,7 @@
 /* #   undef HAVE_HOSTS_DENY_TABLE */
 #endif
 
+#if defined(__LP64__)
 /* 1..short, 3..int, 5..long; 2,4,6..unsigned */
 #define HAVE_BASIC_SIZE_T 6 /* unsigned long (aarch64/bionic LP64) */
 #define HAVE_BASIC_MODE_T 4 /* unsigned int */
@@ -540,7 +541,7 @@
 #define HAVE_BASIC_OFF64_T 7 /* long long */
 #define HAVE_BASIC_DEV_T 6 /* unsigned long (aarch64/bionic LP64) */
 
-#define HAVE_BASIC_SOCKLEN_T 3 /* int */
+#define HAVE_BASIC_SOCKLEN_T 4 /* unsigned int */
 
 #define HAVE_TYPEOF_ST_INO 6 /* unsigned long (aarch64/bionic LP64) */
 #define HAVE_TYPEOF_ST_NLINK 4 /* unsigned int */
@@ -559,7 +560,40 @@
 
 #define HAVE_TYPEOF_RLIM_MAX 6 /* unsigned long */
 
+#define HAVE_TYPEOF_STRUCT_CMSGHDR_CMSG_LEN 6 /* unsigned long */
+#else
+/* 1..short, 3..int, 5..long; 2,4,6..unsigned */
+#define HAVE_BASIC_SIZE_T 4 /* unsigned int */
+#define HAVE_BASIC_MODE_T 2 /* unsigned short */
+#define HAVE_BASIC_PID_T 3 /* int */
+#define HAVE_BASIC_UID_T 4 /* unsigned int */
+#define HAVE_BASIC_GID_T 4 /* unsigned int */
+#define HAVE_BASIC_TIME_T 5 /* long */
+#define HAVE_BASIC_OFF_T 5 /* long */
+#define HAVE_BASIC_OFF64_T 7 /* long long */
+#define HAVE_BASIC_DEV_T 8 /* unsigned long long */
+
+#define HAVE_BASIC_SOCKLEN_T 3 /* int */
+
+#define HAVE_TYPEOF_ST_INO 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST_NLINK 4 /* unsigned int */
+#define HAVE_TYPEOF_ST_SIZE 7 /* long long */
+#define HAVE_TYPEOF_ST_BLKSIZE 6 /* unsigned long */
+#define HAVE_TYPEOF_ST_BLOCKS 8 /* unsigned long long */
+
+#define HAVE_TYPEOF_ST64_DEV 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST64_INO 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST64_NLINK 4 /* unsigned int */
+#define HAVE_TYPEOF_ST64_SIZE 7 /* long long */
+#define HAVE_TYPEOF_ST64_BLKSIZE 6 /* unsigned long */
+#define HAVE_TYPEOF_ST64_BLOCKS 8 /* unsigned long long */
+
+#define HAVE_TYPEOF_STRUCT_TIMEVAL_TV_USEC 5 /* long */
+
+#define HAVE_TYPEOF_RLIM_MAX 6 /* unsigned long */
+
 #define HAVE_TYPEOF_STRUCT_CMSGHDR_CMSG_LEN 4 /* unsigned int */
+#endif
 
 /* Define if you have the /proc filesystem */
 #define HAVE_PROC_DIR 1

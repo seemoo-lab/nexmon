@@ -365,6 +365,9 @@
 /* Defined if inline assembler supports Intel SM4 instructions */
 #undef HAVE_GCC_INLINE_ASM_SM4
 
+/* Defined if inline assembler supports AVX512 Intel SM4 instructions */
+#undef HAVE_GCC_INLINE_ASM_SM4_AVX512
+
 /* Defined if inline assembler supports SSE4.1 instructions */
 #undef HAVE_GCC_INLINE_ASM_SSE41
 

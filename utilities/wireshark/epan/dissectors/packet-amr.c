@@ -225,30 +225,6 @@ static const uint8_t Framebits_NB[] = {95, 103, 118, 134, 148, 159, 204, 244, 39
 static const unsigned int Framebits_WB[] = {132, 177, 253, 285, 317, 365, 397, 461, 477, 40, 0, 0, 0, 0, 0, 0};
 
 
-/** Return AMR narrowband Frame Type (FT) based on AMR speech data payload size.
- * The input size is the size of an octet aligned payload without the
- * CMR and TOC octets.
- *
- * @return AMR Frame Type (FT)
- */
-
-int amr_nb_bytes_to_ft(uint8_t bytes)
-{
-    int ft;
-
-    for (ft = 0; ft < AMR_FT_PDC_EFR_SID; ft++) {
-        if ((Framebits_NB[ft] + 7) / 8 == bytes) {
-            return ft;
-        }
-    }
-    /* 12-14 not used, jump to 15 (AMR_FT_NO_DATA): */
-    if (Framebits_NB[AMR_FT_NO_DATA] == bytes) {
-        return AMR_FT_NO_DATA;
-    }
-
-	return -1;
-}
-
 static void
 amr_apply_prefs(void) {
     wmem_map_insert(amr_default_fmtp, "octet-align", (amr_encoding_type == AMR_OA) ? "1" : "0");
@@ -363,8 +339,8 @@ dissect_amr_be(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int amr_mode
     int         ft;
     int         bit_offset = 0;
     int         bitcount;       /*bitcounter, MSB = bit 0, over bytes*/
-    int         bits_used_for_frames = 0;
-    int         bytes_needed_for_frames;
+    unsigned    bits_used_for_frames = 0;
+    unsigned    bytes_needed_for_frames;
     uint8_t     f_bit;
 
     /* Chapter 4.3 */
@@ -457,8 +433,8 @@ dissect_amr_oa(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int amr_
     uint8_t     octet;
     int         ft;
     int         ft_payload_bits = 0;
-    int         bits_used_for_frames = 0;
-    int         bytes_needed_for_frames = 0;
+    unsigned    bits_used_for_frames = 0;
+    unsigned    bytes_needed_for_frames = 0;
     proto_tree *toc_tree;
 
     octet = tvb_get_uint8(tvb,offset);

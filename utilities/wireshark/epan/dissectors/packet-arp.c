@@ -19,13 +19,13 @@
 #include <epan/addr_resolv.h>
 #include "packet-arp.h"
 #include <epan/etypes.h>
-#include <epan/arcnet_pids.h>
-#include <epan/ax25_pids.h>
 #include <epan/osi-utils.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
+#include "packet-arcnet.h"
+#include "packet-ax25.h"
 
 void proto_register_arp(void);
 void proto_reg_handoff_arp(void);
@@ -606,8 +606,7 @@ dissect_atm_nsap(tvbuff_t *tvb, packet_info* pinfo, int offset, int len, proto_t
   uint8_t afi;
   proto_item* ti;
 
-  afi = tvb_get_uint8(tvb, offset);
-  ti = proto_tree_add_item(tree, hf_atmarp_src_atm_afi, tvb, offset, 1, ENC_BIG_ENDIAN);
+  ti = proto_tree_add_item_ret_uint8(tree, hf_atmarp_src_atm_afi, tvb, offset, 1, ENC_BIG_ENDIAN, &afi);
   switch (afi) {
 
     case NSAP_IDI_ISO_DCC_BIN:       /* DCC ATM format */

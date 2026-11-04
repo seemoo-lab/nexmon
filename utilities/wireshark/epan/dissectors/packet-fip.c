@@ -423,13 +423,13 @@ dissect_fip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     while ((rlen > 0) && tvb_bytes_exist(tvb, desc_offset, 2)) {
         dlen = tvb_get_uint8(tvb, desc_offset + 1) * FIP_BPW;
         if (!dlen) {
-            proto_tree_add_expert(fip_tree, pinfo, &ei_fip_descriptors, tvb, desc_offset, -1);
+            proto_tree_add_expert_remaining(fip_tree, pinfo, &ei_fip_descriptors, tvb, desc_offset);
             break;
         }
         if (!tvb_bytes_exist(tvb, desc_offset, dlen) || dlen > rlen) {
             break;
         }
-        desc_tvb = tvb_new_subset_length_caplen(tvb, desc_offset, dlen, -1);
+        desc_tvb = tvb_new_subset_length(tvb, desc_offset, dlen);
         dtype = tvb_get_uint8(desc_tvb, 0);
         desc_offset += dlen;
         rlen -= dlen;
@@ -482,7 +482,7 @@ dissect_fip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
             fc_data_t fc_data = {ETHERTYPE_FIP, 0};
 
             subtree = fip_desc_type_len(fip_tree, pinfo, desc_tvb, dtype, ett_fip_dt_caps, &item);
-            ls_tvb = tvb_new_subset_length_caplen(desc_tvb, 4, dlen - 4, -1);
+            ls_tvb = tvb_new_subset_remaining(desc_tvb, 4);
             call_dissector_with_data(fc_handle, ls_tvb, pinfo, subtree, &fc_data);
             proto_item_append_text(item, "%u bytes", dlen - 4);
         }

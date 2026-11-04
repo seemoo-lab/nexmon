@@ -55,7 +55,7 @@ wtap_open_return_val ber_open(wtap *wth, int *err, char **err_info)
   uint8_t ber_tag;
   bool ber_pc;
   uint8_t oct, ntb = 0, nlb = 0;
-  int len = 0;
+  int64_t len = 0;
   int64_t file_size;
   size_t offset = 0;
 
@@ -97,17 +97,25 @@ wtap_open_return_val ber_open(wtap *wth, int *err, char **err_info)
 
       if(nlb > 0) {
         if (nlb + offset >= sizeof(bytes)) {
+            /* This limits us to 1 or 256 TiB, depending on tag length. */
             return WTAP_OPEN_NOT_MINE;
         }
         /* not indefinite length and we have read enough bytes to compute the length */
         for(int i = 0; i < nlb; i++) {
           oct = bytes[offset++];
-          len = (len<<8) + oct;
+          if (ckd_mul(&len, len, 256)) {
+            /* Can't happen, unless we increase BER_BYTES_TO_CHECK */
+            return WTAP_OPEN_NOT_MINE;
+          }
+          len += oct;
         }
       }
     }
 
-    len += (2 + ntb + nlb); /* add back Tag and Length bytes */
+    /* add back Tag and Length bytes */
+    if (ckd_add(&len, len, 2 + ntb + nlb)) {
+      return WTAP_OPEN_NOT_MINE;
+    }
     file_size = wtap_file_size(wth, err);
 
     if(len != file_size) {

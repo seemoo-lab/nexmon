@@ -420,12 +420,14 @@ itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (102894)
      cenDsrcTolling (0),
      ...
     }
-    RelevanceDistance ::= ENUMERATED {lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3),
-    lessThan1000m(4), lessThan5km(5), lessThan10km(6), over10km(7)}
-    RelevanceTrafficDirection ::= ENUMERATED {allTrafficDirections(0), upstreamTraffic(1),
-    downstreamTraffic(2), oppositeTraffic(3)}
-    TransmissionInterval ::= INTEGER {oneMilliSecond(1), tenSeconds(10000)} (1..10000)
-    ValidityDuration ::= INTEGER {timeOfDetection(0), oneSecondAfterDetection(1)} (0..86400)
+    -- Wireshark mod
+    --RelevanceDistance ::= ENUMERATED {lessThan50m(0), lessThan100m(1), lessThan200m(2), lessThan500m(3),
+    --lessThan1000m(4), lessThan5km(5), lessThan10km(6), over10km(7)}
+    --RelevanceTrafficDirection ::= ENUMERATED {allTrafficDirections(0), upstreamTraffic(1),
+    --downstreamTraffic(2), oppositeTraffic(3)}
+    --TransmissionInterval ::= INTEGER {oneMilliSecond(1), tenSeconds(10000)} (1..10000)
+    --ValidityDuration ::= INTEGER {timeOfDetection(0), oneSecondAfterDetection(1)} (0..86400)
+
     ActionID ::= SEQUENCE {
      originatingStationID StationID,
      sequenceNumber SequenceNumber

@@ -59,18 +59,28 @@ CaptureInfo* push_CaptureInfo(lua_State* L, wtap *wth, const bool first_time) {
 }
 
 WSLUA_METAMETHOD CaptureInfo__tostring(lua_State* L) {
-    /* Generates a string of debug info for the CaptureInfo */
+    /* Returns a short label of the form
+       `CaptureInfo: file_type=<name> encap=<name> snaplen=<n>`,
+       or `CaptureInfo: (expired)` once the underlying wtap handle
+       is gone. The previous form dumped raw numeric ids; their
+       symbolic names are much more useful for debugging a
+       FileHandler. */
     CaptureInfo fi = toCaptureInfo(L,1);
 
     if (!fi || !fi->wth) {
-        lua_pushstring(L,"CaptureInfo pointer is NULL!");
-    } else {
-        wtap *wth = fi->wth;
-        lua_pushfstring(L, "CaptureInfo: file_type_subtype=%d, snapshot_length=%d, file_encap=%d, file_tsprec=%d",
-            wth->file_type_subtype, wth->snapshot_length, wth->file_encap, wth->file_tsprec);
+        lua_pushstring(L, "CaptureInfo: (expired)");
+        WSLUA_RETURN(1);
     }
 
-    WSLUA_RETURN(1); /* String of debug information. */
+    wtap *wth = fi->wth;
+    const char *ftype = wtap_file_type_subtype_name(wth->file_type_subtype);
+    const char *encap = wtap_encap_name(wth->file_encap);
+    lua_pushfstring(L, "CaptureInfo: file_type=%s encap=%s snaplen=%d",
+                    ftype ? ftype : "?",
+                    encap ? encap : "?",
+                    (int)wth->snapshot_length);
+
+    WSLUA_RETURN(1); /* A short label identifying the capture. */
 }
 
 
@@ -325,18 +335,27 @@ CaptureInfoConst* push_CaptureInfoConst(lua_State* L, wtap_dumper *wdh) {
 }
 
 WSLUA_METAMETHOD CaptureInfoConst__tostring(lua_State* L) {
-    /* Generates a string of debug info for the CaptureInfoConst */
+    /* Returns a short label of the form
+       `CaptureInfoConst: file_type=<name> encap=<name> snaplen=<n>`,
+       or `CaptureInfoConst: (expired)` once the underlying
+       wtap_dumper is gone. Like CaptureInfo.__tostring, symbolic
+       names are preferred over raw enum ids for debugger use. */
     CaptureInfoConst fi = toCaptureInfoConst(L,1);
 
     if (!fi || !fi->wdh) {
-        lua_pushstring(L,"CaptureInfoConst pointer is NULL!");
-    } else {
-        wtap_dumper *wdh = fi->wdh;
-        lua_pushfstring(L, "CaptureInfoConst: file_type_subtype=%d, snaplen=%d, encap=%d, compression_type=%d",
-            wdh->file_type_subtype, wdh->snaplen, wdh->file_encap, wdh->compression_type);
+        lua_pushstring(L, "CaptureInfoConst: (expired)");
+        WSLUA_RETURN(1);
     }
 
-    WSLUA_RETURN(1); /* String of debug information. */
+    wtap_dumper *wdh = fi->wdh;
+    const char *ftype = wtap_file_type_subtype_name(wdh->file_type_subtype);
+    const char *encap = wtap_encap_name(wdh->file_encap);
+    lua_pushfstring(L, "CaptureInfoConst: file_type=%s encap=%s snaplen=%d",
+                    ftype ? ftype : "?",
+                    encap ? encap : "?",
+                    (int)wdh->snaplen);
+
+    WSLUA_RETURN(1); /* A short label identifying the dumper. */
 }
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_type RO The file type. */
@@ -355,19 +374,19 @@ WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfoConst,encap,wdh->file_encap);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_comment RW A comment for the whole capture file, if the
     `wtap_presence_flags.COMMENTS` was set in the presence flags; nil if there is no comment. */
-WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,comment,wth->shb_hdrs,OPT_COMMENT);
+WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,comment,wdh->shb_hdrs,OPT_COMMENT);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_hardware RO A string containing the description of
     the hardware used to create the capture, or nil if there is no hardware string. */
-WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,hardware,wth->shb_hdrs,OPT_SHB_HARDWARE);
+WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,hardware,wdh->shb_hdrs,OPT_SHB_HARDWARE);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_os RO A string containing the name of
     the operating system used to create the capture, or nil if there is no os string. */
-WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,os,wth->shb_hdrs,OPT_SHB_OS);
+WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,os,wdh->shb_hdrs,OPT_SHB_OS);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_user_app RO A string containing the name of
     the application used to create the capture, or nil if there is no user_app string. */
-WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,user_app,wth->shb_hdrs,OPT_SHB_USERAPPL);
+WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,user_app,wdh->shb_hdrs,OPT_SHB_USERAPPL);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_hosts RO A ip-to-hostname Lua table of two key-ed names: `ipv4_addresses` and `ipv6_addresses`.
     The value of each of these names are themselves array tables, of key-ed tables, such that the inner table has a key

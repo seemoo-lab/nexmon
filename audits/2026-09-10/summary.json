@@ -1,0 +1,43 @@
+{
+  "raw_injection_variants": 36,
+  "frames_submitted": 108,
+  "full_length_writes": 108,
+  "outgoing_echoes": 108,
+  "incoming_probe_responses": 0,
+  "hops": 60,
+  "successful_hops": 60,
+  "pcap_packet_counts": {
+    "capture-ch36.pcap": 0,
+    "aireplay-ch36.pcap": 0,
+    "capture-ch44.pcap": 0,
+    "capture-ch1.pcap": 0,
+    "hopping.pcap": 0,
+    "aireplay-ch11.pcap": 0,
+    "capture-ch100-passive.pcap": 0,
+    "aireplay-ch1.pcap": 0,
+    "capture-ch11.pcap": 0,
+    "capture-ch13.pcap": 0,
+    "capture-sta-up.pcap": 0,
+    "capture-ch48.pcap": 0,
+    "capture-ch6.pcap": 0,
+    "capture-ch40.pcap": 0
+  },
+  "hop_latency_ms": {
+    "min": 5.0,
+    "max": 9.0
+  },
+  "first_candidate_kernel_error_lines": [
+    "[27223.544684] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27223.549164] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27493.472272] ieee80211 phy4: brcmf_cfg80211_get_channel: chanspec failed (-52)",
+    "[27531.486511] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27531.492909] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27532.525103] ieee80211 phy4: brcmf_cfg80211_get_channel: chanspec failed (-52)",
+    "[27532.806518] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27532.811739] brcmfmac: nexmon_nl_ioctl_handler: NEXMON: DCMD set 66 failed: -52",
+    "[27533.843565] ieee80211 phy4: brcmf_cfg80211_get_channel: chanspec failed (-52)"
+  ],
+  "overall": "FAIL: monitor reception; over-the-air injection unverified",
+  "original_driver_restored": true,
+  "installed_firmware_unchanged": true
+}

@@ -643,7 +643,7 @@ BRCMF_FW_DEF(43430A0, "brcmfmac43430a0-sdio");
 BRCMF_FW_CLM_DEF(43430A1, "brcmfmac43430-sdio");
 BRCMF_FW_DEF(43430B0, "brcmfmac43430b0-sdio");
 BRCMF_FW_CLM_DEF(43455, "brcmfmac43455-sdio");
-BRCMF_FW_DEF(43456, "brcmfmac43456-sdio");
+BRCMF_FW_CLM_DEF(43456, "brcmfmac43456-sdio");
 BRCMF_FW_CLM_DEF(4354, "brcmfmac4354-sdio");
 BRCMF_FW_CLM_DEF(4356, "brcmfmac4356-sdio");
 BRCMF_FW_DEF(4359, "brcmfmac4359-sdio");
@@ -1779,10 +1779,13 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 	 * DCMD_RESP_TIMEOUT regardless.
 	 */
 	add_wait_queue(&bus->dcmd_resp_wait, &wait);
-	set_current_state(TASK_KILLABLE);
 
-	while (!(*condition) && (!fatal_signal_pending(current) && timeout))
+	while (!(*condition) && !fatal_signal_pending(current) && timeout) {
+		set_current_state(TASK_KILLABLE);
+		if (*condition || fatal_signal_pending(current))
+			break;
 		timeout = schedule_timeout(timeout);
+	}
 
 	if (fatal_signal_pending(current))
 		*pending = true;
@@ -1795,7 +1798,7 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 
 static int brcmf_sdio_dcmd_resp_wake(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->dcmd_resp_wait);
+	wake_up(&bus->dcmd_resp_wait);
 
 	return 0;
 }
@@ -1884,10 +1887,12 @@ gotpkt:
 		bus->rxlen = len - doff;
 		spin_unlock_bh(&bus->rxctl_lock);
 	}
+	buf = NULL;
 
 done:
 	/* Awake any waiters */
 	brcmf_sdio_dcmd_resp_wake(bus);
+	vfree(buf);
 }
 
 /* Pad read to blocksize for efficiency */
@@ -2126,7 +2131,7 @@ static uint brcmf_sdio_readframes(struct brcmf_sdio *bus, uint maxframes)
 static void
 brcmf_sdio_wait_event_wakeup(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->ctrl_wait);
+	wake_up(&bus->ctrl_wait);
 	return;
 }
 
@@ -4704,6 +4709,12 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev)
 fail:
 	brcmf_sdio_remove(bus);
 	return NULL;
+}
+
+void brcmf_sdio_cancel_datawork(struct brcmf_sdio *bus)
+{
+	if (bus)
+		cancel_work_sync(&bus->datawork);
 }
 
 /* Detach and free everything */

@@ -1298,8 +1298,7 @@ dissect_thread_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         tlv_tree = proto_item_add_subtree(ti, ett_thread_address_tlv);
 
         /* Type */
-        proto_tree_add_item(tlv_tree, hf_thread_address_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-        tlv_type = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_address_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN, &tlv_type);
         offset++;
 
         /* Add value name to value root label */
@@ -1516,8 +1515,7 @@ dissect_thread_nm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         tlv_tree = proto_item_add_subtree(ti, ett_thread_nm_tlv);
 
         /* Type */
-        proto_tree_add_item(tlv_tree, hf_thread_nm_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-        tlv_type = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_nm_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN, &tlv_type);
         offset++;
 
         /* Add value name to value root label */
@@ -1752,8 +1750,7 @@ dissect_thread_bl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         tlv_tree = proto_item_add_subtree(ti, ett_thread_bl_tlv);
 
         /* Type */
-        proto_tree_add_item(tlv_tree, hf_thread_bl_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-        tlv_type = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_bl_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN, &tlv_type);
         offset++;
 
         /* Add value name to value root label */
@@ -2543,14 +2540,11 @@ dissect_thread_mc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
             case THREAD_MC_TLV_UDP_ENCAPSULATION:
                 {
                     tvbuff_t *sub_tvb;
-                    uint16_t src_port;
-                    uint16_t dst_port;
+                    uint16_t src_port, dst_port;
 
-                    src_port = tvb_get_ntohs(tvb, offset);
-                    proto_tree_add_item(tlv_tree, hf_thread_mc_tlv_udp_encap_src_port, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item_ret_uint16(tlv_tree, hf_thread_mc_tlv_udp_encap_src_port, tvb, offset, 2, ENC_BIG_ENDIAN, &src_port);
                     offset += 2;
-                    dst_port = tvb_get_ntohs(tvb, offset);
-                    proto_tree_add_item(tlv_tree, hf_thread_mc_tlv_udp_encap_dst_port, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item_ret_uint16(tlv_tree, hf_thread_mc_tlv_udp_encap_dst_port, tvb, offset, 2, ENC_BIG_ENDIAN, &dst_port);
                     offset += 2;
 
                     if (tlv_len >= 4)
@@ -2633,8 +2627,7 @@ dissect_thread_mc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                             cm_tree = proto_item_add_subtree(pi, ett_thread_mc_chan_mask);
                             proto_tree_add_item(cm_tree, hf_thread_mc_tlv_chan_mask_page, tvb, offset, 1, ENC_BIG_ENDIAN);
                             offset++;
-                            masklen = tvb_get_uint8(tvb, offset);
-                            proto_tree_add_item(cm_tree, hf_thread_mc_tlv_chan_mask_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+                            proto_tree_add_item_ret_uint16(cm_tree, hf_thread_mc_tlv_chan_mask_len, tvb, offset, 1, ENC_BIG_ENDIAN, &masklen);
                             offset++;
                             proto_tree_add_item(cm_tree, hf_thread_mc_tlv_chan_mask_mask, tvb, offset, masklen, ENC_NA);
                             offset += masklen;
@@ -2871,8 +2864,7 @@ dissect_thread_nwd_with_server_decode(tvbuff_t *tvb, packet_info *pinfo, proto_t
         tlv_tree = proto_item_add_subtree(ti, ett_thread_nwd_tlv);
 
         /* Type */
-        proto_tree_add_item(tlv_tree, hf_thread_nwd_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-        tlv_type = tvb_get_uint8(tvb, offset) >> 1;
+        proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_nwd_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN, &tlv_type);
 
         /* Stable */
         proto_tree_add_item(tlv_tree, hf_thread_nwd_tlv_stable, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -2929,8 +2921,7 @@ dissect_thread_nwd_with_server_decode(tvbuff_t *tvb, packet_info *pinfo, proto_t
                     tlv_offset = 1;
 
                     /* Prefix Length */
-                    proto_tree_add_item(tlv_tree, hf_thread_nwd_tlv_prefix_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-                    prefix_len = tvb_get_uint8(tvb, offset);
+                    proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_nwd_tlv_prefix_length, tvb, offset, 1, ENC_BIG_ENDIAN, &prefix_len);
                     prefix_byte_len = (prefix_len + 7) / 8;
                     offset++;
                     tlv_offset++;
@@ -3046,8 +3037,7 @@ dissect_thread_nwd_with_server_decode(tvbuff_t *tvb, packet_info *pinfo, proto_t
                     }
 
                     /* S_data */
-                    s_data_len = tvb_get_uint8(tvb, offset);
-                    proto_tree_add_item(tlv_tree, hf_thread_nwd_tlv_service_s_data_len, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_nwd_tlv_service_s_data_len, tvb, offset, 1, ENC_BIG_ENDIAN, &s_data_len);
                     offset++;
                     tlv_offset++;
                     uint8_t thread_service_data = tvb_get_uint8(tvb, offset);
@@ -3220,7 +3210,7 @@ dissect_thread_coap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     /* Reject the packet if not CoAP */
     if (!coinfo) return 0;
 
-    uri = wmem_strbuf_get_str(coinfo->uri_str_strbuf);
+    uri = wmem_strbuf_get_str(coinfo->uri_path_strbuf);
 
     tokens = wmem_strsplit(pinfo->pool, uri, "/", 3);
     if (g_strv_length(tokens) == 3) {
@@ -3292,9 +3282,7 @@ static int dissect_thread_bcn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     /* Type */
     ti = proto_tree_add_item(beacon_tree, hf_thread_bcn_tlv, tvb, offset, tlv_len+2, ENC_NA);
     tlv_tree = proto_item_add_subtree(ti, ett_thread_bcn_tlv);
-    proto_tree_add_item(tlv_tree, hf_thread_bcn_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-
-    tlv_type = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint8(tlv_tree, hf_thread_bcn_tlv_type, tvb, offset, 1, ENC_BIG_ENDIAN, &tlv_type);
     offset++;
 
     /* Add value name to value root label */

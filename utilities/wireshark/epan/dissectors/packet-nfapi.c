@@ -1515,7 +1515,7 @@ typedef struct
 	tlv_decode decode;
 } tlv_t;
 
-static void dissect_tlv_list(ptvcursor_t * ptvc, packet_info* pinfo, int len);
+static void dissect_tlv_list(ptvcursor_t * ptvc, packet_info* pinfo, unsigned len);
 
 static void dissect_array_value(ptvcursor_t * ptvc, packet_info* pinfo, const char* name, uint32_t ett_idx, uint32_t count, tlv_decode decode)
 {
@@ -7710,7 +7710,7 @@ static proto_item* dissect_tl_header(ptvcursor_t * ptvc, packet_info* pinfo _U_)
 	return item;
 }
 
-static void dissect_tlv_list(ptvcursor_t* ptvc, packet_info* pinfo, int len)
+static void dissect_tlv_list(ptvcursor_t* ptvc, packet_info* pinfo, unsigned len)
 {
 	while (ptvcursor_current_offset(ptvc) < len)
 	{
@@ -7739,7 +7739,7 @@ static void dissect_tlv_list(ptvcursor_t* ptvc, packet_info* pinfo, int len)
 					if (ptvcursor_current_offset(sub_ptvc) != tlv_len)
 					{
 						// error in the tlv length
-						expert_add_info_format(pinfo, tlv_length_item, &ei_invalid_tlv_length, "TLV length does not match decoded length");
+						expert_add_info(pinfo, tlv_length_item, &ei_invalid_tlv_length);
 					}
 
 					ptvcursor_free(sub_ptvc);
@@ -7780,7 +7780,7 @@ static void dissect_rx_indication_body_value(ptvcursor_t * ptvc, packet_info* pi
 	if (count > 0)
 	{
 		ptvcursor_add_text_with_subtree(ptvc, SUBTREE_UNDEFINED_LENGTH, ett_nfapi_rx_indication_pdu_list, "RX PDU List");
-		int pdu_end = tvb_reported_length_remaining(ptvcursor_tvbuff(ptvc), ptvcursor_current_offset(ptvc)) + ptvcursor_current_offset(ptvc);
+		unsigned pdu_end = tvb_reported_length_remaining(ptvcursor_tvbuff(ptvc), ptvcursor_current_offset(ptvc)) + ptvcursor_current_offset(ptvc);
 
 		while (tvb_reported_length_remaining(ptvcursor_tvbuff(ptvc), ptvcursor_current_offset(ptvc)) > 0 &&
 			   ptvcursor_current_offset(ptvc) < pdu_end )
@@ -7977,7 +7977,7 @@ static int dissect_p45_config_request_msg_id(tvbuff_t *tvb, packet_info *pinfo, 
 static int dissect_p7_header(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint8_t* m, uint8_t* seg, uint8_t* seq)
 {
 	proto_tree *header_tree;
-	int offset = 0;
+	unsigned offset = 0;
 	uint8_t m_seg;
 	static int * const fields[] = {
 		&hf_nfapi_p7_message_header_m,
@@ -11319,7 +11319,7 @@ void proto_register_nfapi(void)
 	static ei_register_info ei[] =
 	{
 		{ &ei_invalid_range, { "nfapi.invalid.range", PI_PROTOCOL, PI_WARN, "Invalid range", EXPFILL } },
-		{ &ei_invalid_tlv_length, { "nfapi.invalid.tlv.length", PI_PROTOCOL, PI_ERROR, "Invalid TLV length", EXPFILL } },
+		{ &ei_invalid_tlv_length, { "nfapi.invalid.tlv.length", PI_PROTOCOL, PI_ERROR, "TLV length does not match decoded length", EXPFILL } },
 	};
 
 	expert_module_t* expert_nfapi;

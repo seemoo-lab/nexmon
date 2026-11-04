@@ -21,11 +21,6 @@
 #include "packet-per.h"
 #include "packet-ntp.h"
 
-#define PNAME  "RC V3"
-#define PSNAME "RCv3"
-#define PFNAME "rc-v3"
-
-
 void proto_register_rc_v3(void);
 void proto_reg_handoff_rc_v3(void);
 
@@ -68,7 +63,7 @@ proto_reg_handoff_rc_v3(void)
 {
 //#include "packet-rc-v3-dis-tab.c"
 
-    static ran_function_dissector_t rc_v3 =
+    static const ran_function_dissector_t rc_v3 =
     { "ORAN-E2SM-RC",  "1.3.6.1.4.1.53148.1.1.2.3", 3, 5,
       {  dissect_E2SM_RC_RANFunctionDefinition_PDU,
 
@@ -114,7 +109,7 @@ void proto_register_rc_v3(void) {
 
 
   /* Register protocol */
-  proto_rc_v3 = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_rc_v3 = proto_register_protocol("RC V3", "RCv3", "rc-v3");
   /* Register fields and subtrees */
   proto_register_field_array(proto_rc_v3, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

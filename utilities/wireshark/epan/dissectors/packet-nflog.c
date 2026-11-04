@@ -14,6 +14,7 @@
 #include <wiretap/wtap.h>
 #include <wsutil/ws_roundup.h>
 
+#include "packet-arp.h"
 #include "packet-netlink.h"
 
 void proto_register_nflog(void);
@@ -38,7 +39,9 @@ enum ws_nfulnl_attr_type {
     WS_NFULA_GID,                /* group id of socket */
     WS_NFULA_HWTYPE,             /* hardware type */
     WS_NFULA_HWHEADER,           /* hardware header */
-    WS_NFULA_HWLEN               /* hardware header length */
+    WS_NFULA_HWLEN,              /* hardware header length */
+    WS_NFULA_CT,                 /* nfnetlink_conntrack.h */
+    WS_NFULA_CT_INFO,            /* enum ip_conntrack_info */
 };
 
 static const value_string nflog_tlv_vals[] = {
@@ -60,16 +63,22 @@ static const value_string nflog_tlv_vals[] = {
     { WS_NFULA_HWTYPE,             "NFULA_HWTYPE" },
     { WS_NFULA_HWHEADER,           "NFULA_HWHEADER" },
     { WS_NFULA_HWLEN,              "NFULA_HWLEN" },
+    { WS_NFULA_CT,                 "NFULA_CT" },
+    { WS_NFULA_CT_INFO,            "NFULA_CT_INFO" },
     { 0, NULL }
 };
 
 static int proto_nflog;
 
+static int hf_nflog_tlv_ct;
+static int hf_nflog_tlv_ct_info;
 static int hf_nflog_family;
 static int hf_nflog_resid;
 static int hf_nflog_tlv;
 static int hf_nflog_tlv_gid;
 static int hf_nflog_tlv_hook;
+static int hf_nflog_tlv_hw_type;
+static int hf_nflog_tlv_hwheader_len;
 static int hf_nflog_tlv_hwprotocol;
 static int hf_nflog_tlv_ifindex_indev;
 static int hf_nflog_tlv_ifindex_outdev;
@@ -88,8 +97,11 @@ static int ett_nflog_tlv;
 
 static dissector_handle_t ip_handle;
 static dissector_handle_t ip6_handle;
+static dissector_handle_t eth_handle;
 static dissector_table_t ethertype_table;
 static dissector_handle_t nflog_handle;
+
+static bool eth_ip_layout_inside = true;
 
 static int
 dissect_nflog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
@@ -99,9 +111,13 @@ dissect_nflog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     proto_tree *nflog_tree = NULL;
     proto_item *ti;
 
-    int offset = 0;
+    unsigned offset = 0;
 
-    tvbuff_t *next_tvb = NULL;
+    struct {
+        proto_tree *parent;
+        tvbuff_t   *buffer;
+    } payload = {NULL, NULL}, hwheader = {NULL, NULL};
+
     int pf;
     uint16_t hw_protocol = 0;
 
@@ -141,130 +157,160 @@ dissect_nflog(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
         value_len = tlv_len - 4;
         tlv_type = (tvb_get_h_uint16(tvb, offset + 2) & 0x7fff);
 
-        if (nflog_tree) {
-            bool handled = false;
-
-            ti = proto_tree_add_bytes_format(nflog_tree, hf_nflog_tlv,
-                             tvb, offset, tlv_len, NULL,
-                             "TLV Type: %s (%u), Length: %u",
-                             val_to_str_const(tlv_type, nflog_tlv_vals, "Unknown"),
-                             tlv_type, tlv_len);
-            tlv_tree = proto_item_add_subtree(ti, ett_nflog_tlv);
-
-            proto_tree_add_item(tlv_tree, hf_nflog_tlv_length, tvb, offset + 0, 2, ENC_HOST_ENDIAN);
-            proto_tree_add_item(tlv_tree, hf_nflog_tlv_type, tvb, offset + 2, 2, ENC_HOST_ENDIAN);
-            switch (tlv_type) {
-                case WS_NFULA_PACKET_HDR:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_hwprotocol,
-                                    tvb, offset + 4, 2, ENC_BIG_ENDIAN);
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_hook,
-                                    tvb, offset + 6, 1, ENC_NA);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_IFINDEX_INDEV:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_indev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_IFINDEX_OUTDEV:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_outdev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_IFINDEX_PHYSINDEV:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_physindev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_IFINDEX_PHYSOUTDEV:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_physoutdev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_PAYLOAD:
+        bool handled = false;
+        ti = proto_tree_add_bytes_format(nflog_tree, hf_nflog_tlv,
+                         tvb, offset, tlv_len, NULL,
+                         "TLV Type: %s (%u), Length: %u",
+                         val_to_str_const(tlv_type, nflog_tlv_vals, "Unknown"),
+                         tlv_type, tlv_len);
+        tlv_tree = proto_item_add_subtree(ti, ett_nflog_tlv);
+        proto_tree_add_item(tlv_tree, hf_nflog_tlv_length, tvb, offset + 0, 2, ENC_HOST_ENDIAN);
+        proto_tree_add_item(tlv_tree, hf_nflog_tlv_type, tvb, offset + 2, 2, ENC_HOST_ENDIAN);
+        switch (tlv_type) {
+            case WS_NFULA_PACKET_HDR:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_hwprotocol,
+                                tvb, offset + 4, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_hook,
+                                tvb, offset + 6, 1, ENC_NA);
+                    hw_protocol = tvb_get_ntohs(tvb, offset + 4);
                     handled = true;
-                    break;
-
-                case WS_NFULA_PREFIX:
-                    if (value_len >= 1) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_prefix,
-                                    tvb, offset + 4, value_len, ENC_ASCII);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_UID:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_uid,
-                                    tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_GID:
-                    if (value_len == 4) {
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_gid,
-                                    tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-
-                case WS_NFULA_TIMESTAMP:
-                    if (value_len == 16) {
-                        /*
-                         * 64-bit seconds and 64-bit microseconds.
-                         *
-                         * XXX - add an "expert info" warning if the
-                         * microseconds are >= 10^6?
-                         */
-                        proto_tree_add_item(tlv_tree, hf_nflog_tlv_timestamp,
-                                    tvb, offset + 4, value_len,
-                                    ENC_TIME_SECS_USECS|ENC_BIG_ENDIAN);
-                        handled = true;
-                    }
-                    break;
-            }
-
-            if (!handled)
-                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_unknown,
-                                        tvb, offset + 4, value_len, ENC_NA);
+                }
+                break;
+            case WS_NFULA_IFINDEX_INDEV:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_indev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_IFINDEX_OUTDEV:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_outdev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_IFINDEX_PHYSINDEV:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_physindev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_IFINDEX_PHYSOUTDEV:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ifindex_physoutdev, tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_PAYLOAD:
+                payload.buffer = tvb_new_subset_length(tvb, offset + 4, value_len);
+                payload.parent = tlv_tree;
+                handled = true;
+                break;
+            case WS_NFULA_PREFIX:
+                if (value_len >= 1) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_prefix,
+                                tvb, offset + 4, value_len, ENC_ASCII);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_UID:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_uid,
+                                tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_GID:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_gid,
+                                tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_TIMESTAMP:
+                if (value_len == 16) {
+                    /*
+                     * 64-bit seconds and 64-bit microseconds.
+                     *
+                     * XXX - add an "expert info" warning if the
+                     * microseconds are >= 10^6?
+                     */
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_timestamp,
+                                tvb, offset + 4, value_len,
+                                ENC_TIME_SECS_USECS|ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_HWTYPE:
+                if (value_len == 2) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_hw_type,
+                                tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_HWHEADER:
+                hwheader.buffer = tvb_new_subset_length(tvb, offset + 4, value_len);
+                hwheader.parent = tlv_tree;
+                handled = true;
+                break;
+            case WS_NFULA_HWLEN:
+                if (value_len == 2 || value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_hwheader_len,
+                                tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_CT:
+                if (value_len > 0) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ct,
+                                tvb, offset + 4, value_len, ENC_ASCII);
+                    handled = true;
+                }
+                break;
+            case WS_NFULA_CT_INFO:
+                if (value_len == 4) {
+                    proto_tree_add_item(tlv_tree, hf_nflog_tlv_ct_info,
+                                tvb, offset + 4, value_len, ENC_BIG_ENDIAN);
+                    handled = true;
+                }
+                break;
         }
 
-        if (tlv_type == WS_NFULA_PACKET_HDR && value_len == 4)
-            hw_protocol = tvb_get_ntohs(tvb, offset + 4);
-        if (tlv_type == WS_NFULA_PAYLOAD)
-            next_tvb = tvb_new_subset_length(tvb, offset + 4, value_len);
-
+        if (!handled)
+                proto_tree_add_item(tlv_tree, hf_nflog_tlv_unknown,
+                                    tvb, offset + 4, value_len, ENC_NA);
         offset += WS_ROUNDUP_4(tlv_len); /* next TLV aligned to 4B */
     }
 
-    if (next_tvb && hw_protocol) {
-        if (!dissector_try_uint(ethertype_table, hw_protocol, next_tvb, pinfo, tree))
-            call_data_dissector(next_tvb, pinfo, tree);
-    } else if (next_tvb) {
-        switch (pf) {
-            /* Note: NFPROTO_INET is not supposed to appear here, it is mapped
-             * to NFPROTO_IPV4 or NFPROTO_IPV6 */
-            case WS_NFPROTO_IPV4:
-                call_dissector(ip_handle, next_tvb, pinfo, tree);
-                break;
-            case WS_NFPROTO_IPV6:
-                call_dissector(ip6_handle, next_tvb, pinfo, tree);
-                break;
-            default:
-                call_data_dissector(next_tvb, pinfo, tree);
-                break;
+    if (hwheader.buffer && eth_handle) {
+        proto_tree *parent = eth_ip_layout_inside ? hwheader.parent : tree;
+        // for others it is not guaranteed to be full, just for avoiding errors
+        if (hw_protocol == ETHERTYPE_IP) {
+            call_dissector(eth_handle, hwheader.buffer, pinfo, parent);
+        } else {
+            call_data_dissector(hwheader.buffer, pinfo, parent);
+        }
+    }
+
+    if (payload.buffer) {
+        proto_tree *parent = eth_ip_layout_inside ? payload.parent : tree;
+               if (hw_protocol) {
+            if (!dissector_try_uint(ethertype_table, hw_protocol, payload.buffer, pinfo, parent))
+                call_data_dissector(payload.buffer, pinfo, parent);
+        } else {
+            switch (pf) {
+                /* Note: NFPROTO_INET is not supposed to appear here, it is mapped
+                 * to NFPROTO_IPV4 or NFPROTO_IPV6 */
+                case WS_NFPROTO_IPV4:
+                    call_dissector(ip_handle, payload.buffer, pinfo, parent);
+                    break;
+                case WS_NFPROTO_IPV6:
+                    call_dissector(ip6_handle, payload.buffer, pinfo, parent);
+                    break;
+                default:
+                    call_data_dissector(payload.buffer, pinfo, parent);
+                    break;
+            }
         }
     }
     return tvb_captured_length(tvb);
@@ -308,6 +354,15 @@ proto_register_nflog(void)
             { "HW protocol", "nflog.protocol",
               FT_UINT16, BASE_HEX, VALS(etype_vals), 0x00,
               NULL, HFILL }
+        },
+        { &hf_nflog_tlv_hw_type,
+            { "HW Type", "nflog.hwtype",
+              FT_UINT16, BASE_DEC, VALS(arp_hrd_vals), 0x00,
+              NULL, HFILL }
+        },
+        { &hf_nflog_tlv_hwheader_len,
+            { "Hardware header length", "nflog.hwhdr_len",
+              FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
         },
         { &hf_nflog_tlv_hook,
             { "Netfilter hook", "nflog.hook",
@@ -354,6 +409,16 @@ proto_register_nflog(void)
               FT_ABSOLUTE_TIME, ABSOLUTE_TIME_LOCAL, NULL, 0x00,
               "TLV Timestamp Value", HFILL }
         },
+        { &hf_nflog_tlv_ct_info,
+            { "CT INFO", "nflog.ctinfo",
+              FT_INT32, BASE_DEC, VALS(nfq_ctinfo_vals), 0x00,
+              "TLV CT INFO", HFILL }
+        },
+        { &hf_nflog_tlv_ct,
+            { "CT", "nflog.ct",
+              FT_STRINGZ, BASE_NONE, NULL, 0x00,
+              "TLV CT", HFILL }
+        },
         { &hf_nflog_tlv_unknown,
             { "Value", "nflog.tlv_value",
               FT_BYTES, BASE_NONE, NULL, 0x00,
@@ -366,20 +431,27 @@ proto_register_nflog(void)
         &ett_nflog_tlv
     };
 
+    module_t *nflog_module;
+
     proto_nflog = proto_register_protocol("Linux Netfilter NFLOG", "NFLOG", "nflog");
-
     nflog_handle = register_dissector("nflog", dissect_nflog, proto_nflog);
-
     proto_register_field_array(proto_nflog, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
-
+    // user preferences
+    nflog_module = prefs_register_protocol(proto_nflog, NULL);
+    prefs_register_bool_preference(nflog_module, "eth_ip_layout_inside",
+        "Place ip and eth inside",
+        "Place ip and eth sections inside appropriate TLV's "
+        "(payload and hw header respectively). If false, then place on top level",
+        &eth_ip_layout_inside);
 }
 
 void
 proto_reg_handoff_nflog(void)
 {
-    ip_handle   = find_dissector_add_dependency("ip", proto_nflog);
-    ip6_handle  = find_dissector_add_dependency("ipv6", proto_nflog);
+    ip_handle  = find_dissector_add_dependency("ip", proto_nflog);
+    ip6_handle = find_dissector_add_dependency("ipv6", proto_nflog);
+    eth_handle = find_dissector_add_dependency("eth_header", proto_nflog);
 
     dissector_add_uint("wtap_encap", WTAP_ENCAP_NFLOG, nflog_handle);
     ethertype_table = find_dissector_table("ethertype");

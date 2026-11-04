@@ -1,4 +1,4 @@
-/* packet-usbdfu.c
+/* packet-usb-dfu.c
  * Routines for USB DFU dissection
  *
  * Copyright 2014, Michal Labedzki for Tieto Corporation
@@ -134,7 +134,7 @@ dissect_usb_dfu_descriptor(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     proto_item       *main_item;
     proto_tree       *main_tree;
     proto_item       *length_item;
-    int               offset = 0;
+    unsigned          offset = 0;
     uint8_t           descriptor_length;
     uint8_t           descriptor_type;
     urb_info_t       *urb = (urb_info_t *) data;
@@ -191,7 +191,7 @@ dissect_usb_dfu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     proto_item       *command_item;
     proto_item       *sub_item;
     proto_tree       *command_tree;
-    int               offset = 0;
+    unsigned          offset = 0;
     int               p2p_dir_save;
     uint8_t           command;
     int16_t           command_response = -1;
@@ -247,8 +247,7 @@ dissect_usb_dfu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         uint16_t interface;
         uint32_t length;
 
-        command_item = proto_tree_add_item(main_tree, hf_setup_command, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-        command = tvb_get_uint8(tvb, offset);
+        command_item = proto_tree_add_item_ret_uint8(main_tree, hf_setup_command, tvb, offset, 1, ENC_LITTLE_ENDIAN, &command);
 
         if (!((urb->setup_requesttype == 0x21 && (command == 0x00 || command == 0x01 || command == 0x04 || command == 0x06)) ||
             (urb->setup_requesttype == 0xa1 && (command == 0x02 || command == 0x03 || command == 0x05))))
@@ -270,8 +269,7 @@ dissect_usb_dfu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         }
         offset += 2;
 
-        proto_tree_add_item(main_tree, hf_setup_interface, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-        interface = tvb_get_letohs(tvb, offset);
+        proto_tree_add_item_ret_uint16(main_tree, hf_setup_interface, tvb, offset, 2, ENC_LITTLE_ENDIAN, &interface);
         offset += 2;
 
         proto_tree_add_item_ret_uint(main_tree, hf_setup_length, tvb, offset, 2, ENC_LITTLE_ENDIAN, &length);
@@ -397,7 +395,7 @@ dissect_usb_dfu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     default:
         proto_tree_add_expert(command_tree, pinfo, &ei_unexpected_response, tvb, offset, 0);
         if (tvb_reported_length_remaining(tvb, offset) > 0) {
-            proto_tree_add_expert(main_tree, pinfo, &ei_unknown_data, tvb, offset, -1);
+            proto_tree_add_expert_remaining(main_tree, pinfo, &ei_unknown_data, tvb, offset);
             offset = tvb_captured_length(tvb);
         }
     }

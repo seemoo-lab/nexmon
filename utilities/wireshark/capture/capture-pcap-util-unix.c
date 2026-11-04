@@ -31,18 +31,19 @@
 #ifdef HAVE_PCAP_REMOTE
 GList *
 get_remote_interface_list(const char *hostname, const char *port,
+			  bool wireshark_remote _U_,
 			  int auth_type, const char *username,
 			  const char *passwd, int *err, char **err_str)
 {
-	return get_interface_list_findalldevs_ex(hostname, port, auth_type,
+	return get_remote_interface_list_common(hostname, port, auth_type,
 	    username, passwd, err, err_str);
 }
 #endif
 
 GList *
-get_interface_list(int *err, char **err_str)
+get_local_interface_list_ws(int *err, char **err_str)
 {
-	return get_interface_list_findalldevs(err, err_str);
+	return get_local_interface_list(err, err_str);
 }
 
 /*

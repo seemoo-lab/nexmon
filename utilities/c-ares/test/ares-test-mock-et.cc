@@ -960,6 +960,30 @@ TEST_P(MockEventThreadTest, DestroyQuick) {
   EXPECT_TRUE(result.done_);
 }
 
+TEST_P(MockEventThreadTest, DupDestroySource) {
+  DNSPacket rsp;
+  rsp.set_response().set_aa()
+    .add_question(new DNSQuestion("www.google.com", T_A))
+    .add_answer(new DNSARR("www.google.com", 100, {2, 3, 4, 5}));
+  ON_CALL(server_, OnRequest("www.google.com", T_A))
+    .WillByDefault(SetReply(&server_, &rsp));
+
+  /* The copy gets its own event thread, so it must keep working once the
+   * channel it was duplicated from is gone. */
+  ares_channel_t *copy = nullptr;
+  ASSERT_EQ(ARES_SUCCESS, ares_dup(&copy, channel_));
+  ares_destroy(channel_);
+  channel_ = copy;
+
+  HostResult result;
+  ares_gethostbyname(channel_, "www.google.com.", AF_INET, HostCallback, &result);
+  Process();
+  EXPECT_TRUE(result.done_);
+  std::stringstream ss;
+  ss << result.host_;
+  EXPECT_EQ("{'www.google.com' aliases=[] addrs=[2.3.4.5]}", ss.str());
+}
+
 // Test case for Issue #662
 TEST_P(MockEventThreadTest, PartialQueryCancel) {
   std::vector<byte> nothing;

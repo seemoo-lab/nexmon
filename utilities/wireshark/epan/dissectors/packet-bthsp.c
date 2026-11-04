@@ -18,6 +18,8 @@
 #include <epan/strutil.h>
 #include <epan/unit_strings.h>
 
+#include <wsutil/strtoi.h>
+
 #include "packet-btrfcomm.h"
 #include "packet-btsdp.h"
 
@@ -76,6 +78,13 @@ enum reassemble_state_t {
     REASSEMBLE_DONE
 };
 
+/* Upper bound on the length of a reassembled message. V.250 and the
+ * HSP/HFP specifications don't limit the length of an AT command or
+ * response. This limit is arbitrary, well above any real command line;
+ * it keeps the offsets from overflowing and stops an unterminated stream
+ * from growing the same message without end. */
+#define MAX_REASSEMBLED_LENGTH  (64 * 1024)
+
 typedef struct _fragment_t {
     uint32_t                 interface_id;
     uint32_t                 adapter_id;
@@ -87,6 +96,7 @@ typedef struct _fragment_t {
     unsigned                 length;
     uint8_t                 *data;
     struct _fragment_t      *previous_fragment;
+    struct _fragment_t      *first_fragment;
 
     unsigned                 reassemble_start_offset;
     unsigned                 reassemble_end_offset;
@@ -133,15 +143,12 @@ static const unit_name_string units_slash15 = { "/15", NULL };
 void proto_register_bthsp(void);
 void proto_reg_handoff_bthsp(void);
 
-static uint32_t get_uint_parameter(wmem_allocator_t* scope, uint8_t *parameter_stream, int parameter_length)
+static uint32_t get_uint_parameter(const uint8_t *parameter_stream, int parameter_length)
 {
-    uint32_t     value;
-    char *val;
+    uint32_t       value;
+    const uint8_t *unused;
 
-    val = (uint8_t *) wmem_alloc(scope, parameter_length + 1);
-    memcpy(val, parameter_stream, parameter_length);
-    val[parameter_length] = '\0';
-    value = (uint32_t) g_ascii_strtoull(val, NULL, 10);
+    ws_buftou32(parameter_stream, parameter_length, &unused, &value);
 
     return value;
 }
@@ -184,7 +191,7 @@ dissect_vgs_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgs, tvb, offset, parameter_length, value);
 
@@ -207,7 +214,7 @@ dissect_vgm_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgm, tvb, offset, parameter_length, value);
 
@@ -231,7 +238,7 @@ dissect_ckpd_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo->pool, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_ckpd, tvb, offset, parameter_length, value);
 
@@ -548,7 +555,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 if (type == TYPE_ACTION || type == TYPE_RESPONSE) {
                     if (i_at_cmd && (i_at_cmd->dissect_parameter != NULL &&
                             !i_at_cmd->dissect_parameter(tvb, pinfo, parameters_tree, offset, role,
-                            type, &at_command[i_char], parameter_number, parameter_length, &data) )) {
+                            type, (uint8_t*)&at_command[i_char], parameter_number, parameter_length, &data) )) {
                         pitem = proto_tree_add_item(parameters_tree,
                                 hf_unknown_parameter, tvb, offset,
                                 parameter_length, ENC_ASCII);
@@ -792,6 +799,12 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             previous_fragment = NULL;
         }
 
+        if (previous_fragment &&
+                (uint64_t)previous_fragment->idx + previous_fragment->length + tvb_reported_length(tvb) > MAX_REASSEMBLED_LENGTH) {
+            /* Too long; give up on the previous message and start a new one */
+            previous_fragment = NULL;
+        }
+
         frame_number = pinfo->num;
 
         key[0].length = 1;
@@ -820,6 +833,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         fragment->length            = tvb_reported_length(tvb);
         fragment->data              = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
         fragment->previous_fragment = previous_fragment;
+        fragment->first_fragment    = (fragment->idx > 0) ? previous_fragment->first_fragment : fragment;
         tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
         wmem_tree_insert32_array(fragments, key, fragment);
@@ -868,10 +882,7 @@ dissect_bthsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     fragment->chandle == chandle &&
                     fragment->dlci == dlci &&
                     fragment->role == role) {
-                i_fragment = fragment;
-                while (i_fragment && i_fragment->idx > 0) {
-                    i_fragment = i_fragment->previous_fragment;
-                }
+                i_fragment = fragment->first_fragment;
 
                 if (i_length + 1 == length &&
                         role == ROLE_HS &&

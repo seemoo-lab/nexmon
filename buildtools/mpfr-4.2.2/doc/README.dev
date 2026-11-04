@@ -1,0 +1,2022 @@
+Copyright 2002-2025 Free Software Foundation, Inc.
+Contributed by the Pascaline and Caramba projects, INRIA.
+
+This file is part of the GNU MPFR Library.
+
+The GNU MPFR Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+The GNU MPFR Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with the GNU MPFR Library; see the file COPYING.LESSER.
+If not, see <https://www.gnu.org/licenses/>.
+
+
+Notes for the MPFR developers and Git users
+===========================================
+
+To compile the source code obtained from the repository or after applying
+some special patches, you need some additional GNU development utilities:
+aclocal, autoheader, automake, autoconf 2.60 (at least), and libtoolize.
+The AX_PTHREAD macro from autoconf-archive[*] is now included in the MPFR
+repository (m4/ax_pthread.m4).
+[*] https://www.gnu.org/software/autoconf-archive/ax_pthread.html
+
+As some files like "configure" are not part of the Git repository, you
+first need to run "autoreconf -i" (or ./autogen.sh, which could be used
+later to update the config files). Then you can run ./configure in the
+usual way (see the INSTALL file, but note that there are no patches to
+apply, and the URLs are not valid since the corresponding version has
+not been released yet).
+
+To generate mpfr.info, you need texinfo version 4.2 (or higher).
+
+===========================================================================
+
+The VERSION file contains the number of the next release version, i.e.
+the version currently being developed. A suffix can be attached for the
+development versions (in general, "-dev") or pre-release versions (e.g.
+"-rc1"). It must be updated with the update-version script. Examples:
+
+  tools/update-version 3 1 0 dev
+  tools/update-version 3 1 0 rc1
+  tools/update-version 3 1 0
+
+The "-dev" suffix means that additional tests may be done or required
+for development. For instance, the data files from the tests/data
+directory are required; such files are not included in tarballs as
+they can be large.
+
+If nightly snapshots are built, the date in the yyyymmdd format and/or
+some Git information (for more accurate information) must be added to
+the version as a suffix, for instance: "2.3.0-20070621".
+
+Patches can be tracked by adding a chunk of the form
+
+--- PATCHES~    Tue Nov  6 19:59:33 2001
++++ PATCHES     Tue Nov  6 19:59:42 2001
+@@ -1,0 +1 @@
++<your-id-here>
+
+to the patch file[*]. After such patches have been applied, the file
+src/get_patches.c providing the mpfr_get_patches() function will be
+rebuilt by "make". MPFR distributors can still modify the version
+suffix from the applied patches according to their version naming
+scheme; for instance, for their own patches, MPFR developers do:
+
+  tools/update-version 3 1 0 p1 -
+
+[*] This idea comes from Thomas Roessler, who implemented it in Mutt.
+
+For patches from MPFR developers, e.g. for MPFR 3.1.0:
+1. Unarchive the tarball: a directory mpfr-3.1.0 is created.
+2. Go into this directory (cd mpfr-3.1.0).
+3. Apply the current patches with "patch -N -Z -p1 < /path/to/allpatches".
+4. Reset the PATCHES file with "true >| PATCHES".
+5. Rename mpfr-3.1.0 as mpfr-3.1.0-a and duplicate it as mpfr-3.1.0-b
+   without changing the timestamps (e.g. with cp -a).
+6. In mpfr-3.1.0-b, apply the patch obtained with "git diff", e.g.
+     patch --no-backup-if-mismatch -p0 < /path/to/new_patch
+   If an autotools file has been modified, run "autoreconf" and remove
+   the autom4te.cache directory.
+7. In mpfr-3.1.0-b, update the version information:
+     tools/update-version 3 1 0 p<n> -
+   where <n> is the patch number.
+8. In mpfr-3.1.0-b, update PATCHES file: echo >> PATCHES <patch_name>
+9. Make the patch: TZ=UTC0 diff -Naurd mpfr-3.1.0-a mpfr-3.1.0-b
+
+The tools/build-patch script can be used to ease the process.
+
+Note: if autotools files are modified, the corresponding changes in the
+distributed files depending on them must be included in the patch, and
+the timestamps of such autotools files should be reset so that they do
+not change when the patch is applied with the -Z option. Otherwise the
+autotools would be needed to build MPFR (unless maintainer mode is
+disabled).
+
+Patches are put under the www directory of the misc.git repository for
+the MPFR website.
+
+===========================================================================
+
+When submitting patches, unified diffs (option -u) are recommended,
+as they are more readable. You can also use the option -d to generate
+a smaller set of changes. See diff(1) for more information.
+
+===========================================================================
+
+Copyright Notices: For easier maintainability, make sure that the
+copyright notices match the regexp "Copyright.* yyyy Free Software"
+where yyyy is the year of the latest modification in the branch
+(and nothing else should match it).
+
+The latest rules for GNU software can be found here:
+
+  https://www.gnu.org/prep/maintain/maintain.html#Copyright-Notices
+
+===========================================================================
+
+To make a release (for the MPFR team):
+
+  *** Please read this section entirely before making any release. ***
+
+  0) For a non-patchlevel release, before creating a branch from master
+     (or more often), some operations should be done in master:
+       * update the doc/texinfo.tex file from a recent version, and check
+         whether this yields unwanted changes in the MPFR manual generated
+         in the main formats (HTML, info, PDF);
+       * make sure that the src/mpfr-longlong.h file (from GMP's longlong.h)
+         is up-to-date (updates could also be done in patchlevel releases,
+         but with care);
+       * among the checks below, those that are most likely to notice issues,
+         as it is easy to forget something;
+       * in particular, check that the abi-compliance-checker output,
+         the "API Compatibility" section of the manual (mpfr.texi), and
+         the NEWS file are consistent;
+       * update the libtool version (see src/Makefile.am) and the DLL version
+         (see configure.ac) if need be, though this should have been done as
+         soon as the ABI changed in the master branch;
+       * update the ChangeLog (see below) in the master branch, in order to
+         minimize the future diffs.
+     If everything is OK, create the branch (below designated <branch>).
+     Switch to the branch and create an annotated tag <branch>-root on HEAD:
+     "New <branch> branch from master."
+     This tag should be placed on the parent of the first commit specific to
+     the branch; it could also be added later; its id should be the same as
+     the one output by "git merge-base master <branch>".
+     In the master branch, update the version with the update-version
+     script to indicate the next version (use the "dev" suffix).
+     Note: Not everything can be done in master before creating the branch,
+     as this step may be done much time before the release candidate, with
+     the goal of a feature freeze.
+
+  1) Check the version and change the suffix to "rc1", "rc2", etc. with
+     tools/update-version for the release candidates; remove the suffix
+     for the final release.
+     If not done yet, update the libtool version (see src/Makefile.am)
+     and the DLL version (see configure.ac).
+     Update the README file if need be: the list of the distributed files
+     and the URL of the README.dev file (use the right branch).
+     Check these versions with tools/ck-version-info (this check will also
+     be done automatically by "make dist" / "make distcheck").
+     Update the date in doc/mpfr.texi.
+
+  2) Generate the tuning parameters on different architectures and
+     put them in src/mparam_h.in. For each architecture:
+
+     a) download the latest release of GMP on gmplib.org
+     b) build GMP with --disable-shared in, say, "/path/to/gmp-x.y.z".
+        There is no need in tuning GMP, since most users will build MPFR
+        with a vanilla GMP installation, i.e., with the default GMP tuning;
+        however, you need to go into /path/to/gmp-x.y.z/tune and type
+        "make speed" (the MPFR tuning is using the resulting speed library)
+     c) configure MPFR with
+          --disable-shared --with-gmp-build=/path/to/gmp-x.y.z
+     d) go into the "tune" directory and run "make tune"
+     e) put the resulting ../src/mparam.h file in some subdirectory for the
+        concerned architecture (see src/*/mparam.h for the current ones);
+        please include the version of GMP and the compiler used
+     f) update mparam_h.in to conditionally include this mparam.h file
+        (see the existing architectures as examples)
+
+     You can produce time graphs to check the thresholds are correct (and
+     compare to the corresponding mpf functions) with mbench. For example
+     (-x1 corresponds to add, -x2 to sub, -x3 to mul, ...):
+
+     $ cd mpfr/tools/mbench
+     $ make mpfr-gfx GMP=... MPFR=...
+     $  ./mpfr-gfx -b16 -e320 -s16 -f2 -x3 # compares mpfr_mul and mpf_mul
+                                           # from 16 to 320 bits with increment
+                                           # of 16 bits
+     $ gnuplot -persist plot.gnuplot
+
+     Another example, comparing mpfr_mul and mpf_mul from 2 to 1000000 bits,
+     with ratio 1.1 between two sizes, 10 random values, and 10 smoothness
+     checks:
+
+     $ ./mpfr-gfx -b2 -e1000000 -r1.1 -f10 -x3 -m10
+     $ gnuplot -persist plot.gnuplot
+
+     Check the coverage of each source file by the test suite is at least 90%
+     (or clearly justify any value under this threshold), and publish (for
+     example in NEWS) the global coverage of this release. The individual
+     coverage of each source file might also be published on the release web
+     page. There is a specific mparam.h file to improve coverage; it should
+     be tested by configuring MPFR with -DMPFR_TUNE_COVERAGE.
+
+     Also test with -DMPFR_COV_CHECK, which allows one to check the coverage
+     of some combinations of variable values (as defined in the MPFR source
+     and test suite).
+
+  3) Update the NEWS file, in particular say if the release is binary
+     and/or API compatible (or not) with previous releases.
+     Also update the "API Compatibility" section in the manual (mpfr.texi).
+     Cherry-pick these changes in the master branch.
+     Check with abi-compliance-checker (ABI Compliance Checker)[a] against
+     the previous MPFR release (built with no configure options, except
+     --prefix) that no changes have been missed. The build-multi script
+     in the misc.git repository[b] may be useful to prepare data for
+     abi-compliance-checker (for the version to be released, a temporary
+     tarball thus needs to be generated, e.g. with "make dist").
+     Example of use for the 4.1.1 release candidate:
+        $ make distcheck
+        $ mkdir ~/tmp/abicc
+        $ /path/to/build-multi ~/tmp/abicc \
+            /path/to/mpfr-4.1.0.tar.xz mpfr-4.1.1-rc1.tar.xz
+        $ cd ~/tmp/abicc
+        $ abi-compliance-checker -lib mpfr -old 4.1.0.xml -new 4.1.1-rc1.xml
+     Note that abi-compliance-checker can check only the symbols, types
+     and constants; it cannot detect just a change in the behavior, thus
+     may miss some incompatibilities.
+     Update the FAQ.html file with update-faq (and check it) in the doc
+     directory.
+     [a] https://lvc.github.io/abi-compliance-checker/
+     [b] https://gitlab.inria.fr/mpfr/misc/-/blob/master/build-multi
+
+  4) Update the ChangeLog file with "make update-changelog" in UTF-8 locales.
+     This should at least be done last, in order to be complete before the
+     generation of the tarball.
+     Note: First, make sure that all the pending commits have been done.
+     Push the changes with "git push".
+
+  5) Create an annotated tag whose name corresponds to the content of
+     the VERSION file:
+       $ tag=$(cat VERSION)
+       $ git tag -m "GNU MPFR $tag tag." $tag
+     and push it:
+       $ git push origin $tag
+     Note: in case of error, see the git-tag(1) man page.
+
+  6) Export the tree identified by this tag in order to get a tarball:
+       $ ./tools/export-release $(cat VERSION) /path/to/some/dir
+     A mpfr-$tag subdirectory will be created there; each file or directory
+     has a timestamp corresponding to its last change.
+     From this directory, generate the tarballs with:
+       $ ./autogen.sh
+       $ ./configure
+       $ make distcheck
+     If need be, after "./autogen.sh", replace config.guess and config.sub
+     by their latest version (see URLs in these files), e.g. if they are
+     known to solve issues. But note that they may not have been fully
+     tested.
+
+  7) Test the release version on different machines, with --enable-assert
+     set to "yes", "no" (default), "none" and "full" respectively, with
+     and without -DMPFR_DISABLE_IEEE_FLOATS in $CFLAGS, with and without gmp
+     internal files (--enable-gmp-internals), with and without GMP built as
+     a shared library, with objdir equal to and different from srcdir (e.g.
+     ../mpfr-source/configure after making mpfr-source read-only), with
+     and without --enable-logging.
+
+     Try different temporary allocation methods: GMP's --disable-alloca
+     configure option (or compile GMP with --enable-alloca=debug and MPFR
+     with --with-gmp-build to be able to get the memory leak errors); and
+     -DMPFR_ALLOCA_MAX=0.
+
+     Try different gcc versions with different options: with and without
+     "-std=c99 -O3 -D_XOPEN_SOURCE=500", with and without "-ansi" (which
+     allows to turn off features that are incompatible with ISO C90),
+     with and without [-ansi] -pedantic-errors (which has the effect to
+     disable extensions, such as long long when used together with -ansi),
+     with and without -std=c11, with and without --enable-thread-safe, in
+     various FPU precisions (double, double extended and single) if the
+     platform supports that (e.g. under Linux/x86, with GCC and its -mpc64
+     option to simulate the FreeBSD / NetBSD 6- behavior, where by default,
+     the x87 FPU is configured to round on 53 bits), and in various locales
+     (LC_ALL=tr_TR and LC_ALL=ps_AF in particular, if installed).
+     On x86, test with -m96bit-long-double and -m128bit-long-double.
+     Try also with gcc's -fno-common option.
+     Check also with "-Wformat=2", but without logging support (in order
+     to avoid too many spurious warnings).
+     Check with "-UHAVE_BIG_ENDIAN -UHAVE_LITTLE_ENDIAN" to simulate
+     platforms where the endianness is unknown (or can't be specified
+     without AC_CONFIG_HEADERS).
+     Check also without the mpz_t pool (-DMPFR_POOL_NENTRIES=0).
+     Check the generic code, e.g. with -DMPFR_GENERIC_ABI in $CFLAGS
+     (useful because most tests are written for low precision) and with
+     mpfr_cv_c_long_double_format=unknown (as a variable assignment).
+     Check with -DMPFR_GROUP_STATIC_SIZE=0 to detect memory leaks that would
+     occur in medium precision or more if a MPFR_GROUP_CLEAR were forgotten.
+
+     Check that make and make check pass with a C++ compiler, for example:
+     ./configure CC=g++ (MPFR 2.3.2 did not).
+     Also test --enable-gmp-internals with it.
+
+     Try different compilers, e.g., tcc <https://bellard.org/tcc/>,
+     Clang and Intel's compiler, with and without optimizations.
+     Note that optimizations may also hide bugs, even with "gcc -O0"
+     (which transforms "-X >= 0" to "X <= 0", changing the behavior
+     on LONG_MIN); as an example, see tstrtofr.c, bug20230606().
+
+     On 64-bit PowerPC, test against GMP built with the different ABI's:
+     32, mode32 and mode64 (in particular mode32, where long's have
+     32 bits and limbs have 64 bits [long long]).
+
+     Test with -DMPFR_TESTS_FPE_DIV -DMPFR_ERRDIVZERO
+     -DMPFR_DISABLE_IEEE_FLOATS in order
+     to detect whether tests can fail due to a FP division by 0 (yielding
+     either FE_DIVBYZERO, e.g. from 1.0 / 0.0 to generate an infinity, or
+     FE_INVALID, e.g. from 0.0 / 0.0 to generate a NaN) on platforms where
+     such an operation fails (e.g. trap). On platforms that do not support
+     IEEE 754, such an operation yields an undefined behavior.
+     If _MPFR_IEEE_FLOATS is defined to 1 (by the configure script), some
+     divisions by 0 are avoided in the MPFR library.
+     The -DMPFR_DISABLE_IEEE_FLOATS option sets _MPFR_IEEE_FLOATS to 0,
+     allowing one to detect more issues, for platforms without IEEE floats.
+
+     Test with -D_MPFR_PREC_FORMAT=2 when the "int" type is smaller
+     than the "long" type.
+
+     Test with mini-gmp.
+
+     Test with valgrind by setting the environment variable:
+       LOG_COMPILER="valgrind -q --error-exitcode=1 --leak-check=full"
+     See below for more information about valgrind.
+
+     Test with an UB sanitizer, e.g. with Clang's or GCC's options
+     "-fsanitize=undefined -fno-sanitize-recover" in CFLAGS. However,
+     Clang unconditionally regards the floating-point division by zero
+     as an error with "-fsanitize=undefined"; this is detected by a
+     configure test, which sets MPFR_ERRDIVZERO to disable the tests
+     involving a floating-point division by zero. Alternatively, on systems
+     supporting IEC 60559 / IEEE 754 division by zero, one can also provide
+     the -fno-sanitize=float-cast-overflow,float-divide-by-zero option
+     *after* the -fsanitize=undefined one.
+
+     Test with GCC's AddressSanitizer (-fsanitize=address). Optimizations
+     should not be enabled, otherwise they can make some errors disappear.
+     One also needs to unset LD_PRELOAD or use -static-libasan to avoid
+     failures. But the -static-libasan solution does not work with MPFR,
+     as it yields the following error:
+       Your application is linked against incompatible ASan runtimes.
+
+     Test with i686-w64-mingw32 under Wine (see below).
+
+     Test with both "make check" and the worst cases.
+
+     Check various warnings, in particular for obsolescent features.
+     With GCC: "-Wall -Wold-style-declaration -Wold-style-definition
+     -Wmissing-parameter-type -Wmissing-prototypes -Wmissing-declarations
+     -Wmissing-field-initializers". The -Wint-in-bool-context option
+     could be added once available. These warnings can easily be checked
+     in automatic tests by adding "-Werror". Add -Wno-error=... options
+     when needed (but except in some cases, it may be better to improve
+     the MPFR code; in particular, the -Wno-error=unused-function option
+     should no longer be necessary, thanks to conditional compilation or
+     MPFR_MAYBE_UNUSED).
+
+     Check whether some functions could be declared as pure, const, etc.
+     with GCC, using -Wsuggest-attribute=... options.
+
+     Check that there are no abnormal regressions in the timings (both for
+     100, 1000, 10000 digits, https://www.mpfr.org/mpfr-current/timings.html,
+     and for small precision, using the mbench program, see tools/mbench).
+
+     Test the library interface compatibility by running the test suite
+     compiled against an old library version and dynamically linked with
+     the new library version: for instance, build the shared library of
+     old and new MPFR versions with the same configure options, and from
+     the build directory of the old version, do something like:
+     (cd src/.libs && \
+      ln -nsf ../../../mpfr-new/src/.libs/libmpfr.so.1.* libmpfr.so.1)
+     then "make check".
+
+     Also test with different environment variables set
+     (GMP_CHECK_RANDOMIZE, MPFR_CHECK_LIBC_PRINTF, MPFR_CHECK_LARGEMEM,
+     MPFR_CHECK_EXPENSIVE, MPFR_SUSPICIOUS_OVERFLOW, MPFR_CHECK_LOCALES,
+     MPFR_CHECK_BADCASES).
+     Note: a non-default GMP_CHECK_RANDOMIZE value allows one to make sure
+     that a test against a hard-coded result does not depend on it.
+
+     Check there is no branch misprediction due to wrong MPFR_LIKELY or
+     MPFR_UNLIKELY statements. For that test, configure with
+     --enable-debug-prediction, run "timings-mpfr 100", and check that
+     the output contains no WARNING.
+
+     For various platforms and compilers, check that:
+       * [make check-gmp-symbols]
+         MPFR does not use GMP internal symbols (unless --with-gmp-build
+         or --enable-gmp-internals has been used);
+       * [make check-exported-symbols]
+         MPFR does not define symbols with a GMP reserved prefix.
+     But note that these rules are not really portable: they may do
+     nothing or might even incorrectly fail on some platforms.
+
+  8) For the release itself (not the release candidates), update the
+     version with the update-version script in the Git repository to
+     indicate the next patchlevel version (use the "dev" suffix).
+     Increase the 2nd number of the libtool version (see src/Makefile.am)
+     for the next patchlevel version.
+
+  9) * For the release itself (not the release candidates):
+     Create a web page for the MPFR release and add the documentation
+     (for mpfr.html, use "makeinfo --html --no-split mpfr.texi" from
+     the doc directory). Make sure that both the .dvi and .ps files
+     have an a4 papersize (see technical information later about the
+     MPFR manual).
+     Upload the tarballs and the signatures to the MPFR web server
+     (via the misc.git repository).
+     Prepare the files for the GNU FTP site with the gnu-sigdir script
+     of the misc.git repository and upload them.
+     Update the mpfr-current symbolic link and the history page.
+     Update the old current page to point to the new release; see
+     examples for 3.0.1 (latest version of the branch) and 3.1.0
+     (which is not the latest version of the branch).
+     Run the tools/announce-text script to do some checking and get
+     the announce text. Edit this text if need be.
+     Announce the release in the mpfr-announce, mpfr, gmp-discuss, gcc
+     and info-gnu[1] mailing-lists.
+     In case of a new patchlevel release, add a link from the web page
+     of the previous release.
+
+     * For the release candidates:
+     Upload the tarballs and the signatures to the MPFR web server
+     (via the misc.git repository).
+     Run the tools/announce-text script to do some checking and get
+     the announce text. Edit this text if need be.
+     Announce the RC in the mpfr-announce, mpfr, gmp-discuss, gcc and
+     platform-testers[2] mailing-lists.
+     A minimal web page for the MPFR release can be created right now
+     (see Git history such as [3] for examples), as the manual already
+     contains the new URLs.
+
+     [1] https://www.gnu.org/prep/maintain/html_node/Announcements.html
+     [2] See https://lists.gnu.org/mailman/listinfo/platform-testers and
+     https://lists.gnu.org/archive/html/platform-testers/2011-09/msg00000.html
+     [3] commit a04e43bb98b916c354f15d7e88b2934f84d0a6ab of misc.git
+         i.e. https://gitlab.inria.fr/mpfr/misc/-/commit/a04e43bb
+
+Note: Mail sent to the mpfr-announce list should also be sent to
+the mpfr list, and the Reply-To should be set to the mpfr list.
+
+For major or minor releases (but not patchlevels), a new branch may be
+created first to allow new features to be committed to master.
+
+To add tcc support with libtool 2.4.2 or below, do the following before
+running "make distcheck":
+$ patch m4/libtool.m4 libtool-tcc-wl.patch
+$ autoreconf
+
+And for libtool 2.4.3 to 2.4.6, the following is needed:
+$ patch m4/libtool.m4 libtool-tcc-rpath.patch
+$ autoreconf
+
+===========================================================================
+
+Here is a non-exhaustive list of macros used for building and checking MPFR.
+Most of them are automatically set up by the configure script and its options.
+
+List of macros used for building MPFR (also used for checking):
+
++ HAVE_CONFIG_H:        Define if we have to include 'config.h' first.
++ MPFR_HAVE_GMP_IMPL:   Define if we have the gmp internal files.
+                        ('gmp-impl.h', 'gmp-maparam.h', ...).
++ MPFR_USE_MINI_GMP:    Define to use mini-gmp.
+
++ HAVE_ALLOCA:          Define if alloca() works.
++ HAVE_ALLOCA_H:        Define if the function alloca() is in alloca.h.
++ HAVE_LOCALE_H:        Define if <locale.h> is available.
++ HAVE_LONG_LONG:       Define if the system supports 'long long'.
+
++ HAVE_STDARG:          Define if the system supports 'stdarg.h'.
+                        Otherwise it is assumed it is 'vararg.h'.
+
++ HAVE_INTTYPES_H:      Define if <inttypes.h> is available (ISO C99).
++ HAVE_STDINT_H:        Define if <stdint.h> is available (ISO C99).
++ MPFR_HAVE_INTMAX_MAX: Define if the INTMAX_MAX macro works correctly
+                        (if 'intmax_t' is supported).
+
++ MPFR_HAVE_C11_LOCK:   Define if C11 threads are supported.
++ HAVE_PTHREAD:         Define if pthread is available.
+
+Format of long double.
++ HAVE_LDOUBLE_IS_DOUBLE:               IEEE double.
++ HAVE_LDOUBLE_IEEE_EXT_BIG:            IEEE extended, big endian (m68k).
++ HAVE_LDOUBLE_IEEE_EXT_LITTLE:         IEEE extended, little endian.
++ HAVE_LDOUBLE_IEEE_QUAD_BIG:           IEEE quad, big endian.
++ HAVE_LDOUBLE_IEEE_QUAD_LITTLE:        IEEE quad, little endian.
++ HAVE_LDOUBLE_MAYBE_DOUBLE_DOUBLE:     Double-double (a.k.a. IBM).
+Note that emin(m68k) = emin(x86) - 1.
+
++ MPFR_DISABLE_IEEE_FLOATS:
+                        Related to the native floating-point types (e.g.
+                        for conversion functions), use the generic code
+                        instead of IEEE 754 specific one.
+                        Note: This is mainly for developers in order to
+                        check the generic code, as machines without IEEE
+                        floating-point types are very uncommon nowadays.
++ MPFR_WANT_ASSERT:     Assertion level. See src/mpfr-impl.h for details.
++ MPFR_EXP_CHECK:       Define if we want to check the exp field.
+
++ _MPFR_PREC_FORMAT:    Used to define the mpfr_prec_t type.
++ _MPFR_EXP_FORMAT:     Used to define the mpfr_exp_t type.
+                        Note: these two macros are for internal use,
+                        testing and experimented users only; they must
+                        not be changed when the MPFR library is to be
+                        installed in a system directory.
+
++ IEEE_DBL_MANT_DIG:    Number of bits in the significand (mantissa) of a
+                        double (default: 53).
++ MPFR_LDBL_MANT_DIG:   Number of bits in the significand (mantissa) of a
+                        long double (generally based on the standard macro
+                        LDBL_MANT_DIG). Note: be careful with formats such
+                        as double-double (a.k.a. IBM long double).
+
++ MPFR_USE_LOGGING:     Define to enable logging (this needs GCC, and this
+                        is not available with mini-gmp, since mpfr_fprintf
+                        cannot be defined with mini-gmp).
+
++ MPFR_WANT_DECIMAL_FLOATS:
+                        Define to build conversion functions from/to
+                        decimal floats. At most one of the following
+                        three macros can be defined.
++ DECIMAL_BID_FORMAT:   BID encoding detected or assumed.
++ DECIMAL_DPD_FORMAT:   DPD encoding detected or assumed.
++ DECIMAL_GENERIC_CODE: Use generic code for decimal floats.
+
++ MPFR_WANT_FLOAT128:   Define to build conversion functions from/to
+                        binary128 floats (_Float128 or __float128).
+                        Define it to 1 if constants have the f128 suffix.
+                        Define it to 2 if constants have the q suffix; in
+                        this case, the mpfr_float128 macro may have to be
+                        defined as __float128 (a.k.a. __float128 fallback).
+
++ MPFR_ALLOCA_MAX:      Maximum size for the use of alloca() by temporary
+                        allocations (default: 16384); if set to 0, alloca()
+                        will not be used, and not even referenced.
+                        This macro is not used when MPFR is built with
+                        the GMP build directory (--with-gmp-build).
+
++ MPFR_USE_THREAD_SAFE: Define to build MPFR as thread safe (TLS).
++ MPFR_USE_C11_THREAD_SAFE:
+                        Define to implement TLS in the C11 way.
+
++ MPFR_WANT_SHARED_CACHE:
+                        Define to have caches shared by all threads.
++ MPFR_THREAD_LOCK_METHOD:
+                        When MPFR_WANT_SHARED_CACHE is defined, this macro
+                        gives the thread locking method (string).
+
++ MPFR_HAVE_NORETURN:   Define if the _Noreturn function specifier is
+                        supported.
++ MPFR_HAVE_BUILTIN_UNREACHABLE:
+                        Define if the __builtin_unreachable GCC built-in is
+                        supported.
+
++ MPFR_GENERIC_ABI:     Define to disable code that is tied to a specific
+                        ABI (e.g. GMP_NUMB_BITS value).
+                        Note: Currently it is also used to disable code
+                        specific to low precision, i.e. to use only generic
+                        code. This is useful because most tests are written
+                        for low precision, meaning that without this macro,
+                        the generic code would not sufficiently be tested.
+
++ MPFR_WANT_PROVEN_CODE:
+                        Define to enable formally proven code (used only
+                        under some conditions, see below).
+
+List of macros used for checking MPFR:
+
++ MPFR_HAVE_FESETROUND: Define if the function fesetround() is available
+                        (and in header <fenv.h>).
++ MPFR_FPU_PREC:        Allows to test MPFR on x86 processors when the
+                        x87 FPU rounding precision has been changed (see
+                        tests/tests.c for its usage).
++ HAVE_SUBNORM_DBL:     Define if the double type fully supports subnormals.
++ HAVE_SUBNORM_FLT:     Define if the float type fully supports subnormals.
++ HAVE_SIGNEDZ:         Define if signed zeros are supported.
++ HAVE_SYS_TIME_H:      Define if the header sys/time.h is usable.
++ HAVE_GETTIMEOFDAY:    Define if the function gettimeofday() is available.
++ HAVE_SETLOCALE:       Define if the function setlocale() is available.
++ MPFR_ERRDIVZERO:      Define if the floating-point division by 0 fails
+                        in the MPFR library (e.g., because a SIGFPE signal
+                        is generated, or because it is regarded as undefined
+                        behavior by a sanitizer). This disables the tests
+                        involving such operations.
+                        Note: Tests related to NaN and infinities must not
+                        rely on native FP division by 0, whether this macro
+                        is defined or not.
++ MPFR_TESTS_FPE_DIV:   Define to check whether there has been a FP
+                        exception FE_DIVBYZERO or FE_INVALID, which
+                        probably comes from 1.0 / 0.0 or 0.0 / 0.0 to
+                        generate an infinity or a NaN. This is normally
+                        used together with MPFR_ERRDIVZERO, in order to
+                        check that all divisions by 0 have been protected
+                        in the tests (so that tests can pass on platforms
+                        where the floating-point division by 0 fails).
++ MPFR_TESTS_FPE_TRAP:  Define to trap the FE_DIVBYZERO and FE_INVALID
+                        exceptions; MPFR_TESTS_FPE_DIV needs to be defined
+                        too, and MPFR_ERRDIVZERO should be defined as well
+                        to avoid spurious traps (see above).
++ MPFR_TESTS_TIMEOUT:   Define to enable timeout in the tests. Its value
+                        specifies the default timeout (in seconds), or 0
+                        for no timeout by default. When defined, this
+                        value can be overridden at run time (e.g., with
+                        "make check" or when executing an individual test)
+                        with the MPFR_TESTS_TIMEOUT environment variable.
++ MPFR_TESTS_ABORT:     Define to replace exit(1) by abort(), thus with a
+                        core dump.
++ MPFR_TESTS_SKIP_CHECK_NULL:
+                        Define to skip the check_null() tests in
+                        tfprintf.c and tsprintf.c, in case of failure
+                        due to a bug in GMP's vsnprintf replacement
+                        (see INSTALL file). The goal is just to avoid
+                        a failure of the MPFR testsuite; there is no
+                        workaround for the bug in GMP's vsnprintf!
++ MPFR_COV_CHECK:       Define to enable value coverage checking (must not
+                        be used in production). This macro is for the MPFR
+                        developers, in order to improve the test suite.
+
+===========================================================================
+
+Environment variables that affect the tests:
+
++ GMP_CHECK_RANDOMIZE:  Seed for the random functions, except for 0 or 1,
+                        in which case a random (time based) seed is used.
+                        By default, a fixed seed is used. Only developers
+                        and testers should change the seed.
+
++ MPFR_CHECK_LARGEMEM:  Define to enable tests that take a lot of memory.
+
++ MPFR_CHECK_EXPENSIVE: Define to enable tests that take a lot of time.
+                        Warning! The --enable-assert=full option should
+                        not be used, otherwise this can take much too
+                        long. While checking assertions (--enable-assert)
+                        may be useful with MPFR_CHECK_EXPENSIVE, the
+                        --enable-assert=full is not necessary with it.
+
++ MPFR_CHECK_LIBC_PRINTF:
+                        Define to enable comparisons with the printf
+                        function of the C library. These comparisons are
+                        disabled by default as failures could be due to
+                        the C library itself on some machines, and they
+                        do not affect MPFR.
+
++ MPFR_CHECK_LOCALES:   Fail in case a locale cannot be set. Developers
+                        can set this variable on their machines to make
+                        sure that needed locales are properly installed
+                        and tested.
+
++ MPFR_CHECK_BADCASES:  Fail if function bad_cases generates too many
+                        cases for which f(f^{-1}(x)) ≠ x, due to a poor
+                        choice of the parameters.
+
++ MPFR_DEBUG_BADCASES:  For debugging (see tests.c, function bad_cases).
+
++ MPFR_SUSPICIOUS_OVERFLOW:
+                        Define to check suspicious overflow in the generic
+                        tests (tgeneric.c). For developers and testers.
+
++ MPFR_TESTS_MEMORY_LIMIT:
+                        The memory limit for the tests (default is
+                        2^22 = 4 MB). Set to 0 for unlimited.
+
++ MPFR_TESTS_TIMEOUT:   When timeout in the tests is enabled, this
+                        overrides the value of the macro.
+
++ MPFR_TGENERIC_STAT:   For the generic tests, output the number of normal
+                        cases and the total.
+
+===========================================================================
+
+Before testing any macro (such as HAVE_STDINT_H) in a .c file, one needs:
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+except if mpfr-impl.h (for the library) or mpfr-test.h (for the tests) is
+included first, because these header files already have the above code.
+
+===========================================================================
+
+The GNU Coding standards can be read at:
+  https://www.gnu.org/prep/standards/
+
+ISO C Names and corresponding headers:
+  http://www.schweikhardt.net/identifiers.html
+
+The C language:
+  https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf (C99 + TC3)
+  https://www.open-std.org/jtc1/sc22/wg14/www/C99RationaleV5.10.pdf
+  https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf (C11 draft)
+  https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf (≈ C23)
+  http://home.datacomm.ch/t_wolf/tw/c/c9x_changes.html
+
+About undefined behavior:
+  https://blog.regehr.org/archives/213
+  https://blog.regehr.org/archives/226
+  https://blog.regehr.org/archives/232
+  https://blog.regehr.org/archives/1520
+  https://blog.llvm.org/posts/2011-05-13-what-every-c-programmer-should-know/
+  https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3128.pdf
+
+Type punning, strict aliasing, and optimization:
+  https://blog.regehr.org/archives/959
+
+To allow MPFR to be built on some buggy compiler, try to follow
+these rules:
+
+   =====================================================================
+
+Don't write:
+  mp_limb_t l;
+  [...]
+  if (l) do_action ();
+But:
+  mp_limb_t l;
+  [...]
+  if (l != 0) do_action ();
+
+since mp_limb_t may be "unsigned long long", and some buggy compiler
+produce illegal codes with the first form.
+
+   =====================================================================
+
+Try to avoid "LONG_MIN/1" since it produces a SIGNAL on (old) FreeBsd.
+Don't forget that LONG_MIN/-1 is not representable (specially
+with code like MPFR_EXP_MIN/n).
+
+   =====================================================================
+
+Don't use the following identifiers since they are keywords for some
+compilers:
+  - "bool", "true" and "false": keywords in ISO C23.
+  - "near" and "far": keywords in some old DOS compiler.
+  - "pm", which is used by the C compiler 'sharp' to design variables
+    that should be stored in the flash memory.
+  - "new", which is reserved in C++.
+
+Note: This list is not exhaustive; these are just the simplest keywords,
+which are likely to be used by mistake.
+
+Check C++ reserved keywords, e.g. from
+
+  https://en.cppreference.com/w/cpp/keyword
+
+or more generally:
+
+  https://www.google.com/search?q=%22C%2B%2B%22+reserved+keywords
+
+Quoted from <https://www.gnu.org/software/gcc/codingconventions.html>:
+
+  Avoid the use of identifiers or idioms that would prevent code
+  compiling with a C++ compiler. Identifiers such as new or class,
+  that are reserved words in C++, should not be used as variables
+  or field names. Explicit casts should be used to convert between
+  void* and other pointer types.
+
+When a string literal ("...") is followed by a macro name, there
+must be white space between them, otherwise this is parsed as a
+user-defined string literal in C++11:
+
+  https://en.cppreference.com/w/cpp/language/user_literal
+  https://stackoverflow.com/a/6402166/3782797
+
+In at least mpfr.h, use the underscore version of the attribute names
+(e.g. "__sentinel__" instead of "sentinel"), otherwise user code could
+fail to compile with GCC when it defines macros such as "sentinel"
+(before the #include's or via the -D command-line option). See
+
+  https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html
+
+   =====================================================================
+
+Setting errno is safe to signal some error information (as in the
+formatted output functions), but errno must not be read (unless we
+have just modified it) as this may yield undefined behavior in some
+corner cases out of our control (ISO C99 / C11, 7.14.1.1p5, also
+mentioned in J.2).
+
+   =====================================================================
+
+C-Reduce may be useful to try to identify whether a bug comes from the
+compiler.
+
+   =====================================================================
+
+About type conversions:
+
+To do type punning (i.e. store a value of some type and reinterpret
+it as another type), use a union. This is valid in ISO C99 and above
+(in C99, see 6.5#7 and Note 82 of 6.5.2.3#3 for the clarification),
+but not in C++. So, users of a C++ compilers should make sure that
+their compiler supports type punning via a union. If some problem is
+reported, we should address it either by making the code compatible
+or by adding a configure test to reject the compiler.
+
+Some references:
+* https://en.wikipedia.org/wiki/Type_punning#Use_of_union
+* https://stackoverflow.com/questions/346622/opinions-on-type-punning-in-c
+  "Opinions on type-punning in C++?"
+
+Do not do conversions between function pointers and other kinds of
+pointers (including to void *). This yields undefined behavior and
+may not work in practice. Example:
+
+  https://stackoverflow.com/questions/5579835/c-function-pointer-casting-to-void-pointer
+
+Adding a level of indirection is OK, as suggested there, and on:
+
+  https://stackoverflow.com/questions/36645660/why-cant-i-cast-a-function-pointer-to-void
+
+To convert an unsigned integer u to the corresponding signed integer with
+the two's complement rule (i.e. modular arithmetic) but in a portable way,
+write e.g. for long:
+
+  u > LONG_MAX ? -1 - (long) ~u : (long) u
+
+(at least GCC and Clang optimize this expression to identity). This is
+provided by the ULONG2LONG() macro (defined in mpfr-impl.h).
+
+   =====================================================================
+
+For floating-point constants, do not use the non-standard and useless
+suffix "D". It seems to mean "double" for GCC[*], but for instance,
+ICC 15 regards 1.0D as 0 (though ICC claims compatibility with GCC)
+and for tcc 0.9.27, this is an error. The standard suffixes from TS 18661-2
+are:
+
+	f l F L df dd dl DF DD DL
+
+Moreover, avoid native floating-point if possible. Be careful that GCC
+does not conform to the C standard by default. References:
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=323
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85957
+
+[*] https://stackoverflow.com/questions/4331200/what-do-f-and-d-mean-at-the-end-of-numeric-literals
+
+   =====================================================================
+
+For string suffix selection, do not write expressions of the form
+string + integer, such as
+
+  "foo" + i
+
+because Clang emits a warning
+
+  adding 'int' to a string does not append to the string [-Wstring-plus-int]
+
+Instead, one may write
+
+  &"foo"[i]    or    (char *) "foo" + i
+
+(the first form is the one suggested by Clang, the second one is more
+immediate to understand).
+
+===========================================================================
+
+Avoid variable names "l", "I" and "O", which look like "1" and "0" with
+some fonts.
+
+===========================================================================
+
+For identifiers defined in MPFR, do not use the GMP namespaces
+(gmp_..., GMP_...).
+
+===========================================================================
+
+You are allowed to use the mpn and mpz classes of GMP functions (types
+and functions starting with "mpn_" and "mpz_"). However, except for some
+conversion functions where they may be needed,
+  * the mpq class and GMP's formatted output and input functions (i.e.,
+    printf and scanf style) can only be used in an alternative method
+    by testing MPFR_USE_MINI_GMP (and only if there is a real benefit),
+    since they are not available in mini-gmp;
+  * the mpf class must not be used at all.
+
+===========================================================================
+
+The headers <limits.h>, <stdio.h>, <stdlib.h> and <string.h> are always
+included in mpfr-impl.h; thus you need not (and should not) include them
+in usual source and test files.
+
+===========================================================================
+
+For files that need intmax_t or similar, use:
+
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
+#if HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
+Note that even though the ISO C99 standard requires that <inttypes.h>
+include <stdint.h>, in practice this is not true on all platforms,
+such as OSF/1 (Tru64) 5.1. This is consistent with autoconf, which
+has used this form since 2004-01-26 (in headers.m4).
+
+References:
+  https://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=commitdiff;h=62ac9bbfebe879581dabeed78c6ac66b907dd51d
+  https://sympa.inria.fr/sympa/arc/mpfr/2010-08/msg00015.html
+
+===========================================================================
+
+Use locale-dependent functions when the result needs to depend on the
+locales, e.g. the decimal-point character in mpfr_out_str.
+
+Conversely, do not use locale-dependent functions when the result must
+not depend on the locales. In particular, the alphanumeric characters
+used in number strings (as created by mpfr_get_str) must be those of
+the required characters from the basic character set (see ISO C99
+standard Section 5.2.1 "Character sets").
+
+Note that in Turkish locales on some systems:
+  * the uppercase version of "i" is "İ" (an "I" with a dot above);
+  * the lowercase version of "I" is "ı" (a dotless "i").
+These characters are available in ISO-8859-9, thus as "char" in the
+tr_TR.iso88599 locale. However, in UTF-8, they are not available as
+(8-bit) "char"; thus toupper('i') gives 'i' and tolower('I') gives 'I'.
+So, when writing code and testing, these two encodings need to be
+considered, as they can give different behaviors.
+
+===========================================================================
+
+If you have to mix TMP_DECL and MPFR_SAVE_EXPO_DECL in the declaring
+section of your function, please declare MPFR_SAVE_EXPO_DECL before
+TMP_DECL, since TMP_DECL may be replace by nothing:
+
+Instead of:                                 Usually preprocessed as:
+  unsigned long t                             unsigned long t;
+  TMP_DECL (marker);                          ;
+  MPFR_SAVE_EXPO_DECL (expo);                 mpfr_save_expo_t expo;
+use:
+  unsigned long t                             unsigned long t;
+  MPFR_SAVE_EXPO_DECL (expo);                 mpfr_save_expo_t expo;
+  TMP_DECL (marker);                          ;
+
+===========================================================================
+
+Memory allocation
+-----------------
+
+Do not use TMP_DECL / TMP_ALLOC, ... but MPFR_TMP_DECL, MPFR_TMP_ALLOC, ...
+
+In the tests, use only tests_allocate, tests_reallocate and tests_free
+(there may be some rare exceptions, such as in tabort_defalloc*.c).
+
+Avoid code that would yield unnecessary reallocations, which can be very
+expensive. In particular, for code that is based on the mpz layer of GMP,
+do not use mpz_init, but mpz_init2 with the estimated maximum size; it is
+better to overestimate this size a bit than underestimating it.
+
+===========================================================================
+
+Do not use C99-only features, such as empty macro arguments or C++-style
+comments.
+
+===========================================================================
+
+When testing a "boolean" macro M (i.e. which is normally either equal
+to 1 or undefined), do not use #if M, but #ifdef M or #if defined(M).
+With icc, the form #if M triggers a warning ("remark #193: zero used
+for undefined preprocessing identifier").
+
+===========================================================================
+
+Make sure that if code may appear in a function or macro argument, any
+comma is inside parentheses (this must be parentheses, not brackets),
+so that the comma is not interpreted as separating arguments.
+
+For instance, do not write
+  bp[MPFR_ASSERTD (k >= 0), k]
+but
+  bp[(MPFR_ASSERTD (k >= 0), k)]
+because
+  MPFR_UNLIKELY (bp[MPFR_ASSERTD (k >= 0), k] == 0)
+would be invalid (it may also be better to put the assertion earlier
+to improve the readability of the code, if possible).
+
+This mainly concerns the MPFR_ASSERT* macros (which are likely to be
+followed by a comma operator) and macros that can take non-expression
+code (such as MPFR_RNDRAW_GEN and MPFR_FAST_COMPUTE_IF_SMALL_INPUT).
+
+A really misused comma should generally yield a compilation error,
+thus would easily be detected. But this might not be the case if the
+occurrence is in conditionally compiled code or if this is combined
+with some other mistake.
+
+===========================================================================
+
+If you want to use the logging of MPFR, you need to enable it:
+  make distclean
+  ./configure --enable-logging
+  make
+Then link your program with this new build of MPFR.
+
+The logging feature needs GCC to build MPFR, and it is not available
+with mini-gmp, since mpfr_fprintf cannot be defined with mini-gmp.
+
+Warning! The logging code for functions sometimes output an "inexact"
+value, but in case of exception, this value may be meaningless. In
+fact, the output value is the value of some variable; please check
+the source code of the function to understand its real meaning.
+
+You can control what is logged using the environment variables:
+
+MPFR_LOG_FILE:  Name of the LOG file (default: mpfr.log).
+MPFR_LOG_FLUSH: When this variable is set, flush the log stream after
+                each log output (useful to get the latest logs in case
+                of crash, but this makes logging slower).
+MPFR_LOG_PREC:  Number of digits of the output (set the internal variable
+                mpfr_log_prec, default: 6).
+MPFR_LOG_LEVEL: Max recursive level (default: 7).
+
+MPFR_LOG_INPUT:    Log the input
+MPFR_LOG_OUTPUT:   Log the output
+MPFR_LOG_TIME:     Log the time spent inside the function.
+MPFR_LOG_INTERNAL: Log the intermediary variables if any.
+MPFR_LOG_MSG:      Log the messages sent by MPFR if any.
+MPFR_LOG_ZIV:      Log what the Ziv Loops do.
+MPFR_LOG_STAT:     Log how many times Ziv failed.
+MPFR_LOG_ALL:      Log everything
+
+Define them. Run your program, and view `mpfr.log`.
+
+For example, just define MPFR_LOG_ALL, run you program, and view `mpfr.log`.
+
+Note: The running time may be much longer. If logging is used on the
+test suite with a default timeout, it may be necessary to increase the
+timeout time by setting the environment variable MPFR_TESTS_TIMEOUT
+to the new timeout value in seconds (or 0 to disable the timeout).
+
+===========================================================================
+
+This feature is available only for gcc >= 3.0 and glibc >= 2.0.
+To achieve this, these macros have been added:
+
++++ MPFR_LOG_VAR(y)
+ Log a MPFR variable if requested (INTERNAL).
+ Example:
+   mpfr_t y;
+   MPFR_LOG_VAR (y);
+
++++ MPFR_LOG_MSG(x)
+ Log another message (a warning for example)
+Example:
+ MPFR_LOG_MSG (("WARNING: Unchecked code\n", 0));
+The 0 is here a dummy value, because there must be at least an argument
+after the format string.
+
++++ MPFR_LOG_BEGIN(x)
+ Add this macro at the beginning of a function.
+Example:
+ int dodo (mpfr_t x, mpfr_t op, int cnt, mpfr_rnd_t rnd) {
+  [decl]
+  MPFR_LOG_BEGIN (("op[%Pd]=%.*Rg rnd=%s",
+                    mpfr_get_prec(op), mpfr_log_prec, op, RND2STR(rnd)));
+
++++ MPFR_LOG_END(x)
+ Add this macro at the end of a function.
+Example:
+ MPFR_LOG_END (("x[%Pd]=%.*Rg i=%d", mpfr_get_prec (x), mpfr_log_prec, x, i));
+ return i;
+}
+
++++ MPFR_LOG_FUNC (begin,end)
+  Add this macro at the beginning of a function. It does
+the same job as MPFR_LOG_BEGIN and MPFR_LOG_END but it is smatter
+since it intercepts the return itself to put the end statement.
+Example
+ MPFR_LOG_FUNC (
+    ("op[%Pd]=%.*Rg rnd=%d", op, mpfr_get_prec (op), mpfr_log_prec, op),
+    ("x[%Pd]=%.*Rg inexact=%d", mpfr_get_prec (x), mpfr_log_prec, x, i));
+
+
+The double brackets "((" and "))" are needed since MPFR must still
+compile with non GNU compiler, so Macros with variable # of args
+are not allowed.
+
+It uses the extension of the mpfr_printf function: %Rf to display a mpfr_t.
+%Ru is used to display the precision of a mpfr_t.
+It uses some extended attributes of GCC (constructor, etc.) to achieve
+its goals too.
+
+===========================================================================
+
+ZivLoop Controller
+
+Ziv strategy is quite used in MPFR. In order to factorize the code, you
+could use these macros:
+
++++ MPFR_ZIV_DECL(_x)
+ Declare a ZivLoop controller
+
++++ MPFR_ZIV_INIT(_x, _prec)
+ Init a ZivLoop controller according to the initial value of _prec.
+
++++ MPFR_ZIV_NEXT(_x, _prec)
+ Increase the precision _prec according to the ZivLoop controller.
+
++++ MPFR_ZIV_FREE(_x)
+ Free the ZivLoop controller.
+
+===========================================================================
+
+If you plan to add a new function, you could follow this schema:
+
+int
+mpfr_toto (mpfr_ptr rop, mpfr_srcptr op, mpfr_rnd_t rnd)
+{
+  [Declare all used variables]
+  int inexact;
+  mpfr_prec_t prec;
+  MPFR_ZIV_DECL (loop);
+  MPFR_SAVE_EXPO_DECL (expo);
+
+  /* Log it if requested */
+  MPFR_LOG_BEGIN
+    (("op[%Pd]=%.*Rg rnd=%d", mpfr_get_prec (op), mpfr_log_prec, op, rnd),
+     ("rop[%Pd]=%.*Rg inexact=%d",
+       mpfr_get_prec (rop), mpfr_log_prec, rop, inexact));
+
+  /* First deal with particular cases */
+  if (MPFR_UNLIKELY (MPFR_IS_SINGULAR (op)))
+    {
+      if (MPFR_IS_NAN (op))
+        {
+         MPFR_SET_NAN (rop);
+         MPFR_RET_NAN;
+        }
+      else if (MPFR_IS_INF (op))
+        {
+         [Code to deal with Infinity]
+        }
+      else
+        {
+          MPFR_ASSERTD (MPFR_IS_ZERO (op));
+          [Code to deal with Zero]
+        }
+    }
+  [Other particular case: For example, op<0 or op == 1]
+
+  [Compute the first estimation of the used precision `prec`]
+  [Initialize the intermediate variables using mpfr_init2]
+  MPFR_SAVE_EXPO_MARK (expo);            /* Maximal range for exponent */
+
+  MPFR_ZIV_INIT (loop, prec);            /* Initialize the ZivLoop controller */
+  for (;;)                               /* Infinite loop */
+    {
+      [Compute an estimation of the function and]
+      [an estimate of the error.]
+      if (MPFR_CAN_ROUND (...))          /* If we can round, quit the loop */
+        break;
+      MPFR_ZIV_NEXT (loop, prec);        /* Increase used precision */
+      [Use `mpfr_set_prec` to resize all needed intermediate variables]
+    }
+  MPFR_ZIV_FREE (loop);                  /* Free the ZivLoop Controller */
+
+  inexact = mpfr_set (rop, temp, rnd);   /* Set rop to the computed value */
+  [Clear all intermediate variables]
+
+  MPFR_SAVE_EXPO_FREE (expo);            /* Restore exponent range */
+  return mpfr_check_range (rop, inexact, rnd);  /* Check range and quit */
+}
+
+Make sure that Ziv loops cannot increase the precision forever because of
+internal exception. Otherwise one gets either a segmentation fault (with
+limited stack size) or an assertion failure (with unlimited stack size,
+e.g. with "make check").
+
+Do not use code with side effects inside MPFR_ASSERTD or MPFR_ASSERTN,
+as assertion checking can be disabled. If a variable is set only to test
+it in an MPFR_ASSERTD expression, the MPFR_DBGRES macro should be used
+with the assignment as its argument, e.g.
+  int inex;
+  MPFR_DBGRES (inex = mpfr_set (y, x, rnd));
+  MPFR_ASSERTD (inex == 0);
+
+Exception handling (overflow/underflow in particular):
+  * Warning: To detect exceptions and/or possible error loss due to
+    internal exceptions, testing whether some variable is singular with
+    MPFR_IS_SINGULAR is generally not sufficient! Indeed, in case of
+    overflow (resp. underflow), the value may be rounded (in absolute
+    value) to the largest finite number (resp. to the smallest non-zero
+    number, possible even in round-to-nearest mode).
+  * The MPFR_BLOCK* macros can be useful, e.g.
+      {
+        MPFR_BLOCK_DECL (flags);
+        /* ... */
+        MPFR_BLOCK (flags, /* expression or statements */)
+        /* ... */
+        if (MPFR_OVERFLOW (flags))
+          { /* case of overflow in expression or statements */ }
+        /* ... */
+      }
+    See mpfr-impl.h (search for MPFR_BLOCK) for more information.
+
+===========================================================================
+
+If you plan to add a new threshold in MPFR which could be tuned,
+you should add its default value in the file `mparam_h.in'. When the
+script configure finishes, it creates the file `mparam.h' from `mparam_h.in'.
+
+Then you needs to modify the program `tuneup.c' to allow it to compute
+the new threshold. If it is a classical threshold (not complex), you could
+use this method (example of mpfr_exp):
+
+/* Define the threshold as a variable instead of a constant */
+mpfr_prec_t mpfr_exp_threshold;
+#undef  MPFR_EXP_THRESHOLD
+#define MPFR_EXP_THRESHOLD mpfr_exp_threshold
+/* Include the test function to threshold directly in the test
+   program. It will override the mpfr_exp coming from libmpfr.a */
+#include "exp.c"
+/* Define the speed function related to mpfr_exp */
+static double speed_mpfr_exp (struct speed_params *s) {
+  SPEED_MPFR_FUNC (mpfr_exp);
+}
+
+Then in the function `all', you will have to call the tune function,
+and write the new THRESHOLD in the file `mparam.h':
+
+  /* Tune mpfr_exp */
+  if (verbose)
+    printf ("Tuning mpfr_exp...\n");
+  tune_simple_func (&mpfr_exp_threshold, speed_mpfr_exp);
+  fprintf (f, "#define MPFR_EXP_THRESHOLD %lu\n",
+           (unsigned long) mpfr_exp_threshold);
+
+More complex tuning is possible but needs special attention.
+
+===========================================================================
+
+MPFR uses many macros, thus finding where an error occurs exactly may
+be difficult when it is in some macro expansion. For GCC users, a new
+experimental -ftrack-macro-expansion option has been added in GCC 4.7.
+"It allows the compiler to emit diagnostic about the current macro
+expansion stack when a compilation error occurs in a macro expansion."
+<https://gcc.gnu.org/gcc-4.7/changes.html>
+
+===========================================================================
+
+Bit Twiddling Hacks - Sean Eron Anderson maintain a list of tricks to get
+efficient code on <https://graphics.stanford.edu/~seander/bithacks.html>.
+WARNING: some of those tricks may not take into account possible overflows,
+and may not be portable.
+
+===========================================================================
+
+MPFR manual (mpfr.texi):
+  * Use "significand", not "mantissa".
+  * Use "decimal-point character" (as in ISO C) when the meaning is
+    the corresponding character ("." or ",", depending on the locale),
+    not "decimal point", "decimal separator", "fractional point", or
+    "radix point" (the latter is fine with a mathematical meaning).
+    This is just the name of this character (as originally defined
+    for base 10) and does not imply a number written in decimal.
+    Note: POSIX uses the term "radix character".
+  * Use "@minus{}" for the minus character, not "-".
+  * Warning! Texinfo is not like TeX. Whitespace is preserved in the
+    info file. So, do not use additional space for .texi indentation.
+    This also means that you need to care about the typography. Please
+    read Section "Inserting Space" in the Texinfo manual.
+  * Follow the English typography (no space before punctuation marks,
+    double space after a period, etc.), not the French one.
+
+The MPFR manual in DVI/PS/PDF formats should have an a4 papersize, as
+declared in mpfr.texi (@afourpaper command). The DVI file format (.dvi)
+traditionally does not contain papersize information, which has two
+consequences:
+  * When viewing a .dvi file, one gets the papersize from global settings,
+    which may differ from the papersize declared in the mpfr.texi file.
+    In particular, a4 text on letter paper can be truncated, depending on
+    the margins.
+  * Since the .ps file is built from the .dvi file and makeinfo does not
+    provide the papersize information to the dvips command, the .ps file
+    can get a wrong papersize, depending on the settings on the machine
+    where this file is generated. Papersize information should be checked
+    before distributing the .ps file.
+Nowadays, .dvi files can contain papersize information via "specials",
+and texinfo.tex has been updated to include such information. However,
+the interpretation of such data is based on a common agreement between
+drivers rather on a standard. In short, the papersize issues should no
+longer appear, but this should be checked manually. The bug report:
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=874632
+
+===========================================================================
+
+Running "make" outputs a lot of information, and warnings are not very
+visible. The following tool "eet" allows a copy of warning messages to
+be output to a different window (e.g. xterm or zenity):
+
+  https://www.vinc17.net/unix/#eet
+
+Direct link to the tarball: https://www.vinc17.net/unix/eet.tar.xz
+
+===========================================================================
+
+Be careful when avoiding "'var' may be used uninitialized in this function"
+warnings from gcc. Initializing such variables to a dummy value has several
+drawbacks:
+  * this may prevent other tools (that do static or dynamic analysis) from
+    detecting bugs;
+  * this makes code maintenance more difficult (e.g. when modifying the
+    code, one may more easily forget a real initialization);
+  * this makes the compiler add useless code (though this should not be
+    significant).
+
+The INITIALIZED macro can be used to avoid such warnings with gcc, e.g.
+
+  int INITIALIZED(i);
+
+It uses the "int i = i;" pseudo-initialization trick, disabled with other
+compilers as this is undefined behavior. See:
+
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=36296
+
+If a dummy initialization must be added, use preferably an "invalid" value
+(e.g. NULL for pointers, or a value that can be checked with MPFR_ASSERTN
+before using it) that could make the program abort instead of returning an
+incorrect value in case of a bug in MPFR.
+
+===========================================================================
+
+Avoid mixing signed and unsigned integer types, as this can lead signed
+types to be automatically converted into unsigned types (usual arithmetic
+conversions). If such a signed type contains a negative value, the result
+may be incorrect on some platforms. With MPFR 2.x, this problem could
+arise with mpfr_exp_t, which is signed, and mpfr_prec_t (mp_prec_t),
+which was unsigned (it is now signed), meaning that in general, a cast
+of a mpfr_prec_t to a mpfr_exp_t was needed.
+
+Note that such bugs are difficult to detect because they may depend on
+the platform (e.g., on LP64, 32-bit unsigned int + 64-bit long will give
+a signed type, but on ILP32, 32-bit int + 32-bit unsigned long will give
+an unsigned type, which may not be what is expected), but also on the
+input values. So, do not rely on tests very much. However, if a test
+works on 32 bits but fails on 64 bits in the extended exponent range
+(or conversely), the cause may be related to the integer types (e.g. a
+signness problem or an integer overflow due to different type sizes).
+
+For instance, in MPFR, such issues were fixed in r1992 and r5588.
+
+An example that will fail with 32-bit int and long:
+
+    long long umd(void)
+    {
+      long a = 1;
+      unsigned int b = 2;
+      return a - b;
+    }
+
+When creating a new variable that will always contain non-negative values,
+it is generally better to define it as a signed type if it may be used in
+an arithmetic expression. The exceptions are when the value is seen as an
+array of bits (e.g. for limbs) and to temporarily avoid integer overflow.
+
+===========================================================================
+
+To use features related to types larger than type long, "mpfr-intmax.h"
+must be included before "mpfr-impl.h".
+
+The intmax_t and uintmax_t types can be used only if _MPFR_H_HAVE_INTMAX_T
+is defined. In this case, the printf / gmp_printf length specifier "j" can
+be used only when NPRINTF_J is not defined.
+
+For internal use, mpfr-intmax.h also unconditionally defines mpfr_intmax_t,
+mpfr_uintmax_t, MPFR_UINTMAX_MAX, MPFR_INTMAX_MAX, MPFR_INTMAX_MIN and
+the corresponding length specifier MPFR_INTMAX_FSPEC.
+
+Warning! mpfr_intmax_t may be smaller than intmax_t if NPRINTF_J is defined.
+
+===========================================================================
+
+Use mpfr_prec_t and mpfr_rnd_t instead of the old types mp_prec_t and
+mp_rnd_t. Similarly, use mpfr_exp_t instead of GMP's mp_exp_t type
+(unless you really want mp_exp_t, e.g. for conversions with mpf; but
+you must not assume that mpfr_exp_t and mp_exp_t are identical).
+
+===========================================================================
+
+How to specify (for reading) the minimum exponent or the maximum exponent
+in the MPFR source depends on the context.
+
+1. The most portable form is mpfr_get_emin() and mpfr_get_emax(). In
+   the MPFR source, this is equivalent to __gmpfr_emin and __gmpfr_emax
+   respectively (macros are defined in mpfr-impl.h; the only difference
+   is that the macros do not evaluate to a lvalue).
+
+2. If the exponent range has been extended, you can use the constants
+   MPFR_EMIN_MIN and MPFR_EMAX_MAX instead. This will be faster if TLS
+   is enabled. It also avoids a bug on some Linux/Sparc machines with
+   some GCC versions and TLS, but this shouldn't be the primary concern,
+   as this might be the other way round on some other machines. This is
+   the most common context.
+
+3. If you want the minimum and maximum possible exponent values supported
+   by MPFR, use MPFR_EMIN_MIN and MPFR_EMAX_MAX respectively.
+
+4. If you want the minimum and maximum values supported by the mpfr_exp_t
+   type (i.e. the limits of this type), use MPFR_EXP_MIN and MPFR_EXP_MAX
+   respectively. This may be useful for intermediate computations on the
+   exponents.
+
+More on exponent handling:
+
+* The mpfr_exp_t type has at least 32 bits since it must contain the
+  default exponent range.
+
+* The range of valid exponents is defined so that if a and b are two
+  valid exponents (i.e. between MPFR_EMIN_MIN and MPFR_EMAX_MAX), then
+  ± a ± b ± 1 fits in a mpfr_exp_t.
+
+* The unsigned type corresponding to mpfr_exp_t is mpfr_uexp_t. It may be
+  useful if the considered values are non-negative and don't necessarily
+  fit in mpfr_exp_t. To convert a non-negative mpfr_exp_t to mpfr_uexp_t,
+  you should use the MPFR_UEXP macro, which is defined as:
+    #define MPFR_UEXP(X) (MPFR_ASSERTD ((X) >= 0), (mpfr_uexp_t) (X))
+
+* If a mpfr_exp_t appears in arithmetic expressions together with ISO C90
+  types int and/or long, computations must be done with the largest type,
+  which is provided by mpfr_eexp_t.
+
+* If a mpfr_exp_t needs to be converted from or to a MPFR number, the
+  mpfr_set_exp_t or mpfr_get_exp_t macro should be used.
+
+* If a mpfr_exp_t needs to be converted into a character string with a
+  formatted output function (fprintf, printf, sprintf), the mpfr_eexp_t
+  type should be used, together with the MPFR_EXP_FSPEC specifier, e.g.
+
+    printf ("%" MPFR_EXP_FSPEC "d", (mpfr_eexp_t) exponent);
+
+For implementation details, see the mpfr.h and mpfr-impl.h files.
+
+===========================================================================
+
+Be careful that the ternary value (a.k.a. "inexact") is not guaranteed
+to be -1, 0, or 1, in general (for some functions, the exact value may
+contain other information, such as midpoint cases with MPFR_EVEN_INEX),
+and the exact behavior may change in the future. So, it is not correct
+to multiply ternary values returned by arbitrary functions as this may
+overflow.
+
+To work with ternary values, mpfr-impl.h provides the following macros:
+
+#define SIGN(I) ((I) < 0 ? -1 : (I) > 0)
+#define SAME_SIGN(I1,I2) (SIGN (I1) == SIGN (I2))
+
+===========================================================================
+
+Because of a bug in the Mac OS X 10.5 linker, avoid tentative definitions
+(C99, 6.9.2). Depending on the context, use either a simple declaration
+(with the "extern" storage-class specifier) or an external definition.
+This is also cleaner.
+
+===========================================================================
+
+In case of detected internal error, do not use printf() and exit().
+Use assertions (MPFR_ASSERTN) instead.
+
+===========================================================================
+
+The only compiler known to support _Decimal64 and _Decimal128 is GCC.
+In code related to these types, when the decimal encoding can be BID,
+do not use any conversion between binary and decimal types, otherwise
+GCC will generate from 2 to 3 MB of code (depending on the GCC version)
+in the MPFR shared library when the encoding is BID:
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96173
+  https://gforge.inria.fr/tracker/index.php?func=detail&aid=21849&group_id=136&atid=619
+
+===========================================================================
+
+When using GNU extensions (based on the value of the __GNUC_* macros), check
+whether they work with ICC. The following paper can give useful information:
+"Intel® Compilers for Linux*: Compatibility with GNU Compilers" at
+  https://www.intel.com/content/www/us/en/content-details/686146/intel-c-compiler-compatibility-with-gnu-gcc-compiler-for-linux.html
+
+Direct link to the PDF file:
+  https://cdrdv2.intel.com/v1/dl/getContent/686146?fileName=gnu-icc-compatibility-v03.pdf
+
+To detect compilers, see
+  https://sourceforge.net/p/predef/wiki/Compilers/
+
+===========================================================================
+
+Note about the formally proven code (src/*_extracted.c):
+
+The code has been proven with types of fixed width (due to a limitation
+of the F*/KreMLin proof system). Thus this code may be used only under
+some conditions, so that MPFR enables it only under such conditions via
+a #if, e.g. in add1sp.c:
+
+#if defined(MPFR_WANT_PROVEN_CODE) && GMP_NUMB_BITS == 64 && \
+  UINT_MAX == 0xffffffff && MPFR_PREC_BITS == 64 && \
+  _MPFR_PREC_FORMAT == 3 && _MPFR_EXP_FORMAT == _MPFR_PREC_FORMAT
+
+which implies that the #define's in add1sp1_extracted.c
+
+#define int32_t int
+#define int64_t long
+#define uint32_t unsigned int
+#define uint64_t mp_limb_t
+
+are correct.
+
+Be careful with any attempt to reuse the code in a more general context,
+e.g. by removing these #define's and just assuming that the prototypes
+match the ABI. There is another implicit requirement: uint64_t must be
+at least as large as unsigned int. Otherwise the code may become incorrect
+due to integer promotions. The issue of integer promotions about intN_t vs
+int has been mentioned in
+
+  https://gcc.gnu.org/pipermail/gcc/2021-November/237726.html
+
+===========================================================================
+
+For configure tests, use AC_LINK_IFELSE rather than AC_COMPILE_IFELSE,
+which is broken by design. The reason is that some errors just produce
+a warning (which is not a bug from the compiler: in ISO C terminology,
+this corresponds to a diagnostic, and the compilation is allowed to
+succeed), and this is unfixable in a portable way.
+
+===========================================================================
+
+Shell portability
+-----------------
+
+Shell commands (in /bin/sh scripts, in Makefile and autotools related
+files...) need to be valid in POSIX shells, but also in Bourne shells
+(for instance, /bin/sh under Solaris is a Bourne shell).
+
+In particular:
+
+* Do not use $(...) but `...` (backticks).
+
+* Be careful that quote nesting with backticks such as "`cmd "$foo"`"
+  is not portable:
+
+    https://unix.stackexchange.com/q/387246/74516
+    ("quotes inside backticks inside quotes in ksh")
+
+  But the external quotes are not needed when assigning to a variable:
+
+    out=`cmd "$foo"`
+
+  Otherwise one can write "`cmd \"$foo\"`".
+
+===========================================================================
+
+Makefile portability
+--------------------
+
+Due to the various "make" implementations, the "make" rules must follow
+the POSIX standard:
+  https://pubs.opengroup.org/onlinepubs/9799919799/utilities/make.html
+
+The GNU Autoconf manual has a chapter "Portable Make Programming".
+
+The Makefile.am files in the directories distributed with MPFR have
+a .POSIX special target to ensure POSIX behavior. However, Automake
+(at least for versions up to 1.16.5) adds non-comment lines before
+this target in the generated Makefile files; it is not clear whether
+this matters for any "make" implementation, though. About this issue,
+see <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=55025>.
+
+Note: This .POSIX special target is needed for "GNU make". But because of
+the Automake issue, it might also break rules (e.g. if "make" redefines
+variables when it reaches the .POSIX special target). The AIX "make"
+command outputs a warning
+  warning: .POSIX directive is not first non-comment line.
+but it behaves as wanted.
+
+Be careful with "make" bugs related to errors in shell commands:
+  https://debbugs.gnu.org/cgi/bugreport.cgi?bug=55025#24
+
+Corresponding bug report for GNU make:
+  https://savannah.gnu.org/bugs/index.php?63667
+
+So, do not use the '-' prefix or the .IGNORE special target.
+
+===========================================================================
+
+About the test suite
+--------------------
+
+When adding a test file for a new function (say mpfr_func), you can use
+the following prototype tfunc.c (to put in the directory 'tests').
+This file performs random tests for values of x between -5 and 5, with
+a precision varying from 2 to 100.
+
+You can add your own tests to this basic file. When adding the expected
+result, do NOT use the one obtained from the MPFR function! Otherwise,
+if this function is buggy, the test will be wrong and the function will
+remain buggy. For random tests, avoid mpfr_urandomb as its values are
+not truly random due to how it is specified (if the exponent is less
+than 0, some of the trailing bits will necessarily be 0).
+
+Do not forget to add 'tfunc' in the variable check_PROGRAMS
+of the tests/Makefile.am file.
+
+/* Test file for mpfr_func.
+
+Copyright 2025 Free Software Foundation, Inc.
+Contributed by the Pascaline and Caramba projects, INRIA.
+
+This file is part of the GNU MPFR Library.
+
+The GNU MPFR Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+The GNU MPFR Library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with the GNU MPFR Library; see the file COPYING.LESSER.
+If not, see <https://www.gnu.org/licenses/>. */
+
+#include "mpfr-test.h"
+
+#define TEST_FUNCTION mpfr_func
+#define TEST_RANDOM_EMIN -5
+#define TEST_RANDOM_EMAX 5
+#include "tgeneric.c"
+
+int
+main (int argc, char *argv[])
+{
+  tests_start_mpfr ();
+
+  test_generic (2, 100, 100);
+
+  tests_end_mpfr ();
+  return 0;
+}
+
+   ---------------------------------------------------------------------
+
+Here is how the test suite works since the full Automake 1.13 support
+(merge of the vl-am113 branch in r8821).
+
+The tests_start_mpfr function, which should be called at the beginning
+of each test program (unless nothing is tested and main() just contains
+"return 77;"), starts by calling the test_version function, whose goal
+is to do various header/library version checks of GMP and MPFR. In case
+of mismatch between a header and a library, an error message is output
+("make check" will redirect it to a log file). Then there are 3 cases:
+
+1. An error in the MPFR version check is a fatal error: test_version()
+   exits with an error (exit status = 1). The reason is that a different
+   MPFR library (somewhere in some library search path) would probably
+   be tested, so that the results of the test would be meaningless.
+
+2. An error in the GMP version check is a non-fatal error: if there are
+   no errors in MPFR version check, test_version() returns with value 1.
+   However, the tversion test program will regard this as a fatal error
+   (thus "make check" will fail). The probable reason of the mismatch is
+   that the GMP library has been upgraded while the MPFR test suite has
+   not been rebuilt; otherwise there is probably something wrong in the
+   GMP installation.
+
+3. Otherwise test_version() returns with value 0 (everything is fine).
+
+Note: The tests_start_mpfr function does a setbuf on stdout to disable
+buffering. As a consequence, no operations on stdout (such as printf)
+must be done before this function is called.
+
+With Automake 1.13+, the tests are run in parallel if a -j make option
+is used. In case of failure, information can be found in the log file
+of each failed test program and in the global tests/test-suite.log file
+(which is output automatically if the VERBOSE environment variable is
+set to 1). If no tests fail, then the tests/tversion.log file is output
+after the "testsuite summary"; it contains various useful information
+about the MPFR build.
+
+To use a wrapper to run the tests, such as valgrind or wine, define
+LOG_COMPILER, e.g.:
+  LOG_COMPILER="valgrind -q --error-exitcode=1 --leak-check=full" make check
+  LOG_COMPILER=wine make check
+
+More information about the parallel test harness:
+https://www.gnu.org/software/automake/manual/automake.html#Parallel-Test-Harness
+
+   ---------------------------------------------------------------------
+
+In the tests, do not use `mpfr_set_d` (except when testing it), as the
+result will depend on the floating-point arithmetic of the system;
+this has shown many problems in the past and problems may still occur
+with new systems. Use `mpfr_set_si` or `mpfr_set_str` instead.
+
+To check the result of some function, use mpfr_equal_p rather than
+mpfr_cmp, as mpfr_cmp will return 0 (equality) if the result is NaN.
+
+Do not use functions that need optional features (except in a context
+where such features are required). For instance, the mpfr_printf-like
+functions need <stdarg.h> (HAVE_STDARG defined), thus should not be
+used, except for testing them.
+
+For temporary result files created by test programs, choose a unique
+filename to avoid conflicts in parallel tests. To ensure that, the
+filename should start with the name of the test program (for instance,
+"tfprintf_out.txt" for tfprintf.c). Add the filename to CLEANFILES in
+the tests/Makefile.am file.
+
+In case of failure of a test, freeing the memory explicitly before exiting
+is not necessary. We do this in case of success just to be able to detect
+memory leaks in MPFR.
+
+Also, try to make sure that the tests run against previous MPFR versions,
+possibly by disabling some tests with code like
+
+  #if MPFR_VERSION >= MPFR_VERSION_NUM(2,3,0)
+
+It is possible to check out the tests from a branch, e.g. master, with
+
+  git checkout master -- tests/
+
+But to avoid the update of tests/Makefile.am with new tests, which
+would probably fail as these new tests are typically written for new
+MPFR functions, the following may be better:
+
+  git checkout master -- 'tests/*.c' 'tests/*.h'
+
+Note that (as seen with "git status") since the corresponding changes are
+put in the index and there is no intent to commit, you should also do
+
+  git restore --staged tests
+
+   ---------------------------------------------------------------------
+
+Test function-like macros associated with functions
+  * for side effects in argument evaluation (arguments must always be
+    evaluated once);
+  * for support of types that would be eligible to implicit type conversion
+    with the function. Be careful: C and C++ have different rules.
+
+Support "gcc -Werror=c++-compat" and g++, possibly with -DMPFR_USE_NO_MACRO
+in CFLAGS. The following was added to mpfr-test.h:
+
+#if defined (__cplusplus)
+#define VOIDP_CAST(X) (X)
+#else
+#define VOIDP_CAST(X) ((void *) (X))
+#if defined (__GNUC__)
+#define IGNORE_CPP_COMPAT
+#endif
+#endif
+
+For instance, in tcopysign.c, since mpfr_copysign is implemented both as
+a function and as a function-like macro:
+
+  int a = 0, b = 0, c = 0;
+[...]
+#ifdef IGNORE_CPP_COMPAT
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++-compat"
+#endif
+      mpfr_copysign ((a++, VOIDP_CAST(z)),
+                     (b++, VOIDP_CAST(p)),
+                     (c++, VOIDP_CAST(y)), rnd_mode);
+#ifdef IGNORE_CPP_COMPAT
+#pragma GCC diagnostic pop
+#endif
+      MPFR_ASSERTN (a == 1);
+      MPFR_ASSERTN (b == 1);
+      MPFR_ASSERTN (c == 1);
+
+   ---------------------------------------------------------------------
+
+To check the coverage of the test suite, you can use gcov.
+To get accurate information, do not enable optimizations.
+
+   ./configure CFLAGS="--coverage"
+   make clean
+   make check
+   find . -name '*.c' -exec gcov '{}' ';' | grep "lines executed" | sort
+
+For each source file, there is a .c.gcov file which contains much more
+information.
+
+Another solution is to run the script 'coverage' within the 'tools' directory.
+
+   ---------------------------------------------------------------------
+
+To run the MPFR test suite under valgrind, you may need to do several
+things.
+
+First, as the running time is much longer than usual, you should not use
+the --enable-tests-timeout configure option, or set the timeout value to
+a large value; this can be done at run time, e.g. with
+
+  export MPFR_TESTS_TIMEOUT=0
+
+to disable the timeout, so that you do not need to rebuild MPFR for
+this purpose.
+
+Then just set the LOG_COMPILER environment variable to something like
+
+  valgrind -q --error-exitcode=1 --leak-check=full
+
+before running "make check", or type directly:
+
+  LOG_COMPILER="valgrind -q --error-exitcode=1 --leak-check=full" make check
+
+NOTE: with the new tests/Makefile.am file, the following is obsolete;
+but it might still be useful under some occasions, e.g. if all the
+valgrind output needs to be sent to a single file.
+
+Before running valgrind, you should run "make check" a first time so
+that everything is compiled out of valgrind.
+
+Then you need the --trace-children=yes valgrind option (a possible
+exception is when you run an individual test that has been built
+statically). The reason is that libtool generates wrapper scripts
+to link the tests against the right libraries. The drawback is that
+you will get valgrind output for all the processes, including the
+shell commands from the wrapper scripts (the --trace-children-skip
+valgrind option will not allow you to filter every unwanted process).
+But you can filter the output with:
+
+  sed -n '/= Command: [^ ]*\/\.libs\/lt-/,/= ERROR SUMMARY:/p'
+
+For readability, you should redirect the valgrind output to a file.
+You can use --log-file, but due to --trace-children=yes, you need
+the %p format specifier in the filename argument to generate a file
+for each child; however, many files will be generated, and it may be
+better to use the following method to get a single file:
+
+  valgrind --trace-children=yes --log-fd=3 make check 3> vg.out
+
+then
+
+  sed -n '/= Command: [^ ]*\/\.libs\/lt-/,/= ERROR SUMMARY:/p' vg.out
+
+to get only the valgrind output corresponding to the MPFR tests.
+
+Or if your shell supports it, you can use a process substitution
+to filter the valgrind output directly to a file, e.g. with bash
+or zsh:
+
+  valgrind --trace-children=yes --log-fd=3 make check 3> >(sed -n \
+    '/= Command: [^ ]*\/\.libs\/lt-/,/= ERROR SUMMARY:/p' > vg.out)
+
+if you do not mind about the buffering delays.
+
+   ---------------------------------------------------------------------
+
+NOTE: with "AM_LDFLAGS = -no-install" in tests/Makefile.am, the following
+is obsolete, as libtool no longer generates wrapper scripts; but it is left
+here in case negative effects of "AM_LDFLAGS = -no-install" are seen or for
+users with a special setup.
+
+To debug some test program, e.g. tadd, with gdb, you cannot run "gdb tadd"
+since libtool has generated a wrapper script to link the program against
+the correct MPFR library. Instead, run:
+
+  libtool --mode=execute gdb tadd
+
+Alternatively, something like
+
+  LD_PRELOAD=../src/.libs/libmpfr.so gdb .libs/tadd
+
+may also work (example for GNU/Linux).
+
+Note: for test programs not listed in Makefile.am (check_PROGRAMS),
+libtool is not used (a static link against MPFR is done via LOADLIBES
+in Makefile.am), so that gdb should be used in the conventional way.
+You can use the following wrapper script to have a command that works
+with both:
+
+------------------------------------------------------------
+#!/bin/sh
+
+unset cmd
+case $1 in
+  -*) ;;
+  ?*) test "x$(head -c 2 "$1")" = 'x#!' && \
+      grep -q "^# Generated by libtool" "$1" && \
+      cmd="libtool --mode=execute" ;;
+esac
+
+exec $cmd gdb "$@"
+------------------------------------------------------------
+
+and
+
+  alias gdb='/path/to/the/wrapper/script'
+
+===========================================================================
+
+To cross-compile MPFR for i686-w64-mingw32 and test it under Wine:
+
+0. Install wine (at least the 32-bit version).
+
+1. Build and install GMP.
+
+In the GMP source directory:
+$ ./configure --host=i686-w64-mingw32 --disable-shared --prefix=...
+$ make
+$ make check LOG_COMPILER=wine
+$ make install
+
+Note: With MinGW earlier than v8.0.0, the -D__USE_MINGW_ANSI_STDIO option
+may be necessary in order to get an ISO-conforming printf as mentioned in
+MPFR's INSTALL file.
+
+2. Build and check MPFR.
+
+In the MPFR source directory:
+$ ./configure --host=i686-w64-mingw32 --disable-shared --with-gmp=...
+$ make
+$ make check LOG_COMPILER=wine
+
+In case of "module:import_dll Library ....dll ... not found" error, locate
+the dll file and set the WINEPATH environment variable to its directory.
+
+For instance, to use POSIX threads instead of win32 threads:
+$ ./configure --host=i686-w64-mingw32 --disable-shared --with-gmp=... \
+    CC=i686-w64-mingw32-gcc-posix
+$ make
+$ make check LOG_COMPILER="env WINEPATH=/usr/i686-w64-mingw32/lib wine"
+
+When abort() is called, wine returns with exit status 3. Since this value
+is not used by the MPFR tests, such an exit status probably means that an
+abort() was called somewhere.
+
+Note: Due to bugs in autoconf[1] and dash[2], the configure script
+may create files with a binary filename or have any other arbitrary
+behavior if /bin/sh is dash. The cause is that it tries to execute
+a MS Windows executable, which is interpreted as a shell script by
+dash (thus with random, meaningless commands).
+
+[1] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=850329
+[2] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=816313
+
+===========================================================================
+
+After a MPFR build, the list of GMP symbols used by this particular MPFR
+build can be obtained as follows:
+
+  nm -u src/.libs/libmpfr.so | sed -n 's/^ *U \(__gmp.*\)/\1/p'
+
+at least under Linux, the library name and the "nm" behavior being
+non-portable (adding the POSIX "-P" option may help, but there are
+still differences between platforms).
+
+Note that this list may depend on various parameters, such as the
+architecture and the compilation options.
+
+GMP internal symbols used by MPFR can be detected with the following
+shell command (just replace /path/to/gmp.h by the actual pathname):
+
+nm -u src/.libs/libmpfr.so | sed -n 's/^ *U \(__gmp.*\)/\1/p' | \
+while read s
+do
+  case $s in
+    __gmpn_*) regex="__MPN(${s#__gmpn_})" ;;
+    *)        regex="$s" ;;
+  esac
+  grep -q "^#define .* ${regex}$" /path/to/gmp.h || echo "Internal: $s"
+done
+
+A similar check can be done with "make check-gmp-symbols".
+
+One can also check that MPFR does not define exported symbols with a
+prefix outside "mpfr_" and "__gmpfr_" by using "nm -g" and filtering
+at least the "U" lines. But this can only be a manual check to avoid
+false positives. Checking that a GMP reserved prefix is not used can
+be done automatically, as with "make check-exported-symbols".
+
+===========================================================================
+
+To update the FAQ, checkout the misc directory of the repository root.
+Modify the faq.xhtml file and run
+
+  xsltproc --nodtdattr faq-web.xsl faq.xhtml > www/faq.html
+
+Check with "git diff" that this change has been done correctly (in case
+of incorrect installation of XML tools), validate the files with
+
+  xmllint --noout --loaddtd --valid faq.xhtml www/faq.html
+
+and if everything is OK (no error messages), commit both files.
+
+Update the FAQ.html file with update-faq in the doc directory of the
+MPFR master and supported release branches.
+
+===========================================================================
+
+Spelling:
+  * Some suggestions: https://gcc.gnu.org/codingconventions.html#Spelling
+  * Check with "codespell" (done by mpfrlint).
+
+===========================================================================
+
+Git:
+  * When creating a branch, add an associated <branch>-root tag on the
+    root commit (i.e. just before the first commit in the new branch).
+    This can be useful for commands like "git diff <branch>-root" to get
+    the commits done in the branch since its creation, and such tags are
+    used in tests/Makefile.am for output_info (Git information output by
+    "make check").

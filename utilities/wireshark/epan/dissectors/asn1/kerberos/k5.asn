@@ -116,7 +116,7 @@ PADATA-TYPE ::= INTEGER {
 	pA-PKU2U-NAME(148),		-- [PKU2U]
 	pA-REQ-ENC-PA-REP(149), 	-- [RFC6806]
 	pA-AS-FRESHNESS(150),		-- [RFC8070]
-	pA-SPAKE(151),			-- draft-ietf-kitten-krb-spake-preauth-09
+	pA-SPAKE(151),			-- [RFC9588]
 	pA-REDHAT-IDP-OAUTH2(152),	-- (pbrezina@redhat.com)
 	pA-REDHAT-PASSKEY(153),		-- (pbrezina@redhat.com)
 	pA-KERB-KEY-LIST-REQ(161), -- [MS-KILE]
@@ -315,9 +315,15 @@ ERROR-CODE ::= INTEGER {
 	eRR-REVOCATION-STATUS-UNAVAILABLE(74),
 	eRR-CLIENT-NAME-MISMATCH(75),
 	eRR-KDC-NAME-MISMATCH(76),
+	eRR-INCONSISTENT-KEY-PURPOSE(77),
+	eRR-DIGEST-IN-CERT-NOT-ACCEPTED(78),
+	eRR-PA-CHECKSUM-MUST-BE-INCLUDED(79),
+	eRR-DIGEST-IN-SIGNED-DATA-NOT-ACCEPTED(80),
+	eRR-PUBLIC-KEY-ENCRYPTION-NOT-SUPPORTED(81),
 	eRR-IAKERB-KDC-NOT-FOUND(85),
 	eRR-IAKERB-KDC-NO-RESPONSE(86),
-	eRR-KDC-MORE-PREAUTH-DATA-REQUIRED(91)
+	eRR-KDC-MORE-PREAUTH-DATA-REQUIRED(91),
+	eRR-NO-ACCEPTABLE-KDF(100)
 }
 
 -- this is sugar to make something ASN1 does not have: unsigned
@@ -996,6 +1002,22 @@ Verifier-MAC         ::= SEQUENCE {
       kvno           [1] UInt32 OPTIONAL,
       enctype        [2] Int32 OPTIONAL,
       mac            [3] Checksum
+}
+
+END
+
+-- draft-ietf-kitten-iakerb-03, Section 4.
+IAKERB DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+IMPORTS
+    Checksum
+        FROM KerberosV5Spec2 { iso(1) identified-organization(3)
+            dod(6) internet(1) security(5) kerberosV5(2)
+            modules(4) krb5spec2(2) };
+
+IAKERB-FINISHED ::= SEQUENCE {
+    gss-mic [1] Checksum,
+    ...
 }
 
 END

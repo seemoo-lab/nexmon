@@ -21,6 +21,10 @@
  * pcap-util.h - common code for various files
  */
 
+#ifndef pcap_util_h
+#define pcap_util_h
+
+#include <pcap/pcap-inttypes.h>
 /*
  * We use the "receiver-makes-right" approach to byte order;
  * because time is at a premium when we are writing the file.
@@ -37,15 +41,74 @@
  *
  * ntoh[ls] aren't sufficient because we might need to swap on a big-endian
  * machine (if the file was written in little-end order).
+ *
+ * These macros are used to generate case labels in switch statements,
+ * so they can't be done as inline functions, and, when passed a
+ * compile-time constant argument, must produce a compile-time constant
+ * result.  This means that they must either use builtin functions that
+ * are recognized by the compiler as producing constant results when
+ * passed a constant argument, or must be done with expressions that
+ * evaluate to compile-time constants when passed a compile-time
+ * constant.
+ *
+ * (In practical terms, to define HAVE_BUILTIN_BSWAPnn it is sufficient to
+ * verify that respective builtin can be used as a case label in a switch
+ * statement.)
+ *
+ * Newer versions of GCC, Clang, Visual Studio C/C++, and possibly
+ * some other compilers recognize the expressions as byte-swapping
+ * idioms and generate optimized machine-specific code for architectures
+ * that include instructions that can be used to swap bytes.
  */
-#define	SWAPLONG(y) \
-    (((((u_int)(y))&0xff)<<24) | \
-     ((((u_int)(y))&0xff00)<<8) | \
-     ((((u_int)(y))&0xff0000)>>8) | \
-     ((((u_int)(y))>>24)&0xff))
-#define	SWAPSHORT(y) \
-     ((u_short)(((((u_int)(y))&0xff)<<8) | \
-                ((((u_int)(y))&0xff00)>>8)))
+#ifdef HAVE_BUILTIN_BSWAP64
+#define PCAP_BSWAP_64(y) __builtin_bswap64((uint64_t)(y))
+#else
+#define PCAP_BSWAP_64(y) \
+    ((uint64_t)(((((uint64_t)(y)) & UINT64_C(0xff00000000000000)) >> 56) | \
+                ((((uint64_t)(y)) & UINT64_C(0x00ff000000000000)) >> 40) | \
+                ((((uint64_t)(y)) & UINT64_C(0x0000ff0000000000)) >> 24) | \
+                ((((uint64_t)(y)) & UINT64_C(0x000000ff00000000)) >> 8)  | \
+                ((((uint64_t)(y)) & UINT64_C(0x00000000ff000000)) << 8)  | \
+                ((((uint64_t)(y)) & UINT64_C(0x0000000000ff0000)) << 24) | \
+                ((((uint64_t)(y)) & UINT64_C(0x000000000000ff00)) << 40) | \
+                ((((uint64_t)(y)) & UINT64_C(0x00000000000000ff)) << 56)))
+#endif // 64-bit
+
+#ifdef HAVE_BUILTIN_BSWAP32
+#define PCAP_BSWAP_32(y) __builtin_bswap32((uint32_t)(y))
+#else
+#define PCAP_BSWAP_32(y) \
+    ((uint32_t)(((((uint32_t)(y)) & UINT32_C(0xff000000)) >> 24) | \
+                ((((uint32_t)(y)) & UINT32_C(0x00ff0000)) >> 8)  | \
+                ((((uint32_t)(y)) & UINT32_C(0x0000ff00)) << 8)  | \
+                ((((uint32_t)(y)) & UINT32_C(0x000000ff)) << 24)))
+#endif // 32-bit
+
+#ifdef HAVE_BUILTIN_BSWAP16
+#define PCAP_BSWAP_16(y) __builtin_bswap16((uint16_t)(y))
+#else
+#define PCAP_BSWAP_16(y) \
+    ((uint16_t)(((((uint16_t)(y)) & UINT16_C(0x00ff)) << 8) | \
+                ((((uint16_t)(y)) & UINT16_C(0xff00)) >> 8)))
+#endif // 16-bit
+
+/*
+ * Byte-swap a pcap_4_byte_aligned_uint64;
+ */
+static inline pcap_4_byte_aligned_uint64 swap_4_byte_aligned_uint64(pcap_4_byte_aligned_uint64 val)
+{
+	return (pcap_4_byte_aligned_uint64){.halves[0] = PCAP_BSWAP_32(val.halves[1]), .halves[1] = PCAP_BSWAP_32(val.halves[0])};
+}
+
+/*
+ * Byte-swap a pcap_4_byte_aligned_int64;
+ */
+static inline pcap_4_byte_aligned_int64 swap_4_byte_aligned_int64(pcap_4_byte_aligned_int64 val)
+{
+	return (pcap_4_byte_aligned_int64){.halves[0] = PCAP_BSWAP_32(val.halves[1]), .halves[1] = PCAP_BSWAP_32(val.halves[0])};
+}
 
 extern void pcapint_post_process(int linktype, int swapped,
     struct pcap_pkthdr *hdr, u_char *data);
+
+#endif // pcap_util_h

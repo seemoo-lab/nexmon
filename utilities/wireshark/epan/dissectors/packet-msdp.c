@@ -396,9 +396,7 @@ static void dissect_msdp_notification(tvbuff_t *tvb, packet_info *pinfo, proto_t
                 return;
         }
         proto_tree_add_item(tree, hf_msdp_not_o, tvb, *offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(tree, hf_msdp_not_error, tvb, *offset, 1, ENC_BIG_ENDIAN);
-        error = tvb_get_uint8(tvb, *offset);
-        error &= 0x7F;             /* Error is 7-bit field. O-bit is bit 8 */
+        proto_tree_add_item_ret_uint8(tree, hf_msdp_not_error, tvb, *offset, 1, ENC_BIG_ENDIAN, &error);
         *offset += 1;
         tlv_len -= 1;
 
@@ -579,9 +577,7 @@ static void dissect_msdp_notification(tvbuff_t *tvb, packet_info *pinfo, proto_t
                 break;
         }
         if (tlv_len != 0) {
-                expert_add_info_format(pinfo, length_item,
-                    &ei_msdp_tlv_len_too_long,
-                    "TLV length too long");
+                expert_add_info(pinfo, length_item, &ei_msdp_tlv_len_too_long);
                 proto_tree_add_item(tree, hf_msdp_trailing_junk, tvb, *offset, tlv_len, ENC_NA);
                 *offset += tlv_len;
         }

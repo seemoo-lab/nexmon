@@ -52,6 +52,7 @@ typedef enum {
     USB_HEADER_USBIP,
     USB_HEADER_DARWIN,
     USB_HEADER_PSEUDO_URB,
+    USB_HEADER_FREEBSD,
 } usb_header_t;
 
 #define USB_HEADER_IS_LINUX(type) \
@@ -320,6 +321,12 @@ typedef struct _usb_tap_data_t {
 extern const true_false_string tfs_endpoint_direction;
 
 extern value_string_ext usb_class_vals_ext;
+extern value_string_ext usb_langid_vals_ext;
+extern value_string_ext ext_usb_audio_subclass_vals;
+extern value_string_ext ext_usb_massstorage_subclass_vals;
+extern value_string_ext ext_usb_com_subclass_vals;
+extern value_string_ext usb_massstorage_protocol_vals_ext;
+
 
 usb_conv_info_t *get_usb_iface_conv_info(packet_info *pinfo, uint8_t interface_num);
 usb_conv_info_t *get_existing_usb_ep_conv_info(packet_info *pinfo, uint16_t bus_id,

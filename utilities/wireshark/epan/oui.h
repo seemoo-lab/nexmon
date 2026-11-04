@@ -8,10 +8,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __OUI_H__
-#define __OUI_H__
-
+#pragma once
 /*
  * See
  *
@@ -51,6 +48,7 @@
 #define OUI_IEEE_802_3      0x00120F    /* IEEE 802.3 */
 #define OUI_MEDIA_ENDPOINT  0x0012BB    /* Media (TIA TR-41 Committee) */
 #define OUI_SONY_ERICSSON_4 0x0012EE    /* Sony Ericsson Mobile Communications AB */
+#define OUI_UBIQUITI        0x00156D    /* Ubiquiti Inc */
 #define OUI_ERICSSON_MOBILE 0x0015E0    /* Ericsson Mobile Platforms */
 #define OUI_SONY_ERICSSON_5 0x001620    /* Sony Ericsson Mobile Communications AB */
 #define OUI_SONY_ERICSSON_6 0x0016B8    /* Sony Ericsson Mobile Communications AB */
@@ -80,6 +78,7 @@
 #define OUI_EXTREME         0x00E02B    /* Extreme EDP/ESRP */
 #define OUI_CABLE_BPDU      0x00E02F    /* DOCSIS spanning tree BPDU */
 #define OUI_FOUNDRY         0x00E052    /* Foundry */
+#define OUI_HUAWEI          0x00E0FC    /* Huawei */
 #define OUI_APPLE           0x0017f2    /* Apple, Inc */
 #define OUI_PROFINET_MULTICAST 0x010ECF   /* PROFIBUS Nutzerorganisation e.V. */
 #define OUI_SIEMENS         0x080006    /* Siemens AG */
@@ -89,19 +88,20 @@
 #define OUI_WISUN           0x0C5A9E    /* Wi-SUN */
 #define OUI_IEEE_C37_238    0x1C129D    /* IEEE PES PSRC/SUB Working Group H7/Sub C7 (IEEE PC37.238) */
 #define OUI_HYTEC_GER       0x30B216    /* Hytec Geraetebau GmbH */
+#define OUI_BELDEN          0x3CB9A6    /* BELDEN */
+#define OUI_TELECOM         0x48D017    /* Telecom Infra Project */
 #define OUI_ZIGBEE          0x4A191B    /* ZigBee Alliance */
 #define OUI_WFA             0x506F9A    /* Wi-Fi Alliance */
 #define OUI_MIST            0x5C5B35    /* Mist Systems */
 #define OUI_RUCKUS          0x001392    /* Ruckus Networks */
 #define OUI_SMPTE           0x6897E8    /* Society of Motion Picture and Television Engineers */
 #define OUI_SGDSN           0x6A5C35    /* Secrétariat Général de la Défense et de la Sécurité Nationale http://www.sgdsn.gouv.fr */
+#define OUI_METER           0x848094    /* Meter Inc */
 #define OUI_ONOS            0xA42305    /* Open Networking Laboratory (ONOS) */
 #define OUI_3GPP2           0xCF0002    /* 3GPP2 */
 #define OUI_AVAYA_EXTREME2  0xD88466    /* Avaya Extreme Fabric */
 #define OUI_ALCATEL_LUCENT  0xDC0856    /* Alcatel-Lucent */
 #define OUI_THREAD          0xEAB89B    /* Thread */
-
-#endif
 
 /*
  * Editor modelines

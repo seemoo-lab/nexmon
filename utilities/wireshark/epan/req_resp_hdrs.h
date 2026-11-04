@@ -8,15 +8,13 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __REQ_RESP_HDRS_H__
-#define __REQ_RESP_HDRS_H__
-
+#pragma once
 #include "ws_symbol_export.h"
-#include "wsutil/strtoi.h"
+#include <epan/packet.h>
+#include <wsutil/strtoi.h>
 
 /**
- * Optionally do reassembly of the request/response line, headers, and body.
+ *  @brief Optionally do reassembly of the request/response line, headers, and body.
  *
  *  @param tvb  The buffer.
  *  @param offset   The offset in the buffer to begin inspection.
@@ -45,17 +43,24 @@ req_resp_hdrs_do_reassembly(tvbuff_t *tvb, const  int offset, packet_info *pinfo
     bool desegment_until_fin, int *last_chunk_offset,
 	dissector_table_t streaming_subdissector_table, dissector_handle_t *streaming_chunk_handle);
 
-/** Check whether the first line is the beginning of a chunk. */
+/**
+ * @brief Checks if the given TVB's first line starts with a chunk size.
+ *
+ * @param tvb The TVB containing the data to check.
+ * @param offset The starting offset within the TVB.
+ * @param pinfo Packet information structure.
+ * @return true If the TVB starts with a valid chunk size, false otherwise.
+ */
 static inline bool
 starts_with_chunk_size(tvbuff_t* tvb, const int offset, packet_info* pinfo)
 {
 	unsigned chunk_size = 0;
-	int linelen = tvb_find_line_end(tvb, offset, tvb_reported_length_remaining(tvb, offset), NULL, true);
+	unsigned linelen;
 
-	if (linelen < 0)
+	if (!tvb_find_line_end_remaining(tvb, offset, &linelen, NULL))
 		return false;
 
-	char* chunk_string = tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII);
+	char* chunk_string = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII);
 	char* c = chunk_string;
 
 	/* ignore extensions, including optional BWS ("bad whitespace")
@@ -72,5 +77,3 @@ starts_with_chunk_size(tvbuff_t* tvb, const int offset, packet_info* pinfo)
 	}
 	return true;
 }
-
-#endif

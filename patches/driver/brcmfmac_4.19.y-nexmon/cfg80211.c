@@ -22,6 +22,7 @@
 #include <linux/etherdevice.h>
 #include <linux/module.h>
 #include <linux/vmalloc.h>
+#include <linux/ctype.h>
 #include <net/cfg80211.h>
 #include <net/netlink.h>
 #ifdef NEXMON_MON_IF
@@ -657,12 +658,22 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy,struct cfg80211_chan_def *
     s32 err = 0;
     u16 chanspec;
 
-     //brcmf_err("DEBUG NexMon: brcmf_cfg80211_nexmon_set_channel() called!\n");
+    if (!chandef->chan || !wiphy->bands[chandef->chan->band]) {
+        brcmf_err("Set Channel rejected: unsupported band for this chip (chan=%p, band=%d)\n",
+                  chandef->chan, chandef->chan ? chandef->chan->band : -1);
+        return -EINVAL;
+    }
+
     chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+    if (chanspec == INVCHANSPEC || chanspec == 0) {
+        brcmf_err("Set Channel rejected: invalid chanspec (0x%04x)\n", chanspec);
+        return -EINVAL;
+    }
     err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
     if (err < 0) {
         brcmf_err("Set Channel failed: chspec=%d, %d\n",
               chanspec, err);
+        return err;
     }
     return 0;
 }
@@ -2875,6 +2886,7 @@ brcmf_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 		else
 			brcmf_err("error (%d)\n", err);
 	}
+	brcmf_fil_iovar_int_set(ifp, "pm2_sleep_ret", 2000); /* 2000ms - the maximum */
 done:
 	brcmf_dbg(TRACE, "Exit\n");
 	return err;
@@ -5112,6 +5124,10 @@ static int brcmf_cfg80211_get_channel(struct wiphy *wiphy,
 
 	freq = ieee80211_channel_to_frequency(ch.control_ch_num, band);
 	chandef->chan = ieee80211_get_channel(wiphy, freq);
+	if (!chandef->chan) {
+		brcmf_err("Invalid channel frequency %d\n", freq);
+		return -EINVAL;
+	}
 	chandef->width = width;
 	chandef->center_freq1 = ieee80211_channel_to_frequency(ch.chnum, band);
 	chandef->center_freq2 = 0;
@@ -5648,6 +5664,8 @@ brcmf_bss_connect_done(struct brcmf_cfg80211_info *cfg,
 			conn_params.status = WLAN_STATUS_SUCCESS;
 		} else {
 			conn_params.status = WLAN_STATUS_AUTH_TIMEOUT;
+			brcmf_err("connect failed: event %u status %u reason %u\n",
+				  e->event_code, e->status, e->reason);
 		}
 		conn_params.bssid = profile->bssid;
 		conn_params.req_ie = conn_info->req_ie;
@@ -7029,23 +7047,9 @@ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
 	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
 	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
 	struct brcmf_fil_country_le ccreq;
+	char *alpha2;
 	s32 err;
 	int i;
-
-	/* The country code gets set to "00" by default at boot, ignore */
-	if (req->alpha2[0] == '0' && req->alpha2[1] == '0')
-		return;
-
-	/* ignore non-ISO3166 country codes */
-	for (i = 0; i < 2; i++)
-		if (req->alpha2[i] < 'A' || req->alpha2[i] > 'Z') {
-			brcmf_err("not an ISO3166 code (0x%02x 0x%02x)\n",
-				  req->alpha2[0], req->alpha2[1]);
-			return;
-		}
-
-	brcmf_dbg(TRACE, "Enter: initiator=%d, alpha=%c%c\n", req->initiator,
-		  req->alpha2[0], req->alpha2[1]);
 
 	err = brcmf_fil_iovar_data_get(ifp, "country", &ccreq, sizeof(ccreq));
 	if (err) {
@@ -7053,7 +7057,35 @@ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
 		return;
 	}
 
-	err = brcmf_translate_country_code(ifp->drvr, req->alpha2, &ccreq);
+	/* The country code gets set to "00" by default at boot - substitute
+	 * any saved ccode from the nvram file unless there is a valid code
+	 * already set.
+	 */
+	alpha2 = req->alpha2;
+	if (alpha2[0] == '0' && alpha2[1] == '0') {
+		extern char saved_ccode[2];
+
+		if ((isupper(ccreq.country_abbrev[0]) &&
+		     isupper(ccreq.country_abbrev[1])) ||
+		    !saved_ccode[0])
+			return;
+		alpha2 = saved_ccode;
+		pr_debug("brcmfmac: substituting saved ccode %c%c\n",
+			 alpha2[0], alpha2[1]);
+	}
+
+	/* ignore non-ISO3166 country codes */
+	for (i = 0; i < 2; i++)
+		if (alpha2[i] < 'A' || alpha2[i] > 'Z') {
+			brcmf_err("not an ISO3166 code (0x%02x 0x%02x)\n",
+				  alpha2[0], alpha2[1]);
+			return;
+		}
+
+	brcmf_dbg(TRACE, "Enter: initiator=%d, alpha=%c%c\n", req->initiator,
+		  alpha2[0], alpha2[1]);
+
+	err = brcmf_translate_country_code(ifp->drvr, alpha2, &ccreq);
 	if (err)
 		return;
 

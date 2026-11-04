@@ -340,7 +340,7 @@ static proto_tree *top_tree;
 #define STATE_MIN_ACCESS_LEN 6
 
 /*
- * Defenitions for:
+ * Definitions for:
  * The Session Initiation Protocol (SIP) and Session Description Protocol
  *    (SDP) Static Dictionary for Signaling Compression (SigComp)
  * https://www.ietf.org/rfc/rfc3485
@@ -353,7 +353,7 @@ static const uint8_t sip_sdp_state_identifier[STATE_BUFFER_SIZE] =
    /* -0010, */  0x9c, 0xe6, 0x1b, 0xa5
 };
 
-static const uint8_t sip_sdp_static_dictionaty_for_sigcomp[0x12e4] =
+static const uint8_t sip_sdp_static_dictionary_for_sigcomp[0x12e4] =
 {
 
    /* -0000, */  0x0d, 0x0a, 0x52, 0x65, 0x6a, 0x65, 0x63, 0x74, 0x2d, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x63, 0x74,
@@ -917,7 +917,7 @@ sigcomp_init_udvm(void) {
     memset(sip_sdp_buff, 0, 8);
     sip_sdp_buff[0] = SIP_SDP_STATE_LENGTH >> 8;
     sip_sdp_buff[1] = SIP_SDP_STATE_LENGTH & 0xff;
-    memcpy(sip_sdp_buff+8, sip_sdp_static_dictionaty_for_sigcomp, SIP_SDP_STATE_LENGTH);
+    memcpy(sip_sdp_buff+8, sip_sdp_static_dictionary_for_sigcomp, SIP_SDP_STATE_LENGTH);
 
     g_hash_table_insert(state_buffer_table, g_strdup(partial_state_str), sip_sdp_buff);
     wmem_free(NULL, partial_state_str);
@@ -951,7 +951,7 @@ static int udvm_state_access(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     uint16_t buf_size_real;
     uint16_t byte_copy_right;
     uint16_t byte_copy_left;
-    char     partial_state[STATE_BUFFER_SIZE]; /* Size is 6 - 20 */
+    uint8_t  partial_state[STATE_BUFFER_SIZE]; /* Size is 6 - 20 */
     uint8_t *state_buff;
     char    *partial_state_str;
 
@@ -994,7 +994,7 @@ static int udvm_state_access(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
         return result_code;
     }
     /*
-     * sip_sdp_static_dictionaty
+     * sip_sdp_static_dictionary
      *
      * 8.4.  Byte copying
      * :
@@ -1092,7 +1092,7 @@ static int udvm_state_access(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 static void udvm_state_create(uint8_t *state_buff,uint8_t *state_identifier,uint16_t p_id_length) {
 
-    char   partial_state[STATE_BUFFER_SIZE];
+    uint8_t   partial_state[STATE_BUFFER_SIZE];
     unsigned  i;
     char *partial_state_str;
     char *dummy_buff;
@@ -1424,7 +1424,7 @@ decode_udvm_multitype_operand(uint8_t *buff,unsigned operand_address, uint16_t *
     uint32_t result;
     uint8_t temp_data;
     uint16_t temp_data16;
-    uint16_t memmory_addr = 0;
+    uint16_t memory_addr = 0;
 
     *value = 0;
 
@@ -1448,9 +1448,9 @@ decode_udvm_multitype_operand(uint8_t *buff,unsigned operand_address, uint16_t *
         /*
          * 01nnnnnn                        memory[2 * N]       0 - 65535
          */
-        memmory_addr = ( bytecode & 0x3f) * 2;
-        temp_data16 = buff[memmory_addr] << 8;
-        temp_data16 = temp_data16 | buff[(memmory_addr+1) & 0xffff];
+        memory_addr = ( bytecode & 0x3f) * 2;
+        temp_data16 = buff[memory_addr] << 8;
+        temp_data16 = temp_data16 | buff[(memory_addr+1) & 0xffff];
         *value = temp_data16;
         offset ++;
         break;
@@ -1513,9 +1513,9 @@ decode_udvm_multitype_operand(uint8_t *buff,unsigned operand_address, uint16_t *
                          * ws_warning("Reading 0x%x From address %u",temp_data16,operand_address);
                          */
                         if ( (bytecode & 0x01) == 1 ) {
-                            memmory_addr = temp_data16;
-                            temp_data16 = buff[memmory_addr] << 8;
-                            temp_data16 = temp_data16 | buff[(memmory_addr+1) & 0xffff];
+                            memory_addr = temp_data16;
+                            temp_data16 = buff[memory_addr] << 8;
+                            temp_data16 = temp_data16 | buff[(memory_addr+1) & 0xffff];
                         }
                         *value = temp_data16;
                         offset = offset +2;
@@ -1540,14 +1540,14 @@ decode_udvm_multitype_operand(uint8_t *buff,unsigned operand_address, uint16_t *
             /*
              * 110nnnnn nnnnnnnn               memory[N]           0 - 65535
              */
-            memmory_addr = buff[operand_address] & 0x1f;
-            memmory_addr = memmory_addr << 8;
-            memmory_addr = memmory_addr | buff[(operand_address + 1) & 0xffff];
-            temp_data16 = buff[memmory_addr] << 8;
-            temp_data16 = temp_data16 | buff[(memmory_addr+1) & 0xffff];
+            memory_addr = buff[operand_address] & 0x1f;
+            memory_addr = memory_addr << 8;
+            memory_addr = memory_addr | buff[(operand_address + 1) & 0xffff];
+            temp_data16 = buff[memory_addr] << 8;
+            temp_data16 = temp_data16 | buff[(memory_addr+1) & 0xffff];
             *value = temp_data16;
             /*  debug
-             * ws_warning("Reading 0x%x From address %u",temp_data16,memmory_addr);
+             * ws_warning("Reading 0x%x From address %u",temp_data16,memory_addr);
              */
             offset = offset +2;
         }
@@ -1967,7 +1967,7 @@ execute_next_instruction:
              * is cleaned up.
              */
             add_new_data_source(pinfo, decomp_tvb, "Decompressed SigComp message(Incomplete)");
-            proto_tree_add_expert(udvm_tree, pinfo, &ei_sigcomp_sigcomp_message_decompression_failure, decomp_tvb, 0, -1);
+            proto_tree_add_expert_remaining(udvm_tree, pinfo, &ei_sigcomp_sigcomp_message_decompression_failure, decomp_tvb, 0);
             return decomp_tvb;
         }
         return NULL;
@@ -2451,7 +2451,7 @@ execute_next_instruction:
         if (show_instr_detail_level == 2 ) {
             proto_item_append_text(addr_item, " (start, n, k))");
         }
-        proto_tree_add_expert(udvm_tree, pinfo, &ei_sigcomp_execution_of_this_instruction_is_not_implemented, bytecode_tvb, 0, -1);
+        proto_tree_add_expert_remaining(udvm_tree, pinfo, &ei_sigcomp_execution_of_this_instruction_is_not_implemented, bytecode_tvb, 0);
         /*
          *      used_udvm_cycles =  1 + k * (ceiling(log2(k)) + n)
          */
@@ -2461,7 +2461,7 @@ execute_next_instruction:
         if (show_instr_detail_level == 2 ) {
             proto_item_append_text(addr_item, " (start, n, k))");
         }
-        proto_tree_add_expert(udvm_tree, pinfo, &ei_sigcomp_execution_of_this_instruction_is_not_implemented, bytecode_tvb, 0, -1);
+        proto_tree_add_expert_remaining(udvm_tree, pinfo, &ei_sigcomp_execution_of_this_instruction_is_not_implemented, bytecode_tvb, 0);
         /*
          *      used_udvm_cycles =  1 + k * (ceiling(log2(k)) + n)
          */
@@ -4383,9 +4383,10 @@ execute_next_instruction:
             string[0]= buff[k];
             string[1]= '\0';
             if (print_level_3 ) {
-                proto_tree_add_uint_format(udvm_tree, hf_sigcomp_output_value, bytecode_tvb, 0, -1, buff[k],
+                ti = proto_tree_add_uint_format(udvm_tree, hf_sigcomp_output_value, bytecode_tvb, 0, 0, buff[k],
                                     "               Output value: %u (0x%x) ASCII(%s) from Addr: %u ,output to dispatcher position %u",
                                     buff[k],buff[k],format_text(pinfo->pool, string,1), k,output_address);
+                proto_item_set_generated(ti);
             }
             k = ( k + 1 ) & 0xffff;
             output_address ++;
@@ -4580,7 +4581,7 @@ execute_next_instruction:
     return NULL;
 decompression_failure:
 
-    proto_tree_add_expert_format(udvm_tree, pinfo, &ei_sigcomp_decompression_failure, bytecode_tvb, 0, -1,
+    proto_tree_add_expert_format_remaining(udvm_tree, pinfo, &ei_sigcomp_decompression_failure, bytecode_tvb, 0,
                         "DECOMPRESSION FAILURE: %s", val_to_str(pinfo->pool, result_code, result_code_vals,"Unknown (%u)"));
     return NULL;
 
@@ -4756,7 +4757,7 @@ try_again:
     if (end_off_message == true) {
         dissect_sigcomp_common(unescaped_tvb, pinfo, sigcomp_tree);
     } else {
-        proto_tree_add_expert(sigcomp_tree, pinfo, &ei_sigcomp_tcp_fragment, unescaped_tvb, 0, -1);
+        proto_tree_add_expert_remaining(sigcomp_tree, pinfo, &ei_sigcomp_tcp_fragment, unescaped_tvb, 0);
     }
     if ( offset < length) {
         goto try_again;
@@ -5002,7 +5003,7 @@ dissect_sigcomp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *sigcomp_tr
 
 /* end partial state-id change cco@iptel.org */
             if ( result_code != 0 ) {
-                proto_tree_add_expert_format(sigcomp_tree, pinfo, &ei_sigcomp_failed_to_access_state_wireshark_udvm_diagnostic, tvb, 0, -1,
+                proto_tree_add_expert_format_remaining(sigcomp_tree, pinfo, &ei_sigcomp_failed_to_access_state_wireshark_udvm_diagnostic, tvb, 0,
                                                                                          "Failed to Access state Wireshark UDVM diagnostic: %s", val_to_str(pinfo->pool, result_code, result_code_vals,"Unknown (%u)"));
                 return tvb_captured_length(tvb);
             }
@@ -6023,7 +6024,7 @@ dissect_udvm_bytecode(tvbuff_t *udvm_tvb, packet_info* pinfo, proto_tree *sigcom
                 udvm_tvb, start_offset, len, value);
             /* returned_parameters_location */
             if ((msg_length-1) < offset) {
-                proto_tree_add_expert(sigcomp_udvm_tree, pinfo, &ei_sigcomp_all_remaining_parameters_zero, udvm_tvb, offset-1, -1);
+                proto_tree_add_expert_remaining(sigcomp_udvm_tree, pinfo, &ei_sigcomp_all_remaining_parameters_zero, udvm_tvb, offset-1);
                 return;
             }
             offset = dissect_udvm_multitype_operand(udvm_tvb, sigcomp_udvm_tree, offset, true, &start_offset, &value, &is_memory_address);
@@ -6428,7 +6429,7 @@ tvb_raw_text_add(tvbuff_t *tvb, proto_tree *tree)
 {
     proto_tree *raw_tree = NULL;
     proto_item *ti = NULL;
-    int offset, next_offset, linelen;
+    unsigned offset, next_offset, linelen;
 
     if (tree) {
         ti = proto_tree_add_item(tree, proto_raw_sigcomp, tvb, 0, -1, ENC_NA);
@@ -6438,7 +6439,7 @@ tvb_raw_text_add(tvbuff_t *tvb, proto_tree *tree)
     offset = 0;
 
     while (tvb_offset_exists(tvb, offset)) {
-        tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+        tvb_find_line_end_remaining(tvb, offset, NULL, &next_offset);
         linelen = next_offset - offset;
         proto_tree_add_format_text(raw_tree, tvb, offset, linelen);
         offset = next_offset;

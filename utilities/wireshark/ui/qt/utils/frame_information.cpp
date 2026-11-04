@@ -16,7 +16,7 @@
 
 #include "wiretap/wtap.h"
 
-#include "cfile.h"
+#include <epan/cfile.h>
 #include "file.h"
 #include <ui/qt/capture_file.h>
 
@@ -30,7 +30,7 @@ FrameInformation::FrameInformation(CaptureFile * capfile, frame_data * fi, QObje
  cap_file_(capfile),
  edt_(Q_NULLPTR)
 {
-    wtap_rec_init(&rec_, 1514);
+    wtap_rec_init(&rec_, DEFAULT_INIT_BUFFER_SIZE_2048);
     loadFrameTree();
 }
 

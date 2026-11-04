@@ -1,0 +1,54 @@
+# --- build output from a `make` run with the repo root as CWD -------------
+# The per-chip patch Makefiles do `mkdir -p obj gen log` and create
+# BUILD_NUMBER relative to the current directory, so invoking one from the
+# repository root (rather than from patches/<chip>/<fwver>/nexmon) leaves
+# these here. The real per-chip copies are covered by patches/.gitignore.
+/gen/
+/obj/
+/log/
+/BUILD_NUMBER
+
+# --- python ---------------------------------------------------------------
+*.so
+__pycache__/
+*.pyc
+
+# --- downloaded host toolchains -------------------------------------------
+# Unmodified upstream release tarballs (~1.1 GB for the Arm GNU toolchain).
+# Nothing in the build graph references them: setup_env.sh selects
+# buildtools/gcc-arm-none-eabi-5_4-2016q2-<host> and expects the armhf
+# compat runtime libs, which are rebuilt per buildtools/MATH_LIBRARIES.md.
+/buildtools/arm-gnu-toolchain-*/
+/buildtools/armhf-compat-libs/
+
+# --- rig, editor and agent working directories ----------------------------
+# Local to this machine; none of it is part of the project.
+/.UUID
+/.claude/
+/.agents/
+/.codex/
+/.local-notes/
+/.mainline-shared-backup/
+/output.txt/
+
+# --- validation-run evidence ----------------------------------------------
+# Only the machine output is ignored. The scripts and REPORT.md under
+# audits/<date>/ are real engineering work and are deliberately NOT ignored,
+# so that they stay visible until they are committed or moved to tools/.
+/audits/**/evidence/
+/audits/**/*.pcap
+/audits/**/*.stdout
+/audits/**/*.stderr
+
+# --- test and diagnostic artifacts ----------------------------------------
+/firmware_backup/
+/.ruff_cache/
+/.pytest_cache/
+/DISABLE_STATISTICS
+/updates.json
+utilities/rawproxy/fuzz_radiotap_sanitize
+utilities/libnexio/libnexio_sanitize.*
+utilities/nexutil/nexutil
+*.ko
+*.mod*
+Module.symvers

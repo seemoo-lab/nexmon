@@ -7,10 +7,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __PREFS_H__
-#define __PREFS_H__
-
+#pragma once
 #include <glib.h>
 
 #include <epan/params.h>
@@ -43,6 +40,18 @@ extern "C" {
 #define CONV_DEINT_KEY_MAC        0x04
 #define CONV_DEINT_KEY_VLAN       0x08
 
+/* Bitmask of flags for the effect of a preference in Wireshark */
+#define PREF_EFFECT_DISSECTION        (1u << 0)
+#define PREF_EFFECT_CAPTURE           (1u << 1)
+#define PREF_EFFECT_GUI_LAYOUT        (1u << 2)
+#define PREF_EFFECT_FIELDS            (1u << 3)
+#define PREF_EFFECT_GUI               (1u << 4)
+#define PREF_EFFECT_GUI_COLOR         (1u << 5)
+#define PREF_EFFECT_AGGREGATION       (1u << 6)
+
+/* Default update interval in milliseconds */
+#define DEFAULT_UPDATE_INTERVAL 100
+
 struct epan_uat;
 struct _e_addr_resolve;
 
@@ -74,217 +83,320 @@ char string_to_name_resolve(const char *string, struct _e_addr_resolve *name_res
 #define TB_STYLE_TEXT           1
 #define TB_STYLE_BOTH           2
 
-/*
- * Color styles.
- */
-#define COLOR_STYLE_DEFAULT     0
-#define COLOR_STYLE_FLAT        1
-#define COLOR_STYLE_GRADIENT    2
-
-#define COLOR_STYLE_ALPHA       0.25
-
 #define COLOR_SCHEME_DEFAULT    0
 #define COLOR_SCHEME_LIGHT      1
 #define COLOR_SCHEME_DARK       2
 
-/*
- * Types of layout of summary/details/hex panes.
+/**
+ * @brief Arrangement type of the summary, details, and hex panes in the main window.
  */
 typedef enum {
-    layout_unused,  /* entry currently unused */
-    layout_type_5,
-    layout_type_2,
-    layout_type_1,
-    layout_type_4,
-    layout_type_3,
-    layout_type_6,
-    layout_type_max
+    layout_unused,    /**< Layout slot is currently unused */
+    layout_type_5,    /**< Pane arrangement type 5 */
+    layout_type_2,    /**< Pane arrangement type 2 */
+    layout_type_1,    /**< Pane arrangement type 1 */
+    layout_type_4,    /**< Pane arrangement type 4 */
+    layout_type_3,    /**< Pane arrangement type 3 */
+    layout_type_6,    /**< Pane arrangement type 6 */
+    layout_type_max   /**< Sentinel: one past the last valid layout type */
 } layout_type_e;
 
-/*
- * Types of pane.
+
+/**
+ * @brief Content assigned to a single layout pane in the main window.
  */
 typedef enum {
-    layout_pane_content_none,
-    layout_pane_content_plist,
-    layout_pane_content_pdetails,
-    layout_pane_content_pbytes,
-    layout_pane_content_pdiagram,
+    layout_pane_content_none,     /**< Pane is empty / not displayed */
+    layout_pane_content_plist,    /**< Pane shows the packet list */
+    layout_pane_content_pdetails, /**< Pane shows the packet details tree */
+    layout_pane_content_pbytes,   /**< Pane shows the packet bytes (hex dump) */
+    layout_pane_content_pdiagram, /**< Pane shows the packet diagram */
 } layout_pane_content_e;
 
-/*
- * Places version information will show up
+
+/**
+ * @brief Controls where version information is displayed in the GUI.
  */
 typedef enum {
-    version_welcome_only,
-    version_title_only,
-    version_both,
-    version_neither
+    version_welcome_only, /**< Version shown on the welcome splash screen only */
+    version_title_only,   /**< Version shown in the window title bar only */
+    version_both,         /**< Version shown in both the welcome screen and title bar */
+    version_neither       /**< Version not shown anywhere */
 } version_info_e;
 
-typedef enum {
-    layout_vertical,
-    layout_horizontal
-} splitter_layout_e;
 
-typedef enum {
-    pref_default,
-    pref_stashed,
-    pref_current
-} pref_source_t;
-
-typedef enum {
-    ELIDE_LEFT,
-    ELIDE_RIGHT,
-    ELIDE_MIDDLE,
-    ELIDE_NONE
-} elide_mode_e;
-
-typedef enum {
-    COPY_FORMAT_TEXT,
-    COPY_FORMAT_CSV,
-    COPY_FORMAT_YAML,
-    COPY_FORMAT_HTML
-} copy_format_e;
-
-typedef enum {
-    ABS_TIME_ASCII_NEVER,
-    ABS_TIME_ASCII_TREE,
-    ABS_TIME_ASCII_COLUMN,
-    ABS_TIME_ASCII_ALWAYS,
-} abs_time_format_e;
-
-/*
- * Update channel.
+/**
+ * @brief Orientation of a splitter divider between panes.
  */
 typedef enum {
-    UPDATE_CHANNEL_DEVELOPMENT,
-    UPDATE_CHANNEL_STABLE
+    layout_vertical,   /**< Panes are split vertically (side by side) */
+    layout_horizontal  /**< Panes are split horizontally (stacked) */
+} splitter_layout_e;
+
+
+/**
+ * @brief Selects which copy of a preference value is used as the active source.
+ */
+typedef enum {
+    pref_default, /**< The compiled-in default value */
+    pref_stashed, /**< A temporarily stashed value (e.g., before applying changes) */
+    pref_current  /**< The currently active/applied value */
+} pref_source_t;
+
+
+/**
+ * @brief Controls which end of a text string is elided when it is too long to display.
+ */
+typedef enum {
+    ELIDE_LEFT,   /**< Elide (truncate with ellipsis) from the left end */
+    ELIDE_RIGHT,  /**< Elide from the right end */
+    ELIDE_MIDDLE, /**< Elide from the middle */
+    ELIDE_NONE    /**< Do not elide; display the full string */
+} elide_mode_e;
+
+
+/**
+ * @brief Output format for copying packet list rows to the clipboard.
+ */
+typedef enum {
+    COPY_FORMAT_TEXT, /**< Plain text format */
+    COPY_FORMAT_CSV,  /**< Comma-separated values (CSV) format */
+    COPY_FORMAT_YAML, /**< YAML format */
+    COPY_FORMAT_HTML  /**< HTML format */
+} copy_format_e;
+
+
+/**
+ * @brief Controls whether absolute timestamps are rendered as ASCII in tree and column views.
+ */
+typedef enum {
+    ABS_TIME_ASCII_NEVER,  /**< Never render absolute timestamps as ASCII strings */
+    ABS_TIME_ASCII_TREE,   /**< Render ASCII timestamps in the packet details tree only */
+    ABS_TIME_ASCII_COLUMN, /**< Render ASCII timestamps in packet list columns only */
+    ABS_TIME_ASCII_ALWAYS, /**< Always render absolute timestamps as ASCII strings */
+} abs_time_format_e;
+
+
+/**
+ * @brief What to record of the processes that packets belong to when capturing.
+ */
+typedef enum {
+    CAPTURE_PROCESS_INFO_NONE,  /**< Nothing */
+    CAPTURE_PROCESS_INFO_BASIC, /**< What identifies them: ID, name and start time */
+    CAPTURE_PROCESS_INFO_FULL   /**< Also their path, command line, parent and user */
+} capture_process_info_e;
+
+/**
+ * @brief Automatic software update channel selection.
+ */
+typedef enum {
+    UPDATE_CHANNEL_DEVELOPMENT, /**< Receive development/pre-release update builds */
+    UPDATE_CHANNEL_STABLE       /**< Receive stable release update builds only */
 } software_update_channel_e;
 
+
+/**
+ * @brief Multi-color stripe display mode for the packet list scrollbar and rows.
+ */
+typedef enum {
+    PACKET_LIST_MULTI_COLOR_MODE_OFF         = 0, /**< Multi-color display disabled */
+    PACKET_LIST_MULTI_COLOR_MODE_SCROLLBAR_ONLY,  /**< Color stripes shown in scrollbar only; no row striping */
+    PACKET_LIST_MULTI_COLOR_MODE_FULL,            /**< Full color stripes in both rows and scrollbar */
+    PACKET_LIST_MULTI_COLOR_MODE_SHIFT_RIGHT      /**< Color stripes shifted right by a configurable percentage in rows and scrollbar */
+} gui_packet_list_multi_color_mode_e;
+
+
+/**
+ * @brief Visual style of the separator between adjacent color stripes in the packet list.
+ */
+typedef enum {
+    PACKET_LIST_MULTI_COLOR_SEPARATOR_VERTICAL  = 0, /**< Straight vertical separator between stripes */
+    PACKET_LIST_MULTI_COLOR_SEPARATOR_DIAGONAL,      /**< Diagonal (candy-cane) separator between stripes */
+    PACKET_LIST_MULTI_COLOR_SEPARATOR_BUBBLE         /**< Bubble / half-moon separator between stripes */
+} gui_packet_list_multi_color_separator_e;
+
+
+/**
+ * @brief Global Wireshark preferences structure holding all persistent configuration settings.
+ */
 typedef struct _e_prefs {
-  GList       *col_list;
-  int          num_cols;
-  color_t      st_client_fg, st_client_bg, st_server_fg, st_server_bg;
-  color_t      gui_filter_valid_fg, gui_filter_invalid_fg, gui_filter_deprecated_fg;
-  color_t      gui_filter_valid_bg, gui_filter_invalid_bg, gui_filter_deprecated_bg;
-  bool         restore_filter_after_following_stream;
-  int          gui_toolbar_main_style;
-  char        *gui_font_name;
-  int          gui_color_scheme;
-  color_t      gui_active_fg;
-  color_t      gui_active_bg;
-  int          gui_active_style;
-  color_t      gui_inactive_fg;
-  color_t      gui_inactive_bg;
-  int          gui_inactive_style;
-  color_t      gui_marked_fg;
-  color_t      gui_marked_bg;
-  color_t      gui_ignored_fg;
-  color_t      gui_ignored_bg;
-  char        *gui_colorized_fg;
-  char        *gui_colorized_bg;
-  bool         gui_geometry_save_position;
-  bool         gui_geometry_save_size;
-  bool         gui_geometry_save_maximized;
-  unsigned     gui_recent_df_entries_max;
-  unsigned     gui_recent_files_count_max;
-  unsigned     gui_fileopen_style;
-  char        *gui_fileopen_dir;
-  unsigned     gui_fileopen_preview;
-  char        *gui_tlskeylog_command;
-  bool         gui_ask_unsaved;
-  bool         gui_autocomplete_filter;
-  bool         gui_find_wrap;
-  char        *gui_window_title;
-  char        *gui_prepend_window_title;
-  char        *gui_start_title;
-  version_info_e gui_version_placement;
-  unsigned     gui_max_export_objects;
-  unsigned     gui_max_tree_items;
-  unsigned     gui_max_tree_depth;
-  bool         gui_welcome_page_show_recent;
-  layout_type_e gui_layout_type;
-  layout_pane_content_e gui_layout_content_1;
-  layout_pane_content_e gui_layout_content_2;
-  layout_pane_content_e gui_layout_content_3;
-  splitter_layout_e gui_packet_dialog_layout;
-  char        *gui_interfaces_hide_types;
-  bool         gui_interfaces_show_hidden;
-  bool         gui_interfaces_remote_display;
-  bool         gui_io_graph_automatic_update;
-  bool         gui_io_graph_enable_legend;
-  bool         gui_plot_automatic_update;
-  bool         gui_plot_enable_legend;
-  bool         gui_plot_enable_auto_scroll;
-  bool         gui_packet_details_show_byteview;
-  char        *capture_device;
-  char        *capture_devices_linktypes;
-  char        *capture_devices_descr;
-  char        *capture_devices_hide;
-  char        *capture_devices_monitor_mode;
-  char        *capture_devices_buffersize;
-  char        *capture_devices_snaplen;
-  char        *capture_devices_pmode;
-  char        *capture_devices_filter; /* XXX - Mostly unused. Deprecate? */
-  bool         capture_prom_mode;
-  bool         capture_monitor_mode;
-  bool         capture_pcap_ng;
-  bool         capture_real_time;
-  unsigned     capture_update_interval;
-  bool         capture_no_interface_load;
-  bool         capture_no_extcap;
-  bool         capture_show_info;
-  GList       *capture_columns;
-  unsigned     tap_update_interval;
-  bool         display_hidden_proto_items;
-  bool         display_byte_fields_with_spaces;
-  abs_time_format_e display_abs_time_ascii;
-  bool         enable_incomplete_dissectors_check;
-  bool         incomplete_dissectors_check_debug;
-  bool         strict_conversation_tracking_heuristics;
-  int          conversation_deinterlacing_key;
-  bool         ignore_dup_frames;
-  unsigned     ignore_dup_frames_cache_entries;
-  bool         filter_expressions_old;  /* true if old filter expressions preferences were loaded. */
-  bool         cols_hide_new; /* true if the new (index-based) gui.column.hide preference was loaded. */
-  bool         gui_update_enabled;
-  software_update_channel_e gui_update_channel;
-  int          gui_update_interval;
-  int          gui_debounce_timer;
-  char        *saved_at_version;
-  bool         unknown_prefs; /* unknown or obsolete pref(s) */
-  bool         gui_packet_list_separator;
-  bool         gui_packet_header_column_definition;
-  bool         gui_packet_list_hover_style; /* Enable/Disable mouse-over colorization */
-  bool         gui_show_selected_packet;
-  bool         gui_show_file_load_time;
-  elide_mode_e gui_packet_list_elide_mode;
-  copy_format_e gui_packet_list_copy_format_options_for_keyboard_shortcut;
-  bool         gui_packet_list_copy_text_with_aligned_columns;
-  bool         gui_packet_list_show_related;
-  bool         gui_packet_list_show_minimap;
-  bool         gui_packet_list_sortable;
-  unsigned     gui_packet_list_cached_rows_max;
-  int          gui_decimal_places1; /* Used for type 1 calculations */
-  int          gui_decimal_places2; /* Used for type 2 calculations */
-  int          gui_decimal_places3; /* Used for type 3 calculations */
-  bool         gui_rtp_player_use_disk1;
-  bool         gui_rtp_player_use_disk2;
-  unsigned     flow_graph_max_export_items;
-  bool         st_enable_burstinfo;
-  bool         st_burst_showcount;
-  int          st_burst_resolution;
-  int          st_burst_windowlen;
-  bool         st_sort_casesensitve;
-  bool         st_sort_rng_fixorder;
-  bool         st_sort_rng_nameonly;
-  int          st_sort_defcolflag;
-  bool         st_sort_defdescending;
-  bool         st_sort_showfullname;
-  int          st_format;
-  bool         conv_machine_readable;
-  bool         extcap_save_on_start;
+    GList        *col_list;                  /**< Ordered list of packet list column definitions */
+    unsigned      num_cols;                  /**< Number of entries in @ref col_list */
+
+    /* GUI appearance */
+    int           gui_toolbar_main_style;    /**< Style of the main toolbar (icon size/text) */
+    char         *gui_font_name;             /**< Name and size of the font used in the packet list and details pane */
+
+    /* Colorized column colors */
+    char         *gui_colorized_fg;          /**< Comma-separated list of foreground colors for the 10 colorized column slots */
+    char         *gui_colorized_bg;          /**< Comma-separated list of background colors for the 10 colorized column slots */
+
+    /* Window geometry */
+    bool          gui_geometry_save_position;   /**< If true, save and restore the main window position */
+    bool          gui_geometry_save_size;        /**< If true, save and restore the main window size */
+    bool          gui_geometry_save_maximized;   /**< If true, save and restore the maximized state of the main window */
+
+    /* Recent entries */
+    unsigned      gui_recent_df_entries_max;    /**< Maximum number of recent display filter entries to retain */
+    unsigned      gui_recent_files_count_max;   /**< Maximum number of recently opened files to retain */
+
+    /* File open dialog */
+    unsigned      gui_fileopen_style;           /**< File open dialog style (last directory vs. fixed directory) */
+    char         *gui_fileopen_dir;             /**< Fixed directory used when gui_fileopen_style is set to fixed */
+    unsigned      gui_fileopen_preview;         /**< Number of bytes to preview when browsing capture files */
+
+    char         *gui_tlskeylog_command;         /**< Shell command executed to retrieve a TLS key log file path */
+
+    /* Dialog behavior */
+    bool          gui_ask_unsaved;              /**< If true, prompt before discarding unsaved changes */
+    bool          gui_autocomplete_filter;      /**< If true, enable autocomplete in the display filter bar */
+    bool          gui_find_wrap;                /**< If true, wrap around when reaching the end of search results */
+
+    /* Window title */
+    char         *gui_window_title;             /**< Custom suffix appended to the main window title */
+    char         *gui_prepend_window_title;     /**< Custom prefix prepended to the main window title */
+    char         *gui_start_title;              /**< Title shown on the welcome screen */
+    version_info_e gui_version_placement;       /**< Controls where version information appears in the GUI */
+
+    /* Export/tree limits */
+    unsigned      gui_max_export_objects;       /**< Maximum number of objects to show in the Export Objects dialog */
+    unsigned      gui_max_tree_items;           /**< Maximum number of items to display in the packet details tree */
+    unsigned      gui_max_tree_depth;           /**< Maximum depth to expand in the packet details tree */
+
+    bool          gui_welcome_page_show_recent; /**< If true, show recent files on the welcome page */
+
+    /* Layout */
+    layout_type_e         gui_layout_type;       /**< Arrangement of the summary/details/bytes panes */
+    layout_pane_content_e gui_layout_content_1;  /**< Content assigned to layout pane 1 */
+    layout_pane_content_e gui_layout_content_2;  /**< Content assigned to layout pane 2 */
+    layout_pane_content_e gui_layout_content_3;  /**< Content assigned to layout pane 3 */
+    splitter_layout_e     gui_packet_dialog_layout; /**< Splitter orientation in the packet detail dialog */
+
+    /* Interface filtering */
+    char         *gui_interfaces_hide_types;     /**< Comma-separated list of interface type IDs to hide in the interface list */
+    bool          gui_interfaces_show_hidden;    /**< If true, show interfaces that would otherwise be hidden */
+    bool          gui_interfaces_remote_display; /**< If true, display remote capture interfaces */
+
+    /* I/O graph */
+    bool          gui_io_graph_automatic_update; /**< If true, automatically update the I/O graph while capturing */
+    bool          gui_io_graph_enable_legend;    /**< If true, display the legend on the I/O graph */
+
+    /* Plot */
+    bool          gui_plot_automatic_update;     /**< If true, automatically update plot views while capturing */
+    bool          gui_plot_enable_legend;        /**< If true, display the legend on plot views */
+    bool          gui_plot_enable_auto_scroll;   /**< If true, auto-scroll plot views to follow new data */
+
+    bool          gui_packet_details_show_byteview; /**< If true, show the byte view panel alongside packet details */
+
+    /* Capture device settings */
+    char         *capture_device;               /**< Name of the default capture interface */
+    char         *capture_devices_linktypes;    /**< Per-interface link-type selections (name:linktype pairs) */
+    char         *capture_devices_descr;        /**< Per-interface user-defined descriptions (name:descr pairs) */
+    char         *capture_devices_hide;         /**< Comma-separated list of interface names to hide */
+    char         *capture_devices_monitor_mode; /**< Per-interface monitor mode settings (name:0/1 pairs) */
+    char         *capture_devices_buffersize;   /**< Per-interface kernel capture buffer sizes in MB (name:size pairs) */
+    char         *capture_devices_snaplen;      /**< Per-interface snapshot lengths in bytes (name:snaplen pairs) */
+    char         *capture_devices_pmode;        /**< Per-interface promiscuous mode settings (name:0/1 pairs) */
+    char         *capture_devices_filter;       /**< Per-interface default capture filters; mostly unused, may be deprecated */
+
+    /* Capture behavior */
+    bool          capture_prom_mode;            /**< If true, capture in promiscuous mode by default */
+    bool          capture_monitor_mode;         /**< If true, capture in monitor (RFMON) mode by default */
+    bool          capture_pcap_ng;              /**< If true, save captures in pcapng format instead of pcap */
+    int           capture_zstd_compression_level; /**< Zstandard level for saved/exported captures; 0 uses the library default */
+    capture_process_info_e capture_process_info; /**< What to record of the processes that packets belong to */
+    bool          capture_real_time;            /**< If true, update the packet list in real time during capture */
+    unsigned      capture_update_interval;      /**< Interval in milliseconds between packet list updates during capture */
+    char         *capture_temp_dir;             /**< Directory for temporary capture files; empty means the system default */
+
+    /* Aggregation */
+    GList        *aggregation_fields;           /**< List of field names used for packet aggregation */
+    int           aggregation_fields_num;       /**< Number of entries in @ref aggregation_fields */
+
+    /* Capture startup */
+    bool          capture_no_interface_load;    /**< If true, skip loading the interface list at startup */
+    bool          capture_no_extcap;            /**< If true, disable extcap interface discovery */
+    bool          capture_show_info;            /**< If true, show the capture information dialog during live capture */
+
+    /* Update intervals */
+    unsigned      tap_update_interval;          /**< Interval in milliseconds between tap/statistics view updates */
+
+    /* Dissection display options */
+    bool          display_hidden_proto_items;          /**< If true, show protocol fields marked as hidden in the details tree */
+    bool          display_byte_fields_with_spaces;     /**< If true, insert spaces between bytes in byte-array field display */
+    abs_time_format_e display_abs_time_ascii;          /**< Controls ASCII rendering of absolute timestamps */
+
+    /* Dissector checking */
+    bool          enable_incomplete_dissectors_check;  /**< If true, warn when a dissector does not consume all available data */
+    bool          incomplete_dissectors_check_debug;   /**< If true, emit debug output for incomplete dissector checks */
+    bool          strict_conversation_tracking_heuristics; /**< If true, apply stricter heuristics for conversation tracking */
+    int           conversation_deinterlacing_key;      /**< Key bitmask controlling conversation deinterlacing behavior */
+
+    /* Duplicate frame detection */
+    bool          ignore_dup_frames;                   /**< If true, suppress display of duplicate frames */
+    unsigned      ignore_dup_frames_cache_entries;     /**< Number of frames to cache for duplicate detection */
+
+    /* Migration flags */
+    bool          filter_expressions_old;   /**< True if legacy filter expression preferences were loaded from disk */
+    bool          cols_hide_new;            /**< True if the new index-based gui.column.hide preference was loaded */
+
+    /* Auto-update */
+    bool          gui_update_enabled;                  /**< If true, automatic update checks are enabled */
+    software_update_channel_e gui_update_channel;      /**< Update channel (stable or development) */
+    unsigned      gui_update_interval;                 /**< Interval in seconds between automatic update checks */
+    unsigned      gui_debounce_timer;                  /**< Debounce interval in milliseconds for UI events */
+
+    char         *saved_at_version;         /**< Wireshark version string that last wrote the preferences file */
+
+    /* Packet list display options */
+    bool          gui_packet_list_separator;             /**< If true, draw a separator line between rows in the packet list */
+    bool          gui_packet_header_column_definition;   /**< If true, show column type descriptions in packet list header tooltips */
+    bool          gui_packet_list_hover_style;           /**< If true, apply hover colorization to packet list rows */
+    bool          gui_show_selected_packet;              /**< If true, highlight the selected packet in all views */
+    bool          gui_show_file_load_time;               /**< If true, display the file load time in the status bar */
+    elide_mode_e  gui_packet_list_elide_mode;            /**< Which end of long column text is elided */
+    copy_format_e gui_packet_list_copy_format_options_for_keyboard_shortcut; /**< Format used when copying rows via keyboard shortcut */
+    bool          gui_packet_list_copy_text_with_aligned_columns; /**< If true, align columns with spaces when copying as text */
+    bool          gui_packet_list_show_related;          /**< If true, highlight related packets in the packet list */
+    bool          gui_packet_list_show_minimap;          /**< If true, show the color minimap alongside the packet list scrollbar */
+    bool          gui_packet_list_sortable;              /**< If true, allow the packet list to be sorted by clicking column headers */
+    unsigned      gui_packet_list_cached_rows_max;       /**< Maximum number of packet list rows to keep in the display cache */
+
+    /* Multi-color stripe settings */
+    gui_packet_list_multi_color_mode_e      gui_packet_list_multi_color_mode;            /**< Multi-color stripe display mode */
+    unsigned                                gui_packet_list_multi_color_shift_percent;   /**< Primary color width percentage (75–95) for SHIFT_RIGHT mode */
+    bool                                    gui_packet_list_multi_color_details;         /**< If true, show all matching color rules in the packet details tree */
+    gui_packet_list_multi_color_separator_e gui_packet_list_multi_color_separator;       /**< Separator style between adjacent color stripes */
+
+    /* Decimal places for statistics calculations */
+    unsigned      gui_decimal_places1;      /**< Number of decimal places for type-1 statistic calculations */
+    unsigned      gui_decimal_places2;      /**< Number of decimal places for type-2 statistic calculations */
+    unsigned      gui_decimal_places3;      /**< Number of decimal places for type-3 statistic calculations */
+
+    /* RTP player */
+    bool          gui_rtp_player_use_disk1; /**< If true, buffer RTP audio stream 1 to disk instead of memory */
+    bool          gui_rtp_player_use_disk2; /**< If true, buffer RTP audio stream 2 to disk instead of memory */
+
+    /* Flow graph */
+    unsigned      flow_graph_max_export_items; /**< Maximum number of items to include in a flow graph export */
+
+    /* Statistics burst detection */
+    bool          st_enable_burstinfo;      /**< If true, compute and display burst information in statistics */
+    bool          st_burst_showcount;       /**< If true, show burst packet count instead of burst rate */
+    unsigned      st_burst_resolution;      /**< Resolution of burst detection in milliseconds */
+    unsigned      st_burst_windowlen;       /**< Sliding window length for burst detection in milliseconds */
+
+    /* Statistics sorting */
+    bool          st_sort_casesensitve;     /**< If true, perform case-sensitive sorting in statistics trees */
+    bool          st_sort_rng_fixorder;     /**< If true, fix the order of range-based statistics columns */
+    bool          st_sort_rng_nameonly;     /**< If true, sort range-based statistics by name only */
+    int           st_sort_defcolflag;       /**< Default column flag used for initial statistics sort */
+    bool          st_sort_defdescending;    /**< If true, sort statistics in descending order by default */
+    bool          st_sort_showfullname;     /**< If true, display the full protocol name in statistics trees */
+    int           st_format;               /**< Output format selector for statistics text export */
+
+    bool          conv_machine_readable;   /**< If true, output conversation statistics in machine-readable format */
+    bool          extcap_save_on_start;    /**< If true, automatically save extcap capture options at session start */
 } e_prefs;
 
 WS_DLL_PUBLIC e_prefs prefs;
@@ -301,18 +413,32 @@ struct pref_custom_cbs;
 typedef struct pref_module module_t;
 
 /** Sets up memory used by proto routines. Called at program startup */
-void prefs_init(void);
+
+/**
+ * @brief Initialize preferences system
+ *
+ * @param col_fmt Array of column format strings
+ * @param num_cols Number of columns in the display
+ */
+void prefs_init(const char** col_fmt, int num_cols);
 
 /** Reset preferences to default values.  Called at profile change */
-WS_DLL_PUBLIC void prefs_reset(void);
+
+/**
+ * @brief Resets preferences to their default values.
+ *
+ * @param app_env_var_prefix Prefix for the application environment variables.
+ * @param col_fmt Array of column format strings.
+ * @param num_cols Number of columns in the format array.
+ */
+WS_DLL_PUBLIC void prefs_reset(const char* app_env_var_prefix, const char** col_fmt, int num_cols);
 
 /** Frees memory used by proto routines. Called at program shutdown */
-void prefs_cleanup(void);
 
-/** Store whether the current UI theme is dark so that we can adjust colors
-* @param is_dark set to true if the UI's theme is dark
-*/
-WS_DLL_PUBLIC void prefs_set_gui_theme_is_dark(bool is_dark);
+/**
+ * @brief Clean up preferences.
+ */
+void prefs_cleanup(void);
 
 /**
  * Register that a protocol has preferences.
@@ -325,7 +451,7 @@ WS_DLL_PUBLIC void prefs_set_gui_theme_is_dark(bool is_dark);
 WS_DLL_PUBLIC module_t *prefs_register_protocol(int id, void (*apply_cb)(void));
 
 /**
- * Register an alias for a preference module.
+ * @brief Register an alias for a preference module.
  * @param name the preference module's alias. Only ASCII letters, numbers,
  *                  underscores, hyphens, and dots may appear in the name
  * @param module the module to create an alias for
@@ -389,6 +515,30 @@ WS_DLL_PUBLIC module_t *prefs_register_protocol_subtree(const char *subtree, int
 WS_DLL_PUBLIC module_t *prefs_register_protocol_obsolete(int id);
 
 /**
+ * @brief Register a module that will have preferences.
+ * Specify the module under which to register it, the name used for the
+ * module in the preferences file, the title used in the tab for it
+ * in a preferences dialog box, and a routine to call back when the
+ * preferences are applied.
+ *
+ * @param pref_tree "Parent" preference tree under which to register this module.
+ * @param master_pref_tree List of all preference modules.
+ * @param name is a name for the module to use on the command line with "-o"
+ *             and in preference files.
+ * @param title the module title in the preferences UI
+ * @param description the description included in the preferences file
+ *                    and shown as tooltip in the GUI, or NULL
+ * @param help The help string associated with the module, or NULL
+ * @param apply_cb Callback routine that is called when preferences are
+ *                      applied. It may be NULL, which inhibits the callback.
+ * @return a preferences module which can be used to register a user 'preference'
+ */
+WS_DLL_PUBLIC module_t*
+prefs_register_module(wmem_tree_t* pref_tree, wmem_tree_t* master_pref_tree, const char* name, const char* title,
+    const char* description, const char* help, void (*apply_cb)(void),
+    const bool use_gui);
+
+/**
  * Callback function for module list scanners.
  */
 typedef unsigned (*module_cb)(module_t *module, void *user_data);
@@ -408,10 +558,11 @@ WS_DLL_PUBLIC bool prefs_module_has_submodules(module_t *module);
  * preferences for dissectors that no longer have preferences to be
  * silently ignored in preference files.
  *
+ * @param module module to act on
  * @param callback the callback to call
  * @param user_data additional data to pass to the callback
  */
-WS_DLL_PUBLIC unsigned prefs_modules_foreach(module_cb callback, void *user_data);
+WS_DLL_PUBLIC unsigned prefs_modules_foreach(const wmem_tree_t* module, module_cb callback, void *user_data);
 
 /**
  * Call a callback function, with a specified argument, for each submodule
@@ -423,12 +574,24 @@ WS_DLL_PUBLIC unsigned prefs_modules_foreach(module_cb callback, void *user_data
  * silently ignored in preference files.  Does not ignore subtrees,
  * as this can be used when walking the display tree of modules.
  *
- * @param module the top-level module to walk through the submodules,
- *               or NULL for the top-level list in the display tree of modules
+ * @param module module to walk through
  * @param callback the callback to call
  * @param user_data additional data to pass to the callback
  */
-WS_DLL_PUBLIC unsigned prefs_modules_foreach_submodules(module_t *module, module_cb callback, void *user_data);
+WS_DLL_PUBLIC unsigned prefs_modules_foreach_submodules(const wmem_tree_t* module, module_cb callback, void *user_data);
+
+/**
+ * Call a callback function, with a specified argument, for all modules.
+ *
+ * Ignores "obsolete" modules; their sole purpose is to allow old
+ * preferences for dissectors that no longer have preferences to be
+ * silently ignored in preference files.  Does not ignore subtrees,
+ * as this can be used when walking the display tree of modules.
+ *
+ * @param callback the callback to call
+ * @param user_data additional data to pass to the callback
+ */
+WS_DLL_PUBLIC unsigned prefs_modules_for_all_modules(module_cb callback, void* user_data);
 
 /**
  * Call the "apply" callback function for each module if any of its
@@ -506,6 +669,45 @@ WS_DLL_PUBLIC pref_t *prefs_find_preference(module_t * module, const char *pref)
  */
 WS_DLL_PUBLIC void prefs_register_uint_preference(module_t *module, const char *name,
     const char *title, const char *description, unsigned base, unsigned *var);
+
+/**
+ * Register a preference with an integer value.
+ * @param module the preferences module returned by prefs_register_protocol() or
+ *               prefs_register_protocol_subtree()
+ * @param name the preference's identifier. This is appended to the name of the
+ *             protocol, with a "." between them, to create a unique identifier.
+ *             The identifier should not include the protocol name, as
+ *             the preference file will already have it. Make sure that
+ *             only lower-case ASCII letters, numbers, underscores and
+ *             dots appear in the preference name.
+ * @param title the title in the preferences dialog
+ * @param description the description included in the preferences file
+ *                    and shown as tooltip in the GUI, or NULL
+ * @param var pointer to the storage location that is updated when the
+ *                    field is changed in the preference dialog box
+ */
+WS_DLL_PUBLIC void prefs_register_int_preference(module_t* module, const char* name,
+    const char* title, const char* description, int* var);
+
+/**
+* Register a preference with a float (double) value.
+* @param module the preferences module returned by prefs_register_protocol() or
+*               prefs_register_protocol_subtree()
+* @param name the preference's identifier. This is appended to the name of the
+*             protocol, with a "." between them, to create a unique identifier.
+*             The identifier should not include the protocol name, as
+*             the preference file will already have it. Make sure that
+*             only lower-case ASCII letters, numbers, underscores and
+*             dots appear in the preference name.
+* @param title the title in the preferences dialog
+* @param description the description included in the preferences file
+*                    and shown as tooltip in the GUI, or NULL
+* @param num_decimal the number of decimal places to display for a value
+* @param var pointer to the storage location that is updated when the
+*                    field is changed in the preference dialog box
+*/
+WS_DLL_PUBLIC void prefs_register_float_preference(module_t* module, const char* name,
+    const char* title, const char* description, unsigned num_decimal, double* var);
 
 /*
  * prefs_register_ callers must conform to the following:
@@ -639,6 +841,61 @@ WS_DLL_PUBLIC void prefs_register_filename_preference(module_t *module, const ch
  */
 WS_DLL_PUBLIC void prefs_register_directory_preference(module_t *module, const char *name,
     const char *title, const char *description, const char **var);
+
+/**
+ * Register a preference with a comma-delimited string values.
+ *
+ * This is currently not support in the UI for dissector use
+ * (internal UI preferences only)
+ * @param module the preferences module returned by prefs_register_protocol() or
+ *               prefs_register_protocol_subtree()
+ * @param name the preference's identifier. This is appended to the name of the
+ *             protocol, with a "." between them, to create a unique identifier.
+ *             The identifier should not include the protocol name, as the name in
+ *             the preference file will already have it. Make sure that
+ *             only lower-case ASCII letters, numbers, underscores and
+ *             dots appear in the preference name.
+ * @param title Field's title in the preferences dialog
+ * @param description description to include in the preferences file
+ *                    and shown as tooltip in the GUI, or NULL
+ * @param var pointer to the storage location that is updated when the
+ *                    field is changed in the preference dialog box. Note that
+ *          the given pointer is overwritten
+ *          with a pointer to a new copy of the list during the
+ *          preference registration. The passed-in string may be
+ *          freed, but you must keep another pointer to the string
+ *          in order to free it
+ */
+WS_DLL_PUBLIC void prefs_register_list_string_preference(module_t* module, const char* name,
+    const char* title, const char* description, wmem_list_t** var);
+
+/**
+ * Register a preference that has multiple string values
+ * This looks like multiple instances of the same preference in the file
+ *
+ * This is currently not support in the UI for dissector use
+ * (internal UI preferences only)
+ * @param module the preferences module returned by prefs_register_protocol() or
+ *               prefs_register_protocol_subtree()
+ * @param name the preference's identifier. This is appended to the name of the
+ *             protocol, with a "." between them, to create a unique identifier.
+ *             The identifier should not include the protocol name, as the name in
+ *             the preference file will already have it. Make sure that
+ *             only lower-case ASCII letters, numbers, underscores and
+ *             dots appear in the preference name.
+ * @param title Field's title in the preferences dialog
+ * @param description description to include in the preferences file
+ *                    and shown as tooltip in the GUI, or NULL
+ * @param var pointer to the storage location that is updated when the
+ *                    field is changed in the preference dialog box. Note that
+ *          the given pointer is overwritten
+ *          with a pointer to a new copy of the list during the
+ *          preference registration. The passed-in string may be
+ *          freed, but you must keep another pointer to the string
+ *          in order to free it
+ */
+WS_DLL_PUBLIC void prefs_register_multiple_string_preference(module_t* module, const char* name,
+    const char* title, const char* description, wmem_list_t** var);
 
 /**
  * Register a preference with a ranged value.
@@ -812,7 +1069,7 @@ WS_DLL_PUBLIC void prefs_register_dissector_preference(module_t *module, const c
     const char *title, const char *description, const char **var);
 
 /**
- * Register a preference that used to be supported but no longer is.
+ * @brief Register a preference that used to be supported but no longer is.
  *
  * Note that a warning will pop up if you've saved such preference to the
  * preference file and you subsequently take the code out. The way to make
@@ -831,7 +1088,7 @@ WS_DLL_PUBLIC void prefs_register_obsolete_preference(module_t *module,
     const char *name);
 
 /**
- * Register a preference with an enumerated value.
+ * @brief Register a preference with an enumerated value.
  * @param module the preferences module returned by prefs_register_protocol() or
  *               prefs_register_protocol_subtree()
  * @param name the preference's identifier. This is appended to the name of the
@@ -855,7 +1112,9 @@ WS_DLL_PUBLIC void prefs_register_custom_preference_TCP_Analysis(module_t *modul
     const enum_val_t *enumvals, bool radio_buttons);
 
 /**
- * Mark a preference that affects fields change. This works for bool, enum,
+ * @brief Mark a preference that affects fields change.
+ *
+ * This works for bool, enum,
  * int, string (containing filename), range preferences. UAT is not included,
  * because you can specified UAT_AFFECTS_FIELDS at uat_new().
   *
@@ -871,11 +1130,20 @@ WS_DLL_PUBLIC void prefs_register_custom_preference_TCP_Analysis(module_t *modul
 WS_DLL_PUBLIC void prefs_set_preference_effect_fields(module_t *module,
     const char *name);
 
+/**
+ * @brief Set the effect flags for a preference in a given module.
+ *
+ * @param module The module containing the preference.
+ * @param name The name of the preference to set.
+ * @param flags The effect flags to set.
+ */
+WS_DLL_PUBLIC void prefs_set_preference_effect(module_t* module,
+    const char* name, unsigned flags);
 
 typedef unsigned (*pref_cb)(pref_t *pref, void *user_data);
 
 /**
- * Call a callback function, with a specified argument, for each preference
+ * @brief Call a callback function, with a specified argument, for each preference
  * in a given module.
  *
  * If any of the callbacks return a non-zero value, stop and return that
@@ -892,7 +1160,7 @@ WS_DLL_PUBLIC unsigned prefs_pref_foreach(module_t *module, pref_cb callback,
     void *user_data);
 
 /**
- * Parse through a list of comma-separated, possibly quoted strings.
+ * @brief Parse through a list of comma-separated, possibly quoted strings.
  * Return a list of the string data.
  *
  * Commas, whitespace, and the quotes surrounding entries are removed.
@@ -904,12 +1172,13 @@ WS_DLL_PUBLIC unsigned prefs_pref_foreach(module_t *module, pref_cb callback,
 WS_DLL_PUBLIC GList *prefs_get_string_list(const char *str);
 
 /**
- * Clear the given list of string data.
+ * @brief Clear the given list of string data.
  * @param sl the GList to clear
  */
 WS_DLL_PUBLIC void prefs_clear_string_list(GList *sl);
 
-/** Fetch a short preference type name, e.g. "Integer".
+/**
+ * @brief Fetch a short preference type name, e.g. "Integer".
  *
  * @param pref A preference.
  *
@@ -918,7 +1187,8 @@ WS_DLL_PUBLIC void prefs_clear_string_list(GList *sl);
 WS_DLL_PUBLIC
 const char *prefs_pref_type_name(pref_t *pref);
 
-/** Fetch a long description of the preference type
+/**
+ * @brief Fetch a long description of the preference type
  *
  * @param pref A preference.
  *
@@ -929,7 +1199,8 @@ const char *prefs_pref_type_name(pref_t *pref);
 WS_DLL_PUBLIC
 char *prefs_pref_type_description(pref_t *pref);
 
-/** Fetch a string representation of the preference.
+/**
+ * @brief Fetch a string representation of the preference.
  *
  * @param pref A preference.
  * @param source Which value of the preference to return, see pref_source_t.
@@ -939,46 +1210,77 @@ char *prefs_pref_type_description(pref_t *pref);
 WS_DLL_PUBLIC
 char *prefs_pref_to_str(pref_t *pref, pref_source_t source);
 
-/** Fetch whether a preference is marked obsolete.
+/**
+ * @brief Fetch the number of preferences in a module that are not UATs.
+ *
+ * @param module A preference module.
+ *
+ * @return The number of non-UAT preferences in the module.
+ */
+WS_DLL_PUBLIC
+int prefs_num_non_uat(module_t* module);
+
+
+/**
+ * @brief Fetch whether a preference is marked obsolete.
  *
  * @param pref A preference.
  *
- * @return A boolean indication the obsolesence of the preference.
+ * @return A boolean indication the obsolescence of the preference.
  */
 WS_DLL_PUBLIC
 bool prefs_is_preference_obsolete(pref_t *pref);
 
 /**
- * Read the preferences file, fill in "prefs", and return a pointer to it.
+ * @brief Read the preferences file, fill in "prefs", and return a pointer to it.
+ *
  * If we got an error (other than "it doesn't exist") we report it through
  * the UI.
  *
  * This is called by epan_load_settings(); programs should call that
  * rather than individually calling the routines it calls.
  *
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
  * @return a pointer to the filled in prefs object
 */
-extern e_prefs *read_prefs(void);
+extern e_prefs *read_prefs(const char* app_env_var_prefix);
 
 /**
- * Write out "prefs" to the user's preferences file, and return 0.
+ * @brief Write out "prefs" to the user's preferences file, and return 0.
  *
  * If we got an error, stuff a pointer to the path of the preferences file
  * into "*pf_path_return", and return the errno.
  *
+ * @param app_env_var_prefix The prefix for the application environment variable used to get the global configuration directory.
  * @param pf_path_return The path to write preferences to or NULL for stdout
  * @return 0 if success, otherwise errno
 */
-WS_DLL_PUBLIC int write_prefs(char **pf_path_return);
+WS_DLL_PUBLIC int write_prefs(const char* app_env_var_prefix, char **pf_path_return);
 
 /**
- * Result of setting a preference.
+ * @brief Callback function for writing individual preferences.
+ *
+ * @param data A preference pointer of type pref_t*
+ * @param user_data write_pref_arg_t* pointer
+ */
+WS_DLL_PUBLIC void pref_write_individual(void* data, void* user_data);
+
+/**
+ * @brief Callback function for freeing individual preferences.
+ *
+ * @param data A preference pointer of type pref_t*
+ * @param user_data unused
+ */
+WS_DLL_PUBLIC void pref_free_individual(void* data, void* user_data);
+
+/**
+ * @brief Result of setting a preference.
  */
 typedef enum {
-    PREFS_SET_OK,               /* succeeded */
-    PREFS_SET_SYNTAX_ERR,       /* syntax error in string */
-    PREFS_SET_NO_SUCH_PREF,     /* no such preference */
-    PREFS_SET_OBSOLETE          /* preference used to exist but no longer does */
+    PREFS_SET_OK,               /**< succeeded */
+    PREFS_SET_SYNTAX_ERR,       /**< syntax error in string */
+    PREFS_SET_NO_SUCH_PREF,     /**< no such preference */
+    PREFS_SET_OBSOLETE          /**< preference used to exist but no longer does */
 } prefs_set_pref_e;
 
 /**
@@ -1008,29 +1310,23 @@ WS_DLL_PUBLIC prefs_set_pref_e prefs_set_pref(char *prefarg, char **errmsg);
 WS_DLL_PUBLIC range_t* prefs_get_range_value(const char *module_name, const char* pref_name);
 
 /**
- * Returns true if the specified capture device is hidden
+ * @brief Checks if the specified capture device is hidden
+ *
  * @param name the name of the capture device
  * @return true if the specified capture device is hidden, otherwise false
  */
 WS_DLL_PUBLIC bool prefs_is_capture_device_hidden(const char *name);
 
 /**
- * Returns true if the given device should capture in monitor mode by default
+ * @brief Returns true if the given device should capture in monitor mode by default
+ *
  * @param name the name of the capture device
  * @return true if the specified capture device should capture in monitor mode by default, otherwise false
  */
 WS_DLL_PUBLIC bool prefs_capture_device_monitor_mode(const char *name);
 
 /**
- * Returns true if the user has marked this column as visible
- *
- * @param column the name of the column
- * @return true if this column as visible, otherwise false
- */
-WS_DLL_PUBLIC bool prefs_capture_options_dialog_column_is_visible(const char *column);
-
-/**
- * Returns true if the layout pane content is enabled
+ * @brief Returns true if the layout pane content is enabled
  *
  * @param layout_pane_content the layout pane content to check
  * @return true if the layout pane content is enabled, otherwise false
@@ -1040,8 +1336,6 @@ WS_DLL_PUBLIC bool prefs_has_layout_pane_content (layout_pane_content_e layout_p
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* prefs.h */
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

@@ -20,7 +20,7 @@
  * - Prints a status line, followed by fields from a specified list.
  */
 
-#include <config.h>
+#include "config.h"
 #define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <stdlib.h>
@@ -46,12 +46,14 @@
 #include <wsutil/array.h>
 #include <wsutil/cmdarg_err.h>
 #include <wsutil/filesystem.h>
+#include <app/application_flavor.h>
 #include <wsutil/file_util.h>
 #include <wsutil/socket.h>
 #include <wsutil/privileges.h>
 #include <wsutil/please_report_bug.h>
 #include <wsutil/wslog.h>
 #include <wsutil/clopts_common.h>
+#include <wsutil/report_message.h>
 
 #ifdef _WIN32
 #include <wsutil/unicode-utils.h>
@@ -84,7 +86,6 @@
 #include <wiretap/libpcap.h>
 #include <wiretap/pcap-encap.h>
 
-#include <cli_main.h>
 #include <wsutil/version_info.h>
 
 #include "capture/capture-pcap-util.h"
@@ -150,14 +151,12 @@ typedef struct string_fmt_s {
     string_fmt_e format;    /* Valid if plain is NULL */
 } string_fmt_t;
 
-int n_rfilters;
-int n_rfcodes;
-dfilter_t *rfcodes[64];
-int n_rfieldfilters;
-dfilter_t *rfieldfcodes[64];
-int fd;
-int encap;
-GPtrArray *string_fmts;
+static int n_rfilters;
+static int n_rfcodes;
+static dfilter_t *rfcodes[64];
+static int fd;
+static int encap;
+static GPtrArray *string_fmts;
 
 static void
 print_usage(FILE *output)
@@ -207,7 +206,7 @@ print_usage(FILE *output)
     fprintf(output, "  -l                       flush output after each packet\n");
     fprintf(output, "  -S                       format string for fields\n");
     fprintf(output, "                           (%%D - name, %%S - stringval, %%N numval)\n");
-    fprintf(output, "  -t (a|ad|adoy|d|dd|e|r|u|ud|udoy)[.[N]]|.[N]\n");
+    fprintf(output, "  -t (a|ad|adoy|d|dd|e|r|rc|u|ud|udoy)[.[N]]|.[N]\n");
     fprintf(output, "                           output format of time stamps (def: r: rel. to first)\n");
     fprintf(output, "  -u s|hms                 output format of seconds (def: s: seconds)\n");
     fprintf(output, "\n");
@@ -428,6 +427,12 @@ main(int argc, char *argv[])
 #define OPTSTRING_INIT OPTSTRING_DISSECT_COMMON OPTSTRING_READ_CAPTURE_COMMON "F:hlm:o:psS:v"
 
     static const char    optstring[] = OPTSTRING_INIT;
+    const struct file_extension_info* file_extensions;
+    unsigned num_extensions;
+    epan_app_data_t app_data;
+
+    /* Future proof by zeroing out all data */
+    memset(&app_data, 0, sizeof(app_data));
 
     /* Set the program name. */
     g_set_prgname("rawshark");
@@ -445,7 +450,7 @@ main(int argc, char *argv[])
     cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    ws_log_init(vcmdarg_err);
+    ws_log_init(vcmdarg_err, "Rawshark Debug Console");
 
     /* Early logging command-line initialization. */
     ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
@@ -478,14 +483,14 @@ main(int argc, char *argv[])
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    err_msg = configuration_init(argv[0]);
+    err_msg = configuration_init(argv[0], "wireshark");
     if (err_msg != NULL) {
         fprintf(stderr, "rawshark: Can't get pathname of rawshark program: %s.\n",
                 err_msg);
     }
 
     /* Initialize the version information. */
-    ws_init_version_info("Rawshark",
+    ws_init_version_info("Rawshark", NULL, application_get_vcs_version_info,
                          epan_gather_compile_info,
                          NULL);
 
@@ -505,13 +510,19 @@ main(int argc, char *argv[])
      * file-type-dependent blocks can register using the file
      * type/subtype value for the file type.
      */
-    wtap_init(false);
+    application_file_extensions(&file_extensions, &num_extensions);
+    wtap_init(false, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
     /* Register all dissectors; we must do this before checking for the
        "-G" flag, as the "-G" flag dumps information registered by the
        dissectors, and we must do it before we read the preferences, in
        case any dissectors register preferences. */
-    if (!epan_init(NULL, NULL, true)) {
+    app_data.env_var_prefix = application_configuration_environment_prefix();
+    app_data.col_fmt = application_columns();
+    app_data.num_cols = application_num_columns();
+    app_data.register_func = register_all_protocols;
+    app_data.handoff_func = register_all_protocol_handoffs;
+    if (!epan_init(NULL, NULL, true, &app_data)) {
         ret = WS_EXIT_INIT_FAILED;
         goto clean_exit;
     }
@@ -572,15 +583,38 @@ main(int argc, char *argv[])
                 break;
 #if !defined(_WIN32) && defined(RLIMIT_AS)
             case 'm':
-                if (!get_uint32(ws_optarg, "memory limit", (uint32_t*)(&limit.rlim_cur)) ||
-                    !get_uint32(ws_optarg, "memory limit", (uint32_t*)(&limit.rlim_max)) ||
-                    (setrlimit(RLIMIT_AS, &limit) != 0)) {
+            {
+                /* POSIX says that rlim_t shall be defined through typedef to
+                 * be an unsigned integer type. On many 32-bit platforms rlim_t
+                 * as defined by sys/resource.h is 64-bit anyway in order to
+                 * provide large file support. (Exactly how that is translated
+                 * to system calls varies.)
+                 */
+                if (sizeof(rlim_t) < 8) {
+                    uint32_t memory_limit;
+                    if (!get_nonzero_uint32(ws_optarg, "memory limit", &memory_limit)) {
+                        ret = WS_EXIT_INVALID_OPTION;
+                        goto clean_exit;
+                    }
+                    limit.rlim_cur = memory_limit;
+                    limit.rlim_max = memory_limit;
+                } else {
+                    uint64_t memory_limit;
+                    if (!get_nonzero_uint64(ws_optarg, "memory limit", &memory_limit)) {
+                        ret = WS_EXIT_INVALID_OPTION;
+                        goto clean_exit;
+                    }
+                    limit.rlim_cur = memory_limit;
+                    limit.rlim_max = memory_limit;
+                }
+                if ((setrlimit(RLIMIT_AS, &limit) != 0)) {
                     cmdarg_err("setrlimit(RLIMIT_AS) failed: %s",
                                g_strerror(errno));
                     ret = WS_EXIT_INVALID_OPTION;
                     goto clean_exit;
                 }
                 break;
+            }
 #endif
             case 'o':        /* Override preference from command line */
             {
@@ -926,7 +960,7 @@ load_cap_file(capture_file *cf)
     wtap_rec     rec;
     epan_dissect_t edt;
 
-    wtap_rec_init(&rec, 1514);
+    wtap_rec_init(&rec, DEFAULT_INIT_BUFFER_SIZE_2048);
 
     epan_dissect_init(&edt, cf->epan, true, false);
 
@@ -939,7 +973,7 @@ load_cap_file(capture_file *cf)
     wtap_rec_cleanup(&rec);
     if (err != 0) {
         /* Print a message noting that the read failed somewhere along the line. */
-        cfile_read_failure_message(cf->filename, err, err_info);
+        report_cfile_read_failure(cf->filename, err, err_info);
         return false;
     }
 
@@ -1257,7 +1291,7 @@ protocolinfo_packet(void *prs, packet_info *pinfo _U_, epan_dissect_t *edt, cons
     return TAP_PACKET_DONT_REDRAW;
 }
 
-int g_cmd_line_index;
+static int g_cmd_line_index;
 
 /*
  * field must be persistent - we don't g_strdup() it below
@@ -1407,8 +1441,17 @@ raw_epan_new(capture_file *cf)
 {
     static const struct packet_provider_funcs funcs = {
         cap_file_provider_get_frame_ts,
+        cap_file_provider_get_start_ts,
+        cap_file_provider_get_end_ts,
         cap_file_provider_get_interface_name,
         cap_file_provider_get_interface_description,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
         NULL,
         NULL,
         NULL,

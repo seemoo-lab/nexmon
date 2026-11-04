@@ -467,7 +467,7 @@ tvbparse_wanted_t* tvbparse_set_oneof(const int id,
 
 static int cond_hash(tvbparse_t* tt, const int offset, const tvbparse_wanted_t* wanted, tvbparse_elem_t** tok) {
     int key_len;
-    char* key = NULL;
+    uint8_t* key = NULL;
     tvbparse_elem_t* key_elem = NULL;
     tvbparse_wanted_t* value_wanted = NULL;
     int value_len;
@@ -730,25 +730,25 @@ static int cond_some(tvbparse_t* tt, int offset, const tvbparse_wanted_t * wante
 }
 
 tvbparse_wanted_t* tvbparse_some(const int id,
-                                 const unsigned from,
-                                 const unsigned to,
+                                 const unsigned min,
+                                 const unsigned max,
                                  const void* data,
                                  tvbparse_action_t before_cb,
                                  tvbparse_action_t after_cb,
-                                 const tvbparse_wanted_t* el) {
+                                 const tvbparse_wanted_t* wanted) {
 
     tvbparse_wanted_t* w = wmem_new0(wmem_epan_scope(), tvbparse_wanted_t);
 
-    ws_assert(from <= to);
+    ws_assert(min <= max);
 
     w->condition = cond_some;
     w->id = id;
-    w->min = from;
-    w->max = to;
+    w->min = min;
+    w->max = max;
     w->data = data;
     w->before = before_cb;
     w->after = after_cb;
-    w->control.subelem = el;
+    w->control.subelem = wanted;
 
     return w;
 }
@@ -892,14 +892,12 @@ tvbparse_t* tvbparse_init(wmem_allocator_t *scope,
 }
 
 bool tvbparse_reset(tvbparse_t* tt,
-                        const int offset,
-                        int len) {
+                        const unsigned offset,
+                        unsigned len) {
 
 #ifdef TVBPARSE_DEBUG
     if (TVBPARSE_DEBUG & TVBPARSE_DEBUG_TT) ws_warning("tvbparse_init: offset=%i len=%i",offset,len);
 #endif
-
-    len = (len == -1) ? (int) tvb_captured_length(tt->tvb) : len;
 
     if( tvb_captured_length_remaining(tt->tvb, offset) >= len) {
         tt->offset = offset;

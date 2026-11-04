@@ -4,7 +4,7 @@ UTILITIES_PATH := $(LOCAL_PATH)/../../../../../../../utilities
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwireshark_helper
 LOCAL_SRC_FILES:= wireshark_helper.c
-LOCAL_CFLAGS := -DHAVE_LIBPCAP
+LOCAL_CFLAGS := -std=gnu89 -DHAVE_LIBPCAP
 LOCAL_C_INCLUDES += $(UTILITIES_PATH)
 LOCAL_STATIC_LIBRARIES := libtshark libwireshark libwiretap libwsutil libpcap libgmodule-2.0 libglib-2.0 libiconv libintl
 LOCAL_LDLIBS := -llog -lz

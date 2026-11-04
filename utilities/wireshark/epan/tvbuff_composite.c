@@ -60,8 +60,6 @@ tvb_comp_off_compare(const void *a, const void *b, void *user_data)
 typedef struct {
 	GSequence	*tvbs;
 
-	unsigned	recursion_depth;
-
 } tvb_comp_t;
 
 struct tvb_composite {
@@ -108,7 +106,7 @@ composite_get_ptr(tvbuff_t *tvb, unsigned abs_offset, unsigned abs_length)
 	/* special case */
 	if (g_sequence_iter_is_end(iter)) {
 		DISSECTOR_ASSERT(abs_offset == tvb->length && abs_length == 0);
-		return "";
+		return (const uint8_t*)"";
 	}
 
 	member = (tvb_comp_member_t *)g_sequence_get(iter);
@@ -214,6 +212,8 @@ static const struct tvb_ops tvb_composite_ops = {
 	composite_offset,     /* offset */
 	composite_get_ptr,    /* get_ptr */
 	composite_memcpy,     /* memcpy */
+	/* XXX - The generic find routines work, but specialized ones
+	 * might be able to avoid some memcpys */
 	NULL,                 /* find_uint8 XXX */
 	NULL,                 /* pbrk_uint8 XXX */
 	NULL,                 /* clone */
@@ -239,7 +239,6 @@ tvb_new_composite(void)
 	tvb_comp_t *composite = &composite_tvb->composite;
 
 	composite->tvbs		 = g_sequence_new(g_free);
-	composite->recursion_depth = 0;
 
 	return tvb;
 }

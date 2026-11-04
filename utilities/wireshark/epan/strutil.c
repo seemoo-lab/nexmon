@@ -705,7 +705,7 @@ convert_string_case(const char *string, bool case_insensitive)
 
 #define GN_CHAR_ALPHABET_SIZE 128
 
-static gunichar IA5_default_alphabet[GN_CHAR_ALPHABET_SIZE] = {
+static const gunichar IA5_default_alphabet[GN_CHAR_ALPHABET_SIZE] = {
 
     /*ITU-T recommendation T.50 specifies International Reference Alphabet 5 (IA5) */
 
@@ -746,7 +746,7 @@ IA5_7BIT_decode(unsigned char * dest, const unsigned char* src, int len)
 
     for (i = 0, j = 0; j < len;  j++) {
         buf = char_def_ia5_alphabet_decode(src[j]);
-        i += g_unichar_to_utf8(buf,&(dest[i]));
+        i += g_unichar_to_utf8(buf,(char*)&(dest[i]));
     }
     dest[i]=0;
 }
@@ -826,23 +826,160 @@ ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
     if (pos >= buf_size)
         return pos;
 
-    uint8_t r = 0;
     ssize_t chlen;
     ssize_t idx, src_len;
     ssize_t free_len;
 
+    /* Ensure the label is NULL terminated (even if str is NULL or empty or
+     * begins with invalid UTF-8). label_str SHOULD already be NULL terminated
+     * if this has been called before, but if newly-allocated might not be.
+     * (pos < buf_size SHOULD hold for a newly-allocated string unless the
+     * caller is very buggy.)
+     *
+     * We always add a NULL immediately after writing a character (or long run
+     * of printable ASCII in the fast path), so the string is always null
+     * terminated. That might be slower than writing a NUL immediately before
+     * returning in every path.
+     *
+     * However, to switch to an implementation that null terminates before
+     * return, we would need to check that pos < buf_size, and if not, rather
+     * than simply setting label_str[buf_size - 1] to '\0', scan for the end
+     * of the previous UTF-8 character to avoid truncating a multibyte
+     * character in the middle. Cf. ws_utf8_truncate in wsutil/strutil.c
+     */
     label_str[pos] = '\0';
 
     ws_return_val_if(str == NULL, pos);
     idx = 0;
-    src_len = strlen(str);
+    src_len = strlen((const char*)str);
     free_len = buf_size - pos - 1;
 
+    /*
+     * Fast path: scan for runs of printable ASCII (0x20..0x7E) and copy
+     * them in bulk with memcpy instead of byte-by-byte. This avoids
+     * per-character UTF-8 length lookups, g_ascii_isprint table lookups,
+     * and NUL-termination on every byte.
+     */
+    if (!(flags & FORMAT_LABEL_REPLACE_SPACE)) {
+        while (idx < src_len) {
+            /* Find the length of a printable ASCII run */
+            ssize_t run_start = idx;
+            while (idx < src_len && str[idx] >= 0x20 && str[idx] <= 0x7E) {
+                idx++;
+            }
+            ssize_t run_len = idx - run_start;
+            if (run_len > 0) {
+                if (free_len >= run_len) {
+                    memcpy(label_str + pos, str + run_start, run_len);
+                    label_str[pos + run_len] = '\0';
+                } else if (free_len > 0) {
+                    memcpy(label_str + pos, str + run_start, free_len);
+                    label_str[pos + free_len] = '\0';
+                }
+                pos += run_len;
+                free_len -= run_len;
+                continue;
+            }
+
+            /* Non-printable or non-ASCII byte: handle one character */
+            chlen = ws_utf8_char_len(str[idx]);
+            if (chlen <= 0) {
+                /* We were passed invalid UTF-8. This is an error. Complain and do... something. */
+                ws_log_utf8((char*)str, -1, NULL);
+                /*
+                 * XXX If we are going to return here instead of trying to recover maybe the log level should
+                 * be higher than DEBUG.
+                 */
+                return pos;
+            }
+
+            if (chlen == 1) {
+                /* ASCII control character */
+                uint8_t r = 0;
+                switch (str[idx]) {
+                    case '\a': r = 'a'; break;
+                    case '\b': r = 'b'; break;
+                    case '\f': r = 'f'; break;
+                    case '\n': r = 'n'; break;
+                    case '\r': r = 'r'; break;
+                    case '\t': r = 't'; break;
+                    case '\v': r = 'v'; break;
+                }
+                if (r != 0) {
+                    if (free_len >= 2) {
+                        label_str[pos] = '\\';
+                        label_str[pos+1] = r;
+                        label_str[pos+2] = '\0';
+                    }
+                    pos += 2;
+                    idx += 1;
+                    free_len -= 2;
+                    continue;
+                }
+                /* Non-printable, non-control: hex escape */
+                if (free_len >= 4) {
+                    label_str[pos+0] = '\\';
+                    label_str[pos+1] = 'x';
+                    uint8_t ch = str[idx];
+                    label_str[pos+2] = _hex[ch >> 4];
+                    label_str[pos+3] = _hex[ch & 0x0F];
+                    label_str[pos+4] = '\0';
+                }
+                pos += 4;
+                idx += 1;
+                free_len -= 4;
+                continue;
+            }
+
+            /* UTF-8 multibyte */
+            if (chlen == 2 && str[idx] == 0xC2 &&
+                    str[idx+1] >= 0x80 && str[idx+1] <= 0x9F) {
+                /*
+                 * Escape the C1 control codes. C0 (covered above) and C1 are
+                 * inband signalling and transparent to Unicode.
+                 * Anything else probably has text semantics should not be removed.
+                 */
+                /*
+                 * Special case: The second UTF-8 byte is the same as the Unicode
+                 * code point for range U+0080 - U+009F.
+                 */
+                if (free_len >= 6) {
+                    label_str[pos+0] = '\\';
+                    label_str[pos+1] = 'u';
+                    label_str[pos+2] = '0';
+                    label_str[pos+3] = '0';
+                    uint8_t ch = str[idx+1];
+                    label_str[pos+4] = _hex[ch >> 4];
+                    label_str[pos+5] = _hex[ch & 0x0F];
+                    label_str[pos+6] = '\0';
+                }
+                pos += 6;
+                idx += chlen;
+                free_len -= 6;
+                continue;
+            }
+
+            /* Just copy multibyte */
+            if (free_len >= chlen) {
+                for (ssize_t j = 0; j < chlen; j++) {
+                    label_str[pos+j] = str[idx+j];
+                }
+                label_str[pos+chlen] = '\0';
+            }
+            pos += chlen;
+            idx += chlen;
+            free_len -= chlen;
+        }
+
+        return pos;
+    }
+
+    /* Slow path: FORMAT_LABEL_REPLACE_SPACE is set */
     while (idx < src_len) {
         chlen = ws_utf8_char_len(str[idx]);
         if (chlen <= 0) {
             /* We were passed invalid UTF-8. This is an error. Complain and do... something. */
-            ws_log_utf8(str, -1, NULL);
+            ws_log_utf8((char*)str, -1, NULL);
             /*
              * XXX If we are going to return here instead of trying to recover maybe the log level should
              * be higher than DEBUG.
@@ -852,7 +989,7 @@ ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
 
         /* ASCII */
         if (chlen == 1) {
-            if (flags & FORMAT_LABEL_REPLACE_SPACE && g_ascii_isspace(str[idx])) {
+            if (g_ascii_isspace(str[idx])) {
                 if (free_len >= 1) {
                     label_str[pos] = ' ';
                     label_str[pos+1] = '\0';
@@ -863,7 +1000,7 @@ ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
                 continue;
             }
 
-            r = 0;
+            uint8_t r = 0;
             switch (str[idx]) {
                 case '\a': r = 'a'; break;
                 case '\b': r = 'b'; break;
@@ -899,21 +1036,20 @@ ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
             if (free_len >= 4) {
                 label_str[pos+0] = '\\';
                 label_str[pos+1] = 'x';
-
                 uint8_t ch = str[idx];
                 label_str[pos+2] = _hex[ch >> 4];
                 label_str[pos+3] = _hex[ch & 0x0F];
                 label_str[pos+4] = '\0';
             }
             pos += 4;
-            idx += chlen;
+            idx += 1;
             free_len -= 4;
             continue;
         }
 
         /* UTF-8 multibyte */
         if (chlen == 2 && str[idx] == 0xC2 &&
-                                str[idx+1] >= 0x80 && str[idx+1] <= 0x9F) {
+                str[idx+1] >= 0x80 && str[idx+1] <= 0x9F) {
             /*
              * Escape the C1 control codes. C0 (covered above) and C1 are
              * inband signalling and transparent to Unicode.
@@ -928,7 +1064,6 @@ ws_label_strcpy(char *label_str, size_t buf_size, size_t pos,
                 label_str[pos+1] = 'u';
                 label_str[pos+2] = '0';
                 label_str[pos+3] = '0';
-
                 uint8_t ch = str[idx+1];
                 label_str[pos+4] = _hex[ch >> 4];
                 label_str[pos+5] = _hex[ch & 0x0F];

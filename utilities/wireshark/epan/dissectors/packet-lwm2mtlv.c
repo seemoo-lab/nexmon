@@ -445,7 +445,7 @@ static void lwm2m_add_resource(lwm2m_resource_t *resource, hf_register_info *hf,
 	int *hf_id;
 
 	hf_id = g_new(int,1);
-	*hf_id = -1;
+	*hf_id = 0;
 
 	if (resource->field_name) {
 		resource_abbrev = g_strdup(resource->field_name);
@@ -459,7 +459,7 @@ static void lwm2m_add_resource(lwm2m_resource_t *resource, hf_register_info *hf,
 	}
 
 	resource->hf_id = hf_id;
-	resource->ett_id = -1;
+	resource->ett_id = 0;
 
 	hf->p_id = hf_id;
 	hf->hfinfo.name = g_strdup(resource->name);
@@ -743,8 +743,8 @@ addValueInterpretations(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tlv_tree,
 		case DATA_TYPE_STRING:
 		case DATA_TYPE_CORELNK:
 		{
-			const uint8_t *strval;
-			proto_tree_add_item_ret_string(tlv_tree, *resource->hf_id, tvb, valueOffset, element->length_of_value, ENC_UTF_8, pinfo->pool, &strval);
+			const char *strval;
+			proto_tree_add_item_ret_string(tlv_tree, *resource->hf_id, tvb, valueOffset, element->length_of_value, ENC_UTF_8, pinfo->pool, (const uint8_t**)&strval);
 			proto_item_append_text(tlv_tree, ": %s", format_text(pinfo->pool, strval, strlen(strval)));
 			break;
 		}
@@ -806,7 +806,7 @@ addValueInterpretations(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tlv_tree,
 		}
 		}
 	} else {
-		uint8_t *str = tvb_get_string_enc(pinfo->pool, tvb, valueOffset, element->length_of_value, ENC_UTF_8);
+		const char *str = (char*)tvb_get_string_enc(pinfo->pool, tvb, valueOffset, element->length_of_value, ENC_UTF_8);
 		if (isprint_utf8_string(str, element->length_of_value)) {
 			proto_tree_add_item(tlv_tree, hf_lwm2mtlv_value_string, tvb, valueOffset, element->length_of_value, ENC_UTF_8);
 		} else {

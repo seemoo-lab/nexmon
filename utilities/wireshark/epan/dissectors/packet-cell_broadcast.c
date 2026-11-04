@@ -1,4 +1,4 @@
-/* packet-gsm_cell_broadcast.c
+/* packet-cell_broadcast.c
  * Routines for GSM Cell Broadcast Service dissection - A.K.A. 3GPP 23.041 (GSM 03.41) section 9.4
  *
  * Copyright 2011, Mike Morrin <mike.morrin [AT] ipaccess.com>
@@ -115,6 +115,7 @@ static int hf_gsm_cbs_message_reassembled_length;
 static int hf_gsm_cbs_page_content;
 static int hf_gsm_cbs_page_content_padding;
 static int hf_gsm_cbs_message_content;
+static int hf_gsm_cbs_language;
 
 /* Initialize the subtree pointers */
 static int ett_cbs_msg;
@@ -234,14 +235,25 @@ unsigned dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, unsigne
 tvbuff_t * dissect_cbs_data(uint8_t sms_encoding, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset )
 {
    tvbuff_t * tvb_out = NULL;
-   int length = tvb_reported_length(tvb) - offset;
-   char *text;
+   int length = tvb_reported_length_remaining(tvb, offset);
+   const char *text;
 
    switch(sms_encoding){
    case SMS_ENCODING_7BIT:
    case SMS_ENCODING_7BIT_LANG:
       text = tvb_get_ts_23_038_7bits_string_packed(pinfo->pool, tvb, offset<<3, (length*8)/7);
-      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
+      /* 3GPP TS 23.038 clause 5, coding group 0001 bits 0000: the message
+       * starts with the ISO 639 language code as two GSM 7 bit default
+       * alphabet characters followed by a CR, so the text only starts at the
+       * fourth character. Coding group 0000 carries its language in the data
+       * coding scheme itself instead, and must not be shortened here.
+       */
+      if (sms_encoding == SMS_ENCODING_7BIT_LANG && strlen(text) >= 3) {
+         proto_tree_add_string(tree, hf_gsm_cbs_language, tvb, offset, 3,
+                               wmem_strndup(pinfo->pool, text, 2));
+         text += 3;
+      }
+      tvb_out = tvb_new_child_real_data(tvb, (const uint8_t*)text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "unpacked 7 bit data");
       break;
 
@@ -249,15 +261,28 @@ tvbuff_t * dissect_cbs_data(uint8_t sms_encoding, tvbuff_t *tvb, proto_tree *tre
       /*
        * XXX - encoding is "user-defined".  Have a preference?
        */
-      text = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII|ENC_NA);
-      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
+      text = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII|ENC_NA);
+      tvb_out = tvb_new_child_real_data(tvb, (const uint8_t*)text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "8 bit data");
       break;
 
-   case SMS_ENCODING_UCS2:
    case SMS_ENCODING_UCS2_LANG:
-      text = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_UCS_2|ENC_BIG_ENDIAN);
-      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
+      /* 3GPP TS 23.038 clause 5, coding group 0001 bits 0001: the message
+       * starts with the ISO 639 language code as two GSM 7 bit default
+       * alphabet characters, packed and padded to the octet boundary with
+       * two bits set to 0. The UCS2 text only starts at the third octet.
+       */
+      if (length >= 2) {
+         const char *language = tvb_get_ts_23_038_7bits_string_packed(pinfo->pool, tvb, offset<<3, 2);
+         proto_tree_add_string(tree, hf_gsm_cbs_language, tvb, offset, 2, language);
+         offset += 2;
+         length -= 2;
+      }
+      /* FALLTHRU */
+
+   case SMS_ENCODING_UCS2:
+      text = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_UCS_2|ENC_BIG_ENDIAN);
+      tvb_out = tvb_new_child_real_data(tvb, (const uint8_t*)text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "UCS-2 data");
       break;
 
@@ -368,7 +393,7 @@ int dissect_umts_cell_broadcast_message(tvbuff_t *tvb, packet_info *pinfo, proto
    proto_item    *cbs_item;
    proto_tree    *cbs_tree, *cbs_subtree;
    unsigned      msg_len;
-   uint8_t       *msg;
+   const char   *msg;
    tvbuff_t * cbs_msg_tvb = NULL;
 
    len = tvb_reported_length(tvb);
@@ -386,7 +411,7 @@ int dissect_umts_cell_broadcast_message(tvbuff_t *tvb, packet_info *pinfo, proto
    msg_len = tvb_reported_length(cbs_msg_tvb);
    cbs_subtree = proto_tree_add_subtree_format(cbs_tree, tvb, offset, -1,
                     ett_cbs_msg, NULL, "Cell Broadcast Message Contents (length: %d)", msg_len);
-   msg = tvb_get_string_enc(pinfo->pool, cbs_msg_tvb, 0, msg_len, ENC_UTF_8|ENC_NA);
+   msg = (char*)tvb_get_string_enc(pinfo->pool, cbs_msg_tvb, 0, msg_len, ENC_UTF_8|ENC_NA);
    proto_tree_add_string_format(cbs_subtree, hf_gsm_cbs_message_content, cbs_msg_tvb, 0, -1, msg, "%s", msg);
    return tvb_captured_length(tvb);
 }
@@ -524,6 +549,13 @@ proto_register_cbs(void)
              "gsm_cbs.message_content",
              FT_STRING, BASE_NONE, NULL, 0x0,
              NULL, HFILL
+           }
+         },
+         { &hf_gsm_cbs_language,
+           { "CBS Language Indication",
+             "gsm_cbs.language",
+             FT_STRING, BASE_NONE, NULL, 0x0,
+             "ISO 639 language code preceding the message", HFILL
            }
          }
       };

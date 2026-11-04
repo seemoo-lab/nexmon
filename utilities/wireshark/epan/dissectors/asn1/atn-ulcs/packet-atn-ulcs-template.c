@@ -44,30 +44,30 @@ why not using existing ses, pres and acse dissectors ?
     to implement everything the new atn-ulcs dissector.
 
 why using conversations ?
-    PER encoded user data is ambigous; the same encoding may apply to a CM or
+    PER encoded user data is ambiguous; the same encoding may apply to a CM or
     CPDLC PDU. The workaround is to decode on a transport connection basis.
     I use my own version of conversations to identify
     the transport connection the PDU belongs to for the standard functions
     from "conversation.h" didn't work out.
 
 what is the use of AARQ/AARE data ?
-    Converstions should be maintained on the COTP layer in a standard way
+    Conversations should be maintained on the COTP layer in a standard way
     for there are usually more packets available than in the layers above.
     In the worst case my dissector is called from a DT packet which
     has destination references but no source reference.
     I have to guess the reference used the other way round
-    (curently I am using ACSE PDU'S used during OSI connection establishment for that).
+    (currently I am using ACSE PDU'S used during OSI connection establishment for that).
     The idea is that each ACSE AARQ is answered by ACSE AARE and having this sequence
     I have all the source/destination references for this transport connection.
     I use AARQ/AARE data to store the source/destination reference of AARQ as well
     as the optional ae-qualifier which tells me the application and
     the dissector I have to use.
-    This approach donesn't work well when there are interleaving AARQ/AARE sequences for
+    This approach doesn't work well when there are interleaving AARQ/AARE sequences for
     the same aircraft.
 
 which ATN standard is supported ?
     The dissector has been tested with ICAO doc9705 Edition2 compliant traffic.
-    No ATN Secutity is supported.
+    No ATN Security is supported.
     note:
     The ATN upper layers are derived from OSI standards (ICAO DOC 9705)
     while ATN/IPS (ICAO DOC 9896) which is entirely based on IPV6.
@@ -131,16 +131,16 @@ static wmem_tree_t *atn_conversation_tree;
 static proto_tree *root_tree;
 
 /* forward declarations for functions generated from asn1 */
-static int dissect_atn_ulcs_T_externalt_encoding_octet_aligned(
+static unsigned dissect_atn_ulcs_T_externalt_encoding_octet_aligned(
     tvbuff_t *tvb _U_,
-    int offset _U_,
+    uint32_t offset _U_,
     asn1_ctx_t *actx _U_,
     proto_tree *tree _U_,
     int hf_index _U_);
 
-static int dissect_atn_ulcs_T_externalt_encoding_arbitrary(
+static unsigned dissect_atn_ulcs_T_externalt_encoding_arbitrary(
     tvbuff_t *tvb _U_,
-    int offset _U_,
+    uint32_t offset _U_,
     asn1_ctx_t *actx _U_,
     proto_tree *tree _U_,
     int hf_index _U_);
@@ -548,7 +548,7 @@ dissect_atn_ulcs(
     proto_tree *tree,
     void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     proto_item *ti = NULL;
     proto_tree *atn_ulcs_tree = NULL;
     uint8_t value_pres = 0;
@@ -825,10 +825,7 @@ void proto_register_atn_ulcs (void)
         &ett_atn_ulcs
     };
 
-    proto_atn_ulcs = proto_register_protocol (
-        ATN_ULCS_PROTO ,
-        "ATN-ULCS",
-        "atn-ulcs");
+    proto_atn_ulcs = proto_register_protocol (ATN_ULCS_PROTO, "ATN-ULCS", "atn-ulcs");
 
     proto_register_field_array (
         proto_atn_ulcs,

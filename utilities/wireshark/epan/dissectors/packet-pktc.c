@@ -187,7 +187,7 @@ dissect_pktc_app_specific_data(packet_info *pinfo, proto_tree *parent_tree, tvbu
     case DOI_SNMPv3:
         switch(kmmid){
         /* we don't distinguish between manager and agent engineid.
-           feel free to add separation for this if it is imporant enough
+           feel free to add separation for this if it is important enough
            for you. */
         case KMMID_AP_REQUEST:
         case KMMID_AP_REPLY:
@@ -228,7 +228,7 @@ dissect_pktc_app_specific_data(packet_info *pinfo, proto_tree *parent_tree, tvbu
         switch(kmmid){
         /* we don't distinguish between SPIs for inbound Security Associations
            of the client (AP-REQ) vs. server (AP-REP, REKEY). Feel free to add
-           separation for this if it is imporant enough for you. */
+           separation for this if it is important enough for you. */
         case KMMID_AP_REQUEST:
         case KMMID_AP_REPLY:
         case KMMID_REKEY:
@@ -411,7 +411,7 @@ dissect_pktc_rekey(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offs
 {
     uint32_t snonce;
     unsigned string_len;
-    const uint8_t *timestr;
+    const char *timestr;
     char *display;
     int yy, mm, dd, hh, _mm, ss;
 
@@ -427,7 +427,7 @@ dissect_pktc_rekey(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offs
 
     /* Timestamp: YYMMDDhhmmssZ */
     /* They really came up with a two-digit year in late 1990s! =8o */
-    timestr=display=tvb_get_string_enc(pinfo->pool, tvb, offset, 13, ENC_ASCII);
+    timestr=display=(char*)tvb_get_string_enc(pinfo->pool, tvb, offset, 13, ENC_ASCII);
     if (sscanf(timestr, "%2d%2d%2d%2d%2d%2dZ", &yy, &mm, &dd, &hh, &_mm, &ss) == 6) {
         display = wmem_strdup_printf(pinfo->pool, "%02d-%02d-%02d %02d:%02d:%02d",
                                             yy, mm, dd, hh, _mm, ss);
@@ -552,7 +552,7 @@ dissect_pktc_mtafqdn(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "PKTC");
 
-    item = proto_tree_add_item(tree, proto_pktc, tvb, 0, 0, ENC_NA);
+    item = proto_tree_add_item(tree, proto_pktc, tvb, 0, -1, ENC_NA);
     pktc_mtafqdn_tree = proto_item_add_subtree(item, ett_pktc_mtafqdn);
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "MTA FQDN %s",
@@ -592,7 +592,7 @@ dissect_pktc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "PKTC");
 
-    item = proto_tree_add_item(tree, proto_pktc, tvb, 0, 3, ENC_NA);
+    item = proto_tree_add_item(tree, proto_pktc, tvb, 0, -1, ENC_NA);
     pktc_tree = proto_item_add_subtree(item, ett_pktc);
 
     /* key management message id */

@@ -71,8 +71,8 @@ static bool gearman_desegment  = true;
 
 static const int GEARMAN_COMMAND_HEADER_SIZE = 12;
 static const int GEARMAN_PORT = 4730;
-static const unsigned char *GEARMAN_MAGIC_CODE_REQUEST = "\0REQ";
-static const unsigned char *GEARMAN_MAGIC_CODE_RESPONSE = "\0RES";
+static const unsigned char *GEARMAN_MAGIC_CODE_REQUEST = (uint8_t*)"\0REQ";
+static const unsigned char *GEARMAN_MAGIC_CODE_RESPONSE = (uint8_t*)"\0RES";
 
 static const char *GEARMAN_MGR_CMDS[] = {
   "workers",
@@ -82,7 +82,7 @@ static const char *GEARMAN_MGR_CMDS[] = {
   "version"
 };
 
-static const int GEARMAN_MGR_CMDS_COUNT = array_length(GEARMAN_MGR_CMDS);
+static const unsigned GEARMAN_MGR_CMDS_COUNT = array_length(GEARMAN_MGR_CMDS);
 
 typedef enum
 {
@@ -188,7 +188,7 @@ get_gearman_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *dat
 static int
 dissect_binary_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  int curr_offset;
+  unsigned curr_offset;
   char *magic_code;
   uint32_t type, size;
   unsigned len;
@@ -198,7 +198,7 @@ dissect_binary_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "Gearman");
   col_clear(pinfo->cinfo,COL_INFO);
 
-  magic_code = tvb_get_string_enc(pinfo->pool, tvb, 1, 3, ENC_ASCII);
+  magic_code = (char*)tvb_get_string_enc(pinfo->pool, tvb, 1, 3, ENC_ASCII);
   type = tvb_get_ntohl(tvb, 4);
   size = tvb_get_ntohl(tvb, 8);
 
@@ -544,7 +544,7 @@ dissect_binary_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 static void
 dissect_management_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-  int i, type = 0, cmdlen, linelen, offset = 0, next_offset = 0;
+  unsigned i, type = 0, cmdlen, linelen, offset = 0, next_offset = 0;
   proto_item *ti;
   proto_tree *gearman_tree;
 
@@ -554,7 +554,7 @@ dissect_management_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   ti = proto_tree_add_item(tree, proto_gearman, tvb, 0, -1, ENC_NA);
   gearman_tree = proto_item_add_subtree(ti, ett_gearman);
 
-  while ((linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false)) > 0)
+  while (tvb_find_line_end_remaining(tvb, offset, &linelen, &next_offset))
   {
     for (i=0; i<GEARMAN_MGR_CMDS_COUNT; i++)
     {
@@ -583,7 +583,7 @@ dissect_management_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
       }
       else
       {
-        col_append_sep_str(pinfo->cinfo, COL_INFO, ",", tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, ",", (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII));
       }
     }
 

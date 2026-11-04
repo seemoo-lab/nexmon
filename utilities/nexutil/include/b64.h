@@ -31,6 +31,8 @@
 #ifndef B64_H
 #define B64_H 1
 
+#include <stdint.h>
+
 /**
  *  Memory allocation functions to use. You can define b64_malloc and
  * b64_realloc to custom functions if you want.
@@ -41,6 +43,9 @@
 #endif
 #ifndef b64_realloc
 #  define b64_realloc(ptr, size) realloc(ptr, size)
+#endif
+#ifndef b64_free
+#  define b64_free(ptr) free(ptr)
 #endif
 
 /**

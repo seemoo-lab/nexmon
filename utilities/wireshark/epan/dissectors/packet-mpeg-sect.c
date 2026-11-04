@@ -11,6 +11,8 @@
 
 #include "config.h"
 
+#include "jtckdint.h"
+
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/crc32-tvb.h>
@@ -232,7 +234,12 @@ packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, int offset, nstime_t *utc_time)
         return -1;
 
     nstime_set_zero(utc_time);
-    utc_time->secs  = (tvb_get_ntohs(tvb, offset) - 40587) * 86400;
+    /* The 16-bit MJD epoch is November 17, 1858, which is 40587 days
+     * before the UN*X epoch. */
+    if (ckd_mul(&utc_time->secs, tvb_get_ntohs(tvb, offset) - 40587, 86400)) {
+        /* This can overflow with 32-bit time_t. */
+        return -1;
+    }
     bcd_time_offset = offset+2;
     hour            = MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, bcd_time_offset));
     min             = MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, bcd_time_offset+1));
@@ -419,7 +426,7 @@ proto_register_mpeg_sect(void)
     /* Decode As handling */
     static build_valid_func mpeg_sect_da_build_value[1] = {mpeg_sect_value};
     static decode_as_value_t mpeg_sect_da_values = {mpeg_sect_prompt, 1, mpeg_sect_da_build_value};
-    static decode_as_t mpeg_sect_da = {"mpeg_sect", "mpeg_sect.tid", 1, 0, &mpeg_sect_da_values, NULL, NULL, decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+    static decode_as_t mpeg_sect_da = {"mpeg_sect", "mpeg_sect.tid", 1, 0, &mpeg_sect_da_values, NULL, NULL, decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     module_t *mpeg_sect_module;
     expert_module_t* expert_mpeg_sect;

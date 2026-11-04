@@ -28,10 +28,6 @@
   * see ISO 17987 or search for "LIN Specification 2.2a" online.
   */
 
-#define LIN_NAME                             "LIN"
-#define LIN_NAME_LONG                        "LIN Protocol"
-#define LIN_NAME_FILTER                      "lin"
-
 static heur_dissector_list_t                 heur_subdissector_list;
 static heur_dtbl_entry_t                    *heur_dtbl_entry;
 
@@ -58,9 +54,12 @@ static int hf_lin_err_invalidid;
 static int hf_lin_err_overflow;
 static int hf_lin_event_id;
 static int hf_lin_bus_id;
+static int hf_lin_sleep_req;
+static int hf_lin_sleep_req_data;
 
 static int ett_lin;
 static int ett_lin_pid;
+static int ett_lin_sleep_req;
 static int ett_errors;
 
 static int * const error_fields[] = {
@@ -205,19 +204,10 @@ reset_interface_config_cb(void) {
  * - interface_name matches and interface_id = 0xffffffff
  * - interface_name = ""    and interface_id matches
  */
-
 static unsigned
-get_bus_id(packet_info *pinfo) {
-    if (!(pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID)) {
-        return 0;
-    }
-
-    uint32_t            interface_id = pinfo->rec->rec_header.packet_header.interface_id;
-    unsigned            section_number = pinfo->rec->presence_flags & WTAP_HAS_SECTION_NUMBER ? pinfo->rec->section_number : 0;
-    const char         *interface_name = epan_get_interface_name(pinfo->epan, interface_id, section_number);
-
+get_bus_id_common(const char* interface_name, uint32_t interface_id) {
     if (interface_name != NULL && interface_name[0] != 0) {
-        interface_config_t *tmp = NULL;
+        interface_config_t* tmp = NULL;
 
         if (data_lin_interfaces_by_name != NULL) {
             tmp = g_hash_table_lookup(data_lin_interfaces_by_name, interface_name);
@@ -240,6 +230,24 @@ get_bus_id(packet_info *pinfo) {
 
     /* we found nothing */
     return 0;
+}
+
+static unsigned
+get_bus_id(packet_info *pinfo) {
+    if (!(pinfo->rec->presence_flags & WTAP_HAS_INTERFACE_ID)) {
+        return 0;
+    }
+
+    uint32_t    interface_id = pinfo->rec->rec_header.packet_header.interface_id;
+    unsigned    section_number = pinfo->rec->presence_flags & WTAP_HAS_SECTION_NUMBER ? pinfo->rec->section_number : 0;
+    const char* interface_name = epan_get_interface_name(pinfo->epan, interface_id, section_number);
+
+    return get_bus_id_common(interface_name, interface_id);
+}
+
+unsigned
+lin_get_bus_id_from_interface_name(const char* interface_name) {
+    return get_bus_id_common(interface_name, 0xffffffff);
 }
 
 /* Senders and Receivers UAT */
@@ -371,20 +379,29 @@ lin_set_source_and_destination_columns(packet_info* pinfo, lin_info_t *lininfo) 
     return false;
 }
 
+static int
+dissect_lin_sleep_request(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree) {
+    proto_item* ti_root = proto_tree_add_item(tree, hf_lin_sleep_req, tvb, 0, -1, ENC_NA);
+    proto_tree* sleep_tree = proto_item_add_subtree(ti_root, ett_lin_sleep_req);
+    proto_tree_add_item(sleep_tree, hf_lin_sleep_req_data, tvb, 0, -1, ENC_NA);
+    col_append_str(pinfo->cinfo, COL_INFO, " - Go-to-sleep Command");
+    return tvb_captured_length(tvb);
+}
+
 int
 dissect_lin_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, lin_info_t *lininfo) {
     /* LIN encodes a sleep frame by setting ID to LIN_DIAG_MASTER_REQUEST_FRAME and the first byte to 0x00 */
-    bool ignore_lin_payload = (lininfo->id == LIN_DIAG_MASTER_REQUEST_FRAME && tvb_get_uint8(tvb, 0) == 0x00);
+    if (lininfo->id == LIN_DIAG_MASTER_REQUEST_FRAME && tvb_get_uint8(tvb, 0) == 0x00) {
+        return dissect_lin_sleep_request(tvb, pinfo, tree);
+    }
 
     int ret = 0;
-    if (!ignore_lin_payload) {
-        uint32_t bus_frame_id = lininfo->id | (lininfo->bus_id << 16);
-        ret = dissector_try_uint_with_data(subdissector_table, bus_frame_id, tvb, pinfo, tree, true, lininfo);
+    uint32_t bus_frame_id = lininfo->id | (lininfo->bus_id << 16);
+    ret = dissector_try_uint_with_data(subdissector_table, bus_frame_id, tvb, pinfo, tree, true, lininfo);
+    if (ret == 0) {
+        ret = dissector_try_uint_with_data(subdissector_table, lininfo->id, tvb, pinfo, tree, true, lininfo);
         if (ret == 0) {
-            ret = dissector_try_uint_with_data(subdissector_table, lininfo->id, tvb, pinfo, tree, true, lininfo);
-            if (ret == 0) {
-                ret = dissector_try_heuristic(heur_subdissector_list, tvb, pinfo, tree, &heur_dtbl_entry, lininfo);
-            }
+            ret = dissector_try_heuristic(heur_subdissector_list, tvb, pinfo, tree, &heur_dtbl_entry, lininfo);
         }
     }
 
@@ -408,7 +425,7 @@ dissect_lin(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     lin_info_t lininfo;
     uint64_t errors;
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, LIN_NAME);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "LIN");
     col_clear(pinfo->cinfo, COL_INFO);
 
     lininfo.bus_id = (uint16_t)get_bus_id(pinfo);
@@ -539,25 +556,32 @@ proto_register_lin(void) {
         { &hf_lin_bus_id,
             { "Bus ID", "lin.bus_id",
             FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL }},
+        { &hf_lin_sleep_req,
+            { "Go-to-sleep Command", "lin.go_to_sleep",
+            FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+        { &hf_lin_sleep_req_data,
+            { "Go-to-sleep Payload", "lin.go_to_sleep.data",
+            FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
     };
 
     static int *ett[] = {
         &ett_lin,
         &ett_lin_pid,
+        &ett_lin_sleep_req,
         &ett_errors,
     };
 
-    proto_lin = proto_register_protocol(LIN_NAME_LONG, LIN_NAME, LIN_NAME_FILTER);
+    proto_lin = proto_register_protocol("LIN Protocol", "LIN", "lin");
     lin_module = prefs_register_protocol(proto_lin, NULL);
 
     proto_register_field_array(proto_lin, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    lin_handle = register_dissector(LIN_NAME_FILTER, dissect_lin, proto_lin);
+    lin_handle = register_dissector("lin", dissect_lin, proto_lin);
 
     /* the lin.frame_id subdissector table carries the bus id in the higher 16 bits */
     subdissector_table = register_dissector_table("lin.frame_id", "LIN Frame ID", proto_lin, FT_UINT8, BASE_HEX);
-    heur_subdissector_list = register_heur_dissector_list_with_description(LIN_NAME_FILTER, "LIN Message data fallback", proto_lin);
+    heur_subdissector_list = register_heur_dissector_list_with_description("lin", "LIN Message data fallback", proto_lin);
 
     static uat_field_t lin_interface_mapping_uat_fields[] = {
         UAT_FLD_HEX(interface_configs,      interface_id,   "Interface ID",   "ID of the Interface with 0xffffffff = any (hex uint32 without leading 0x)"),

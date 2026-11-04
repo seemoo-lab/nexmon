@@ -841,7 +841,7 @@ static const value_string uncertainty_range[] = {
     { 0,  NULL }
 };
 
-typedef uint16_t (**elem_func_hander)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+typedef uint16_t (* const * elem_func_hander)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
 int
 dissect_geographical_description(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree) {
@@ -1701,8 +1701,8 @@ uint16_t elem_tv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t ie
 
         /* idx is out of range */
         if (elem_name == NULL) {
-            proto_tree_add_expert_format(tree, pinfo, &ei_gsm_a_unknown_element,
-                tvb, curr_offset, -1,
+            proto_tree_add_expert_format_remaining(tree, pinfo, &ei_gsm_a_unknown_element,
+                tvb, curr_offset,
                 "Unknown - aborting dissection%s", (name_add == NULL) || (name_add[0] == '\0') ? "" : name_add);
             return consumed;
         }
@@ -1775,8 +1775,8 @@ uint16_t elem_tv_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint
 
         /* idx is out of range */
         if (elem_name == NULL) {
-            proto_tree_add_expert_format(tree, pinfo, &ei_gsm_a_unknown_element,
-                tvb, curr_offset, -1,
+            proto_tree_add_expert_format_remaining(tree, pinfo, &ei_gsm_a_unknown_element,
+                tvb, curr_offset,
                 "Unknown - aborting dissection%s", (name_add == NULL) || (name_add[0] == '\0') ? "" : name_add);
             return consumed;
         }
@@ -2052,7 +2052,7 @@ uint16_t elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int p
     proto_item         *item;
     value_string_ext    elem_names_ext;
     int                *elem_ett;
-    elem_fcn           *elem_funcs;
+    const elem_fcn     *elem_funcs;
     char               *a_add_string;
     const char         *elem_name;
 
@@ -3564,7 +3564,7 @@ de_ms_net_feat_sup(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint
 }
 
 
-uint16_t (*common_elem_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len) = {
+uint16_t (* const common_elem_fcn[])(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len) = {
     /* Common Information Elements 10.5.1 */
     de_cell_id,                        /* Cell Identity */
     de_ciph_key_seq_num,               /* Ciphering Key Sequence Number */
@@ -3604,15 +3604,10 @@ static stat_tap_table_item gsm_a_stat_fields[] = {
 
 static void gsm_a_stat_init(stat_tap_table_ui* new_stat, const char *table_title, const value_string *msg_strings)
 {
-    int num_fields = array_length(gsm_a_stat_fields);
+    unsigned num_fields = array_length(gsm_a_stat_fields);
     stat_tap_table* table;
     unsigned i;
     stat_tap_table_item_type items[array_length(gsm_a_stat_fields)];
-
-    items[IEI_COLUMN].type = TABLE_ITEM_UINT;
-    items[MSG_NAME_COLUMN].type = TABLE_ITEM_STRING;
-    items[COUNT_COLUMN].type = TABLE_ITEM_UINT;
-    items[COUNT_COLUMN].value.uint_value = 0;
 
     table = stat_tap_find_table(new_stat, table_title);
     if (table) {
@@ -3621,6 +3616,12 @@ static void gsm_a_stat_init(stat_tap_table_ui* new_stat, const char *table_title
         }
         return;
     }
+
+    memset(items, 0, sizeof(items));
+    items[IEI_COLUMN].type = TABLE_ITEM_UINT;
+    items[MSG_NAME_COLUMN].type = TABLE_ITEM_STRING;
+    items[COUNT_COLUMN].type = TABLE_ITEM_UINT;
+    items[COUNT_COLUMN].value.uint_value = 0;
 
     table = stat_tap_init_table(table_title, num_fields, 0, NULL);
     stat_tap_add_table(new_stat, table);

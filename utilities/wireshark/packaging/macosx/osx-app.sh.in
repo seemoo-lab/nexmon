@@ -43,7 +43,7 @@ install_exclude_prefixes="/System/|/Library/|/usr/lib/|/usr/X11/|/opt/X11/|@exec
 # the Info.plist file which is filled in by the configure script.
 bundle="Wireshark.app"
 
-# Location for libraries (tools/macos-setup.sh defaults to whatever the
+# Location for libraries (tools/os_setup/macos-setup.sh defaults to whatever the
 # various support libraries use as their standard installation location,
 # which is /usr/local)
 if [ -z "$LIBPREFIX" ]; then
@@ -228,7 +228,7 @@ while $endl; do
 	#    replace "\tlibbrotli" with "\t/usr/local/lib/libbrotli" so that
 	#    it isn't excluded from subsequent filtering.
 	#    libbrotli 1.09 and earlier doesn't have a path prefix in its
-	#    "install name" when built by tools/macos-setup.sh:
+	#    "install name" when built by tools/os_setup/macos-setup.sh:
 	#    https://github.com/google/brotli/pull/976;
 	#
 	#    replace "@loader_path/libbrotli" with "/usr/local/lib/libbrotli" so that
@@ -359,16 +359,6 @@ rpathify_file () {
 				echo "Changing reference to $dep_lib to $to in $1"
 				/usr/bin/install_name_tool -change "$dep_lib" "$to" "$1"
 			done < <( otool -L "$1" | grep @executable_path/../Frameworks | awk '{print $1}' )
-
-			#
-			# Try to work around brotli's lack of a full path
-			# https://github.com/google/brotli/issues/934
-			#
-			while read -r base ; do
-				to="@rpath/$base"
-				echo "Changing reference to $base to $to in $1"
-				/usr/bin/install_name_tool -change "$base" "$to" "$1"
-			done < <( otool -L "$1" | grep '^	libbrotli' | awk '{print $1}' )
 		fi
 
 		#
@@ -645,7 +635,7 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 		# 	--verbose \
 		# 	"$pkglib/Sparkle.framework/Versions/B/XPCServices/org.sparkle-project.Downloader.xpc" \
 		# 	|| exit 1
-	else
+	elif [ "$sparkle_version" == "1" ] ; then
 		echo "Signing Sparkle's AutoUpdate.app"
 		codesign \
 			--sign "$codesign_dev_app_identity" \
@@ -671,7 +661,7 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 		codesign_file "$library"
 	done
 
-	plugin_list=$( find "$bundle/Contents/PlugIns" -type f -name "*.dylib" -o -name "*.so" )
+	plugin_list=$( find "$bundle/Contents/PlugIns" -type f -name "*.dylib" -o -name "*.so" -o -name "*.so.disabled" )
 	echo "Signing plugins"
 	for plugin in $plugin_list ; do
 		codesign_file "$plugin"

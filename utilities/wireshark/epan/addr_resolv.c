@@ -23,7 +23,7 @@
 #include <wsutil/strtoi.h>
 #include <wsutil/ws_assert.h>
 
-#include "enterprises.h"
+#include "iana-info.h"
 #include "manuf.h"
 
 /*
@@ -95,10 +95,10 @@
 #include <epan/maxmind_db.h>
 #include <epan/prefs.h>
 #include <epan/uat.h>
-#include "services.h"
 
 #define ENAME_HOSTS     "hosts"
 #define ENAME_SUBNETS   "subnets"
+#define ENAME_SUBNETS_V6 "subnetsipv6"
 #define ENAME_ETHERS    "ethers"
 #define ENAME_IPXNETS   "ipxnets"
 #define ENAME_MANUF     "manuf"
@@ -107,11 +107,13 @@
 #define ENAME_VLANS     "vlans"
 #define ENAME_SS7PCS    "ss7pcs"
 #define ENAME_ENTERPRISES "enterprises"
+#define ENAME_TACS      "tacs"
 
 #define HASHETHSIZE      2048
 #define HASHHOSTSIZE     2048
 #define HASHIPXNETSIZE    256
 #define SUBNETLENGTHSIZE   32  /*1-32 inc.*/
+#define SUBNETLENGTHSIZE_V6 128 /*1-128 inc.*/
 
 /* hash table used for IPv4 lookup */
 
@@ -133,6 +135,26 @@ typedef struct {
     sub_net_hashipv4_t** subnet_addresses; /* Hash table of subnet addresses */
 } subnet_length_entry_t;
 
+
+/* IPv6 subnet lookup structures */
+typedef struct sub_net_hashipv6 {
+    uint8_t                   addr[16];   /* masked network address */
+    uint8_t                   flags;
+    struct sub_net_hashipv6  *next;
+    char                      name[MAXNAMELEN];
+} sub_net_hashipv6_t;
+
+typedef struct {
+    size_t               mask_length;       /* 1-128 */
+    uint8_t              mask[16];          /* byte mask */
+    sub_net_hashipv6_t **subnet_addresses;  /* hash table */
+} subnet_length_entry_v6_t;
+
+typedef struct {
+    uint8_t     mask[16];
+    size_t      mask_length;
+    const char *name;
+} subnet_entry_v6_t;
 
 /* hash table used for IPX network lookup */
 
@@ -217,6 +239,7 @@ static wmem_map_t *ipv6_hash_table;
 // Maps unsigned -> hashvlan_t*
 static wmem_map_t *vlan_hash_table;
 static wmem_map_t *ss7pc_hash_table;
+static wmem_map_t *tac_hash_table;
 
 // Maps IP address -> manually set hostname.
 static wmem_map_t *manually_resolved_ipv4_list;
@@ -249,6 +272,9 @@ static GHashTable *enterprises_hashtable;
 
 static subnet_length_entry_t subnet_length_entries[SUBNETLENGTHSIZE]; /* Ordered array of entries */
 static bool have_subnet_entry;
+
+static subnet_length_entry_v6_t subnet_length_entries_v6[SUBNETLENGTHSIZE_V6]; /* IPv6 subnet entries */
+static bool have_subnet_entry_v6;
 
 static bool new_resolved_objects;
 
@@ -316,6 +342,7 @@ e_addr_resolve gbl_resolv_flags = {
     false,  /* vlan_name */
     false,  /* ss7 point code names */
     true,   /* maxmind_geoip */
+    false,  /* tac_name */
 };
 
 /* XXX - ares_init_options(3) says:
@@ -330,19 +357,18 @@ static bool resolve_synchronously;
  *  GUI code to change them.
  */
 
-char *g_ethers_path;     /* global ethers file     */
-char *g_pethers_path;     /* personal ethers file   */
-char *g_wka_path;     /* global well-known-addresses file */
-char *g_manuf_path;     /* global manuf file      */
-char *g_pmanuf_path;     /* personal manuf file      */
-char *g_ipxnets_path;     /* global ipxnets file    */
-char *g_pipxnets_path;     /* personal ipxnets file  */
-char *g_services_path;     /* global services file   */
-char *g_pservices_path;     /* personal services file */
-char *g_pvlan_path;     /* personal vlans file    */
-char *g_ss7pcs_path;     /* personal ss7pcs file   */
-char *g_enterprises_path;   /* global enterprises file   */
-char *g_penterprises_path;  /* personal enterprises file */
+static char *g_ethers_path;     /* global ethers file     */
+static char *g_pethers_path;     /* personal ethers file   */
+static char *g_wka_path;     /* global well-known-addresses file */
+static char *g_manuf_path;     /* global manuf file      */
+static char *g_pmanuf_path;     /* personal manuf file      */
+static char *g_ipxnets_path;     /* global ipxnets file    */
+static char *g_pipxnets_path;     /* personal ipxnets file  */
+static char *g_services_path;     /* global services file   */
+static char *g_pservices_path;     /* personal services file */
+static char *g_pvlan_path;     /* personal vlans file    */
+static char *g_enterprises_path;   /* global enterprises file   */
+static char *g_penterprises_path;  /* personal enterprises file */
                                     /* first resolving call   */
 
 /*
@@ -394,7 +420,7 @@ static  wmem_list_t *async_dns_queue_head;
 static  GMutex      async_dns_queue_mtx;
 
 //UAT for providing a list of DNS servers to C-ARES for name resolution
-bool use_custom_dns_server_list;
+static bool use_custom_dns_server_list;
 struct dns_server_data {
     char *ipaddr;
     uint32_t udp_port;
@@ -1001,7 +1027,7 @@ serv_name_lookup(port_type proto, unsigned port)
 }
 
 static void
-initialize_services(void)
+initialize_services(const char* app_env_var_prefix)
 {
     ws_assert(serv_port_hashtable == NULL);
     serv_port_hashtable = wmem_map_new(addr_resolv_scope, serv_port_custom_hash, serv_port_custom_equal);
@@ -1010,17 +1036,17 @@ initialize_services(void)
 
     /* Compute the pathname of the global services file. */
     if (g_services_path == NULL) {
-        g_services_path = get_datafile_path(ENAME_SERVICES);
+        g_services_path = get_datafile_path(ENAME_SERVICES, app_env_var_prefix);
     }
     parse_services_file(g_services_path);
 
     /* Compute the pathname of the personal services file */
     if (g_pservices_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_pservices_path = get_persconffile_path(ENAME_SERVICES, true);
+        g_pservices_path = get_persconffile_path(ENAME_SERVICES, true, app_env_var_prefix);
         if (!parse_services_file(g_pservices_path)) {
             g_free(g_pservices_path);
-            g_pservices_path = get_persconffile_path(ENAME_SERVICES, false);
+            g_pservices_path = get_persconffile_path(ENAME_SERVICES, false, app_env_var_prefix);
             parse_services_file(g_pservices_path);
         }
     }
@@ -1088,23 +1114,23 @@ parse_enterprises_file(const char * path)
 }
 
 static void
-initialize_enterprises(void)
+initialize_enterprises(const char* app_env_var_prefix)
 {
     ws_assert(enterprises_hashtable == NULL);
     enterprises_hashtable = g_hash_table_new_full(NULL, NULL, NULL, g_free);
 
     if (g_enterprises_path == NULL) {
-        g_enterprises_path = get_datafile_path(ENAME_ENTERPRISES);
+        g_enterprises_path = get_datafile_path(ENAME_ENTERPRISES, app_env_var_prefix);
     }
     parse_enterprises_file(g_enterprises_path);
 
     /* Populate entries from profile or personal */
     if (g_penterprises_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_penterprises_path = get_persconffile_path(ENAME_ENTERPRISES, true);
+        g_penterprises_path = get_persconffile_path(ENAME_ENTERPRISES, true, app_env_var_prefix);
         if (!file_exists(g_penterprises_path)) {
             g_free(g_penterprises_path);
-            g_penterprises_path = get_persconffile_path(ENAME_ENTERPRISES, false);
+            g_penterprises_path = get_persconffile_path(ENAME_ENTERPRISES, false, app_env_var_prefix);
         }
     }
     /* Parse personal file (if present) */
@@ -1116,12 +1142,10 @@ try_enterprises_lookup(uint32_t value)
 {
     /* Trying extra entries first. N.B. This does allow entries to be overwritten and found.. */
     const char *name = (const char *)g_hash_table_lookup(enterprises_hashtable, GUINT_TO_POINTER(value));
-    if (name) {
+    if (name)
         return name;
-    }
-    else {
-        return global_enterprises_lookup(value);
-    }
+
+    return val_to_str_ext_const(value, &enterprise_val_ext, "Unknown");
 }
 
 const char *
@@ -1197,10 +1221,21 @@ fill_dummy_ip4(const unsigned addr, hashipv4_t* volatile tp)
             }
         }
 
-        /* There are more efficient ways to do this, but this is safe if we
-         * trust snprintf and MAXDNSNAMELEN
+        /* XXX - the subnet entry name could be up to MAXDNSNAMELEN, and
+         * buffer is WS_INET_ADDRSTRLEN chars, so the total length of
+         * this string could be up to MAXDNSNAMELEN+WS_INET_ADDRSTRLEN,
+         * which won't fit in the name field of a hashipv4_t, which is only
+         * MAXDNSNAMELEN chars.
+         *
+         * For now, we do it this way, to suppress compiler warnings.
+         * g_strlcpy() returns the length of the string being copied, which
+         * should be < MAXDNSNAMELEN as it does not include the trailing NUL,
+         * but let's be cautious.
          */
-        snprintf(tp->name, MAXDNSNAMELEN, "%s%s", subnet_entry.name, paddr);
+        size_t subnet_entry_name_len;
+        subnet_entry_name_len = g_strlcpy(tp->name, subnet_entry.name, MAXDNSNAMELEN);
+        if (subnet_entry_name_len < MAXDNSNAMELEN)
+                g_strlcpy(tp->name + subnet_entry_name_len, paddr, MAXDNSNAMELEN - subnet_entry_name_len);
 
         /* Evaluate the subnet in CIDR notation
          * Reuse buffers built above
@@ -1227,13 +1262,67 @@ fill_dummy_ip4(const unsigned addr, hashipv4_t* volatile tp)
 }
 
 
-/* Fill in an IP6 structure with the string form of the address.
+/* Forward declaration — defined later with the IPv6 subnet functions. */
+static subnet_entry_v6_t subnet6_lookup(const ws_in6_addr *addr);
+
+/* Fill in an IP6 structure with info from subnetIpv6 file or the string form
+ * of the address.
  */
 static void
 fill_dummy_ip6(hashipv6_t* volatile tp)
 {
+    ws_in6_addr addr;
+    memcpy(addr.bytes, tp->addr, 16);
+
     /* Overwrite if we get async DNS reply */
-    (void) g_strlcpy(tp->name, tp->ip6, MAXDNSNAMELEN);
+    subnet_entry_v6_t subnet_entry = subnet6_lookup(&addr);
+    if (subnet_entry.mask_length != 0) {
+        ws_in6_addr host_addr;
+        for (int i = 0; i < 16; i++)
+            host_addr.bytes[i] = addr.bytes[i] & ~subnet_entry.mask[i];
+
+        /* Build host-portion 16-bit groups directly from bytes — avoids
+         * ambiguity from IPv6 '::' zero-compression in string scanning. */
+        size_t first_host_group = subnet_entry.mask_length / 16;
+        wmem_strbuf_t *host_strbuf = wmem_strbuf_new_sized(addr_resolv_scope,
+                                                            WS_INET6_ADDRSTRLEN);
+        for (size_t g = first_host_group; g < 8; g++) {
+            if (g > first_host_group)
+                wmem_strbuf_append_c(host_strbuf, ':');
+            uint16_t grp = ((uint16_t)host_addr.bytes[g * 2] << 8)
+                           | host_addr.bytes[g * 2 + 1];
+            wmem_strbuf_append_printf(host_strbuf, "%x", (unsigned)grp);
+        }
+
+        /* Assemble name: "subnetName:host_portion" */
+        wmem_strbuf_t *name_strbuf = wmem_strbuf_new_sized(addr_resolv_scope,
+                                                            MAXDNSNAMELEN);
+        wmem_strbuf_append(name_strbuf, subnet_entry.name);
+        if (wmem_strbuf_get_len(host_strbuf) > 0) {
+            wmem_strbuf_append_c(name_strbuf, ':');
+            wmem_strbuf_append(name_strbuf, wmem_strbuf_get_str(host_strbuf));
+        }
+        g_strlcpy(tp->name, wmem_strbuf_get_str(name_strbuf), MAXDNSNAMELEN);
+        wmem_strbuf_destroy(name_strbuf);
+        wmem_strbuf_destroy(host_strbuf);
+
+        /* Build CIDR notation for cidr_addr */
+        ws_in6_addr net_addr;
+        for (int i = 0; i < 16; i++)
+            net_addr.bytes[i] = addr.bytes[i] & subnet_entry.mask[i];
+        char net_buf[WS_INET6_ADDRSTRLEN];
+        ip6_to_str_buf(&net_addr, net_buf, sizeof(net_buf));
+        wmem_strbuf_t *cidr_strbuf = wmem_strbuf_new_sized(addr_resolv_scope,
+                                                            WS_INET6_CIDRADDRSTRLEN);
+        wmem_strbuf_append_printf(cidr_strbuf, "%s/%zu", net_buf,
+                                  subnet_entry.mask_length);
+        g_strlcpy(tp->cidr_addr, wmem_strbuf_get_str(cidr_strbuf),
+                  WS_INET6_CIDRADDRSTRLEN);
+        wmem_strbuf_destroy(cidr_strbuf);
+    } else {
+        (void)g_strlcpy(tp->name, tp->ip6, MAXDNSNAMELEN);
+        (void)g_strlcpy(tp->cidr_addr, tp->ip6, WS_INET6_CIDRADDRSTRLEN);
+    }
 }
 
 static void
@@ -1309,7 +1398,7 @@ host_lookup(const unsigned addr)
             if (resolve_synchronously || name_resolve_concurrency == 0) {
                 /*
                  * Either all names are to be resolved synchronously or
-                 * the concurrencly level is 0; do the resolution
+                 * the concurrency level is 0; do the resolution
                  * synchronously.
                  */
                 sync_lookup_ip4(addr);
@@ -1384,7 +1473,7 @@ host_lookup6(const ws_in6_addr *addr)
             if (resolve_synchronously || name_resolve_concurrency == 0) {
                 /*
                  * Either all names are to be resolved synchronously or
-                 * the concurrencly level is 0; do the resolution
+                 * the concurrency level is 0; do the resolution
                  * synchronously.
                  */
                 sync_lookup_ip6(addr);
@@ -1669,7 +1758,7 @@ parse_ether_line(char *line, ether_t *eth, unsigned int *mask,
         return -1;
 
     /* First try to match the common format for the large ethers file. */
-    if (!parse_ether_address_fast(cp, eth, mask, accept_mask)) {
+    if (!parse_ether_address_fast((const uint8_t*)cp, eth, mask, accept_mask)) {
         /* Fallback for the well-known addresses (wka) file. */
         if (!parse_ether_address(cp, eth, mask, accept_mask))
             return -1;
@@ -1974,7 +2063,7 @@ eui64_addr_cmp(const void *a, const void *b)
 }
 
 static void
-initialize_ethers(void)
+initialize_ethers(const char* app_env_var_prefix)
 {
     ether_t *eth;
     unsigned mask = 0;
@@ -1991,22 +2080,22 @@ initialize_ethers(void)
 
     /* Compute the pathname of the ethers file. */
     if (g_ethers_path == NULL) {
-        g_ethers_path = g_build_filename(get_systemfile_dir(), ENAME_ETHERS, NULL);
+        g_ethers_path = g_build_filename(get_systemfile_dir(app_env_var_prefix), ENAME_ETHERS, NULL);
     }
 
     /* Compute the pathname of the personal ethers file. */
     if (g_pethers_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_pethers_path = get_persconffile_path(ENAME_ETHERS, true);
+        g_pethers_path = get_persconffile_path(ENAME_ETHERS, true, app_env_var_prefix);
         if (!file_exists(g_pethers_path)) {
             g_free(g_pethers_path);
-            g_pethers_path = get_persconffile_path(ENAME_ETHERS, false);
+            g_pethers_path = get_persconffile_path(ENAME_ETHERS, false, app_env_var_prefix);
         }
     }
 
     /* Compute the pathname of the global manuf file */
     if (g_manuf_path == NULL)
-        g_manuf_path = get_datafile_path(ENAME_MANUF);
+        g_manuf_path = get_datafile_path(ENAME_MANUF, app_env_var_prefix);
     /* Read it and initialize the hash table */
     if (file_exists(g_manuf_path)) {
         set_ethent(g_manuf_path);
@@ -2019,10 +2108,10 @@ initialize_ethers(void)
     /* Compute the pathname of the personal manuf file */
     if (g_pmanuf_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_pmanuf_path = get_persconffile_path(ENAME_MANUF, true);
+        g_pmanuf_path = get_persconffile_path(ENAME_MANUF, true, app_env_var_prefix);
         if (!file_exists(g_pmanuf_path)) {
             g_free(g_pmanuf_path);
-            g_pmanuf_path = get_persconffile_path(ENAME_MANUF, false);
+            g_pmanuf_path = get_persconffile_path(ENAME_MANUF, false, app_env_var_prefix);
         }
     }
     /* Read it and initialize the hash table */
@@ -2036,7 +2125,7 @@ initialize_ethers(void)
 
     /* Compute the pathname of the wka file */
     if (g_wka_path == NULL)
-        g_wka_path = get_datafile_path(ENAME_WKA);
+        g_wka_path = get_datafile_path(ENAME_WKA, app_env_var_prefix);
 
     /* Read it and initialize the hash table */
     set_ethent(g_wka_path);
@@ -2598,7 +2687,7 @@ get_ipxnetbyaddr(uint32_t addr)
 } /* get_ipxnetbyaddr */
 
 static void
-initialize_ipxnets(void)
+initialize_ipxnets(const char* app_env_var_prefix)
 {
     /* Compute the pathname of the ipxnets file.
      *
@@ -2609,7 +2698,7 @@ initialize_ipxnets(void)
      */
     if (g_ipxnets_path == NULL) {
         g_ipxnets_path = wmem_strdup_printf(addr_resolv_scope, "%s" G_DIR_SEPARATOR_S "%s",
-                get_systemfile_dir(), ENAME_IPXNETS);
+                get_systemfile_dir(app_env_var_prefix), ENAME_IPXNETS);
     }
 
     /* Set g_pipxnets_path here, but don't actually do anything
@@ -2617,10 +2706,10 @@ initialize_ipxnets(void)
      */
     if (g_pipxnets_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_pipxnets_path = get_persconffile_path(ENAME_IPXNETS, true);
+        g_pipxnets_path = get_persconffile_path(ENAME_IPXNETS, true, app_env_var_prefix);
         if (!file_exists(g_pipxnets_path)) {
             g_free(g_pipxnets_path);
-            g_pipxnets_path = get_persconffile_path(ENAME_IPXNETS, false);
+            g_pipxnets_path = get_persconffile_path(ENAME_IPXNETS, false, app_env_var_prefix);
         }
     }
 
@@ -2752,7 +2841,7 @@ get_vlannamebyid(uint16_t id)
 } /* get_vlannamebyid */
 
 static void
-initialize_vlans(void)
+initialize_vlans(const char* app_env_var_prefix)
 {
     ws_assert(vlan_hash_table == NULL);
     vlan_hash_table = wmem_map_new(addr_resolv_scope, g_direct_hash, g_direct_equal);
@@ -2762,10 +2851,10 @@ initialize_vlans(void)
      */
     if (g_pvlan_path == NULL) {
         /* Check profile directory before personal configuration */
-        g_pvlan_path = get_persconffile_path(ENAME_VLANS, true);
+        g_pvlan_path = get_persconffile_path(ENAME_VLANS, true, app_env_var_prefix);
         if (!file_exists(g_pvlan_path)) {
             g_free(g_pvlan_path);
-            g_pvlan_path = get_persconffile_path(ENAME_VLANS, false);
+            g_pvlan_path = get_persconffile_path(ENAME_VLANS, false, app_env_var_prefix);
         }
     }
 } /* initialize_vlans */
@@ -3137,12 +3226,16 @@ subnet_entry_set(uint32_t subnet_addr, const uint8_t mask_length, const char* na
     if (NULL != (tp = entry->subnet_addresses[hash_idx])) {
         sub_net_hashipv4_t * new_tp;
 
-        while (tp->next) {
+        while (tp) {
             if (tp->addr == subnet_addr) {
-                return; /* XXX provide warning that an address was repeated? */
-            } else {
-                tp = tp->next;
+                /* Entry already exists; last one loaded wins. */
+                (void) g_strlcpy(tp->name, name, MAXNAMELEN); /* This is longer than subnet names can actually be */
+                return;
             }
+            if (tp->next == NULL) {
+                break;
+            }
+            tp = tp->next;
         }
 
         new_tp = wmem_new(addr_resolv_scope, sub_net_hashipv4_t);
@@ -3159,7 +3252,7 @@ subnet_entry_set(uint32_t subnet_addr, const uint8_t mask_length, const char* na
 }
 
 static void
-subnet_name_lookup_init(void)
+subnet_name_lookup_init(const char* app_env_var_prefix)
 {
     char* subnetspath;
     uint32_t i;
@@ -3172,28 +3265,225 @@ subnet_name_lookup_init(void)
         subnet_length_entries[i].mask = g_htonl(ws_ipv4_get_subnet_mask(length));
     }
 
-    /* Check profile directory before personal configuration */
-    subnetspath = get_persconffile_path(ENAME_SUBNETS, true);
-    if (!read_subnets_file(subnetspath)) {
-        if (errno != ENOENT) {
-            report_open_failure(subnetspath, errno, false);
-        }
-
-        g_free(subnetspath);
-        subnetspath = get_persconffile_path(ENAME_SUBNETS, false);
-        if (!read_subnets_file(subnetspath) && errno != ENOENT) {
-            report_open_failure(subnetspath, errno, false);
-        }
+    /*
+     * Load the global subnets file, if we have one.
+     */
+    subnetspath = get_datafile_path(ENAME_SUBNETS, app_env_var_prefix);
+    if (!read_subnets_file(subnetspath) && errno != ENOENT) {
+        report_open_failure(subnetspath, errno, false);
     }
     g_free(subnetspath);
 
     /*
-     * Load the global subnets file, if we have one.
+     * Load the base personal subnets file, if we have one.  This is in the
+     * root of the personal configuration directory, not in a profile
+     * subdirectory, so it survives upgrades and applies across all
+     * profiles.  It is loaded after the global file so that personal
+     * entries take precedence over global ones.
      */
-    subnetspath = get_datafile_path(ENAME_SUBNETS);
+    subnetspath = get_persconffile_path(ENAME_SUBNETS, false, app_env_var_prefix);
     if (!read_subnets_file(subnetspath) && errno != ENOENT) {
         report_open_failure(subnetspath, errno, false);
     }
+    g_free(subnetspath);
+
+    /*
+     * Load the profile subnets file, if we have one.  This is loaded last
+     * so that profile entries take precedence over both the global and
+     * base personal subnets files.
+     */
+    subnetspath = get_persconffile_path(ENAME_SUBNETS, true, app_env_var_prefix);
+    if (!read_subnets_file(subnetspath) && errno != ENOENT) {
+        report_open_failure(subnetspath, errno, false);
+    }
+    g_free(subnetspath);
+}
+
+/* IPv6 Subnet Name Resolution */
+
+/* Compute a 16-byte subnet mask from a prefix length (1-128). */
+static void
+ipv6_get_subnet_mask(uint32_t mask_length, uint8_t mask[16])
+{
+    uint32_t full_bytes = mask_length / 8;
+    uint32_t remaining  = mask_length % 8;
+    memset(mask, 0, 16);
+    for (uint32_t i = 0; i < full_bytes; i++)
+        mask[i] = 0xff;
+    if (remaining > 0 && full_bytes < 16)
+        mask[full_bytes] = (uint8_t)(0xff << (8 - remaining));
+}
+
+static void
+subnet6_entry_set(const ws_in6_addr *subnet_addr, const uint32_t mask_length,
+                  const char *name)
+{
+    subnet_length_entry_v6_t *entry;
+    sub_net_hashipv6_t *tp;
+    uint8_t masked[16];
+    size_t hash_idx;
+
+    ws_assert(mask_length > 0 && mask_length <= 128);
+    entry = &subnet_length_entries_v6[mask_length - 1];
+
+    for (int i = 0; i < 16; i++)
+        masked[i] = subnet_addr->bytes[i] & entry->mask[i];
+
+    hash_idx = ipv6_oat_hash(masked) & (HASHHOSTSIZE - 1);
+
+    if (entry->subnet_addresses == NULL)
+        entry->subnet_addresses = (sub_net_hashipv6_t **)wmem_alloc0(
+            addr_resolv_scope, sizeof(sub_net_hashipv6_t *) * HASHHOSTSIZE);
+
+    if ((tp = entry->subnet_addresses[hash_idx]) != NULL) {
+        sub_net_hashipv6_t *new_tp;
+        while (tp) {
+            if (memcmp(tp->addr, masked, 16) == 0) {
+                /* Entry already exists; last one loaded wins. */
+                (void)g_strlcpy(tp->name, name, MAXNAMELEN);
+                return;
+            }
+            if (tp->next == NULL) {
+                break;
+            }
+            tp = tp->next;
+        }
+        new_tp = wmem_new(addr_resolv_scope, sub_net_hashipv6_t);
+        tp->next = new_tp;
+        tp = new_tp;
+    } else {
+        tp = entry->subnet_addresses[hash_idx] =
+            wmem_new(addr_resolv_scope, sub_net_hashipv6_t);
+    }
+
+    tp->next = NULL;
+    memcpy(tp->addr, masked, 16);
+    (void)g_strlcpy(tp->name, name, MAXNAMELEN);
+    have_subnet_entry_v6 = true;
+}
+
+static subnet_entry_v6_t
+subnet6_lookup(const ws_in6_addr *addr)
+{
+    subnet_entry_v6_t result;
+    uint32_t i = SUBNETLENGTHSIZE_V6;
+
+    while (have_subnet_entry_v6 && i > 0) {
+        subnet_length_entry_v6_t *length_entry;
+        uint8_t masked[16];
+        size_t hash_idx;
+        sub_net_hashipv6_t *tp;
+
+        --i;
+        length_entry = &subnet_length_entries_v6[i];
+
+        if (length_entry->subnet_addresses == NULL)
+            continue;
+
+        for (int b = 0; b < 16; b++)
+            masked[b] = addr->bytes[b] & length_entry->mask[b];
+
+        hash_idx = ipv6_oat_hash(masked) & (HASHHOSTSIZE - 1);
+        tp = length_entry->subnet_addresses[hash_idx];
+
+        while (tp != NULL && memcmp(tp->addr, masked, 16) != 0)
+            tp = tp->next;
+
+        if (tp != NULL) {
+            memcpy(result.mask, length_entry->mask, 16);
+            result.mask_length = i + 1;
+            result.name = tp->name;
+            return result;
+        }
+    }
+
+    memset(result.mask, 0, 16);
+    result.mask_length = 0;
+    result.name = NULL;
+    return result;
+}
+
+static bool
+read_subnets_ipv6_file(const char *subnetspath)
+{
+    FILE *hf;
+    char line[MAX_LINELEN];
+    char *cp, *cp2;
+    ws_in6_addr host_addr;
+    uint32_t mask_length;
+
+    if ((hf = ws_fopen(subnetspath, "r")) == NULL)
+        return false;
+
+    while (fgetline(line, sizeof(line), hf) >= 0) {
+        if ((cp = strchr(line, '#')))
+            *cp = '\0';
+
+        if ((cp = strtok(line, " \t")) == NULL)
+            continue;
+
+        /* Expected format: <IPv6_address>/<prefix_length> */
+        cp2 = strchr(cp, '/');
+        if (cp2 == NULL)
+            continue;
+        *cp2 = '\0';
+        ++cp2;
+
+        if (!ws_inet_pton6(cp, &host_addr))
+            continue;
+
+        if (!ws_strtou32(cp2, NULL, &mask_length) || mask_length == 0 || mask_length > 128)
+            continue;
+
+        if ((cp = strtok(NULL, " \t")) == NULL)
+            continue;
+
+        subnet6_entry_set(&host_addr, mask_length, cp);
+    }
+
+    fclose(hf);
+    return true;
+}
+
+static void
+subnet6_name_lookup_init(const char *app_env_var_prefix)
+{
+    char *subnetspath;
+
+    for (uint32_t i = 0; i < SUBNETLENGTHSIZE_V6; ++i) {
+        subnet_length_entries_v6[i].subnet_addresses = NULL;
+        subnet_length_entries_v6[i].mask_length = i + 1;
+        ipv6_get_subnet_mask((uint32_t)(i + 1), subnet_length_entries_v6[i].mask);
+    }
+
+    /*
+     * Load the global IPv6 subnets file, if we have one.
+     */
+    subnetspath = get_datafile_path(ENAME_SUBNETS_V6, app_env_var_prefix);
+    if (!read_subnets_ipv6_file(subnetspath) && errno != ENOENT)
+        report_open_failure(subnetspath, errno, false);
+    g_free(subnetspath);
+
+    /*
+     * Load the base personal IPv6 subnets file, if we have one.  This is in
+     * the root of the personal configuration directory, not in a profile
+     * subdirectory, so it survives upgrades and applies across all
+     * profiles.  It is loaded after the global file so that personal
+     * entries take precedence over global ones.
+     */
+    subnetspath = get_persconffile_path(ENAME_SUBNETS_V6, false, app_env_var_prefix);
+    if (!read_subnets_ipv6_file(subnetspath) && errno != ENOENT)
+        report_open_failure(subnetspath, errno, false);
+    g_free(subnetspath);
+
+    /*
+     * Load the profile IPv6 subnets file, if we have one.  This is loaded
+     * last so that profile entries take precedence over both the global
+     * and base personal IPv6 subnets files.
+     */
+    subnetspath = get_persconffile_path(ENAME_SUBNETS_V6, true, app_env_var_prefix);
+    if (!read_subnets_ipv6_file(subnetspath) && errno != ENOENT)
+        report_open_failure(subnetspath, errno, false);
     g_free(subnetspath);
 }
 
@@ -3319,7 +3609,7 @@ read_ss7pcs_file(const char *ss7pcspath)
 }
 
 static void
-ss7pc_name_lookup_init(void)
+ss7pc_name_lookup_init(const char* app_env_var_prefix)
 {
     char *ss7pcspath;
 
@@ -3330,7 +3620,7 @@ ss7pc_name_lookup_init(void)
     /*
      * Load the user's ss7pcs file
      */
-    ss7pcspath = get_persconffile_path(ENAME_SS7PCS, true);
+    ss7pcspath = get_persconffile_path(ENAME_SS7PCS, true, app_env_var_prefix);
     if (!read_ss7pcs_file(ss7pcspath) && errno != ENOENT) {
         report_open_failure(ss7pcspath, errno, false);
     }
@@ -3339,6 +3629,71 @@ ss7pc_name_lookup_init(void)
 
 /* SS7PC Name Resolution End*/
 
+/* TACS */
+static bool
+read_tacs_file(const char *tacspath)
+{
+    FILE *hf;
+    char line[MAX_LINELEN];
+    char *cp;
+    uint16_t id;
+
+    /*
+    *  File format is TAC(decimal)<tab/space>TACName (no spaces)
+    */
+    if ((hf = ws_fopen(tacspath, "r")) == NULL)
+        return false;
+
+    while (fgetline(line, sizeof(line), hf) >= 0) {
+        if ((cp = strchr(line, '#')))
+            *cp = '\0';
+
+        if ((cp = strtok(line, " \t")) == NULL)
+            continue;
+
+        if (sscanf(cp, "%" SCNu16, &id) != 1) {
+            continue;
+        }
+
+        if ((cp = strtok(NULL, " \t\n")) == NULL)
+            continue; /* no TAC name */
+
+        if (!wmem_map_lookup(tac_hash_table, GUINT_TO_POINTER(id))) {
+            char *buf = wmem_strdup(addr_resolv_scope, cp);
+            wmem_map_insert(tac_hash_table, GUINT_TO_POINTER(id), (void *)buf);
+        }
+    }
+
+    fclose(hf);
+    return true;
+}
+
+static void
+initialize_tacs(const char* app_env_var_prefix)
+{
+    char *tacspath;
+    ws_assert(tac_hash_table == NULL);
+    tac_hash_table = wmem_map_new(addr_resolv_scope, g_direct_hash, g_direct_equal);
+
+    tacspath = get_persconffile_path(ENAME_TACS, true, app_env_var_prefix);
+    if (!read_tacs_file(tacspath) && errno != ENOENT) {
+        report_open_failure(tacspath, errno, false);
+    }
+    g_free(tacspath);
+}
+
+static void
+tac_name_lookup_cleanup(void)
+{
+    tac_hash_table = NULL;
+}
+
+const char *
+tac_name_lookup(const unsigned id)
+{
+    return (const char *)wmem_map_lookup(tac_hash_table, GUINT_TO_POINTER(id));
+}
+/* TAC END */
 
 /*
  *  External Functions
@@ -3362,7 +3717,7 @@ addr_resolve_pref_init(module_t *nameres)
             "Resolve network (IP) addresses",
             "Resolve IPv4, IPv6, and IPX addresses into host names."
             " The next set of check boxes determines how name resolution should be performed."
-            " If no other options are checked name resolution is made from Wireshark's host file"
+            " If no other options are checked name resolution is made from Wireshark's host, subnets or subnetsipv6 file"
             " and capture file name resolution blocks.",
             &gbl_resolv_flags.network_name);
 
@@ -3444,6 +3799,13 @@ addr_resolve_pref_init(module_t *nameres)
             " One line per Point Code, e.g.: 2-1234 MyPointCode1",
             &gbl_resolv_flags.ss7pc_name);
 
+    prefs_register_bool_preference(nameres, "tac_name",
+            "Resolve TAC",
+            "Resolve TAC to area names from the preferences \"tac\" file."
+            " Format of the file is: \"TAC(decimail)<Tab/space>Name\"."
+            " One line per TAC, e.g.: 30123 City1",
+            &gbl_resolv_flags.tac_name);
+
 }
 
 void addr_resolve_pref_apply(void)
@@ -3463,6 +3825,7 @@ disable_name_resolution(void) {
     gbl_resolv_flags.vlan_name                          = false;
     gbl_resolv_flags.ss7pc_name                         = false;
     gbl_resolv_flags.maxmind_geoip                      = false;
+    gbl_resolv_flags.tac_name                           = false;
 }
 
 bool
@@ -3668,7 +4031,7 @@ add_manually_resolved(void)
 }
 
 static void
-host_name_lookup_init(void)
+host_name_lookup_init(const char* app_env_var_prefix)
 {
     char *hostspath;
     unsigned i;
@@ -3701,15 +4064,29 @@ host_name_lookup_init(void)
     /*
      * Load the global hosts file, if we have one.
      */
-    hostspath = get_datafile_path(ENAME_HOSTS);
+    hostspath = get_datafile_path(ENAME_HOSTS, app_env_var_prefix);
     if (!read_hosts_file(hostspath, true) && errno != ENOENT) {
         report_open_failure(hostspath, errno, false);
     }
     g_free(hostspath);
     /*
-     * Load the user's hosts file no matter what, if they have one.
+     * Load the base personal hosts file, if we have one.  This is in the
+     * root of the personal configuration directory (e.g. %APPDATA%\Wireshark\hosts
+     * on Windows), not in a profile subdirectory, so it survives upgrades and
+     * applies across all profiles.  It is loaded after the global file so that
+     * personal entries take precedence over global ones.
      */
-    hostspath = get_persconffile_path(ENAME_HOSTS, true);
+    hostspath = get_persconffile_path(ENAME_HOSTS, false, app_env_var_prefix);
+    if (!read_hosts_file(hostspath, true) && errno != ENOENT) {
+        report_open_failure(hostspath, errno, false);
+    }
+    g_free(hostspath);
+    /*
+     * Load the profile hosts file, if we have one.  This is loaded last so
+     * that profile entries take precedence over both the global and base
+     * personal hosts files.
+     */
+    hostspath = get_persconffile_path(ENAME_HOSTS, true, app_env_var_prefix);
     if (!read_hosts_file(hostspath, true) && errno != ENOENT) {
         report_open_failure(hostspath, errno, false);
     }
@@ -3732,11 +4109,12 @@ host_name_lookup_init(void)
         }
     }
 
-    subnet_name_lookup_init();
+    subnet_name_lookup_init(app_env_var_prefix);
+    subnet6_name_lookup_init(app_env_var_prefix);
 
     add_manually_resolved();
 
-    ss7pc_name_lookup_init();
+    ss7pc_name_lookup_init(app_env_var_prefix);
 }
 
 static void
@@ -3767,14 +4145,31 @@ host_name_lookup_cleanup(void)
     }
 
     have_subnet_entry = false;
+
+    for(i = 0; i < SUBNETLENGTHSIZE_V6; ++i) {
+        sub_net_hashipv6_t *entry6, *next_entry6;
+        if (subnet_length_entries_v6[i].subnet_addresses != NULL) {
+            for (j = 0; j < HASHHOSTSIZE; j++) {
+                for (entry6 = subnet_length_entries_v6[i].subnet_addresses[j];
+                     entry6 != NULL; entry6 = next_entry6) {
+                    next_entry6 = entry6->next;
+                    wmem_free(addr_resolv_scope, entry6);
+                }
+            }
+            wmem_free(addr_resolv_scope, subnet_length_entries_v6[i].subnet_addresses);
+            subnet_length_entries_v6[i].subnet_addresses = NULL;
+        }
+    }
+    have_subnet_entry_v6 = false;
+
     new_resolved_objects = false;
 }
 
 
-void host_name_lookup_reset(void)
+void host_name_lookup_reset(const char* app_env_var_prefix)
 {
     addr_resolv_cleanup();
-    addr_resolv_init();
+    addr_resolv_init(app_env_var_prefix);
 }
 
 char *
@@ -3866,7 +4261,7 @@ get_ether_name(const uint8_t *addr)
 } /* get_ether_name */
 
 const char *
-tvb_get_ether_name(tvbuff_t *tvb, int offset)
+tvb_get_ether_name(tvbuff_t *tvb, unsigned offset)
 {
     return get_ether_name(tvb_get_ptr(tvb, offset, 6));
 }
@@ -3962,7 +4357,7 @@ get_manuf_name(const uint8_t *addr, size_t size)
 } /* get_manuf_name */
 
 const char *
-tvb_get_manuf_name(tvbuff_t *tvb, int offset)
+tvb_get_manuf_name(tvbuff_t *tvb, unsigned offset)
 {
     uint8_t buf[3] = { 0 };
     tvb_memcpy(tvb, buf, offset, 3);
@@ -4007,7 +4402,7 @@ uint_get_manuf_name_if_known(const uint32_t manuf_key)
 }
 
 const char *
-tvb_get_manuf_name_if_known(tvbuff_t *tvb, int offset)
+tvb_get_manuf_name_if_known(tvbuff_t *tvb, unsigned offset)
 {
     uint8_t buf[3] = { 0 };
     tvb_memcpy(tvb, buf, offset, 3);
@@ -4240,16 +4635,17 @@ get_ipv6_hash_table(void)
 }
 /* Initialize all the address resolution subsystems in this file */
 void
-addr_resolv_init(void)
+addr_resolv_init(const char* app_env_var_prefix)
 {
     ws_assert(addr_resolv_scope == NULL);
     addr_resolv_scope = wmem_allocator_new(WMEM_ALLOCATOR_BLOCK);
-    initialize_services();
-    initialize_ethers();
-    initialize_ipxnets();
-    initialize_vlans();
-    initialize_enterprises();
-    host_name_lookup_init();
+    initialize_services(app_env_var_prefix);
+    initialize_ethers(app_env_var_prefix);
+    initialize_ipxnets(app_env_var_prefix);
+    initialize_vlans(app_env_var_prefix);
+    initialize_enterprises(app_env_var_prefix);
+    host_name_lookup_init(app_env_var_prefix);
+    initialize_tacs(app_env_var_prefix);
 }
 
 /* Clean up all the address resolution subsystems in this file */
@@ -4262,6 +4658,7 @@ addr_resolv_cleanup(void)
     ipx_name_lookup_cleanup();
     enterprises_cleanup();
     host_name_lookup_cleanup();
+    tac_name_lookup_cleanup();
 
     wmem_destroy_allocator(addr_resolv_scope);
     addr_resolv_scope = NULL;
@@ -4285,7 +4682,7 @@ str_to_ip6(const char *str, void *dst)
  * eth_bytes is a buffer >= 6 bytes that was allocated by the caller
  */
 bool
-str_to_eth(const char *str, char *eth_bytes)
+str_to_eth(const char *str, uint8_t (*eth_bytes)[6])
 {
     ether_t eth;
     unsigned mask;

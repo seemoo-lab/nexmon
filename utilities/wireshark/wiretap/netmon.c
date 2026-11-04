@@ -364,7 +364,7 @@ utf_16_to_utf_8(const uint8_t *in, uint32_t length)
 			if (IS_TRAIL_SURROGATE(uchar2)) {
 				/* Trail surrogate. */
 				uchar = SURROGATE_VALUE(lead_surrogate, uchar2);
-				out += g_unichar_to_utf8(uchar, out);
+				out += g_unichar_to_utf8(uchar, (char*)out);
 			} else {
 				/*
 				 * Not a trail surrogate.
@@ -387,7 +387,7 @@ utf_16_to_utf_8(const uint8_t *in, uint32_t length)
 				/*
 				 * Non-surrogate; just count it.
 				 */
-				out += g_unichar_to_utf8(uchar2, out);
+				out += g_unichar_to_utf8(uchar2, (char*)out);
 			}
 		}
 	}
@@ -743,6 +743,7 @@ wtap_open_return_val netmon_open(wtap *wth, int *err, char **err_info)
 			utf16_str = (uint8_t*)g_malloc(title_length);
 			if (!wtap_read_bytes(wth->fh, utf16_str, title_length,
 			    err, err_info)) {
+				g_free(utf16_str);
 				g_hash_table_destroy(comment_table);
 				return WTAP_OPEN_ERROR;
 			}
@@ -850,6 +851,7 @@ wtap_open_return_val netmon_open(wtap *wth, int *err, char **err_info)
 			utf16_str = (uint8_t*)g_malloc(path_size);
 			if (!wtap_read_bytes(wth->fh, utf16_str, path_size,
 			    err, err_info)) {
+				g_free(utf16_str);
 				g_free(process_info);
 				g_hash_table_destroy(process_info_table);
 				return WTAP_OPEN_ERROR;
@@ -864,7 +866,7 @@ wtap_open_return_val netmon_open(wtap *wth, int *err, char **err_info)
 
 			/* Read icon (currently not saved) */
 			if (!wtap_read_bytes(wth->fh, &tmp32, 4, err, err_info)) {
-				g_free(process_info);
+				netmonrec_process_info_destroy(process_info);
 				g_hash_table_destroy(process_info_table);
 				return WTAP_OPEN_ERROR;
 			}
@@ -873,14 +875,14 @@ wtap_open_return_val netmon_open(wtap *wth, int *err, char **err_info)
 
 			/* XXX - skip the icon for now */
 			if (file_seek(wth->fh, process_info->iconSize, SEEK_CUR, err) == -1) {
-				g_free(process_info);
+				netmonrec_process_info_destroy(process_info);
 				g_hash_table_destroy(process_info_table);
 				return WTAP_OPEN_ERROR;
 			}
 			process_info->iconSize = 0;
 
 			if (!wtap_read_bytes(wth->fh, &tmp32, 4, err, err_info)) {
-				g_free(process_info);
+				netmonrec_process_info_destroy(process_info);
 				g_hash_table_destroy(process_info_table);
 				return WTAP_OPEN_ERROR;
 			}
@@ -1009,7 +1011,7 @@ netmon_set_pseudo_header_info(wtap_rec *rec)
 
 	case WTAP_ENCAP_IEEE_802_11_NETMON:
 		/*
-		 * The 802.11 metadata at the beginnning of the frame data
+		 * The 802.11 metadata at the beginning of the frame data
 		 * is processed by a dissector, which fills in a pseudo-
 		 * header and passes it to the 802.11 radio dissector,
 		 * just as is done with other 802.11 radio metadata headers
@@ -1036,7 +1038,7 @@ netmon_process_record(wtap *wth, FILE_T fh, wtap_rec *rec,
 		struct netmonrec_2_x_hdr hdr_2_x;
 	}	hdr;
 	int64_t	 delta = 0;	/* signed - frame times can be before the nominal start */
-	int64_t	 t;
+	int64_t	 t, q, r;
 	time_t	 secs;
 	int	 nsecs;
 	uint32_t packet_size = 0;
@@ -1156,43 +1158,40 @@ netmon_process_record(wtap *wth, FILE_T fh, wtap_rec *rec,
 		 * positive number-of-microseconds into a small
 		 * negative number-of-100-nanosecond-increments.
 		 */
-		delta = pletohu64(&hdr.hdr_2_x.ts_delta)*10;
+		if (ckd_mul(&delta, pletohu64(&hdr.hdr_2_x.ts_delta), 10)) {
+			// Allow wrap without UB
+		}
 
 		/*
 		 * OK, it's now a signed value in 100-nanosecond
 		 * units.  Now convert it to nanosecond units.
 		 */
-		delta *= 100;
+		if (ckd_mul(&delta, delta, 100)) {
+			/* More than 580 years */
+			*err = WTAP_ERR_BAD_FILE;
+			*err_info = ws_strdup_printf("netmon: timestamp outside supported range");
+			return FAILURE;
+		}
 		break;
 	}
-	secs = 0;
 	t = netmon->start_nsecs + delta;
-	while (t < 0) {
-		/*
-		 * Propagate a borrow into the seconds.
-		 * The seconds is a time_t, and can be < 0
-		 * (unlikely, as Windows didn't exist before
-		 * January 1, 1970, 00:00:00 UTC), while the
-		 * nanoseconds should be positive, as in
-		 * "nanoseconds since the instant of time
-		 * represented by the seconds".
-		 *
-		 * We do not want t to be negative, as, according
-		 * to the C90 standard, "if either operand [of /
-		 * or %] is negative, whether the result of the
-		 * / operator is the largest integer less than or
-		 * equal to the algebraic quotient or the smallest
-		 * greater than or equal to the algebraic quotient
-		 * is implementation-defined, as is the sign of
-		 * the result of the % operator", and we want
-		 * the result of the division and remainder
-		 * operations to be the same on all platforms.
-		 */
-		t += 1000000000;
-		secs--;
+	/*
+	 * C99 and C++11 guarantee that integer division rounds to zero,
+	 * so this is the same on all platforms.
+	 */
+	q = t / 1000000000;
+	r = t % 1000000000;
+	if (r < 0) {
+		r += 1000000000;
+		q--;
 	}
-	secs += (time_t)(t/1000000000);
-	nsecs = (int)(t%1000000000);
+	if (ckd_add(&secs, q, 0)) {
+		// 32-bit time_t?
+		*err = WTAP_ERR_BAD_FILE;
+		*err_info = ws_strdup_printf("netmon: timestamp outside supported range");
+		return FAILURE;
+	}
+	nsecs = (int)(r);
 	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
 	rec->ts.secs = netmon->start_secs + secs;
 	rec->ts.nsecs = nsecs;
@@ -1904,17 +1903,18 @@ static bool netmon_dump_finish(wtap_dumper *wdh, int *err,
 	const char *magicp;
 	size_t magic_size;
 	struct tm *tm;
-	int64_t saved_bytes_dumped;
+	uint64_t saved_bytes_dumped;
+	bool success = false;
 
 	/* Write out the frame table.  "netmon->frame_table_index" is
 	   the number of entries we've put into it. */
 	n_to_write = netmon->frame_table_index * sizeof *netmon->frame_table;
 	if (!wtap_dump_file_write(wdh, netmon->frame_table, n_to_write, err))
-		return false;
+		goto out;
 
 	/* Now go fix up the file header. */
 	if (wtap_dump_file_seek(wdh, 0, SEEK_SET, err) == -1)
-		return false;
+		goto out;
 	/* Save bytes_dumped since following calls to wtap_dump_file_write()
 	 * will still (mistakenly) increase it.
 	 */
@@ -1950,7 +1950,7 @@ static bool netmon_dump_finish(wtap_dumper *wdh, int *err,
 		file_hdr.ver_minor = 1;
 	}
 	if (!wtap_dump_file_write(wdh, magicp, magic_size, err))
-		return false;
+		goto out;
 
 	if (wdh->file_encap == WTAP_ENCAP_PER_PACKET) {
 		/*
@@ -1984,10 +1984,14 @@ static bool netmon_dump_finish(wtap_dumper *wdh, int *err,
 	file_hdr.frametablelength =
 	    GUINT32_TO_LE(netmon->frame_table_index * sizeof *netmon->frame_table);
 	if (!wtap_dump_file_write(wdh, &file_hdr, sizeof file_hdr, err))
-		return false;
+		goto out;
 
 	wdh->bytes_dumped = saved_bytes_dumped;
-	return true;
+	success = true;
+
+out:
+	g_free(netmon->frame_table);
+	return success;
 }
 
 static const struct supported_block_type netmon_1_x_blocks_supported[] = {

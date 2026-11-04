@@ -135,7 +135,7 @@ dissect_ppcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	proto_item *ti;
 	proto_tree *ppcap_tree, *ppcap_tree1;
 	uint16_t msg_type;
-	int offset = 0;
+	unsigned offset = 0;
 	payload_type_type payload_type = PPCAP_UNKNOWN;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "PPCAP");
@@ -204,7 +204,7 @@ dissect_ppcap_payload_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree * ppcap
 	msg_len = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item( ppcap_tree1, hf_ppcap_length, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset  = offset + 2;
-	string = tvb_get_string_enc(pinfo->pool, tvb, offset, msg_len, ENC_UTF_8|ENC_NA);
+	string = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, msg_len, ENC_UTF_8|ENC_NA);
 	if (strcmp(string,"mtp3") == 0) {
 		*payload_type = PPCAP_MTP3;
 	}else if (strcmp(string,"tcap")  == 0) {
@@ -488,10 +488,8 @@ static int
 dissect_ppcap_sctp_assoc(tvbuff_t *tvb _U_, proto_tree * tree _U_, int offset)
 {
 	uint16_t length;
-	length = tvb_get_ntohs(tvb, offset);
-
-	proto_tree_add_item(tree, hf_ppcap_length, tvb, offset, 2, ENC_BIG_ENDIAN);
-	offset = offset + 2;
+	proto_tree_add_item_ret_uint16(tree, hf_ppcap_length, tvb, offset, 2, ENC_BIG_ENDIAN, &length);
+	offset += 2;
 
 	proto_tree_add_item(tree, hf_ppcap_sctp_assoc, tvb, offset, length, ENC_ASCII);
 

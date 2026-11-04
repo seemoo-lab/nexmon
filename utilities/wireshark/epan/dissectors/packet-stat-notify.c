@@ -1,4 +1,4 @@
-/* packet-stat.c
+/* packet-stat-notify.c
  * Routines for async NSM stat callback dissection
  * 2001 Ronnie Sahlberg <See AUTHORS for email>
  *
@@ -29,7 +29,7 @@ static int ett_statnotify;
 static int
 dissect_statnotify_mon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	offset = dissect_rpc_string(tvb,pinfo,tree,hf_statnotify_name,offset,NULL);
 

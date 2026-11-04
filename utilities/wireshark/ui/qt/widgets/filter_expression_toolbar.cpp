@@ -10,13 +10,16 @@
 #include <ui/qt/widgets/filter_expression_toolbar.h>
 #include <ui/qt/utils/color_utils.h>
 #include <ui/qt/utils/qt_ui_utils.h>
+#include <ui/qt/utils/theme_manager.h>
 #include <ui/qt/utils/wireshark_mime_data.h>
 #include <ui/qt/models/uat_model.h>
 #include <ui/qt/filter_action.h>
 #include <ui/qt/main_application.h>
 
 #include <epan/filter_expressions.h>
+#include <epan/uat-int.h>
 #include <ui/preference_utils.h>
+#include <app/application_flavor.h>
 
 #include <QApplication>
 #include <QFrame>
@@ -44,6 +47,8 @@ FilterExpressionToolBar::FilterExpressionToolBar(QWidget * parent) :
     DragDropToolBar(parent)
 {
     updateStyleSheet();
+    connect(ThemeManager::instance(), &ThemeManager::themeChanged,
+            this, &FilterExpressionToolBar::updateStyleSheet);
 
     setContextMenuPolicy(Qt::CustomContextMenu);
     /* Give minimum space to the bar, so that drops on an empty bar will work */
@@ -194,7 +199,7 @@ void FilterExpressionToolBar::onActionMoved(QAction* action, int oldPos, int new
     {
         uat_t * table = uat_get_table_by_name("Display expressions");
         uat_move_index(table, oldPos, newPos);
-        uat_save(table, &err);
+        uat_save(table, application_configuration_environment_prefix(), &err);
 
         g_free(err);
     }
@@ -456,16 +461,20 @@ bool FilterExpressionToolBar::filter_expression_add_action(const void *key _U_, 
     dfb_action->setProperty(dfe_property_label_, QString(fe->label));
     dfb_action->setProperty(dfe_property_expression_, QString(fe->expression));
 
-    if (data->actions_added) {
-        QFrame *sep = new QFrame();
-        sep->setEnabled(false);
-        data->toolbar->addWidget(sep);
-    }
-
-    if (parentMenu)
+    if (parentMenu) {
         parentMenu->addAction(dfb_action);
-    else
+    } else {
+        /* Only add a visual separator between toolbar-level buttons.
+         * Submenu items must not create separators because disabled
+         * QFrame widgets still occupy ~1 px on the toolbar, causing
+         * progressively wider gaps when many submenu entries exist. */
+        if (data->actions_added) {
+            QFrame *sep = new QFrame();
+            sep->setEnabled(false);
+            data->toolbar->addWidget(sep);
+        }
         data->toolbar->addAction(dfb_action);
+    }
 
     connect(dfb_action, &QAction::triggered, data->toolbar, &FilterExpressionToolBar::filterClicked);
     data->actions_added = true;

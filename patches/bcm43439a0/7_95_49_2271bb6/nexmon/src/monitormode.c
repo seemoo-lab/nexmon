@@ -55,8 +55,20 @@
 void
 wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     struct sk_buff *p_new = pkt_buf_get_skb(wl->wlc->osh, p->len + sizeof(struct nexmon_radiotap_header));
-    struct nexmon_radiotap_header *frame = (struct nexmon_radiotap_header *) p_new->data;
+    struct nexmon_radiotap_header *frame;
     struct tsf tsf;
+
+    /* pkt_buf_get_skb returns 0 once the packet pool is exhausted, which a busy
+     * radio can be pushed into simply by receiving faster than the host drains
+     * it. p_new used to be dereferenced in its very next declaration, so an
+     * exhausted pool was an immediate NULL data abort that killed the radio.
+     */
+    if (p_new == 0) {
+        printf("ERR: no free sk_buff\n");
+        return;
+    }
+
+    frame = (struct nexmon_radiotap_header *) p_new->data;
     wlc_bmac_read_tsf(wl->wlc_hw, &tsf.tsf_l, &tsf.tsf_h);
 
     frame->header.it_version = 0;
@@ -103,7 +115,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
 
         case MONITOR_IPV4_UDP:
-                printf("%s: udp tunneling not implemented\n");
+                printf("%s: udp tunneling not implemented\n", __FUNCTION__);
                 // not implemented yet
             break;
     }

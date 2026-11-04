@@ -1,7 +1,7 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-sgp32.h                                                             */
-/* asn2wrs.py -b -C -q -L -p sgp32 -c ./sgp32.cnf -s ./packet-sgp32-template -D . -O ../.. SGP32Definitions.asn */
+/* asn2wrs.py -b -q -L -p sgp32 -c ./sgp32.cnf -s ./packet-sgp32-template -D . -O ../.. SGP32Definitions.asn */
 
 /* packet-sgp32.h
  * Routines for SGP.32 packet dissection.
@@ -18,11 +18,14 @@
 #ifndef PACKET_SGP32_H
 #define PACKET_SGP32_H
 
+#include <epan/asn1.h>
+
+int dissect_sgp32_ISDRProprietaryApplicationTemplateIoT_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_);
+
 bool is_sgp32_request(tvbuff_t *tvb);
 bool is_sgp32_response(tvbuff_t *tvb);
 
 int dissect_sgp32_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
 int dissect_sgp32_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
-
 
 #endif  /* PACKET_SGP32_H */

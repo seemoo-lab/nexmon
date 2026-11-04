@@ -20,10 +20,6 @@
 #include "packet-pkixalgs.h"
 #include "packet-x509af.h"
 
-#define PNAME  "PKIX Algorithms"
-#define PSNAME "PKIXALGS"
-#define PFNAME "pkixalgs"
-
 void proto_register_pkixalgs(void);
 void proto_reg_handoff_pkixalgs(void);
 
@@ -50,7 +46,7 @@ void proto_register_pkixalgs(void) {
   };
 
   /* Register protocol */
-  proto_pkixalgs = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_pkixalgs = proto_register_protocol("PKIX Algorithms", "PKIXALGS", "pkixalgs");
 
   /* Register fields and subtrees */
   proto_register_field_array(proto_pkixalgs, hf, array_length(hf));
@@ -107,6 +103,9 @@ void proto_reg_handoff_pkixalgs(void) {
 	register_ber_oid_dissector("1.3.101.111", dissect_ber_oid_NULL_callback, proto_pkixalgs, "id-X448");
 	register_ber_oid_dissector("1.3.101.112", dissect_ber_oid_NULL_callback, proto_pkixalgs, "id-Ed25519");
 	register_ber_oid_dissector("1.3.101.113", dissect_ber_oid_NULL_callback, proto_pkixalgs, "id-Ed448");
+
+	/* Unsigned "signature" algorithm from RFC 9925. */
+	register_ber_oid_dissector("1.3.6.1.5.5.7.6.36", dissect_ber_oid_NULL_callback, proto_pkixalgs, "id-alg-unsigned");
 
 	/* Curve identifiers from SECG SEC 2 */
 	oid_add_from_string("sect163k1","1.3.132.0.1");

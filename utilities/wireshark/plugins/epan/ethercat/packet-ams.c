@@ -15,18 +15,21 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/conversation.h>
 #include <epan/tfs.h>
 #include <wsutil/array.h>
 
 #include "packet-ams.h"
 
+#include "epan/dissectors/packet-tcp.h"
+
 void proto_register_ams(void);
 void proto_reg_handoff_ams(void);
 
-#define AMS_TCP_PORT 48898 /* Not IANA registered */
+#define AMS_TCP_PORT_RANGE "48898" /* Not IANA registered */
 
 /* Define the ams proto */
-int proto_ams;
+static int proto_ams;
 
 static dissector_handle_t amstcp_handle;
 
@@ -69,6 +72,9 @@ static int hf_ams_statebroadcast;
 static int hf_ams_cbdata;
 static int hf_ams_errorcode;
 static int hf_ams_invokeid;
+static int hf_ams_response_in;
+static int hf_ams_response_to;
+static int hf_ams_response_time;
 static int hf_ams_data;
 
 /*ads Commands */
@@ -120,6 +126,18 @@ static int hf_ams_adscycletime;
 /* static int hf_ams_adscmpmin; */
 
 static dissector_handle_t ams_handle;
+
+/* Structure for tracking request/response transactions */
+typedef struct _ams_transaction_t {
+   uint32_t req_frame;
+   uint32_t rep_frame;
+   nstime_t req_time;
+} ams_transaction_t;
+
+/* Structure for per-conversation data */
+typedef struct _ams_conv_info_t {
+   wmem_map_t *transactions;  /* Maps invokeId -> ams_transaction_t */
+} ams_conv_info_t;
 
 static const value_string TransMode[] =
 {
@@ -374,9 +392,9 @@ static const value_string AMS_CommandId_vals[] =
 };
 
 
-static void NetIdFormater(tvbuff_t *tvb, unsigned offset, char *szText, int nMax)
+static const char* NetIdFormater(wmem_allocator_t* scope, tvbuff_t *tvb, unsigned offset)
 {
-   snprintf ( szText, nMax, "%d.%d.%d.%d.%d.%d", tvb_get_uint8(tvb, offset),
+   return wmem_strdup_printf (scope, "%d.%d.%d.%d.%d.%d", tvb_get_uint8(tvb, offset),
       tvb_get_uint8(tvb, offset+1),
       tvb_get_uint8(tvb, offset+2),
       tvb_get_uint8(tvb, offset+3),
@@ -391,72 +409,101 @@ static void NetIdFormater(tvbuff_t *tvb, unsigned offset, char *szText, int nMax
 static int dissect_ams_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
    proto_item *ti, *anItem;
-   proto_tree *ams_tree = NULL, *ams_adstree, *ams_statetree;
+   proto_tree *ams_tree, *ams_adstree;
    unsigned ams_length = tvb_reported_length(tvb);
-   uint16_t stateflags = 0;
-   uint16_t cmdId = 0;
-   uint32_t cbdata = 0;
-
-   char szText[200];
-   int nMax = sizeof(szText)-1;
+   uint16_t stateflags;
+   uint32_t cmdId, cbdata = 0;
+   uint32_t invokeId;
+   conversation_t *conversation;
+   ams_conv_info_t *ams_info;
+   ams_transaction_t *ams_trans = NULL;
+   static int* const state_flags[] = {
+           &hf_ams_stateresponse,
+           &hf_ams_statenoreturn,
+           &hf_ams_stateadscmd,
+           &hf_ams_statesyscmd,
+           &hf_ams_statehighprio,
+           &hf_ams_statetimestampadded,
+           &hf_ams_stateudp,
+           &hf_ams_stateinitcmd,
+           &hf_ams_statebroadcast,
+           NULL
+   };
 
    col_set_str(pinfo->cinfo, COL_PROTOCOL, "AMS");
-
    col_clear(pinfo->cinfo, COL_INFO);
 
    if( ams_length < AmsHead_Len )
       return offset;
 
-   if (tree)
-   {
-      ti = proto_tree_add_item(tree, proto_ams, tvb, 0, -1, ENC_NA);
-      ams_tree = proto_item_add_subtree(ti, ett_ams);
+   ti = proto_tree_add_item(tree, proto_ams, tvb, 0, -1, ENC_NA);
+   ams_tree = proto_item_add_subtree(ti, ett_ams);
 
-      NetIdFormater(tvb, offset, szText, nMax);
-      proto_tree_add_string(ams_tree, hf_ams_targetnetid, tvb, offset, AmsNetId_Len, szText);
-      offset += AmsNetId_Len;
+   proto_tree_add_string(ams_tree, hf_ams_targetnetid, tvb, offset, AmsNetId_Len, NetIdFormater(pinfo->pool, tvb, offset));
+   offset += AmsNetId_Len;
 
-      proto_tree_add_item(ams_tree, hf_ams_targetport, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      offset += (int)sizeof(uint16_t);
+   proto_tree_add_item(ams_tree, hf_ams_targetport, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   offset += 2;
 
-      NetIdFormater(tvb, offset, szText, nMax);
-      proto_tree_add_string(ams_tree, hf_ams_sendernetid, tvb, offset, AmsNetId_Len, szText);
-      offset += AmsNetId_Len;
+   proto_tree_add_string(ams_tree, hf_ams_sendernetid, tvb, offset, AmsNetId_Len, NetIdFormater(pinfo->pool, tvb, offset));
+   offset += AmsNetId_Len;
 
-      proto_tree_add_item(ams_tree, hf_ams_senderport, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      offset += (int)sizeof(uint16_t);
+   proto_tree_add_item(ams_tree, hf_ams_senderport, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+   offset += 2;
 
-      proto_tree_add_item(ams_tree, hf_ams_cmdid, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      cmdId = tvb_get_letohs(tvb, offset);
-      offset+=(int)sizeof(uint16_t);
+   proto_tree_add_item_ret_uint(ams_tree, hf_ams_cmdid, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cmdId);
+   offset += 2;
 
-      anItem = proto_tree_add_item(ams_tree, hf_ams_stateflags, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      ams_statetree = proto_item_add_subtree(anItem, ett_ams_stateflags);
-      proto_tree_add_item(ams_statetree, hf_ams_stateresponse,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_statenoreturn,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_stateadscmd,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_statesyscmd,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_statehighprio,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_statetimestampadded,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_stateudp,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_stateinitcmd,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      proto_tree_add_item(ams_statetree, hf_ams_statebroadcast,tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-      stateflags = tvb_get_letohs(tvb, offset);
-      offset+=(int)sizeof(uint16_t);
+   proto_tree_add_bitmask(ams_tree, tvb, offset, hf_ams_stateflags, ett_ams_stateflags, state_flags, ENC_LITTLE_ENDIAN);
+   stateflags = tvb_get_letohs(tvb, offset);
+   offset += 2;
 
-      proto_tree_add_item(ams_tree, hf_ams_cbdata, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-      cbdata = tvb_get_letohl(tvb,offset);
-      offset+=(int)sizeof(uint32_t);
+   proto_tree_add_item_ret_uint(ams_tree, hf_ams_cbdata, tvb, offset, 4, ENC_LITTLE_ENDIAN, &cbdata);
+   offset += 4;
 
-      proto_tree_add_item(ams_tree, hf_ams_errorcode, tvb, offset, (int)sizeof(uint32_t),ENC_LITTLE_ENDIAN);
-      offset+=(int)sizeof(uint32_t);
+   proto_tree_add_item(ams_tree, hf_ams_errorcode, tvb, offset, 4,ENC_LITTLE_ENDIAN);
+   offset += 4;
 
-      proto_tree_add_item(ams_tree, hf_ams_invokeid, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-      offset+=(int)sizeof(uint32_t);
+   proto_tree_add_item_ret_uint(ams_tree, hf_ams_invokeid, tvb, offset, 4, ENC_LITTLE_ENDIAN, &invokeId);
+   offset += 4;
+
+   /* Track request/response using conversation */
+   conversation = find_or_create_conversation(pinfo);
+   ams_info = (ams_conv_info_t *)conversation_get_proto_data(conversation, proto_ams);
+   if (!ams_info) {
+      /* No conversation data yet, create it */
+      ams_info = wmem_new(wmem_file_scope(), ams_conv_info_t);
+      ams_info->transactions = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+      conversation_add_proto_data(conversation, proto_ams, ams_info);
    }
-   else
-   {
-      offset+=AmsHead_Len;
+
+   if (!PINFO_FD_VISITED(pinfo)) {
+      /* First pass - track the transaction */
+      if ((stateflags & AMSCMDSF_RESPONSE) == 0) {
+         /* This is a request */
+         ams_trans = wmem_new(wmem_file_scope(), ams_transaction_t);
+         ams_trans->req_frame = pinfo->num;
+         ams_trans->rep_frame = 0;
+         ams_trans->req_time = pinfo->abs_ts;
+         wmem_map_insert(ams_info->transactions, GUINT_TO_POINTER(invokeId), ams_trans);
+      } else {
+         /* This is a response */
+         ams_trans = (ams_transaction_t *)wmem_map_lookup(ams_info->transactions, GUINT_TO_POINTER(invokeId));
+         if (ams_trans && ams_trans->rep_frame == 0) {
+            ams_trans->rep_frame = pinfo->num;
+         }
+      }
+   } else {
+      /* Subsequent pass - retrieve the transaction */
+      ams_trans = (ams_transaction_t *)wmem_map_lookup(ams_info->transactions, GUINT_TO_POINTER(invokeId));
+   }
+
+   if (!ams_trans) {
+      /* Create a "fake" transaction structure for this packet */
+      ams_trans = wmem_new(pinfo->pool, ams_transaction_t);
+      ams_trans->req_frame = 0;
+      ams_trans->rep_frame = 0;
+      ams_trans->req_time = pinfo->abs_ts;
    }
 
    if ( (stateflags & AMSCMDSF_ADSCMD) != 0 )
@@ -464,361 +511,301 @@ static int dissect_ams_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
       /* ADS */
       if ( (stateflags & AMSCMDSF_RESPONSE) == 0 )
       {
+         col_append_fstr(pinfo->cinfo, COL_INFO, "%s Request", val_to_str_const(cmdId, AMS_CommandId_vals, "Unknown"));
+
+         /* Add request state tracking info to the tree */
+         if (ams_trans->rep_frame) {
+            proto_item *it;
+            it = proto_tree_add_uint(ams_tree, hf_ams_response_in, tvb, 0, 0, ams_trans->rep_frame);
+            proto_item_set_generated(it);
+         }
+
          /* Request */
          switch ( cmdId )
          {
          case ADSSRVID_READ:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadrequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadReq_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadrequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadReq_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadrequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadrequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_WRITE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Write Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adswriterequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsWriteReq_Len - 2 )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adswriterequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsWriteReq_Len - (int)sizeof(uint16_t) )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswriterequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswriterequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
             }
          }
          break;
          case ADSSRVID_READWRITE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Write Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadwriterequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadWriteReq_Len - 2)
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadwriterequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadWriteReq_Len - (int)sizeof(uint16_t))
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadwriterequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadwriterequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscbreadlength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscbreadlength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscbwritelength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscbwritelength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
             }
          }
          break;
          case ADSSRVID_READSTATE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read State Request");
-
-            if( tree && cbdata !=0 )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadstaterequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadStateReq_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadstaterequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadStateReq_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadstaterequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsinvokeid, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadstaterequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsinvokeid, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_WRITECTRL:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Write Control Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adswritectrlrequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsWriteControlReq_Len - 2 )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adswritectrlrequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsWriteControlReq_Len - (int)sizeof(uint16_t) )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswritectrlrequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsstate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint16_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswritectrlrequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsstate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdevicestate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint16_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsdevicestate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
             }
          }
          break;
          case ADSSRVID_READDEVICEINFO:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Device Info Request");
-
-            if( tree && cbdata !=0 )
+            if (cbdata !=0 )
             {
                anItem = proto_tree_add_item(ams_tree, hf_ams_adsreaddinforequest, tvb, offset, ams_length-offset, ENC_NA);
                if( ams_length-offset >= TAdsReadDeviceInfoReq_Len )
                {
                   ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreaddinforequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
+                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                }
             }
          }
          break;
          case ADSSRVID_ADDDEVICENOTE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Add Device Notification Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsadddnrequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsAddDeviceNotificationReq_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsadddnrequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsAddDeviceNotificationReq_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsadddnrequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsadddnrequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexgroup, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsindexoffset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adstransmode, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adstransmode, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsmaxdelay, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsmaxdelay, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscycletime, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adscycletime, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                /* offset += 4; */
             }
          }
          break;
          case ADSSRVID_DELDEVICENOTE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Delete Device Notification Request");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsdeldnrequest, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsDelDeviceNotificationReq_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsdeldnrequest, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsDelDeviceNotificationReq_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsdeldnrequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsnotificationhandle, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsdeldnrequest);
+                proto_tree_add_item(ams_adstree, hf_ams_adsnotificationhandle, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_DEVICENOTE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Device Notification Request");
-
-            if( tree )
-            {
-               /*uint32_t cbLength;
-                 uint32_t nStamps;*/
+               uint32_t cbLength, nStamps;
 
                anItem = proto_tree_add_item(ams_tree, hf_ams_adsdnrequest, tvb, offset, ams_length-offset, ENC_NA);
                if( ams_length-offset >= TAdsDeviceNotificationReq_Len )
                {
                   ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsdnrequest);
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  /*cbLength = tvb_get_letohs(tvb, offset);*/
-                  offset+=(int)sizeof(uint32_t);
+                  proto_tree_add_item_ret_uint(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN, &cbLength);
+                  offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsnoteblocksstamps, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  /*nStamps = tvb_get_letohs(tvb, offset);*/
-                  offset+=(int)sizeof(uint32_t);
+                  proto_tree_add_item_ret_uint(ams_adstree, hf_ams_adsnoteblocksstamps, tvb, offset, 4, ENC_LITTLE_ENDIAN, &nStamps);
+                  /* offset += 4; */
 
                   /*ToDo: dissect noteblocks*/
                }
-            }
          }
          break;
          }
       }
       else
       {
+         col_append_fstr(pinfo->cinfo, COL_INFO, "%s Response", val_to_str_const(cmdId, AMS_CommandId_vals, "Unknown"));
+
+         /* Add response state tracking info to the tree */
+         if (ams_trans->req_frame) {
+            proto_item *it;
+            nstime_t ns;
+
+            it = proto_tree_add_uint(ams_tree, hf_ams_response_to, tvb, 0, 0, ams_trans->req_frame);
+            proto_item_set_generated(it);
+
+            nstime_delta(&ns, &pinfo->abs_ts, &ams_trans->req_time);
+            it = proto_tree_add_time(ams_tree, hf_ams_response_time, tvb, 0, 0, &ns);
+            proto_item_set_generated(it);
+         }
+
          /* Response */
          switch ( cmdId )
          {
          case ADSSRVID_READ:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadRes_Len - 2 )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadRes_Len - (int)sizeof(uint16_t) )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
             }
          }
          break;
          case ADSSRVID_WRITE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Write Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adswriteresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsWriteRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adswriteresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsWriteRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswriteresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswriteresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_READWRITE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Write Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadwriteresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadWriteRes_Len - 2 )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadwriteresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadWriteRes_Len - (int)sizeof(uint16_t) )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadwriteresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadwriteresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adscblength, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdata, tvb, offset, ams_length-offset, ENC_NA);
             }
          }
          break;
          case ADSSRVID_READSTATE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read State Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadstateresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadStateRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreadstateresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadStateRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadstateresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreadstateresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsstate, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint16_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsstate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdevicestate, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdevicestate, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_WRITECTRL:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Write Control Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adswritectrlresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsWriteControlRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adswritectrlresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsWriteControlRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswritectrlresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adswritectrlresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_READDEVICEINFO:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Read Device Info Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsreaddinforesponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsReadDeviceInfoRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsreaddinforesponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsReadDeviceInfoRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreaddinforesponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsreaddinforesponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsversionversion, tvb, offset++, (int)sizeof(uint8_t), ENC_LITTLE_ENDIAN);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsversionrevision, tvb, offset++, (int)sizeof(uint8_t), ENC_LITTLE_ENDIAN);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsversionbuild, tvb, offset, (int)sizeof(uint16_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint16_t);
+                proto_tree_add_item(ams_adstree, hf_ams_adsversionversion, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+                offset += 1;
+                proto_tree_add_item(ams_adstree, hf_ams_adsversionrevision, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+                offset += 1;
+                proto_tree_add_item(ams_adstree, hf_ams_adsversionbuild, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsdevicename, tvb, offset, ams_length-offset, ENC_ASCII);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsdevicename, tvb, offset, ams_length-offset, ENC_ASCII);
             }
          }
          break;
          case ADSSRVID_ADDDEVICENOTE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Device Notification Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsadddnresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsAddDeviceNotificationRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsadddnresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsAddDeviceNotificationRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsadddnresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-                  offset+=(int)sizeof(uint32_t);
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsadddnresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
 
-                  proto_tree_add_item(ams_adstree, hf_ams_adsnotificationhandle, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                proto_tree_add_item(ams_adstree, hf_ams_adsnotificationhandle, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
          case ADSSRVID_DELDEVICENOTE:
          {
-            col_append_str(pinfo->cinfo, COL_INFO, "ADS Delete Device Notification Response");
-
-            if( tree )
+            anItem = proto_tree_add_item(ams_tree, hf_ams_adsdeldnresponse, tvb, offset, ams_length-offset, ENC_NA);
+            if( ams_length-offset >= TAdsDelDeviceNotificationRes_Len )
             {
-               anItem = proto_tree_add_item(ams_tree, hf_ams_adsdeldnresponse, tvb, offset, ams_length-offset, ENC_NA);
-               if( ams_length-offset >= TAdsDelDeviceNotificationRes_Len )
-               {
-                  ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsdeldnresponse);
-                  proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, (int)sizeof(uint32_t), ENC_LITTLE_ENDIAN);
-               }
+                ams_adstree = proto_item_add_subtree(anItem, ett_ams_adsdeldnresponse);
+                proto_tree_add_item(ams_adstree, hf_ams_adsresult, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             }
          }
          break;
@@ -831,11 +818,13 @@ static int dissect_ams_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
          col_append_str(pinfo->cinfo, COL_INFO, "AMS Request");
       else
          col_append_str(pinfo->cinfo, COL_INFO, "AMS Response");
-      if( tree && ams_length-offset > 0 )
+      if (ams_length-offset > 0 )
          proto_tree_add_item(ams_tree, hf_ams_data, tvb, offset, ams_length-offset, ENC_NA);
    }
-   return offset;
+
+   return ams_length;
 }
+
 
 /*ams*/
 static int dissect_ams(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
@@ -843,12 +832,24 @@ static int dissect_ams(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     return dissect_ams_pdu(tvb, pinfo, tree, 0);
 }
 
-static int dissect_amstcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static unsigned get_amstcp_length(packet_info* pinfo _U_, tvbuff_t* tvb, int offset, void* data _U_)
 {
-    if( TcpAdsParserHDR_Len > tvb_reported_length(tvb))
-        return 0;
+    // The 6-byte AMS/TCP header is 2 reserved bytes followed by 4 bytes
+    // indicating the length of the AMS header and data that follows.
 
+    return tvb_get_letohl(tvb, offset + 2) + TcpAdsParserHDR_Len;
+}
+
+static int dissect_amstcp_reassembled(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
     return dissect_ams_pdu(tvb, pinfo, tree, TcpAdsParserHDR_Len);
+}
+
+static int dissect_amstcp(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_)
+{
+    tcp_dissect_pdus(tvb, pinfo, tree, true, TcpAdsParserHDR_Len, get_amstcp_length, dissect_amstcp_reassembled, NULL);
+
+    return tvb_captured_length(tvb);
 }
 
 void proto_register_ams(void)
@@ -950,6 +951,21 @@ void proto_register_ams(void)
            { "InvokeId", "ams.invokeid",
              FT_UINT32, BASE_HEX, NULL, 0x0,
              NULL, HFILL }
+         },
+         { &hf_ams_response_in,
+           { "Response In", "ams.response_in",
+             FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
+             "The response to this AMS request is in this frame", HFILL }
+         },
+         { &hf_ams_response_to,
+           { "Request In", "ams.response_to",
+             FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
+             "This is a response to the AMS request in this frame", HFILL }
+         },
+         { &hf_ams_response_time,
+           { "Response Time", "ams.response_time",
+             FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,
+             "The time between the Request and the Response", HFILL }
          },
          { &hf_ams_adsdata,
            { "Data", "ams.ads_data",
@@ -1229,7 +1245,7 @@ void proto_register_ams(void)
 
 void proto_reg_handoff_ams(void)
 {
-   dissector_add_uint_with_preference("tcp.port", AMS_TCP_PORT, amstcp_handle);
+   dissector_add_uint_range_with_preference("tcp.port", AMS_TCP_PORT_RANGE, amstcp_handle);
    dissector_add_uint("ecatf.type", 2, ams_handle);
 }
 

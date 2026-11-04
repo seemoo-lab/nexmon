@@ -12,6 +12,7 @@
 #include <ui/qt/models/enabled_protocols_model.h>
 #include <epan/packet.h>
 #include <epan/disabled_protos.h>
+#include <app/application_flavor.h>
 
 #include <ui/qt/utils/variant_pointer.h>
 #include "main_application.h"
@@ -31,7 +32,7 @@ public:
     virtual ~ProtocolTreeItem() {}
 
 protected:
-    virtual void applyValuePrivate(bool value)
+    virtual void applyValuePrivate(bool value) override
     {
         if (! proto_can_toggle_protocol(proto_get_id(proto_))) {
             return;
@@ -56,7 +57,7 @@ public:
     virtual ~HeuristicTreeItem() {}
 
 protected:
-    virtual void applyValuePrivate(bool value)
+    virtual void applyValuePrivate(bool value) override
     {
         heuristic_table_->enabled = value;
     }
@@ -333,7 +334,7 @@ void EnabledProtocolsModel::disableProtocol(struct _protocol *protocol)
 void EnabledProtocolsModel::saveChanges(bool writeChanges)
 {
     if (writeChanges) {
-        save_enabled_and_disabled_lists();
+        save_enabled_and_disabled_lists(application_configuration_environment_prefix());
     }
     mainApp->emitAppSignal(MainApplication::PacketDissectionChanged);
 }
@@ -421,26 +422,22 @@ bool EnabledProtocolsProxyModel::filterAcceptsSelf(int sourceRow, const QModelIn
 
     if (protocolType_ == EnabledProtocolItem::Any || protocolType_ == item->type())
     {
-        if (type_ != EnabledProtocolsProxyModel::EnabledItems && type_ != EnabledProtocolsProxyModel::DisabledItems)
-        {
-            if (! filter_.isEmpty())
-            {
-                if (item->name().contains(regex) && type_ != OnlyDescription)
-                    return true;
+        EnabledProtocolsProxyModel::SearchTypes enabledMask{EnabledItems, DisabledItems};
+        if ((type_ & enabledMask) && ((type_ & enabledMask) != enabledMask)) {
+            if (bool(type_ & EnabledItems) != item->enabled())
+                return false;
+        }
 
-                if (item->description().contains(regex) && type_ != OnlyProtocol)
-                    return true;
-            }
-            else
-                return true;
-        }
-        else if (filter_.isEmpty() || (! filter_.isEmpty() && (item->name().contains(regex) || item->description().contains(regex))))
+        if (! filter_.isEmpty())
         {
-            if (type_ == EnabledProtocolsProxyModel::EnabledItems && item->enabled())
+            if (item->name().contains(regex) && !type_.testFlag(OnlyDescription))
                 return true;
-            else if (type_ == EnabledProtocolsProxyModel::DisabledItems && ! item->enabled())
+
+            if (item->description().contains(regex) && !type_.testFlag(OnlyProtocol))
                 return true;
         }
+        else
+            return true;
     }
 
     return false;
@@ -470,7 +467,7 @@ bool EnabledProtocolsProxyModel::filterAcceptsChild(int sourceRow, const QModelI
     return false;
 }
 
-void EnabledProtocolsProxyModel::setFilter(const QString& filter, EnabledProtocolsProxyModel::SearchType type,
+void EnabledProtocolsProxyModel::setFilter(const QString& filter, EnabledProtocolsProxyModel::SearchTypes type,
     EnabledProtocolItem::EnableProtocolType protocolType)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)

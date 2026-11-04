@@ -94,7 +94,7 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
     tvbuff_t   *next_tvb;
     int i=0;
     uint8_t packet_type;
-    uint8_t * str_name;
+    char* str_name;
     unsigned str_len;
     int remaining_length;
 
@@ -150,10 +150,9 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
         /* Since the frame size is limited this should work ok */
 
         if (tvb_get_uint8(tvb, 0x14)>=0x20){
-            name_item = proto_tree_add_item(turbocell_tree, hf_turbocell_name, tvb, 0x14, 30, ENC_ASCII);
+            name_item = proto_tree_add_item_ret_string_and_length(turbocell_tree, hf_turbocell_name, tvb, 0x14, 30, ENC_ASCII, pinfo->pool, (const uint8_t**)&str_name, &str_len);
             network_tree = proto_item_add_subtree(name_item, ett_network);
 
-            str_name=tvb_get_stringz_enc(pinfo->pool, tvb, 0x14, &str_len, ENC_ASCII);
             col_append_fstr(pinfo->cinfo, COL_INFO, ", Network=\"%s\"", format_text(pinfo->pool, str_name, str_len-1));
 
             while(tvb_get_uint8(tvb, 0x34 + 8*i)==0x00 && (tvb_reported_length_remaining(tvb,0x34 + 8*i) > 6) && (i<32)) {
@@ -200,7 +199,7 @@ dissect_turbocell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 
                 msdu_offset += 0x02;
                 remaining_length -= 0x02;
-                msdu_tvb = tvb_new_subset_length_caplen(next_tvb, msdu_offset, (msdu_length>remaining_length)?remaining_length:msdu_length, msdu_length);
+                msdu_tvb = tvb_new_subset_length(next_tvb, msdu_offset, msdu_length);
                 call_dissector(eth_handle, msdu_tvb, pinfo, subframe_tree);
                 msdu_offset += msdu_length;
                 remaining_length -= msdu_length;
@@ -266,7 +265,7 @@ void proto_register_turbocell(void)
         },
         { &hf_turbocell_name,
           { "Network Name", "turbocell.name",
-            FT_STRINGZ, BASE_NONE, NULL, 0,
+            FT_STRINGZTRUNC, BASE_NONE, NULL, 0,
             NULL, HFILL }
         },
         { &hf_turbocell_station,

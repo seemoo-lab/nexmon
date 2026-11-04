@@ -34,10 +34,6 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 
-#define PNAME  "Advanced Intelligent Network"
-#define PSNAME "AIN"
-#define PFNAME "ain"
-
 void proto_register_ain(void);
 void proto_reg_handoff_ain(void);
 
@@ -87,9 +83,9 @@ static int ain_opcode_type;
 #define AIN_OPCODE_REJECT        4
 
 /* Forward declarations */
-static int dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_);
-static int dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_);
-static int dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, int offset, asn1_ctx_t *actx);
+static unsigned dissect_invokeData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx _U_);
+static unsigned dissect_returnResultData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx _U_);
+static unsigned dissect_returnErrorData(proto_tree *tree, tvbuff_t *tvb, unsigned offset, asn1_ctx_t *actx);
 
 static const value_string ain_np_vals[] = {
     {   0, "Unknown or not applicable"},
@@ -265,7 +261,7 @@ void proto_register_ain(void) {
     expert_module_t* expert_ain;
 
     /* Register protocol */
-    proto_ain = proto_register_protocol(PNAME, PSNAME, PFNAME);
+    proto_ain = proto_register_protocol("Advanced Intelligent Network", "AIN", "ain");
     ain_handle = register_dissector("ain", dissect_ain, proto_ain);
     /* Register fields and subtrees */
     proto_register_field_array(proto_ain, hf, array_length(hf));

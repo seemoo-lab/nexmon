@@ -4,7 +4,7 @@
  * Colin O'Flynn <coflynn@newae.com>
  *
  * The entire security section of this is lifted from the IEEE 802.15.4
- * dissectory, as this is done the same way. Should eventually make the
+ * dissector, as this is done the same way. Should eventually make the
  * two use some common functions or something. But that section is:
  * By Owen Kirby <osk@exegin.com>
  * Copyright 2007 Exegin Technologies Limited
@@ -124,7 +124,7 @@ static int hf_mle_tlv_hold_time;
 static int hf_mle_tlv_channel_page; /* v1.1-draft-2 */
 static int hf_mle_tlv_channel; /* v1.1-draft-2 */
 static int hf_mle_tlv_csl_accuracy; /* v1.2-draft-5 */
-static int hf_mle_tlv_csl_synchronied_timeout; /* v1.2-draft-5 */
+static int hf_mle_tlv_csl_synchronized_timeout; /* v1.2-draft-5 */
 static int hf_mle_tlv_csl_clock_accuracy; /* v1.2-draft-5 */
 static int hf_mle_tlv_csl_uncertainty;
 static int hf_mle_tlv_pan_id; /* v1.1-draft-2 */
@@ -153,7 +153,6 @@ static int hf_mle_tlv_link_status_sub_tlv;
 static int hf_mle_tlv_link_query_options;
 static int hf_mle_tlv_link_enh_ack_flags;
 static int hf_mle_tlv_link_requested_type_id_flags;
-static int hf_mle_tlv_csl_sychronized_timeout;
 static int hf_mle_tlv_link_forward_series;
 static int hf_mle_tlv_link_concatenation_link_metric_typeid_flags;
 static int hf_mle_tlv_link_timeout;
@@ -173,6 +172,20 @@ static int ett_mle_thread_nwd;
 static int ett_mle_auxiliary_security;
 static int ett_mle_aux_sec_control;
 static int ett_mle_aux_sec_key_id;
+
+static int hf_mle_aux_security_header;
+static int hf_mle_aux_sec_security_control;
+static int hf_mle_aux_sec_security_level;
+static int hf_mle_aux_sec_key_id_mode;
+static int hf_mle_aux_sec_frame_counter_suppression;
+static int hf_mle_aux_sec_asn_in_nonce;
+static int hf_mle_aux_sec_reserved;
+static int hf_mle_aux_sec_frame_counter;
+static int hf_mle_aux_sec_key_source;
+static int hf_mle_aux_sec_key_source_bytes;
+static int hf_mle_aux_sec_key_index;
+
+static ieee802154_aux_sec_hf_t mle_aux_sec_hf;
 
 static expert_field ei_mle_cbc_mac_failed;
 static expert_field ei_mle_packet_too_small;
@@ -471,13 +484,14 @@ static const true_false_string mle_tlv_addr_reg_iid_type = {
  *  DESCRIPTION
  *      MLE dissector.
  *  PARAMETERS
- *      tvbuff_t *tvb               - IEEE 802.15.4 packet.
- *      packet_info * pinfo         - Packet info structure.
- *      unsigned offset                - Offset where the ciphertext 'c' starts.
- *      ieee802154_packet *packet   - IEEE 802.15.4 packet information.
- *      ws_decrypt_status *status   - status of decryption returned through here on failure.
+ *      tvbuff_t * tvb                           - IEEE 802.15.4 packet.
+ *      unsigned offset                          - Offset where the ciphertext 'c' starts.
+ *      packet_info * pinfo                      - Packet info structure.
+ *      ieee802154_packet * packet               - IEEE 802.15.4 packet information.
+ *      ieee802154_decrypt_info_t * decrypt_info - information for decryption
+ *      unsigned char * key                      - key for decryption
  *  RETURNS
- *      tvbuff_t *                  - Decrypted payload.
+ *      tvbuff_t *                               - Decrypted payload.
  *---------------------------------------------------------------
  */
 static tvbuff_t *
@@ -485,7 +499,8 @@ dissect_mle_decrypt(tvbuff_t * tvb,
                     unsigned offset,
                     packet_info * pinfo,
                     ieee802154_packet * packet,
-                    ieee802154_decrypt_info_t* decrypt_info)
+                    ieee802154_decrypt_info_t * decrypt_info,
+                    unsigned char * key)
 {
     tvbuff_t *          ptext_tvb;
     bool                have_mic = false;
@@ -550,7 +565,7 @@ dissect_mle_decrypt(tvbuff_t * tvb,
 
     /* Decrypt the ciphertext, and place the plaintext in a new tvb. */
     if (IEEE802154_IS_ENCRYPTED(packet->security_level) && captured_len) {
-        char *text;
+        uint8_t *text;
 
         /*
          * Make a copy of the ciphertext in heap memory.
@@ -558,10 +573,10 @@ dissect_mle_decrypt(tvbuff_t * tvb,
          * We will decrypt the message in-place and then use the buffer as the
          * real data for the new tvb.
          */
-        text = (char *)tvb_memdup(pinfo->pool, tvb, offset, captured_len);
+        text = (uint8_t *)tvb_memdup(pinfo->pool, tvb, offset, captured_len);
 
         /* Perform CTR-mode transformation. Try both the likely key and the alternate key */
-        if (!ccm_ctr_encrypt(decrypt_info->key, tmp, decrypt_info->rx_mic, text, captured_len)) {
+        if (!ccm_ctr_encrypt(key, tmp, decrypt_info->rx_mic, text, captured_len)) {
             *decrypt_info->status = DECRYPT_PACKET_DECRYPT_FAILED;
             return NULL;
         }
@@ -576,14 +591,14 @@ dissect_mle_decrypt(tvbuff_t * tvb,
     else {
         /* Decrypt the MIC (if present). */
         if (have_mic) {
-            if (!ccm_ctr_encrypt(decrypt_info->key, tmp, decrypt_info->rx_mic, NULL, 0)) {
+            if (!ccm_ctr_encrypt(key, tmp, decrypt_info->rx_mic, NULL, 0)) {
                 *decrypt_info->status = DECRYPT_PACKET_DECRYPT_FAILED;
                 return NULL;
             }
         }
 
         /* Create a tvbuff for the plaintext. This might result in a zero-length tvbuff. */
-        ptext_tvb = tvb_new_subset_length_caplen(tvb, offset, captured_len, reported_len);
+        ptext_tvb = tvb_new_subset_length(tvb, offset, reported_len);
         *decrypt_info->status = DECRYPT_PACKET_SUCCEEDED;
     }
 
@@ -623,7 +638,7 @@ dissect_mle_decrypt(tvbuff_t * tvb,
          * already points to contiguous memory, since we just allocated it in
          * decryption phase.
          */
-        if (!ccm_cbc_mac(decrypt_info->key, tmp, d_a, l_a, tvb_get_ptr(ptext_tvb, 0, l_m), l_m, dec_mic)) {
+        if (!ccm_cbc_mac(key, tmp, d_a, l_a, tvb_get_ptr(ptext_tvb, 0, l_m), l_m, dec_mic)) {
             *decrypt_info->status = DECRYPT_PACKET_MIC_CHECK_FAILED;
         }
         /* Compare the received MIC with the one we generated. */
@@ -723,15 +738,14 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     /* Parse the security suite field. */
     /* Security Suite Field */
-    security_suite = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(mle_tree, hf_mle_security_suite, tvb, offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(mle_tree, hf_mle_security_suite, tvb, offset, 1, ENC_NA, &security_suite);
     offset++;
 
     aux_header_offset = offset;
 
     /* Security material present if security suite = 0 */
     if (security_suite == 0) {
-        dissect_ieee802154_aux_sec_header_and_key(tvb, pinfo, mle_tree, packet, &offset);
+        dissect_ieee802154_aux_sec_header_and_key_with_hf(tvb, pinfo, mle_tree, packet, &offset, &mle_aux_sec_hf);
         aux_length = offset-aux_header_offset;
     } else {
         packet->security_level = SECURITY_LEVEL_NONE;
@@ -748,7 +762,6 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
         decrypt_info.aux_offset = aux_header_offset;
         decrypt_info.aux_length = aux_length;
         decrypt_info.status = &status;
-        decrypt_info.key = NULL; /* payload function will fill that in */
 
         payload_tvb = decrypt_ieee802154_payload(tvb, offset, pinfo, header_tree, packet, &decrypt_info,
                                      ieee802154_set_mle_key, dissect_mle_decrypt);
@@ -767,10 +780,7 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     /* Get the unencrypted data if decryption failed.  */
     if (!payload_tvb) {
         /* Deal with possible truncation and the FCS field at the end. */
-        int reported_len = tvb_reported_length_remaining(tvb, offset);
-        int captured_len = tvb_captured_length_remaining(tvb, offset);
-        if (reported_len < captured_len) captured_len = reported_len;
-        payload_tvb = tvb_new_subset_length_caplen(tvb, offset, captured_len, reported_len);
+        payload_tvb = tvb_new_subset_remaining(tvb, offset);
     }
 
     /* Display the reason for failure, and abort if the error was fatal. */
@@ -840,8 +850,7 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
         tlv_tree = proto_item_add_subtree(ti, ett_mle_tlv);
 
         /* Type */
-        proto_tree_add_item(tlv_tree, hf_mle_tlv_type, payload_tvb, offset, 1, ENC_NA);
-        tlv_type = tvb_get_uint8(payload_tvb, offset);
+        proto_tree_add_item_ret_uint8(tlv_tree, hf_mle_tlv_type, payload_tvb, offset, 1, ENC_NA, &tlv_type);
         offset++;
 
         /* Add value name to value root label */
@@ -1416,11 +1425,17 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
                       expert_add_info(pinfo, proto_root, &ei_mle_tlv_length_failed);
                       proto_tree_add_item(tlv_tree, hf_mle_tlv_unknown, payload_tvb, offset, tlv_len, ENC_NA);
                   } else {
+                      uint8_t page;
+                      uint16_t channel;
+
                       /* Channel page */
-                      proto_tree_add_item(tlv_tree, hf_mle_tlv_channel_page, payload_tvb, offset, 1, ENC_BIG_ENDIAN);
+                      proto_tree_add_item_ret_uint8(tlv_tree, hf_mle_tlv_channel_page, payload_tvb, offset, 1, ENC_BIG_ENDIAN, &page);
                       /* Channel */
-                      proto_tree_add_item(tlv_tree, hf_mle_tlv_channel, payload_tvb, offset+1, 2, ENC_BIG_ENDIAN);
+                      proto_tree_add_item_ret_uint16(tlv_tree, hf_mle_tlv_channel, payload_tvb, offset+1, 2, ENC_BIG_ENDIAN, &channel);
+
+                      proto_item_append_text(ti, " = %u/%u", page, channel);
                   }
+                  proto_item_append_text(ti, ")");
                   offset += tlv_len;
               }
               break;
@@ -1433,7 +1448,7 @@ dissect_mle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
                 } else {
                     /*  CSL synchronized timeout */
                     uint32_t to_data = 0;
-                    proto_tree_add_item_ret_uint(tlv_tree, hf_mle_tlv_csl_synchronied_timeout, payload_tvb, offset, 4, ENC_BIG_ENDIAN, &to_data);
+                    proto_tree_add_item_ret_uint(tlv_tree, hf_mle_tlv_csl_synchronized_timeout, payload_tvb, offset, 4, ENC_BIG_ENDIAN, &to_data);
                     proto_item_append_text(ti, " = %u", to_data);
                 }
                 proto_item_append_text(ti, ")");
@@ -2297,7 +2312,7 @@ proto_register_mle(void)
           HFILL
       }
     },
-    { &hf_mle_tlv_csl_sychronized_timeout,
+    { &hf_mle_tlv_csl_synchronized_timeout,
         { "CSL Synchronized Timeout",
           "mle.tlv.link_csl_synchronized_timeout",
           FT_UINT32, BASE_HEX, NULL, 0x0,
@@ -2400,6 +2415,53 @@ proto_register_mle(void)
         "Thread Query ID",
         HFILL
       }
+    },
+    { &hf_mle_aux_security_header,
+      { "Auxiliary Security Header", "mle.aux_sec.hdr", FT_NONE, BASE_NONE, NULL,
+        0x0, "The Auxiliary Security Header of the message", HFILL }
+    },
+    { &hf_mle_aux_sec_security_level,
+      { "Security Level", "mle.aux_sec.sec_level", FT_UINT8, BASE_HEX, VALS(ieee802154_sec_level_names),
+        IEEE802154_AUX_SEC_LEVEL_MASK, "The Security Level of the message", HFILL }
+    },
+    { &hf_mle_aux_sec_security_control,
+      { "Security Control Field", "mle.aux_sec.security_control_field", FT_UINT8, BASE_HEX, NULL,
+        0x0, NULL, HFILL }
+    },
+    { &hf_mle_aux_sec_key_id_mode,
+      { "Key Identifier Mode", "mle.aux_sec.key_id_mode", FT_UINT8, BASE_HEX, VALS(ieee802154_key_id_mode_names),
+        IEEE802154_AUX_KEY_ID_MODE_MASK,
+        "The scheme to use by the recipient to lookup the key in its key table", HFILL }
+    },
+    { &hf_mle_aux_sec_frame_counter_suppression,
+      { "Frame Counter Suppression", "mle.aux_sec.frame_counter_suppression", FT_BOOLEAN, 8, NULL,
+        IEEE802154_AUX_FRAME_COUNTER_SUPPRESSION_MASK,
+        "Whether the frame counter is omitted from the Auxiliary Security Header", HFILL }
+    },
+    { &hf_mle_aux_sec_asn_in_nonce,
+      { "ASN in Nonce", "mle.aux_sec.asn_in_nonce", FT_BOOLEAN, 8, NULL,
+        IEEE802154_AUX_ASN_IN_NONCE_MASK,
+        "Whether the ASN is used to generate the nonce instead of the frame counter", HFILL }
+    },
+    { &hf_mle_aux_sec_reserved,
+      { "Reserved", "mle.aux_sec.reserved", FT_UINT8, BASE_HEX, NULL, IEEE802154_AUX_CTRL_RESERVED_MASK,
+        NULL, HFILL }
+    },
+    { &hf_mle_aux_sec_frame_counter,
+      { "Frame Counter", "mle.aux_sec.frame_counter", FT_UINT32, BASE_DEC, NULL, 0x0,
+        "Frame counter of the originator of the protected message", HFILL }
+    },
+    { &hf_mle_aux_sec_key_source,
+      { "Key Source", "mle.aux_sec.key_source", FT_UINT64, BASE_HEX, NULL, 0x0,
+        "Key Source for processing of the protected message", HFILL }
+    },
+    { &hf_mle_aux_sec_key_source_bytes,
+      { "Key Source", "mle.aux_sec.key_source.bytes", FT_BYTES, BASE_NONE, NULL, 0x0,
+        "Key Source for processing of the protected message", HFILL }
+    },
+    { &hf_mle_aux_sec_key_index,
+      { "Key Index", "mle.aux_sec.key_index", FT_UINT8, BASE_HEX, NULL, 0x0,
+        "Key Index for processing of the protected message", HFILL }
     }
 
   };
@@ -2435,6 +2497,21 @@ proto_register_mle(void)
   proto_register_subtree_array(ett, array_length(ett));
   expert_mle = expert_register_protocol(proto_mle);
   expert_register_field_array(expert_mle, ei, array_length(ei));
+
+  mle_aux_sec_hf.hf_aux_security_header = hf_mle_aux_security_header;
+  mle_aux_sec_hf.hf_aux_sec_security_control = hf_mle_aux_sec_security_control;
+  mle_aux_sec_hf.hf_aux_sec_security_level = hf_mle_aux_sec_security_level;
+  mle_aux_sec_hf.hf_aux_sec_key_id_mode = hf_mle_aux_sec_key_id_mode;
+  mle_aux_sec_hf.hf_aux_sec_frame_counter_suppression = hf_mle_aux_sec_frame_counter_suppression;
+  mle_aux_sec_hf.hf_aux_sec_asn_in_nonce = hf_mle_aux_sec_asn_in_nonce;
+  mle_aux_sec_hf.hf_aux_sec_reserved = hf_mle_aux_sec_reserved;
+  mle_aux_sec_hf.hf_aux_sec_frame_counter = hf_mle_aux_sec_frame_counter;
+  mle_aux_sec_hf.hf_aux_sec_key_source = hf_mle_aux_sec_key_source;
+  mle_aux_sec_hf.hf_aux_sec_key_source_bytes = hf_mle_aux_sec_key_source_bytes;
+  mle_aux_sec_hf.hf_aux_sec_key_index = hf_mle_aux_sec_key_index;
+  mle_aux_sec_hf.ett_auxiliary_security = ett_mle_auxiliary_security;
+  mle_aux_sec_hf.ett_aux_sec_control = ett_mle_aux_sec_control;
+  mle_aux_sec_hf.ett_aux_sec_key_id = ett_mle_aux_sec_key_id;
 
   mle_handle = register_dissector("mle", dissect_mle, proto_mle);
 

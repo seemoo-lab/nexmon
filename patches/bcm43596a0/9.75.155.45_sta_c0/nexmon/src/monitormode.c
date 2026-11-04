@@ -107,8 +107,15 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         | (1<<IEEE80211_RADIOTAP_CHANNEL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL)
         | (1<<IEEE80211_RADIOTAP_DBM_ANTNOISE);
+    static uint32_t fw_tsf_high = 0;
+    static uint32_t fw_last_mactime = 0;
+
+    if (fw_last_mactime >= 0x80000000 && sts->mactime < 0x80000000)
+        fw_tsf_high++;
+    fw_last_mactime = sts->mactime;
+
     frame->tsf.tsf_l = sts->mactime;
-    frame->tsf.tsf_h = 0;
+    frame->tsf.tsf_h = fw_tsf_high;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
     frame->chan_flags = 0;
@@ -123,13 +130,17 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     }
 
     //wl_sendup(wl, 0, p_new);
-// TODO: fix the structures to call the xmit function
-//    wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    if (wl && wl->dev && wl->dev->chained && wl->dev->chained->funcs && wl->dev->chained->funcs->xmit) {
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    } else {
+        printf("ERR: xmit null, dropping frame\n");
+        pkt_buf_free_skb(osh, p_new, 0);
+    }
 }
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
-// TODO: fix the wlc_info structure
+// NOTE: wlc_info structure synced for this FW; revisit on header update
 //    switch(wl->wlc->monitor & 0xFF) {
     switch(*(((char *) wl->wlc) + 0x250)) {
         case MONITOR_RADIOTAP:

@@ -164,8 +164,17 @@ void SCTPGraphDialog::drawSACKGraph(const sctp_assoc_info_t* selected_assoc)
                 tsnumber = g_ntohl(sack_header->cum_tsn_ack);
                 dup_nr=g_ntohs(sack_header->nr_of_dups);
                 if (nr>0) {  // Gap Reports green
+                    // Flexible Array Member #1.  XXX - UB in C++ technically;
+                    // also are we checking at any point that all the data is
+                    // there, since this was just copied straight from the TVB
+                    // and the overall chunk length might be inconsistent with
+                    // the number of gaps and duplicated TSNs indicated and/or
+                    // present.
                     gap = &sack_header->gaps[0];
                     for (i=0;i<nr; i++) {
+                        // Really we're just doing this, but as FAMs are UB
+                        // in C++ some compilers or run-times might complain.
+                        //gap = &sack_header->gaps[i];
                         gap_start=g_ntohs(gap->start);
                         gap_end = g_ntohs(gap->end);
                         for (j=gap_start; j<=gap_end; j++) {
@@ -183,7 +192,10 @@ void SCTPGraphDialog::drawSACKGraph(const sctp_assoc_info_t* selected_assoc)
                     fs.append(tsn->frame_number);
                 }
                 if (dup_nr > 0) { // Duplicates cyan
-                    dup_list = &sack_header->a_rwnd + 2 + nr;
+                    // XXX - Flexible Array Member #2, basically. This is sort
+                    // of horrifying. Jump over the gaps array to where the
+                    // duplicated TSN array should be.
+                    dup_list = (uint32_t*)(&sack_header->gaps[0] + nr);
                     for (i = 0; i < dup_nr; i++) {
                         tsnumber = g_ntohl(dup_list[i]);
                         if (tsnumber >= minTSN) {
@@ -477,18 +489,20 @@ void SCTPGraphDialog::graphClicked(QCPAbstractPlottable* plottable, int, QMouseE
 
 void SCTPGraphDialog::save_graph(QDialog *dlg, QCustomPlot *plot)
 {
-    QString file_name, extension;
+    QString file_name;
     QDir path(mainApp->openDialogInitialDir());
     QString pdf_filter = tr("Portable Document Format (*.pdf)");
     QString png_filter = tr("Portable Network Graphics (*.png)");
     QString bmp_filter = tr("Windows Bitmap (*.bmp)");
     // Gaze upon my beautiful graph with lossy artifacts!
     QString jpeg_filter = tr("JPEG File Interchange Format (*.jpeg *.jpg)");
-    QString filter = QStringLiteral("%1;;%2;;%3;;%4")
-            .arg(pdf_filter)
-            .arg(png_filter)
-            .arg(bmp_filter)
-            .arg(jpeg_filter);
+    QString filter = QStringLiteral("%1;;%2;;%3;;%4").arg(
+        pdf_filter,
+        png_filter,
+        bmp_filter,
+        jpeg_filter
+    );
+    QString extension = png_filter;
 
     file_name = WiresharkFileDialog::getSaveFileName(dlg, mainApp->windowTitleString(tr("Save Graph As…")),
                                              path.canonicalPath(), filter, &extension);

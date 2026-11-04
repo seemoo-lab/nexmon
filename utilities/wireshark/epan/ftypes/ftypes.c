@@ -37,10 +37,7 @@ ftypes_register_pseudofields(void)
 {
 	static int proto_ftypes;
 
-	proto_ftypes = proto_register_protocol(
-				"Wireshark Field/Fundamental Types",
-				"Wireshark FTypes",
-				"_ws.ftypes");
+	proto_ftypes = proto_register_protocol("Wireshark Field/Fundamental Types", "Wireshark FTypes", "_ws.ftypes");
 
 	ftype_register_pseudofields_bytes(proto_ftypes);
 	ftype_register_pseudofields_double(proto_ftypes);
@@ -170,11 +167,9 @@ ftype_similar_types(const enum ftenum ftype_a, const enum ftenum ftype_b)
 const char*
 ftype_name(enum ftenum ftype)
 {
-	const ftype_t	*ft;
 	const char *s = "(null)";
 
-	FTYPE_LOOKUP(ftype, ft);
-	switch (ft->ftype) {
+	switch (ftype) {
 		case FT_NONE:		s = "FT_NONE"; break;
 		case FT_PROTOCOL:	s = "FT_PROTOCOL"; break;
 		case FT_BOOLEAN:	s = "FT_BOOLEAN"; break;
@@ -230,11 +225,9 @@ ftype_name(enum ftenum ftype)
 const char*
 ftype_pretty_name(enum ftenum ftype)
 {
-	const ftype_t	*ft;
 	const char *s = "(null)";
 
-	FTYPE_LOOKUP(ftype, ft);
-	switch (ft->ftype) {
+	switch (ftype) {
 		case FT_NONE:		s = "Label"; break;
 		case FT_PROTOCOL:	s = "Protocol"; break;
 		case FT_BOOLEAN:	s = "Boolean"; break;
@@ -490,23 +483,26 @@ ftype_can_val_to_double(enum ftenum ftype)
 
 /* ---------------------------------------------------------- */
 
-/* Allocate and initialize an fvalue_t, given an ftype */
+/* Allocate and initialize an fvalue_t, given an ftype using a GSlice. */
 fvalue_t*
 fvalue_new(ftenum_t ftype)
 {
 	fvalue_t		*fv;
-	const ftype_t		*ft;
-	FvalueNewFunc		new_value;
 
 	fv = g_slice_new(fvalue_t);
+	fvalue_init(fv, ftype);
 
-	FTYPE_LOOKUP(ftype, ft);
-	fv->ftype = ft;
+	return fv;
+}
 
-	new_value = ft->new_value;
-	if (new_value) {
-		new_value(fv);
-	}
+/* Allocate and initialize an fvalue_t, given an ftype using wmem. */
+fvalue_t *
+fvalue_new_pool(wmem_allocator_t *scope, ftenum_t ftype)
+{
+	fvalue_t		*fv;
+
+	fv = wmem_new(scope, fvalue_t);
+	fvalue_init(fv, ftype);
 
 	return fv;
 }
@@ -1046,18 +1042,24 @@ fvalue_set_strbuf(fvalue_t *fv, wmem_strbuf_t *value)
 }
 
 void
-fvalue_set_protocol(fvalue_t *fv, tvbuff_t *value, const char *name, int length)
+fvalue_set_protocol(fvalue_t *fv, tvbuff_t *value, const char *name, unsigned length)
 {
 	ws_assert(fv->ftype->ftype == FT_PROTOCOL);
 	ws_assert(fv->ftype->set_value.set_value_protocol);
+	// We probably should check the below, but some parts of proto.c
+	// don't guarantee this.
+	ws_assert(value == NULL || tvb_captured_length(value) >= length);
 	fv->ftype->set_value.set_value_protocol(fv, value, name, length);
 }
 
 void
-fvalue_set_protocol_length(fvalue_t *fv, int length)
+fvalue_set_protocol_length(fvalue_t *fv, unsigned length)
 {
 	ws_assert(fv->ftype->ftype == FT_PROTOCOL);
 	protocol_value_t *proto = &fv->value.protocol;
+	// We probably should check the below, but some parts of proto.c
+	// don't guarantee this.
+	ws_assert(proto->tvb == NULL || tvb_captured_length(proto->tvb) >= length);
 	proto->length = length;
 }
 

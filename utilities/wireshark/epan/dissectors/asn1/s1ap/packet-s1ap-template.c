@@ -10,7 +10,7 @@
  *
  * Based on the RANAP dissector
  *
- * References: 3GPP TS 36.413 V18.3.0 (2024-12)
+ * References: 3GPP TS 36.413 V19.1.0 (2025-12)
  */
 
 #include "config.h"
@@ -19,7 +19,6 @@
 
 #include <epan/asn1.h>
 #include <epan/prefs.h>
-#include <epan/sctpppids.h>
 #include <epan/expert.h>
 #include <epan/conversation.h>
 #include <epan/proto_data.h>
@@ -27,6 +26,7 @@
 #include <epan/show_exception.h>
 #include <epan/tfs.h>
 #include <epan/unit_strings.h>
+#include <epan/addr_resolv.h>
 #include <wsutil/array.h>
 
 #include "packet-per.h"
@@ -42,10 +42,7 @@
 #include "packet-ntp.h"
 #include "packet-ngap.h"
 #include "packet-lpp.h"
-
-#define PNAME  "S1 Application Protocol"
-#define PSNAME "S1AP"
-#define PFNAME "s1ap"
+#include "packet-sctp.h"
 
 /* Dissector will use SCTP PPID 18 or SCTP port. IANA assigned port = 36412 */
 #define SCTP_PORT_S1AP 36412
@@ -126,6 +123,7 @@ static int hf_s1ap_rAT_RestrictionInformation_NR_LEO;
 static int hf_s1ap_rAT_RestrictionInformation_NR_MEO;
 static int hf_s1ap_rAT_RestrictionInformation_NR_GEO;
 static int hf_s1ap_rAT_RestrictionInformation_NR_OTHERSAT;
+static int hf_s1ap_tAC_Name;
 #include "packet-s1ap-hf.c"
 
 /* Initialize the subtree pointers */
@@ -311,7 +309,8 @@ void
 dissect_s1ap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree, packet_info *pinfo, uint8_t dcs, int hf_nb_pages, int hf_decoded_page)
 {
   uint32_t offset;
-  uint8_t nb_of_pages, length, *str;
+  uint8_t nb_of_pages, length;
+  const char *str;
   proto_item *ti;
   tvbuff_t *cb_data_page_tvb, *cb_data_tvb;
   int i;
@@ -328,7 +327,7 @@ dissect_s1ap_warningMessageContents(tvbuff_t *warning_msg_tvb, proto_tree *tree,
     cb_data_page_tvb = tvb_new_subset_length(warning_msg_tvb, offset, length);
     cb_data_tvb = dissect_cbs_data(dcs, cb_data_page_tvb, tree, pinfo, 0);
     if (cb_data_tvb) {
-      str = tvb_get_string_enc(pinfo->pool, cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
+      str = (char*)tvb_get_string_enc(pinfo->pool, cb_data_tvb, 0, tvb_reported_length(cb_data_tvb), ENC_UTF_8|ENC_NA);
       proto_tree_add_string_format(tree, hf_decoded_page, warning_msg_tvb, offset, 83,
                                    str, "Decoded Page %u: %s", i+1, str);
     }
@@ -755,6 +754,10 @@ void proto_register_s1ap(void) {
       { "NR-OTHERSAT", "s1ap.rAT_RestrictionInformation.NR_OTHERSAT",
         FT_BOOLEAN, 8, TFS(&tfs_restricted_not_restricted), 0x01,
         NULL, HFILL }},
+    { &hf_s1ap_tAC_Name,
+      { "TAC Name", "s1ap.tAC_name",
+        FT_STRING, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
 #include "packet-s1ap-hfarr.c"
   };
 
@@ -815,7 +818,7 @@ void proto_register_s1ap(void) {
   expert_module_t* expert_s1ap;
 
   /* Register protocol */
-  proto_s1ap = proto_register_protocol(PNAME, PSNAME, PFNAME);
+  proto_s1ap = proto_register_protocol("S1 Application Protocol", "S1AP", "s1ap");
   /* Register fields and subtrees */
   proto_register_field_array(proto_s1ap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));

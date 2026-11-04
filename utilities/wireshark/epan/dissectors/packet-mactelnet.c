@@ -22,8 +22,6 @@
 void proto_register_mactelnet(void);
 void proto_reg_handoff_mactelnet(void);
 
-#define PROTO_TAG_MACTELNET "MAC-Telnet"
-
 /* Initialize the protocol and registered fields */
 static int proto_mactelnet;
 static int hf_mactelnet_control_packet;
@@ -127,7 +125,7 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     }
 
     /* Make entries in Protocol column and Info column on summary display */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_MACTELNET);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "MAC-Telnet");
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s > %s Direction: %s Type: %s",
                     tvb_ether_to_str(pinfo->pool, tvb, 2),
@@ -205,13 +203,11 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                     offset += 4;
 
                     /* Control packet type (1) */
-                    datatype = tvb_get_uint8(tvb, offset);
-                    proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_datatype, tvb, offset, 1, ENC_NA);
+                    proto_tree_add_item_ret_uint8(mactelnet_control_tree, hf_mactelnet_datatype, tvb, offset, 1, ENC_NA, &datatype);
                     offset += 1;
 
                     /* Control packet length (4) */
-                    datalength = tvb_get_ntohl(tvb, offset);
-                    proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_control_length, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item_ret_uint(mactelnet_control_tree, hf_mactelnet_control_length, tvb, offset, 4, ENC_BIG_ENDIAN, &datalength);
                     offset += 4;
 
                     switch (datatype) {
@@ -360,7 +356,7 @@ proto_register_mactelnet(void)
     };
 
     /* Register the protocol name and description */
-    proto_mactelnet = proto_register_protocol ("MikroTik MAC-Telnet Protocol", PROTO_TAG_MACTELNET, "mactelnet");
+    proto_mactelnet = proto_register_protocol ("MikroTik MAC-Telnet Protocol", "MAC-Telnet", "mactelnet");
     register_dissector("mactelnet", dissect_mactelnet, proto_mactelnet);
 
     /* Required function calls to register the header fields and subtrees used */

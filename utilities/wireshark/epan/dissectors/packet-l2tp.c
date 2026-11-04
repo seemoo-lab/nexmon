@@ -47,7 +47,6 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
 #include <epan/sminmpec.h>
 #include <epan/addr_resolv.h>
 #include <epan/prefs.h>
@@ -56,6 +55,7 @@
 #include <epan/decode_as.h>
 #include <epan/proto_data.h>
 #include <epan/tfs.h>
+#include <epan/iana-info.h>
 #include <wsutil/array.h>
 #include <wsutil/wsgcrypt.h>
 
@@ -1046,7 +1046,7 @@ static void md5_hmac_digest(l2tpv3_tunnel_t *tunnel,
     uint8_t zero[HASH_MD5_LENGTH] = { 0 };
     gcry_md_hd_t hmac_handle;
     int remainder;
-    int offset = 0;
+    unsigned offset = 0;
 
     if (tunnel->conv->pt == PT_NONE) /* IP encapsulated L2TPv3 */
         offset = 4;
@@ -1092,7 +1092,7 @@ static void sha1_hmac_digest(l2tpv3_tunnel_t *tunnel,
     uint8_t zero[HASH_SHA1_LENGTH] = { 0 };
     gcry_md_hd_t hmac_handle;
     int remainder;
-    int offset = 0;
+    unsigned offset = 0;
 
     if (tunnel->conv->pt == PT_NONE) /* IP encapsulated L2TPv3 */
         offset = 4;
@@ -1482,7 +1482,7 @@ static void *l2tp_value(packet_info *pinfo _U_)
  */
 static int dissect_l2tp_cisco_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, l2tp_cntrl_data_t *l2tp_cntrl_data, l2tpv3_session_t **session) {
 
-    int offset = 0;
+    unsigned offset = 0;
     int         avp_type;
     uint32_t    avp_vendor_id;
     uint16_t    avp_len;
@@ -1593,7 +1593,7 @@ static int dissect_l2tp_cisco_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree
  */
 static int dissect_l2tp_broadband_avps(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree) {
 
-    int offset = 0;
+    unsigned offset = 0;
     int         avp_type;
     uint32_t    avp_vendor_id;
     uint16_t    avp_len;
@@ -1731,7 +1731,7 @@ static int dissect_l2tp_broadband_avps(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 /* Dissect a single variable-length Ericsson Transport Configuration Group */
 static int dissect_l2tp_ericsson_transp_cfg(tvbuff_t *tvb, proto_tree *parent_tree)
 {
-    int offset = 0;
+    unsigned offset = 0;
     uint32_t i, num_sapis;
     proto_tree *tree;
 
@@ -1774,7 +1774,7 @@ static int dissect_l2tp_ericsson_tei_sc_map(tvbuff_t *tvb, proto_tree *parent_tr
 
 static int dissect_l2tp_ericsson_avps(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uint32_t ccid _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int         avp_type;
     uint32_t    avp_vendor_id;
     uint16_t    avp_len;
@@ -1863,7 +1863,7 @@ static int dissect_l2tp_ericsson_avps(tvbuff_t *tvb, packet_info *pinfo _U_, pro
 static int
 dissect_l2tp_vnd_cablelabs_avps(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    int offset = 0;
+    unsigned offset = 0;
     int         avp_type;
     uint32_t    avp_vendor_id;
     uint32_t    avp_len;
@@ -3708,7 +3708,7 @@ proto_register_l2tp(void)
     static build_valid_func l2tp_da_build_value[1] = {l2tp_value};
     static decode_as_value_t l2tp_da_values = {l2tp_prompt, 1, l2tp_da_build_value};
     static decode_as_t l2tp_da = {"l2tp", "l2tp.pw_type", 1, 0, &l2tp_da_values, NULL, NULL,
-                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                                    decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
     proto_l2tp = proto_register_protocol("Layer 2 Tunneling Protocol", "L2TP", "l2tp");
     l2tp_udp_handle = register_dissector("lt2p_udp", dissect_l2tp_udp, proto_l2tp);

@@ -21,6 +21,7 @@
 #include <glib.h>
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <locale.h>
@@ -80,12 +81,12 @@ typedef enum {
 
 unsigned long _pkt_count;
 
-void dissectCleanup(int ptr);
-int dissectPacket(char *pHeader, char *pData, int encap);
-char *wiresharkGet(int wfd_ptr, gchar *field);
+void dissectCleanup(intptr_t ptr);
+intptr_t dissectPacket(char *pHeader, char *pData, int encap);
+char *wiresharkGet(intptr_t wfd_ptr, gchar *field);
 void myoutput_fields_free(output_fields_t* fields);
 void wireshark_get_fields(proto_node *node, gpointer data);
-void wiresharkGetAll(int wfd_ptr);
+void wiresharkGetAll(intptr_t wfd_ptr);
 
 capture_file cfile;
 gchar               *cf_name = NULL, *rfilter = NULL;
@@ -176,7 +177,7 @@ Java_de_tu_1darmstadt_seemoo_nexmon_MyApplication_wiresharkTestGetAll(JNIEnv* en
 #endif
 
 	while(1) {
-		int dissect_ptr;
+		intptr_t dissect_ptr;
 		char *rval;
 		struct pcap_pkthdr pheader;
 	
@@ -223,49 +224,65 @@ Java_de_tu_1darmstadt_seemoo_nexmon_MyApplication_wiresharkTestGetAll(JNIEnv* en
 
 
 void
-Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_dissectCleanup(JNIEnv* env, jclass thiz, jint ptr)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_dissectCleanup(JNIEnv* env, jclass thiz, jlong ptr)
 {
-  
-  _env=env;
-  //_obj=thiz;
-	dissectCleanup(ptr);
+	_env = env;
+	//_obj=thiz;
+	if (ptr == 0 || ptr == -1)
+		return;
+	dissectCleanup((intptr_t)(uintptr_t)ptr);
 }
 
 void
-dissectCleanup(int ptr)
+dissectCleanup(intptr_t ptr)
 {
-	write_field_data_t *dissection = (write_field_data_t *) ptr;
+	write_field_data_t *dissection;
 
-  if(dissection->edt!=NULL)
-	  epan_dissect_cleanup(dissection->edt);
+	if (ptr == 0 || ptr == (intptr_t)-1)
+		return;
 
-  if(dissection->edt!=NULL)
-    free(dissection->edt);
+	dissection = (write_field_data_t *) ptr;
+	if (dissection->edt != NULL) {
+		epan_dissect_cleanup(dissection->edt);
+		free(dissection->edt);
+	}
 
-  if(dissection!=NULL)
-    free(dissection);
+	free(dissection);
 }
 
 
-jint
+jlong
 Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_dissectPacket(JNIEnv* env, jclass thiz, jbyteArray header, jbyteArray data, jint encap)
 {
-	
-	jint ret;
-  
-  _env=env;
+	intptr_t raw;
+	char pHeader[4096];
+	char *pData;
 
-	int length_header = (*env)->GetArrayLength(env, header);	
-	int length_data = (*env)->GetArrayLength(env, data);
-	char pHeader[length_header];
-	char pData[length_data];
+	_env = env;
 
-    (*env)->GetByteArrayRegion(env, header, 0, length_header, pHeader);
-    (*env)->GetByteArrayRegion(env, data, 0, length_data, pData);
+	if (header == NULL || data == NULL)
+		return (jlong)-1;
 
-	ret = dissectPacket(pHeader, pData, (int)encap);
+	jsize length_header = (*env)->GetArrayLength(env, header);
+	jsize length_data = (*env)->GetArrayLength(env, data);
+	if (length_header <= 0 || length_header > (jsize)sizeof(pHeader) ||
+	    length_data <= 0 || length_data > 65535)
+		return (jlong)-1;
 
-	return ret;
+	pData = (char *) malloc((size_t)length_data);
+	if (pData == NULL)
+		return (jlong)-1;
+
+	(*env)->GetByteArrayRegion(env, header, 0, length_header, (jbyte *)pHeader);
+	(*env)->GetByteArrayRegion(env, data, 0, length_data, (jbyte *)pData);
+
+	raw = dissectPacket(pHeader, pData, (int)encap);
+	free(pData);
+
+	if (raw == 0 || raw == (intptr_t)-1)
+		return (jlong)-1;
+
+	return (jlong)(uintptr_t)raw;
 }
 
 struct gnychis_str_list_s {
@@ -285,12 +302,18 @@ typedef struct gnychis_field_data_s gnychis_field_data;
 
 // Return a list of all the fields
 void
-wiresharkGetAll(int wfd_ptr)
+wiresharkGetAll(intptr_t wfd_ptr)
 {
 	gnychis_field_data data;
-	write_field_data_t *dissection = (write_field_data_t *) wfd_ptr;
+	write_field_data_t *dissection;
   str_list_item *item;
   int x=0;
+
+	if (wfd_ptr == 0 || wfd_ptr == (intptr_t)-1)
+		return;
+	dissection = (write_field_data_t *) wfd_ptr;
+	if (dissection->edt == NULL)
+		return;
 
   /* Create the output */
 	data.edt = dissection->edt;
@@ -325,17 +348,23 @@ wiresharkGetAll(int wfd_ptr)
 
 // Return a list of all the fields
 jobjectArray
-Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGetAll(JNIEnv* env, jclass thiz, jint wfd_ptr)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGetAll(JNIEnv* env, jclass thiz, jlong wfd_ptr)
 {
   jobjectArray fields = 0;
-	jstring      str;
+	jclass str_cls;
 	gnychis_field_data data;
-	write_field_data_t *dissection = (write_field_data_t *) wfd_ptr;
+	write_field_data_t *dissection;
   str_list_item *item;
   int x=0;
   
   _env=env;
   //_obj=thiz;
+
+	if (wfd_ptr == 0 || wfd_ptr == -1)
+		return NULL;
+	dissection = (write_field_data_t *)(uintptr_t)wfd_ptr;
+	if (dissection->edt == NULL)
+		return NULL;
 
   /* Create the output */
 	data.edt = dissection->edt;
@@ -347,17 +376,21 @@ Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGetAll(JNIEnv* env, j
 	proto_tree_children_foreach(dissection->edt->tree, wireshark_get_fields,
 	    &data);
 
-  fields = (*env)->NewObjectArray(env, (jsize)data.num_fields, (*env)->FindClass(env, "java/lang/String"), 0);
+	str_cls = (*env)->FindClass(env, "java/lang/String");
+	if (str_cls != NULL)
+		fields = (*env)->NewObjectArray(env, (jsize)data.num_fields, str_cls, 0);
 #ifdef VERBOSE
   __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "Dissected with %d fields\n", data.num_fields);
 #endif
   
   // Go through the list
   item = data.fields_head;
-  while(item != NULL && x < data.num_fields) {
+  while(item != NULL) {
 		str_list_item *old;
-    jstring strt = (*env)->NewStringUTF( env, item->str );
-    (*env)->SetObjectArrayElement(env, fields, x, strt);
+		if (fields != NULL && x < data.num_fields && item->str != NULL) {
+			jstring strt = (*env)->NewStringUTF(env, item->str);
+			(*env)->SetObjectArrayElement(env, fields, x, strt);
+		}
 		free(item->str);
 		old = item;
     item = item->next;
@@ -385,6 +418,9 @@ wireshark_get_fields(proto_node *node, gpointer data)
 	int		i;
   char item_buf[512];
   str_list_item *item;
+
+	if (node == NULL || fi == NULL || fi->hfinfo == NULL || pdata == NULL)
+		return;
 
 	if(node->parent != NULL) {
 
@@ -426,48 +462,62 @@ wireshark_get_fields(proto_node *node, gpointer data)
       
 	}*/
 
-	item = malloc(sizeof(str_list_item));
-      item->str = malloc(256);
-      item->next = NULL;
-
-      if(pdata->fields_head == NULL) {
-        pdata->fields_head = item;
-        pdata->fields = item;
-      } else {
-        pdata->fields->next = item;
-        pdata->fields = item;
-      }
-
-
 			/* XXX - this is a hack until we can just call
 			 * fvalue_to_string_repr() for *all* FT_* types. */
 			dfilter_string = proto_construct_match_selected_string(fi,
 			    pdata->edt);
 
 			if (dfilter_string != NULL) {
-				chop_len = strlen(fi->hfinfo->abbrev) + 4; /* for " == " */
+				size_t dlen = strlen(dfilter_string);
+				const char *val_str;
+				const char *rep_str = (fi->rep != NULL) ? fi->rep->representation : "(null)";
 
-				/* XXX - Remove double-quotes. Again, once we
-				 * can call fvalue_to_string_repr(), we can
-				 * ask it not to produce the version for
-				 * display-filters, and thus, no
-				 * double-quotes. */
-				if (dfilter_string[strlen(dfilter_string)-1] == '"') {
-					dfilter_string[strlen(dfilter_string)-1] = '\0';
-					chop_len++;
+				item = malloc(sizeof(str_list_item));
+				if (item != NULL) {
+					item->str = malloc(512);
+					if (item->str == NULL) {
+						free(item);
+						item = NULL;
+					}
 				}
 
-				//fputs("\" show=\"", pdata->fh);
-				//print_escaped_xml(pdata->fh, &dfilter_string[chop_len]);
-				if(fiparent != NULL)
-        			snprintf(item->str, 512, "%s---%s---%s---%s---%s", fi->hfinfo->abbrev, fiparent->hfinfo->abbrev, fi->rep->representation, fi->hfinfo->name, &dfilter_string[chop_len]); 
-				else
-					snprintf(item->str, 512, "%s---null---%s---%s---null", fi->hfinfo->abbrev, fi->rep->representation, fi->hfinfo->name); 
+				if (item != NULL) {
+					item->next = NULL;
+					chop_len = strlen(fi->hfinfo->abbrev) + 4; /* for " == " */
 
-				#ifdef VERBOSE
-				__android_log_print(ANDROID_LOG_INFO, LOG_TAG, "%s - %s - %s", fi->hfinfo->abbrev, fi->hfinfo->name, &dfilter_string[chop_len]);
-				#endif
-        pdata->num_fields++;
+					/* XXX - Remove double-quotes. Again, once we
+					 * can call fvalue_to_string_repr(), we can
+					 * ask it not to produce the version for
+					 * display-filters, and thus, no
+					 * double-quotes. */
+					if (dlen > 0 && dfilter_string[dlen - 1] == '"') {
+						dfilter_string[dlen - 1] = '\0';
+						dlen--;
+						chop_len++;
+					}
+
+					val_str = (chop_len <= dlen) ? &dfilter_string[chop_len] : "";
+
+					//fputs("\" show=\"", pdata->fh);
+					//print_escaped_xml(pdata->fh, &dfilter_string[chop_len]);
+					if (fiparent != NULL && fiparent->hfinfo != NULL)
+						snprintf(item->str, 512, "%s---%s---%s---%s---%s", fi->hfinfo->abbrev, fiparent->hfinfo->abbrev, rep_str, fi->hfinfo->name, val_str);
+					else
+						snprintf(item->str, 512, "%s---null---%s---%s---null", fi->hfinfo->abbrev, rep_str, fi->hfinfo->name);
+
+					if (pdata->fields_head == NULL) {
+						pdata->fields_head = item;
+						pdata->fields = item;
+					} else {
+						pdata->fields->next = item;
+						pdata->fields = item;
+					}
+
+					#ifdef VERBOSE
+					__android_log_print(ANDROID_LOG_INFO, LOG_TAG, "%s - %s - %s", fi->hfinfo->abbrev, fi->hfinfo->name, val_str);
+					#endif
+					pdata->num_fields++;
+				}
 			}
 		}
 
@@ -482,20 +532,28 @@ rse here. */
 
 
 char *
-wiresharkGet(int wfd_ptr, gchar *field)
+wiresharkGet(intptr_t wfd_ptr, gchar *field)
 {
 	int z = 1;
-	jstring result;
+	write_field_data_t *dissection;
+
+	if (wfd_ptr == 0 || wfd_ptr == (intptr_t)-1 || field == NULL)
+		return NULL;
+
+	dissection = (write_field_data_t *) wfd_ptr;
+	if (dissection->edt == NULL)
+		return NULL;
+
 	char *str_res = malloc(2048);	// assuming string result will be no more than 1024
 
 	//_pkt_count++;
 
-	if(str_res==NULL)
+	if (str_res == NULL) {
 		__android_log_print(ANDROID_LOG_INFO, LOG_TAG, "error allocating memory for return string, doh");
+		return NULL;
+	}
 
-	memset(str_res, '\0', sizeof(str_res));
-
-	write_field_data_t *dissection = (write_field_data_t *) wfd_ptr;
+	memset(str_res, '\0', 2048);
 #ifdef VERBOSE
 	__android_log_print(ANDROID_LOG_INFO, LOG_TAG, "wiresharkGet(casted dissection pointer)");
 #endif
@@ -522,7 +580,7 @@ wiresharkGet(int wfd_ptr, gchar *field)
 
 // CHANGE BACK TO 0
 	if(dissection->fields->field_values[0]!=NULL && dissection->fields->field_values[0]->str!=NULL) {
-		strncpy(str_res, dissection->fields->field_values[0]->str, 2047);
+		snprintf(str_res, 2048, "%s", dissection->fields->field_values[0]->str);
   } else {
 
     myoutput_fields_free(dissection->fields);
@@ -580,7 +638,7 @@ void myoutput_fields_free(output_fields_t* fields)
 
 
 jstring
-Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jclass thiz, jint wfd_ptr, jstring param)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jclass thiz, jlong wfd_ptr, jstring param)
 {
 	gchar *field;
 	char *str_result;
@@ -589,12 +647,19 @@ Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jcla
   _env=env;
   //_obj=thiz;
 
+	if (param == NULL || wfd_ptr == 0 || wfd_ptr == -1)
+		return NULL;
+
 	field = (gchar *) (*env)->GetStringUTFChars(env, param, 0);
+	if (field == NULL)
+		return NULL;
 
-	str_result = wiresharkGet((int)wfd_ptr, field);
+	str_result = wiresharkGet((intptr_t)(uintptr_t)wfd_ptr, field);
 
-  if(str_result == NULL)
+  if(str_result == NULL) {
+    (*env)->ReleaseStringUTFChars(env, param, field);
     return NULL;
+  }
 
 	result = (*env)->NewStringUTF(env, str_result);
 	free(str_result);

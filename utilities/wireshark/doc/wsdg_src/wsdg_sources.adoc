@@ -64,10 +64,10 @@ Wireshark releases use the following branch naming conventions:
 Main feature development and odd-numbered development releases.
 
 .release-x.y.
-Stable release maintenance. For example, release-4.4 is used to manage the 4.4.x official releases.
+Stable release maintenance. For example, release-4.6 is used to manage the 4.6.x official releases.
 
-Tags for major Wireshark releases and release candidates consist of a “v” followed by a version number such as “v4.4.1” or “v4.4.3rc0”.
-Major releases additionally have a tag prefixed with “wireshark-” followed by a version number, such as “wireshark-4.4.0”.
+Tags for major Wireshark releases and release candidates consist of a “v” followed by a version number such as “v4.6.1” or “v4.6.3rc0”.
+Prior to October 2025, major releases additionally had a tag prefixed with “wireshark-” followed by a version number, such as “wireshark-4.4.0”.
 
 Tags for major Stratoshark releases and release candidates consist of an “ssv” followed by a version number such as “ssv1.2.3” or “ssv1.3.4rc0”.
 
@@ -209,8 +209,9 @@ $ git pull --rebase upstream master
 
 The sources contain several documentation files. It’s a good idea to read these
 files first. After obtaining the sources, tools and libraries, the first place
-to look at is _doc/README.developer_. Inside you will find the latest
-information for Wireshark development for all supported platforms.
+to look at is wsrepofile:doc/README.developer[]. Inside
+you will find the latest information for Wireshark development for all
+supported platforms.
 
 .Build Wireshark before changing anything
 [TIP]
@@ -282,7 +283,7 @@ or on Windows,
 
 [source,cmd]
 ----
-> msbuild /m /p:Configuration=Debug Wireshark.sln
+> msbuild /m /p:Configuration=Debug Wireshark.slnx
 ----
 
 [#ChSrcRunFirstTime]
@@ -337,7 +338,7 @@ execution order of statements. To disable optimization, set the
 <<ChSrcBuildType,build type>> to `Debug`.
 
 Full debug logs can be invaluable to investigate any issues with the code.
-By default debug level logs are only enabled with `Debug` build type. You
+By default full debug level logs are only enabled with `Debug` build type. You
 can enable full debug logs and extra debugging code by configuring the
 ENABLE_DEBUG CMake option. This in turn will define the macro symbol
 `WS_DEBUG` and enable the full range of debugging code in Wireshark.
@@ -349,7 +350,7 @@ and can be somewhat expensive to check during normal usage.
 
 Conversely, the `Release` or `MinSizeRel` build types can be used to optimize
 further for speed or size, but do not include debug symbols for use with
-debuggers, and completely disable <<ChSrcLoggingLevels,lower level logging>>
+debuggers, inhibits part of the debug code
 and asserts, optimizing away the code path. Ensure that you have not built with
 one of those types before attempting debugging.
 
@@ -387,13 +388,14 @@ The following logging levels are defined from highest to lowest:
 
 By default logging output is generated for logging level "message" and above. If the logging level is lowered or raised
 all log output generated at or above this level is sent to the log output.
+
 Note that if the <<ChSrcBuildType,build type>> is not set to `Debug`
 then by default all log output for the logging levels "debug" and
 "noisy" will be optimized away by the compiler and cannot be emitted to the log
 output, regardless of the logging settings. To enable debug logging for all build
 types, set the CMake variable `-DENABLE_DEBUG=ON`.
 
-There is also a special "echo" logging level used exclusively for temporary debugging print outs (usually
+The always-on "echo" logging level is used exclusively for temporary debugging print outs (usually
 via the `WS_DEBUG_HERE` macro).
 
 [#ChSrcLoggingOutput]
@@ -420,7 +422,13 @@ These domain(s) will generate debug level log messages regardless of the log lev
 WIRESHARK_LOG_NOISY, or --log_noisy::
 These domain(s) will generate noisy level log messages regardless of the log level and log domains configured.
 
+[NOTE]
+====
 Multiple domains can be concatenated using commas or semicolons. The match can be inverted by prefixing the domain(s) list with an exclamation mark.
+====
+
+The log output is normally send to stderr. The log output can also be saved in a file using the `--log-file=<path>`
+command line option.
 
 [#ChSrcTrapsLogging]
 ==== Traps Set By Logging
@@ -429,8 +437,11 @@ Sometimes it can be helpful to abort the program right after a log message of a 
 
 The following environment variables are used to configure a trap by the logging system:
 
-WIRESHARK_LOG_FATAL, or --log_fatal::
+WIRESHARK_LOG_FATAL, or --log-fatal::
 This is the level for which log messages are fatal. This can either be "critical" or "warning" level.
+
+WIRESHARK_LOG_FATAL_COUNT, or --log-fatal-count::
+This is the amount of fatal log messages which may pass before the program is trapped.
 
 WIRESHARK_LOG_FATAL_DOMAIN, WIRESHARK_LOG_FATAL_DOMAINS, or --log-fatal-domain, --log-fatal-domains::
 These are the domain(s) where output of a log message is fatal. This is less commonly used than the fatal log level setting above.
@@ -465,6 +476,10 @@ Populate your code with the applicable function calls to generate log messages w
 
 All these take `printf()` style parameters. There is also a `WS_DEBUG_HERE` macro that is always active and outputs to a special "echo"
 domain for temporary debug print outs. `WS_DEBUG_HERE` should be used for development purposes only and not appear in final delivery of the code.
+
+To get more direct access to the logging system various `ws_log()` type function are available, providing more fine grained control
+over the logging functionality. Note these are exempt from the build time optimization, and will be built in regardless of build type.
+
 
 [#ChSrcUnixDebug]
 ==== Unix-Like Platforms
@@ -681,10 +696,10 @@ $ git remote add downstream git@gitlab.com:henry.perry/wireshark.git
 [source,sh]
 ----
 $ git remote -v
-$ downstream	git@gitlab.com:henry.perry/wireshark.git (fetch)
-$ downstream	git@gitlab.com:henry.perry/wireshark.git (push)
-$ upstream	git@gitlab.com:wireshark/wireshark.git (fetch)
-$ upstream	git@gitlab.com:wireshark/wireshark.git (push)
+downstream	git@gitlab.com:henry.perry/wireshark.git (fetch)
+downstream	git@gitlab.com:henry.perry/wireshark.git (push)
+upstream	git@gitlab.com:wireshark/wireshark.git (fetch)
+upstream	git@gitlab.com:wireshark/wireshark.git (push)
 ----
 --
 
@@ -913,8 +928,21 @@ This is required by various formatting tools and helpful to humans.
 Break paragraphs where needed.
 Limit each line to 80 characters.
 
-You can also reference and close issues in a commit message by prefixing the issue number with a https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically[number sign].
+Keep in mind that the commit's diffs will show precisely _what_ was changed.  The most useful commit messages provide a concise _overview_, explain _why_ the change was made (if it is not obvious), and give more in-depth explanation _where needed_.
+
+You can also reference and close issues in a commit message by prefixing the issue number with a https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically[number sign].
 For example, “closes #5” will close issue number 5.
+
+Other https://docs.gitlab.com/user/markdown/#gitlab-specific-references[GitLab-specific references] are `!` for a merge request and the short (8 character) hash for a commit.
+
+We also ask contributors to disclose whether AI tools were used when authoring the change.
+If you use an AI tool, add a trailer such as
+[source,sh]
+----
+Assisted-by: Claude
+----
+to your commit message(s) and mention the same in merge requests.
+The trailer should be omitted if no AI tools were used.
 
 Putting all that together, we get the following example:
 
@@ -924,6 +952,8 @@ MIPv6: Fix dissection of Service Selection Identifier
 
 APN field is not encoded as a dotted string so the first character is not a
 length. Closes #10323.
+
+Assisted-by: Claude
 ----
 
 [#ChSrcCodeRequirements]
@@ -950,18 +980,29 @@ Others are split across multiple source files and are often more suitable to be 
 In your local repository directory, there will be a __.git/hooks/__ directory, with sample git hooks for running automatic actions before and after git commands.
 You can also optionally install other hooks that you find useful.
 
-In particular, the _pre-commit_ hook will run every time you commit a change and can be used to automatically check for various errors in your code.
-The sample git pre-commit hook simply detects whitespace errors such as mixed tabs and spaces.
-To install it just remove the .sample suffix from the existing _pre-commit.sample_ file.
+Enable the shipped Wireshark hooks without copying them by running:
+--
+[source,sh]
+----
+$ git config core.hooksPath tools/git_hooks
+----
+--
+This uses the dedicated `tools/git_hooks/` directory, so other scripts in `tools/` remain untouched.
 
-Wireshark provides a custom pre-commit hook which does additional Wireshark-specific API and formatting checks, but it might return false positives.
-If you want to install it, copy the pre-commit file from the tools directory (`cp ./tools/pre-commit .git/hooks/`) and make sure it is executable or it will not be run.
+To include the "Assisted-by" trailer automatically, set the commit template with:
+--
+[source,sh]
+----
+$ git config commit.template .gitmessage
+----
+--
+
+The Wireshark pre-commit hook (in `tools/git_hooks/`) runs Wireshark-specific API and formatting checks and might return false positives.
+The commit-msg hook warns if the "Assisted-by" trailer is missing.
+The wrappers in `tools/` remain for compatibility; if you prefer the classic layout you can still copy or symlink from `tools/git_hooks/` into `.git/hooks/`.
 
 If the pre-commit hook is preventing you from committing what you believe is a valid change, you can run `git commit --no-verify` to skip running the hooks.
 Warning: using --no-verify avoids the commit-msg hook, and thus if you have setup this hook it will not run.
-
-Additionally, if your system supports symbolic links, as all UNIX-like platforms do, you can use them instead of copying files.
-Running `ln -s ../../tools/pre-commit .git/hooks` creates a symbolic link that will make the hook to be up-to-date with the current master.
 
 .Choose a compatible license.
 Wireshark is released under the {spdx-license-url}GPL-2.0-or-later.html[GPL version 2 or later], and it is strongly recommended that incoming code use that license.
@@ -1033,7 +1074,7 @@ all of us do this in our spare time.
 [#ChSrcBackport]
 ==== Backporting A Change
 
-:example-branch: master-3.2
+:example-branch: release-4.6
 When a bug is fixed in the master branch it’s sometimes desirable or necessary to backport the fix to a release branch.
 You can do this in Git by cherry-picking the change from one branch to another.
 Suppose you want to backport change 1ab2c3d4 from the master branch to {example-branch}.
@@ -1044,7 +1085,7 @@ You can do so as follows:
 # Create a new topic branch for the backport.
 $ git checkout -b backport-1ab2c3d4 upstream/{example-branch}
 
-# Cherry-pick the change. Include a "cherry picked from..." line.
+# Cherry-pick the change. "-x" adds the "cherry picked from..." line to the commit message.
 $ git cherry-pick -x 1ab2c3d4
 
 # If there are conflicts, fix them.
@@ -1060,8 +1101,11 @@ $EDITOR "doc/Wireshark_Release_Notes.adoc"
 git commit --amend -a
 
 # Push the change to your working repository.
-git push downstream HEAD
+git push downstream +HEAD
 ----
+The `+` sign is shorthand for forcing the push (`-f`).
+
+In the GitLab web UI for creating the Merge Request, use the *Change branches* control near the top of the page to ensure that your MR is targeted at the intended release branch.  Confirm by verifying under *Commits* that only the one cherry-picked commit is selected for the merge.
 
 You can also cherry-pick changes in the https://docs.gitlab.com/ee/user/project/merge_requests/cherry_pick_changes.html[GitLab web UI].
 
@@ -1182,7 +1226,12 @@ https://1.na.dl.wireshark.org/download/src/wireshark-{wireshark-version}.tar.xz
 ===== Staying Current
 
 Wireshark releases are announced on the link:{wireshark-mailing-lists-url}[wireshark-announce] mailing list.
-A https://appvisor.com/pad/[PAD] file is also published at https://www.wireshark.org/wireshark-pad.xml which contains the current stable version and release date.
+
+If you want to automatically check for the latest version, you can use one of the {wireshark-code-file-url}/ui/software_update.h[automatic update URLs] for our Windows or macOS packages, such as
+
+https://www.wireshark.org/update/0/Wireshark/0.0.0/Windows/x86-64/en-US/stable.xml
+
+You can enable update notifications on various Linux distributions using the `ENABLE_PACKAGEKIT` CMake option.
 
 [discrete]
 ===== Artwork

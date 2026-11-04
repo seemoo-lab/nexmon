@@ -49,6 +49,14 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
 {
     char ret;
 
+    if (!wlc || !p)
+        return 0;
+
+    if (!wlc->band || !wlc->band->hwrs_scb) {
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
+
     if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
         rate = RATES_RATE_6M;
     }

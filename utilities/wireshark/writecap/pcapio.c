@@ -45,18 +45,11 @@
 
 #include <wsutil/epochs.h>
 #include <wsutil/file_util.h>
+#include <wsutil/file_compressed.h>
 #include <wsutil/ws_padding_to.h>
 
 #include "pcapio.h"
 #include <wiretap/file_wrappers.h>
-
-typedef void* WFILE_T;
-
-struct pcapio_writer {
-    WFILE_T fh;
-    char* io_buffer;
-    wtap_compression_type ctype;
-};
 
 /* Magic numbers in "libpcap" files.
 
@@ -158,9 +151,22 @@ struct ws_option_tlv {
     uint16_t type;
     uint16_t value_length;
 };
+/* A Custom Block that may be copied, with the Wireshark Foundation's PEN. */
+#define CUSTOM_BLOCK_TYPE 0x00000BAD
+#define PEN_WIRESHARK     32622
+#define WIRESHARK_CB_ENTRY_PROCESS_INFORMATION 3
+
 #define OPT_ENDOFOPT      0
 #define OPT_COMMENT       1
 #define EPB_FLAGS         2
+#define EPB_PROCESSID_THREADID 8
+#define PIB_NAME          2
+#define PIB_PATH          3
+#define PIB_CMDLINE       4
+#define PIB_PPID          5
+#define PIB_UID           6
+#define PIB_USER          7
+#define PIB_STARTTIME     9
 #define SHB_HARDWARE      2 /* currently not used */
 #define SHB_OS            3
 #define SHB_USERAPPL      4
@@ -180,285 +186,13 @@ struct ws_option_tlv {
 #define ISB_USRDELIV      8
 #define ADD_PADDING(x) ((((x) + 3) >> 2) << 2)
 
-static WFILE_T
-writecap_file_open(pcapio_writer* pfile, const char *filename)
-{
-    WFILE_T fh;
-    switch (pfile->ctype) {
-#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
-        case WTAP_GZIP_COMPRESSED:
-            return gzwfile_open(filename);
-#endif /* defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG) */
-#ifdef HAVE_LZ4FRAME_H
-        case WTAP_LZ4_COMPRESSED:
-            return lz4wfile_open(filename);
-#endif /* HAVE_LZ4FRAME_H */
-        default:
-            fh = ws_fopen(filename, "wb");
-            /* Increase the size of the IO buffer if uncompressed.
-             * Compression has its own buffer that reduces writes.
-             */
-            if (fh != NULL) {
-                size_t buffsize = IO_BUF_SIZE;
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-                ws_statb64 statb;
-
-                if (ws_stat64(filename, &statb) == 0) {
-                    if (statb.st_blksize > IO_BUF_SIZE) {
-                        buffsize = statb.st_blksize;
-                    }
-                }
-#endif
-                pfile->io_buffer = (char *)g_malloc(buffsize);
-                setvbuf(fh, pfile->io_buffer, _IOFBF, buffsize);
-                //ws_debug("buffsize %zu", buffsize);
-            }
-            return fh;
-    }
-}
-
-static WFILE_T
-writecap_file_fdopen(pcapio_writer* pfile, int fd)
-{
-    WFILE_T fh;
-    switch (pfile->ctype) {
-#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
-        case WTAP_GZIP_COMPRESSED:
-            return gzwfile_fdopen(fd);
-#endif /* defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG) */
-#ifdef HAVE_LZ4FRAME_H
-        case WTAP_LZ4_COMPRESSED:
-            return lz4wfile_fdopen(fd);
-#endif /* HAVE_LZ4FRAME_H */
-        default:
-            fh = ws_fdopen(fd, "wb");
-            /* Increase the size of the IO buffer if uncompressed.
-             * Compression has its own buffer that reduces writes.
-             */
-            if (fh != NULL) {
-                size_t buffsize = IO_BUF_SIZE;
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-                ws_statb64 statb;
-
-                if (ws_fstat64(fd, &statb) == 0) {
-                    if (statb.st_blksize > IO_BUF_SIZE) {
-                        buffsize = statb.st_blksize;
-                    }
-                }
-#endif
-                pfile->io_buffer = (char *)g_malloc(buffsize);
-                setvbuf(fh, pfile->io_buffer, _IOFBF, buffsize);
-                //ws_debug("buffsize %zu", buffsize);
-            }
-            return fh;
-    }
-}
-
-pcapio_writer*
-writecap_fopen(const char *filename, wtap_compression_type ctype, int *err)
-{
-    pcapio_writer* pfile;
-    *err = 0;
-
-    pfile = g_new0(struct pcapio_writer, 1);
-    if (pfile == NULL) {
-        *err = errno;
-        return NULL;
-    }
-    pfile->ctype = ctype;
-    errno = WTAP_ERR_CANT_OPEN;
-    void* fh = writecap_file_open(pfile, filename);
-    if (fh == NULL) {
-        *err = errno;
-	g_free(pfile);
-	return NULL;
-    }
-
-    pfile->fh = fh;
-    return pfile;
-}
-
-pcapio_writer*
-writecap_fdopen(int fd, wtap_compression_type ctype, int *err)
-{
-    pcapio_writer* pfile;
-    *err = 0;
-
-    pfile = g_new0(struct pcapio_writer, 1);
-    if (pfile == NULL) {
-        *err = errno;
-        return NULL;
-    }
-    pfile->ctype = ctype;
-    errno = WTAP_ERR_CANT_OPEN;
-    WFILE_T fh = writecap_file_fdopen(pfile, fd);
-    if (fh == NULL) {
-        *err = errno;
-        g_free(pfile);
-        return NULL;
-    }
-
-    pfile->fh = fh;
-    return pfile;
-}
-
-pcapio_writer*
-writecap_open_stdout(wtap_compression_type ctype, int *err)
-{
-    int new_fd;
-    pcapio_writer* pfile;
-
-    new_fd = ws_dup(1);
-    if (new_fd == -1) {
-        *err = errno;
-        return NULL;
-    }
-#ifdef _WIN32
-    /*
-     * Put the new descriptor into binary mode.
-     *
-     * XXX - even if the file format we're writing is a text
-     * format?
-     */
-    if (_setmode(new_fd, O_BINARY) == -1) {
-        /* "Should not happen" */
-        *err = errno;
-        ws_close(new_fd);
-        return NULL;
-    }
-#endif
-
-    pfile = writecap_fdopen(new_fd, ctype, err);
-    if (pfile == NULL) {
-        /* Failed; close the new fd */
-        ws_close(new_fd);
-        return NULL;
-    }
-    return pfile;
-}
-
-bool
-writecap_flush(pcapio_writer* pfile, int *err)
-{
-    switch (pfile->ctype) {
-#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
-        case WTAP_GZIP_COMPRESSED:
-            if (gzwfile_flush((GZWFILE_T)pfile->fh) == -1) {
-                if (err) {
-                    *err = gzwfile_geterr((GZWFILE_T)pfile->fh);
-                }
-                return false;
-            }
-            break;
-#endif
-#ifdef HAVE_LZ4FRAME_H
-        case WTAP_LZ4_COMPRESSED:
-            if (lz4wfile_flush((LZ4WFILE_T)pfile->fh) == -1) {
-                if (err) {
-                    *err = lz4wfile_geterr((LZ4WFILE_T)pfile->fh);
-                }
-                return false;
-            }
-            break;
-#endif /* HAVE_LZ4FRAME_H */
-        default:
-            if (fflush((FILE*)pfile->fh) == EOF) {
-                if (err) {
-                    *err = errno;
-                }
-                return false;
-            }
-    }
-    return true;
-}
-
-bool
-writecap_close(pcapio_writer* pfile, int *errp)
-{
-    int err = 0;
-
-    errno = WTAP_ERR_CANT_CLOSE;
-    switch (pfile->ctype) {
-#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
-        case WTAP_GZIP_COMPRESSED:
-            err = gzwfile_close(pfile->fh);
-            break;
-#endif
-#ifdef HAVE_LZ4FRAME_H
-        case WTAP_LZ4_COMPRESSED:
-            err = lz4wfile_close(pfile->fh);
-            break;
-#endif /* HAVE_LZ4FRAME_H */
-        default:
-            if (fclose(pfile->fh) == EOF) {
-                err = errno;
-            }
-    }
-
-    g_free(pfile->io_buffer);
-    g_free(pfile);
-    if (errp) {
-        *errp = err;
-    }
-    return err == 0;
-}
-
-/* Write to capture file */
-static bool
-write_to_file(pcapio_writer* pfile, const uint8_t* data, size_t data_length,
-              uint64_t *bytes_written, int *err)
-{
-    size_t nwritten;
-
-    switch (pfile->ctype) {
-#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
-        case WTAP_GZIP_COMPRESSED:
-            nwritten = gzwfile_write(pfile->fh, data, (unsigned)data_length);
-            /*
-             * gzwfile_write() returns 0 on error.
-             */
-            if (nwritten == 0) {
-                *err = gzwfile_geterr(pfile->fh);
-                return false;
-            }
-            break;
-#endif
-#ifdef HAVE_LZ4FRAME_H
-        case WTAP_LZ4_COMPRESSED:
-            nwritten = lz4wfile_write(pfile->fh, data, data_length);
-            /*
-             * lz4wfile_write() returns 0 on error.
-             */
-            if (nwritten == 0) {
-                *err = lz4wfile_geterr(pfile->fh);
-                return false;
-            }
-            break;
-#endif /* HAVE_LZ4FRAME_H */
-        default:
-            nwritten = fwrite(data, data_length, 1, pfile->fh);
-            if (nwritten != 1) {
-                if (ferror((FILE *)pfile->fh)) {
-                    *err = errno;
-                } else {
-                    *err = WTAP_ERR_SHORT_WRITE;
-                }
-                return false;
-            }
-            break;
-    }
-
-    (*bytes_written) += data_length;
-    return true;
-}
-
 /* Writing pcap files */
 
 /* Write the file header to a dump file.
    Returns true on success, false on failure.
    Sets "*err" to an error code, or 0 for a short write, on failure*/
 bool
-libpcap_write_file_header(pcapio_writer* pfile, int linktype, int snaplen, bool ts_nsecs, uint64_t *bytes_written, int *err)
+libpcap_write_file_header(ws_cwstream* pfile, int linktype, int snaplen, bool ts_nsecs, uint64_t *bytes_written, int *err)
 {
     struct pcap_hdr file_hdr;
 
@@ -471,13 +205,13 @@ libpcap_write_file_header(pcapio_writer* pfile, int linktype, int snaplen, bool 
     file_hdr.snaplen = snaplen;
     file_hdr.network = linktype;
 
-    return write_to_file(pfile, (const uint8_t*)&file_hdr, sizeof(file_hdr), bytes_written, err);
+    return ws_cwstream_write(pfile, (const uint8_t*)&file_hdr, sizeof(file_hdr), bytes_written, err);
 }
 
 /* Write a record for a packet to a dump file.
    Returns true on success, false on failure. */
 bool
-libpcap_write_packet(pcapio_writer* pfile,
+libpcap_write_packet(ws_cwstream* pfile,
                      time_t sec, uint32_t usec,
                      uint32_t caplen, uint32_t len,
                      const uint8_t *pd,
@@ -489,10 +223,10 @@ libpcap_write_packet(pcapio_writer* pfile,
     rec_hdr.ts_usec = usec;
     rec_hdr.incl_len = caplen;
     rec_hdr.orig_len = len;
-    if (!write_to_file(pfile, (const uint8_t*)&rec_hdr, sizeof(rec_hdr), bytes_written, err))
+    if (!ws_cwstream_write(pfile, (const uint8_t*)&rec_hdr, sizeof(rec_hdr), bytes_written, err))
         return false;
 
-    return write_to_file(pfile, pd, caplen, bytes_written, err);
+    return ws_cwstream_write(pfile, pd, caplen, bytes_written, err);
 }
 
 /* Writing pcapng files */
@@ -509,7 +243,7 @@ pcapng_count_string_option(const char *option_value)
 }
 
 static bool
-pcapng_write_string_option(pcapio_writer* pfile,
+pcapng_write_string_option(ws_cwstream* pfile,
                            uint16_t option_type, const char *option_value,
                            uint64_t *bytes_written, int *err)
 {
@@ -526,15 +260,15 @@ pcapng_write_string_option(pcapio_writer* pfile,
         option.type = option_type;
         option.value_length = (uint16_t)option_value_length;
 
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)option_value, (int) option_value_length, bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)option_value, (int) option_value_length, bytes_written, err))
             return false;
 
         option_padding_length = WS_PADDING_TO_4(option_value_length);
         if (option_padding_length != 0) {
-            if (!write_to_file(pfile, (const uint8_t*)&padding, option_padding_length, bytes_written, err))
+            if (!ws_cwstream_write(pfile, (const uint8_t*)&padding, option_padding_length, bytes_written, err))
                 return false;
         }
     }
@@ -543,7 +277,7 @@ pcapng_write_string_option(pcapio_writer* pfile,
 
 /* Write a pre-formatted pcapng block directly to the output file */
 bool
-pcapng_write_block(pcapio_writer* pfile,
+pcapng_write_block(ws_cwstream* pfile,
                    const uint8_t *data,
                    uint32_t length,
                    uint64_t *bytes_written,
@@ -568,11 +302,11 @@ pcapng_write_block(pcapio_writer* pfile,
         *err = EBADMSG;
         return false;
     }
-    return write_to_file(pfile, data, length, bytes_written, err);
+    return ws_cwstream_write(pfile, data, length, bytes_written, err);
 }
 
 bool
-pcapng_write_section_header_block(pcapio_writer* pfile,
+pcapng_write_section_header_block(ws_cwstream* pfile,
                                   GPtrArray *comments,
                                   const char *hw,
                                   const char *os,
@@ -611,7 +345,7 @@ pcapng_write_section_header_block(pcapio_writer* pfile,
     shb.minor_version = PCAPNG_MINOR_VERSION;
     shb.section_length = section_length;
 
-    if (!write_to_file(pfile, (const uint8_t*)&shb, sizeof(struct shb), bytes_written, err))
+    if (!ws_cwstream_write(pfile, (const uint8_t*)&shb, sizeof(struct shb), bytes_written, err))
         return false;
 
     if (comments != NULL) {
@@ -635,16 +369,16 @@ pcapng_write_section_header_block(pcapio_writer* pfile,
         /* write end of options */
         option.type = OPT_ENDOFOPT;
         option.value_length = 0;
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
     }
 
     /* write the trailing block total length */
-    return write_to_file(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
+    return ws_cwstream_write(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
 }
 
 bool
-pcapng_write_interface_description_block(pcapio_writer* pfile,
+pcapng_write_interface_description_block(ws_cwstream* pfile,
                                          const char *comment,  /* OPT_COMMENT        1 */
                                          const char *name,     /* IDB_NAME           2 */
                                          const char *descr,    /* IDB_DESCRIPTION    3 */
@@ -713,7 +447,7 @@ pcapng_write_interface_description_block(pcapio_writer* pfile,
     idb.link_type = link_type;
     idb.reserved = 0;
     idb.snap_len = snap_len;
-    if (!write_to_file(pfile, (const uint8_t*)&idb, sizeof(struct idb), bytes_written, err))
+    if (!ws_cwstream_write(pfile, (const uint8_t*)&idb, sizeof(struct idb), bytes_written, err))
         return false;
 
     /* 01 - OPT_COMMENT - write comment string if applicable */
@@ -737,10 +471,10 @@ pcapng_write_interface_description_block(pcapio_writer* pfile,
         option.type = IDB_IF_SPEED;
         option.value_length = sizeof(uint64_t);
 
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&if_speed, sizeof(uint64_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&if_speed, sizeof(uint64_t), bytes_written, err))
             return false;
     }
 
@@ -749,13 +483,13 @@ pcapng_write_interface_description_block(pcapio_writer* pfile,
         option.type = IDB_TSRESOL;
         option.value_length = sizeof(uint8_t);
 
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&tsresol, sizeof(uint8_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&tsresol, sizeof(uint8_t), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&padding, 3, bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&padding, 3, bytes_written, err))
             return false;
     }
 
@@ -766,17 +500,17 @@ pcapng_write_interface_description_block(pcapio_writer* pfile,
     if ((filter != NULL) && (strlen(filter) > 0) && (strlen(filter) < UINT16_MAX - 1)) {
         option.type = IDB_FILTER;
         option.value_length = (uint16_t)(strlen(filter) + 1 );
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
         /* The first byte of the Option Data keeps a code of the filter used, 0 = libpcap filter string */
-        if (!write_to_file(pfile, (const uint8_t*)&padding, 1, bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&padding, 1, bytes_written, err))
             return false;
-        if (!write_to_file(pfile, (const uint8_t*)filter, (int) strlen(filter), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)filter, (int) strlen(filter), bytes_written, err))
             return false;
         option_padding_length = WS_PADDING_TO_4(strlen(filter) + 1);
         if (option_padding_length != 0) {
-            if (!write_to_file(pfile, (const uint8_t*)&padding, option_padding_length, bytes_written, err))
+            if (!ws_cwstream_write(pfile, (const uint8_t*)&padding, option_padding_length, bytes_written, err))
                 return false;
         }
     }
@@ -795,18 +529,18 @@ pcapng_write_interface_description_block(pcapio_writer* pfile,
         /* write end of options */
         option.type = OPT_ENDOFOPT;
         option.value_length = 0;
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
     }
 
     /* write the trailing Block Total Length */
-    return write_to_file(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
+    return ws_cwstream_write(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
 }
 
 /* Write a record for a packet to a dump file.
    Returns true on success, false on failure. */
 bool
-pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
+pcapng_write_enhanced_packet_block(ws_cwstream* pfile,
                                    const char *comment,
                                    time_t sec, uint32_t usec,
                                    uint32_t caplen, uint32_t len,
@@ -814,6 +548,8 @@ pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
                                    unsigned ts_mul,
                                    const uint8_t *pd,
                                    uint32_t flags,
+                                   const uint32_t *process_ids,
+                                   unsigned num_process_ids,
                                    uint64_t *bytes_written,
                                    int *err)
 {
@@ -836,6 +572,10 @@ pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
         options_length += (uint32_t)(sizeof(struct ws_option_tlv) +
                                     sizeof(uint32_t));
     }
+    if (process_ids == NULL)
+        num_process_ids = 0;
+    options_length += num_process_ids * (uint32_t)(sizeof(struct ws_option_tlv) +
+                                                   2 * sizeof(uint32_t));
     /* If we have options add size of end-of-options */
     if (options_length != 0) {
         options_length += (uint32_t)sizeof(struct ws_option_tlv);
@@ -849,9 +589,9 @@ pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
     epb.timestamp_low = (uint32_t)(timestamp & 0xffffffff);
     epb.captured_len = caplen;
     epb.packet_len = len;
-    if (!write_to_file(pfile, (const uint8_t*)&epb, sizeof(struct epb), bytes_written, err))
+    if (!ws_cwstream_write(pfile, (const uint8_t*)&epb, sizeof(struct epb), bytes_written, err))
         return false;
-    if (!write_to_file(pfile, pd, caplen, bytes_written, err))
+    if (!ws_cwstream_write(pfile, pd, caplen, bytes_written, err))
         return false;
     /* Use more efficient write in case of no "extras" */
     pad_len = WS_PADDING_TO_4(caplen);
@@ -867,10 +607,10 @@ pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
         /* Write the total length */
         memcpy(&buff[i], &block_total_length, sizeof(uint32_t));
         i += sizeof(uint32_t);
-        return write_to_file(pfile, (const uint8_t*)&buff, i, bytes_written, err);
+        return ws_cwstream_write(pfile, (const uint8_t*)&buff, i, bytes_written, err);
     }
     if (pad_len) {
-        if (!write_to_file(pfile, (const uint8_t*)&padding, pad_len, bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&padding, pad_len, bytes_written, err))
             return false;
     }
     if (!pcapng_write_string_option(pfile, OPT_COMMENT, comment,
@@ -879,24 +619,124 @@ pcapng_write_enhanced_packet_block(pcapio_writer* pfile,
     if (flags != 0) {
         option.type = EPB_FLAGS;
         option.value_length = sizeof(uint32_t);
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
-        if (!write_to_file(pfile, (const uint8_t*)&flags, sizeof(uint32_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&flags, sizeof(uint32_t), bytes_written, err))
+            return false;
+    }
+    for (unsigned n = 0; n < num_process_ids; n++) {
+        /* The process ID, then the thread ID, which is not known. */
+        const uint32_t procid_threadid[2] = { process_ids[n], 0 };
+
+        option.type = EPB_PROCESSID_THREADID;
+        option.value_length = sizeof procid_threadid;
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+            return false;
+        if (!ws_cwstream_write(pfile, (const uint8_t*)procid_threadid, sizeof procid_threadid, bytes_written, err))
             return false;
     }
     if (options_length != 0) {
         /* write end of options */
         option.type = OPT_ENDOFOPT;
         option.value_length = 0;
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
     }
 
-    return write_to_file(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
+    return ws_cwstream_write(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
+}
+
+/*
+ * Append an option of a process information block body to the block being
+ * built: everything in it is little-endian, and the value is padded to a
+ * multiple of 4 bytes. Nothing is appended for an empty or oversized value.
+ */
+static void
+pib_append_option(GByteArray *block, uint16_t type, const void *value, size_t length)
+{
+    struct ws_option_tlv option;
+    static const uint8_t padding[4] = { 0, 0, 0, 0 };
+
+    if (value == NULL || length == 0 || length > UINT16_MAX)
+        return;
+    option.type = GUINT16_TO_LE(type);
+    option.value_length = GUINT16_TO_LE((uint16_t)length);
+    g_byte_array_append(block, (const uint8_t*)&option, sizeof option);
+    g_byte_array_append(block, (const uint8_t*)value, (unsigned)length);
+    g_byte_array_append(block, padding, WS_PADDING_TO_4(length));
 }
 
 bool
-pcapng_write_interface_statistics_block(pcapio_writer* pfile,
+pcapng_write_process_information_block(ws_cwstream* pfile,
+                                       const ws_process_info_t *process,
+                                       uint64_t *bytes_written,
+                                       int *err)
+{
+    GByteArray *block;
+    const uint32_t block_type = CUSTOM_BLOCK_TYPE;
+    const uint32_t pen = PEN_WIRESHARK;
+    uint32_t block_total_length, entry_type, entry_length, value32;
+    uint64_t value64;
+    unsigned entry_length_offset, entry_offset;
+    struct ws_option_tlv option;
+    bool successful;
+
+    /*
+     * The block header and the PEN are in the byte order of the section,
+     * that is ours; the block entry type and length and the entry itself,
+     * the body of a process information block, are little-endian.
+     */
+    block = g_byte_array_new();
+    g_byte_array_append(block, (const uint8_t*)&block_type, sizeof block_type);
+    g_byte_array_set_size(block, block->len + sizeof block_total_length);  /* filled in below */
+    g_byte_array_append(block, (const uint8_t*)&pen, sizeof pen);
+    entry_type = GUINT32_TO_LE(WIRESHARK_CB_ENTRY_PROCESS_INFORMATION);
+    g_byte_array_append(block, (const uint8_t*)&entry_type, sizeof entry_type);
+    entry_length_offset = block->len;
+    g_byte_array_set_size(block, block->len + sizeof entry_length);         /* filled in below */
+
+    entry_offset = block->len;
+    value32 = GUINT32_TO_LE(process->pid);
+    g_byte_array_append(block, (const uint8_t*)&value32, sizeof value32);
+    pib_append_option(block, PIB_NAME, process->name,
+                      process->name != NULL ? strlen(process->name) : 0);
+    pib_append_option(block, PIB_PATH, process->path,
+                      process->path != NULL ? strlen(process->path) : 0);
+    pib_append_option(block, PIB_CMDLINE, process->cmdline, process->cmdline_len);
+    if (process->has_ppid) {
+        value32 = GUINT32_TO_LE(process->ppid);
+        pib_append_option(block, PIB_PPID, &value32, sizeof value32);
+    }
+    if (process->has_uid) {
+        value32 = GUINT32_TO_LE(process->uid);
+        pib_append_option(block, PIB_UID, &value32, sizeof value32);
+    }
+    pib_append_option(block, PIB_USER, process->user,
+                      process->user != NULL ? strlen(process->user) : 0);
+    if (process->start_time_ns != 0) {
+        value64 = GUINT64_TO_LE(process->start_time_ns);
+        pib_append_option(block, PIB_STARTTIME, &value64, sizeof value64);
+    }
+    if (block->len > entry_offset + sizeof value32) {
+        /* There are options; end them. */
+        option.type = OPT_ENDOFOPT;
+        option.value_length = 0;
+        g_byte_array_append(block, (const uint8_t*)&option, sizeof option);
+    }
+    entry_length = GUINT32_TO_LE(block->len - entry_offset);
+    memcpy(block->data + entry_length_offset, &entry_length, sizeof entry_length);
+
+    block_total_length = block->len + (uint32_t)sizeof block_total_length;
+    memcpy(block->data + sizeof block_type, &block_total_length, sizeof block_total_length);
+    g_byte_array_append(block, (const uint8_t*)&block_total_length, sizeof block_total_length);
+
+    successful = ws_cwstream_write(pfile, block->data, block->len, bytes_written, err);
+    g_byte_array_free(block, TRUE);
+    return successful;
+}
+
+bool
+pcapng_write_interface_statistics_block(ws_cwstream* pfile,
                                         uint32_t interface_id,
                                         uint64_t *bytes_written,
                                         const char *comment,    /* OPT_COMMENT           1 */
@@ -987,7 +827,7 @@ pcapng_write_interface_statistics_block(pcapio_writer* pfile,
     isb.interface_id = interface_id;
     isb.timestamp_high = (uint32_t)((timestamp>>32) & 0xffffffff);
     isb.timestamp_low = (uint32_t)(timestamp & 0xffffffff);
-    if (!write_to_file(pfile, (const uint8_t*)&isb, sizeof(struct isb), bytes_written, err))
+    if (!ws_cwstream_write(pfile, (const uint8_t*)&isb, sizeof(struct isb), bytes_written, err))
         return false;
 
     /* write comment string if applicable */
@@ -1002,13 +842,13 @@ pcapng_write_interface_statistics_block(pcapio_writer* pfile,
         option.value_length = sizeof(uint64_t);
         high = (uint32_t)((isb_starttime>>32) & 0xffffffff);
         low = (uint32_t)(isb_starttime & 0xffffffff);
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&high, sizeof(uint32_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&high, sizeof(uint32_t), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&low, sizeof(uint32_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&low, sizeof(uint32_t), bytes_written, err))
             return false;
     }
     if (isb_endtime !=0) {
@@ -1018,40 +858,40 @@ pcapng_write_interface_statistics_block(pcapio_writer* pfile,
         option.value_length = sizeof(uint64_t);
         high = (uint32_t)((isb_endtime>>32) & 0xffffffff);
         low = (uint32_t)(isb_endtime & 0xffffffff);
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&high, sizeof(uint32_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&high, sizeof(uint32_t), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&low, sizeof(uint32_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&low, sizeof(uint32_t), bytes_written, err))
             return false;
     }
     if (isb_ifrecv != UINT64_MAX) {
         option.type = ISB_IFRECV;
         option.value_length = sizeof(uint64_t);
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&isb_ifrecv, sizeof(uint64_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&isb_ifrecv, sizeof(uint64_t), bytes_written, err))
             return false;
     }
     if (isb_ifdrop != UINT64_MAX) {
         option.type = ISB_IFDROP;
         option.value_length = sizeof(uint64_t);
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
 
-        if (!write_to_file(pfile, (const uint8_t*)&isb_ifdrop, sizeof(uint64_t), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&isb_ifdrop, sizeof(uint64_t), bytes_written, err))
             return false;
     }
     if (options_length != 0) {
         /* write end of options */
         option.type = OPT_ENDOFOPT;
         option.value_length = 0;
-        if (!write_to_file(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
+        if (!ws_cwstream_write(pfile, (const uint8_t*)&option, sizeof(struct ws_option_tlv), bytes_written, err))
             return false;
     }
 
-    return write_to_file(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
+    return ws_cwstream_write(pfile, (const uint8_t*)&block_total_length, sizeof(uint32_t), bytes_written, err);
 }

@@ -13,7 +13,6 @@
 
 /*  Include Files */
 #include "config.h"
-
 #define WS_LOG_DOMAIN "zcl"
 
 #include <wireshark.h>
@@ -28,6 +27,7 @@
 
 #include "packet-zbee.h"
 #include "packet-zbee-aps.h"
+#include "packet-zbee-nwk.h"
 #include "packet-zbee-zcl.h"
 #include "packet-zbee-security.h"
 
@@ -571,7 +571,7 @@ dissect_zbee_zcl_power_config(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_t
 static void
 decode_power_conf_voltage(char *s, uint32_t value)
 {
-    snprintf(s, ITEM_LABEL_LENGTH, "%d.%d [V]", value/10, value%10);
+    snprintf(s, ITEM_LABEL_LENGTH, "%u.%u [V]", value/10, value%10);
     return;
 } /*decode_power_conf_voltage*/
 
@@ -616,7 +616,7 @@ decode_power_conf_frequency(char *s, uint32_t value)
     else if (value == 0xff)
         snprintf(s, ITEM_LABEL_LENGTH, "Frequency could not be measured");
     else
-        snprintf(s, ITEM_LABEL_LENGTH, "%d [Hz]", value*2);
+        snprintf(s, ITEM_LABEL_LENGTH, "%u [Hz]", value*2);
     return;
 } /*decode_power_conf_frequency*/
 
@@ -635,7 +635,7 @@ decode_power_conf_frequency(char *s, uint32_t value)
 static void
 decode_power_conf_batt_AHr(char *s, uint32_t value)
 {
-    snprintf(s, ITEM_LABEL_LENGTH, "%d [mAHr]", value*10);
+    snprintf(s, ITEM_LABEL_LENGTH, "%u [mAHr]", value*10);
     return;
 } /*decode_power_conf_batt_AHr*/
 
@@ -1716,7 +1716,7 @@ static void
 dissect_zcl_groups_add_group_or_if_identifying(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
     unsigned attr_uint;
-    uint8_t *attr_string;
+    const char *attr_string;
 
     /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_groups_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -1730,10 +1730,8 @@ dissect_zcl_groups_add_group_or_if_identifying(tvbuff_t *tvb, packet_info* pinfo
 
     *offset += 1;
 
-    attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
-
+    proto_tree_add_item_ret_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, ENC_ASCII, pinfo->pool, (const uint8_t**)&attr_string);
     proto_item_append_text(tree, ", String: %s", attr_string);
-    proto_tree_add_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, attr_string);
 
     *offset += attr_uint;
 
@@ -1783,8 +1781,7 @@ dissect_zcl_groups_get_group_membership(tvbuff_t *tvb, proto_tree *tree, unsigne
    proto_tree *grp_list_tree;
    uint8_t count, i;
    /* Retrieve "Group Count" field */
-   count = tvb_get_uint8(tvb, *offset);
-   proto_tree_add_uint(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, count);
+   proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, ENC_NA, &count);
    *offset += 1;
 
    if(count > 0)
@@ -1869,7 +1866,7 @@ static void
 dissect_zcl_groups_view_group_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset)
 {
     unsigned attr_uint;
-    uint8_t *attr_string;
+    const char *attr_string;
    /* Retrieve "Status" field */
    proto_tree_add_item(tree, hf_zbee_zcl_groups_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
    *offset += 1;
@@ -1886,10 +1883,8 @@ dissect_zcl_groups_view_group_response(tvbuff_t *tvb, packet_info* pinfo, proto_
 
    *offset += 1;
 
-   attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
-
+   proto_tree_add_item_ret_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, ENC_ASCII, pinfo->pool, (const uint8_t**)&attr_string);
    proto_item_append_text(tree, ", String: %s", attr_string);
-   proto_tree_add_string(tree, hf_zbee_zcl_groups_attr_str, tvb, *offset, attr_uint, attr_string);
 
    *offset += attr_uint;
 } /*dissect_zcl_groups_add_group*/
@@ -1920,8 +1915,7 @@ dissect_zcl_groups_get_group_membership_response(tvbuff_t *tvb, proto_tree *tree
    *offset += 1;
 
    /* Retrieve "Group Count" field */
-   count = tvb_get_uint8(tvb, *offset);
-   proto_tree_add_uint(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, count);
+   proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_groups_group_count, tvb, *offset, 1, ENC_NA, &count);
    *offset += 1;
    if(count > 0)
    {
@@ -2454,7 +2448,7 @@ static void
 dissect_zcl_scenes_add_scene(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced)
 {
     unsigned attr_uint;
-    uint8_t *attr_string;
+    const char *attr_string;
 
     /* Retrieve "Group ID" field */
     proto_tree_add_item(tree, hf_zbee_zcl_scenes_group_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
@@ -2476,10 +2470,8 @@ dissect_zcl_scenes_add_scene(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree
 
     *offset += 1;
 
-    attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
-
+    proto_tree_add_item_ret_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, ENC_ASCII, pinfo->pool, (const uint8_t**)&attr_string);
     proto_item_append_text(tree, ", String: %s", attr_string);
-    proto_tree_add_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, attr_string);
 
     *offset += attr_uint;
 
@@ -2626,12 +2618,12 @@ dissect_zcl_scenes_add_remove_store_scene_response(tvbuff_t *tvb, proto_tree *tr
 static void
 dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, packet_info* pinfo, proto_tree *tree, unsigned *offset, bool enhanced)
 {
-    uint8_t status, *attr_string;
+    uint8_t status;
+    const char *attr_string;
     unsigned attr_uint;
 
     /* Retrieve "Status" field */
-    status = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &status);
     *offset += 1;
 
     /* Retrieve "Group ID" field */
@@ -2656,10 +2648,8 @@ dissect_zcl_scenes_view_scene_response(tvbuff_t *tvb, packet_info* pinfo, proto_
 
         *offset += 1;
 
-        attr_string = tvb_get_string_enc(pinfo->pool, tvb, *offset, attr_uint, ENC_ASCII);
-
+        proto_tree_add_item_ret_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, ENC_ASCII, pinfo->pool, (const uint8_t**)&attr_string);
         proto_item_append_text(tree, ", String: %s", attr_string);
-        proto_tree_add_string(tree, hf_zbee_zcl_scenes_attr_str, tvb, *offset, attr_uint, attr_string);
 
         *offset += attr_uint;
 
@@ -2719,8 +2709,7 @@ dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree
    uint8_t status, count, i;
 
    /* Retrieve "Status" field */
-   status = tvb_get_uint8(tvb, *offset);
-   proto_tree_add_item(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_scenes_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &status);
    *offset += 1;
 
    /* Retrieve "Capacity" field */
@@ -2734,8 +2723,7 @@ dissect_zcl_scenes_get_scene_membership_response(tvbuff_t *tvb, proto_tree *tree
    if(status == ZBEE_ZCL_STAT_SUCCESS)
    {
        /* Retrieve "Scene Count" field */
-       count = tvb_get_uint8(tvb, *offset);
-       proto_tree_add_uint(tree, hf_zbee_zcl_scenes_scene_count, tvb, *offset, 1, count);
+       proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_scenes_scene_count, tvb, *offset, 1, ENC_NA, &count);
        *offset += 1;
 
        if(count>0)
@@ -3367,8 +3355,7 @@ dissect_zbee_zcl_on_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
             switch (cmd_id) {
                 case ZBEE_ZCL_ON_OFF_CMD_OFF_WITH_EFFECT:
-                    proto_tree_add_item(payload_tree, hf_zbee_zcl_on_off_effect_identifier, tvb, offset, 1, ENC_NA);
-                    effect_identifier = tvb_get_uint8(tvb, offset);
+                    proto_tree_add_item_ret_uint8(payload_tree, hf_zbee_zcl_on_off_effect_identifier, tvb, offset, 1, ENC_NA, &effect_identifier);
                     offset += 1;
                     switch (effect_identifier) {
                         case 0x00:
@@ -3915,8 +3902,7 @@ dissect_zcl_alarms_get_alarm_response(tvbuff_t *tvb, proto_tree *tree, unsigned 
      uint8_t status;
 
     /* Retrieve "Status" field */
-    status = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_alarms_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_alarms_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &status);
     *offset += 1;
 
     if(status == ZBEE_ZCL_STAT_SUCCESS)
@@ -5428,8 +5414,7 @@ dissect_zcl_rssi_location_device_config_response(tvbuff_t *tvb, proto_tree *tree
    uint8_t status;
 
    /* Retrieve "Status" field */
-   status = tvb_get_uint8(tvb, *offset);
-   proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &status);
    *offset += 1;
 
    if(status == ZBEE_ZCL_STAT_SUCCESS)
@@ -5477,8 +5462,7 @@ dissect_zcl_rssi_location_location_data_response(tvbuff_t *tvb, packet_info* pin
    uint8_t status;
 
    /* Retrieve "Status" field */
-   status = tvb_get_uint8(tvb, *offset);
-   proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+   proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_rssi_location_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &status);
    *offset += 1;
 
    if(status == ZBEE_ZCL_STAT_SUCCESS)
@@ -5682,8 +5666,7 @@ dissect_zcl_rssi_location_report_rssi_meas(tvbuff_t *tvb, proto_tree *tree, unsi
     *offset += 8;
 
     /* Retrieve "Number of Neighbours" field */
-    count = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_rssi_location_no_of_neigh, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_rssi_location_no_of_neigh, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &count);
     *offset += 1;
 
     for( i = 0; i < count; i++)
@@ -7986,7 +7969,7 @@ static int ett_zbee_zcl_multistate_output_basic_priority_array;
 static int ett_zbee_zcl_multistate_output_basic_priority_array_structure;
 
 /* Attributes */
-static const value_string zbee_zcl_multistate_output_basic_attr_names[] = {
+static const value_string zbee_zcl_multistate_basic_attr_names[] = {
     { ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_STATE_TEXT,           "State Text" },
     { ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_DESCRIPTION,          "Description" },
     { ZBEE_ZCL_ATTR_ID_MULTISTATE_OUTPUT_BASIC_NUMBER_OF_STATES,     "Number of States" },
@@ -8124,7 +8107,7 @@ proto_register_zbee_zcl_multistate_output_basic(void)
     static hf_register_info hf[] = {
 
         { &hf_zbee_zcl_multistate_output_basic_attr_id,
-            { "Attribute", "zbee_zcl_general.multistate_output_basic.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_multistate_output_basic_attr_names),
+            { "Attribute", "zbee_zcl_general.multistate_output_basic.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_multistate_basic_attr_names),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_output_basic_reliability,
@@ -8272,20 +8255,6 @@ static int ett_zbee_zcl_multistate_value_basic_status_flags;
 static int ett_zbee_zcl_multistate_value_basic_priority_array;
 static int ett_zbee_zcl_multistate_value_basic_priority_array_structure;
 
-/* Attributes */
-static const value_string zbee_zcl_multistate_value_basic_attr_names[] = {
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_STATE_TEXT,           "State Text" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_DESCRIPTION,          "Description" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_NUMBER_OF_STATES,     "Number of States" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_OUT_OF_SERVICE,       "Out of Service" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_PRESENT_VALUE,        "Present Value" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_PRIORITY_ARRAY,       "Priority Array" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_RELIABILITY,          "Reliability" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_RELINQUISH_DEFAULT,   "Relinquish Default" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_STATUS_FLAGS,         "Status Flags" },
-    { ZBEE_ZCL_ATTR_ID_MULTISTATE_VALUE_BASIC_APPLICATION_TYPE,     "Application Type" },
-    { 0, NULL }
-};
 
 static const value_string zbee_zcl_multistate_value_basic_priority_array_bool_values[] = {
     { 0x01, "Valid" },
@@ -8411,7 +8380,7 @@ proto_register_zbee_zcl_multistate_value_basic(void)
     static hf_register_info hf[] = {
 
         { &hf_zbee_zcl_multistate_value_basic_attr_id,
-            { "Attribute", "zbee_zcl_general.multistate_value_basic.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_multistate_value_basic_attr_names),
+            { "Attribute", "zbee_zcl_general.multistate_value_basic.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_multistate_basic_attr_names),
             0x00, NULL, HFILL } },
 
         { &hf_zbee_zcl_multistate_value_basic_reliability,
@@ -9344,7 +9313,7 @@ static void dissect_zcl_part_trasfpartframe(tvbuff_t *tvb, proto_tree *tree, uns
 {
 
     uint8_t   options;
-    int       frame_len;
+    unsigned  frame_len;
 
     static int * const part_opt[] = {
         &hf_zbee_zcl_part_opt_first_block,
@@ -9849,7 +9818,7 @@ static const value_string zbee_zcl_ota_srv_tx_cmd_names[] = {
 };
 
 /* Payload Type */
-static const value_string zbee_zcl_ota_paylaod_type_names[] = {
+static const value_string zbee_zcl_ota_payload_type_names[] = {
     { ZBEE_ZCL_OTA_PAYLOAD_TYPE_QJ,                         "Query Jitter" },
     { ZBEE_ZCL_OTA_PAYLOAD_TYPE_QJ_MC,                      "Query Jitter and Manufacturer Code" },
     { ZBEE_ZCL_OTA_PAYLOAD_TYPE_QJ_MC_IT,                   "Query Jitter, Manufacturer Code and Image Type" },
@@ -9972,7 +9941,7 @@ decode_zcl_ota_upgr_time(char *s, uint32_t value)
 static void
 decode_zcl_ota_size_in_bytes(char *s, uint32_t value)
 {
-    snprintf(s, ITEM_LABEL_LENGTH, "%d [Bytes]", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%u [Bytes]", value);
 } /*decode_zcl_ota_size_in_bytes*/
 
 /*FUNCTION:------------------------------------------------------
@@ -10057,8 +10026,7 @@ dissect_zcl_ota_imagenotify(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
     uint8_t payload_type;
 
     /* Retrieve 'Payload type' field */
-    payload_type = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_payload_type, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_ota_payload_type, tvb, *offset, 1, ENC_NA, &payload_type);
     *offset += 1;
 
     /* Retrieve 'Query Jitter' field */
@@ -10151,8 +10119,7 @@ dissect_zcl_ota_querynextimagersp(tvbuff_t *tvb, proto_tree *tree, unsigned *off
     uint8_t status;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA, &status);
     *offset += 1;
 
     /* Check if there are optional fields */
@@ -10317,8 +10284,7 @@ dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
     uint8_t data_size;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA, &status);
     *offset += 1;
 
     if (status == ZBEE_ZCL_STAT_SUCCESS) {
@@ -10338,8 +10304,7 @@ dissect_zcl_ota_imageblockrsp(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
         *offset += 4;
 
         /* Retrieve 'Data Size' field */
-        data_size = tvb_get_uint8(tvb, *offset);
-        proto_tree_add_item(tree, hf_zbee_zcl_ota_data_size, tvb, *offset, 1, ENC_NA);
+        proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_ota_data_size, tvb, *offset, 1, ENC_NA, &data_size);
         *offset += 1;
 
         /* Retrieve 'Image Data' field */
@@ -10514,8 +10479,7 @@ dissect_zcl_ota_queryspecfilersp(tvbuff_t *tvb, proto_tree *tree, unsigned *offs
     uint8_t status;
 
     /* Retrieve 'Status' field */
-    status = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_ota_status, tvb, *offset, 1, ENC_NA, &status);
     *offset += 1;
 
     if (status == ZBEE_ZCL_STAT_SUCCESS) {
@@ -10752,7 +10716,7 @@ void proto_register_zbee_zcl_ota(void)
             RVALS(zbee_zcl_ota_zb_stack_ver_names), 0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_payload_type,
-            { "Payload Type", "zbee_zcl_general.ota.payload.type", FT_UINT8, BASE_HEX, VALS(zbee_zcl_ota_paylaod_type_names),
+            { "Payload Type", "zbee_zcl_general.ota.payload.type", FT_UINT8, BASE_HEX, VALS(zbee_zcl_ota_payload_type_names),
             0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ota_query_jitter,
@@ -11418,7 +11382,7 @@ dissect_zcl_sched_energy_phase(tvbuff_t *tvb, proto_tree *tree, unsigned *offset
  *      dissect_zcl_pwr_prof_enphsschednotif
  *  DESCRIPTION
  *      this function is called in order to decode "EnergyPhasesScheduleNotification"
- *      and "EnergyPhasesScheduleResoponse" payload.
+ *      and "EnergyPhasesScheduleResponse" payload.
  *  PARAMETERS
  *      tvbuff_t *tvb       - pointer to buffer containing raw packet.
  *      proto_tree *tree    - pointer to data tree Wireshark uses to display packet.
@@ -11440,8 +11404,7 @@ dissect_zcl_pwr_prof_enphsschednotif(tvbuff_t *tvb, proto_tree *tree, unsigned *
     *offset += 1;
 
     /* Retrieve "Number of Scheduled Phases" field */
-    num_of_sched_phases = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_pwr_prof_num_of_sched_phases, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_pwr_prof_num_of_sched_phases, tvb, *offset, 1, ENC_NA, &num_of_sched_phases);
     *offset += 1;
 
     /* Scheduled Energy Phases decoding */
@@ -11771,10 +11734,10 @@ static void
 decode_power_profile_id(char *s, uint8_t id)
 {
     if (id == 0) {
-        snprintf(s, ITEM_LABEL_LENGTH, "%d (All)", id);
+        snprintf(s, ITEM_LABEL_LENGTH, "%u (All)", id);
     }
     else {
-        snprintf(s, ITEM_LABEL_LENGTH, "%d", id);
+        snprintf(s, ITEM_LABEL_LENGTH, "%u", id);
     }
 } /*decode_power_profile_id*/
 
@@ -11794,7 +11757,7 @@ decode_power_profile_id(char *s, uint8_t id)
 static void
 decode_price_in_cents(char *s, uint32_t value)
 {
-    snprintf(s, ITEM_LABEL_LENGTH, "%d cents", value);
+    snprintf(s, ITEM_LABEL_LENGTH, "%u cents", value);
 } /* decode_price_in_cents */
 
 
@@ -12464,16 +12427,14 @@ dissect_zcl_appl_ctrl_attr_func(tvbuff_t *tvb, packet_info* pinfo, proto_tree *t
     uint16_t func_id;
 
     /* ID */
-    func_id = tvb_get_letohs(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_attr_func_id, tvb, *offset, 2,ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_appl_ctrl_attr_func_id, tvb, *offset, 2, ENC_LITTLE_ENDIAN, &func_id);
     *offset += 2;
 
     proto_item_append_text(tree, ", %s",
     val_to_str_ext_const(func_id, &zbee_zcl_appl_ctrl_attr_names_ext, "Reserved"));
 
     /* Data Type */
-    func_data_type = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_appl_ctrl_attr_func_data_type, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_appl_ctrl_attr_func_data_type, tvb, *offset, 1, ENC_NA, &func_data_type);
     *offset += 1;
 
     /* Function Data Dissector */
@@ -13675,11 +13636,6 @@ static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_min_gpd_secur_lvl;
 static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_protection_with_gp_link_key;
 static int hf_zbee_zcl_gp_attr_gps_secur_lvl_fld_involve_tc;
 
-/* reuse ZGPD command names */
-extern value_string_ext zbee_nwk_gp_cmd_names_ext;
-/* reuse devices table from ZGPD parser */
-extern const value_string zbee_nwk_gp_device_ids_names[];
-
 /*************************/
 /* Function Declarations */
 /*************************/
@@ -13709,8 +13665,7 @@ dissect_zbee_zcl_gp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_tree_add_item(tree, hf_zbee_gp_gpd_command_id, tvb, offset, 1, ENC_NA);
     offset += 1;
 
-    payload_size = tvb_get_uint8(tvb, offset);
-    proto_tree_add_item(tree, hf_zbee_gp_gpd_payload_size, tvb, offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint(tree, hf_zbee_gp_gpd_payload_size, tvb, offset, 1, ENC_NA, &payload_size);
     offset += 1;
 
     if (payload_size != 0 && payload_size != 0xff) {
@@ -14420,11 +14375,9 @@ dissect_zcl_gp_proxy_sink_table_response(proto_tree *tree, tvbuff_t *tvb, unsign
     *offset += 1;
     proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_entries_total, tvb, *offset, 1, ENC_NA);
     *offset += 1;
-    start_index = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_start_index, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_proxy_sink_tbl_resp_start_index, tvb, *offset, 1, ENC_NA, &start_index);
     *offset += 1;
-    entries_count = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_proxy_sink_tbl_resp_entries_count, tvb, *offset, 1, ENC_NA);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_proxy_sink_tbl_resp_entries_count, tvb, *offset, 1, ENC_NA, &entries_count);
     *offset += 1;
 
     for (i = 0, stop = 0; i < entries_count && !stop; i++) {
@@ -15963,9 +15916,9 @@ static const value_string zbee_zcl_touchlink_keyid_names[] = {
 /* Function Bodies       */
 /*************************/
 
-/* Functions for Touchlink Comissionning hashtables. {{{ */
+/* Functions for Touchlink Commissioning hashtables. {{{ */
 static int
-zcl_touchlink_comissioning_equal (gconstpointer v, gconstpointer v2)
+zcl_touchlink_comissioning_equal (const void *v, const void *v2)
 {
     if (v == NULL || v2 == NULL) {
         return 0;
@@ -15983,7 +15936,7 @@ zcl_touchlink_comissioning_equal (gconstpointer v, gconstpointer v2)
 }
 
 static unsigned
-zcl_touchlink_comissioning_hash (gconstpointer v)
+zcl_touchlink_comissioning_hash (const void *v)
 {
     unsigned hash;
     const unsigned * id;
@@ -15997,7 +15950,7 @@ zcl_touchlink_comissioning_hash (gconstpointer v)
 
     return hash;
 }
-/* Functions for Touchlink Comissionning hashtables. }}} */
+/* Functions for Touchlink Commissioning hashtables. }}} */
 
 /**
  *This function decodes the Scan Request payload.
@@ -16098,12 +16051,12 @@ dissect_zcl_touchlink_network_join_request(tvbuff_t *tvb, packet_info *pinfo, pr
     proto_tree_add_item_ret_uint(tree, hf_zbee_zcl_touchlink_key_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &key_index);
     *offset += 1;
     proto_item* it_key = proto_tree_add_item(tree, hf_zbee_zcl_touchlink_key, tvb, *offset, 16, ENC_NA);
-    const char *encrypted_network_key = (const char *)tvb_get_ptr(tvb, *offset, 16);
+    const uint8_t *encrypted_network_key = tvb_get_ptr(tvb, *offset, 16);
     *offset += 16;
 
     static const uint8_t Touchlink_Certification_Key[16] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf};
     uint8_t Touchlink_Master_Key[16];
-    char   network_key[16] = {0};
+    uint8_t network_key[16] = {0};
     const uint8_t * key = NULL;
     uint8_t * decrypted_network_key = NULL;
     if(key_index == ZBEE_ZCL_TOUCHLINK_KEYID_MASTER || key_index == ZBEE_ZCL_TOUCHLINK_KEYID_CERTIFICATION){
@@ -16151,13 +16104,13 @@ dissect_zcl_touchlink_network_join_request(tvbuff_t *tvb, packet_info *pinfo, pr
                 return;
             }
 
-            char   transport_key[16] = {0};
+            uint8_t transport_key[16] = {0};
             if (gcry_cipher_encrypt(hd1, transport_key, 16, expanded_input, 16)) {
                 ws_debug("can\'t decrypt aes128");
                 return;
             }
 
-            ws_debug("transport_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)transport_key[0x0], (uint8_t)transport_key[0x1], (uint8_t)transport_key[0x2], (uint8_t)transport_key[0x3], (uint8_t)transport_key[0x4], (uint8_t)transport_key[0x5], (uint8_t)transport_key[0x6], (uint8_t)transport_key[0x7], (uint8_t)transport_key[0x8], (uint8_t)transport_key[0x9], (uint8_t)transport_key[0xA], (uint8_t)transport_key[0xB], (uint8_t)transport_key[0xC], (uint8_t)transport_key[0xD], (uint8_t)transport_key[0xE], (uint8_t)transport_key[0xF]);
+            ws_debug("transport_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", transport_key[0x0], transport_key[0x1], transport_key[0x2], transport_key[0x3], transport_key[0x4], transport_key[0x5], transport_key[0x6], transport_key[0x7], transport_key[0x8], transport_key[0x9], transport_key[0xA], transport_key[0xB], transport_key[0xC], transport_key[0xD], transport_key[0xE], transport_key[0xF]);
 
             gcry_cipher_close(hd1);
 
@@ -16174,14 +16127,14 @@ dissect_zcl_touchlink_network_join_request(tvbuff_t *tvb, packet_info *pinfo, pr
                 return;
             }
 
-            ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)encrypted_network_key[0x0], (uint8_t)encrypted_network_key[0x1], (uint8_t)encrypted_network_key[0x2], (uint8_t)encrypted_network_key[0x3], (uint8_t)encrypted_network_key[0x4], (uint8_t)encrypted_network_key[0x5], (uint8_t)encrypted_network_key[0x6], (uint8_t)encrypted_network_key[0x7], (uint8_t)encrypted_network_key[0x8], (uint8_t)encrypted_network_key[0x9], (uint8_t)encrypted_network_key[0xA], (uint8_t)encrypted_network_key[0xB], (uint8_t)encrypted_network_key[0xC], (uint8_t)encrypted_network_key[0xD], (uint8_t)encrypted_network_key[0xE], (uint8_t)encrypted_network_key[0xF]);
+            ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", encrypted_network_key[0x0], encrypted_network_key[0x1], encrypted_network_key[0x2], encrypted_network_key[0x3], encrypted_network_key[0x4], encrypted_network_key[0x5], encrypted_network_key[0x6], encrypted_network_key[0x7], encrypted_network_key[0x8], encrypted_network_key[0x9], encrypted_network_key[0xA], encrypted_network_key[0xB], encrypted_network_key[0xC], encrypted_network_key[0xD], encrypted_network_key[0xE], encrypted_network_key[0xF]);
 
             if (gcry_cipher_decrypt(hd2, network_key, 16, encrypted_network_key, 16)) {
                 ws_debug("can\'t decrypt aes128");
                 return;
             }
 
-            ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)network_key[0x0], (uint8_t)network_key[0x1], (uint8_t)network_key[0x2], (uint8_t)network_key[0x3], (uint8_t)network_key[0x4], (uint8_t)network_key[0x5], (uint8_t)network_key[0x6], (uint8_t)network_key[0x7], (uint8_t)network_key[0x8], (uint8_t)network_key[0x9], (uint8_t)network_key[0xA], (uint8_t)network_key[0xB], (uint8_t)network_key[0xC], (uint8_t)network_key[0xD], (uint8_t)network_key[0xE], (uint8_t)network_key[0xF]);
+            ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", network_key[0x0], network_key[0x1], network_key[0x2], network_key[0x3], network_key[0x4], network_key[0x5], network_key[0x6], network_key[0x7], network_key[0x8], network_key[0x9], network_key[0xA], network_key[0xB], network_key[0xC], network_key[0xD], network_key[0xE], network_key[0xF]);
 
             gcry_cipher_close(hd2);
 
@@ -16222,14 +16175,14 @@ dissect_zcl_touchlink_network_join_request(tvbuff_t *tvb, packet_info *pinfo, pr
             return;
         }
 
-        ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)encrypted_network_key[0x0], (uint8_t)encrypted_network_key[0x1], (uint8_t)encrypted_network_key[0x2], (uint8_t)encrypted_network_key[0x3], (uint8_t)encrypted_network_key[0x4], (uint8_t)encrypted_network_key[0x5], (uint8_t)encrypted_network_key[0x6], (uint8_t)encrypted_network_key[0x7], (uint8_t)encrypted_network_key[0x8], (uint8_t)encrypted_network_key[0x9], (uint8_t)encrypted_network_key[0xA], (uint8_t)encrypted_network_key[0xB], (uint8_t)encrypted_network_key[0xC], (uint8_t)encrypted_network_key[0xD], (uint8_t)encrypted_network_key[0xE], (uint8_t)encrypted_network_key[0xF]);
+        ws_debug("encrypted_network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", encrypted_network_key[0x0], encrypted_network_key[0x1], encrypted_network_key[0x2], encrypted_network_key[0x3], encrypted_network_key[0x4], encrypted_network_key[0x5], encrypted_network_key[0x6], encrypted_network_key[0x7], encrypted_network_key[0x8], encrypted_network_key[0x9], encrypted_network_key[0xA], encrypted_network_key[0xB], encrypted_network_key[0xC], encrypted_network_key[0xD], encrypted_network_key[0xE], encrypted_network_key[0xF]);
 
         if (gcry_cipher_decrypt(hd, network_key, 16, encrypted_network_key, 16)) {
             ws_debug("can\'t decrypt aes128");
             return;
         }
 
-        ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", (uint8_t)network_key[0x0], (uint8_t)network_key[0x1], (uint8_t)network_key[0x2], (uint8_t)network_key[0x3], (uint8_t)network_key[0x4], (uint8_t)network_key[0x5], (uint8_t)network_key[0x6], (uint8_t)network_key[0x7], (uint8_t)network_key[0x8], (uint8_t)network_key[0x9], (uint8_t)network_key[0xA], (uint8_t)network_key[0xB], (uint8_t)network_key[0xC], (uint8_t)network_key[0xD], (uint8_t)network_key[0xE], (uint8_t)network_key[0xF]);
+        ws_debug("network_key: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", network_key[0x0], network_key[0x1], network_key[0x2], network_key[0x3], network_key[0x4], network_key[0x5], network_key[0x6], network_key[0x7], network_key[0x8], network_key[0x9], network_key[0xA], network_key[0xB], network_key[0xC], network_key[0xD], network_key[0xE], network_key[0xF]);
 
         gcry_cipher_close(hd);
 
@@ -16289,6 +16242,20 @@ dissect_zcl_touchlink_network_update_request(tvbuff_t *tvb, proto_tree *tree, un
 
 
 /**
+ *This function decodes the Device Information Request payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_device_info_request(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+} /* dissect_zcl_touchlink_device_info_request */
+
+/**
  *This function decodes the Scan Response payload.
  *
  *@param  tvb the tv buffer of the current data_type
@@ -16340,8 +16307,7 @@ dissect_zcl_touchlink_scan_response(tvbuff_t *tvb, proto_tree *tree, unsigned *o
     *offset += 2;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_nwk_addr, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
     *offset += 2;
-    subdev = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_sub_devices, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_touchlink_sub_devices, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &subdev);
     *offset += 1;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_total_groups, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
@@ -16384,6 +16350,20 @@ dissect_zcl_touchlink_network_start_response(tvbuff_t *tvb, proto_tree *tree, un
 } /* dissect_zcl_touchlink_network_start_response */
 
 /**
+ *This function decodes the Network Join Router/EndDevice Response payloads.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_touchlink_network_join_response(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+{
+    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+} /*dissect_zcl_touchlink_network_join_response*/
+
+/**
  *This function decodes the Device Information Response payload.
  *
  *@param  tvb the tv buffer of the current data_type
@@ -16396,14 +16376,11 @@ dissect_zcl_touchlink_device_info_response(tvbuff_t *tvb, proto_tree *tree, unsi
     proto_tree *list_tree;
     uint8_t count, idx;
 
-    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_transaction_id, tvb, *offset, 4, ENC_LITTLE_ENDIAN);
-    *offset += 4;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_sub_devices, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
-    count = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_device_record_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_touchlink_device_record_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &count);
     *offset += 1;
 
     list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 16, ett_zbee_zcl_touchlink_device_records, NULL, "Device Records");
@@ -16475,8 +16452,7 @@ dissect_zcl_touchlink_group_id_response(tvbuff_t *tvb, proto_tree *tree, unsigne
     *offset += 1;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
-    count = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &count);
     *offset += 1;
 
     list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 3, ett_zbee_zcl_touchlink_groups, NULL, "Group Information Records");
@@ -16505,8 +16481,7 @@ dissect_zcl_touchlink_endpoint_list_response(tvbuff_t *tvb, proto_tree *tree, un
     *offset += 1;
     proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
-    count = tvb_get_uint8(tvb, *offset);
-    proto_tree_add_item(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_zcl_touchlink_group_count, tvb, *offset, 1, ENC_LITTLE_ENDIAN, &count);
     *offset += 1;
 
     list_tree = proto_tree_add_subtree(tree, tvb, *offset, count * 8, ett_zbee_zcl_touchlink_endpoints, NULL, "Endpoint Information Records");
@@ -16535,7 +16510,7 @@ dissect_zcl_touchlink_endpoint_list_response(tvbuff_t *tvb, proto_tree *tree, un
 } /* dissect_zcl_touchlink_endpoint_list_response */
 
 /**
- *ZigBee ZCL Touchlink Commissioining cluster dissector for wireshark.
+ *ZigBee ZCL Touchlink Commissioning cluster dissector for wireshark.
  *
  *@param tvb pointer to buffer containing raw packet.
  *@param pinfo pointer to packet information fields
@@ -16623,6 +16598,9 @@ dissect_zbee_zcl_touchlink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 break;
 
             case ZBEE_ZCL_CMD_ID_DEVICE_INFO_REQUEST:
+                dissect_zcl_touchlink_device_info_request(tvb, tree, &offset);
+                break;
+
             case ZBEE_ZCL_CMD_ID_GET_GROUP_IDENTIFIERS_REQUEST:
             case ZBEE_ZCL_CMD_ID_GET_ENDPOINT_LIST_REQUEST:
                 proto_tree_add_item(tree, hf_zbee_zcl_touchlink_start_index, tvb, offset, 1, ENC_LITTLE_ENDIAN);
@@ -16646,8 +16624,7 @@ dissect_zbee_zcl_touchlink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
             case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ROUTER_RESPONSE:
             case ZBEE_ZCL_CMD_ID_NETWORK_JOIN_ENDDEV_RESPONSE:
-                proto_tree_add_item(tree, hf_zbee_zcl_touchlink_status, tvb, offset, 1, ENC_LITTLE_ENDIAN);
-                offset++;
+                dissect_zcl_touchlink_network_join_response(tvb, tree, &offset);
                 break;
 
             case ZBEE_ZCL_CMD_ID_DEVICE_INFO_RESPONSE:
@@ -16678,6 +16655,17 @@ dissect_zbee_zcl_touchlink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     }
     return offset;
 } /*dissect_zbee_zcl_touchlink*/
+
+static void
+zbee_zcl_touchlink_init(void)
+{
+    /* Empty the commissioning map, as a new dissection pass is
+       going to be done, so all of the entries in that map,
+       which were allocated with file scope, have been freed. */
+    if (zcl_touchlink_commissioning_map != NULL) {
+        g_hash_table_remove_all(zcl_touchlink_commissioning_map);
+    }
+}
 
 /**
  *ZigBee ZCL Touchlink Commissioning cluster protocol registration routine.
@@ -16897,7 +16885,9 @@ proto_register_zbee_zcl_touchlink(void)
         &ett_zbee_zcl_touchlink_info,
         &ett_zbee_zcl_touchlink_keybits,
         &ett_zbee_zcl_touchlink_groups,
+        &ett_zbee_zcl_touchlink_device_record,
         &ett_zbee_zcl_touchlink_device_records,
+        &ett_zbee_zcl_touchlink_endpoint,
         &ett_zbee_zcl_touchlink_endpoints,
     };
 
@@ -16918,6 +16908,8 @@ proto_register_zbee_zcl_touchlink(void)
 
     /* Register the ZigBee ZCL Touchlink Commissioning dissector. */
     register_dissector(ZBEE_PROTOABBREV_ZCL_TOUCHLINK, dissect_zbee_zcl_touchlink, proto_zbee_zcl_touchlink);
+
+    register_init_routine(zbee_zcl_touchlink_init);
 } /*proto_register_zbee_zcl_touchlink*/
 
 /**

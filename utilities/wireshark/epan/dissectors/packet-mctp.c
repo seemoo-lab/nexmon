@@ -100,15 +100,24 @@ static const value_string flag_vals[] = {
     { 0x00, NULL },
 };
 
+/* DSP0239 1.12.0 Table 1, "MCTP Message Types" */
 static const value_string type_vals[] = {
     { MCTP_TYPE_CONTROL, "MCTP Control Protocol" },
     { MCTP_TYPE_PLDM, "PLDM" },
     { MCTP_TYPE_NCSI, "NC-SI" },
     { MCTP_TYPE_ETHERNET, "Ethernet" },
     { MCTP_TYPE_NVME, "NVMe-MI" },
+    { MCTP_TYPE_SPDM, "SPDM over MCTP" },
+    { MCTP_TYPE_SECURED, "Secured Messages" },
+    { MCTP_TYPE_CXL_FM, "CXL FM API over MCTP" },
+    { MCTP_TYPE_CXL_CCI, "CXL CCI over MCTP" },
+    { MCTP_TYPE_PCIE_MI, "PCIe-MI over MCTP" },
+    { MCTP_TYPE_VDM_PCI, "Vendor Defined - PCI" },
+    { MCTP_TYPE_VDM_IANA, "Vendor Defined - IANA" },
     { 0, NULL },
 };
 
+static dissector_handle_t mctp_handle;
 static dissector_table_t mctp_dissector_table;
 static dissector_table_t mctp_encap_dissector_table;
 static reassembly_table mctp_reassembly_table;
@@ -202,9 +211,14 @@ dissect_mctp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         tvbuff_t *new_tvb = NULL;
 
         pinfo->fragmented = true;
+        /* DSP0236 defines a message at the transport level by the source
+         * EID, the tag owner (TO) bit and the message tag; the tag is
+         * tracked independently for each value of TO. So the reassembly id
+         * must be the full 4-bit tag, TO included, or a request and its
+         * response would share a reassembly key. */
         frag_msg = fragment_add_seq_next(&mctp_reassembly_table,
                                          tvb, 4, pinfo,
-                                         fst & 0x7, NULL,
+                                         tag, NULL,
                                          tvb_captured_length_remaining(tvb, 4),
                                          !(fst & 0x40));
 
@@ -390,7 +404,7 @@ proto_register_mctp(void)
      *    message integrity check (which is type-specific!). For example,
      *    NVMe-MI, which includes the type byte in packet specifications
      *
-     * mctp.encap-type: for procotols that are trivially encapsulated in a
+     * mctp.encap-type: for protocols that are trivially encapsulated in a
      *    MCTP message, and do not handle the type byte themselves. For
      *    example, NC-SI over MCTP, which just wraps a NC-SI packet within
      *    a MCTP message.
@@ -410,13 +424,13 @@ proto_register_mctp(void)
 
     reassembly_table_register(&mctp_reassembly_table,
                               &addresses_reassembly_table_functions);
+
+    mctp_handle = register_dissector("mctp", dissect_mctp, proto_mctp);
 }
 
 void
 proto_reg_handoff_mctp(void)
 {
-    dissector_handle_t mctp_handle;
-    mctp_handle = create_dissector_handle(dissect_mctp, proto_mctp);
     dissector_add_uint("sll.ltype", LINUX_SLL_P_MCTP, mctp_handle);
 }
 

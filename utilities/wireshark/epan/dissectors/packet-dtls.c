@@ -44,7 +44,6 @@
 #include <epan/uat.h>
 #include <epan/addr_resolv.h>
 #include <epan/follow.h>
-#include <epan/sctpppids.h>
 #include <epan/exported_pdu.h>
 #include <epan/decode_as.h>
 #include <epan/proto_data.h>
@@ -55,11 +54,13 @@
 #include <wsutil/utf8_entities.h>
 #include <wsutil/rsa.h>
 #include <wsutil/pint.h>
+#include "conversation.h"
 #include "packet-tls-utils.h"
 #include "packet-dtls.h"
 #include "packet-rtp.h"
 #include "packet-rtcp.h"
 #include "packet-udp.h"
+#include "packet-sctp.h"
 
 void proto_register_dtls(void);
 
@@ -228,7 +229,7 @@ static dissector_table_t   dtls_associations;
 static dissector_handle_t  dtls_handle;
 static StringInfo          dtls_compressed_data;
 static StringInfo          dtls_decrypted_data;
-static int                 dtls_decrypted_data_avail;
+static unsigned            dtls_decrypted_data_avail;
 
 static ssl_common_options_t dtls_options;
 static const char *dtls_debug_file_name;
@@ -265,7 +266,7 @@ static const fragment_items dtls_frag_items = {
 
 static SSL_COMMON_LIST_T(dissect_dtls_hf);
 
-uint32_t get_dtls_stream_count(void)
+static uint32_t get_dtls_stream_count(void)
 {
   return dtls_stream_count;
 }
@@ -415,26 +416,27 @@ static int   looks_like_dtls(tvbuff_t *tvb, uint32_t offset);
 static char *
 dtls_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, unsigned *stream, unsigned *sub_stream _U_)
 {
-    conversation_t *conv = find_conversation_pinfo(pinfo, 0);
-    if (!conv) {
-        return NULL;
-    }
-    void *conv_data = conversation_get_proto_data(conv, proto_dtls);
-    if (conv_data == NULL) {
-        return NULL;
-    }
+  char *filter = NULL;
+  const SslPacketInfo *pi = NULL;
+  uint8_t max_layer_num = proto_get_layer_num(pinfo, proto_dtls);
 
-    SslDecryptSession *ssl_session = (SslDecryptSession *)conv_data;
-    SslSession *session = &ssl_session->session;
+  for (uint8_t curr_layer_num = max_layer_num; curr_layer_num; --curr_layer_num) {
+    /* The (nesting) layer number in p_get_proto_data is 0-indexed. */
+    pi = p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, curr_layer_num - 1);
+    if (pi) {
+      *stream = pi->stream;
+      filter = ws_strdup_printf("dtls.stream eq %u", *stream);
+      break;
+    }
+  }
 
-    *stream = session->stream;
-    return ws_strdup_printf("dtls.stream eq %u", session->stream);
+  return filter;
 }
 
 static char *
 dtls_follow_index_filter(unsigned stream, unsigned sub_stream _U_)
 {
-    return ws_strdup_printf("dtls.stream eq %u", stream);
+  return ws_strdup_printf("dtls.stream eq %u", stream);
 }
 
 /*********************************************************************
@@ -456,7 +458,7 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   SslDecryptSession *ssl_session = NULL;
   SslSession        *session = NULL;
   int                is_from_server;
-  uint8_t            curr_layer_num_ssl = pinfo->curr_layer_num;
+  uint8_t            curr_layer_num_ssl = p_get_proto_depth(pinfo, proto_dtls);
 
   ti                    = NULL;
   dtls_tree             = NULL;
@@ -486,16 +488,25 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
       ssl_session = ssl_get_session_by_cid(tvb, offset+11);
 
       if (ssl_session) {
-          // update conversation
-          conversation_add_proto_data(conversation,
-                                      dissector_handle_get_protocol_index(dtls_handle),
-                                      ssl_session);
+          /* Update conversation - get or create the wmem map.
+           * Using wmem_file_scope ensures the map is freed on capture reload. */
+          void *conv_data = conversation_get_proto_data(conversation, dissector_handle_get_protocol_index(dtls_handle));
+          wmem_map_t *session_map;
+
+          if (conv_data == NULL) {
+              session_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+              conversation_add_proto_data(conversation, dissector_handle_get_protocol_index(dtls_handle), session_map);
+          } else {
+              session_map = (wmem_map_t *)conv_data;
+          }
+
+          wmem_map_insert(session_map, GUINT_TO_POINTER((unsigned)curr_layer_num_ssl), ssl_session);
       }
   }
 
   /* if session cannot be retrieved from connection ID, get or create it from conversation */
   if (ssl_session == NULL) {
-      ssl_session = ssl_get_session(conversation, dtls_handle);
+      ssl_session = ssl_get_session(conversation, dtls_handle, curr_layer_num_ssl);
   }
 
   session = &ssl_session->session;
@@ -519,6 +530,11 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
    * (to keep cipher synchronized) */
   if (pinfo->fd->visited)
     ssl_session = NULL;
+
+  /* Increment the proto depth, so any nested DTLS gets the new depth.
+   * Make sure to decrement when leaving the function.
+   * (XXX - Do we need a TRY...FINALLY or CLEANUP_CB_PUSH?) */
+  p_set_proto_depth(pinfo, proto_dtls, curr_layer_num_ssl + 1);
 
   /* Initialize the protocol column; we'll set it later when we
    * figure out what flavor of DTLS it is */
@@ -567,6 +583,7 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   // XXX Is this tap needed?
   tap_queue_packet(dtls_tap, pinfo, NULL);
   tap_queue_packet(dtls_follow_tap, pinfo, p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, curr_layer_num_ssl));
+  p_set_proto_depth(pinfo, proto_dtls, curr_layer_num_ssl);
   return tvb_captured_length(tvb);
 }
 
@@ -599,7 +616,7 @@ dissect_dtls_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
    * captured payload length against the remainder of the UDP packet size. */
   unsigned length = tvb_captured_length(tvb);
   unsigned offset = 0;
-  unsigned record_length = 0;
+  unsigned record_length;
   SslDecryptSession *ssl_session = NULL;
   SslSession *session = NULL;
 
@@ -705,27 +722,27 @@ static void
 dtls_save_decrypted_record(packet_info *pinfo, int record_id, uint8_t content_type, SslDecoder *decoder, uint8_t curr_layer_num_ssl, bool inner_content_type)
 {
     const unsigned char *data = dtls_decrypted_data.data;
-    unsigned datalen = dtls_decrypted_data_avail;
+    unsigned content_len = dtls_decrypted_data_avail;
 
-    if (datalen == 0) {
+    if (content_len == 0) {
         return;
     }
 
     if (content_type == SSL_ID_TLS12_CID || inner_content_type) {
         /*
-         * The actual data is followed by the content type and then zero or
+         * The content is followed by the content type and then zero or
          * more padding. Scan backwards for content type, skipping padding.
          */
-        while (datalen > 0 && data[datalen - 1] == 0) {
-            datalen--;
+        while (content_len > 0 && data[content_len - 1] == 0) {
+            content_len--;
         }
-        ssl_debug_printf("%s found %d padding bytes\n", G_STRFUNC, dtls_decrypted_data_avail - datalen);
-        if (datalen == 0) {
+        ssl_debug_printf("%s found %d padding bytes\n", G_STRFUNC, dtls_decrypted_data_avail - content_len);
+        if (content_len == 0) {
             ssl_debug_printf("%s there is no room for content type!\n", G_STRFUNC);
             return;
         }
-        content_type = data[--datalen];
-        if (datalen == 0) {
+        content_type = data[--content_len];
+        if (content_len == 0) {
             return;
         }
     }
@@ -734,7 +751,7 @@ dtls_save_decrypted_record(packet_info *pinfo, int record_id, uint8_t content_ty
     // tls_decrypt_aead_record does not increment decoder->seq after
     // successful authentication for DTLS 1.3 (unlike for TLS.)
     // XXX - The flow is only passed in here in order to support Follow Stream.
-    ssl_add_record_info(proto_dtls, pinfo, data, datalen, record_id, decoder->flow, (ContentType)content_type, curr_layer_num_ssl, decoder->seq);
+    ssl_add_record_info(proto_dtls, pinfo, data, dtls_decrypted_data_avail, content_len, record_id, decoder->flow, (ContentType)content_type, curr_layer_num_ssl, decoder->seq);
 }
 
 static bool
@@ -829,8 +846,8 @@ dissect_dtls_appdata(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
     /* Unknown protocol handle, ssl_starttls_ack was not called before.
      * Try to find an appropriate dissection handle and cache it. */
     dissector_handle_t handle;
-    handle = dissector_get_uint_handle(dtls_associations, pinfo->srcport);
-    handle = handle ? handle : dissector_get_uint_handle(dtls_associations, pinfo->destport);
+    handle = dissector_get_uint_handle(dtls_associations, PINFO_SRCPORT(pinfo));
+    handle = handle ? handle : dissector_get_uint_handle(dtls_associations, PINFO_DESTPORT(pinfo));
     if (handle) session->app_handle = handle;
   }
 
@@ -855,22 +872,25 @@ dissect_dtls_appdata(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
   if (decrypted) {
     bool  dissected;
     uint16_t  saved_match_port;
+    const char *saved_match_string;
     /* try to dissect decrypted data*/
-    ssl_debug_printf("%s decrypted len %d\n", G_STRFUNC, record->data_len);
+    ssl_debug_printf("%s decrypted len %d\n", G_STRFUNC, record->content_len);
 
     saved_match_port = pinfo->match_uint;
     if (is_from_server) {
-      pinfo->match_uint = pinfo->srcport;
+      pinfo->match_uint = PINFO_SRCPORT(pinfo);
     } else {
-      pinfo->match_uint = pinfo->destport;
+      pinfo->match_uint = PINFO_DESTPORT(pinfo);
     }
+    saved_match_string = pinfo->match_string;
+    pinfo->match_string = session->alpn_name;
 
-    /* find out a dissector using server port*/
+    /* find out a dissector using ALPN or server port*/
     if (session->app_handle) {
       ssl_debug_printf("%s: found handle %p (%s)\n", G_STRFUNC,
                        (void *)session->app_handle,
                        dissector_handle_get_dissector_name(session->app_handle));
-      ssl_print_data("decrypted app data", record->plain_data, record->data_len);
+      ssl_print_data("decrypted app data", record->plain_data, record->content_len);
 
       if (have_tap_listener(exported_pdu_tap)) {
         export_pdu_packet(decrypted, pinfo, EXP_PDU_TAG_DISSECTOR_NAME,
@@ -887,6 +907,7 @@ dissect_dtls_appdata(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,
       }
     }
     pinfo->match_uint = saved_match_port;
+    pinfo->match_string = saved_match_string;
     /* fallback to data dissector */
     if (!dissected) {
       call_data_dissector(decrypted, pinfo, top_tree);
@@ -946,7 +967,6 @@ dissect_dtls_record(tvbuff_t *tvb, packet_info *pinfo,
   uint16_t        epoch;
   uint64_t        sequence_number;
   uint8_t         content_type;
-  unsigned        content_type_offset;
   uint8_t         next_byte;
   proto_tree     *ti;
   proto_tree     *dtls_record_tree;
@@ -1030,7 +1050,6 @@ dissect_dtls_record(tvbuff_t *tvb, packet_info *pinfo,
       ct_pi = proto_tree_add_item(dtls_record_tree, hf_dtls_record_content_type,
                                   tvb, offset, 1, ENC_BIG_ENDIAN);
   }
-  content_type_offset = offset;
   offset++;
 
   /* add the version */
@@ -1104,9 +1123,9 @@ dissect_dtls_record(tvbuff_t *tvb, packet_info *pinfo,
 
     if (content_type == SSL_ID_TLS12_CID) {
       content_type = record->type;
-      ti = proto_tree_add_uint(dtls_record_tree, hf_dtls_record_content_type,
-                               tvb, content_type_offset, 1, record->type);
-      proto_item_set_generated(ti);
+      proto_tree_add_uint(dtls_record_tree, hf_dtls_record_content_type,
+                          decrypted, record->content_len, 1, record->type);
+      decrypted = tvb_new_subset_length(decrypted, 0, record->content_len);
     }
   }
   ssl_check_record_length(&dissect_dtls_hf, pinfo, (ContentType)content_type, record_length, length_pi, session->version, decrypted);
@@ -1469,7 +1488,9 @@ dtls13_decrypt_early_data(tvbuff_t *tvb, packet_info *pinfo, uint32_t hdr_off, u
   ssl_debug_printf("Trying early data encryption, first record / trial decryption: %s\n",
                   !(ssl->state & SSL_SEEN_0RTT_APPDATA) ? "true" : "false");
 
-
+  // Early data is used with a PSK. (The early secret is computed w/o
+  // input from the (EC)DHE even if psk_dhe_ke is used.)
+  tls_load_psk(ssl, dtls_options.psk);
   secret = tls13_load_secret(ssl, tls_get_master_key_map(true), false, TLS_SECRET_0RTT_APP);
   if (!secret) {
       ssl_debug_printf("Missing secrets, early data decryption not possible!\n");
@@ -1731,10 +1752,15 @@ dissect_dtls13_record(tvbuff_t *tvb, packet_info *pinfo _U_,
   decrypted = ssl_get_record_info(tvb, proto_dtls, pinfo, tvb_raw_offset(tvb)+offset, curr_layer_num_ssl, &record);
   if (decrypted)
   {
+    add_new_data_source(pinfo, decrypted, "Decrypted DTLS");
+
+    proto_tree_add_uint(dtls_record_tree, hf_dtls_record_content_type,
+                        decrypted, record->content_len, 1, record->type);
+    decrypted = tvb_new_subset_length(decrypted, 0, record->content_len);
+
     ti = proto_tree_add_uint(dtls_record_tree, hf_dtls_record_sequence_suffix_dec, tvb, hdr_start + 1 + cid_length,
                              seq_length, (uint16_t)record->record_seq);
     proto_item_set_generated(ti);
-    add_new_data_source(pinfo, decrypted, "Decrypted DTLS");
     /* real content type*/
     switch ((record->type))
     {
@@ -1942,9 +1968,9 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
        * situation where the first octet of the encrypted handshake
        * message is actually a known handshake message type.
        */
-      if (!maybe_encrypted || offset + fragment_length <= record_length) {
+      if (!maybe_encrypted || offset + 12 + fragment_length <= record_length) {
         if (msg_type == SSL_HND_SERVER_HELLO) {
-          tls_scan_server_hello(tvb, offset+12, fragment_length, &version, &is_hrr);
+          tls_scan_server_hello(tvb, offset + 12, offset + 12 + fragment_length, &version, &is_hrr);
         }
         if (is_hrr) {
             msg_type_str = try_val_to_str(SSL_HND_HELLO_RETRY_REQUEST, ssl_31_handshake_type);
@@ -2000,6 +2026,39 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
       proto_item_set_len(ti, fragment_length + 12);
 
       fragmented = false;
+
+      /* In DTLS 1.2, the message_seq is reset and the epoch incremented
+       * at each rehandshake (i.e., renegotiation), so concatenate them
+       * for a fragment sequence number. However, in DTLS 1.3 the
+       * message_seq is not reset in a post-handshake message exchange
+       * (so having passed in 0 as the epoch here instead of the real
+       * 64-bit DTLS 1.3 epoch should work unless message_seq has
+       * wrapped around, which is unlikely as it is only incremented
+       * in handshake messages).
+       * https://www.rfc-editor.org/rfc/rfc9147.html#section-5.2-6
+       * https://datatracker.ietf.org/doc/html/rfc6347#section-4.1
+       */
+      uint32_t frag_seq = ((uint32_t)epoch << 16) | message_seq;
+      if (ssl) { // first pass
+        uint32_t *next_receive_p;
+        if (is_from_server) {
+          next_receive_p = &ssl->server_next_receive_seq;
+        } else {
+          next_receive_p = &ssl->client_next_receive_seq;
+        }
+        if (frag_seq < *next_receive_p) {
+          ssl = NULL; // Retransmission; don't update decoder state
+        } else if (frag_seq == *next_receive_p || (message_seq == 0)) {
+          // message_seq == 0 and frag_seq > *next_receive_p can only
+          // occur if the epoch has increased and the message seq is 0,
+          // which is DTLS 1.2 only, and it is safe to increment
+          // next_receive_p in such a case (assume at renegotiation we
+          // no longer care about handshake messages from the previous
+          // handshake.)
+          *next_receive_p = frag_seq + 1;
+        }
+      }
+
       if (fragment_length + fragment_offset > length)
         {
           if (fragment_offset == 0)
@@ -2033,18 +2092,6 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
               /* Don't pass the reassembly code data that doesn't exist */
               tvb_ensure_bytes_exist(tvb, offset, fragment_length);
 
-              /* In DTLS 1.2, the message_seq is reset and the epoch incremented
-               * at each rehandshake (i.e., renegotiation), so concatenate them
-               * for a fragment sequence number. However, in DTLS 1.3 the
-               * message_seq is not reset in a post-handshake message exchange
-               * (so having passed in 0 as the epoch here instead of the real
-               * 64-bit DTLS 1.3 epoch should work unless message_seq has
-               * wrapped around, which is unlikely as it is only incremented
-               * in handshake messages).
-               * https://www.rfc-editor.org/rfc/rfc9147.html#section-5.2-6
-               * https://datatracker.ietf.org/doc/html/rfc6347#section-4.1
-               */
-              uint32_t frag_seq = (epoch << 16) | message_seq;
               frag_msg = fragment_add(&dtls_reassembly_table,
                                       tvb, offset, pinfo, frag_seq, NULL,
                                       fragment_offset, fragment_length, true);
@@ -2139,29 +2186,30 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
          * Add handshake message (including type, length, etc.) to hash (for
          * Extended Master Secret). The computation must however happen as if
          * the message was sent in a single fragment (RFC 6347, section 4.2.6).
-         *
-         * Skip CertificateVerify since the handshake hash covers just
-         * ClientHello up to and including ClientKeyExchange, but the keys are
-         * actually retrieved in ChangeCipherSpec (which comes after that).
          */
-        if (msg_type != SSL_HND_CERT_VERIFY) {
-          if (fragment_offset == 0) {
-            /* Unfragmented packet. */
-            ssl_calculate_handshake_hash(ssl, tvb, hs_offset, 12 + fragment_length);
-          } else {
-            /*
-             * Handshake message was fragmented over multiple messages, fake a
-             * single fragment and add reassembled data.
-             */
-            /* msg_type (1), length (3), message_seq (2) */
-            ssl_calculate_handshake_hash(ssl, tvb, hs_offset, 6);
-            /* fragment_offset (3) equals to zero. */
-            ssl_calculate_handshake_hash(ssl, NULL, 0, 3);
-            /* fragment_length (3) equals to length. */
-            ssl_calculate_handshake_hash(ssl, tvb, hs_offset + 1, 3);
-            /* actual handshake data */
-            ssl_calculate_handshake_hash(ssl, sub_tvb, 0, length);
-          }
+        /* XXX - DTLS 1.3's handshake transcript has the same format as TLS 1.3
+         * and lacks the DTLS specific fields (fragment info), unlike DTLS 1.2.
+         * However, at the point of the ClientHello we don't know the version
+         * the server will accept, which poses a problem. We might need to save
+         * the transcript in the 1.2 format and then fix it up when 1.3 is
+         * negotiated.
+         */
+        if (fragment_offset == 0) {
+          /* Unfragmented packet. */
+          ssl_calculate_handshake_hash(ssl, tvb, hs_offset, 12 + fragment_length, msg_type, is_from_server);
+        } else {
+          /*
+           * Handshake message was fragmented over multiple messages, fake a
+           * single fragment and add reassembled data.
+           */
+          /* msg_type (1), length (3), message_seq (2) */
+          ssl_calculate_handshake_hash(ssl, tvb, hs_offset, 6, msg_type, is_from_server);
+          /* fragment_offset (3) equals to zero. */
+          ssl_calculate_handshake_hash(ssl, NULL, 0, 3, msg_type, is_from_server);
+          /* fragment_length (3) equals to length. */
+          ssl_calculate_handshake_hash(ssl, tvb, hs_offset + 1, 3, msg_type, is_from_server);
+          /* actual handshake data */
+          ssl_calculate_handshake_hash(ssl, sub_tvb, 0, length, msg_type, is_from_server);
         }
 
         /* now dissect the handshake message, if necessary */
@@ -2173,7 +2221,7 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
           case SSL_HND_CLIENT_HELLO:
             if (ssl) {
               /* ClientHello is first packet so set direction */
-              ssl_set_server(session, &pinfo->dst, pinfo->ptype, pinfo->destport);
+              ssl_set_server(session, PINFO_DST(pinfo), pinfo->ptype, PINFO_DESTPORT(pinfo));
             }
             ssl_dissect_hnd_cli_hello(&dissect_dtls_hf, sub_tvb, pinfo,
                                       ssl_hand_tree, 0, length, session, ssl,
@@ -2190,11 +2238,17 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,
             break;
 
           case SSL_HND_SERVER_HELLO:
-            tls_scan_server_hello(sub_tvb, 0, fragment_length, &version, &is_hrr);
+            tls_scan_server_hello(sub_tvb, 0, length, &version, &is_hrr);
             ssl_try_set_version(session, ssl, SSL_ID_HANDSHAKE, SSL_HND_SERVER_HELLO, true, version);
 
             ssl_dissect_hnd_srv_hello(&dissect_dtls_hf, sub_tvb, pinfo, ssl_hand_tree,
                                       0, length, session, ssl, true, is_hrr);
+            if (ssl) {
+              if (ssl->has_psk && !ssl->has_key_share) {
+                // Server negotiated psk_ke; load the PSK if we have one.
+                tls_load_psk(ssl, dtls_options.psk);
+              }
+            }
             break;
 
           case SSL_HND_HELLO_VERIFY_REQUEST:
@@ -2583,8 +2637,8 @@ dtls_dissect_hnd_hello_ext_use_srtp(packet_info *pinfo, tvbuff_t *tvb,
      * (Being able to have the stream refer back to both the DTLS-SRTP and
      * SDP setup frame might be useful, though.)
      */
-    srtp_add_address(pinfo, PT_UDP, &pinfo->net_src, pinfo->srcport, pinfo->destport, "DTLS-SRTP", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);
-    srtp_add_address(pinfo, PT_UDP, &pinfo->net_dst, pinfo->destport, pinfo->srcport, "DTLS-SRTP", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);
+    srtp_add_address(pinfo, PT_UDP, PINFO_NET_SRC(pinfo), PINFO_SRCPORT(pinfo), PINFO_DESTPORT(pinfo), "DTLS-SRTP", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);
+    srtp_add_address(pinfo, PT_UDP, PINFO_NET_DST(pinfo), PINFO_DESTPORT(pinfo), PINFO_SRCPORT(pinfo), "DTLS-SRTP", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);
   }
   return offset;
 }
@@ -2710,7 +2764,7 @@ static void
 dtls_src_prompt(packet_info *pinfo, char *result)
 {
     SslPacketInfo* pi;
-    uint32_t srcport = pinfo->srcport;
+    uint32_t srcport = PINFO_SRCPORT(pinfo);
 
     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);
     if (pi != NULL)
@@ -2726,7 +2780,7 @@ dtls_src_value(packet_info *pinfo)
 
     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);
     if (pi == NULL)
-        return GUINT_TO_POINTER(pinfo->srcport);
+        return GUINT_TO_POINTER(PINFO_SRCPORT(pinfo));
 
     return GUINT_TO_POINTER(pi->srcport);
 }
@@ -2735,7 +2789,7 @@ static void
 dtls_dst_prompt(packet_info *pinfo, char *result)
 {
     SslPacketInfo* pi;
-    uint32_t destport = pinfo->destport;
+    uint32_t destport = PINFO_DESTPORT(pinfo);
 
     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);
     if (pi != NULL)
@@ -2751,7 +2805,7 @@ dtls_dst_value(packet_info *pinfo)
 
     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);
     if (pi == NULL)
-        return GUINT_TO_POINTER(pinfo->destport);
+        return GUINT_TO_POINTER(PINFO_DESTPORT(pinfo));
 
     return GUINT_TO_POINTER(pi->destport);
 }
@@ -2760,8 +2814,8 @@ static void
 dtls_both_prompt(packet_info *pinfo, char *result)
 {
     SslPacketInfo* pi;
-    uint32_t srcport = pinfo->srcport,
-            destport = pinfo->destport;
+    uint32_t srcport = PINFO_SRCPORT(pinfo),
+            destport = PINFO_DESTPORT(pinfo);
 
     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);
     if (pi != NULL)
@@ -3076,7 +3130,7 @@ proto_register_dtls(void)
   static build_valid_func dtls_da_both_values[2] = {dtls_src_value, dtls_dst_value};
   static decode_as_value_t dtls_da_values[3] = {{dtls_src_prompt, 1, dtls_da_src_values}, {dtls_dst_prompt, 1, dtls_da_dst_values}, {dtls_both_prompt, 2, dtls_da_both_values}};
   static decode_as_t dtls_da = {"dtls", "dtls.port", 3, 2, dtls_da_values, "UDP", "port(s) as",
-                               decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
+                               decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL, NULL, NULL };
 
   expert_module_t* expert_dtls;
 

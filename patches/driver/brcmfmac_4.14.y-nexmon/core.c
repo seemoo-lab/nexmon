@@ -19,6 +19,7 @@
 #include <linux/module.h>
 /* NEXMON */
 #include <linux/if_arp.h>
+#include <linux/version.h>
 #include <linux/netlink.h>
 #include <linux/inetdevice.h>
 #include <net/cfg80211.h>
@@ -61,7 +62,13 @@
 /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
 static struct sock *nl_sock = NULL;
-static struct net_device *ndev_global = NULL;
+/* ifindex of the primary interface used by legacy requests.  Storing an
+ * ifindex rather than a net_device pointer lets the receive path acquire a
+ * real device reference while holding RTNL, and therefore prevents detach
+ * from racing a firmware command. */
+static int nexmon_default_ifindex;
+
+static const struct net_device_ops brcmf_netdev_ops_pri;
 
 struct nexudp_header {
     char nex[3];
@@ -76,55 +83,198 @@ struct nexudp_ioctl_header {
     char payload[1];
 } __attribute__((packed));
 
+static inline void
+nexmon_nl_ack(struct sk_buff *in_skb, struct nlmsghdr *nlh, int err)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+    netlink_ack(in_skb, nlh, err, NULL);
+#else
+    netlink_ack(in_skb, nlh, err);
+#endif
+}
+
 static void
 nexmon_nl_ioctl_handler(struct sk_buff *skb)
 {
-    struct nlmsghdr *nlh = (struct nlmsghdr *) skb->data;
-    struct nexudp_ioctl_header *frame = (struct nexudp_ioctl_header *) nlmsg_data(nlh);
-    struct brcmf_if *ifp = netdev_priv(ndev_global);
+    const size_t header_len = offsetof(struct nexudp_ioctl_header, payload);
+    struct nlmsghdr *nlh;
+    struct nexudp_ioctl_header *frame = NULL;
+    struct net_device *ndev = NULL;
+    struct net_device *target_ndev = NULL;
+    struct brcmf_if *ifp;
+    struct brcmf_if *target_ifp;
     struct sk_buff *skb_out;
     struct nlmsghdr *nlh_tx;
+    size_t frame_len;
+    size_t payload_len;
+    size_t reply_len;
+    u32 portid;
+    u32 seq;
+    int ifindex;
+    int err;
 
-    brcmf_err("NEXMON: %s: Enter\n", __FUNCTION__);
+    if (!netlink_capable(skb, CAP_NET_ADMIN)) {
+        pr_err_ratelimited("brcmfmac: NEXMON: netlink request without CAP_NET_ADMIN\n");
+        return;
+    }
 
-    brcmf_err("NEXMON: %s: %08x %d %d\n", __FUNCTION__, *(int *) frame->nexudphdr.nex, nlmsg_len(nlh), skb->len);
+    if (skb->len < NLMSG_HDRLEN)
+        return;
+
+    if (skb_is_nonlinear(skb) && skb_linearize(skb))
+        return;
+
+    nlh = nlmsg_hdr(skb);
+    if (!nlmsg_ok(nlh, skb->len)) {
+        pr_err_ratelimited("brcmfmac: NEXMON: malformed netlink header\n");
+        return;
+    }
+
+    frame_len = nlmsg_len(nlh);
+    if (frame_len < header_len ||
+        frame_len > header_len + BRCMF_DCMD_MAXLEN) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid request length %zu\n",
+                           frame_len);
+        nexmon_nl_ack(skb, nlh, -EINVAL);
+        return;
+    }
+
+    frame = kmalloc(frame_len, GFP_KERNEL);
+    if (!frame) {
+        nexmon_nl_ack(skb, nlh, -ENOMEM);
+        return;
+    }
+    memcpy(frame, nlmsg_data(nlh), frame_len);
+
+    payload_len = frame_len - header_len;
+    portid = NETLINK_CB(skb).portid;
+    seq = nlh->nlmsg_seq;
 
     if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
-        brcmf_err("NEXMON: %s: invalid nexudp_ioctl_header\n", __FUNCTION__);
-        return;
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid nexudp_ioctl_header\n");
+        nexmon_nl_ack(skb, nlh, -EINVAL);
+        goto out_free;
     }
 
-    if (frame->nexudphdr.type != NEXUDP_IOCTL) {
-        brcmf_err("NEXMON: %s: invalid frame type\n", __FUNCTION__);
-        return;
+    if (frame->nexudphdr.type != NEXUDP_IOCTL || frame->set > 1) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid frame type\n");
+        nexmon_nl_ack(skb, nlh, -EINVAL);
+        goto out_free;
     }
 
-    if (ifp == NULL) {
-        brcmf_err("NEXMON: %s: ifp is NULL\n", __FUNCTION__);
-        return;
+    ifindex = frame->nexudphdr.securitycookie;
+    if (ifindex <= 0)
+        ifindex = READ_ONCE(nexmon_default_ifindex);
+    if (ifindex <= 0) {
+        pr_err_ratelimited("brcmfmac: NEXMON: no default interface, bus not ready\n");
+        nexmon_nl_ack(skb, nlh, -ENODEV);
+        goto out_free;
     }
+
+    rtnl_lock();
+    ndev = dev_get_by_index(&init_net, ifindex);
+    if (!ndev) {
+        rtnl_unlock();
+        pr_err_ratelimited("brcmfmac: NEXMON: interface index %d not found\n",
+                           ifindex);
+        nexmon_nl_ack(skb, nlh, -ENODEV);
+        goto out_free;
+    }
+
+    if (ndev->netdev_ops != &brcmf_netdev_ops_pri) {
+        rtnl_unlock();
+        pr_err_ratelimited("brcmfmac: NEXMON: interface index %d is not a brcmfmac device\n",
+                           ifindex);
+        nexmon_nl_ack(skb, nlh, -ENODEV);
+        goto out_put;
+    }
+
+    ifp = netdev_priv(ndev);
+
+    if (ifp == NULL || ifp->drvr == NULL || ifp->drvr->bus_if == NULL) {
+        rtnl_unlock();
+        pr_err_ratelimited("brcmfmac: NEXMON: interface torn down\n");
+        nexmon_nl_ack(skb, nlh, -ENODEV);
+        goto out_put;
+    }
+
+    if (ifp->drvr->bus_if->state != BRCMF_BUS_UP) {
+        rtnl_unlock();
+        pr_err_ratelimited("brcmfmac: NEXMON: bus not UP (state=%d), ignoring ioctl\n",
+                           ifp->drvr->bus_if->state);
+        nexmon_nl_ack(skb, nlh, -ENETDOWN);
+        goto out_put;
+    }
+
+    target_ifp = ifp;
+
+    /* Monitor and promiscuous mode commands and chip-global variables are directed to primary BSS */
+    if (frame->cmd == 108 /* WLC_SET_MONITOR */ || frame->cmd == 107 /* WLC_GET_MONITOR */ ||
+        frame->cmd == 10  /* WLC_SET_PROMISC */ || frame->cmd == 9   /* WLC_GET_PROMISC */ ||
+        frame->cmd == 30  /* WLC_SET_CHANNEL */ || frame->cmd == 29  /* WLC_GET_CHANNEL */ ||
+        frame->cmd == 262 /* WLC_GET_VAR */     || frame->cmd == 263 /* WLC_SET_VAR */) {
+        struct brcmf_if *pri_ifp = ifp->drvr ? ifp->drvr->iflist[0] : NULL;
+        if (pri_ifp && pri_ifp->ndev) {
+            target_ifp = pri_ifp;
+            target_ndev = pri_ifp->ndev;
+            dev_hold(target_ndev);
+        }
+    }
+    rtnl_unlock();
 
     if (frame->set) {
-        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_set, cmd: %d\n", __FUNCTION__, frame->cmd);
-        brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
+        err = brcmf_fil_cmd_data_set(target_ifp, frame->cmd, frame->payload,
+                                     payload_len);
+        if (err) {
+            brcmf_err("NEXMON: DCMD set %u failed: %d\n", frame->cmd, err);
+            nexmon_nl_ack(skb, nlh, err < 0 ? err : -err);
+            goto out_put;
+        }
 
-        skb_out = nlmsg_new(4, 0);
-        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, 4, 0);
-        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
+        skb_out = nlmsg_new(4, GFP_KERNEL);
+        if (!skb_out) {
+            nexmon_nl_ack(skb, nlh, -ENOMEM);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 4, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            nexmon_nl_ack(skb, nlh, -ENOMEM);
+            goto out_put;
+        }
         memcpy(nlmsg_data(nlh_tx), "ACK", 4);
-        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
+        nlmsg_unicast(nl_sock, skb_out, portid);
     } else {
-        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_get, cmd: %d\n", __FUNCTION__, frame->cmd);
-        brcmf_fil_cmd_data_get(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
+        err = brcmf_fil_cmd_data_get(target_ifp, frame->cmd, frame->payload,
+                                     payload_len);
+        if (err) {
+            brcmf_err("NEXMON: DCMD get %u failed: %d\n", frame->cmd, err);
+            nexmon_nl_ack(skb, nlh, err < 0 ? err : -err);
+            goto out_put;
+        }
 
-        skb_out = nlmsg_new(nlmsg_len(nlh), 0);
-        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, nlmsg_len(nlh), 0);
-        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
-        memcpy(nlmsg_data(nlh_tx), frame, nlmsg_len(nlh));
-        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
+        reply_len = frame_len;
+        skb_out = nlmsg_new(reply_len, GFP_KERNEL);
+        if (!skb_out) {
+            nexmon_nl_ack(skb, nlh, -ENOMEM);
+            goto out_put;
+        }
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, reply_len, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            nexmon_nl_ack(skb, nlh, -ENOMEM);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), frame, reply_len);
+        nlmsg_unicast(nl_sock, skb_out, portid);
     }
 
-    brcmf_err("NEXMON: %s: Exit\n", __FUNCTION__);
+out_put:
+    if (target_ndev)
+        dev_put(target_ndev);
+    dev_put(ndev);
+out_free:
+    kfree(frame);
 }
 
 
@@ -463,6 +613,8 @@ void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success)
 
 	if (type == ETH_P_PAE) {
 		atomic_dec(&ifp->pend_8021x_cnt);
+		/* Order the decrement before waitqueue_active() */
+		smp_mb__after_atomic();
 		if (waitqueue_active(&ifp->pend_8021x_wait))
 			wake_up(&ifp->pend_8021x_wait);
 	}
@@ -561,8 +713,6 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 		  ifp->mac_addr);
 	ndev = ifp->ndev;
 
-	/* NEXMON */
-	ndev_global = ndev;
 
 	/* set appropriate operations */
 	ndev->netdev_ops = &brcmf_netdev_ops_pri;
@@ -586,6 +736,10 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 		goto fail;
 	}
 
+	/* NEXMON: registration assigned a stable ifindex. */
+	if (!READ_ONCE(nexmon_default_ifindex))
+		WRITE_ONCE(nexmon_default_ifindex, ndev->ifindex);
+
 	ndev->priv_destructor = brcmf_cfg80211_free_netdev;
 	brcmf_dbg(INFO, "%s: Broadcom Dongle Host Driver\n", ndev->name);
 	return 0;
@@ -598,6 +752,9 @@ fail:
 
 static void brcmf_net_detach(struct net_device *ndev, bool rtnl_locked)
 {
+	if (ndev->ifindex == READ_ONCE(nexmon_default_ifindex))
+		WRITE_ONCE(nexmon_default_ifindex, 0);
+
 	if (ndev->reg_state == NETREG_REGISTERED) {
 		if (rtnl_locked)
 			unregister_netdevice(ndev);
@@ -1189,6 +1346,7 @@ void brcmf_detach(struct device *dev)
 		brcmf_p2p_detach(&drvr->config->p2p);
 
 	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
+	WRITE_ONCE(nexmon_default_ifindex, 0);
 
 	/* make sure primary interface removed last */
 	for (i = BRCMF_MAX_IFS-1; i > -1; i--)
@@ -1269,15 +1427,21 @@ static DECLARE_WORK(brcmf_driver_work, brcmf_driver_register);
 
 int __init brcmf_core_init(void)
 {
-	if (!schedule_work(&brcmf_driver_work))
-		return -EBUSY;
-
 	/* NEXMON netlink init */
 	cfg.input = nexmon_nl_ioctl_handler;
 	nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
 	if (!nl_sock) {
 		brcmf_err("NEXMON: %s: Error creating netlink socket\n", __FUNCTION__);
-		return -1;
+		return -ENOMEM;
+	}
+
+	if (!schedule_work(&brcmf_driver_work)) {
+		if (nl_sock) {
+			netlink_kernel_release(nl_sock);
+			nl_sock = NULL;
+		}
+		nl_sock = NULL;
+		return -EBUSY;
 	}
 
 	return 0;

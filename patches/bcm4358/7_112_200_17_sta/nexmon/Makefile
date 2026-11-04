@@ -1,4 +1,4 @@
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+-include $(NEXMON_ROOT)/patches/common/nexmon_lazy.mk
 FW_PATH=$(NEXMON_ROOT)/firmwares/bcm4358/7_112_200_17_sta
 include $(FW_PATH)/definitions.mk
 
@@ -107,7 +107,7 @@ fw_bcmdhd.bin: init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flash
 	@printf "\033[0;31m  APPLYING FLASHPATCHES\033[0m gen/flashpatches.mk => %s (details: log/flashpatches.log)\n" $@
 	$(Q)make -f gen/flashpatches.mk >>log/flashpatches.log 2>>log/flashpatches.log
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
-	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
+	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/patches.log
 
 ###################################################################
 # ucode compression related
@@ -117,8 +117,8 @@ ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43-unified/assembler $(NEXMON_ROOT)/buildtools/b43-unified/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif
@@ -131,7 +131,7 @@ endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
-	$(Q)cat $< | $(ZLIBFLATE) > $@
+	$(Q)$(ZLIBFLATE) < $< > $@
 
 src/ucode_compressed.c: gen/ucode_compressed.bin
 	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@

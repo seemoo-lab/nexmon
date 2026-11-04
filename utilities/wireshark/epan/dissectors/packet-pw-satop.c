@@ -55,9 +55,6 @@ static dissector_handle_t pw_padding_handle;
 static dissector_handle_t pw_satop_udp_handle;
 static dissector_handle_t pw_satop_mpls_handle;
 
-const char pwc_longname_pw_satop[] = "SAToP";
-static const char shortname[] = "SAToP";
-
 /* Preferences */
 static bool pref_has_rtp_header;
 static bool pref_heuristic_rtp_header = true;
@@ -115,7 +112,7 @@ void dissect_pw_satop(tvbuff_t * tvb_original
 		expert_add_info_format(pinfo, item, &ei_cw_packet_size_too_small,
 				       "PW packet size (%d) is too small to carry sensible information"
 				       ,(int)packet_size);
-		col_set_str(pinfo->cinfo, COL_PROTOCOL, shortname);
+		col_set_str(pinfo->cinfo, COL_PROTOCOL, "SAToP");
 		col_set_str(pinfo->cinfo, COL_INFO, "Malformed: PW packet is too small");
 		return;
 	}
@@ -268,7 +265,7 @@ void dissect_pw_satop(tvbuff_t * tvb_original
 	}
 
 	/* fill up columns*/
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, shortname);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "SAToP");
 	col_clear(pinfo->cinfo, COL_INFO);
 	if (properties & PWC_ANYOF_CW_BAD)
 	{
@@ -426,7 +423,7 @@ void dissect_pw_satop(tvbuff_t * tvb_original
 			tree2 = proto_item_add_subtree(item, ett_pw_satop);
 			{
 				tvbuff_t* tvb;
-				tvb = tvb_new_subset_length_caplen(tvb_original, PWC_SIZEOF_CW + payload_size, padding_size, -1);
+				tvb = tvb_new_subset_length(tvb_original, PWC_SIZEOF_CW + payload_size, padding_size);
 				call_dissector(pw_padding_handle, tvb, pinfo, tree2);
 			}
 		}
@@ -510,7 +507,7 @@ void proto_register_pw_satop(void)
 	module_t *pwsatop_module;
 	expert_module_t* expert_pwsatop;
 
-	proto = proto_register_protocol(pwc_longname_pw_satop, shortname, "pwsatopcw");
+	proto = proto_register_protocol("SAToP", "SAToP", "pwsatopcw");
 	proto_register_field_array(proto, hf, array_length(hf));
 	proto_register_subtree_array(ett_array, array_length(ett_array));
 	expert_pwsatop = expert_register_protocol(proto);
@@ -531,6 +528,7 @@ void proto_reg_handoff_pw_satop(void)
 	/* For Decode As */
 	dissector_add_for_decode_as("mpls.label", pw_satop_mpls_handle);
 	dissector_add_for_decode_as("mpls.pfn", pw_satop_mpls_handle);
+	dissector_add_for_decode_as("cesoeth.ecid", pw_satop_mpls_handle);
 	dissector_add_for_decode_as_with_preference("udp.port", pw_satop_udp_handle);
 }
 

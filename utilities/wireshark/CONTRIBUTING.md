@@ -38,9 +38,16 @@ You can set up a [build environment](https://www.wireshark.org/docs/wsdg_html_ch
 
 If you would like to contribute changes to Wireshark’s source code, you must create a [merge request](https://gitlab.com/wireshark/wireshark/-/merge_requests).
 Complete details on doing so can be found in the [Developer’s Guide](https://www.wireshark.org/docs/wsdg_html_chunked/ChSrcContribute.html) and on the [wiki](https://gitlab.com/wireshark/wireshark/-/wikis/Development/SubmittingPatches).
-When you submit a merge request, a series of automated tests will be run in order to ensure that compiles across different platforms and conforms to our coding guidelines.
+When you submit a merge request, a series of automated tests will be run in order to ensure that it compiles across different platforms and conforms to our coding guidelines.
 The change will also be manually reviewed by a core developer and will be merged when the change passes both automated and manual review.
 
 The Wireshark User’s Guide and Developer’s Guide are maintained in the [doc directory](https://gitlab.com/wireshark/wireshark/-/tree/master/doc) in the main repository.
 You don’t need a complete development environment to contribute to them, but you do need git and a text editor.
 Documentation updates must be made via a merge request similar to source code changes.
+
+## Commit messages and hooks
+
+- Use the repository commit template (which includes the "Assisted-by" trailer) with `git config commit.template .gitmessage`.
+- Run the shipped hooks from the dedicated path with `git config core.hooksPath tools/git_hooks` in this repository so they don’t interfere with other scripts in `tools/`.
+- To have new clones pick up those hooks automatically, create a global git template directory with stubs that exec the scripts in `tools/git_hooks/` and set `git config --global init.templateDir ~/.git-template`. For example, `~/.git-template/hooks/commit-msg` can `exec "$(git rev-parse --show-toplevel)"/tools/git_hooks/commit-msg "$@"`.
+- AI usage disclosure: Please declare AI assistance in commit messages and merge requests using the `Assisted-by: [tool(s)]` trailer.

@@ -23,8 +23,11 @@
 #include <epan/strutil.h>
 #include <epan/unit_strings.h>
 
+#include <wsutil/strtoi.h>
+
 #include "packet-btrfcomm.h"
 #include "packet-btsdp.h"
+#include "packet-etsi_card_app_toolkit.h"
 
 static int proto_bthfp;
 
@@ -204,6 +207,13 @@ enum reassemble_state_t {
     REASSEMBLE_DONE
 };
 
+/* Upper bound on the length of a reassembled message. V.250 and the
+ * HSP/HFP specifications don't limit the length of an AT command or
+ * response. This limit is arbitrary, well above any real command line;
+ * it keeps the offsets from overflowing and stops an unterminated stream
+ * from growing the same message without end. */
+#define MAX_REASSEMBLED_LENGTH  (64 * 1024)
+
 typedef struct _fragment_t {
     uint32_t                 interface_id;
     uint32_t                 adapter_id;
@@ -215,6 +225,7 @@ typedef struct _fragment_t {
     unsigned                 length;
     uint8_t                 *data;
     struct _fragment_t      *previous_fragment;
+    struct _fragment_t      *first_fragment;
 
     unsigned                 reassemble_start_offset;
     unsigned                 reassemble_end_offset;
@@ -511,33 +522,25 @@ static const value_string iphoneaccev_key_vals[] = {
 
 static const unit_name_string units_slash15 = { "/15", NULL };
 
-extern value_string_ext csd_data_rate_vals_ext;
-
 void proto_register_bthfp(void);
 void proto_reg_handoff_bthfp(void);
 
-static uint32_t get_uint_parameter(packet_info* pinfo, uint8_t *parameter_stream, int parameter_length)
+static uint32_t get_uint_parameter(const uint8_t *parameter_stream, int parameter_length)
 {
-    uint32_t     value;
-    char        *val;
+    uint32_t       value;
+    const uint8_t *unused;
 
-    val = (char *) wmem_alloc(pinfo->pool, parameter_length + 1);
-    memcpy(val, parameter_stream, parameter_length);
-    val[parameter_length] = '\0';
-    value = (uint32_t) g_ascii_strtoull(val, NULL, 10);
+    ws_buftou32(parameter_stream, parameter_length, &unused, &value);
 
     return value;
 }
 
-static uint32_t get_uint_hex_parameter(packet_info* pinfo, uint8_t *parameter_stream, int parameter_length)
+static uint32_t get_uint_hex_parameter(const uint8_t *parameter_stream, int parameter_length)
 {
-    uint32_t     value;
-    char        *val;
+    uint32_t       value;
+    const uint8_t *unused;
 
-    val = (char *) wmem_alloc(pinfo->pool, parameter_length + 1);
-    memcpy(val, parameter_stream, parameter_length);
-    val[parameter_length] = '\0';
-    value = (uint32_t) g_ascii_strtoull(val, NULL, 16);
+    ws_hexbuftou32(parameter_stream, parameter_length, &unused, &value);
 
     return value;
 }
@@ -781,7 +784,7 @@ dissect_brsf_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     if (role == ROLE_HS) {
         static int * const hs[] = {
@@ -846,7 +849,7 @@ dissect_vgs_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgs, tvb, offset, parameter_length, value);
 
@@ -872,7 +875,7 @@ dissect_vgm_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_vgm, tvb, offset, parameter_length, value);
 
@@ -898,7 +901,7 @@ dissect_nrec_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_nrec, tvb, offset, parameter_length, value);
 
@@ -924,7 +927,7 @@ dissect_bvra_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_bvra_vrect, tvb, offset, parameter_length, value);
 
@@ -949,7 +952,7 @@ dissect_bcs_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_bcs_codec, tvb, offset, parameter_length, value);
 
@@ -972,7 +975,7 @@ dissect_bac_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         return false;
     }
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_bac_codec, tvb, offset, parameter_length, value);
 
@@ -994,7 +997,7 @@ dissect_bind_parameter(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 /* TODO Need to implement request-response tracking to recognise answer to AT+BIND? vs unsolicited */
     if (parameter_number < 20) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         proto_tree_add_uint(tree, hf_bind_parameter, tvb, offset,
                 parameter_length, value);
@@ -1016,7 +1019,7 @@ dissect_aplefm_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     if (!check_aplefm(role, type)) return false;
 
     if (parameter_number == 0) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         pitem = proto_tree_add_uint(tree, hf_aplefm_state, tvb, offset,
                 parameter_length, value);
@@ -1040,7 +1043,7 @@ dissect_aplsiri_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     if (!check_aplsiri(role, type)) return false;
 
     if (parameter_number == 0) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         pitem = proto_tree_add_uint(tree, hf_aplsiri_state, tvb, offset,
                 parameter_length, value);
@@ -1064,12 +1067,12 @@ dissect_iphoneaccev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     if (!check_iphoneaccev(role, type)) return false;
 
     if (parameter_number == 0) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         proto_tree_add_uint(tree, hf_iphoneaccev_count, tvb, offset,
                 parameter_length, value);
     } else if (parameter_number % 2 == 1) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         pitem = proto_tree_add_uint(tree, hf_iphoneaccev_key, tvb, offset,
                 parameter_length, value);
@@ -1078,7 +1081,7 @@ dissect_iphoneaccev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
             expert_add_info(pinfo, pitem, &ei_iphoneaccev_key_out_of_range);
         }
     } else {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         proto_tree_add_uint(tree, hf_iphoneaccev_value, tvb, offset,
                 parameter_length, value);
@@ -1107,13 +1110,13 @@ dissect_xapl_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             }
             ptree = proto_item_add_subtree(pitem, ett_bthfp_xapl_accessory_info);
 
-            value = get_uint_hex_parameter(pinfo, parameter_stream + (4 + 1) * 0, 4);
+            value = get_uint_hex_parameter(parameter_stream + (4 + 1) * 0, 4);
             proto_tree_add_uint(ptree, hf_xapl_accessory_info_vendor_id, tvb, offset, 4, value);
 
-            value = get_uint_hex_parameter(pinfo, parameter_stream + (4 + 1) * 1, 4);
+            value = get_uint_hex_parameter(parameter_stream + (4 + 1) * 1, 4);
             proto_tree_add_uint(ptree, hf_xapl_accessory_info_product_id, tvb, offset + (4 + 1) * 1, 4, value);
 
-            value = get_uint_hex_parameter(pinfo, parameter_stream + (4 + 1) * 2, 4);
+            value = get_uint_hex_parameter(parameter_stream + (4 + 1) * 2, 4);
             proto_tree_add_uint(ptree, hf_xapl_accessory_info_version, tvb, offset + (4 + 1) * 2, 4, value);
         } else {
             proto_tree_add_item(tree, hf_xapl_host_info, tvb, offset, parameter_length, ENC_ASCII);
@@ -1129,7 +1132,7 @@ dissect_xapl_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             NULL
         };
 
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         pitem = proto_tree_add_bitmask_value_with_flags(tree, tvb, offset, hf_xapl_features, ett_bthfp_xapl_features, hfx, value, BMT_NO_APPEND);
 
@@ -1151,7 +1154,7 @@ dissect_biev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (!check_biev(role, type)) return false;
     if (parameter_number == 0) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 
         pitem = proto_tree_add_uint(tree, hf_biev_assigned_number, tvb, offset,
                 parameter_length, value);
@@ -1162,7 +1165,7 @@ dissect_biev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             expert_add_info(pinfo, pitem, &ei_biev_assigned_number_no);
         }
     } else if (parameter_number == 1) {
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
 /* TODO: Decode assigned numbers - assigned_number=1 */
         /*pitem =*/ proto_tree_add_uint(tree, hf_biev_value, tvb, offset,
                 parameter_length, value);
@@ -1193,7 +1196,7 @@ dissect_bsir_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_bsir, tvb, offset, parameter_length, value);
 
@@ -1219,7 +1222,7 @@ dissect_btrh_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_btrh, tvb, offset, parameter_length, value);
 
@@ -1246,7 +1249,7 @@ dissect_binp_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (role == ROLE_HS && type == TYPE_ACTION) {
         if (parameter_number == 0) {
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
 
             pitem = proto_tree_add_uint(tree, hf_binp_request, tvb, offset,
                     parameter_length, value);
@@ -1273,7 +1276,7 @@ dissect_bia_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     if (!((role == ROLE_HS && type == TYPE_ACTION))) return false;
     if (parameter_number > 19) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     pitem = proto_tree_add_uint(tree, hf_bia_indicator[parameter_number], tvb,
             offset, parameter_length, value);
@@ -1308,7 +1311,7 @@ dissect_chld_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     if (!check_chld(role, type)) return false;
 
     if (role == ROLE_HS && type == TYPE_ACTION && parameter_number == 0) {
-        value = get_uint_parameter(pinfo, parameter_stream, 1);
+        value = get_uint_parameter(parameter_stream, 1);
 
         if (parameter_length >= 2) {
             if (tvb_get_uint8(tvb, offset + 1) == 'x') {
@@ -1349,15 +1352,15 @@ dissect_ccwa_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (role == ROLE_HS) switch (parameter_number) {
         case 0:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_ccwa_show_result_code, tvb, offset, parameter_length, value);
             break;
         case 1:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_ccwa_mode, tvb, offset, parameter_length, value);
             break;
         case 2:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_ccwa_class, tvb, offset, parameter_length, value);
             break;
     }
@@ -1368,31 +1371,31 @@ dissect_ccwa_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             proto_tree_add_item(tree, hf_at_number, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 1:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             pitem = proto_tree_add_uint(tree, hf_at_type, tvb, offset, parameter_length, value);
             if (value < 128 || value > 175)
                 expert_add_info(pinfo, pitem, &ei_at_type);
             break;
         case 2:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_ccwa_class, tvb, offset, parameter_length, value);
             break;
         case 3:
             proto_tree_add_item(tree, hf_at_alpha, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 4:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_at_cli_validity, tvb, offset, parameter_length, value);
             break;
         case 5:
             proto_tree_add_item(tree, hf_at_subaddress, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 6:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_at_subaddress_type, tvb, offset, parameter_length, value);
             break;
         case 7:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_at_priority, tvb, offset, parameter_length, value);
             break;
     }
@@ -1414,7 +1417,7 @@ dissect_cmer_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 4) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
 
     switch (parameter_number) {
         case 0:
@@ -1465,11 +1468,11 @@ dissect_clip_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (role == ROLE_HS && type == TYPE_ACTION) switch (parameter_number) {
         case 0:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_clip_mode, tvb, offset, parameter_length, value);
             break;
         case 1:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_clip_status, tvb, offset, parameter_length, value);
             break;
     } else {
@@ -1478,7 +1481,7 @@ dissect_clip_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             proto_tree_add_item(tree, hf_at_number, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 1:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             pitem = proto_tree_add_uint(tree, hf_at_type, tvb, offset, parameter_length, value);
             if (value < 128 || value > 175)
                 expert_add_info(pinfo, pitem, &ei_at_type);
@@ -1487,14 +1490,14 @@ dissect_clip_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             proto_tree_add_item(tree, hf_at_subaddress, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 3:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_at_subaddress_type, tvb, offset, parameter_length, value);
             break;
         case 4:
             proto_tree_add_item(tree, hf_at_alpha, tvb, offset, parameter_length, ENC_ASCII);
             break;
         case 5:
-            value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+            value = get_uint_parameter(parameter_stream, parameter_length);
             proto_tree_add_uint(tree, hf_at_cli_validity, tvb, offset, parameter_length, value);
             break;
         }
@@ -1504,7 +1507,7 @@ dissect_clip_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 }
 
 static bool
-dissect_cmee_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+dissect_cmee_parameter(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
         int offset, int role, uint16_t type, uint8_t *parameter_stream,
         unsigned parameter_number, int parameter_length, void **data _U_)
 {
@@ -1516,14 +1519,14 @@ dissect_cmee_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
     proto_tree_add_uint(tree, hf_cmee, tvb, offset, parameter_length, value);
 
     return true;
 }
 
 static bool
-dissect_cops_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+dissect_cops_parameter(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
         int offset, int role, uint16_t type, uint8_t *parameter_stream,
         unsigned parameter_number, int parameter_length, void **data _U_)
 {
@@ -1538,18 +1541,18 @@ dissect_cops_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     switch (parameter_number) {
     case 0:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_cops_mode, tvb, offset, parameter_length, value);
         break;
     case 1:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_cops_format, tvb, offset, parameter_length, value);
         break;
     case 2:
         proto_tree_add_item(tree, hf_cops_operator, tvb, offset, parameter_length, ENC_ASCII);
         break;
     case 3:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_cops_act, tvb, offset, parameter_length, value);
         break;
     }
@@ -1574,30 +1577,30 @@ dissect_clcc_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     switch (parameter_number) {
     case 0:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_clcc_id, tvb, offset, parameter_length, value);
         break;
     case 1:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_clcc_dir, tvb, offset, parameter_length, value);
         break;
     case 2:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_clcc_stat, tvb, offset, parameter_length, value);
         break;
     case 3:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_clcc_mode, tvb, offset, parameter_length, value);
         break;
     case 4:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_clcc_mpty, tvb, offset, parameter_length, value);
         break;
     case 5:
         proto_tree_add_item(tree, hf_at_number, tvb, offset, parameter_length, ENC_ASCII);
         break;
     case 6:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         pitem = proto_tree_add_uint(tree, hf_at_type, tvb, offset, parameter_length, value);
         if (value < 128 || value > 175)
             expert_add_info(pinfo, pitem, &ei_at_type);
@@ -1606,7 +1609,7 @@ dissect_clcc_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         proto_tree_add_item(tree, hf_at_alpha, tvb, offset, parameter_length, ENC_ASCII);
         break;
     case 8:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_at_priority, tvb, offset, parameter_length, value);
         break;
     }
@@ -1616,7 +1619,7 @@ dissect_clcc_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 
 static bool
-dissect_cme_error_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
+dissect_cme_error_parameter(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
         int offset, int role, uint16_t type, uint8_t *parameter_stream,
         unsigned parameter_number, int parameter_length, void **data _U_)
 {
@@ -1628,7 +1631,7 @@ dissect_cme_error_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     if (parameter_number > 0) return false;
 
-    value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+    value = get_uint_parameter(parameter_stream, parameter_length);
     proto_tree_add_uint(tree, hf_cme_error, tvb, offset, parameter_length, value);
 
     return true;
@@ -1655,25 +1658,25 @@ dissect_cnum_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         proto_tree_add_item(tree, hf_at_number, tvb, offset, parameter_length, ENC_ASCII);
         break;
     case 2:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         pitem = proto_tree_add_uint(tree, hf_at_type, tvb, offset, parameter_length, value);
         if (value < 128 || value > 175)
             expert_add_info(pinfo, pitem, &ei_at_type);
         break;
     case 3:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         pitem = proto_tree_add_uint(tree, hf_cnum_speed, tvb, offset, parameter_length, value);
         if (parameter_length > 0)
             expert_add_info(pinfo, pitem, &ei_parameter_blank);
         break;
     case 4:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         pitem = proto_tree_add_uint(tree, hf_cnum_service, tvb, offset, parameter_length, value);
         if (value > 5)
             expert_add_info(pinfo, pitem, &ei_cnum_service);
         break;
     case 5:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         pitem = proto_tree_add_uint(tree, hf_cnum_itc, tvb, offset, parameter_length, value);
         if (value > 1)
             expert_add_info(pinfo, pitem, &ei_cnum_itc);
@@ -1701,7 +1704,7 @@ dissect_vts_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             expert_add_info(pinfo, pitem, &ei_vts_dtmf);
         break;
     case 1:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_vts_duration, tvb, offset, parameter_length, value);
         break;
     }
@@ -1722,7 +1725,7 @@ dissect_ciev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     switch (parameter_number) {
     case 0:
-        value = get_uint_parameter(pinfo, parameter_stream, parameter_length);
+        value = get_uint_parameter(parameter_stream, parameter_length);
         proto_tree_add_uint(tree, hf_ciev_indicator_index, tvb, offset, parameter_length, value);
         *data = wmem_alloc(pinfo->pool, sizeof(unsigned));
         *((unsigned *) *data) = value;
@@ -1742,7 +1745,7 @@ dissect_ciev_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 /* TODO: Some commands need to save request command type (request with TYPE_READ vs TYPE_TEST, etc.)
          to properly dissect response parameters.
-         Some commands can use TYPE_TEST respose to properly dissect parameters,
+         Some commands can use TYPE_TEST response to properly dissect parameters,
          for example: AT+CIND=?, AT+CIND? */
 static const at_cmd_t at_cmds[] = {
     /* Vendor specific: Apple */
@@ -1799,8 +1802,8 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_tree      *parameters_item = NULL;
     proto_item      *parameters_tree = NULL;
     uint8_t         *col_str = NULL;
-    uint8_t         *at_stream;
-    uint8_t         *at_command = NULL;
+    char            *at_stream;
+    char            *at_command = NULL;
     int              i_char = 0;
     unsigned         i_char_fix = 0;
     int              length;
@@ -1826,8 +1829,8 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         col_str[length] = '\0';
     }
 
-    at_stream = (uint8_t *) wmem_alloc(pinfo->pool, length + 1);
-    tvb_memcpy(tvb, at_stream, offset, length);
+    at_stream = (char *) wmem_alloc(pinfo->pool, length + 1);
+    tvb_memcpy(tvb, (uint8_t*)at_stream, offset, length);
     at_stream[length] = '\0';
 
     while (at_stream[i_char]) {
@@ -1839,7 +1842,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         i_char += 1;
     }
 
-    if (!command_number) col_append_str(pinfo->cinfo, COL_INFO, col_str);
+    if (!command_number) col_append_str(pinfo->cinfo, COL_INFO, (const char*)col_str);
 
     if (role == ROLE_HS) {
         if (command_number) {
@@ -2019,7 +2022,7 @@ dissect_at_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                 if (type == TYPE_ACTION || type == TYPE_RESPONSE) {
                     if (i_at_cmd && (i_at_cmd->dissect_parameter != NULL &&
                             !i_at_cmd->dissect_parameter(tvb, pinfo, parameters_tree, offset, role,
-                            type, &at_command[i_char], parameter_number, parameter_length, &data) )) {
+                            type, (uint8_t*)&at_command[i_char], parameter_number, parameter_length, &data) )) {
                         pitem = proto_tree_add_item(parameters_tree,
                                 hf_unknown_parameter, tvb, offset,
                                 parameter_length, ENC_ASCII);
@@ -2249,6 +2252,12 @@ dissect_bthfp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
             previous_fragment = NULL;
         }
 
+        if (previous_fragment &&
+                (uint64_t)previous_fragment->idx + previous_fragment->length + tvb_reported_length(tvb) > MAX_REASSEMBLED_LENGTH) {
+            /* Too long; give up on the previous message and start a new one */
+            previous_fragment = NULL;
+        }
+
         frame_number = pinfo->num;
 
         key[0].length = 1;
@@ -2277,6 +2286,7 @@ dissect_bthfp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         fragment->length            = tvb_reported_length(tvb);
         fragment->data              = (uint8_t *) wmem_alloc(wmem_file_scope(), fragment->length);
         fragment->previous_fragment = previous_fragment;
+        fragment->first_fragment    = (fragment->idx > 0) ? previous_fragment->first_fragment : fragment;
         tvb_memcpy(tvb, fragment->data, offset, fragment->length);
 
         wmem_tree_insert32_array(fragments, key, fragment);
@@ -2325,10 +2335,7 @@ dissect_bthfp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
                     fragment->chandle == chandle &&
                     fragment->dlci == dlci &&
                     fragment->role == role) {
-                i_fragment = fragment;
-                while (i_fragment && i_fragment->idx > 0) {
-                    i_fragment = i_fragment->previous_fragment;
-                }
+                i_fragment = fragment->first_fragment;
 
                 if (i_length + 1 == length &&
                         role == ROLE_HS &&

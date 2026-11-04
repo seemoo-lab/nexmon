@@ -11,6 +11,7 @@
 #include "expert_info_model.h"
 
 #include "file.h"
+#include <epan/expert.h>
 #include <epan/proto.h>
 
 ExpertPacketItem::ExpertPacketItem(const expert_info_t& expert_info, column_info *cinfo, ExpertPacketItem* parent) :
@@ -239,7 +240,7 @@ Qt::ItemFlags ExpertInfoModel::flags(const QModelIndex &index) const
 
 QVariant ExpertInfoModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || (role != Qt::DisplayRole && role != Qt::ToolTipRole))
+    if (!index.isValid())
         return QVariant();
 
     ExpertPacketItem* item = static_cast<ExpertPacketItem*>(index.internalPointer());
@@ -250,6 +251,53 @@ QVariant ExpertInfoModel::data(const QModelIndex &index, int role) const
     {
         QString filterName = proto_registrar_get_abbrev(item->hfId());
         return filterName;
+    }
+    else if (role == Qt::AccessibleDescriptionRole)
+    {
+        switch ((enum ExpertColumn)index.column()) {
+        case colSeverity:
+            return tr("Severity: %1").arg(val_to_str_const(item->severity(), expert_severity_vals, "Unknown"));
+        case colSummary:
+            if (index.parent().isValid())
+            {
+                if (item->severity() == PI_COMMENT)
+                    return tr("Summary: %1").arg(item->summary().simplified());
+                if (group_by_summary_)
+                    return tr("Summary: %1").arg(item->colInfo().simplified());
+
+                return tr("Summary: %1").arg(item->summary().simplified());
+            }
+            else
+            {
+                if (group_by_summary_)
+                {
+                    if (item->severity() == PI_COMMENT)
+                        return tr("Summary: Packet comments listed below.");
+                    if (item->hfId() != -1) {
+                        return tr("Summary: %1").arg(proto_registrar_get_name(item->hfId()));
+                    } else {
+                        return tr("Summary: %1").arg(item->summary().simplified());
+                    }
+                }
+            }
+            return QVariant();
+        case colGroup:
+            return tr("Group: %1").arg(val_to_str_const(item->group(), expert_group_vals, "Unknown"));
+        case colProtocol:
+            return tr("Protocol: %1").arg(item->protocol());
+        case colCount:
+            if (!index.parent().isValid())
+            {
+                return tr("Count: %1").arg(item->childCount());
+            }
+            break;
+        case colPacket:
+            return tr("Packet: %1").arg(item->packetNum());
+        case colHf:
+            return tr("Header Field: %1").arg(item->hfId());
+        default:
+            break;
+        }
     }
     else if (role == Qt::DisplayRole)
     {

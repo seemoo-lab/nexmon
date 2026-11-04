@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # Verifies whether commit messages adhere to the standards.
 # Checks the author name and email and invokes the tools/commit-msg script.
-# Copy this into .git/hooks/post-commit
+# Preferred setup: run tools/setup-dev.sh (or tools/setup-dev.ps1 on Windows) to
+# configure core.hooksPath=tools/git_hooks and commit.template=.gitmessage.
 #
 # Copyright (c) 2018 Peter Wu <peter@lekensteyn.nl>
 #
@@ -11,17 +12,15 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from __future__ import print_function
 
 import argparse
 import difflib
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.request
-import re
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('commits', nargs='*', default=['HEAD'],
@@ -31,15 +30,31 @@ parser.add_argument('--commitmsg', help='commit-msg check', action='store')
 
 def print_git_user_instructions():
     print('To configure your name and email for git, run:')
-    print('')
+    print()
     print('  git config --global user.name "Your Name"')
     print('  git config --global user.email "you@example.com"')
-    print('')
+    print()
     print('After that update the author of your latest commit with:')
-    print('')
+    print()
     print('  git commit --amend --reset-author --no-edit')
-    print('')
+    print()
 
+def print_standards():
+    print('''
+Please rewrite your commit message to our standards, matching this format:
+
+    component: a very brief summary of the change
+
+    A commit message should start with a brief summary, followed by a single
+    blank line and an optional longer description. If the change is specific to
+    a single protocol, start the summary line with the abbreviated name of the
+    protocol and a colon.
+
+    Use paragraphs to improve readability. Limit each line to 80 characters.
+
+    If applicable, finish with a trailer about AI involvement, in the form of
+    Assisted-by: [tool(s)]
+''')
 
 def verify_name(name):
     name = name.lower().strip()
@@ -49,7 +64,7 @@ def verify_name(name):
     # Warn about names without spaces. Sometimes it is a mistake where the
     # developer accidentally committed using the system username.
     if ' ' not in name:
-        print("WARNING: name '%s' does not contain a space." % (name,))
+        print(f"WARNING: name '{name}' does not contain a space.")
         print_git_user_instructions()
     return True
 
@@ -57,7 +72,7 @@ def verify_name(name):
 def verify_email(email):
     email = email.lower().strip()
     try:
-        user, host = email.split('@')
+        _, host = email.split('@')
     except ValueError:
         # Lacks a '@' (e.g. a plain domain or "foo[AT]example.com")
         return False
@@ -81,10 +96,7 @@ def verify_email(email):
         return False
 
     # 'peter-ubuntu32.(none)'
-    if '(none)' in host:
-        return False
-
-    return True
+    return '(none)' not in host
 
 
 def tools_dir():
@@ -115,8 +127,9 @@ def verify_body(body):
         cut_index = len(body) - 1
     body = body[0:cut_index + 1]
 
-    bodynocomments = re.sub('^#.*$', '', body, flags=re.MULTILINE)
-    old_lines = bodynocomments.splitlines(True)
+    # XXX Should depend on core.commentChar. Might use 'git stripspace -s' instead?
+    body = re.sub('^#.*\n?', '', body, flags=re.MULTILINE)
+    old_lines = body.splitlines(True)
     is_good = True
     if len(old_lines) >= 2 and old_lines[1].strip():
         print('ERROR: missing blank line after the first subject line.')
@@ -124,23 +137,11 @@ def verify_body(body):
     cleaned_subject = extract_subject(old_lines[0])
     if len(cleaned_subject) > 80:
         # Note that this check is also invoked by the commit-msg hook.
-        print("Warning: the subject line '%s' is longer than 80 characters." % (cleaned_subject,))
+        print(f"Warning: the subject line '{cleaned_subject}' is longer than 80 characters.")
         is_good = False
     if not is_good:
-        print('''
-Please rewrite your commit message to our standards, matching this format:
-
-    component: a very brief summary of the change
-
-    A commit message should start with a brief summary, followed by a single
-    blank line and an optional longer description. If the change is specific to
-    a single protocol, start the summary line with the abbreviated name of the
-    protocol and a colon.
-
-    Use paragraphs to improve readability. Limit each line to 80 characters.
-
-''')
-    if any(line.startswith('Bug:') or line.startswith('Ping-Bug:') for line in old_lines):
+        print_standards()
+    if any(line.startswith(('Bug:', 'Ping-Bug:')) for line in old_lines):
         sys.stderr.write('''
 To close an issue, use "Closes #1234" or "Fixes #1234" instead of "Bug: 1234".
 To reference an issue, use "related to #1234" instead of "Ping-Bug: 1234". See
@@ -157,26 +158,35 @@ for details.
     cp_line = '\n(cherry-picked from commit'
     body = body.replace('\n' + cp_line, cp_line)
 
+    # Some editors (e.g. gitk) add a trailing newline, regardless if it exists.
+    # Reduce any number of newlines at the end of the body to a single newline.
+    body = body.rstrip('\n') + '\n'
+
     try:
         cmd = ['git', 'stripspace']
         newbody = subprocess.check_output(cmd, input=body, universal_newlines=True)
     except OSError as ex:
-        print('Warning: unable to invoke git stripspace: %s' % (ex,))
+        print(f'Warning: unable to invoke git stripspace: {ex}')
         return is_good
-    if newbody != body:
+    if newbody and newbody != body:
         new_lines = newbody.splitlines(True)
         diff = difflib.unified_diff(old_lines, new_lines,
                                     fromfile='OLD/.git/COMMIT_EDITMSG',
                                     tofile='NEW/.git/COMMIT_EDITMSG')
         # Clearly mark trailing whitespace (GNU patch supports such comments).
         diff = [
-            '# NOTE: trailing space on the next line\n%s' % (line,)
+            f'# NOTE: trailing space on the next line\n{line}'
             if len(line) > 2 and line[-2].isspace() else line
             for line in diff
         ]
         print('The commit message does not follow our standards.')
+        print_standards()
+        print('Commit message:')
+        print(body.splitlines(True))
+        print('After git stripspace:')
+        print(newbody.splitlines(True))
         print('Please rewrite it (there are likely whitespace issues):')
-        print('')
+        print()
         print(''.join(diff))
         return False
     return is_good
@@ -195,7 +205,7 @@ def verify_merge_request():
     }
     m_r_iid = os.getenv('CI_MERGE_REQUEST_IID')
     if project_id is None or m_r_iid is None:
-        print("This doesn't appear to be a merge request. CI_MERGE_REQUEST_PROJECT_ID={}, CI_MERGE_REQUEST_IID={}".format(project_id, m_r_iid))
+        print(f"This doesn't appear to be a merge request. CI_MERGE_REQUEST_PROJECT_ID={project_id}, CI_MERGE_REQUEST_IID={m_r_iid}")
         return True
 
     m_r_sb_protected = os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_PROTECTED')
@@ -206,7 +216,7 @@ have to close this merge request and push from a different branch.\n
 ''')
         # Assume that the "Allow commits" test is about to fail.
 
-    m_r_url = '{}/projects/{}/merge_requests/{}'.format(gitlab_api_pfx, project_id, m_r_iid)
+    m_r_url = f'{gitlab_api_pfx}/projects/{project_id}/merge_requests/{m_r_iid}'
     req = urllib.request.Request(m_r_url)
     # print('req', repr(req), m_r_url)
     with urllib.request.urlopen(req) as resp:
@@ -237,8 +247,8 @@ def main():
             try:
                 with open(args.commitmsg) as f:
                     return 0 if verify_body(f.read()) else 1
-            except Exception:
-                print("Couldn't verify body of message from file '", + args.commitmsg + "'")
+            except RuntimeError:
+                print("Couldn't verify body of message from file '" + args.commitmsg + "'")
                 return 1
 
 
@@ -259,15 +269,15 @@ def main():
         # being validated. If called from a git hook (without .py extension), try to
         # remain silent unless there are issues.
         if __file__.endswith('.py'):
-            print('Checking commit: %s %s' % (abbrev, subject))
+            print(f'Checking commit: {abbrev} {subject}')
 
         if not verify_name(author_name):
-            print('Disallowed author name: {}'.format(author_name))
+            print(f'Disallowed author name: {author_name}')
             exit_code = 1
             bad_git_author = True
 
         if not verify_email(author_email):
-            print('Disallowed author email address: {}'.format(author_email))
+            print(f'Disallowed author email address: {author_email}')
             exit_code = 1
             bad_git_author = True
 
@@ -287,7 +297,7 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except subprocess.CalledProcessError as ex:
-        print('\n%s' % ex)
+        print(f'\n{ex}')
         sys.exit(ex.returncode)
     except KeyboardInterrupt:
         sys.exit(130)

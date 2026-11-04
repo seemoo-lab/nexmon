@@ -15,6 +15,8 @@
  */
 
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-mtp2"
+#include <wireshark.h>
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
@@ -232,11 +234,6 @@ start_dissect_bitstream_packet: 2120
  * to identify and solve problems regarding bitstream parsing*/
 /*#define MTP2_BITSTREAM_DEBUG    1*/
 
-#ifdef MTP2_BITSTREAM_DEBUG
-#define WS_LOG_DOMAIN "packet-mtp2"
-#include <wireshark.h>
-#endif
-
 static void
 dissect_mtp2_header(tvbuff_t *su_tvb, packet_info *pinfo, proto_item *mtp2_tree, bool use_extended_sequence_numbers, bool validate_crc, uint32_t *li)
 {
@@ -319,7 +316,7 @@ mtp2_decode_crc16(tvbuff_t *tvb, proto_tree *fh_tree, packet_info *pinfo)
   /*
    * Do we have the entire packet, and does it include a 2-byte FCS?
    */
-  len = tvb_reported_length_remaining(tvb, proto_offset);
+  len = tvb_captured_length_remaining(tvb, proto_offset);
   reported_len = tvb_reported_length_remaining(tvb, proto_offset);
   if (reported_len < 2 || len < 0) {
     /*
@@ -338,9 +335,7 @@ mtp2_decode_crc16(tvbuff_t *tvb, proto_tree *fh_tree, packet_info *pinfo)
      * length.
      */
     reported_len -= 2;
-    if (len > reported_len)
-      len = reported_len;
-    next_tvb = tvb_new_subset_length_caplen(tvb, proto_offset, len, reported_len);
+    next_tvb = tvb_new_subset_length(tvb, proto_offset, reported_len);
   } else {
     /*
      * We have the entire packet, and it includes a 2-byte FCS.
@@ -348,7 +343,7 @@ mtp2_decode_crc16(tvbuff_t *tvb, proto_tree *fh_tree, packet_info *pinfo)
      */
     len -= 2;
     reported_len -= 2;
-    next_tvb = tvb_new_subset_length_caplen(tvb, proto_offset, len, reported_len);
+    next_tvb = tvb_new_subset_length(tvb, proto_offset, reported_len);
 
     /*
      * Compute the FCS and put it into the tree.
@@ -410,8 +405,7 @@ dissect_mtp2_lssu(tvbuff_t *su_tvb, packet_info *pinfo, proto_item *mtp2_tree,
     sf_extra_offset = SF_EXTRA_OFFSET;
   }
 
-  proto_tree_add_item(mtp2_tree, hf_mtp2_sf, su_tvb, sf_offset, SF_LENGTH, ENC_LITTLE_ENDIAN);
-  sf = tvb_get_uint8(su_tvb, SF_OFFSET);
+  proto_tree_add_item_ret_uint8(mtp2_tree, hf_mtp2_sf, su_tvb, sf_offset, SF_LENGTH, ENC_LITTLE_ENDIAN, &sf);
 
   /*  If the LI is 2 then there is an extra octet following the standard SF
    *  field but it is not defined what this octet is.
@@ -625,7 +619,7 @@ dissect_mtp2_tvb(tvbuff_t* tvb, packet_info* pinfo, mtp2_mtp2_flag_search_t back
                 *found_data_buff_byte = NULL,                   /* buffer to store the found data_buff bytes till they are assembled to a tvb */
                 offset = 0,                                     /* offset of the tvb, needed to get the appropriate byte */
                 data_len = 0,                                   /* the length of the array where the data_buff's are stored */
-                flag_beginning_offset_for_align_check = 0;      /* this stores the offset of the fist bit in a flag */
+                flag_beginning_offset_for_align_check = 0;      /* this stores the offset of the first bit in a flag */
 #ifdef MTP2_BITSTREAM_DEBUG
   bool          zero_skip0 = 0,                                 /* needed for debug output */
                 zero_skip1 = 0,                                 /* needed for debug output */

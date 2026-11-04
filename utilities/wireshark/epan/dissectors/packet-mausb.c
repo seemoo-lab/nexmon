@@ -283,12 +283,12 @@ enum mausb_pkt_type {
     VendorSpecificResp    ,
 
     /* Control Packets */
-    TransferSetupReq = 0x00 | MAUSB_PKT_TYPE_CTRL,
+    TransferSetupReq = MAUSB_PKT_TYPE_CTRL,
     TransferSetupResp     ,
     TransferTearDownConf  ,
 
     /* Data Packets */
-    TransferReq = 0x00 | MAUSB_PKT_TYPE_DATA,
+    TransferReq = MAUSB_PKT_TYPE_DATA,
     TransferResp          ,
     TransferAck           ,
     IsochTransferReq      ,
@@ -1568,7 +1568,7 @@ dissect_mausb_pkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_tree *mausb_tree;
     /* Other misc. local variables. */
     struct mausb_header header;
-    int offset = 0;
+    unsigned offset = 0;
 
     memset(&header, 0, sizeof(struct mausb_header));
 

@@ -7,10 +7,7 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#ifndef __DECODE_AS_H__
-#define __DECODE_AS_H__
-
+#pragma once
 #include "ws_symbol_export.h"
 
 #include "ftypes/ftypes.h"
@@ -42,11 +39,16 @@ typedef void * (*build_valid_func)(packet_info *pinfo);
 typedef void (*decode_as_add_to_list_func)(const char *table_name, const char *proto_name, void *value, void *user_data);
 typedef void (*decode_as_populate_list_func)(const char *table_name, decode_as_add_to_list_func add_to_list, void *ui_element);
 typedef void (*decode_as_free_func)(void *value);
+typedef void (*decode_as_add_changed_list_func)(void* data, void* user_data);
 
 /** callback function definition: Clear value from dissector table */
 typedef bool (*decode_as_reset_func)(const char *name, const void *pattern);
 /** callback function definition: Apply value to dissector table */
 typedef bool (*decode_as_change_func)(const char *name, const void *pattern, const void *handle, const char *list_name);
+/** callback function definition: Remove all protocol specific bindings */
+typedef void (*decode_as_reset_all_func)(void);
+/** callback function definition: Special building of a decode as dissector list */
+typedef void (*decode_as_build_changed_list_func)(decode_as_add_changed_list_func func, void* user_data);
 
 /**
 Contains all of the function pointers (typically just 1) that
@@ -62,7 +64,7 @@ typedef struct decode_as_value_s {
 /**
 Pulls everything together including the dissector (protocol) name, the
 "layer type" of the dissector, the dissector table name, the function pointer
-values as well as handlers for populating, applying and reseting the changes
+values as well as handlers for populating, applying and resetting the changes
 to the dissector table through Decode As GUI functionality. For dissector
 tables that are an integer or string type, the provided "default" handling
 functions should suffice.
@@ -78,12 +80,18 @@ typedef struct decode_as_s {
     const char* post_value_str;                     /**< String to append the value, NULL if none */
     decode_as_populate_list_func populate_list;     /**< function pointer to the function used to populate the list, NULL if none */
     decode_as_reset_func reset_value;               /**< function pointer to the function used resetting the value, NULL if none */
-    decode_as_change_func change_value;             /**< function pointer to the function used resetting the value, NULL if none */
+    decode_as_change_func change_value;             /**< function pointer to the function used when changing value, NULL if none */
     decode_as_free_func free_func;                  /**< function pointer to the function used freeing the entry, NULL if none */
+    decode_as_reset_all_func reset_all;             /**< function pointer to the function used remove all protocol specific bindings, NULL if none */
+    decode_as_build_changed_list_func build_changed_list;    /**< function pointer for special building of a decode as dissector list (currently only done for DCE/RPC), NULL if none */
 
 } decode_as_t;
 
-/** register a "Decode As".  A copy of the decode_as_t will be maintained by the decode_as module */
+/**
+ * @brief Register a "Decode As".  A copy of the decode_as_t will be maintained by the decode_as module
+ *
+ * @param reg Pointer to the decode_as_t structure containing the protocol registration information.
+ */
 WS_DLL_PUBLIC void register_decode_as(decode_as_t* reg);
 
 /* Forward declaration to prevent requiring packet.h */
@@ -106,10 +114,34 @@ struct dissector_table;
 WS_DLL_PUBLIC struct dissector_table* register_decode_as_next_proto(int proto, const char *table_name, const char *ui_name, build_label_func label_func);
 
 /* Walk though the dissector table and provide dissector_handle_t for each item in the table */
+
+/**
+ * @brief Populate a list with default decode-as values.
+ *
+ * @param table_name The name of the dissector table to populate.
+ * @param add_to_list Function pointer to add items to the list.
+ * @param ui_element User interface element for display purposes.
+ */
 WS_DLL_PUBLIC void decode_as_default_populate_list(const char *table_name, decode_as_add_to_list_func add_to_list, void *ui_element);
 /* Clear a FT_UINT32 value from dissector table list */
+
+/**
+ * @brief Reset the decode-as settings for a given dissector.
+ *
+ * @param name The name of the dissector to reset.
+ * @param pattern The pattern to use for resetting.
+ * @return true if the reset was successful, false otherwise.
+ */
 WS_DLL_PUBLIC bool decode_as_default_reset(const char *name, const void *pattern);
-/* Add a FT_UINT32 value to dissector table list */
+
+/**
+ * @brief Add a FT_UINT32 value to dissector table list.
+ * @param name The name of the dissector.
+ * @param pattern The pattern to use for changing the value.
+ * @param handle The handle for the dissector.
+ * @param list_name The name of the list to add the value to.
+ * @return true if the change was successful, false otherwise.
+ */
 WS_DLL_PUBLIC bool decode_as_default_change(const char *name, const void *pattern, const void *handle, const char *list_name);
 
 /** List of registered decode_as_t structs.
@@ -119,25 +151,35 @@ WS_DLL_PUBLIC GList *decode_as_list;
 
 /* Some useful utilities for Decode As */
 
-/** Reset the "decode as" entries and reload ones of the current profile.
- * This is called by epan_load_settings(); programs should call that
- * rather than individually calling the routines it calls.
+/**
+ * @brief Load "decode as" entries from the current profile.
+ * @param app_env_var_prefix The environment variable prefix for the application.
  */
-extern void load_decode_as_entries(void);
+extern void load_decode_as_entries(const char* app_env_var_prefix);
 
-/** Write out the "decode as" entries of the current profile.
+/**
+ * @brief Write out the "decode as" entries of the current profile.
+ * @param app_name The name of the application.
+ * @param app_env_var_prefix The environment variable prefix.
+ * @param err Pointer to a string where error messages will be stored.
+ * @return The number of entries written, or a negative value on error.
  */
-WS_DLL_PUBLIC int save_decode_as_entries(char** err);
+WS_DLL_PUBLIC int save_decode_as_entries(const char* app_name, const char* app_env_var_prefix, char** err);
 
 /** Clear all "decode as" settings.
+ * @brief Clear all "decode as" settings.
  */
 WS_DLL_PUBLIC void decode_clear_all(void);
 
 /** Frees memory used by "decode as" routines. Called at program shutdown.
+ * @brief Frees memory used by "decode as" routines.
  */
 WS_DLL_PUBLIC void decode_cleanup(void);
 
-/** This routine creates one entry in the list of protocol dissector
+/**
+ * @brief Build a list of dissectors to be reset.
+ *
+ * This routine creates one entry in the list of protocol dissector
  * that need to be reset. It is called by the g_hash_table_foreach
  * routine once for each changed entry in a dissector table.
  * Unfortunately it cannot delete the entry immediately as this screws
@@ -167,5 +209,3 @@ WS_DLL_PUBLIC void decode_build_reset_list (const char *table_name, ftenum_t sel
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif /* decode_as.h */

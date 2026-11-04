@@ -315,13 +315,11 @@ dissect_rx_acks(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int 
 	offset += 4;
 
 	/* reason : 1 byte */
-	reason = tvb_get_uint8(tvb, offset);
-	proto_tree_add_item(tree, hf_rx_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
+	proto_tree_add_item_ret_uint8(tree, hf_rx_reason, tvb, offset, 1, ENC_BIG_ENDIAN, &reason);
 	offset += 1;
 
 	/* nACKs */
-	num = tvb_get_uint8(tvb, offset);
-	proto_tree_add_uint(tree, hf_rx_numacks, tvb, offset, 1, num);
+	proto_tree_add_item_ret_uint8(tree, hf_rx_numacks, tvb, offset, 1, ENC_NA, &num);
 	offset += 1;
 
 	while(num--){
@@ -408,7 +406,7 @@ dissect_rx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *dat
 	proto_tree *tree;
 	proto_item *item;
 	const char *version_type;
-	int offset = 0;
+	unsigned offset = 0;
 	struct rxinfo rxinfo;
 	uint8_t type;
 	nstime_t ts;

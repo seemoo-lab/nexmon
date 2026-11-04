@@ -47,10 +47,10 @@ dissect_fortinet_sso(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     proto_tree *ti;
     proto_tree *fsso_tree;
     uint32_t payload_length, client_ip;
-    int string_length = -1;
+    unsigned string_length;
     const char *string;
-    int32_t len;
-    int offset = 0;
+    uint32_t len;
+    unsigned offset = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FSSO");
     col_set_str(pinfo->cinfo, COL_INFO, "Fortinet Single Sign-On");
@@ -71,18 +71,19 @@ dissect_fortinet_sso(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     proto_tree_add_item_ret_uint(fsso_tree, hf_fsso_payload_length, tvb, offset, 2, ENC_BIG_ENDIAN, &payload_length);
     offset += 2;
 
-    string = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &string_length, ENC_ASCII);
-    proto_tree_add_item(fsso_tree, hf_fsso_string, tvb, offset, string_length, ENC_ASCII);
+    proto_tree_add_item_ret_string_and_length(fsso_tree, hf_fsso_string, tvb, offset, -1, ENC_ASCII, pinfo->pool, (const uint8_t**)&string, &string_length);
     col_set_str(pinfo->cinfo, COL_INFO, string);
 
     if(client_ip == 0xFFFFFFFF) { //if client_ip equal 255.255.255.255 (0xFFFFFFFF) is KeepAlive packet
         /* Domain / KeepAlive (User) / Version */
-        len = tvb_find_uint8(tvb, offset, string_length, '/') - offset;
+        tvb_find_uint8_length(tvb, offset, string_length, '/', &len);
+        len = len -offset;
         proto_tree_add_item(fsso_tree, hf_fsso_domain, tvb, offset, len, ENC_ASCII);
         offset += (len + 1);
         string_length -= (len + 1);
 
-        len = tvb_find_uint8(tvb, offset, string_length, '/') - offset;
+        tvb_find_uint8_length(tvb, offset, string_length, '/', &len);
+        len = len - offset;
         proto_tree_add_item(fsso_tree, hf_fsso_user, tvb, offset, len, ENC_ASCII);
         offset += (len + 1);
         string_length -= (len + 1);
@@ -92,12 +93,14 @@ dissect_fortinet_sso(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
     } else {
         /* Host / Domain / User */
-        len = tvb_find_uint8(tvb, offset, string_length, '/') - offset;
+        tvb_find_uint8_length(tvb, offset, string_length, '/', &len);
+        len = len - offset;
         proto_tree_add_item(fsso_tree, hf_fsso_host, tvb, offset, len, ENC_ASCII);
         offset += (len + 1);
         string_length -= (len + 1);
 
-        len = tvb_find_uint8(tvb, offset, string_length, '/') - offset;
+        tvb_find_uint8_length(tvb, offset, string_length, '/', &len);
+        len = len - offset;
         proto_tree_add_item(fsso_tree, hf_fsso_domain, tvb, offset, len, ENC_ASCII);
         offset += (len + 1);
         string_length -= (len + 1);
@@ -214,7 +217,7 @@ proto_register_fortinet_sso(void)
         NULL, HFILL}},
 
         { &hf_fsso_string,
-        { "String", "fortinet_sso.string", FT_STRING, BASE_NONE, NULL, 0x0,
+        { "String", "fortinet_sso.string", FT_STRINGZ, BASE_NONE, NULL, 0x0,
         NULL, HFILL}},
 
         { &hf_fsso_user,

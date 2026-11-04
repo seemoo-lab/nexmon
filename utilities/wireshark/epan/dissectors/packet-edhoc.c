@@ -12,10 +12,9 @@
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-#define WS_LOG_DOMAIN "packet-edhoc"
-#define EDHOC_LOG_DATA 1
 
-#include <config.h>
+#include "config.h"
+#define WS_LOG_DOMAIN "packet-edhoc"
 #include "packet-edhoc.h"
 #include "packet-cbor.h"
 #include "packet-media-type.h"
@@ -38,6 +37,9 @@
 #include <wsutil/wslog.h>
 #include <wsutil/wmem/wmem_list.h>
 #include <wsutil/wmem/wmem_map.h>
+
+#define EDHOC_LOG_DATA 1
+
 
 #if EDHOC_LOG_DATA
 /** Duplicate logic of packet-tls-util.c
@@ -106,9 +108,6 @@ static void edhoc_secrets_clear(edhoc_secrets_store_t *obj) {
 
 void proto_register_edhoc(void);
 void proto_reg_handoff_edhoc(void);
-
-/// Protocol column name
-static const char *const proto_name_edhoc = "EDHOC";
 
 // Protocol preferences and defaults
 static bool edhoc_ead_try_heur = false;
@@ -192,7 +191,7 @@ typedef struct edhoc_cs_s {
 } edhoc_cs_t;
 
 /// Defined suites
-static edhoc_cs_t edhoc_cs_list[] = {
+static const edhoc_cs_t edhoc_cs_list[] = {
     // Cipher Suites from RFC 9528
     // 0: AES-CCM-16-64-128, SHA-256, 8, X25519, EdDSA, AES-CCM-16-64-128, SHA-256
     {0, 10, -16, 8, 4, -8, 10, -16},
@@ -864,7 +863,7 @@ static bool dissect_edhoc_msg2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
                     scratch_raw[ix] ^= tvb_get_uint8(ciphertext_2, (int)ix);
                 }
 
-                tvb_plain = tvb_new_child_real_data(ciphertext_2, scratch_raw, (unsigned)scratch_len, (int)scratch_len);
+                tvb_plain = tvb_new_child_real_data(ciphertext_2, scratch_raw, (unsigned)scratch_len, (unsigned)scratch_len);
                 tvb_set_free_cb(tvb_plain, g_free);
             }
         }
@@ -1237,7 +1236,7 @@ static int dissect_edhoc_msg(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     edhoc_state_t *state = data;
     DISSECTOR_ASSERT(state);
 
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, proto_name_edhoc);
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "EDHOC");
     col_clear(pinfo->cinfo, COL_INFO);
 
     int offset = 0;
@@ -1405,7 +1404,7 @@ typedef struct {
 } edhoc_secrets_uat_t;
 
 /// Registered UAT
-uat_t *edhoc_secrets_uat = NULL;
+static uat_t *edhoc_secrets_uat = NULL;
 /// UAT_managed secrets list
 static edhoc_secrets_uat_t *edhoc_secrets_uat_recs = NULL;
 /// Number of items in #edhoc_secrets_uat
@@ -1517,7 +1516,7 @@ UAT_BUFFER_CB_DEF(edhoc_secrets_uat, th_4, edhoc_secrets_uat_t, th_4_ptr, th_4_l
 
 /// Overall registration of the protocol
 void proto_register_edhoc(void) {
-    proto_edhoc = proto_register_protocol("Ephemeral Diffie-Hellman Over COSE", proto_name_edhoc, "edhoc");
+    proto_edhoc = proto_register_protocol("Ephemeral Diffie-Hellman Over COSE", "EDHOC", "edhoc");
 
     // Capture scope data
     register_init_routine(&edhoc_init);
@@ -1527,9 +1526,9 @@ void proto_register_edhoc(void) {
     register_shutdown_routine(&edhoc_shutdown);
     edhoc_secrets_init(&uat_secrets, wmem_epan_scope());
     edhoc_cs_table = g_hash_table_new(g_int64_hash, g_int64_equal);
-    for (edhoc_cs_t *suite = edhoc_cs_list; suite < edhoc_cs_list + array_length(edhoc_cs_list);
+    for (edhoc_cs_t const *suite = edhoc_cs_list; suite < edhoc_cs_list + array_length(edhoc_cs_list);
          ++suite) {
-        g_hash_table_insert(edhoc_cs_table, &(suite->value), suite);
+        g_hash_table_insert(edhoc_cs_table, (int64_t *)&(suite->value), (void *)suite);
     }
 
     /// Field definitions

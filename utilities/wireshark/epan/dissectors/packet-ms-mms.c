@@ -349,7 +349,7 @@ static int dissect_msmms_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     uint32_t    sequence_number;
     uint16_t    command_id;
     uint16_t    command_dir;
-    int32_t     length_of_command;
+    uint32_t    length_of_command;
     uint32_t    length_remaining;
 
     /******************************/
@@ -429,8 +429,7 @@ static int dissect_msmms_command(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     offset += 4;
 
     /* Sequence number */
-    sequence_number = tvb_get_letohl(tvb, offset);
-    proto_tree_add_item(msmms_common_command_tree, hf_msmms_command_sequence_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(msmms_common_command_tree, hf_msmms_command_sequence_number, tvb, offset, 4, ENC_LITTLE_ENDIAN, &sequence_number);
     offset += 4;
 
     /* Timestamp */
@@ -646,8 +645,7 @@ static int dissect_msmms_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     msmms_tree = proto_item_add_subtree(ti, ett_msmms_data);
 
     /* Sequence number */
-    sequence_number = tvb_get_letohl(tvb, offset);
-    proto_tree_add_item(msmms_tree, hf_msmms_data_sequence_number, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(msmms_tree, hf_msmms_data_sequence_number, tvb, offset, 4, ENC_LITTLE_ENDIAN, &sequence_number);
     offset += 4;
 
     /* Packet ID type */
@@ -670,8 +668,7 @@ static int dissect_msmms_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     offset++;
 
     /* Packet Length */
-    packet_length = tvb_get_letohs(tvb, offset);
-    proto_tree_add_item(msmms_tree, hf_msmms_data_packet_length, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint16(msmms_tree, hf_msmms_data_packet_length, tvb, offset, 2, ENC_LITTLE_ENDIAN, &packet_length);
     offset += 2;
 
     /* Parse UDP Timing packet pair headers if present */
@@ -733,14 +730,13 @@ static void dissect_client_transport_info(tvbuff_t *tvb, packet_info *pinfo, pro
     offset += 4;
 
     /* Extract and show the string in tree and info column */
-    transport_info = tvb_get_string_enc(pinfo->pool, tvb, offset, length_remaining - 20, ENC_UTF_16|ENC_LITTLE_ENDIAN);
+    transport_info = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, length_remaining - 20, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 
-    proto_tree_add_string_format(tree, hf_msmms_command_client_transport_info, tvb,
-                                 offset, length_remaining-20,
-                                 transport_info, "Transport: (%s)", transport_info);
+    proto_tree_add_string(tree, hf_msmms_command_client_transport_info, tvb,
+                                 offset, length_remaining-20, transport_info);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
-                    format_text_string(pinfo->pool, (const unsigned char*)transport_info));
+                    format_text_string(pinfo->pool, transport_info));
 
 
     /* Try to extract details from this string */
@@ -789,7 +785,7 @@ static void dissect_server_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     uint32_t      tool_version_length;
     uint32_t      download_update_player_length;
     uint32_t      password_encryption_type_length;
-    const uint8_t *server_version;
+    const char   *server_version;
 
     /* ErrorCode */
     proto_tree_add_item(tree, hf_msmms_command_prefix1_error, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -809,13 +805,11 @@ static void dissect_server_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
 
     /* Length of server version */
-    server_version_length = tvb_get_letohl(tvb, offset);
-    proto_tree_add_item(tree, hf_msmms_command_server_version_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_msmms_command_server_version_length, tvb, offset, 4, ENC_LITTLE_ENDIAN, &server_version_length);
     offset += 4;
 
     /* Length of tool version */
-    tool_version_length = tvb_get_letohl(tvb, offset);
-    proto_tree_add_item(tree, hf_msmms_command_tool_version_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_msmms_command_tool_version_length, tvb, offset, 4, ENC_LITTLE_ENDIAN, &tool_version_length);
     offset += 4;
 
     /* Length of download update player URL */
@@ -834,10 +828,10 @@ static void dissect_server_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
         /* Server version string */
         proto_tree_add_item_ret_string(tree, hf_msmms_command_server_version, tvb,
                             offset, server_version_length*2,
-                            ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, &server_version);
+                            ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, (const uint8_t**)&server_version);
 
         col_append_fstr(pinfo->cinfo, COL_INFO, " (version='%s')",
-                    format_text_string(pinfo->pool, (const unsigned char*)server_version));
+                    format_text_string(pinfo->pool, server_version));
     }
     offset += (server_version_length*2);
 
@@ -874,7 +868,7 @@ static void dissect_server_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 static void dissect_client_player_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                        unsigned offset, unsigned length_remaining)
 {
-    const uint8_t *player_info;
+    const char *player_info;
 
     /* Flags */
     proto_tree_add_item(tree, hf_msmms_command_prefix1, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -888,10 +882,10 @@ static void dissect_client_player_info(tvbuff_t *tvb, packet_info *pinfo, proto_
     /* Extract and show the string in tree and info column */
     proto_tree_add_item_ret_string(tree, hf_msmms_command_client_player_info, tvb,
                         offset, length_remaining-12,
-                        ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, &player_info);
+                        ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, (const uint8_t**)&player_info);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
-                    format_text_string(pinfo->pool, (const unsigned char*)player_info));
+                    format_text_string(pinfo->pool, player_info));
 }
 
 /* Dissect info about where client wants to start playing from */
@@ -949,7 +943,7 @@ static void dissect_timing_test_response(tvbuff_t *tvb, proto_tree *tree, unsign
 static void dissect_request_server_file(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                                         unsigned offset, unsigned length_remaining)
 {
-    const uint8_t *server_file;
+    const char *server_file;
 
     /* Command Level */
     proto_tree_add_item(tree, hf_msmms_command_prefix1_command_level, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -963,10 +957,10 @@ static void dissect_request_server_file(tvbuff_t *tvb, packet_info *pinfo, proto
     /* File path on server */
     proto_tree_add_item_ret_string(tree, hf_msmms_command_server_file, tvb,
                         offset, length_remaining-16,
-                        ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, &server_file);
+                        ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, (const uint8_t**)&server_file);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%s)",
-                    format_text_string(pinfo->pool, (const unsigned char*)server_file));
+                    format_text_string(pinfo->pool, server_file));
 }
 
 /* Dissect media details from server */
@@ -1351,7 +1345,7 @@ void proto_register_msmms(void)
         {
             &hf_msmms_command_client_transport_info,
             {
-                "Client transport info",
+                "Transport",
                 "msmms.command.client-transport-info",
                 FT_STRING,
                 BASE_NONE,

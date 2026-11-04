@@ -435,9 +435,8 @@ dissect_negoex(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
        * Construct a new TVB covering just this message and pass to the
        * sub-dissector
        */
-      msg_tvb = tvb_new_subset_length_caplen(tvb,
+      msg_tvb = tvb_new_subset_length(tvb,
                                start_offset,
-                               MIN(message_len, tvb_captured_length(tvb)),
                                message_len);
 
       switch (message_type) {
@@ -597,11 +596,7 @@ proto_register_negoex(void)
   };
   /*module_t *negoex_module = NULL; */
 
-  proto_negoex = proto_register_protocol (
-    "SPNEGO Extended Negotiation Security Mechanism", /* name */
-    "NEGOEX",  /* short name */
-    "negoex"   /* abbrev */
-    );
+  proto_negoex = proto_register_protocol ("SPNEGO Extended Negotiation Security Mechanism", "NEGOEX", "negoex");
   proto_register_field_array(proto_negoex, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 

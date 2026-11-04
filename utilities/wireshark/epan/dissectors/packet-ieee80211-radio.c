@@ -669,7 +669,7 @@ static float ieee80211_he_mu_ofdma_rate(unsigned nsts, unsigned mcs, unsigned ru
 /*
  * EHT MCS rate table converted from http://mcsindex.net
  * indexed by (MCS,BW,GI)
- * Covering only upto 4x996-tone-RU/320MHz, Additional RUs and Punctured modes not added yet.
+ * Covering only up to 4x996-tone-RU/320MHz, Additional RUs and Punctured modes not added yet.
  * For higher # of spatial streams, the rate will be computed based on the 1SS rates below.
  * The resultant error in rate computation remains within a maximum of +/- 0.5 Mbps from corresponding static table rates.
  */
@@ -1321,7 +1321,7 @@ dissect_wlan_radio_phdr(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
   }
 
   /* make sure frame_length includes the FCS for accurate duration calculation */
-  if (pinfo->pseudo_header->ieee_802_11.fcs_len == 0) {
+  if (phdr->fcs_len == 0) {
     frame_length += 4;
   }
 

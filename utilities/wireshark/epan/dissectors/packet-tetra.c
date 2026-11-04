@@ -32,8 +32,6 @@
 #include "packet-per.h"
 #include "packet-tetra.h"
 
-#define PROTO_TAG_tetra	"TETRA"
-
 void proto_register_tetra(void);
 void proto_reg_handoff_tetra(void);
 
@@ -1006,8 +1004,8 @@ static expert_field ei_tetra_channels_incorrect;
 
 
 
-static int
-dissect_tetra_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 3U, NULL, false);
 
@@ -1016,8 +1014,8 @@ dissect_tetra_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_tetra_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_63(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 63U, NULL, false);
 
@@ -1032,8 +1030,8 @@ static const per_sequence_t AACH_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_AACH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_AACH(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_AACH, AACH_sequence);
 
@@ -1062,8 +1060,8 @@ static const value_string tetra_System_Code_vals[] = {
 };
 
 
-static int
-dissect_tetra_System_Code(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_System_Code(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1139,9 +1137,11 @@ static const value_string tetra_Colour_Code_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_Colour_Code_vals_ext = VALUE_STRING_EXT_INIT(tetra_Colour_Code_vals);
 
-static int
-dissect_tetra_Colour_Code(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_Colour_Code(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -1158,8 +1158,8 @@ static const value_string tetra_Timeslot_Number_vals[] = {
 };
 
 
-static int
-dissect_tetra_Timeslot_Number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Timeslot_Number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -1204,8 +1204,8 @@ static const value_string tetra_Frame_Number_vals[] = {
 };
 
 
-static int
-dissect_tetra_Frame_Number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Frame_Number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      32, NULL, false, 0, NULL);
 
@@ -1281,9 +1281,11 @@ static const value_string tetra_Multiple_Frame_Number_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_Multiple_Frame_Number_vals_ext = VALUE_STRING_EXT_INIT(tetra_Multiple_Frame_Number_vals);
 
-static int
-dissect_tetra_Multiple_Frame_Number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_Multiple_Frame_Number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -1300,8 +1302,8 @@ static const value_string tetra_Sharing_Mod_vals[] = {
 };
 
 
-static int
-dissect_tetra_Sharing_Mod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Sharing_Mod(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -1322,8 +1324,8 @@ static const value_string tetra_TS_Reserved_Frames_vals[] = {
 };
 
 
-static int
-dissect_tetra_TS_Reserved_Frames(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_TS_Reserved_Frames(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -1338,8 +1340,8 @@ static const value_string tetra_U_Plane_DTX_vals[] = {
 };
 
 
-static int
-dissect_tetra_U_Plane_DTX(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_Plane_DTX(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1354,8 +1356,8 @@ static const value_string tetra_Frame_18_Extension_vals[] = {
 };
 
 
-static int
-dissect_tetra_Frame_18_Extension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Frame_18_Extension(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1370,8 +1372,8 @@ static const value_string tetra_Reserved_vals[] = {
 };
 
 
-static int
-dissect_tetra_Reserved(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Reserved(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1380,8 +1382,8 @@ dissect_tetra_Reserved(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_tetra_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_1023(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1023U, NULL, false);
 
@@ -1390,8 +1392,8 @@ dissect_tetra_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_16383(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 16383U, NULL, false);
 
@@ -1400,8 +1402,8 @@ dissect_tetra_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 
 
-static int
-dissect_tetra_INTEGER_0_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 1U, NULL, false);
 
@@ -1418,8 +1420,8 @@ static const per_sequence_t MLE_Sync_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MLE_Sync(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MLE_Sync(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MLE_Sync, MLE_Sync_sequence);
 
@@ -1442,8 +1444,8 @@ static const per_sequence_t BSCH_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_BSCH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BSCH(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_BSCH, BSCH_sequence);
 
@@ -1452,8 +1454,8 @@ dissect_tetra_BSCH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 
 
 
-static int
-dissect_tetra_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_4095(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4095U, NULL, false);
 
@@ -1462,8 +1464,8 @@ dissect_tetra_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 15U, NULL, false);
 
@@ -1480,8 +1482,8 @@ static const value_string tetra_Offset_vals[] = {
 };
 
 
-static int
-dissect_tetra_Offset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Offset(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -1490,8 +1492,8 @@ dissect_tetra_Offset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 
 
 
-static int
-dissect_tetra_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_7(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 7U, NULL, false);
 
@@ -1506,8 +1508,8 @@ static const value_string tetra_Reverse_Operation_vals[] = {
 };
 
 
-static int
-dissect_tetra_Reverse_Operation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Reverse_Operation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1524,8 +1526,8 @@ static const value_string tetra_Sencond_Ctl_Carrier_vals[] = {
 };
 
 
-static int
-dissect_tetra_Sencond_Ctl_Carrier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Sencond_Ctl_Carrier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -1546,8 +1548,8 @@ static const value_string tetra_MS_TXPWR_MAX_CELL_vals[] = {
 };
 
 
-static int
-dissect_tetra_MS_TXPWR_MAX_CELL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MS_TXPWR_MAX_CELL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -1576,8 +1578,8 @@ static const value_string tetra_RXLEV_ACCESS_MIN_vals[] = {
 };
 
 
-static int
-dissect_tetra_RXLEV_ACCESS_MIN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_RXLEV_ACCESS_MIN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1606,8 +1608,8 @@ static const value_string tetra_ACCESS_PARAMETER_vals[] = {
 };
 
 
-static int
-dissect_tetra_ACCESS_PARAMETER(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_ACCESS_PARAMETER(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1636,8 +1638,8 @@ static const value_string tetra_RADIO_DOWNLINK_TIMEOUT_vals[] = {
 };
 
 
-static int
-dissect_tetra_RADIO_DOWNLINK_TIMEOUT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_RADIO_DOWNLINK_TIMEOUT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1646,8 +1648,8 @@ dissect_tetra_RADIO_DOWNLINK_TIMEOUT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 
 
 
-static int
-dissect_tetra_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_65535(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 65535U, NULL, false);
 
@@ -1667,8 +1669,8 @@ static const per_choice_t T_hyperframe_or_cck_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_hyperframe_or_cck(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_hyperframe_or_cck(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_hyperframe_or_cck, T_hyperframe_or_cck_choice,
                                  NULL);
@@ -1684,8 +1686,8 @@ static const value_string tetra_FRAME_vals[] = {
 };
 
 
-static int
-dissect_tetra_FRAME(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_FRAME(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1715,8 +1717,8 @@ static const per_sequence_t TS_COMMON_FRAMES_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_TS_COMMON_FRAMES(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_TS_COMMON_FRAMES(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_TS_COMMON_FRAMES, TS_COMMON_FRAMES_sequence);
 
@@ -1745,8 +1747,8 @@ static const value_string tetra_IMM_vals[] = {
 };
 
 
-static int
-dissect_tetra_IMM(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_IMM(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1775,8 +1777,8 @@ static const value_string tetra_WT_vals[] = {
 };
 
 
-static int
-dissect_tetra_WT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_WT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1805,8 +1807,8 @@ static const value_string tetra_NU_vals[] = {
 };
 
 
-static int
-dissect_tetra_NU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_NU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1821,8 +1823,8 @@ static const value_string tetra_Frame_Len_Factor_vals[] = {
 };
 
 
-static int
-dissect_tetra_Frame_Len_Factor(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Frame_Len_Factor(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1851,8 +1853,8 @@ static const value_string tetra_Timeslot_Pointer_vals[] = {
 };
 
 
-static int
-dissect_tetra_Timeslot_Pointer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Timeslot_Pointer(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -1873,8 +1875,8 @@ static const value_string tetra_Min_Pdu_Priority_vals[] = {
 };
 
 
-static int
-dissect_tetra_Min_Pdu_Priority(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Min_Pdu_Priority(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -1892,8 +1894,8 @@ static const per_sequence_t Default_Code_A_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Default_Code_A(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Default_Code_A(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Default_Code_A, Default_Code_A_sequence);
 
@@ -1902,8 +1904,8 @@ dissect_tetra_Default_Code_A(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -1920,8 +1922,8 @@ static const value_string tetra_SDS_TL_Addressing_Method_vals[] = {
 };
 
 
-static int
-dissect_tetra_SDS_TL_Addressing_Method(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SDS_TL_Addressing_Method(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -1936,8 +1938,8 @@ static const value_string tetra_Data_Priority_Supported_vals[] = {
 };
 
 
-static int
-dissect_tetra_Data_Priority_Supported(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Data_Priority_Supported(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1952,8 +1954,8 @@ static const value_string tetra_Section_Information_vals[] = {
 };
 
 
-static int
-dissect_tetra_Section_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Section_Information(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -1970,8 +1972,8 @@ static const per_sequence_t PRESENT1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_PRESENT1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_PRESENT1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_PRESENT1, PRESENT1_sequence);
 
@@ -1980,8 +1982,8 @@ dissect_tetra_PRESENT1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_tetra_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_127(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 127U, NULL, false);
 
@@ -2005,8 +2007,8 @@ static const per_choice_t T_section_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_section(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_section(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_section, T_section_choice,
                                  NULL);
@@ -2023,8 +2025,8 @@ static const per_sequence_t Extended_Services_Broadcast_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Extended_Services_Broadcast(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Extended_Services_Broadcast(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Extended_Services_Broadcast, Extended_Services_Broadcast_sequence);
 
@@ -2048,8 +2050,8 @@ static const per_choice_t T_optional_params_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_params(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_params(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_params, T_optional_params_choice,
                                  NULL);
@@ -2059,8 +2061,8 @@ dissect_tetra_T_optional_params(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 
 
-static int
-dissect_tetra_Subscriber_class(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Subscriber_class(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      16, 16, false, NULL, 0, NULL, NULL);
 
@@ -2100,8 +2102,8 @@ static const per_sequence_t BNCH_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_BNCH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BNCH(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_BNCH, BNCH_sequence);
 
@@ -2116,8 +2118,8 @@ static const value_string tetra_Fill_Bit_Indication_vals[] = {
 };
 
 
-static int
-dissect_tetra_Fill_Bit_Indication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Fill_Bit_Indication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -2132,8 +2134,8 @@ static const value_string tetra_Encrypted_Flag_vals[] = {
 };
 
 
-static int
-dissect_tetra_Encrypted_Flag(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Encrypted_Flag(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -2142,8 +2144,8 @@ dissect_tetra_Encrypted_Flag(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_INTEGER_0_16777215(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_16777215(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 16777215U, NULL, false);
 
@@ -2167,8 +2169,8 @@ static const per_choice_t Address_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Address(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_Address, Address_choice,
                                  NULL);
@@ -2178,8 +2180,8 @@ dissect_tetra_Address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_tetra_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_NULL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_null(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -2199,8 +2201,8 @@ static const value_string tetra_UPDATE_TYPE_vals[] = {
 };
 
 
-static int
-dissect_tetra_UPDATE_TYPE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_UPDATE_TYPE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -2209,8 +2211,8 @@ dissect_tetra_UPDATE_TYPE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_tetra_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BOOLEAN(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -2229,8 +2231,8 @@ static const per_choice_t T_cipher_control_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_cipher_control_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_cipher_control_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_cipher_control_choice, T_cipher_control_choice_choice,
                                  NULL);
@@ -2251,8 +2253,8 @@ static const per_choice_t T_class_of_MS_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_class_of_MS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_class_of_MS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_class_of_MS, T_class_of_MS_choice,
                                  NULL);
@@ -2273,8 +2275,8 @@ static const per_choice_t T_energy_saving_mode_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_energy_saving_mode_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_energy_saving_mode_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_energy_saving_mode_01, T_energy_saving_mode_01_choice,
                                  NULL);
@@ -2295,8 +2297,8 @@ static const per_choice_t T_la_information_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_la_information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_la_information(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_la_information, T_la_information_choice,
                                  NULL);
@@ -2306,8 +2308,8 @@ dissect_tetra_T_la_information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 
-static int
-dissect_tetra_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        3, 3, false, NULL);
 
@@ -2327,8 +2329,8 @@ static const per_choice_t T_ssi_choice_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_ssi_choice_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_ssi_choice_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_ssi_choice_01, T_ssi_choice_01_choice,
                                  NULL);
@@ -2349,8 +2351,8 @@ static const per_choice_t T_address_extension_choice_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_address_extension_choice_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_address_extension_choice_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_address_extension_choice_01, T_address_extension_choice_01_choice,
                                  NULL);
@@ -2380,8 +2382,8 @@ static const value_string tetra_TYPE3_IDENTIFIER_vals[] = {
 };
 
 
-static int
-dissect_tetra_TYPE3_IDENTIFIER(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_TYPE3_IDENTIFIER(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -2401,8 +2403,8 @@ static const per_choice_t T_group_identity_location_demand_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_identity_location_demand(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_identity_location_demand(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_identity_location_demand, T_group_identity_location_demand_choice,
                                  NULL);
@@ -2423,8 +2425,8 @@ static const per_choice_t T_group_report_response_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_report_response_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_report_response_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_report_response_choice, T_group_report_response_choice_choice,
                                  NULL);
@@ -2445,8 +2447,8 @@ static const per_choice_t T_group_identity_uplink_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_identity_uplink(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_identity_uplink(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_identity_uplink, T_group_identity_uplink_choice,
                                  NULL);
@@ -2467,8 +2469,8 @@ static const per_choice_t T_proprietary_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_proprietary_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_proprietary_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_proprietary_01, T_proprietary_01_choice,
                                  NULL);
@@ -2486,8 +2488,8 @@ static const per_sequence_t T_type3_elements_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements_01, T_type3_elements_01_sequence);
 
@@ -2507,8 +2509,8 @@ static const per_choice_t T_type3_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3_01, T_type3_01_choice,
                                  NULL);
@@ -2527,8 +2529,8 @@ static const per_sequence_t T_type2_parameters_04_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_04, T_type2_parameters_04_sequence);
 
@@ -2548,8 +2550,8 @@ static const per_choice_t T_optional_elements_10_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_10, T_optional_elements_10_choice,
                                  NULL);
@@ -2566,8 +2568,8 @@ static const per_sequence_t U_LOCATION_UPDATE_DEMAND_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_LOCATION_UPDATE_DEMAND(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_LOCATION_UPDATE_DEMAND(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_LOCATION_UPDATE_DEMAND, U_LOCATION_UPDATE_DEMAND_sequence);
 
@@ -2584,8 +2586,8 @@ static const value_string tetra_T_scanning_on_off_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_scanning_on_off(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_scanning_on_off(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -2599,8 +2601,8 @@ static const per_sequence_t U_MM_STATUS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_MM_STATUS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_MM_STATUS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_MM_STATUS, U_MM_STATUS_sequence);
 
@@ -2611,8 +2613,8 @@ dissect_tetra_U_MM_STATUS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_tetra_INTEGER_0_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_2047(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 2047U, NULL, false);
 
@@ -2625,8 +2627,8 @@ static const per_sequence_t T_attach_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_attach_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_attach_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_attach_01, T_attach_01_sequence);
 
@@ -2643,8 +2645,8 @@ static const value_string tetra_T_detach_uplike_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_detach_uplike(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_detach_uplike(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -2657,8 +2659,8 @@ static const per_sequence_t T_detach_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_detach_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_detach_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_detach_01, T_detach_01_sequence);
 
@@ -2678,8 +2680,8 @@ static const per_choice_t T_attach_detach_identifier_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_attach_detach_identifier_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_attach_detach_identifier_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_attach_detach_identifier_01, T_attach_detach_identifier_01_choice,
                                  NULL);
@@ -2694,8 +2696,8 @@ static const per_sequence_t T_gssi_extension_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_gssi_extension_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_gssi_extension_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_gssi_extension_01, T_gssi_extension_01_sequence);
 
@@ -2717,8 +2719,8 @@ static const per_choice_t T_address_type_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_address_type_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_address_type_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_address_type_01, T_address_type_01_choice,
                                  NULL);
@@ -2733,8 +2735,8 @@ static const per_sequence_t GROUP_IDENTITY_UPLINK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_GROUP_IDENTITY_UPLINK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_GROUP_IDENTITY_UPLINK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_GROUP_IDENTITY_UPLINK, GROUP_IDENTITY_UPLINK_sequence);
 
@@ -2750,8 +2752,8 @@ static const per_sequence_t T_type3_elements_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements_02, T_type3_elements_02_sequence);
 
@@ -2771,8 +2773,8 @@ static const per_choice_t T_type3_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3_02, T_type3_02_choice,
                                  NULL);
@@ -2786,8 +2788,8 @@ static const per_sequence_t T_type2_element_04_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_04, T_type2_element_04_sequence);
 
@@ -2807,8 +2809,8 @@ static const per_choice_t T_optional_elements_11_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_11, T_optional_elements_11_choice,
                                  NULL);
@@ -2824,8 +2826,8 @@ static const per_sequence_t U_ATTACH_DETACH_GROUP_IDENTITY_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_ATTACH_DETACH_GROUP_IDENTITY(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_ATTACH_DETACH_GROUP_IDENTITY(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_ATTACH_DETACH_GROUP_IDENTITY, U_ATTACH_DETACH_GROUP_IDENTITY_sequence);
 
@@ -2843,8 +2845,8 @@ static const per_sequence_t T_type3_elements_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements_03, T_type3_elements_03_sequence);
 
@@ -2864,8 +2866,8 @@ static const per_choice_t T_type3_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3_03, T_type3_03_choice,
                                  NULL);
@@ -2879,8 +2881,8 @@ static const per_sequence_t T_type2_element_05_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_05, T_type2_element_05_sequence);
 
@@ -2900,8 +2902,8 @@ static const per_choice_t T_optional_elements_12_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_12, T_optional_elements_12_choice,
                                  NULL);
@@ -2917,8 +2919,8 @@ static const per_sequence_t U_ATTACH_DETACH_GROUP_IDENTITY_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_ATTACH_DETACH_GROUP_IDENTITY_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_ATTACH_DETACH_GROUP_IDENTITY_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_ATTACH_DETACH_GROUP_IDENTITY_ACK, U_ATTACH_DETACH_GROUP_IDENTITY_ACK_sequence);
 
@@ -2968,8 +2970,8 @@ static const per_choice_t U_MM_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_U_MM_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_MM_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_U_MM_PDU, U_MM_PDU_choice,
                                  NULL);
@@ -2985,8 +2987,8 @@ static const value_string tetra_T_simplex_duplex_selection_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -3007,8 +3009,8 @@ static const value_string tetra_CIRCUIT_vals[] = {
 };
 
 
-static int
-dissect_tetra_CIRCUIT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_CIRCUIT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      8, NULL, false, 0, NULL);
 
@@ -3024,8 +3026,8 @@ static const per_sequence_t Basic_service_information_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Basic_service_information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Basic_service_information(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Basic_service_information, Basic_service_information_sequence);
 
@@ -3045,8 +3047,8 @@ static const per_choice_t T_basic_service_information_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_basic_service_information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_basic_service_information(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_basic_service_information, T_basic_service_information_choice,
                                  NULL);
@@ -3056,8 +3058,8 @@ dissect_tetra_T_basic_service_information(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_tetra_Proprietary_element_owner(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Proprietary_element_owner(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 255U, NULL, false);
 
@@ -3066,8 +3068,8 @@ dissect_tetra_Proprietary_element_owner(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_tetra_BIT_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      NO_BOUND, NO_BOUND, false, NULL, 0, NULL, NULL);
 
@@ -3081,8 +3083,8 @@ static const per_sequence_t Type1_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Type1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Type1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Type1, Type1_sequence);
 
@@ -3095,8 +3097,8 @@ static const per_sequence_t Type2_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Type2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Type2(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Type2, Type2_sequence);
 
@@ -3116,8 +3118,8 @@ static const per_choice_t T_data_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_data_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_data_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_data_01, T_data_01_choice,
                                  NULL);
@@ -3131,8 +3133,8 @@ static const per_sequence_t Proprietary_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Proprietary(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Proprietary(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Proprietary, Proprietary_sequence);
 
@@ -3152,8 +3154,8 @@ static const per_choice_t T_prop_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_01, T_prop_01_choice,
                                  NULL);
@@ -3168,8 +3170,8 @@ static const per_sequence_t T_type2_parameters_06_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_06, T_type2_parameters_06_sequence);
 
@@ -3189,8 +3191,8 @@ static const per_choice_t T_optional_elements_14_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_14(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_14, T_optional_elements_14_choice,
                                  NULL);
@@ -3207,8 +3209,8 @@ static const per_sequence_t U_ALERT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_ALERT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_ALERT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_ALERT, U_ALERT_sequence);
 
@@ -3225,8 +3227,8 @@ static const value_string tetra_T_simplex_duplex_selection_01_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -3246,8 +3248,8 @@ static const per_choice_t T_basic_service_information_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_basic_service_information_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_basic_service_information_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_basic_service_information_01, T_basic_service_information_01_choice,
                                  NULL);
@@ -3268,8 +3270,8 @@ static const per_choice_t T_prop_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_02, T_prop_02_choice,
                                  NULL);
@@ -3284,8 +3286,8 @@ static const per_sequence_t T_type2_parameters_07_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_07, T_type2_parameters_07_sequence);
 
@@ -3305,8 +3307,8 @@ static const per_choice_t T_optional_elements_15_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_15, T_optional_elements_15_choice,
                                  NULL);
@@ -3323,8 +3325,8 @@ static const per_sequence_t U_CONNECT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_CONNECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_CONNECT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_CONNECT, U_CONNECT_sequence);
 
@@ -3335,8 +3337,8 @@ dissect_tetra_U_CONNECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 
 
-static int
-dissect_tetra_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_31(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 31U, NULL, false);
 
@@ -3356,8 +3358,8 @@ static const per_choice_t T_prop_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_05, T_prop_05_choice,
                                  NULL);
@@ -3371,8 +3373,8 @@ static const per_sequence_t T_type2_parameters_10_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_10, T_type2_parameters_10_sequence);
 
@@ -3392,8 +3394,8 @@ static const per_choice_t T_optional_elements_18_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_18(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_18, T_optional_elements_18_choice,
                                  NULL);
@@ -3409,8 +3411,8 @@ static const per_sequence_t U_DISCONNECT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_DISCONNECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_DISCONNECT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_DISCONNECT, U_DISCONNECT_sequence);
 
@@ -3426,8 +3428,8 @@ static const per_sequence_t U_INFO_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_INFO(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_INFO(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_INFO, U_INFO_sequence);
 
@@ -3441,8 +3443,8 @@ static const per_sequence_t U_RELEASE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_RELEASE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_RELEASE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_RELEASE, U_RELEASE_sequence);
 
@@ -3463,8 +3465,8 @@ static const value_string tetra_T_simple_duplex_selection_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simple_duplex_selection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simple_duplex_selection(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -3478,8 +3480,8 @@ static const per_sequence_t T_called_party_ssi_extension_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_called_party_ssi_extension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_called_party_ssi_extension(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_called_party_ssi_extension, T_called_party_ssi_extension_sequence);
 
@@ -3503,8 +3505,8 @@ static const per_choice_t Calling_party_address_type_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_Calling_party_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Calling_party_address_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_Calling_party_address_type, Calling_party_address_type_choice,
                                  NULL);
@@ -3514,8 +3516,8 @@ dissect_tetra_Calling_party_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 
 
-static int
-dissect_tetra_Called_party_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Called_party_address_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_tetra_Calling_party_address_type(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -3534,8 +3536,8 @@ static const per_choice_t T_external_subscriber_number_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_external_subscriber_number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_external_subscriber_number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_external_subscriber_number, T_external_subscriber_number_choice,
                                  NULL);
@@ -3556,8 +3558,8 @@ static const per_choice_t T_prop_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop, T_prop_choice,
                                  NULL);
@@ -3572,8 +3574,8 @@ static const per_sequence_t T_type2_parameters_05_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_05, T_type2_parameters_05_sequence);
 
@@ -3593,8 +3595,8 @@ static const per_choice_t T_optional_elements_13_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_13(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_13, T_optional_elements_13_choice,
                                  NULL);
@@ -3616,8 +3618,8 @@ static const per_sequence_t U_SETUP_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_SETUP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_SETUP(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_SETUP, U_SETUP_sequence);
 
@@ -3628,8 +3630,8 @@ dissect_tetra_U_SETUP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_48(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      48, 48, false, NULL, 0, NULL, NULL);
 
@@ -3653,8 +3655,8 @@ static const per_choice_t T_called_party_type_identifier_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_called_party_type_identifier_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_called_party_type_identifier_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_called_party_type_identifier_01, T_called_party_type_identifier_01_choice,
                                  NULL);
@@ -3670,8 +3672,8 @@ static const per_sequence_t U_STATUS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_STATUS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_STATUS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_STATUS, U_STATUS_sequence);
 
@@ -3693,8 +3695,8 @@ static const per_choice_t T_prop_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_03, T_prop_03_choice,
                                  NULL);
@@ -3708,8 +3710,8 @@ static const per_sequence_t T_type2_parameters_08_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_08, T_type2_parameters_08_sequence);
 
@@ -3729,8 +3731,8 @@ static const per_choice_t T_optional_elements_16_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_16, T_optional_elements_16_choice,
                                  NULL);
@@ -3745,8 +3747,8 @@ static const per_sequence_t U_TX_CEASED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_TX_CEASED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_TX_CEASED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_TX_CEASED, U_TX_CEASED_sequence);
 
@@ -3768,8 +3770,8 @@ static const per_choice_t T_prop_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_04, T_prop_04_choice,
                                  NULL);
@@ -3783,8 +3785,8 @@ static const per_sequence_t T_type2_parameters_09_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_09, T_type2_parameters_09_sequence);
 
@@ -3804,8 +3806,8 @@ static const per_choice_t T_optional_elements_17_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_17(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_17(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_17, T_optional_elements_17_choice,
                                  NULL);
@@ -3823,8 +3825,8 @@ static const per_sequence_t U_TX_DEMAND_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_TX_DEMAND(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_TX_DEMAND(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_TX_DEMAND, U_TX_DEMAND_sequence);
 
@@ -3835,8 +3837,8 @@ dissect_tetra_U_TX_DEMAND(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 
 
-static int
-dissect_tetra_Other_party_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Other_party_address_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_tetra_Calling_party_address_type(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -3855,8 +3857,8 @@ static const per_choice_t T_prop_06_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_06, T_prop_06_choice,
                                  NULL);
@@ -3870,8 +3872,8 @@ static const per_sequence_t T_type2_parameters_11_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_11, T_type2_parameters_11_sequence);
 
@@ -3891,8 +3893,8 @@ static const per_choice_t T_optional_elements_19_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_19(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_19(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_19, T_optional_elements_19_choice,
                                  NULL);
@@ -3910,8 +3912,8 @@ static const per_sequence_t U_CALL_RESTORE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_CALL_RESTORE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_CALL_RESTORE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_CALL_RESTORE, U_CALL_RESTORE_sequence);
 
@@ -3937,8 +3939,8 @@ static const per_choice_t T_called_party_type_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_called_party_type_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_called_party_type_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_called_party_type_identifier, T_called_party_type_identifier_choice,
                                  NULL);
@@ -3948,8 +3950,8 @@ dissect_tetra_T_called_party_type_identifier(tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_tetra_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        4, 4, false, NULL);
 
@@ -3958,8 +3960,8 @@ dissect_tetra_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_64(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      64, 64, false, NULL, 0, NULL, NULL);
 
@@ -3968,8 +3970,8 @@ dissect_tetra_BIT_STRING_SIZE_64(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 
 
-static int
-dissect_tetra_INTEGER_0_4194304(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_4194304(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 4194304U, NULL, false);
 
@@ -3993,8 +3995,8 @@ static const per_choice_t T_short_data_type_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_short_data_type_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_short_data_type_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_short_data_type_identifier, T_short_data_type_identifier_choice,
                                  NULL);
@@ -4010,8 +4012,8 @@ static const per_sequence_t U_SDS_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_SDS_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_SDS_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_SDS_DATA, U_SDS_DATA_sequence);
 
@@ -4063,8 +4065,8 @@ static const per_choice_t U_CMCE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_U_CMCE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_CMCE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_U_CMCE_PDU, U_CMCE_PDU_choice,
                                  NULL);
@@ -4085,8 +4087,8 @@ static const per_choice_t T_cell_number_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_cell_number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_cell_number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_cell_number, T_cell_number_choice,
                                  NULL);
@@ -4101,8 +4103,8 @@ static const per_sequence_t T_type2_parameters_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters, T_type2_parameters_sequence);
 
@@ -4122,8 +4124,8 @@ static const per_choice_t T_optional_elements_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements, T_optional_elements_choice,
                                  NULL);
@@ -4138,8 +4140,8 @@ static const per_sequence_t U_PREPARE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_PREPARE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_PREPARE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_PREPARE, U_PREPARE_sequence);
 
@@ -4159,8 +4161,8 @@ static const per_choice_t T_mcc_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_mcc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_mcc(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_mcc, T_mcc_choice,
                                  NULL);
@@ -4181,8 +4183,8 @@ static const per_choice_t T_mnc_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_mnc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_mnc(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_mnc, T_mnc_choice,
                                  NULL);
@@ -4203,8 +4205,8 @@ static const per_choice_t T_la_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_la(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_la(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_la, T_la_choice,
                                  NULL);
@@ -4221,8 +4223,8 @@ static const per_sequence_t T_type2_parameters_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_01, T_type2_parameters_01_sequence);
 
@@ -4242,8 +4244,8 @@ static const per_choice_t T_optional_elements_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_01, T_optional_elements_01_choice,
                                  NULL);
@@ -4258,8 +4260,8 @@ static const per_sequence_t U_RESTORE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_RESTORE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_RESTORE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_RESTORE, U_RESTORE_sequence);
 
@@ -4291,8 +4293,8 @@ static const per_choice_t UMLE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_UMLE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_UMLE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_UMLE_PDU, UMLE_PDU_choice,
                                  NULL);
@@ -4325,8 +4327,8 @@ static const per_choice_t U_MLE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_U_MLE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_MLE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_U_MLE_PDU, U_MLE_PDU_choice,
                                  NULL);
@@ -4342,8 +4344,8 @@ static const per_sequence_t U_BL_ADATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_ADATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_ADATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_ADATA, U_BL_ADATA_sequence);
 
@@ -4357,8 +4359,8 @@ static const per_sequence_t U_BL_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_DATA, U_BL_DATA_sequence);
 
@@ -4372,8 +4374,8 @@ static const per_sequence_t U_BL_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_ACK, U_BL_ACK_sequence);
 
@@ -4389,8 +4391,8 @@ static const per_sequence_t U_BL_ADATA_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_ADATA_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_ADATA_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_ADATA_FCS, U_BL_ADATA_FCS_sequence);
 
@@ -4405,8 +4407,8 @@ static const per_sequence_t U_BL_DATA_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_DATA_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_DATA_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_DATA_FCS, U_BL_DATA_FCS_sequence);
 
@@ -4420,8 +4422,8 @@ static const per_sequence_t U_MLE_PDU_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_MLE_PDU_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_MLE_PDU_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_MLE_PDU_FCS, U_MLE_PDU_FCS_sequence);
 
@@ -4436,8 +4438,8 @@ static const per_sequence_t U_BL_ACK_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_U_BL_ACK_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_BL_ACK_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_U_BL_ACK_FCS, U_BL_ACK_FCS_sequence);
 
@@ -4485,8 +4487,8 @@ static const per_choice_t U_LLC_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_U_LLC_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_U_LLC_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_U_LLC_PDU, U_LLC_PDU_choice,
                                  NULL);
@@ -4532,8 +4534,8 @@ static const value_string tetra_LengthIndication_vals[] = {
 };
 
 
-static int
-dissect_tetra_LengthIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_LengthIndication(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      32, NULL, false, 0, NULL);
 
@@ -4548,8 +4550,8 @@ static const value_string tetra_Frag1_vals[] = {
 };
 
 
-static int
-dissect_tetra_Frag1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Frag1(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -4578,8 +4580,8 @@ static const value_string tetra_SLOT_APPLY_vals[] = {
 };
 
 
-static int
-dissect_tetra_SLOT_APPLY(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SLOT_APPLY(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -4593,8 +4595,8 @@ static const per_sequence_t FRAG_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_FRAG(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_FRAG(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_FRAG, FRAG_sequence);
 
@@ -4614,8 +4616,8 @@ static const per_choice_t T_lengthIndicationOrCapacityRequest_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_lengthIndicationOrCapacityRequest(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_lengthIndicationOrCapacityRequest(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_lengthIndicationOrCapacityRequest, T_lengthIndicationOrCapacityRequest_choice,
                                  NULL);
@@ -4630,8 +4632,8 @@ static const per_sequence_t ComplexSDU_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_ComplexSDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_ComplexSDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_ComplexSDU, ComplexSDU_sequence);
 
@@ -4651,8 +4653,8 @@ static const per_choice_t T_data_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_data(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_data(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_data, T_data_choice,
                                  NULL);
@@ -4670,8 +4672,8 @@ static const per_sequence_t MAC_ACCESS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_ACCESS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_ACCESS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_ACCESS, MAC_ACCESS_sequence);
 
@@ -4747,9 +4749,11 @@ static const value_string tetra_LengthIndicationMacData_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_LengthIndicationMacData_vals_ext = VALUE_STRING_EXT_INIT(tetra_LengthIndicationMacData_vals);
 
-static int
-dissect_tetra_LengthIndicationMacData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_LengthIndicationMacData(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -4764,8 +4768,8 @@ static const per_sequence_t FRAG6_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_FRAG6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_FRAG6(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_FRAG6, FRAG6_sequence);
 
@@ -4785,8 +4789,8 @@ static const per_choice_t T_lengthIndicationOrCapacityRequest_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_lengthIndicationOrCapacityRequest_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_lengthIndicationOrCapacityRequest_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_lengthIndicationOrCapacityRequest_01, T_lengthIndicationOrCapacityRequest_01_choice,
                                  NULL);
@@ -4805,8 +4809,8 @@ static const per_sequence_t MAC_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_DATA, MAC_DATA_sequence);
 
@@ -4815,8 +4819,8 @@ dissect_tetra_MAC_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_264(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_264(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      264, 264, false, NULL, 0, NULL, NULL);
 
@@ -4832,8 +4836,8 @@ static const per_sequence_t MAC_FRAG_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_FRAG(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_FRAG(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_FRAG, MAC_FRAG_sequence);
 
@@ -4842,8 +4846,8 @@ dissect_tetra_MAC_FRAG(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_120(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_120(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      120, 120, false, NULL, 0, NULL, NULL);
 
@@ -4859,8 +4863,8 @@ static const per_sequence_t MAC_FRAG120_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_FRAG120(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_FRAG120(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_FRAG120, MAC_FRAG120_sequence);
 
@@ -4936,9 +4940,11 @@ static const value_string tetra_LengthIndOrReservationReq_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_LengthIndOrReservationReq_vals_ext = VALUE_STRING_EXT_INIT(tetra_LengthIndOrReservationReq_vals);
 
-static int
-dissect_tetra_LengthIndOrReservationReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_LengthIndOrReservationReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -4947,8 +4953,8 @@ dissect_tetra_LengthIndOrReservationReq(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_258(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_258(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      258, 258, false, NULL, 0, NULL, NULL);
 
@@ -4965,8 +4971,8 @@ static const per_sequence_t MAC_END_UPLINK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_END_UPLINK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_END_UPLINK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_END_UPLINK, MAC_END_UPLINK_sequence);
 
@@ -4975,8 +4981,8 @@ dissect_tetra_MAC_END_UPLINK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_114(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_114(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      114, 114, false, NULL, 0, NULL, NULL);
 
@@ -4993,8 +4999,8 @@ static const per_sequence_t MAC_END_UP114_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_END_UP114(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_END_UP114(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_END_UP114, MAC_END_UP114_sequence);
 
@@ -5023,8 +5029,8 @@ static const value_string tetra_LengthIndMacHu_vals[] = {
 };
 
 
-static int
-dissect_tetra_LengthIndMacHu(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_LengthIndMacHu(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -5044,8 +5050,8 @@ static const per_choice_t T_lengthInd_ReservationReq_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_lengthInd_ReservationReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_lengthInd_ReservationReq(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_lengthInd_ReservationReq, T_lengthInd_ReservationReq_choice,
                                  NULL);
@@ -5055,8 +5061,8 @@ dissect_tetra_T_lengthInd_ReservationReq(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_85(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_85(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      85, 85, false, NULL, 0, NULL, NULL);
 
@@ -5072,8 +5078,8 @@ static const per_sequence_t MAC_END_HU_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_END_HU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_END_HU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_END_HU, MAC_END_HU_sequence);
 
@@ -5088,8 +5094,8 @@ static const value_string tetra_Position_Of_Grant_vals[] = {
 };
 
 
-static int
-dissect_tetra_Position_Of_Grant(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Position_Of_Grant(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -5165,9 +5171,11 @@ static const value_string tetra_LengthIndicationMacEndDl_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_LengthIndicationMacEndDl_vals_ext = VALUE_STRING_EXT_INIT(tetra_LengthIndicationMacEndDl_vals);
 
-static int
-dissect_tetra_LengthIndicationMacEndDl(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_LengthIndicationMacEndDl(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -5196,8 +5204,8 @@ static const value_string tetra_Capacity_Allocation_vals[] = {
 };
 
 
-static int
-dissect_tetra_Capacity_Allocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Capacity_Allocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -5226,8 +5234,8 @@ static const value_string tetra_Granting_delay_vals[] = {
 };
 
 
-static int
-dissect_tetra_Granting_delay(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Granting_delay(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -5241,8 +5249,8 @@ static const per_sequence_t SlotGranting_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SlotGranting(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SlotGranting(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SlotGranting, SlotGranting_sequence);
 
@@ -5262,8 +5270,8 @@ static const per_choice_t T_slot_granting_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_slot_granting(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_slot_granting(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_slot_granting, T_slot_granting_choice,
                                  NULL);
@@ -5281,8 +5289,8 @@ static const value_string tetra_T_allocation_type_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_allocation_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_allocation_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -5311,8 +5319,8 @@ static const value_string tetra_Timeslot_Assigned_vals[] = {
 };
 
 
-static int
-dissect_tetra_Timeslot_Assigned(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Timeslot_Assigned(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -5329,8 +5337,8 @@ static const value_string tetra_T_up_down_assigned_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_up_down_assigned(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_up_down_assigned(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -5345,8 +5353,8 @@ static const value_string tetra_CLCH_permission_vals[] = {
 };
 
 
-static int
-dissect_tetra_CLCH_permission(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_CLCH_permission(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -5361,8 +5369,8 @@ static const value_string tetra_Cell_change_flag_vals[] = {
 };
 
 
-static int
-dissect_tetra_Cell_change_flag(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Cell_change_flag(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -5377,8 +5385,8 @@ static const value_string tetra_T_reverse_operation_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_reverse_operation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_reverse_operation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -5394,8 +5402,8 @@ static const per_sequence_t Extended_carrier_flag_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Extended_carrier_flag(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Extended_carrier_flag(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Extended_carrier_flag, Extended_carrier_flag_sequence);
 
@@ -5415,8 +5423,8 @@ static const per_choice_t T_extend_carrier_flag_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_extend_carrier_flag(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_extend_carrier_flag(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_extend_carrier_flag, T_extend_carrier_flag_choice,
                                  NULL);
@@ -5434,8 +5442,8 @@ static const value_string tetra_Monitoring_pattern_vals[] = {
 };
 
 
-static int
-dissect_tetra_Monitoring_pattern(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Monitoring_pattern(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -5459,8 +5467,8 @@ static const per_choice_t T_monitoring_pattern_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_monitoring_pattern(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_monitoring_pattern(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_monitoring_pattern, T_monitoring_pattern_choice,
                                  NULL);
@@ -5481,8 +5489,8 @@ static const per_sequence_t ChannelAllocation_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_ChannelAllocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_ChannelAllocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_ChannelAllocation, ChannelAllocation_sequence);
 
@@ -5502,8 +5510,8 @@ static const per_choice_t T_channel_allocation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_channel_allocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_channel_allocation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_channel_allocation, T_channel_allocation_choice,
                                  NULL);
@@ -5513,8 +5521,8 @@ dissect_tetra_T_channel_allocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_255(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      255, 255, false, NULL, 0, NULL, NULL);
 
@@ -5534,8 +5542,8 @@ static const per_sequence_t MAC_END_DOWNLINK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_END_DOWNLINK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_END_DOWNLINK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_END_DOWNLINK, MAC_END_DOWNLINK_sequence);
 
@@ -5555,8 +5563,8 @@ static const per_choice_t T_slot_granting_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_slot_granting_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_slot_granting_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_slot_granting_01, T_slot_granting_01_choice,
                                  NULL);
@@ -5577,8 +5585,8 @@ static const per_choice_t T_channel_allocation_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_channel_allocation_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_channel_allocation_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_channel_allocation_01, T_channel_allocation_01_choice,
                                  NULL);
@@ -5588,8 +5596,8 @@ dissect_tetra_T_channel_allocation_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_111(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_111(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      111, 111, false, NULL, 0, NULL, NULL);
 
@@ -5608,8 +5616,8 @@ static const per_sequence_t MAC_END_DOWN111_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_END_DOWN111(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_END_DOWN111(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_END_DOWN111, MAC_END_DOWN111_sequence);
 
@@ -5624,8 +5632,8 @@ static const value_string tetra_T_access_ack_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_access_ack(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_access_ack(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -5701,9 +5709,11 @@ static const value_string tetra_LengthIndicationMacResource_vals[] = {
   { 0, NULL }
 };
 
+static value_string_ext tetra_LengthIndicationMacResource_vals_ext = VALUE_STRING_EXT_INIT(tetra_LengthIndicationMacResource_vals);
 
-static int
-dissect_tetra_LengthIndicationMacResource(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+
+static unsigned
+dissect_tetra_LengthIndicationMacResource(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      64, NULL, false, 0, NULL);
 
@@ -5732,8 +5742,8 @@ static const value_string tetra_PowerControl_vals[] = {
 };
 
 
-static int
-dissect_tetra_PowerControl(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_PowerControl(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      16, NULL, false, 0, NULL);
 
@@ -5753,8 +5763,8 @@ static const per_choice_t T_power_control_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_power_control(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_power_control(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_power_control, T_power_control_choice,
                                  NULL);
@@ -5775,8 +5785,8 @@ static const per_choice_t T_slot_granting_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_slot_granting_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_slot_granting_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_slot_granting_02, T_slot_granting_02_choice,
                                  NULL);
@@ -5797,8 +5807,8 @@ static const per_choice_t T_channel_allocation_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_channel_allocation_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_channel_allocation_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_channel_allocation_02, T_channel_allocation_02_choice,
                                  NULL);
@@ -5819,8 +5829,8 @@ static const per_choice_t T_ssi_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_ssi_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_ssi_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_ssi_choice, T_ssi_choice_choice,
                                  NULL);
@@ -5841,8 +5851,8 @@ static const per_choice_t T_address_extension_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_address_extension_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_address_extension_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_address_extension_choice, T_address_extension_choice_choice,
                                  NULL);
@@ -5863,8 +5873,8 @@ static const per_choice_t T_subscriber_class_choice_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_subscriber_class_choice(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_subscriber_class_choice(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_subscriber_class_choice, T_subscriber_class_choice_choice,
                                  NULL);
@@ -5885,8 +5895,8 @@ static const per_choice_t T_energy_saving_mode_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_energy_saving_mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_energy_saving_mode(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_energy_saving_mode, T_energy_saving_mode_choice,
                                  NULL);
@@ -5907,8 +5917,8 @@ static const per_choice_t T_scch_info_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_scch_info(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_scch_info(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_scch_info, T_scch_info_choice,
                                  NULL);
@@ -5929,8 +5939,8 @@ static const per_choice_t T_new_ra_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_new_ra(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_new_ra(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_new_ra, T_new_ra_choice,
                                  NULL);
@@ -5951,8 +5961,8 @@ static const per_choice_t T_group_identity_location_accept_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_identity_location_accept(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_identity_location_accept(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_identity_location_accept, T_group_identity_location_accept_choice,
                                  NULL);
@@ -5973,8 +5983,8 @@ static const per_choice_t T_group_predefined_lifetime_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_predefined_lifetime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_predefined_lifetime(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_predefined_lifetime, T_group_predefined_lifetime_choice,
                                  NULL);
@@ -5995,8 +6005,8 @@ static const per_choice_t T_group_identity_downlink_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_group_identity_downlink(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_group_identity_downlink(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_group_identity_downlink, T_group_identity_downlink_choice,
                                  NULL);
@@ -6017,8 +6027,8 @@ static const per_choice_t T_proprietary_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_proprietary(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_proprietary(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_proprietary, T_proprietary_choice,
                                  NULL);
@@ -6038,8 +6048,8 @@ static const per_sequence_t T_type3_elements_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements, T_type3_elements_sequence);
 
@@ -6059,8 +6069,8 @@ static const per_choice_t T_type3_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3, T_type3_choice,
                                  NULL);
@@ -6079,8 +6089,8 @@ static const per_sequence_t T_type2_parameters_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_03, T_type2_parameters_03_sequence);
 
@@ -6100,8 +6110,8 @@ static const per_choice_t T_optional_elements_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_05, T_optional_elements_05_choice,
                                  NULL);
@@ -6116,8 +6126,8 @@ static const per_sequence_t D_LOCATION_UPDATE_ACCEPT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_LOCATION_UPDATE_ACCEPT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_LOCATION_UPDATE_ACCEPT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_LOCATION_UPDATE_ACCEPT, D_LOCATION_UPDATE_ACCEPT_sequence);
 
@@ -6134,8 +6144,8 @@ static const per_sequence_t D_LOCATION_UPDATE_REJECT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_LOCATION_UPDATE_REJECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_LOCATION_UPDATE_REJECT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_LOCATION_UPDATE_REJECT, D_LOCATION_UPDATE_REJECT_sequence);
 
@@ -6151,8 +6161,8 @@ static const per_sequence_t T_attach_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_attach(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_attach(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_attach, T_attach_sequence);
 
@@ -6169,8 +6179,8 @@ static const value_string tetra_T_detach_downlike_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_detach_downlike(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_detach_downlike(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      4, NULL, false, 0, NULL);
 
@@ -6183,8 +6193,8 @@ static const per_sequence_t T_detach_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_detach(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_detach(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_detach, T_detach_sequence);
 
@@ -6204,8 +6214,8 @@ static const per_choice_t T_attach_detach_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_attach_detach_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_attach_detach_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_attach_detach_identifier, T_attach_detach_identifier_choice,
                                  NULL);
@@ -6220,8 +6230,8 @@ static const per_sequence_t T_gssi_extension_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_gssi_extension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_gssi_extension(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_gssi_extension, T_gssi_extension_sequence);
 
@@ -6243,8 +6253,8 @@ static const per_choice_t T_address_type_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_address_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_address_type, T_address_type_choice,
                                  NULL);
@@ -6259,8 +6269,8 @@ static const per_sequence_t GROUP_IDENTITY_DOWNLINK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_GROUP_IDENTITY_DOWNLINK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_GROUP_IDENTITY_DOWNLINK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_GROUP_IDENTITY_DOWNLINK, GROUP_IDENTITY_DOWNLINK_sequence);
 
@@ -6276,8 +6286,8 @@ static const per_sequence_t T_type3_elements_04_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements_04, T_type3_elements_04_sequence);
 
@@ -6297,8 +6307,8 @@ static const per_choice_t T_type3_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3_04, T_type3_04_choice,
                                  NULL);
@@ -6312,8 +6322,8 @@ static const per_sequence_t T_type2_element_09_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_09, T_type2_element_09_sequence);
 
@@ -6333,8 +6343,8 @@ static const per_choice_t T_optional_elements_30_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_30(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_30, T_optional_elements_30_choice,
                                  NULL);
@@ -6351,8 +6361,8 @@ static const per_sequence_t D_ATTACH_DETACH_GROUP_IDENTITY_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_ATTACH_DETACH_GROUP_IDENTITY(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_ATTACH_DETACH_GROUP_IDENTITY(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_ATTACH_DETACH_GROUP_IDENTITY, D_ATTACH_DETACH_GROUP_IDENTITY_sequence);
 
@@ -6370,8 +6380,8 @@ static const per_sequence_t T_type3_elements_05_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_elements_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_elements_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type3_elements_05, T_type3_elements_05_sequence);
 
@@ -6391,8 +6401,8 @@ static const per_choice_t T_type3_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type3_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type3_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_type3_05, T_type3_05_choice,
                                  NULL);
@@ -6406,8 +6416,8 @@ static const per_sequence_t T_type2_element_10_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_10, T_type2_element_10_sequence);
 
@@ -6427,8 +6437,8 @@ static const per_choice_t T_optional_elements_31_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_31(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_31, T_optional_elements_31_choice,
                                  NULL);
@@ -6444,8 +6454,8 @@ static const per_sequence_t D_ATTACH_DETACH_GROUP_IDENTITY_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_ATTACH_DETACH_GROUP_IDENTITY_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_ATTACH_DETACH_GROUP_IDENTITY_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_ATTACH_DETACH_GROUP_IDENTITY_ACK, D_ATTACH_DETACH_GROUP_IDENTITY_ACK_sequence);
 
@@ -6460,8 +6470,8 @@ static const per_sequence_t D_MM_STATUS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_MM_STATUS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_MM_STATUS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_MM_STATUS, D_MM_STATUS_sequence);
 
@@ -6511,8 +6521,8 @@ static const per_choice_t D_MM_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_D_MM_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_MM_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_D_MM_PDU, D_MM_PDU_choice,
                                  NULL);
@@ -6528,8 +6538,8 @@ static const value_string tetra_T_simplex_duplex_selection_03_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -6549,8 +6559,8 @@ static const per_choice_t T_basic_service_infomation_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_basic_service_infomation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_basic_service_infomation(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_basic_service_infomation, T_basic_service_infomation_choice,
                                  NULL);
@@ -6571,8 +6581,8 @@ static const per_choice_t T_notification_indicator_06_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_06, T_notification_indicator_06_choice,
                                  NULL);
@@ -6593,8 +6603,8 @@ static const per_choice_t T_prop_09_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_09, T_prop_09_choice,
                                  NULL);
@@ -6610,8 +6620,8 @@ static const per_sequence_t T_type2_parameters_13_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_13(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_13, T_type2_parameters_13_sequence);
 
@@ -6631,8 +6641,8 @@ static const per_choice_t T_optional_elements_22_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_22(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_22(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_22, T_optional_elements_22_choice,
                                  NULL);
@@ -6651,8 +6661,8 @@ static const per_sequence_t D_ALERT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_ALERT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_ALERT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_ALERT, D_ALERT_sequence);
 
@@ -6674,8 +6684,8 @@ static const per_choice_t T_basic_service_information_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_basic_service_information_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_basic_service_information_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_basic_service_information_02, T_basic_service_information_02_choice,
                                  NULL);
@@ -6696,8 +6706,8 @@ static const per_choice_t T_call_status_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_status_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_status_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_status_01, T_call_status_01_choice,
                                  NULL);
@@ -6718,8 +6728,8 @@ static const per_choice_t T_notification_indicator_05_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_05, T_notification_indicator_05_choice,
                                  NULL);
@@ -6740,8 +6750,8 @@ static const per_choice_t T_prop_08_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_08, T_prop_08_choice,
                                  NULL);
@@ -6758,8 +6768,8 @@ static const per_sequence_t T_type2_parameters_12_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_12, T_type2_parameters_12_sequence);
 
@@ -6779,8 +6789,8 @@ static const per_choice_t T_optional_elements_21_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_21(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_21(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_21, T_optional_elements_21_choice,
                                  NULL);
@@ -6798,8 +6808,8 @@ static const per_sequence_t D_CALL_PROCEEDING_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_CALL_PROCEEDING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_CALL_PROCEEDING(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_CALL_PROCEEDING, D_CALL_PROCEEDING_sequence);
 
@@ -6816,8 +6826,8 @@ static const value_string tetra_T_simplex_duplex_selection_04_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -6837,8 +6847,8 @@ static const per_choice_t T_call_priority_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_priority(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_priority(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_priority, T_call_priority_choice,
                                  NULL);
@@ -6859,8 +6869,8 @@ static const per_choice_t T_basic_service_information_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_basic_service_information_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_basic_service_information_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_basic_service_information_03, T_basic_service_information_03_choice,
                                  NULL);
@@ -6881,8 +6891,8 @@ static const per_choice_t T_temporary_address_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_temporary_address_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_temporary_address_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_temporary_address_02, T_temporary_address_02_choice,
                                  NULL);
@@ -6903,8 +6913,8 @@ static const per_choice_t T_notification_indicator_07_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_07, T_notification_indicator_07_choice,
                                  NULL);
@@ -6925,8 +6935,8 @@ static const per_choice_t T_prop_10_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_10, T_prop_10_choice,
                                  NULL);
@@ -6944,8 +6954,8 @@ static const per_sequence_t T_type2_parameters_14_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_14(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_14, T_type2_parameters_14_sequence);
 
@@ -6965,8 +6975,8 @@ static const per_choice_t T_optional_elements_23_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_23(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_23(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_23, T_optional_elements_23_choice,
                                  NULL);
@@ -6987,8 +6997,8 @@ static const per_sequence_t D_CONNECT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_CONNECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_CONNECT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_CONNECT, D_CONNECT_sequence);
 
@@ -7010,8 +7020,8 @@ static const per_choice_t T_notification_indicator_08_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_08, T_notification_indicator_08_choice,
                                  NULL);
@@ -7032,8 +7042,8 @@ static const per_choice_t T_prop_11_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_11, T_prop_11_choice,
                                  NULL);
@@ -7048,8 +7058,8 @@ static const per_sequence_t T_type2_parameters_15_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_15(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_15, T_type2_parameters_15_sequence);
 
@@ -7069,8 +7079,8 @@ static const per_choice_t T_optional_elements_24_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_24(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_24, T_optional_elements_24_choice,
                                  NULL);
@@ -7088,8 +7098,8 @@ static const per_sequence_t D_CONNECT_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_CONNECT_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_CONNECT_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_CONNECT_ACK, D_CONNECT_ACK_sequence);
 
@@ -7111,8 +7121,8 @@ static const per_choice_t T_notification_indicator_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator, T_notification_indicator_choice,
                                  NULL);
@@ -7126,8 +7136,8 @@ static const per_sequence_t T_type2_element_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element, T_type2_element_sequence);
 
@@ -7147,8 +7157,8 @@ static const per_choice_t T_optional_elements_06_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_06, T_optional_elements_06_choice,
                                  NULL);
@@ -7164,8 +7174,8 @@ static const per_sequence_t D_DISCONNECT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_DISCONNECT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_DISCONNECT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_DISCONNECT, D_DISCONNECT_sequence);
 
@@ -7187,8 +7197,8 @@ static const per_choice_t T_new_call_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_new_call_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_new_call_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_new_call_identifier, T_new_call_identifier_choice,
                                  NULL);
@@ -7209,8 +7219,8 @@ static const per_choice_t T_call_time_out_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_time_out(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_time_out(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_time_out, T_call_time_out_choice,
                                  NULL);
@@ -7231,8 +7241,8 @@ static const per_choice_t T_call_time_out_set_up_phase_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_time_out_set_up_phase(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_time_out_set_up_phase(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_time_out_set_up_phase, T_call_time_out_set_up_phase_choice,
                                  NULL);
@@ -7253,8 +7263,8 @@ static const per_choice_t T_call_ownership_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_ownership(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_ownership(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_ownership, T_call_ownership_choice,
                                  NULL);
@@ -7270,8 +7280,8 @@ static const value_string tetra_T_simplex_duplex_selection_05_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection_05(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection_05(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -7285,8 +7295,8 @@ static const per_sequence_t Modify_type_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_Modify_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Modify_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_Modify_type, Modify_type_sequence);
 
@@ -7306,8 +7316,8 @@ static const per_choice_t T_modify_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_modify(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_modify(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_modify, T_modify_choice,
                                  NULL);
@@ -7328,8 +7338,8 @@ static const per_choice_t T_call_status_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_status(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_status(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_status, T_call_status_choice,
                                  NULL);
@@ -7350,8 +7360,8 @@ static const per_choice_t T_temporary_address_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_temporary_address(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_temporary_address(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_temporary_address, T_temporary_address_choice,
                                  NULL);
@@ -7372,8 +7382,8 @@ static const per_choice_t T_notification_indicator_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_01, T_notification_indicator_01_choice,
                                  NULL);
@@ -7394,8 +7404,8 @@ static const per_choice_t T_poll_response_percentage_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_poll_response_percentage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_poll_response_percentage(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_poll_response_percentage, T_poll_response_percentage_choice,
                                  NULL);
@@ -7416,8 +7426,8 @@ static const per_choice_t T_poll_response_number_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_poll_response_number(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_poll_response_number(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_poll_response_number, T_poll_response_number_choice,
                                  NULL);
@@ -7440,8 +7450,8 @@ static const per_sequence_t T_type2_element_01_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_01, T_type2_element_01_sequence);
 
@@ -7461,8 +7471,8 @@ static const per_choice_t T_optional_elements_07_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_07, T_optional_elements_07_choice,
                                  NULL);
@@ -7479,8 +7489,8 @@ static const per_sequence_t D_INFO_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_INFO(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_INFO(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_INFO, D_INFO_sequence);
 
@@ -7502,8 +7512,8 @@ static const per_choice_t T_notification_indicator_09_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_09, T_notification_indicator_09_choice,
                                  NULL);
@@ -7524,8 +7534,8 @@ static const per_choice_t T_prop_12_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_12, T_prop_12_choice,
                                  NULL);
@@ -7540,8 +7550,8 @@ static const per_sequence_t T_type2_parameters_16_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_16(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_16, T_type2_parameters_16_sequence);
 
@@ -7561,8 +7571,8 @@ static const per_choice_t T_optional_elements_25_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_25(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_25, T_optional_elements_25_choice,
                                  NULL);
@@ -7578,8 +7588,8 @@ static const per_sequence_t D_RELEASE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_RELEASE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_RELEASE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_RELEASE, D_RELEASE_sequence);
 
@@ -7596,8 +7606,8 @@ static const value_string tetra_T_simplex_duplex_selection_02_vals[] = {
 };
 
 
-static int
-dissect_tetra_T_simplex_duplex_selection_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_simplex_duplex_selection_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
                                      2, NULL, false, 0, NULL);
 
@@ -7617,8 +7627,8 @@ static const per_choice_t T_notification_indicator_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_04, T_notification_indicator_04_choice,
                                  NULL);
@@ -7639,8 +7649,8 @@ static const per_choice_t T_temporary_address_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_temporary_address_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_temporary_address_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_temporary_address_01, T_temporary_address_01_choice,
                                  NULL);
@@ -7661,8 +7671,8 @@ static const per_choice_t T_calling_party_type_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_calling_party_type_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_calling_party_type_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_calling_party_type_identifier, T_calling_party_type_identifier_choice,
                                  NULL);
@@ -7683,8 +7693,8 @@ static const per_choice_t T_external_subscriber_number_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_external_subscriber_number_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_external_subscriber_number_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_external_subscriber_number_01, T_external_subscriber_number_01_choice,
                                  NULL);
@@ -7705,8 +7715,8 @@ static const per_choice_t T_prop_07_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_07, T_prop_07_choice,
                                  NULL);
@@ -7724,8 +7734,8 @@ static const per_sequence_t T_type2_element_06_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_06(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_06(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_06, T_type2_element_06_sequence);
 
@@ -7745,8 +7755,8 @@ static const per_choice_t T_optional_elements_20_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_20(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_20(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_20, T_optional_elements_20_choice,
                                  NULL);
@@ -7768,8 +7778,8 @@ static const per_sequence_t D_SETUP_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_SETUP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_SETUP(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_SETUP, D_SETUP_sequence);
 
@@ -7785,8 +7795,8 @@ static const per_sequence_t D_STATUS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_STATUS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_STATUS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_STATUS, D_STATUS_sequence);
 
@@ -7808,8 +7818,8 @@ static const per_choice_t T_notification_indicator_11_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_11(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_11, T_notification_indicator_11_choice,
                                  NULL);
@@ -7830,8 +7840,8 @@ static const per_choice_t T_prop_14_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_14(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_14, T_prop_14_choice,
                                  NULL);
@@ -7846,8 +7856,8 @@ static const per_sequence_t T_type2_parameters_18_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_18(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_18, T_type2_parameters_18_sequence);
 
@@ -7867,8 +7877,8 @@ static const per_choice_t T_optional_elements_27_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_27(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_27(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_27, T_optional_elements_27_choice,
                                  NULL);
@@ -7884,8 +7894,8 @@ static const per_sequence_t D_TX_CEASED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_TX_CEASED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_TX_CEASED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_TX_CEASED, D_TX_CEASED_sequence);
 
@@ -7907,8 +7917,8 @@ static const per_choice_t T_notification_indicator_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_03, T_notification_indicator_03_choice,
                                  NULL);
@@ -7922,8 +7932,8 @@ static const per_sequence_t T_type2_element_03_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_03, T_type2_element_03_sequence);
 
@@ -7943,8 +7953,8 @@ static const per_choice_t T_optional_elements_09_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_09(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_09(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_09, T_optional_elements_09_choice,
                                  NULL);
@@ -7961,8 +7971,8 @@ static const per_sequence_t D_TX_CONTINUE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_TX_CONTINUE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_TX_CONTINUE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_TX_CONTINUE, D_TX_CONTINUE_sequence);
 
@@ -7984,8 +7994,8 @@ static const per_choice_t T_notification_indicator_12_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_12(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_12, T_notification_indicator_12_choice,
                                  NULL);
@@ -7995,8 +8005,8 @@ dissect_tetra_T_notification_indicator_12(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_tetra_Transmitting_party_address_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_Transmitting_party_address_type(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_tetra_Calling_party_address_type(tvb, offset, actx, tree, hf_index);
 
   return offset;
@@ -8015,8 +8025,8 @@ static const per_choice_t T_transmitting_party_type_identifier_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_transmitting_party_type_identifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_transmitting_party_type_identifier(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_transmitting_party_type_identifier, T_transmitting_party_type_identifier_choice,
                                  NULL);
@@ -8031,8 +8041,8 @@ static const per_sequence_t T_type2_element_07_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_07(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_07(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_07, T_type2_element_07_sequence);
 
@@ -8052,8 +8062,8 @@ static const per_choice_t T_optional_elements_28_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_28(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_28, T_optional_elements_28_choice,
                                  NULL);
@@ -8072,8 +8082,8 @@ static const per_sequence_t D_TX_GRANTED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_TX_GRANTED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_TX_GRANTED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_TX_GRANTED, D_TX_GRANTED_sequence);
 
@@ -8096,8 +8106,8 @@ static const per_choice_t T_notification_indicator_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_02, T_notification_indicator_02_choice,
                                  NULL);
@@ -8111,8 +8121,8 @@ static const per_sequence_t T_type2_element_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_02, T_type2_element_02_sequence);
 
@@ -8132,8 +8142,8 @@ static const per_choice_t T_optional_elements_08_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_08, T_optional_elements_08_choice,
                                  NULL);
@@ -8149,8 +8159,8 @@ static const per_sequence_t D_TX_WAIT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_TX_WAIT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_TX_WAIT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_TX_WAIT, D_TX_WAIT_sequence);
 
@@ -8176,8 +8186,8 @@ static const per_choice_t T_notification_indicator_13_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_13(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_13, T_notification_indicator_13_choice,
                                  NULL);
@@ -8198,8 +8208,8 @@ static const per_choice_t T_transmitting_party_type_identifier_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_transmitting_party_type_identifier_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_transmitting_party_type_identifier_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_transmitting_party_type_identifier_01, T_transmitting_party_type_identifier_01_choice,
                                  NULL);
@@ -8214,8 +8224,8 @@ static const per_sequence_t T_type2_element_08_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_element_08(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_element_08(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_element_08, T_type2_element_08_sequence);
 
@@ -8235,8 +8245,8 @@ static const per_choice_t T_optional_elements_29_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_29(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_29(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_29, T_optional_elements_29_choice,
                                  NULL);
@@ -8255,8 +8265,8 @@ static const per_sequence_t D_TX_INTERRUPT_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_TX_INTERRUPT(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_TX_INTERRUPT(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_TX_INTERRUPT, D_TX_INTERRUPT_sequence);
 
@@ -8278,8 +8288,8 @@ static const per_choice_t T_new_call_identifier_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_new_call_identifier_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_new_call_identifier_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_new_call_identifier_01, T_new_call_identifier_01_choice,
                                  NULL);
@@ -8300,8 +8310,8 @@ static const per_choice_t T_call_time_out_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_time_out_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_time_out_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_time_out_01, T_call_time_out_01_choice,
                                  NULL);
@@ -8322,8 +8332,8 @@ static const per_choice_t T_call_status_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_call_status_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_call_status_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_call_status_02, T_call_status_02_choice,
                                  NULL);
@@ -8344,8 +8354,8 @@ static const per_choice_t T_modify_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_modify_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_modify_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_modify_01, T_modify_01_choice,
                                  NULL);
@@ -8366,8 +8376,8 @@ static const per_choice_t T_notification_indicator_10_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_notification_indicator_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_notification_indicator_10(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_notification_indicator_10, T_notification_indicator_10_choice,
                                  NULL);
@@ -8388,8 +8398,8 @@ static const per_choice_t T_prop_13_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_prop_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_prop_13(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_prop_13, T_prop_13_choice,
                                  NULL);
@@ -8408,8 +8418,8 @@ static const per_sequence_t T_type2_parameters_17_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_17(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_17(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_17, T_type2_parameters_17_sequence);
 
@@ -8429,8 +8439,8 @@ static const per_choice_t T_optional_elements_26_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_26(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_26(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_26, T_optional_elements_26_choice,
                                  NULL);
@@ -8448,8 +8458,8 @@ static const per_sequence_t D_CALL_RESTORE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_CALL_RESTORE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_CALL_RESTORE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_CALL_RESTORE, D_CALL_RESTORE_sequence);
 
@@ -8460,8 +8470,8 @@ dissect_tetra_D_CALL_RESTORE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_OCTET_STRING_SIZE_8(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
                                        8, 8, false, NULL);
 
@@ -8485,8 +8495,8 @@ static const per_choice_t T_short_data_type_identifier_01_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_short_data_type_identifier_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_short_data_type_identifier_01(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_short_data_type_identifier_01, T_short_data_type_identifier_01_choice,
                                  NULL);
@@ -8501,8 +8511,8 @@ static const per_sequence_t D_SDS_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_SDS_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_SDS_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_SDS_DATA, D_SDS_DATA_sequence);
 
@@ -8554,8 +8564,8 @@ static const per_choice_t D_CMCE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_D_CMCE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_CMCE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_D_CMCE_PDU, D_CMCE_PDU_choice,
                                  NULL);
@@ -8576,8 +8586,8 @@ static const per_choice_t T_optional_elements_02_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_02, T_optional_elements_02_choice,
                                  NULL);
@@ -8593,8 +8603,8 @@ static const per_sequence_t D_NEW_CELL_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_NEW_CELL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_NEW_CELL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_NEW_CELL, D_NEW_CELL_sequence);
 
@@ -8614,8 +8624,8 @@ static const per_choice_t T_optional_elements_03_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_03(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_03(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_03, T_optional_elements_03_choice,
                                  NULL);
@@ -8631,8 +8641,8 @@ static const per_sequence_t D_PREPARE_FAIL_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_PREPARE_FAIL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_PREPARE_FAIL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_PREPARE_FAIL, D_PREPARE_FAIL_sequence);
 
@@ -8641,8 +8651,8 @@ dissect_tetra_D_PREPARE_FAIL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_T_network_time(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_network_time(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_integer(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -8650,8 +8660,8 @@ dissect_tetra_T_network_time(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_T_reserved(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_reserved(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_integer(tvb, offset, actx, tree, hf_index, NULL);
 
   return offset;
@@ -8667,8 +8677,8 @@ static const per_sequence_t TETRA_NETWORK_TIME_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_TETRA_NETWORK_TIME(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_TETRA_NETWORK_TIME(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_TETRA_NETWORK_TIME, TETRA_NETWORK_TIME_sequence);
 
@@ -8688,8 +8698,8 @@ static const per_choice_t T_tetra_network_time_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_tetra_network_time(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_tetra_network_time(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_tetra_network_time, T_tetra_network_time_choice,
                                  NULL);
@@ -8710,8 +8720,8 @@ static const per_choice_t T_number_of_neighbour_cells_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_number_of_neighbour_cells(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_number_of_neighbour_cells(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_number_of_neighbour_cells, T_number_of_neighbour_cells_choice,
                                  NULL);
@@ -8726,8 +8736,8 @@ static const per_sequence_t T_type2_parameters_02_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_T_type2_parameters_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_type2_parameters_02(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_T_type2_parameters_02, T_type2_parameters_02_sequence);
 
@@ -8747,8 +8757,8 @@ static const per_choice_t T_optional_elements_04_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_elements_04(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_elements_04(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_elements_04, T_optional_elements_04_choice,
                                  NULL);
@@ -8765,8 +8775,8 @@ static const per_sequence_t D_NWRK_BRDADCAST_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_NWRK_BRDADCAST(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_NWRK_BRDADCAST(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_NWRK_BRDADCAST, D_NWRK_BRDADCAST_sequence);
 
@@ -8780,8 +8790,8 @@ static const per_sequence_t D_RESTORE_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_RESTORE_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_RESTORE_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_RESTORE_ACK, D_RESTORE_ACK_sequence);
 
@@ -8795,8 +8805,8 @@ static const per_sequence_t D_RESTORE_FAIL_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_RESTORE_FAIL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_RESTORE_FAIL(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_RESTORE_FAIL, D_RESTORE_FAIL_sequence);
 
@@ -8828,8 +8838,8 @@ static const per_choice_t DMLE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_DMLE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_DMLE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_DMLE_PDU, DMLE_PDU_choice,
                                  NULL);
@@ -8862,8 +8872,8 @@ static const per_choice_t D_MLE_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_D_MLE_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_MLE_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_D_MLE_PDU, D_MLE_PDU_choice,
                                  NULL);
@@ -8879,8 +8889,8 @@ static const per_sequence_t D_BL_ADATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_ADATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_ADATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_ADATA, D_BL_ADATA_sequence);
 
@@ -8894,8 +8904,8 @@ static const per_sequence_t D_BL_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_DATA, D_BL_DATA_sequence);
 
@@ -8909,8 +8919,8 @@ static const per_sequence_t D_BL_ACK_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_ACK(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_ACK(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_ACK, D_BL_ACK_sequence);
 
@@ -8926,8 +8936,8 @@ static const per_sequence_t D_BL_ADATA_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_ADATA_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_ADATA_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_ADATA_FCS, D_BL_ADATA_FCS_sequence);
 
@@ -8942,8 +8952,8 @@ static const per_sequence_t D_BL_DATA_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_DATA_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_DATA_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_DATA_FCS, D_BL_DATA_FCS_sequence);
 
@@ -8957,8 +8967,8 @@ static const per_sequence_t D_MLE_PDU_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_MLE_PDU_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_MLE_PDU_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_MLE_PDU_FCS, D_MLE_PDU_FCS_sequence);
 
@@ -8973,8 +8983,8 @@ static const per_sequence_t D_BL_ACK_FCS_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_D_BL_ACK_FCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_BL_ACK_FCS(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_D_BL_ACK_FCS, D_BL_ACK_FCS_sequence);
 
@@ -9022,8 +9032,8 @@ static const per_choice_t D_LLC_PDU_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_D_LLC_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_D_LLC_PDU(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_D_LLC_PDU, D_LLC_PDU_choice,
                                  NULL);
@@ -9040,8 +9050,8 @@ static const per_sequence_t OTHER_DATA_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_OTHER_DATA(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_OTHER_DATA(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_OTHER_DATA, OTHER_DATA_sequence);
 
@@ -9055,8 +9065,8 @@ static const per_sequence_t SSI_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SSI_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SSI_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SSI_NEED, SSI_NEED_sequence);
 
@@ -9070,8 +9080,8 @@ static const per_sequence_t EVENT_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_EVENT_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_EVENT_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_EVENT_NEED, EVENT_NEED_sequence);
 
@@ -9085,8 +9095,8 @@ static const per_sequence_t USSI_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_USSI_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_USSI_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_USSI_NEED, USSI_NEED_sequence);
 
@@ -9100,8 +9110,8 @@ static const per_sequence_t SMI_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SMI_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SMI_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SMI_NEED, SMI_NEED_sequence);
 
@@ -9116,8 +9126,8 @@ static const per_sequence_t SSI_EVENT_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SSI_EVENT_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SSI_EVENT_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SSI_EVENT_NEED, SSI_EVENT_NEED_sequence);
 
@@ -9132,8 +9142,8 @@ static const per_sequence_t SSI_USAGE_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SSI_USAGE_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SSI_USAGE_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SSI_USAGE_NEED, SSI_USAGE_NEED_sequence);
 
@@ -9142,8 +9152,8 @@ dissect_tetra_SSI_USAGE_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 
 
 
-static int
-dissect_tetra_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_BIT_STRING_SIZE_34(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
                                      34, 34, false, NULL, 0, NULL, NULL);
 
@@ -9157,8 +9167,8 @@ static const per_sequence_t SMI_EVENT_NEED_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_SMI_EVENT_NEED(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_SMI_EVENT_NEED(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_SMI_EVENT_NEED, SMI_EVENT_NEED_sequence);
 
@@ -9190,8 +9200,8 @@ static const per_choice_t AddressMacResource_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_AddressMacResource(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_AddressMacResource(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_AddressMacResource, AddressMacResource_choice,
                                  NULL);
@@ -9211,8 +9221,8 @@ static const per_sequence_t MAC_RESOURCE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_RESOURCE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_RESOURCE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_RESOURCE, MAC_RESOURCE_sequence);
 
@@ -9221,8 +9231,8 @@ dissect_tetra_MAC_RESOURCE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 
 
 
-static int
-dissect_tetra_INTEGER_0_33554431(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_INTEGER_0_33554431(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
                                                             0U, 33554431U, NULL, false);
 
@@ -9246,8 +9256,8 @@ static const per_choice_t T_optional_field_choice[] = {
   { 0, NULL, 0, NULL }
 };
 
-static int
-dissect_tetra_T_optional_field(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_T_optional_field(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
                                  ett_tetra_T_optional_field, T_optional_field_choice,
                                  NULL);
@@ -9272,8 +9282,8 @@ static const per_sequence_t MAC_ACCESS_DEFINE_sequence[] = {
   { NULL, 0, 0, NULL }
 };
 
-static int
-dissect_tetra_MAC_ACCESS_DEFINE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_tetra_MAC_ACCESS_DEFINE(tvbuff_t *tvb _U_, uint32_t offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_tetra_MAC_ACCESS_DEFINE, MAC_ACCESS_DEFINE_sequence);
 
@@ -9283,7 +9293,7 @@ dissect_tetra_MAC_ACCESS_DEFINE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 /*--- PDUs ---*/
 
 static int dissect_AACH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_AACH(tvb, offset, &asn1_ctx, tree, hf_tetra_AACH_PDU);
@@ -9291,7 +9301,7 @@ static int dissect_AACH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tre
   return offset;
 }
 static int dissect_BSCH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_BSCH(tvb, offset, &asn1_ctx, tree, hf_tetra_BSCH_PDU);
@@ -9299,7 +9309,7 @@ static int dissect_BSCH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tre
   return offset;
 }
 static int dissect_BNCH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_BNCH(tvb, offset, &asn1_ctx, tree, hf_tetra_BNCH_PDU);
@@ -9307,7 +9317,7 @@ static int dissect_BNCH_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tre
   return offset;
 }
 static int dissect_MAC_ACCESS_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_ACCESS(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_ACCESS_PDU);
@@ -9315,7 +9325,7 @@ static int dissect_MAC_ACCESS_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
   return offset;
 }
 static int dissect_MAC_DATA_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_DATA(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_DATA_PDU);
@@ -9323,7 +9333,7 @@ static int dissect_MAC_DATA_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto
   return offset;
 }
 static int dissect_MAC_FRAG_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_FRAG(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_FRAG_PDU);
@@ -9331,7 +9341,7 @@ static int dissect_MAC_FRAG_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto
   return offset;
 }
 static int dissect_MAC_FRAG120_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_FRAG120(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_FRAG120_PDU);
@@ -9339,7 +9349,7 @@ static int dissect_MAC_FRAG120_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pr
   return offset;
 }
 static int dissect_MAC_END_UPLINK_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_END_UPLINK(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_END_UPLINK_PDU);
@@ -9347,7 +9357,7 @@ static int dissect_MAC_END_UPLINK_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
   return offset;
 }
 static int dissect_MAC_END_UP114_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_END_UP114(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_END_UP114_PDU);
@@ -9355,7 +9365,7 @@ static int dissect_MAC_END_UP114_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
   return offset;
 }
 static int dissect_MAC_END_HU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_END_HU(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_END_HU_PDU);
@@ -9363,7 +9373,7 @@ static int dissect_MAC_END_HU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
   return offset;
 }
 static int dissect_MAC_END_DOWNLINK_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_END_DOWNLINK(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_END_DOWNLINK_PDU);
@@ -9371,7 +9381,7 @@ static int dissect_MAC_END_DOWNLINK_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
   return offset;
 }
 static int dissect_MAC_END_DOWN111_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_END_DOWN111(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_END_DOWN111_PDU);
@@ -9379,7 +9389,7 @@ static int dissect_MAC_END_DOWN111_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
   return offset;
 }
 static int dissect_MAC_RESOURCE_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_RESOURCE(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_RESOURCE_PDU);
@@ -9387,7 +9397,7 @@ static int dissect_MAC_RESOURCE_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
   return offset;
 }
 static int dissect_MAC_ACCESS_DEFINE_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
-  int offset = 0;
+  unsigned offset = 0;
   asn1_ctx_t asn1_ctx;
   asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_tetra_MAC_ACCESS_DEFINE(tvb, offset, &asn1_ctx, tree, hf_tetra_MAC_ACCESS_DEFINE_PDU);
@@ -9741,7 +9751,7 @@ dissect_tetra(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	uint16_t type = 0;
 	uint8_t carriernumber = -1;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_tetra);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "TETRA");
 	/* Clear out stuff in the info column */
 	col_clear(pinfo->cinfo,COL_INFO);
 
@@ -9988,7 +9998,7 @@ void proto_register_tetra (void)
         NULL, HFILL }},
     { &hf_tetra_colour_code,
       { "colour-code", "tetra.colour_code",
-        FT_UINT32, BASE_DEC, VALS(tetra_Colour_Code_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_Colour_Code_vals_ext, 0,
         NULL, HFILL }},
     { &hf_tetra_timeslot_number,
       { "timeslot-number", "tetra.timeslot_number",
@@ -10000,7 +10010,7 @@ void proto_register_tetra (void)
         NULL, HFILL }},
     { &hf_tetra_multiple_frame_number,
       { "multiple-frame-number", "tetra.multiple_frame_number",
-        FT_UINT32, BASE_DEC, VALS(tetra_Multiple_Frame_Number_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_Multiple_Frame_Number_vals_ext, 0,
         NULL, HFILL }},
     { &hf_tetra_sharing_mod,
       { "sharing-mod", "tetra.sharing_mod",
@@ -10520,7 +10530,7 @@ void proto_register_tetra (void)
         "T_lengthIndicationOrCapacityRequest_01", HFILL }},
     { &hf_tetra_lengthIndication_01,
       { "lengthIndication", "tetra.lengthIndication",
-        FT_UINT32, BASE_DEC, VALS(tetra_LengthIndicationMacData_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_LengthIndicationMacData_vals_ext, 0,
         "LengthIndicationMacData", HFILL }},
     { &hf_tetra_capacityRequest_01,
       { "capacityRequest", "tetra.capacityRequest_element",
@@ -10540,7 +10550,7 @@ void proto_register_tetra (void)
         "BIT_STRING_SIZE_120", HFILL }},
     { &hf_tetra_lengthInd_ReservationReq,
       { "lengthInd-ReservationReq", "tetra.lengthInd_ReservationReq",
-        FT_UINT32, BASE_DEC, VALS(tetra_LengthIndOrReservationReq_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_LengthIndOrReservationReq_vals_ext, 0,
         "LengthIndOrReservationReq", HFILL }},
     { &hf_tetra_tm_sdu_bit_str_02,
       { "tm-sdu", "tetra.tm_sdu_bit_str",
@@ -10572,7 +10582,7 @@ void proto_register_tetra (void)
         NULL, HFILL }},
     { &hf_tetra_lengthIndication_02,
       { "lengthIndication", "tetra.lengthIndication",
-        FT_UINT32, BASE_DEC, VALS(tetra_LengthIndicationMacEndDl_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_LengthIndicationMacEndDl_vals_ext, 0,
         "LengthIndicationMacEndDl", HFILL }},
     { &hf_tetra_slot_granting,
       { "slot-granting", "tetra.slot_granting",
@@ -10700,7 +10710,7 @@ void proto_register_tetra (void)
         NULL, HFILL }},
     { &hf_tetra_lengthIndication_03,
       { "lengthIndication", "tetra.lengthIndication",
-        FT_UINT32, BASE_DEC, VALS(tetra_LengthIndicationMacResource_vals), 0,
+        FT_UINT32, BASE_DEC|BASE_EXT_STRING, &tetra_LengthIndicationMacResource_vals_ext, 0,
         "LengthIndicationMacResource", HFILL }},
     { &hf_tetra_address_01,
       { "address", "tetra.address",

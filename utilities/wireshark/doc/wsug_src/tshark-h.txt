@@ -1,4 +1,4 @@
-TShark (Wireshark) 4.6.8 (v4.6.8rc0-1-g4d083e23a1f3)
+TShark (Wireshark) 4.7.5 (v4.7.5rc0-61-g7205d614999d)
 Dump and analyze network traffic.
 See https://www.wireshark.org for more information.
 
@@ -22,6 +22,11 @@ Capture interface:
   -L, --list-data-link-types
                            print list of link-layer types of iface and exit
   --list-time-stamp-types  print list of timestamp types for iface and exit
+  --no-optimize            do not optimize capture filter
+  --process-info[=basic|full]
+                           record the processes that sent or received each packet:
+                           their ID and name (basic, the default), or their path,
+                           command line and user as well (full)
 
 Capture display:
   --update-interval        interval between updates with new packets, in milliseconds (def: 100ms)
@@ -119,7 +124,7 @@ Output:
      aggregator=,|/s|<char> select comma, space, printable character as
                            aggregator
      quote=d|s|n           select double, single, no quotes for values
-  -t (a|ad|adoy|d|dd|e|r|u|ud|udoy)[.[N]]|.[N]
+  -t (a|ad|adoy|d|dd|e|r|rc|u|ud|udoy)[.[N]]|.[N]
                            output format of time stamps (def: r: rel. to first)
   -u s|hms                 output format of seconds (def: s: seconds)
   -l                       flush standard output after each packet
@@ -144,6 +149,8 @@ Output:
   --no-duplicate-keys      If -T json is specified, merge duplicate keys in an object
                            into a single key with as value a json array containing all
                            values
+  --json-compact           If -T json is specified, output compact one-line JSON
+                           without indentation (significantly faster)
   --elastic-mapping-filter <protocols> If -G elastic-mapping is specified, put only the
                            specified protocols within the mapping file
   --temp-dir <directory>   write temporary files to this directory
@@ -151,14 +158,15 @@ Output:
   --compress <type>        compress the output file using the type compression format
 
 Diagnostic output:
-  --log-level <level>      sets the active log level ("critical", "warning", etc.)
-  --log-fatal <level>      sets level to abort the program ("critical" or "warning")
-  --log-domains <[!]list>  comma-separated list of the active log domains
+  --log-level <level>       sets the active log level ("critical", "warning", etc.)
+  --log-fatal <level>       sets level to abort the program ("critical" or "warning")
+  --log-fatal-count <count> sets the number of fatal errors before aborting the program
+  --log-domains <[!]list>   comma-separated list of the active log domains
   --log-fatal-domains <list>
-                           list of domains that cause the program to abort
-  --log-debug <[!]list>    list of domains with "debug" level
-  --log-noisy <[!]list>    list of domains with "noisy" level
-  --log-file <path>        file to output messages to (in addition to stderr)
+                            list of domains that cause the program to abort
+  --log-debug <[!]list>     list of domains with "debug" level
+  --log-noisy <[!]list>     list of domains with "noisy" level
+  --log-file <path>         file to output messages to (in addition to stderr)
 
 Miscellaneous:
   -h, --help               display this help and exit

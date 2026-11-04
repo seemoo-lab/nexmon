@@ -346,12 +346,12 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
         offset++;
 
         proto_tree_add_item(evrc_tree, hf_mode_request, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(evrc_tree, hf_evrc_frame_count, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint8(evrc_tree, hf_evrc_frame_count, tvb, offset, 1, ENC_BIG_ENDIAN, &frame_count);
 
         /*
          * number of frames in PACKET is frame_count + 1
          */
-        frame_count = (tvb_get_uint8(tvb, offset) & 0x1f) + 1;
+        frame_count++;
 
         offset++;
         saved_offset = offset;

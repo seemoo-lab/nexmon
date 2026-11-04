@@ -20,7 +20,7 @@
  *   packet-sdlc.c
  *   packet-x25.c
  *   packet-lapb.c
- *   paket-gprs-llc.c
+ *   packet-gprs-llc.c
  *   xdlc.c
  * with the base file built from README.developers.
  */
@@ -830,7 +830,7 @@ dissect_aprs_weather(	wmem_allocator_t *scope _U_,
 }
 
 static int
-aprs_timestamp( proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
+aprs_timestamp( proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset )
 {
 	int	data_len;
 	const char *tzone;
@@ -870,7 +870,7 @@ aprs_timestamp( proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
 }
 
 static int
-aprs_latitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
+aprs_latitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset )
 {
 	if ( aprs_tree )
 		{
@@ -891,7 +891,7 @@ aprs_latitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff
 }
 
 static int
-aprs_longitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
+aprs_longitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset )
 {
 	if ( aprs_tree )
 		{
@@ -912,7 +912,7 @@ aprs_longitude_compressed( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuf
 }
 
 static int
-aprs_status( proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
+aprs_status( proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset )
 {
 	int data_len;
 
@@ -933,7 +933,7 @@ aprs_status( proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
 }
 
 static int
-aprs_item( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, int offset )
+aprs_item( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset )
 {
 	char *info_buffer;
 	int   data_len;
@@ -945,7 +945,7 @@ aprs_item( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, int of
 	 * XXX - ASCII or UTF-8?
 	 * See http://www.aprs.org/aprs12/utf-8.txt
 	 */
-	info_buffer = tvb_get_string_enc( scope, tvb, offset, data_len, ENC_ASCII|ENC_NA );
+	info_buffer = (char *)tvb_get_string_enc( scope, tvb, offset, data_len, ENC_ASCII|ENC_NA );
 
 	ch_ptr = strchr( info_buffer, '!' );
 	if ( ch_ptr != NULL )
@@ -968,7 +968,7 @@ aprs_item( wmem_allocator_t *scope, proto_tree *aprs_tree, tvbuff_t *tvb, int of
 }
 
 static int
-aprs_3rd_party( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_len )
+aprs_3rd_party( proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset, int data_len )
 {
 	/* If the type of the hf[] entry pointed to by hfindex is FT_BYTES or FT_STRING */
 	/*  then  data_len == -1 is allowed and means "remainder of the tvbuff"         */
@@ -987,7 +987,7 @@ aprs_3rd_party( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_len )
 }
 
 static int
-aprs_default_string( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_len, int hfindex )
+aprs_default_string( proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset, int data_len, int hfindex )
 {
 	/* Assumption: hfindex points to an hf[] entry with type FT_STRING; should be validated ? */
 	/* If the type of the hf[] entry pointed to by hfindex is FT_STRING      */
@@ -1005,7 +1005,7 @@ aprs_default_string( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_
 }
 
 static int
-aprs_default_bytes( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_len, int hfindex )
+aprs_default_bytes( proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset, int data_len, int hfindex )
 {
 	/* Assumption: hfindex points to an hf[] entry with type FT_BYTES; should be validated ? */
 	/* If the type of the hf[] entry pointed to by hfindex is FT_BYTES      */
@@ -1023,7 +1023,7 @@ aprs_default_bytes( proto_tree *aprs_tree, tvbuff_t *tvb, int offset, int data_l
 }
 
 static int
-aprs_position( packet_info *pinfo, proto_tree *aprs_tree, tvbuff_t *tvb, int offset, bool with_msg )
+aprs_position( packet_info *pinfo, proto_tree *aprs_tree, tvbuff_t *tvb, unsigned offset, bool with_msg )
 {
 	uint8_t	 symbol_table_id    = 0;
 	uint8_t	 symbol_code	    = 0;

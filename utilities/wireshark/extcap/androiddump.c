@@ -28,8 +28,8 @@
 #include <wsutil/cmdarg_err.h>
 #include <wsutil/inet_addr.h>
 #include <wsutil/exported_pdu_tlvs.h>
-
-#include "ui/failure_message.h"
+#include <wsutil/report_message.h>
+#include <app/application_flavor.h>
 
 #ifdef HAVE_NETINET_IN_H
 #    include <netinet/in.h>
@@ -80,9 +80,8 @@
 #else
     #include "wiretap/wtap.h"
     #include "wiretap/pcap-encap.h"
+    #include "ui/failure_message.h"
 #endif
-
-#include <cli_main.h>
 
 #ifdef ANDROIDDUMP_USE_LIBPCAP
     #define EXTCAP_ENCAP_BLUETOOTH_H4_WITH_PHDR DLT_BLUETOOTH_H4_WITH_PHDR
@@ -410,7 +409,9 @@ static void useNonBlockingConnectTimeout(socket_handle_t  sock) {
         ws_debug("Can't set socket timeout, using default");
 #else
     int flags = fcntl(sock, F_GETFL);
-    fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+    if (-1 == fcntl(sock, F_SETFL, flags | O_NONBLOCK)) {
+        ws_info("Failure setting socket to non-blocking: %s", g_strerror(errno));
+    }
 #endif
 }
 
@@ -426,7 +427,9 @@ static void useNormalConnectTimeout(socket_handle_t  sock) {
     ioctlsocket(sock, FIONBIO, &non_blocking);
 #else
     int flags = fcntl(sock, F_GETFL);
-    fcntl(sock, F_SETFL, flags & ~O_NONBLOCK);
+    if (-1 == fcntl(sock, F_SETFL, flags & ~O_NONBLOCK)) {
+        ws_info("Failure setting socket to blocking: %s", g_strerror(errno));
+    }
     const struct timeval socket_timeout = {
         .tv_sec = SOCKET_RW_TIMEOUT_MS / 1000,
         .tv_usec = (SOCKET_RW_TIMEOUT_MS % 1000) * 1000
@@ -463,20 +466,23 @@ static struct extcap_dumper extcap_dumper_open(char *fifo, int encap) {
     int file_type_subtype;
     int err = 0;
     char *err_info = NULL;
+    const struct file_extension_info* file_extensions;
+    unsigned num_extensions;
 
-    wtap_init(false);
+    application_file_extensions(&file_extensions, &num_extensions);
+    wtap_init(false, application_configuration_environment_prefix(), file_extensions, num_extensions);
 
     params.encap = encap;
     params.snaplen = PACKET_LENGTH;
     file_type_subtype = wtap_pcap_nsec_file_type_subtype();
-    extcap_dumper.dumper.wtap = wtap_dump_open(fifo, file_type_subtype, WTAP_UNCOMPRESSED, &params, &err, &err_info);
+    extcap_dumper.dumper.wtap = wtap_dump_open(fifo, file_type_subtype, WS_FILE_UNCOMPRESSED, &params, &err, &err_info);
     if (!extcap_dumper.dumper.wtap) {
-        cfile_dump_open_failure_message(fifo, err, err_info, file_type_subtype);
+        report_cfile_dump_open_failure(fifo, err, err_info, file_type_subtype);
         exit(EXIT_CODE_CANNOT_SAVE_WIRETAP_DUMP);
     }
     extcap_dumper.encap = encap;
     if (!wtap_dump_flush(extcap_dumper.dumper.wtap, &err)) {
-        cfile_dump_open_failure_message(fifo, err, NULL, file_type_subtype);
+        report_cfile_dump_open_failure(fifo, err, NULL, file_type_subtype);
         exit(EXIT_CODE_CANNOT_SAVE_WIRETAP_DUMP);
     }
 #endif
@@ -527,18 +533,18 @@ static bool extcap_dumper_dump(struct extcap_dumper extcap_dumper,
     rec.rec_header.packet_header.caplen = (uint32_t) captured_length;
     rec.rec_header.packet_header.len = (uint32_t) reported_length;
 
-    ws_buffer_append(&rec.data, buffer, captured_length);
+    ws_buffer_append(&rec.data, (const uint8_t*)buffer, captured_length);
 
     if (!wtap_dump(extcap_dumper.dumper.wtap, &rec, &err, &err_info)) {
-        cfile_write_failure_message(NULL, fifo, err, err_info, 0,
-                                    wtap_dump_file_type_subtype(extcap_dumper.dumper.wtap));
+        report_cfile_write_failure(NULL, fifo, err, err_info, 0,
+                                   wtap_dump_file_type_subtype(extcap_dumper.dumper.wtap));
         wtap_rec_cleanup(&rec);
         return false;
     }
 
     if (!wtap_dump_flush(extcap_dumper.dumper.wtap, &err)) {
-        cfile_write_failure_message(NULL, fifo, err, NULL, 0,
-                                    wtap_dump_file_type_subtype(extcap_dumper.dumper.wtap));
+        report_cfile_write_failure(NULL, fifo, err, NULL, 0,
+                                   wtap_dump_file_type_subtype(extcap_dumper.dumper.wtap));
         wtap_rec_cleanup(&rec);
         return false;
     }
@@ -930,7 +936,7 @@ static void new_interface(extcap_parameters * extcap_conf, const char *interface
             is_specified_interface(interface, INTERFACE_ANDROID_BLUETOOTH_EXTERNAL_PARSER) ||
             is_specified_interface(interface, INTERFACE_ANDROID_BLUETOOTH_BTSNOOP_NET)) {
 
-        extcap_base_register_interface_ext(extcap_conf, interface, ifdisplay, 99, "BluetoothH4", "Bluetooth HCI UART transport layer plus pseudo-header" );
+        extcap_base_register_interface_ext(extcap_conf, interface, ifdisplay, 99, "BluetoothH4", "Bluetooth HCI UART transport layer plus pseudo-header", EXTCAP_CONTROL_NONE);
     } else if (is_logcat_interface(interface) || is_logcat_text_interface(interface)) {
         extcap_base_register_interface(extcap_conf, interface, ifdisplay, 252, "Upper PDU" );
     } else if (is_specified_interface(interface, INTERFACE_ANDROID_TCPDUMP)) {
@@ -947,7 +953,7 @@ static void new_fake_interface_for_list_dlts(extcap_parameters * extcap_conf,
     if (is_specified_interface(ifname, INTERFACE_ANDROID_BLUETOOTH_HCIDUMP) ||
             is_specified_interface(ifname, INTERFACE_ANDROID_BLUETOOTH_EXTERNAL_PARSER) ||
             is_specified_interface(ifname, INTERFACE_ANDROID_BLUETOOTH_BTSNOOP_NET)) {
-        extcap_base_register_interface_ext(extcap_conf, ifname, ifname, 99, "BluetoothH4", "Bluetooth HCI UART transport layer plus pseudo-header" );
+        extcap_base_register_interface_ext(extcap_conf, ifname, ifname, 99, "BluetoothH4", "Bluetooth HCI UART transport layer plus pseudo-header", EXTCAP_CONTROL_NONE);
     } else if (is_logcat_interface(ifname) || is_logcat_text_interface(ifname)) {
         extcap_base_register_interface(extcap_conf, ifname, ifname, 252, "Upper PDU" );
     } else if (is_specified_interface(ifname, INTERFACE_ANDROID_TCPDUMP)) {
@@ -1685,7 +1691,7 @@ static int capture_android_bluetooth_external_parser(char *interface,
     uint64_t                      *timestamp;
     char                          *packet = buffer + BLUEDROID_TIMESTAMP_SIZE - sizeof(own_pcap_bluetooth_h4_header); /* skip timestamp (8 bytes) and reuse its space for header */
     own_pcap_bluetooth_h4_header  *h4_header;
-    uint8_t                       *payload = packet + sizeof(own_pcap_bluetooth_h4_header);
+    uint8_t                       *payload = (uint8_t*)(packet + sizeof(own_pcap_bluetooth_h4_header));
     const char                    *adb_tcp_bluedroid_external_parser_template = "tcp:%05u";
     socklen_t                      slen;
     ssize_t                        length;
@@ -2520,7 +2526,7 @@ int main(int argc, char *argv[]) {
     cmdarg_err_init(extcap_log_cmdarg_err, extcap_log_cmdarg_err);
 
     /* Initialize log handler early so we can have proper logging during startup. */
-    extcap_log_init();
+    extcap_log_init(extcap_conf);
 
     /*
      * Get credential information for later use.
@@ -2531,18 +2537,20 @@ int main(int argc, char *argv[]) {
      * Attempt to get the pathname of the directory containing the
      * executable file.
      */
-    err_msg = configuration_init(argv[0]);
+    err_msg = configuration_init(argv[0], "wireshark");
     if (err_msg != NULL) {
         ws_warning("Can't get pathname of directory containing the extcap program: %s.",
                   err_msg);
         g_free(err_msg);
     }
 
+#ifndef ANDROIDDUMP_USE_LIBPCAP
     init_report_failure_message("androiddump");
+#endif
 
     extcap_conf = g_new0(extcap_parameters, 1);
 
-    help_url = data_file_url("androiddump.html");
+    help_url = data_file_url("androiddump.html", application_configuration_environment_prefix());
     extcap_base_set_util_info(extcap_conf, argv[0], ANDROIDDUMP_VERSION_MAJOR, ANDROIDDUMP_VERSION_MINOR,
         ANDROIDDUMP_VERSION_RELEASE, help_url);
     g_free(help_url);

@@ -13,9 +13,8 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#define WS_LOG_DOMAIN "packet-wtls"
-
 #include "config.h"
+#define WS_LOG_DOMAIN "packet-wtls"
 #include <wireshark.h>
 
 #include <epan/packet.h>
@@ -308,7 +307,7 @@ static void dissect_wtls_handshake (proto_tree *, tvbuff_t *, unsigned, unsigned
 static int
 dissect_wtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 
 	char pdut;
 	unsigned count = 0;

@@ -25,6 +25,7 @@
 #include "ui/rtp_stream.h"
 
 #include <QString>
+#include <QUuid>
 
 class QAction;
 class QFont;
@@ -40,6 +41,7 @@ extern "C" {
 
 struct _address;
 struct epan_range;
+struct _e_guid_t;
 
 #ifdef __cplusplus
 }
@@ -90,12 +92,23 @@ QByteArray gchar_free_to_qbytearray(char *glib_string);
  */
 QByteArray gstring_free_to_qbytearray(GString *glib_gstring);
 
-/** Transfer ownership of a GbyteArray to a newly constructed QByteArray
+/** Transfer ownership of a GByteArray to a newly constructed QByteArray
  *
  * @param glib_array A GByteArray or NULL. Will be freed.
  * @return A QByteArray instance created from the input array.
  */
 QByteArray gbytearray_free_to_qbytearray(GByteArray *glib_array);
+
+/** Transfer ownership of a GBytes to a newly constructed QByteArray
+ *
+ * @param glib_bytes A GBytes or NULL. Will be freed.
+ * @return A QByteArray instance created from the input array.
+ *
+ * @note Do not call this if the GBytes has more than SSIZE_MAX bytes.
+ * QByteArray can store qsizetype (ssize_t), whereas QBytes can store size_t
+ * bytes. Cf. the warning on g_bytes_unref_to_array().
+ */
+QByteArray gbytes_free_to_qbytearray(GBytes *glib_bytes);
 
 /** Convert an integer to a formatted string representation.
  *
@@ -175,9 +188,17 @@ const QString file_size_to_qstring(const int64_t size);
  *
  * @param ti_time The value to convert.
  *
- * @return A QString representation of the file size in SI units.
+ * @return A QString representation of the date time value.
  */
 const QString time_t_to_qstring(time_t ti_time);
+
+/** Convert a e_guid_t value to a QUuid.
+ *
+ * @param guid The value to convert.
+ *
+ * @return A QUuid instance created from the e_guid_t.
+ */
+QUuid e_guid_t_to_quuid(const struct _e_guid_t &guid);
 
 /** Escape HTML metacharacters in a string.
  *
@@ -186,6 +207,17 @@ const QString time_t_to_qstring(time_t ti_time);
  * @return A QString with escaped metacharacters.
  */
 QString html_escape(const QString plain_string);
+
+/** Remove line terminators from a string. Similar to QString::simplified,
+ * but does not remove long stretches of spaces or tabs where no newline
+ * or carriage return is present.
+ *
+ * @param multiline_string String to sanitize.
+ *
+ * @return A QString with line terminators (and whitespace before and after)
+ * replaced with a single space.
+*/
+QString join_lines(const QString multiline_string);
 
 /**
  * Round the current size of a font up to its next "smooth" size.
@@ -229,14 +261,6 @@ void desktop_show_in_folder(const QString file_path);
 bool rect_on_screen(const QRect &rect);
 
 /**
- * Set the "shortcutVisibleInContextMenu" property to true for
- * a list of qactions.
- *
- * @param actions The actions to make visible.
- */
-void set_action_shortcuts_visible_in_context_menu(QList<QAction *> actions);
-
-/**
  * Create copy of all rtpstream_ids to new QVector
  * => caller must release it with qvector_rtpstream_ids_free()
  *
@@ -276,14 +300,38 @@ QString openDialogInitialDir();
 void storeLastDir(QString dir);
 
 /**
- * @brief Compare two file paths for equality, handling platform-specific
- * case sensitivity and filesystem quirks.
+ * Compare two file paths for equality using platform-aware logic.
+ *
+ * When both files exist on disk, QFileInfo::operator== is used,
+ * which resolves symlinks, normalizes paths, and respects the
+ * filesystem's case sensitivity.  When at least one file is
+ * missing, absolute paths are compared with platform-appropriate
+ * case sensitivity:
+ *
+ *  - Windows: always case-insensitive.
+ *  - macOS / FreeBSD (where _PC_CASE_SENSITIVE is available):
+ *    pathconf() is queried at runtime to detect whether the
+ *    underlying volume is case-sensitive or not.
+ *  - Other Unix: case-sensitive.
  *
  * @param path1 First file path.
  * @param path2 Second file path.
- * @return true if both paths refer to the same file.
+ * @return true if the two paths refer to the same file.
  */
 bool filePathsMatch(const QString &path1, const QString &path2);
+
+/**
+ * Directory in which to create temporary files.
+ *
+ * The directory the user asked for - from --temp-dir, the Capture Options
+ * dialog, or the capture.temp_dir preference - and QDir::tempPath() when
+ * none of those chose one. Use this rather than QDir::tempPath() for any
+ * scratch file whose size follows the capture, so that a user who has
+ * pointed Wireshark at a roomier disk actually gets it.
+ *
+ * @return The directory, without a trailing separator.
+ */
+QString tempPath();
 
 #endif /* __QT_UI_UTILS__H__ */
 

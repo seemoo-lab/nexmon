@@ -1,0 +1,4 @@
+tcpdump: listening on mon0, link-type IEEE802_11_RADIO (802.11 plus radiotap header), snapshot length 256 bytes
+19 packets captured
+21 packets received by filter
+0 packets dropped by kernel

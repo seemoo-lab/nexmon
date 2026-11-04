@@ -25,10 +25,12 @@
 #include <epan/epan.h>
 #include <epan/tfs.h>
 #include <epan/expert.h>
+#include <epan/tap.h>
 
 #include <wsutil/ws_padding_to.h>
 
 #include "packet-link16.h"
+#include "packet-dis.h"
 
 #define DEFAULT_DIS_UDP_PORT 3000 /* Not IANA registered */
 
@@ -37,12 +39,19 @@
 
 // Global hash table to store previous EntityStatePDU EntityIdentifier
 static wmem_map_t *packet_context_map = NULL;
+static int dis_tap = -1;
 
 // Structure to hold this EntityStatePDU entitykind and entitydomain
 typedef struct {
     uint8_t entity_kind;
     uint8_t entity_domain;
 } packet_context_t;
+
+static void dis_reset_tap_info(dis_tap_info_t *dis_info)
+{
+    memset(dis_info, 0, sizeof(*dis_info));
+    dis_info->info_payload_type = DIS_PAYLOAD_TYPE_INVALID;
+}
 /* SISO-REF-010-2023 Version 34 draft d11 - 21 July 2024 XML generated Content Begin */
 /*  	Reprinted with permission from SISO Inc.    */
 
@@ -16926,18 +16935,18 @@ static int hf_appearance_landform_interior_lights;
 static int hf_appearance_landform_surrender_state;
 static int hf_appearance_landform_masked_cloaked;
 static int hf_appearance_airform_paint_scheme;
-static int hf_appearance_airform_propulsion_killed; 
+static int hf_appearance_airform_propulsion_killed;
 static int hf_appearance_airform_nvg_mode;
 static int hf_appearance_airform_damage;
 static int hf_appearance_airform_is_smoke_emanating;
 static int hf_appearance_airform_is_engine_emitting_smoke;
 static int hf_appearance_airform_trailing_effects;
-static int hf_appearance_airform_canopy_troop_door; 
+static int hf_appearance_airform_canopy_troop_door;
 static int hf_appearance_airform_landing_lights_on;
 static int hf_appearance_airform_navigation_lights_on;
 static int hf_appearance_airform_anti_collision_lights_on;
 static int hf_appearance_airform_is_flaming;
-static int hf_appearance_airform_afterburner_on; 
+static int hf_appearance_airform_afterburner_on;
 static int hf_appearance_airform_lower_anti_collision_light_on;
 static int hf_appearance_airform_upper_anti_collision_light_on;
 static int hf_appearance_airform_anti_collision_light_day_night;
@@ -17718,7 +17727,7 @@ static int parse_Link16_Message_Data(proto_tree *tree, tvbuff_t *tvb, int offset
         memset(&state, 0, sizeof(state));
 
         for (i = 0; i < (encodingScheme & 0x3FFF); i++) {
-            int8_t *word = (int8_t *)wmem_alloc(pinfo->pool, 10);
+            uint8_t *word = (uint8_t *)wmem_alloc(pinfo->pool, 10);
             if (!(i & 1)) {
                 word[0] = (cache >> 16) & 0xFF;
                 word[1] = (cache >> 24) & 0xFF;
@@ -18028,7 +18037,7 @@ static int dissect_DIS_FIELDS_VR_DATA_QUERY(tvbuff_t *tvb, proto_tree *tree, int
 
 
 static int dissect_DIS_PARSER_ENTITY_STATE_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
-{    
+{
     uint8_t entityKind;
     uint8_t entityDomain;
     static uint32_t entitySite;
@@ -18069,7 +18078,7 @@ static int dissect_DIS_PARSER_ENTITY_STATE_PDU(tvbuff_t *tvb, packet_info *pinfo
         context = wmem_new0(wmem_file_scope(), packet_context_t);
         context->entity_kind = entityKind;
         context->entity_domain = entityDomain;
-        
+
         wmem_map_insert(packet_context_map, GUINT_TO_POINTER(entityid), context);
     }
 
@@ -18139,19 +18148,19 @@ static int dissect_DIS_PARSER_ENTITY_STATE_PDU(tvbuff_t *tvb, packet_info *pinfo
     {
         static int * const entity_appearance_domain_air_bitmask[] =
         {
-            &hf_appearance_airform_paint_scheme, 
-            &hf_appearance_airform_propulsion_killed, 
+            &hf_appearance_airform_paint_scheme,
+            &hf_appearance_airform_propulsion_killed,
             &hf_appearance_airform_nvg_mode,
             &hf_appearance_airform_damage,
             &hf_appearance_airform_is_smoke_emanating,
             &hf_appearance_airform_is_engine_emitting_smoke,
             &hf_appearance_airform_trailing_effects,
-            &hf_appearance_airform_canopy_troop_door, 
+            &hf_appearance_airform_canopy_troop_door,
             &hf_appearance_airform_landing_lights_on,
             &hf_appearance_airform_navigation_lights_on,
             &hf_appearance_airform_anti_collision_lights_on,
             &hf_appearance_airform_is_flaming,
-            &hf_appearance_airform_afterburner_on, 
+            &hf_appearance_airform_afterburner_on,
             &hf_appearance_airform_lower_anti_collision_light_on,
             &hf_appearance_airform_upper_anti_collision_light_on,
             &hf_appearance_airform_anti_collision_light_day_night,
@@ -18315,7 +18324,7 @@ static int dissect_DIS_PARSER_ENTITY_STATE_UPDATE_PDU(tvbuff_t *tvb, packet_info
 
     packet_context_t *context = wmem_map_lookup(packet_context_map, GUINT_TO_POINTER(entityid));
     if (context != NULL)
-    { 
+    {
         //look for the previous EntityStatePDU in order to get the EntityKind and EntityDomain
         if ((context->entity_kind == DIS_ENTITYKIND_PLATFORM) &&
             (context->entity_domain == DIS_DOMAIN_LAND))
@@ -18358,18 +18367,18 @@ static int dissect_DIS_PARSER_ENTITY_STATE_UPDATE_PDU(tvbuff_t *tvb, packet_info
             static int * const entity_appearance_domain_air_bitmask[] =
             {
                 &hf_appearance_airform_paint_scheme,
-                &hf_appearance_airform_propulsion_killed, 
+                &hf_appearance_airform_propulsion_killed,
                 &hf_appearance_airform_nvg_mode,
                 &hf_appearance_airform_damage,
                 &hf_appearance_airform_is_smoke_emanating,
                 &hf_appearance_airform_is_engine_emitting_smoke,
                 &hf_appearance_airform_trailing_effects,
-                &hf_appearance_airform_canopy_troop_door, 
+                &hf_appearance_airform_canopy_troop_door,
                 &hf_appearance_airform_landing_lights_on,
                 &hf_appearance_airform_navigation_lights_on,
                 &hf_appearance_airform_anti_collision_lights_on,
                 &hf_appearance_airform_is_flaming,
-                &hf_appearance_airform_afterburner_on, 
+                &hf_appearance_airform_afterburner_on,
                 &hf_appearance_airform_lower_anti_collision_light_on,
                 &hf_appearance_airform_upper_anti_collision_light_on,
                 &hf_appearance_airform_anti_collision_light_day_night,
@@ -18414,14 +18423,14 @@ static int dissect_DIS_PARSER_ENTITY_STATE_UPDATE_PDU(tvbuff_t *tvb, packet_info
         else
         {
             proto_tree_add_item(tree, hf_entity_appearance, tvb, offset, 4, ENC_BIG_ENDIAN);
-        }     
+        }
     }
     else
     {
         sub_tree = proto_tree_add_item(tree, hf_entity_appearance, tvb, offset, 4, ENC_BIG_ENDIAN);
         expert_add_info(pinfo, sub_tree, &ei_entityidentifier_not_yet_received);
     }
-    
+
     offset += 4;
 
     for (i = 0; i < numVariable; i++)
@@ -19029,31 +19038,47 @@ static int dissect_DIS_PARSER_IFF_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_t
 
 /* DIS Radio Communications protocol (RCP) family PDUs
  */
-static int dissect_DIS_PARSER_TRANSMITTER_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
+static int dissect_DIS_PARSER_TRANSMITTER_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, dis_tap_info_t *dis_info)
 {
     proto_item* ti;
     proto_tree* sub_tree;
     uint32_t radioID, disRadioTransmitState, modulationParamLength;
+    uint8_t disRadioSource;
     uint16_t systemModulation;
+
+    dis_info->info_valid_radio_pdu_tap = true;
+    dis_info->info_pdu_type = DIS_TAP_PDU_TRANSMITTER;
+    dis_info->info_entity_id_site = tvb_get_ntohs(tvb, offset);
+    dis_info->info_entity_id_appl = tvb_get_ntohs(tvb, offset + 2);
+    dis_info->info_entity_id_entity = tvb_get_ntohs(tvb, offset + 4);
 
     offset = parseField_Entity(tvb, tree, offset, "Entity ID", NULL);
 
     proto_tree_add_item(tree, hf_dis_radio_id, tvb, offset, 2, ENC_BIG_ENDIAN);
     radioID = tvb_get_ntohs(tvb, offset);
+    dis_info->info_radio_id = (uint16_t)radioID;
     col_append_fstr( pinfo->cinfo, COL_INFO, ", RadioID=%u", radioID);
     offset += 2;
 
     offset = dissect_DIS_FIELDS_RADIO_ENTITY_TYPE(tvb, tree, offset, "Radio Entity Type");
 
     disRadioTransmitState = tvb_get_uint8(tvb, offset);
+    dis_info->info_transmit_state = (uint8_t)disRadioTransmitState;
     proto_tree_add_item(tree, hf_dis_radio_transmit_state, tvb, offset, 1, ENC_BIG_ENDIAN);
     col_append_fstr( pinfo->cinfo, COL_INFO, ", Transmit State=%s", val_to_str_const(disRadioTransmitState, DIS_PDU_Transmitter_Transmit_State_Strings, "Unknown Transmit State"));
     offset++;
 
+    disRadioSource = tvb_get_uint8(tvb, offset);
+    dis_info->info_radio_input_source = disRadioSource;
     proto_tree_add_item(tree, hf_dis_radio_input_source, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
     proto_tree_add_item(tree, hf_dis_padding, tvb, offset, 2, ENC_NA);
+    dis_info->info_payload_offset = 0;
+    dis_info->info_payload_len = 0;
+    dis_info->info_all_data_present = tvb_captured_length(tvb) >= tvb_reported_length(tvb);
+    dis_info->info_data = tvb_get_ptr(tvb, 0, tvb_captured_length(tvb));
+
     offset += 2;
 
     sub_tree = proto_tree_add_subtree(tree, tvb, offset, 24, ett_antenna_location, NULL, "Antenna Location");
@@ -19136,9 +19161,7 @@ static int dissect_DIS_PARSER_DESIGNATOR_PDU(tvbuff_t *tvb, packet_info *pinfo, 
 
     offset = parseField_Entity(tvb, tree, offset, "Designating Entity ID", NULL);
 
-
-    proto_tree_add_item(tree, hf_dis_designator_code_name, tvb, offset, 2, ENC_BIG_ENDIAN);
-    code_name = tvb_get_ntohs(tvb, offset);
+    proto_tree_add_item_ret_uint16(tree, hf_dis_designator_code_name, tvb, offset, 2, ENC_BIG_ENDIAN, &code_name);
     col_append_fstr( pinfo->cinfo, COL_INFO, ", CodeName=%u", code_name);
     offset += 2;
 
@@ -19189,7 +19212,7 @@ static int dissect_DIS_PARSER_DESIGNATOR_PDU(tvbuff_t *tvb, packet_info *pinfo, 
 
 static int dissect_DIS_PARSER_INTERCOM_CONTROL_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
-    int8_t source_line_id;
+    uint8_t source_line_id;
     proto_tree_add_item(tree, hf_intercom_control_control_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
 
@@ -19202,8 +19225,7 @@ static int dissect_DIS_PARSER_INTERCOM_CONTROL_PDU(tvbuff_t *tvb, packet_info *p
     proto_tree_add_item(tree, hf_intercom_control_source_communications_device_id, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    proto_tree_add_item(tree, hf_intercom_control_source_line_id, tvb, offset, 1, ENC_BIG_ENDIAN);
-    source_line_id = tvb_get_uint8(tvb, offset);
+    proto_tree_add_item_ret_uint8(tree, hf_intercom_control_source_line_id, tvb, offset, 1, ENC_BIG_ENDIAN, &source_line_id);
     col_append_fstr( pinfo->cinfo, COL_INFO, ", SourceLineID=%u", source_line_id);
     offset += 1;
 
@@ -19227,26 +19249,40 @@ static int dissect_DIS_PARSER_INTERCOM_CONTROL_PDU(tvbuff_t *tvb, packet_info *p
     return offset;
 }
 
-static int dissect_DIS_PARSER_SIGNAL_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
+static int dissect_DIS_PARSER_SIGNAL_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, uint8_t pduType, dis_tap_info_t *dis_info)
 {
     proto_item* ti;
     proto_tree* sub_tree;
     uint32_t radioID, encodingScheme, numSamples;
     uint16_t tdlType;
+    int captured_remaining;
+    int reported_remaining;
     uint8_t messageType;
+
+    dis_info->info_valid_radio_pdu_tap = true;
+    dis_info->info_pdu_type = pduType;
+    dis_info->info_entity_id_site = tvb_get_ntohs(tvb, offset);
+    dis_info->info_entity_id_appl = tvb_get_ntohs(tvb, offset + 2);
+    dis_info->info_entity_id_entity = tvb_get_ntohs(tvb, offset + 4);
 
     offset = parseField_Entity(tvb, tree, offset, "Entity ID", NULL);
 
     proto_tree_add_item(tree, hf_dis_radio_id, tvb, offset, 2, ENC_BIG_ENDIAN);
     radioID = tvb_get_ntohs(tvb, offset);
+    dis_info->info_radio_id = (uint16_t)radioID;
     col_append_fstr( pinfo->cinfo, COL_INFO, ", RadioID=%u", radioID);
     offset += 2;
 
     encodingScheme = tvb_get_ntohs(tvb, offset);
-    if ((encodingScheme & 0xC000) >> 14 == DIS_ENCODING_CLASS_ENCODED_AUDIO)
+    if (((encodingScheme & 0xC000) >> 14) == DIS_ENCODING_CLASS_ENCODED_AUDIO) {
+        dis_info->info_payload_type = (uint8_t)DIS_ENCODING_TYPE(encodingScheme);
+        dis_info->info_payload_type_str = val_to_str_const(DIS_ENCODING_TYPE(encodingScheme),
+            DIS_PDU_Signal_Encoding_Type_Strings, "Unknown");
+
         col_append_fstr(pinfo->cinfo, COL_INFO,", Encoding Type=%s",
             val_to_str_const(DIS_ENCODING_TYPE(encodingScheme),
             DIS_PDU_Signal_Encoding_Type_Strings, "Unknown"));
+    }
 
     ti = proto_tree_add_item(tree, hf_dis_ens, tvb, offset, 2, ENC_BIG_ENDIAN);
     sub_tree = proto_item_add_subtree(ti, ett_dis_ens);
@@ -19261,17 +19297,21 @@ static int dissect_DIS_PARSER_SIGNAL_PDU(tvbuff_t *tvb, packet_info *pinfo, prot
     proto_tree_add_item(tree, hf_dis_tdl_type, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    proto_tree_add_item(tree, hf_dis_sample_rate, tvb, offset, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_dis_sample_rate, tvb, offset, 4, ENC_BIG_ENDIAN,
+        &dis_info->info_sample_rate);
     offset += 4;
 
     proto_tree_add_item(tree, hf_dis_data_length, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
     numSamples = tvb_get_ntohs(tvb, offset);
+    dis_info->info_num_samples = numSamples;
     proto_tree_add_item(tree, hf_dis_num_of_samples, tvb, offset, 2, ENC_BIG_ENDIAN);
     if (numSamples)
         col_append_fstr(pinfo->cinfo, COL_INFO, ", Number of Samples=%u", numSamples);
     offset += 2;
+
+    dis_info->info_payload_offset = offset;
 
     if (tdlType == DIS_PDU_SIGNAL_TDL_TYPE_LINK_16_STANDARDIZED_FORMAT_JTIDS_MIDS_TADIL_J) {
         offset = parse_DIS_FIELDS_SIGNAL_LINK16_NETWORK_HEADER(tvb, tree, offset, &messageType);
@@ -19284,6 +19324,18 @@ static int dissect_DIS_PARSER_SIGNAL_PDU(tvbuff_t *tvb, packet_info *pinfo, prot
         proto_tree_add_item(tree, hf_dis_signal_data, tvb, offset, -1, ENC_NA );
         offset += tvb_reported_length_remaining(tvb, offset);
     }
+
+    captured_remaining = tvb_captured_length_remaining(tvb, dis_info->info_payload_offset);
+    reported_remaining = tvb_reported_length_remaining(tvb, dis_info->info_payload_offset);
+    if (captured_remaining < 0) {
+        captured_remaining = 0;
+    }
+    if (reported_remaining < 0) {
+        reported_remaining = 0;
+    }
+    dis_info->info_payload_len = (unsigned)captured_remaining;
+    dis_info->info_all_data_present = captured_remaining >= reported_remaining;
+    dis_info->info_data = tvb_get_ptr(tvb, 0, tvb_captured_length(tvb));
     /* ****ck******* need to look for padding bytes */
 
     return offset;
@@ -19681,16 +19733,13 @@ static int dissect_DIS_PARSER_AGGREGATE_STATE_PDU(tvbuff_t *tvb, packet_info *pi
     proto_tree_add_item(sub_tree, hf_dis_aggregate_velocity_z, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
 
-    number_of_aggregates = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(tree, hf_dis_aggregate_number_of_aggregates, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_dis_aggregate_number_of_aggregates, tvb, offset, 2, ENC_BIG_ENDIAN, &number_of_aggregates);
     offset += 2;
 
-    number_of_entities = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(tree, hf_dis_aggregate_number_of_entities, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_dis_aggregate_number_of_entities, tvb, offset, 2, ENC_BIG_ENDIAN, &number_of_entities);
     offset += 2;
 
-    number_of_silent_aggregates_types = tvb_get_ntohs(tvb, offset);
-    proto_tree_add_item(tree, hf_dis_aggregate_number_of_silent_aggregates_types, tvb, offset, 2, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_dis_aggregate_number_of_silent_aggregates_types, tvb, offset, 2, ENC_BIG_ENDIAN, &number_of_silent_aggregates_types);
     offset += 2;
 
     proto_tree_add_item(tree, hf_dis_aggregate_number_of_silent_entity_types, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -19717,8 +19766,7 @@ static int dissect_DIS_PARSER_AGGREGATE_STATE_PDU(tvbuff_t *tvb, packet_info *pi
     /* ti = proto_tree_add_text(tree, tvb, offset, 0, "Silent Entity System List - NOT FINISHED !!!"); */
     offset += 0;
 
-    number_of_variable_datum_records = tvb_get_ntohl(tvb, offset);
-    proto_tree_add_item(tree, hf_dis_aggregate_number_of_variable_datum_records, tvb, offset, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_dis_aggregate_number_of_variable_datum_records, tvb, offset, 4, ENC_BIG_ENDIAN, &number_of_variable_datum_records);
     offset += 4;
 
     offset = parseField_DIS_FIELDS_VARIABLE_DATUM(tvb, tree, offset, "Variable datum", number_of_variable_datum_records);
@@ -20495,7 +20543,7 @@ static int parse_persistent_pdu_payload(tvbuff_t* tvb, packet_info* pinfo, proto
     }
 }
 
-static int parse_pdu_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, uint8_t pduType)
+static int parse_pdu_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, uint8_t pduType, dis_tap_info_t *dis_info)
 {
     switch (pduType)
     {
@@ -20518,10 +20566,10 @@ static int parse_pdu_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree
         return dissect_DIS_PARSER_DESIGNATOR_PDU(tvb, pinfo, tree, offset);
     /* DIS Radio Communications protocol (RCP) family PDUs */
     case DIS_PDUTYPE_TRANSMITTER:
-        return dissect_DIS_PARSER_TRANSMITTER_PDU(tvb, pinfo, tree, offset);
+          return dissect_DIS_PARSER_TRANSMITTER_PDU(tvb, pinfo, tree, offset, dis_info);
     case DIS_PDUTYPE_SIGNAL:
     case DIS_PDUTYPE_INTERCOM_SIGNAL:
-        return dissect_DIS_PARSER_SIGNAL_PDU(tvb, pinfo, tree, offset);
+          return dissect_DIS_PARSER_SIGNAL_PDU(tvb, pinfo, tree, offset, pduType, dis_info);
     case DIS_PDUTYPE_RECEIVER:
         return dissect_DIS_PARSER_RECEIVER_PDU(tvb, pinfo, tree, offset);
     case DIS_PDUTYPE_INTERCOM_CONTROL:
@@ -20602,13 +20650,16 @@ static int dissect_dis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     proto_tree *dis_payload_tree = NULL;
     proto_item *dis_payload_node = NULL;
 
-    int offset = 0;
-    int offsetBeforePayloadParse = 0;
+    unsigned offset = 0;
+    unsigned offsetBeforePayloadParse = 0;
 
     const char *pduString = 0;
 
     dis_header_t header;
     uint8_t persistentObjectPduType;
+    dis_tap_info_t *dis_info = wmem_new0(pinfo->pool, dis_tap_info_t);
+
+    dis_reset_tap_info(dis_info);
 
     /* DIS packets must be at least 12 bytes long.  DIS uses port 3000, by
      * default, but the Cisco Redundant Link Management protocol can also use
@@ -20634,6 +20685,7 @@ static int dissect_dis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
      */
     dis_header_tree = proto_tree_add_subtree(dis_tree, tvb, offset, 12, ett_dis_header, NULL, "Header");
     offset = parseDISHeader(tvb, dis_header_tree, offset, &header);
+    dis_info->info_tx_timestamp = tvb_get_ntohl(tvb, 4);
 
     /* Locate the string name for the PDU type enumeration,
      * or default to "Unknown".
@@ -20687,7 +20739,7 @@ static int dissect_dis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         }
         else
         {
-            offset = parse_pdu_payload(tvb, pinfo, dis_payload_tree, offset, header.pduType);
+            offset = parse_pdu_payload(tvb, pinfo, dis_payload_tree, offset, header.pduType, dis_info);
         }
     }
 
@@ -20696,6 +20748,11 @@ static int dissect_dis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     if (offset != offsetBeforePayloadParse)
     {
         proto_item_set_end(dis_payload_node, tvb, offset);
+    }
+
+    if ((dis_tap != -1) && dis_info->info_valid_radio_pdu_tap)
+    {
+        tap_queue_packet(dis_tap, pinfo, dis_info);
     }
 
     return tvb_captured_length(tvb);
@@ -23256,6 +23313,7 @@ void proto_register_dis(void)
     proto_register_subtree_array(ett, array_length(ett));
 
     dis_dissector_handle = register_dissector("dis", dissect_dis, proto_dis);
+    dis_tap = register_tap("dis");
 
     expert_dis = expert_register_protocol(proto_dis);
     expert_register_field_array(expert_dis, ei, array_length(ei));

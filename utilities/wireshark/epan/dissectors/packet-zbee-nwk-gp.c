@@ -131,6 +131,15 @@ typedef struct {
 #define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_MMIP   0x02
 #define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_GCLP   0x04
 #define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_CRP    0x08
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_SIP    0x10
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_ADCF   0x20
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_RES    0xC0
+
+/* Definitions for GP Commissioning command switch information field. */
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_INFO_LEN              0x02
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_NUM_CONTACTS     0x0F
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_SWITCH_TYPE      0x30
+#define ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_RES              0xC0
 
 /* Definitions for GP Commissioning command Number of server ClusterIDs (bitmask) */
 #define ZBEE_NWK_GP_CMD_COMMISSIONING_CLID_LIST_LEN_SRV 0x0F
@@ -150,6 +159,15 @@ typedef struct {
 #define ZBEE_NWK_GP_CMD_ZCL_TUNNEL_OPT_FRAME_TYPE               0x03
 #define ZBEE_NWK_GP_CMD_ZCL_TUNNEL_OPT_MAN_FIELD_PRESENT        0x04
 #define ZBEE_NWK_GP_CMD_ZCL_TUNNEL_OPT_DIRECTION                0x08
+
+/* Definition for GP Application Description command opt fields bitmasks */
+#define ZBEE_NWK_GP_CMD_APP_DESC_REPORT_DESC_OPT_TIMEOUT_PRESENT    0x01
+#define ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_ATTR_NUM          0x07
+#define ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_SERVER            0x08
+#define ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_MANU_ID_PRESENT   0x10
+#define ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_LEN_REMAIN            0x0F
+#define ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_REPORTED              0x10
+#define ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_VAL_PRESENT           0x20
 
 /* Definitions for GP Channel Request command. */
 #define ZBEE_NWK_GP_CMD_CHANNEL_REQUEST_1ST 0x0F
@@ -258,6 +276,9 @@ static int hf_zbee_nwk_gp_cmd_comm_appli_info_crp;
 static int hf_zbee_nwk_gp_cmd_comm_appli_info_gclp;
 static int hf_zbee_nwk_gp_cmd_comm_appli_info_mip;
 static int hf_zbee_nwk_gp_cmd_comm_appli_info_mmip;
+static int hf_zbee_nwk_gp_cmd_comm_appli_info_sip;
+static int hf_zbee_nwk_gp_cmd_comm_appli_info_adcf;
+static int hf_zbee_nwk_gp_cmd_comm_appli_info_res;
 static int hf_zbee_nwk_gp_cmd_comm_gpd_cmd_num;
 static int hf_zbee_nwk_gp_cmd_comm_gpd_cmd_id_list;
 static int hf_zbee_nwk_gp_cmd_comm_length_of_clid_list;
@@ -266,6 +287,13 @@ static int hf_zbee_nwk_gp_cmd_comm_length_of_clid_list_client;
 static int hf_zbee_nwk_cmd_comm_clid_list_server;
 static int hf_zbee_nwk_cmd_comm_clid_list_client;
 static int hf_zbee_nwk_cmd_comm_cluster_id;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_length;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_generic_switch_config;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_num_contacts;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_switch_type;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_reserved;
+static int hf_zbee_nwk_gp_cmd_comm_switch_info_current_contact_status;
 
 /* Commissioning reply. */
 static int hf_zbee_nwk_gp_cmd_comm_rep_opt;
@@ -290,6 +318,33 @@ static int hf_zbee_nwk_gp_cmd_zcl_tunnel_opt_direction;
 static int hf_zbee_nwk_gp_cmd_zcl_tunnel_opt;
 static int hf_zbee_nwk_gp_cmd_zcl_tunnel_command_id;
 static int hf_zbee_nwk_gp_cmd_zcl_tunnel_payload_len;
+
+/* Compact Attribute Reporting */
+static int hf_zbee_nwk_gp_cmd_compact_attr_report_report_id;
+static int hf_zbee_nwk_gp_cmd_compact_attr_report_data_points;
+
+/* Application Description */
+static int hf_zbee_nwk_gp_cmd_app_desc_total_report;
+static int hf_zbee_nwk_gp_cmd_app_desc_num_report;
+static int hf_zbee_nwk_gp_cmd_app_desc_report_desc_id;
+static int hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt;
+static int hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt_timeout_present;
+static int hf_zbee_nwk_gp_cmd_app_desc_report_desc_timeout;
+static int hf_zbee_nwk_gp_cmd_app_desc_report_desc_len_remain;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_num_recs;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_server;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_manu_id_present;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_cluster_id;
+static int hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_manu_id;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_id;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_data_type;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_len_remain;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_reported;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_val_present;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_offset;
+static int hf_zbee_nwk_gp_cmd_app_desc_attr_rec_val;
 
 /* Common to commands returning data */
 static int hf_zbee_nwk_gp_zcl_attr_status;
@@ -338,10 +393,16 @@ static int ett_zbee_nwk_fcf;
 static int ett_zbee_nwk_fcf_ext;
 static int ett_zbee_nwk_clu_rec;
 static int ett_zbee_nwk_att_rec;
+static int ett_zbee_nwk_cmd_app_desc_report_desc;
+static int ett_zbee_nwk_cmd_app_desc_data_pt_desc;
+static int ett_zbee_nwk_cmd_app_desc_data_pt_options;
+static int ett_zbee_nwk_cmd_app_desc_att_rec;
 static int ett_zbee_nwk_cmd_comm_gpd_cmd_id_list;
 static int ett_zbee_nwk_cmd_comm_length_of_clid_list;
 static int ett_zbee_nwk_cmd_comm_clid_list_server;
 static int ett_zbee_nwk_cmd_comm_clid_list_client;
+static int ett_zbee_nwk_cmd_comm_switch_info;
+static int ett_zbee_nwk_cmd_comm_switch_info_generic_switch_config;
 
 /* Common. */
 static GSList *zbee_gp_keyring;
@@ -456,11 +517,13 @@ static const value_string zbee_nwk_gp_app_id_names[] = {
     XXX( /*FP*/ ZB_GP_CMD_ID_REQUEST_ATTRIBUTES                       , 0xA4, "Request Attributes" ) \
     XXX( /*FP*/ ZB_GP_CMD_ID_READ_ATTRIBUTES_RESPONSE                 , 0xA5, "Read Attributes Response" ) \
     XXX( /*FP*/ ZB_GP_CMD_ID_ZCL_TUNNELING                            , 0xA6, "ZCL Tunneling" ) \
+    XXX( /*FP*/ ZB_GP_CMD_ID_COMPACT_ATTR_REPORT                      , 0xA8, "Compact Attribute Reporting" ) \
     XXX( /*FP*/ ZB_GP_CMD_ID_ANY_SENSOR_COMMAND_A0_A3                 , 0xAF, "Any GPD sensor command (0xA0 - 0xA3)" ) \
     XXX( /*FP*/ ZB_GP_CMD_ID_COMMISSIONING                            , 0xE0, "Commissioning" ) \
     XXX( /*F */ ZB_GP_CMD_ID_DECOMMISSIONING                          , 0xE1, "Decommissioning" ) \
     XXX( /*F */ ZB_GP_CMD_ID_SUCCESS                                  , 0xE2, "Success" ) \
     XXX( /*FP*/ ZB_GP_CMD_ID_CHANNEL_REQUEST                          , 0xE3, "Channel Request" ) \
+    XXX( /*FP*/ ZB_GP_CMD_ID_APPLICATION_DESC                         , 0xE4, "Application Description" ) \
     XXX( /*T */ ZB_GP_CMD_ID_COMMISSIONING_REPLY                      , 0xF0, "Commissioning Reply" ) \
     XXX( /*T */ ZB_GP_CMD_ID_WRITE_ATTRIBUTES                         , 0xF1, "Write Attributes" ) \
     XXX( /*T */ ZB_GP_CMD_ID_READ_ATTRIBUTES                          , 0xF2, "Read Attributes" ) \
@@ -531,6 +594,16 @@ static const value_string zbee_nwk_gp_manufacturer_greenpeak_dev_names[] = {
     { 0, NULL }
 };
 
+/* GP Generic switch type names. */
+static const value_string zbee_nwk_gp_switch_type_names[] = {
+    { 0x00, "Unknown: exact configuration apart from number of contacts unknown" },
+    { 0x01, "Button switch" },
+    { 0x02, "Rocker switch" },
+    { 0x03, "Reserved" },
+
+    { 0, NULL }
+};
+
 /* GP Src ID names. */
 static const value_string zbee_nwk_gp_src_id_names[] = {
     { ZBEE_NWK_GP_ZGPD_SRCID_ALL,     "All" },
@@ -541,22 +614,22 @@ static const value_string zbee_nwk_gp_src_id_names[] = {
 
 /* GP security key type names. */
 static const value_string zbee_nwk_gp_src_sec_keys_type_names[] = {
-    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_DERIVED_INDIVIDUAL_GPD_KEY,        "Derived individual GPD key" },
-    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_GPD_GROUP_KEY,                     "GPD group key" },
     { ZBEE_NWK_GP_SECURITY_KEY_TYPE_NO_KEY,                            "No key" },
+    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_ZB_NWK_KEY,                        "ZigBee NWK key" },
+    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_GPD_GROUP_KEY,                     "GPD group key" },
     { ZBEE_NWK_GP_SECURITY_KEY_TYPE_NWK_KEY_DERIVED_GPD_KEY_GROUP_KEY, "NWK key derived GPD group key" },
     { ZBEE_NWK_GP_SECURITY_KEY_TYPE_PRECONFIGURED_INDIVIDUAL_GPD_KEY,  "Individual, out of the box GPD key" },
-    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_ZB_NWK_KEY,                        "ZigBee NWK key" },
+    { ZBEE_NWK_GP_SECURITY_KEY_TYPE_DERIVED_INDIVIDUAL_GPD_KEY,        "Derived individual GPD key" },
 
     { 0, NULL }
 };
 
 /* GP security levels. */
 static const value_string zbee_nwk_gp_src_sec_levels_names[] = {
+    { ZBEE_NWK_GP_SECURITY_LEVEL_NO,       "No security" },
     { ZBEE_NWK_GP_SECURITY_LEVEL_1LSB,     "1 LSB of frame counter and short MIC only" },
     { ZBEE_NWK_GP_SECURITY_LEVEL_FULL,     "Full frame counter and full MIC only" },
     { ZBEE_NWK_GP_SECURITY_LEVEL_FULLENCR, "Encryption with full frame counter and full MIC" },
-    { ZBEE_NWK_GP_SECURITY_LEVEL_NO,       "No security" },
 
     { 0, NULL }
 };
@@ -689,7 +762,7 @@ static void uat_key_record_post_update_cb(void) {
  *@param nonce nonce buffer.
 */
 static void
-zbee_gp_make_nonce(zbee_nwk_green_power_packet *packet, char *nonce)
+zbee_gp_make_nonce(zbee_nwk_green_power_packet *packet, uint8_t *nonce)
 {
     memset(nonce, 0, ZBEE_SEC_CONST_NONCE_LEN);
 
@@ -732,7 +805,7 @@ zbee_gp_make_nonce(zbee_nwk_green_power_packet *packet, char *nonce)
  *@param key key.
 */
 static bool
-zbee_gp_decrypt_payload(zbee_nwk_green_power_packet *packet, const char *enc_buffer, const char offset, uint8_t
+zbee_gp_decrypt_payload(zbee_nwk_green_power_packet *packet, const uint8_t *enc_buffer, const unsigned offset, uint8_t
     *dec_buffer, unsigned payload_len, unsigned mic_len, uint8_t *key)
 {
     uint8_t *key_buffer = key;
@@ -776,6 +849,9 @@ dissect_zbee_nwk_gp_cmd_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_t
     uint8_t client_clid_num;
     proto_item *server_clid_list, *client_clid_list;
     proto_tree *server_clid_list_tree, *client_clid_list_tree;
+    uint8_t switch_info_length;
+    proto_item *switch_info;
+    proto_tree *switch_info_tree;
 
     void *enc_buffer;
     uint8_t *enc_buffer_withA;
@@ -807,11 +883,20 @@ dissect_zbee_nwk_gp_cmd_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_t
         &hf_zbee_nwk_gp_cmd_comm_appli_info_mmip,
         &hf_zbee_nwk_gp_cmd_comm_appli_info_gclp,
         &hf_zbee_nwk_gp_cmd_comm_appli_info_crp,
+        &hf_zbee_nwk_gp_cmd_comm_appli_info_sip,
+        &hf_zbee_nwk_gp_cmd_comm_appli_info_adcf,
+        &hf_zbee_nwk_gp_cmd_comm_appli_info_res,
         NULL
     };
     static int * const length_of_clid_list[] = {
         &hf_zbee_nwk_gp_cmd_comm_length_of_clid_list_server,
         &hf_zbee_nwk_gp_cmd_comm_length_of_clid_list_client,
+        NULL
+    };
+    static int * const generic_switch_config[] = {
+        &hf_zbee_nwk_gp_cmd_comm_switch_info_num_contacts,
+        &hf_zbee_nwk_gp_cmd_comm_switch_info_switch_type,
+        &hf_zbee_nwk_gp_cmd_comm_switch_info_reserved,
         NULL
     };
 
@@ -895,8 +980,7 @@ dissect_zbee_nwk_gp_cmd_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_t
         offset += 1;
         if (appli_info_options & ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_MIP) {
             /* Get Manufacturer ID. */
-            manufacturer_id = tvb_get_letohs(tvb, offset);
-            proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_comm_manufacturer_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item_ret_uint16(tree, hf_zbee_nwk_gp_cmd_comm_manufacturer_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &manufacturer_id);
             offset += 2;
         }
         if (appli_info_options & ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_MMIP) {
@@ -915,8 +999,7 @@ dissect_zbee_nwk_gp_cmd_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_t
         }
         if (appli_info_options & ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_GCLP) {
             /* Get and display number of GPD commands */
-            gpd_cmd_num = tvb_get_uint8(tvb, offset);
-            proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_comm_gpd_cmd_num, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item_ret_uint8(tree, hf_zbee_nwk_gp_cmd_comm_gpd_cmd_num, tvb, offset, 1, ENC_LITTLE_ENDIAN, &gpd_cmd_num);
             offset += 1;
             /* Display GPD command list */
             if (gpd_cmd_num > 0) {
@@ -965,6 +1048,35 @@ dissect_zbee_nwk_gp_cmd_commissioning(tvbuff_t *tvb, packet_info *pinfo, proto_t
                 }
             }
         }
+        if (appli_info_options & ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_SIP) {
+            /* Get and display Switch Information. */
+            switch_info_length = tvb_get_uint8(tvb, offset);
+            switch_info = proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_comm_switch_info,
+                tvb, offset, 1 + switch_info_length, ENC_NA);
+            switch_info_tree = proto_item_add_subtree(switch_info, ett_zbee_nwk_cmd_comm_switch_info);
+            proto_tree_add_item(switch_info_tree, hf_zbee_nwk_gp_cmd_comm_switch_info_length,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+            offset += 1;
+
+            if (switch_info_length >= 1) {
+                proto_tree_add_bitmask(switch_info_tree, tvb, offset,
+                    hf_zbee_nwk_gp_cmd_comm_switch_info_generic_switch_config,
+                    ett_zbee_nwk_cmd_comm_switch_info_generic_switch_config, generic_switch_config, ENC_NA);
+                offset += 1;
+            }
+
+            if (switch_info_length >= ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_INFO_LEN) {
+                proto_tree_add_item(switch_info_tree,
+                    hf_zbee_nwk_gp_cmd_comm_switch_info_current_contact_status,
+                    tvb, offset, 1, ENC_LITTLE_ENDIAN);
+                offset += 1;
+            }
+
+            /* Guard against future spec revisions that may increase Switch info length beyond the currently defined value of 0x02. */
+            if (switch_info_length > ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_INFO_LEN) {
+                offset += switch_info_length - ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_INFO_LEN;
+            }
+        }
     }
     return offset;
 } /* dissect_zbee_nwk_gp_cmd_commissioning */
@@ -994,6 +1106,243 @@ dissect_zbee_nwk_gp_cmd_channel_request(tvbuff_t *tvb, packet_info *pinfo _U_, p
     offset += 1;
     return offset;
 } /* dissect_zbee_nwk_gp_cmd_channel_request */
+
+/**
+ * Dissector for ZigBee Green Power Application Description Attribute Records.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields.
+ *@param tree pointer to data tree Wireshark uses to display packet.
+ *@param packet packet data.
+ *@param offset current payload offset.
+ *@param num_attr_recs number of attribute records to parse.
+ *@return payload processed offset.
+ */
+static unsigned
+dissect_zbee_nwk_gp_report_desc_attr_rec(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+    zbee_nwk_green_power_packet *packet _U_, unsigned offset, unsigned num_attr_recs)
+{
+    uint8_t attr_rec_opt, len_remain;
+    proto_tree *subtree = NULL;
+    unsigned i, end;
+
+    static int * const options[] = {
+        &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_len_remain,
+        &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_reported,
+        &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_val_present,
+        NULL
+    };
+
+    for (i = 0; i < num_attr_recs; i++) {
+        subtree = proto_tree_add_subtree_format(tree, tvb, offset, -1, ett_zbee_nwk_cmd_app_desc_att_rec,
+            NULL, "Attribute Record %u", i);
+
+        /* Attribute ID */
+        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_attr_rec_id, tvb, offset,
+            2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        /* Attribute Data Type */
+        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_attr_rec_data_type, tvb,
+            offset, 1, ENC_LITTLE_ENDIAN);
+        offset++;
+
+        /* Attribute Options */
+        attr_rec_opt = tvb_get_uint8(tvb, offset);
+        proto_tree_add_bitmask(subtree, tvb, offset, hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt,
+            ett_zbee_nwk_cmd_options, options, ENC_NA);
+
+        /* Extract remaining attribute record length (add 1 since stored value is decremented by 1) */
+        len_remain = (attr_rec_opt & ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_LEN_REMAIN) + 1;
+        offset++;
+
+        /* Determine the offset at the end of the packet so we can calculate the attribute value length later */
+        end = offset + len_remain;
+
+        /* Attribute Offset within Report */
+        if (attr_rec_opt & ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_REPORTED) {
+            proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_attr_rec_offset,
+                tvb, offset, 1, ENC_LITTLE_ENDIAN);
+            offset++;
+        }
+
+        /* Optional Attribute Value */
+        if (attr_rec_opt & ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_VAL_PRESENT) {
+            unsigned val_len = end - offset;
+
+            proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_attr_rec_val,
+                tvb, offset, val_len, ENC_NA);
+            //offset += val_len;
+        }
+        offset = end;
+    }
+
+    return offset;
+} /* dissect_zbee_nwk_gp_report_desc_attr_rec */
+
+/**
+ * Dissector for ZigBee Green Power Application Description Data Point Descriptors.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields.
+ *@param tree pointer to data tree Wireshark uses to display packet.
+ *@param packet packet data.
+ *@param offset current payload offset.
+ *@param len_remain remaining length of report descriptor containing data point descriptors
+ *@return payload processed offset.
+ */
+static unsigned
+dissect_zbee_nwk_gp_report_desc_data_pt_desc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+    zbee_nwk_green_power_packet *packet _U_, unsigned offset, uint8_t len_remain)
+{
+    uint8_t data_pt_opt, raw_recs;
+    proto_item *ti, *opt_item;
+    proto_tree *subtree, *mask_tree;
+    unsigned i = 0;
+    unsigned end = offset + len_remain;
+    static int * const options[] = {
+        /* We are manually adding the 'number of attribute records' field */
+        &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_server,
+        &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_manu_id_present,
+        NULL
+    };
+
+    while (offset < end)
+    {
+        unsigned start_offset = offset;
+
+        /* Create the container for this descriptor */
+        subtree = proto_tree_add_subtree_format(tree, tvb, offset, -1, ett_zbee_nwk_cmd_app_desc_data_pt_desc,
+            &ti, "Data Point Descriptor %u", i++);
+
+        data_pt_opt = tvb_get_uint8(tvb, offset);
+        raw_recs = data_pt_opt & ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_ATTR_NUM;
+
+        /** Options */
+        opt_item = proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt,
+            tvb, offset, 1, ENC_NA);
+
+        mask_tree = proto_item_add_subtree(opt_item, ett_zbee_nwk_cmd_app_desc_data_pt_options);
+
+        proto_tree_add_uint_format_value(mask_tree, hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_num_recs,
+            tvb, offset, 1, raw_recs, "%u", raw_recs + 1);
+
+        proto_tree_add_bitmask_list(mask_tree, tvb, offset, 1, options, ENC_NA);
+
+        offset++;
+
+        /* Cluster ID */
+        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_cluster_id,
+            tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        offset += 2;
+
+        /* Optional Manufacturer ID */
+        if (data_pt_opt & ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_MANU_ID_PRESENT) {
+            proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_manu_id,
+                tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+        }
+
+        /* Logic for the next function call remains the same */
+        offset = dissect_zbee_nwk_gp_report_desc_attr_rec(tvb, pinfo, subtree, packet, offset, raw_recs + 1);
+
+        if (ti) {
+            proto_item_set_len(ti, offset - start_offset);
+        }
+    }
+
+    return offset;
+} /* dissect_zbee_nwk_gp_report_desc_data_pt_desc */
+
+/**
+ * Dissector for ZigBee Green Power Application Description Report Descriptors.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields.
+ *@param tree pointer to data tree Wireshark uses to display packet.
+ *@param packet packet data.
+ *@param offset current payload offset.
+ *@param num_reports number of report descriptors to parse.
+ *@return payload processed offset.
+ */
+static unsigned
+dissect_zbee_nwk_gp_report_desc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+    zbee_nwk_green_power_packet *packet _U_, unsigned offset, unsigned num_reports)
+{
+    uint8_t report_opt, len_remain;
+    proto_tree *subtree = NULL;
+    unsigned i;
+
+    static int * const options[] = {
+        &hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt_timeout_present,
+        NULL
+    };
+
+    for (i = 0; i < num_reports; i++) {
+        subtree = proto_tree_add_subtree_format(tree, tvb, offset, -1, ett_zbee_nwk_cmd_app_desc_report_desc,
+            NULL, "Report Descriptor %u", i);
+
+        /* Report Identifier */
+        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_report_desc_id, tvb,
+            offset, 1, ENC_LITTLE_ENDIAN);
+        offset++;
+
+        /* Report Options */
+        report_opt = tvb_get_uint8(tvb, offset);
+        proto_tree_add_bitmask(subtree, tvb, offset, hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt,
+            ett_zbee_nwk_cmd_options, options, ENC_NA);
+        offset++;
+
+        /* Optional Timeout Period */
+        if (report_opt & ZBEE_NWK_GP_CMD_APP_DESC_REPORT_DESC_OPT_TIMEOUT_PRESENT) {
+            proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_report_desc_timeout,
+                tvb, offset, 2, ENC_LITTLE_ENDIAN);
+            offset += 2;
+        }
+
+        /* Remaining Length */
+        len_remain = tvb_get_uint8(tvb, offset);
+        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_app_desc_report_desc_len_remain,
+            tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        offset++;
+
+        /* Dissect the data point descriptors */
+        offset = dissect_zbee_nwk_gp_report_desc_data_pt_desc(tvb, pinfo, subtree, packet, offset, len_remain);
+    }
+
+    return offset;
+} /* dissect_zbee_nwk_gp_report_desc */
+
+
+/**
+ * Dissector for ZigBee Green Power Application Description.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields.
+ *@param tree pointer to data tree Wireshark uses to display packet.
+ *@param packet packet data.
+ *@param offset current payload offset.
+ *@return payload processed offset.
+*/
+static unsigned
+dissect_zbee_nwk_gp_cmd_application_desc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+    zbee_nwk_green_power_packet *packet _U_, unsigned offset)
+{
+    uint8_t num_reports;
+
+    /* Total number of reports */
+    proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_app_desc_total_report, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
+
+    /* Number of reports */
+    proto_tree_add_item_ret_uint8(tree, hf_zbee_nwk_gp_cmd_app_desc_num_report, tvb, offset, 1, ENC_LITTLE_ENDIAN, &num_reports);
+    offset++;
+
+    /* Dissect the report descriptors */
+    offset = dissect_zbee_nwk_gp_report_desc(tvb, pinfo, tree, packet, offset, num_reports);
+
+    return offset;
+} /* dissect_zbee_nwk_gp_cmd_application_desc */
 
 /**
  *Dissector for ZigBee Green Power channel configuration.
@@ -1040,8 +1389,7 @@ dissect_zbee_nwk_gp_cmd_attr_reporting(tvbuff_t *tvb, packet_info *pinfo _U_, pr
     proto_tree *field_tree;
 
     /* Get cluster ID and add it into the tree. */
-    cluster_id = tvb_get_letohs(tvb, offset);
-    proto_tree_add_item(tree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+    proto_tree_add_item_ret_uint16(tree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cluster_id);
 
     offset += 2;
     /* Create subtree and parse ZCL Write Attribute Payload. */
@@ -1071,8 +1419,7 @@ dissect_zbee_nwk_gp_cmd_MS_attr_reporting(tvbuff_t *tvb, packet_info *pinfo _U_,
     uint16_t mfr_code;
 
     /*dissect manufacturer ID*/
-    proto_tree_add_item(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    mfr_code = tvb_get_letohs(tvb, offset);
+    proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN, &mfr_code);
     offset += 2;
 
     offset = dissect_zbee_nwk_gp_cmd_attr_reporting(tvb, pinfo, tree, packet, offset, mfr_code);
@@ -1194,7 +1541,7 @@ dissect_zbee_nwk_gp_cmd_commissioning_reply(tvbuff_t *tvb, packet_info *pinfo, p
         }
         else{
             /* This field is new in 2016 specification, older implementation may exist without it */
-            proto_tree_add_expert(tree, pinfo, &ei_zbee_nwk_gp_com_rep_no_out_cnt, tvb, 0, -1);
+            proto_tree_add_expert_remaining(tree, pinfo, &ei_zbee_nwk_gp_com_rep_no_out_cnt, tvb, 0);
         }
     }
     return offset;
@@ -1235,8 +1582,7 @@ dissect_zbee_nwk_gp_cmd_read_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, p
     offset += 1;
     /* Parse and display manufacturer ID value. */
     if (cr_options & ZBEE_NWK_GP_CMD_READ_ATTRIBUTE_OPT_MAN_FIELD_PRESENT) {
-        proto_tree_add_item(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-        mfr_code = tvb_get_letohs(tvb, offset);
+        proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN, &mfr_code);
         offset += 2;
     }
 
@@ -1247,12 +1593,10 @@ dissect_zbee_nwk_gp_cmd_read_attributes(tvbuff_t *tvb, packet_info *pinfo _U_, p
         subtree = proto_tree_add_subtree_format(tree, tvb, offset, -1, ett_zbee_nwk_clu_rec, NULL, "Cluster Record Request");
 
         /* Get cluster ID and add it into the subtree. */
-        cluster_id = tvb_get_letohs(tvb, offset);
-        proto_tree_add_item(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint16(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cluster_id);
         offset += 2;
         /* Get length of record list (number of attributes * 2). */
-        record_list_len = tvb_get_uint8(tvb, offset);
-        proto_tree_add_item(subtree, hf_zbee_nwk_gp_cmd_read_att_record_len, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint8(subtree, hf_zbee_nwk_gp_cmd_read_att_record_len, tvb, offset, 1, ENC_LITTLE_ENDIAN, &record_list_len);
         offset += 1;
 
         for(i=0 ; i<record_list_len ; i+=2)
@@ -1301,8 +1645,7 @@ dissect_zbee_nwk_gp_cmd_write_attributes(tvbuff_t *tvb, packet_info *pinfo, prot
     offset += 1;
     /* Parse and display manufacturer ID value. */
     if (cr_options & ZBEE_NWK_GP_CMD_READ_ATTRIBUTE_OPT_MAN_FIELD_PRESENT) {
-        proto_tree_add_item(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-        mfr_code = tvb_get_letohs(tvb, offset);
+        proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN, &mfr_code);
         offset += 2;
     }
 
@@ -1313,8 +1656,7 @@ dissect_zbee_nwk_gp_cmd_write_attributes(tvbuff_t *tvb, packet_info *pinfo, prot
         subtree = proto_tree_add_subtree_format(tree, tvb, offset, -1, ett_zbee_nwk_clu_rec, NULL, "Write Cluster Record");
 
         /* Get cluster ID and add it into the subtree. */
-        cluster_id = tvb_get_letohs(tvb, offset);
-        proto_tree_add_item(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint16(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cluster_id);
         offset += 2;
         /* Get length of record list. */
         record_list_len = tvb_get_uint8(tvb, offset);
@@ -1376,8 +1718,7 @@ dissect_zbee_nwk_gp_cmd_read_attributes_response(tvbuff_t *tvb, packet_info *pin
 
     /* Parse and display manufacturer ID value. */
     if (cr_options & ZBEE_NWK_GP_CMD_READ_ATTRIBUTE_OPT_MAN_FIELD_PRESENT) {
-        proto_tree_add_item(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-        mfr_code = tvb_get_letohs(tvb, offset);
+        proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN, &mfr_code);
         offset += 2;
     }
 
@@ -1388,8 +1729,7 @@ dissect_zbee_nwk_gp_cmd_read_attributes_response(tvbuff_t *tvb, packet_info *pin
         subtree = proto_tree_add_subtree_format(tree, tvb, offset,0, ett_zbee_nwk_clu_rec, NULL, "Cluster record");
 
         /* Get cluster ID and add it into the subtree. */
-        cluster_id = tvb_get_letohs(tvb, offset);
-        proto_tree_add_item(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint16(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cluster_id);
         offset += 2;
         /* Get length of record list in bytes. */
         record_list_len = tvb_get_uint8(tvb, offset);
@@ -1475,6 +1815,37 @@ dissect_zbee_nwk_gp_cmd_zcl_tunneling(tvbuff_t *tvb, packet_info *pinfo _U_, pro
 } /* dissect_zbee_nwk_gp_cmd_zcl_tunneling */
 
 /**
+ * Dissector for ZigBee Green Power Compact Attribute Reporting command.
+ *
+ *@param tvb pointer to buffer containing raw packet.
+ *@param pinfo pointer to packet information fields.
+ *@param tree pointer to data tree Wireshark uses to display packet.
+ *@param packet packet data.
+ *@param offset current payload offset.
+ *@return payload processed offset.
+ */
+static unsigned
+dissect_zbee_nwk_gp_cmd_compact_attr_report(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
+    zbee_nwk_green_power_packet *packet _U_, unsigned offset)
+{
+    int len_remaining;
+
+    /* Report Identifier */
+    proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_compact_attr_report_report_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+    offset++;
+
+    /* Data points */
+    len_remaining = tvb_reported_length_remaining(tvb, offset);
+    if (len_remaining > 0) {
+        proto_tree_add_item(tree, hf_zbee_nwk_gp_cmd_compact_attr_report_data_points,
+            tvb, offset, len_remaining, ENC_NA);
+        offset += len_remaining;
+    }
+
+    return offset;
+} /* dissect_zbee_nwk_gp_cmd_compact_attr_report */
+
+/**
  *Dissector for ZigBee Green Power multi-cluster reporting command.
  *
  *@param tvb pointer to buffer containing raw packet.
@@ -1501,8 +1872,7 @@ dissect_zbee_nwk_gp_cmd_multi_cluster_reporting(tvbuff_t *tvb, packet_info *pinf
         subtree = proto_tree_add_subtree_format(tree, tvb, offset, 0, ett_zbee_nwk_clu_rec, NULL, "Cluster record"); //TODO for cluster %% blabla
 
         /* Get cluster ID and add it into the subtree. */
-        cluster_id = tvb_get_letohs(tvb, offset);
-        proto_tree_add_item(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+        proto_tree_add_item_ret_uint16(subtree, hf_zbee_nwk_gp_zcl_attr_cluster_id, tvb, offset, 2, ENC_LITTLE_ENDIAN, &cluster_id);
         offset += 2;
 
         /* Dissect the attribute identifier */
@@ -1534,8 +1904,7 @@ dissect_zbee_nwk_gp_cmd_MS_multi_cluster_reporting(tvbuff_t *tvb, packet_info *p
     uint16_t mfr_code;
 
     /*dissect manufacturer ID*/
-    proto_tree_add_item(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    mfr_code = tvb_get_letohs(tvb, offset);
+    proto_tree_add_item_ret_uint16(tree, hf_zbee_zcl_gp_cmd_ms_manufacturer_code, tvb, offset, 2, ENC_LITTLE_ENDIAN, &mfr_code);
     offset += 2;
 
     offset = dissect_zbee_nwk_gp_cmd_multi_cluster_reporting(tvb, pinfo, tree, packet, offset, mfr_code);
@@ -1754,6 +2123,9 @@ dissect_zbee_nwk_gp_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
         case ZB_GP_CMD_ID_ZCL_TUNNELING:
             offset = dissect_zbee_nwk_gp_cmd_zcl_tunneling(tvb, pinfo, cmd_tree, packet, offset);
             break;
+        case ZB_GP_CMD_ID_COMPACT_ATTR_REPORT:
+            offset = dissect_zbee_nwk_gp_cmd_compact_attr_report(tvb, pinfo, cmd_tree, packet, offset);
+            break;
         case ZB_GP_CMD_ID_ANY_SENSOR_COMMAND_A0_A3:
             /* TODO: implement it. */
             break;
@@ -1762,6 +2134,9 @@ dissect_zbee_nwk_gp_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             break;
         case ZB_GP_CMD_ID_CHANNEL_REQUEST:
             offset = dissect_zbee_nwk_gp_cmd_channel_request(tvb, pinfo, cmd_tree, packet, offset);
+            break;
+        case ZB_GP_CMD_ID_APPLICATION_DESC:
+            offset = dissect_zbee_nwk_gp_cmd_application_desc(tvb, pinfo, cmd_tree, packet, offset);
             break;
         case ZB_GP_CMD_ID_REQUEST_ATTRIBUTES:
         /* GPDF commands sent to GPD. */
@@ -1924,7 +2299,7 @@ dissect_zbee_nwk_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     packet.payload_len = tvb_reported_length(tvb) - offset - packet.mic_size;
     /* Ensure that the payload exists. */
     if (packet.payload_len <= 0) {
-        proto_tree_add_expert(nwk_tree, pinfo, &ei_zbee_nwk_gp_no_payload, tvb, 0, -1);
+        proto_tree_add_expert_remaining(nwk_tree, pinfo, &ei_zbee_nwk_gp_no_payload, tvb, 0);
         return offset;
     }
     /* OK, payload exists. Parse MIC field if needed. */
@@ -1947,7 +2322,7 @@ dissect_zbee_nwk_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         offset += packet.mic_size;
     }
     if ((offset < tvb_captured_length(tvb)) && (packet.security_level != ZBEE_NWK_GP_SECURITY_LEVEL_FULLENCR)) {
-        proto_tree_add_expert(nwk_tree, pinfo, &ei_zbee_nwk_gp_inval_residual_data, tvb, offset, -1);
+        proto_tree_add_expert_remaining(nwk_tree, pinfo, &ei_zbee_nwk_gp_inval_residual_data, tvb, offset);
         return offset;
     }
     if (packet.security_level == ZBEE_NWK_GP_SECURITY_LEVEL_FULLENCR) {
@@ -1967,7 +2342,7 @@ dissect_zbee_nwk_gp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             add_new_data_source(pinfo, payload_tvb, "Decrypted GP Payload");
             dissect_zbee_nwk_gp_cmd(payload_tvb, pinfo, nwk_tree, data);
         } else {
-            payload_tvb = tvb_new_subset_length_caplen(tvb, offset - packet.payload_len - packet.mic_size, packet.payload_len, -1);
+            payload_tvb = tvb_new_subset_length(tvb, offset - packet.payload_len - packet.mic_size, packet.payload_len);
             call_data_dissector(payload_tvb, pinfo, tree);
         }
     }
@@ -2229,6 +2604,18 @@ proto_register_zbee_nwk_gp(void)
             { "Manufacturer Model ID present", "zbee_nwk_gp.cmd.comm.appli_info.mmip", FT_BOOLEAN, 8, NULL,
                 ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_MMIP , NULL, HFILL }},
 
+        { &hf_zbee_nwk_gp_cmd_comm_appli_info_sip,
+            { "Switch information present", "zbee_nwk_gp.cmd.comm.appli_info.sip", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_SIP , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_appli_info_adcf,
+            { "GPD Application Description command follows", "zbee_nwk_gp.cmd.comm.appli_info.adcf", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_ADCF , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_appli_info_res,
+            { "Reserved", "zbee_nwk_gp.cmd.comm.appli_info.reserved", FT_UINT8, BASE_HEX, NULL,
+                ZBEE_NWK_GP_CMD_COMMISSIONING_APPLI_INFO_RES , NULL, HFILL }},
+
         { &hf_zbee_nwk_gp_cmd_comm_gpd_cmd_num,
             { "Number of GPD commands", "zbee_nwk_gp.cmd.comm.gpd_cmd_num", FT_UINT8, BASE_DEC, NULL,
                 0x0 , NULL, HFILL }},
@@ -2258,7 +2645,35 @@ proto_register_zbee_nwk_gp(void)
                 0x0 , NULL, HFILL }},
 
         { &hf_zbee_nwk_cmd_comm_cluster_id,
-            { "Cluster ID", "zbee_nwk_gp.cmd.comm.cluster_id", FT_UINT16, BASE_HEX, NULL,
+            { "Cluster ID", "zbee_nwk_gp.cmd.comm.cluster_id", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_cid_names),
+                0x0 , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info,
+            { "Switch information", "zbee_nwk_gp.cmd.comm.switch_info", FT_NONE, BASE_NONE, NULL,
+                0x0 , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_length,
+            { "Switch info length", "zbee_nwk_gp.cmd.comm.switch_info.length", FT_UINT8, BASE_DEC, NULL,
+                0x0 , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_generic_switch_config,
+            { "Generic switch configuration", "zbee_nwk_gp.cmd.comm.switch_info.generic_switch_config", FT_UINT8, BASE_HEX, NULL,
+                0x0 , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_num_contacts,
+            { "Number of contacts", "zbee_nwk_gp.cmd.comm.switch_info.num_contacts", FT_UINT8, BASE_DEC, NULL,
+                ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_NUM_CONTACTS , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_switch_type,
+            { "Switch type", "zbee_nwk_gp.cmd.comm.switch_info.switch_type", FT_UINT8, BASE_HEX, VALS(zbee_nwk_gp_switch_type_names),
+                ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_SWITCH_TYPE , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_reserved,
+            { "Reserved", "zbee_nwk_gp.cmd.comm.switch_info.reserved", FT_UINT8, BASE_HEX, NULL,
+                ZBEE_NWK_GP_CMD_COMMISSIONING_SWITCH_CONF_RES , NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_comm_switch_info_current_contact_status,
+            { "Current contact status", "zbee_nwk_gp.cmd.comm.switch_info.current_contact_status", FT_UINT8, BASE_HEX, NULL,
                 0x0 , NULL, HFILL }},
 
         { &hf_zbee_nwk_gp_cmd_comm_rep_opt_key_encr,
@@ -2326,6 +2741,98 @@ proto_register_zbee_nwk_gp(void)
         { &hf_zbee_nwk_gp_cmd_zcl_tunnel_payload_len,
             { "Length of Payload",  "zbee_nwk_gp.cmd.zcl_tunnel.payload_len", FT_UINT8, BASE_DEC, NULL, 0x0,
                 NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_compact_attr_report_report_id,
+            { "Report Identifier", "zbee_nwk_gp.cmd.compact_attr_report.report_id", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_compact_attr_report_data_points,
+            { "Data Points", "zbee_nwk_gp.cmd.compact_attr_report.data_points", FT_BYTES, BASE_NONE, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_total_report,
+            { "Total Number of Reports", "zbee_nwk_gp.app_desc.total_report", FT_UINT8, BASE_DEC, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_num_report,
+            { "Number of Reports", "zbee_nwk_gp.app_desc.num_report", FT_UINT8, BASE_DEC, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_report_desc_id,
+            { "Report Identifier", "zbee_nwk_gp.app_desc.report_desc.id", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt,
+            { "Report Options", "zbee_nwk_gp.app_desc.report_desc.opt", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_report_desc_opt_timeout_present,
+            { "Timeout Present", "zbee_nwk_gp.app_desc.report_desc.opt.timeout_present", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_REPORT_DESC_OPT_TIMEOUT_PRESENT, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_report_desc_timeout,
+            { "Timeout Period", "zbee_nwk_gp.app_desc.report_desc.timeout", FT_UINT16, BASE_DEC, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_report_desc_len_remain,
+            { "Remaining Length", "zbee_nwk_gp.app_desc.report_desc.len_remain", FT_UINT8, BASE_DEC, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt,
+            { "Data Point Options", "zbee_nwk_gp.app_desc.data_pt_desc.opt", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_num_recs,
+            { "Number of Attribute Records", "zbee_nwk_gp.app_desc.data_pt_desc.opt.num_recs", FT_UINT8, BASE_DEC, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_ATTR_NUM, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_server,
+            { "Server", "zbee_nwk_gp.app_desc.data_pt_desc.opt.server", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_SERVER, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_opt_manu_id_present,
+            { "Manufacturer ID Present", "zbee_nwk_gp.app_desc.data_pt_desc.opt.manu_id_present", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_DATA_PT_DESC_OPT_MANU_ID_PRESENT, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_cluster_id,
+            { "Cluster ID", "zbee_nwk_gp.app_desc.data_pt_desc.cluster_id", FT_UINT16, BASE_HEX | BASE_RANGE_STRING, RVALS(zbee_aps_cid_names),
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_data_pt_desc_manu_id,
+            { "Manufacturer ID", "zbee_nwk_gp.app_desc.data_pt_desc.manu_id", FT_UINT16, BASE_HEX, VALS(zbee_mfr_code_names),
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_id,
+            { "Attribute ID", "zbee_nwk_gp.app_desc.attr_rec.id", FT_UINT16, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_data_type,
+            { "Attribute Data Type", "zbee_nwk_gp.app_desc.attr_rec.data_type", FT_UINT8, BASE_HEX, VALS(zbee_zcl_short_data_type_names),
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt,
+            { "Attribute Options", "zbee_nwk_gp.app_desc.attr_rec.opt", FT_UINT8, BASE_HEX, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_len_remain,
+            { "Remaining Attribute Record Length", "zbee_nwk_gp.app_desc.attr_rec.opt.len_remain", FT_UINT8, BASE_DEC, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_LEN_REMAIN, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_reported,
+            { "Reported", "zbee_nwk_gp.app_desc.attr_rec.opt.reported", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_REPORTED, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_opt_val_present,
+            { "Attribute Value Present", "zbee_nwk_gp.app_desc.attr_rec.opt.val_present", FT_BOOLEAN, 8, NULL,
+                ZBEE_NWK_GP_CMD_APP_DESC_ATTR_REC_OPT_VAL_PRESENT, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_offset,
+            { "Attribute Offset within Report", "zbee_nwk_gp.app_desc.attr_rec.offset", FT_UINT8, BASE_DEC, NULL,
+                0x0, NULL, HFILL }},
+
+        { &hf_zbee_nwk_gp_cmd_app_desc_attr_rec_val,
+            { "Attribute Value", "zbee_nwk_gp.app_desc.attr_rec.val", FT_BYTES, BASE_NONE, NULL,
+                0x0, NULL, HFILL }},
 
         { &hf_zbee_zcl_gp_cmd_ms_manufacturer_code,
             { "Manufacturer Code", "zbee_nwk_gp.cmd.manufacturer_code", FT_UINT16, BASE_HEX, VALS(zbee_mfr_code_names),
@@ -2416,10 +2923,16 @@ proto_register_zbee_nwk_gp(void)
         &ett_zbee_nwk_fcf_ext,
         &ett_zbee_nwk_clu_rec,
         &ett_zbee_nwk_att_rec,
+        &ett_zbee_nwk_cmd_app_desc_report_desc,
+        &ett_zbee_nwk_cmd_app_desc_data_pt_desc,
+        &ett_zbee_nwk_cmd_app_desc_data_pt_options,
+        &ett_zbee_nwk_cmd_app_desc_att_rec,
         &ett_zbee_nwk_cmd_comm_gpd_cmd_id_list,
         &ett_zbee_nwk_cmd_comm_length_of_clid_list,
         &ett_zbee_nwk_cmd_comm_clid_list_server,
-        &ett_zbee_nwk_cmd_comm_clid_list_client
+        &ett_zbee_nwk_cmd_comm_clid_list_client,
+        &ett_zbee_nwk_cmd_comm_switch_info,
+        &ett_zbee_nwk_cmd_comm_switch_info_generic_switch_config
     };
 
     static uat_field_t key_uat_fields[] = {

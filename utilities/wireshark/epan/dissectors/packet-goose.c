@@ -29,14 +29,6 @@
 #include "packet-ber.h"
 #include "packet-acse.h"
 
-#define GOOSE_PNAME  "GOOSE"
-#define GOOSE_PSNAME "GOOSE"
-#define GOOSE_PFNAME "goose"
-
-#define R_GOOSE_PNAME  "R-GOOSE"
-#define R_GOOSE_PSNAME "R-GOOSE"
-#define R_GOOSE_PFNAME "r-goose"
-
 void proto_register_goose(void);
 void proto_reg_handoff_goose(void);
 
@@ -186,13 +178,13 @@ static int ett_goose_Data;
 /*--- Cyclic dependencies ---*/
 
 /* Data -> Data/array -> Data */
-static int dissect_goose_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+static unsigned dissect_goose_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 
 
 
 
-static int
-dissect_goose_INTEGER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_INTEGER(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 NULL);
 
@@ -201,8 +193,8 @@ dissect_goose_INTEGER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_goose_VisibleString(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_VisibleString(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_VisibleString,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
@@ -215,8 +207,8 @@ static const ber_sequence_t T_getReferenceRequest_offset_sequence_of[1] = {
   { &hf_goose_getReferenceRequest_offset_item, BER_CLASS_UNI, BER_UNI_TAG_INTEGER, BER_FLAGS_NOOWNTAG, dissect_goose_INTEGER },
 };
 
-static int
-dissect_goose_T_getReferenceRequest_offset(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_T_getReferenceRequest_offset(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       T_getReferenceRequest_offset_sequence_of, hf_index, ett_goose_T_getReferenceRequest_offset);
 
@@ -230,8 +222,8 @@ static const ber_sequence_t GetReferenceRequestPdu_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GetReferenceRequestPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GetReferenceRequestPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    GetReferenceRequestPdu_sequence, hf_index, ett_goose_GetReferenceRequestPdu);
 
@@ -243,8 +235,8 @@ static const ber_sequence_t T_references_sequence_of[1] = {
   { &hf_goose_references_item, BER_CLASS_UNI, BER_UNI_TAG_VisibleString, BER_FLAGS_NOOWNTAG, dissect_goose_VisibleString },
 };
 
-static int
-dissect_goose_T_references(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_T_references(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       T_references_sequence_of, hf_index, ett_goose_T_references);
 
@@ -258,8 +250,8 @@ static const ber_sequence_t GetElementRequestPdu_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GetElementRequestPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GetElementRequestPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    GetElementRequestPdu_sequence, hf_index, ett_goose_GetElementRequestPdu);
 
@@ -283,8 +275,8 @@ static const ber_choice_t GSEMngtRequests_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GSEMngtRequests(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GSEMngtRequests(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  GSEMngtRequests_choice, hf_index, ett_goose_GSEMngtRequests,
                                  NULL);
@@ -294,8 +286,8 @@ dissect_goose_GSEMngtRequests(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offs
 
 
 
-static int
-dissect_goose_NULL(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_NULL(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_null(implicit_tag, actx, tree, tvb, offset, hf_index);
 
   return offset;
@@ -303,8 +295,8 @@ dissect_goose_NULL(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_goose_IA5String(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_IA5String(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_IA5String,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
@@ -320,8 +312,8 @@ static const value_string goose_ErrorReason_vals[] = {
 };
 
 
-static int
-dissect_goose_ErrorReason(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_ErrorReason(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 NULL);
 
@@ -343,8 +335,8 @@ static const ber_choice_t RequestResults_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_RequestResults(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_RequestResults(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  RequestResults_choice, hf_index, ett_goose_RequestResults,
                                  NULL);
@@ -357,8 +349,8 @@ static const ber_sequence_t SEQUENCE_OF_RequestResults_sequence_of[1] = {
   { &hf_goose_result_item   , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG|BER_FLAGS_NOTCHKTAG, dissect_goose_RequestResults },
 };
 
-static int
-dissect_goose_SEQUENCE_OF_RequestResults(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_SEQUENCE_OF_RequestResults(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_RequestResults_sequence_of, hf_index, ett_goose_SEQUENCE_OF_RequestResults);
 
@@ -372,8 +364,8 @@ static const ber_sequence_t T_responsePositive_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_T_responsePositive(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_T_responsePositive(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    T_responsePositive_sequence, hf_index, ett_goose_T_responsePositive);
 
@@ -390,8 +382,8 @@ static const value_string goose_GlbErrors_vals[] = {
 };
 
 
-static int
-dissect_goose_GlbErrors(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GlbErrors(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_integer(implicit_tag, actx, tree, tvb, offset, hf_index,
                                                 NULL);
 
@@ -411,8 +403,8 @@ static const ber_choice_t PositiveNegative_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_PositiveNegative(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_PositiveNegative(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  PositiveNegative_choice, hf_index, ett_goose_PositiveNegative,
                                  NULL);
@@ -428,8 +420,8 @@ static const ber_sequence_t GSEMngtResponsePdu_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GSEMngtResponsePdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GSEMngtResponsePdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    GSEMngtResponsePdu_sequence, hf_index, ett_goose_GSEMngtResponsePdu);
 
@@ -455,8 +447,8 @@ static const ber_choice_t GSEMngtResponses_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GSEMngtResponses(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GSEMngtResponses(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  GSEMngtResponses_choice, hf_index, ett_goose_GSEMngtResponses,
                                  NULL);
@@ -477,8 +469,8 @@ static const ber_choice_t RequestResponse_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_RequestResponse(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_RequestResponse(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  RequestResponse_choice, hf_index, ett_goose_RequestResponse,
                                  NULL);
@@ -493,8 +485,8 @@ static const ber_sequence_t GSEMngtPdu_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GSEMngtPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GSEMngtPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    GSEMngtPdu_sequence, hf_index, ett_goose_GSEMngtPdu);
 
@@ -503,8 +495,8 @@ dissect_goose_GSEMngtPdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U
 
 
 
-static int
-dissect_goose_UtcTime(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_UtcTime(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
 
 	uint32_t len;
 	uint32_t seconds;
@@ -545,8 +537,8 @@ dissect_goose_UtcTime(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, 
 
 
 
-static int
-dissect_goose_T_simulation(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_T_simulation(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
 	bool value;
 	uint32_t len = tvb_reported_length_remaining(tvb, offset);
 	int origin_offset = offset;
@@ -568,8 +560,8 @@ dissect_goose_T_simulation(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_goose_BOOLEAN(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_BOOLEAN(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_boolean(implicit_tag, actx, tree, tvb, offset, hf_index, NULL);
 
   return offset;
@@ -580,8 +572,8 @@ static const ber_sequence_t SEQUENCE_OF_Data_sequence_of[1] = {
   { &hf_goose_allData_item  , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG|BER_FLAGS_NOTCHKTAG, dissect_goose_Data },
 };
 
-static int
-dissect_goose_SEQUENCE_OF_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_SEQUENCE_OF_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence_of(implicit_tag, actx, tree, tvb, offset,
                                       SEQUENCE_OF_Data_sequence_of, hf_index, ett_goose_SEQUENCE_OF_Data);
 
@@ -590,8 +582,8 @@ dissect_goose_SEQUENCE_OF_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, int off
 
 
 
-static int
-dissect_goose_BIT_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_BIT_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_bitstring(implicit_tag, actx, tree, tvb, offset,
                                     NULL, 0, hf_index, -1,
                                     NULL);
@@ -601,8 +593,8 @@ dissect_goose_BIT_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U
 
 
 
-static int
-dissect_goose_FloatingPoint(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_FloatingPoint(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
 
 	int len = tvb_reported_length_remaining(tvb, offset);
 
@@ -621,8 +613,8 @@ dissect_goose_FloatingPoint(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset
 
 
 
-static int
-dissect_goose_REAL(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_REAL(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_real(implicit_tag, actx, tree, tvb, offset, hf_index,
                                NULL);
 
@@ -631,8 +623,8 @@ dissect_goose_REAL(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 
-static int
-dissect_goose_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index,
                                        NULL);
 
@@ -641,8 +633,8 @@ dissect_goose_OCTET_STRING(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset 
 
 
 
-static int
-dissect_goose_TimeOfDay(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_TimeOfDay(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index,
                                        NULL);
 
@@ -651,8 +643,8 @@ dissect_goose_TimeOfDay(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_
 
 
 
-static int
-dissect_goose_OBJECT_IDENTIFIER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_OBJECT_IDENTIFIER(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_object_identifier(implicit_tag, actx, tree, tvb, offset, hf_index, NULL);
 
   return offset;
@@ -660,8 +652,8 @@ dissect_goose_OBJECT_IDENTIFIER(bool implicit_tag _U_, tvbuff_t *tvb _U_, int of
 
 
 
-static int
-dissect_goose_MMSString(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_MMSString(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_UTF8String,
                                             actx, tree, tvb, offset, hf_index,
                                             NULL);
@@ -710,8 +702,8 @@ static const ber_choice_t Data_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_Data(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   // Data -> Data/array -> Data
   increment_dissection_depth_by_n(actx->pinfo, 2);
   offset = dissect_ber_choice(actx, tree, tvb, offset,
@@ -739,8 +731,8 @@ static const ber_sequence_t IECGoosePdu_sequence[] = {
   { NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_IECGoosePdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_IECGoosePdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_sequence(implicit_tag, actx, tree, tvb, offset,
                                    IECGoosePdu_sequence, hf_index, ett_goose_IECGoosePdu);
 
@@ -754,8 +746,8 @@ static const ber_choice_t GOOSEpdu_choice[] = {
   { 0, NULL, 0, 0, 0, NULL }
 };
 
-static int
-dissect_goose_GOOSEpdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+static unsigned
+dissect_goose_GOOSEpdu(bool implicit_tag _U_, tvbuff_t *tvb _U_, unsigned offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_ber_choice(actx, tree, tvb, offset,
                                  GOOSEpdu_choice, hf_index, ett_goose_GOOSEpdu,
                                  NULL);
@@ -821,7 +813,7 @@ dissect_goose(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 	asn1_ctx.private_data = wmem_alloc(pinfo->pool, GOOSE_CHK_DATA_LEN);
 	data_chk = (goose_chk_data_t *)asn1_ctx.private_data;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, GOOSE_PNAME);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "GOOSE");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	tree_item = proto_tree_add_item(parent_tree, proto_goose, tvb, 0, -1, ENC_NA);
@@ -865,7 +857,7 @@ dissect_goose(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 		old_offset = offset;
 		offset = dissect_goose_GOOSEpdu(false, tvb, offset, &asn1_ctx , tree, -1);
 		if (offset == old_offset) {
-			proto_tree_add_expert(tree, pinfo, &ei_goose_zero_pdu, tvb, offset, -1);
+			proto_tree_add_expert_remaining(tree, pinfo, &ei_goose_zero_pdu, tvb, offset);
 			break;
 		}
 	}
@@ -874,7 +866,7 @@ dissect_goose(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 }
 
 /*
-* Dissect RGOOSE PDUs inside ISO 8602/X.234 CLTP ConnecteionLess
+* Dissect RGOOSE PDUs inside ISO 8602/X.234 CLTP ConnectionLess
 * Transport Protocol.
 */
 static int
@@ -893,7 +885,7 @@ dissect_rgoose(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 	asn1_ctx.private_data = wmem_alloc(pinfo->pool, GOOSE_CHK_DATA_LEN);
 	data_chk = (goose_chk_data_t *)asn1_ctx.private_data;
 
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, R_GOOSE_PNAME);
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, "R-GOOSE");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	item = proto_tree_add_item(parent_tree, proto_r_goose, tvb, 0, -1, ENC_NA);
@@ -1006,7 +998,7 @@ dissect_rgoose(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 		old_offset = offset;
 		offset = dissect_goose_GOOSEpdu(false, tvb, offset, &asn1_ctx , tree, -1);
 		if (offset == old_offset) {
-			proto_tree_add_expert(tree, pinfo, &ei_goose_zero_pdu, tvb, offset, -1);
+			proto_tree_add_expert_remaining(tree, pinfo, &ei_goose_zero_pdu, tvb, offset);
 			break;
 		}
 	}
@@ -1480,8 +1472,8 @@ void proto_register_goose(void) {
 	expert_module_t* expert_goose;
 
 	/* Register protocol */
-	proto_goose = proto_register_protocol(GOOSE_PNAME, GOOSE_PSNAME, GOOSE_PFNAME);
-	proto_r_goose = proto_register_protocol(R_GOOSE_PNAME, R_GOOSE_PSNAME, R_GOOSE_PFNAME);
+	proto_goose = proto_register_protocol("GOOSE", "GOOSE", "goose");
+	proto_r_goose = proto_register_protocol("R-GOOSE", "R-GOOSE", "r-goose");
 
 	goose_handle = register_dissector("goose", dissect_goose, proto_goose);
 

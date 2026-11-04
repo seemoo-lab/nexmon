@@ -13,9 +13,9 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/ipproto.h>
 #include <epan/expert.h>
 #include <epan/in_cksum.h>
+#include <epan/iana-info.h>
 
 void proto_register_carp(void);
 void proto_reg_handoff_carp(void);
@@ -77,7 +77,7 @@ test_carp_packet(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree _U_, vo
 static int
 dissect_carp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    int offset = 0;
+    unsigned offset = 0;
     unsigned carp_len;
     uint8_t vhid;
     vec_t cksum_vec[4];

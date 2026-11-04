@@ -313,8 +313,8 @@ typedef struct {
 
 typedef struct {
     tvbuff_t *tvb;
-    int offset;
-    int bytes_read;
+    unsigned offset;
+    unsigned bytes_read;
 } tvb_sane_reader;
 
 
@@ -338,15 +338,15 @@ tvb_read_sane_word(tvb_sane_reader *r, uint32_t *dest) {
 
 static int
 tvb_read_sane_string(tvb_sane_reader *r, wmem_allocator_t *alloc, char **dest) {
-    int str_len;
-    WORD_OR_RETURN(r, &str_len);
+    unsigned str_len;
+    WORD_OR_RETURN(r, (uint32_t*)&str_len);
 
     if (tvb_captured_length_remaining(r->tvb, r->offset) < str_len) {
         return 0;
     }
 
     if (dest) {
-        *dest = tvb_get_string_enc(alloc, r->tvb, r->offset, str_len, ENC_ASCII | ENC_NA);
+        *dest = (char*)tvb_get_string_enc(alloc, r->tvb, r->offset, str_len, ENC_ASCII | ENC_NA);
     }
 
     r->offset += str_len;
@@ -357,8 +357,8 @@ tvb_read_sane_string(tvb_sane_reader *r, wmem_allocator_t *alloc, char **dest) {
 #define STRING_OR_RETURN(r) \
     do { if (tvb_read_sane_string((r), NULL, NULL) == 0) { return 0; } } while(0)
 
-static int
-tvb_skip_bytes(tvb_sane_reader *r, int len) {
+static unsigned
+tvb_skip_bytes(tvb_sane_reader *r, unsigned len) {
     if (tvb_captured_length_remaining(r->tvb, r->offset) < len) {
         return 0;
     }
@@ -415,7 +415,7 @@ dissect_sane_word(tvb_sane_reader *r, proto_tree *tree, int hfindex, int *word) 
                         ENC_BIG_ENDIAN);
     // safe to ignore the return value here, we're guaranteed to have enough bytes to
     // read a word.
-    (void)tvb_read_sane_word(r, word);
+    (void)tvb_read_sane_word(r, (uint32_t*)word);
     return item;
 }
 
@@ -536,7 +536,7 @@ static int
 dissect_sane_request(tvb_sane_reader *r, packet_info *pinfo, proto_tree *tree) {
     unsigned opcode = SANE_NET_UNKNOWN;
     char* str_opcode;
-    dissect_sane_word(r, tree, hf_sane_opcode, &opcode);
+    dissect_sane_word(r, tree, hf_sane_opcode, (int*)&opcode);
     str_opcode = val_to_str(pinfo->pool, opcode, opcode_vals, "Unknown opcode (%u)");
     proto_item_append_text(tree, ": %s request", str_opcode);
     col_append_fstr(pinfo->cinfo, COL_INFO, "%s request", str_opcode);

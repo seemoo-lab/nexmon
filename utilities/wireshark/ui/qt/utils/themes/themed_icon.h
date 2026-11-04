@@ -1,0 +1,109 @@
+/** @file
+ *
+ * Wireshark - Network traffic analyzer
+ * By Gerald Combs <gerald@wireshark.org>
+ * Copyright 1998 Gerald Combs
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
+#pragma once
+
+#include <ui/qt/utils/theme_manager.h>
+#include <ui/qt/utils/themes/token_palette.h>
+
+#include <QIcon>
+#include <QPalette>
+#include <QSize>
+#include <QString>
+
+/**
+ * @brief A QIcon that renders an SVG silhouette recoloured to a ThemeManager
+ *        token, tracking light/dark and theme changes automatically.
+ *
+ * Companion to StockIcon.  StockIcon selects a pre-made, per-mode raster
+ * resource; ThemedIcon renders one SVG and tints it to a live theme colour, so
+ * a single asset follows the active theme without per-mode variants.  The tint
+ * uses CompositionMode_SourceIn, which flattens the rendered shape to the
+ * resolved colour — the source SVG's own colours (even gradients) don't matter,
+ * only its alpha silhouette.
+ *
+ * It is part of the theme system and deliberately speaks ThemeManager tokens
+ * only: there are no QColor or QPalette overloads.  Use a palette token
+ * (e.g. ThemeManager::PaletteText) for monochrome glyphs that should follow the
+ * text colour, or an accent token (e.g. ThemeManager::AccentSuccess) for a
+ * functional colour.
+ *
+ * Theme tracking needs no caller code: the backing engine resolves the token
+ * colour at paint time and keys its pixmap cache on that colour, so a theme or
+ * light/dark flip is a natural cache miss and re-renders on the next repaint.
+ */
+class ThemedIcon : public QIcon
+{
+public:
+    /**
+     * @param svg_resource_path Qt resource path of the SVG, e.g.
+     *        ":/svg_icons/filter-clear.svg".
+     * @param token Theme colour token the glyph is tinted to.
+     * @param size  Nominal render size used when a caller requests a null size.
+     */
+    explicit ThemedIcon(const QString &svg_resource_path,
+                        ThemeManager::ThemeToken token,
+                        QSize size = QSize(14, 14));
+
+    /**
+     * @brief Convenience constructor for creating a themed icon from a stock name.
+     *
+     * @param name The base name of the SVG icon resource without a path or .svg extension.
+     */
+    explicit ThemedIcon(const char *name) :
+        ThemedIcon(QString::fromUtf8(name))
+    {
+    }
+
+    /**
+     * @brief Convenience constructor for creating a themed icon from a stock name.
+     *
+     * @param name The base name of the SVG icon resource without a path or .svg extension.
+     */
+    explicit ThemedIcon(const QString &name)
+    {
+        *this = ThemedIcon(QStringLiteral(":/svg_icons/") + name + QStringLiteral(".svg"),
+                           ThemeManager::PaletteText);
+    }
+
+    /**
+     * @brief Stateful variant: distinct colours per interaction mode.
+     *
+     * @p token colours the resting glyph (QIcon::Normal); @p active_token the
+     * hovered glyph (QIcon::Active); @p selected_token the pressed/selected
+     * glyph (QIcon::Selected, falling back to @p active_token). A QToolButton
+     * requests these modes itself on hover/press, so state recolouring needs no
+     * QSS — which matters because QSS cannot recolour an SVG glyph's fill. Pass
+     * NoRole for a mode to keep the single-token behaviour (a slight emphasis of
+     * @p token).
+     */
+    explicit ThemedIcon(const QString &svg_resource_path,
+                        ThemeManager::ThemeToken token,
+                        ThemeManager::ThemeToken active_token,
+                        ThemeManager::ThemeToken selected_token = ThemeManager::NoRole,
+                        QSize size = QSize(14, 14));
+
+    /**
+     * @brief Set a custom palette for drawing this icon instead of the application palette.
+     *
+     * Affects every copy of this icon. By default the application palette is
+     * used.
+     */
+    void setPalette(const QPalette &palette);
+
+private:
+    // Private delegate: the engine shares @p palette so setPalette() can reach it.
+    ThemedIcon(const QString &svg_resource_path,
+               ThemeManager::ThemeToken token,
+               ThemeManager::ThemeToken active_token,
+               ThemeManager::ThemeToken selected_token,
+               QSize size, IconPaletteRef palette);
+
+    IconPaletteRef palette_;
+};

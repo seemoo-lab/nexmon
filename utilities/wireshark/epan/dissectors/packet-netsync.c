@@ -271,7 +271,7 @@ static int dissect_netsync_cmd_refine(tvbuff_t *tvb,  int offset, proto_tree *tr
 
 static int dissect_netsync_cmd_done(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	int bytes = 0;
+	unsigned bytes = 0;
 
 	proto_tree_add_item_ret_length(tree, hf_netsync_cmd_done_level, tvb,
 					offset, -1, ENC_LITTLE_ENDIAN|ENC_VARINT_PROTOBUF, &bytes);
@@ -407,7 +407,7 @@ get_netsync_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *dat
 static int
 dissect_netsync_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	int offset = 0;
+	unsigned offset = 0;
 	uint8_t tmp;
 	uint8_t cmd, version;
 	uint32_t size, size_bytes, shift;

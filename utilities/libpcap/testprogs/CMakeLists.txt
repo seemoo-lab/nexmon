@@ -26,6 +26,7 @@ macro(add_test_executable _executable)
   add_dependencies(testprogs ${_executable})
 endmacro()
 
+add_test_executable(activatetest)
 add_test_executable(can_set_rfmon_test)
 add_test_executable(capturetest)
 add_test_executable(filtertest)
@@ -37,7 +38,22 @@ add_test_executable(versiontest)
 add_test_executable(writecaptest)
 
 if(NOT WIN32)
+  # pcapint_opcode_without_k()
+  # pcapint_valid_insn()
+  add_test_executable(enumeratetest)
   add_test_executable(selpolltest)
+  # Fails to link on Windows:
+  # translatetest.obj : error LNK2019: unresolved external symbol
+  #   _pcapint_atodn referenced in function _test_pcapint_atodn
+  # translatetest.obj : error LNK2019: unresolved external symbol
+  #   _pcapint_atoan referenced in function _test_pcapint_atoan
+  # translatetest.obj : error LNK2019: unresolved external symbol
+  #   _pcapint_xdtoi referenced in function _test_pcapint_xdtoi
+  # translatetest.obj : error LNK2019: unresolved external symbol
+  #   _pcapint_createsrcstr_ex referenced in function _test_pcapint_parsesrcstr_ex
+  # translatetest.obj : error LNK2019: unresolved external symbol
+  #   _pcapint_parsesrcstr_ex referenced in function _test_pcapint_parsesrcstr_ex
+  add_test_executable(translatetest)
 endif()
 
 add_test_executable(threadsignaltest ${CMAKE_THREAD_LIBS_INIT})
@@ -49,10 +65,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
   add_test_executable(valgrindtest)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
-   CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
-   CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#
+# This requires unistd.h.
+#
+if(HAVE_UNISTD_H)
+  #
+  # We don't distribute the fuzz tests in the release tarball,
+  # so only attempt to build them if we're in a Git repository.
+  #
   if(IS_DIRECTORY ${CMAKE_HOME_DIRECTORY}/.git)
-     add_subdirectory(fuzz)
+    add_subdirectory(fuzz)
   endif(IS_DIRECTORY ${CMAKE_HOME_DIRECTORY}/.git)
-endif()
+endif(HAVE_UNISTD_H)

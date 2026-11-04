@@ -63,6 +63,15 @@ rtap_len_of(struct sk_buff *p)
     return d[2] | (d[3] << 8);
 }
 
+int dbg_hook_calls = 0;
+int dbg_hook_m_zero = 0;
+int dbg_hook_p_null = 0;
+int dbg_hook_len_small = 0;
+int dbg_hook_short_nz = 0;
+int dbg_hook_rtap_bad = 0;
+int dbg_inject_calls = 0;
+int dbg_inject_rate = 0;
+
 int
 inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
     //needed for sending:
@@ -94,6 +103,14 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
         }
     }
 
+    if (ret != -ENOENT) {
+        dbg_hook_rtap_bad++;
+        pkt_buf_free_skb(wlc->osh, p, 0);
+        return 0;
+    }
+
+    dbg_inject_rate = data_rate;
+
     //remove radiotap header
     skb_pull(p, rtap_len);
 
@@ -106,15 +123,33 @@ inject_frame(struct wl_info *wl, sk_buff *p, int rtap_len) {
 static int
 wl_send_one(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
 {
+    if (!dev || !dev->softc)
+        return -1;
     struct wl_info *wl = (struct wl_info *) dev->softc;
+    if (!wl || !wl->wlc)
+        return -1;
     struct wlc_info *wlc = wl->wlc;
+
+    dbg_hook_calls++;
+
+    if (!wlc->monitor)
+        dbg_hook_m_zero++;
+
+    if (!p || !p->data)
+        dbg_hook_p_null++;
+
+    if (p && p->len < sizeof(struct ieee80211_radiotap_header))
+        dbg_hook_len_small++;
+
+    if (p && p->data && ((short *) p->data)[0] != 0)
+        dbg_hook_short_nz++;
 
     /*
      * ((short *) p->data)[0] == 0 only says the first two bytes are zero,
      * which is true of a radiotap header (it_version 0, it_pad 0) but also of
      * any other frame that happens to start 00 00. Validate the length field
      * before committing to the radiotap path: it has to be at least a bare
-     * radiotap header and cannot claim more bytes than the skb actually holds.
+     * radiotap header and must leave at least 1 byte of 802.11 payload.
      * Anything else goes out the normal TX path instead of being pulled apart
      * as a radiotap frame - which is both correct for a non-injected frame and
      * keeps a malformed header from reaching skb_pull()/wlc_sendctl().
@@ -125,8 +160,11 @@ wl_send_one(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
         int rtap_len = rtap_len_of(p);
 
         if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
-            rtap_len <= (int) p->len) {
+            rtap_len < (int) p->len) {
+            dbg_inject_calls++;
             return inject_frame(wl, p, rtap_len);
+        } else {
+            dbg_hook_rtap_bad++;
         }
     }
 

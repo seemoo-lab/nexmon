@@ -49,7 +49,7 @@ class BoolPreference : public WiresharkPreference
 {
 public:
     BoolPreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         const_cast<QAbstractItemModel*>(index.model())->setData(index, QStringLiteral("BOOL"), Qt::EditRole);
         return WiresharkPreference::editor(parent, option, index);
@@ -61,18 +61,18 @@ class StringPreference : public WiresharkPreference
 {
 public:
     StringPreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/)
+    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/) override
     {
         return new QLineEdit(parent);
     }
 
-    virtual void setData(QWidget *editor, const QModelIndex &index)
+    virtual void setData(QWidget *editor, const QModelIndex &index) override
     {
         QLineEdit* line = static_cast<QLineEdit*>(editor);
         line->setText(index.model()->data(index, Qt::DisplayRole).toString());
     }
 
-    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index)
+    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) override
     {
         QLineEdit* line = static_cast<QLineEdit*>(editor);
         model->setData(index, line->text(), Qt::EditRole);
@@ -86,7 +86,7 @@ class PasswordPreference : public StringPreference
 {
 public:
     PasswordPreference(QObject * parent = Q_NULLPTR) : StringPreference(parent) {}
-    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         QLineEdit *le = static_cast<QLineEdit *>(StringPreference::editor(parent, option, index));
 
@@ -103,16 +103,30 @@ public:
 };
 REGISTER_PREFERENCE_TYPE(PREF_UINT, UIntPreference)
 
+class IntPreference : public StringPreference
+{
+public:
+    IntPreference(QObject* parent = Q_NULLPTR) : StringPreference(parent) {}
+};
+REGISTER_PREFERENCE_TYPE(PREF_INT, IntPreference)
+
+class FloatPreference : public StringPreference
+{
+public:
+    FloatPreference(QObject* parent = Q_NULLPTR) : StringPreference(parent) {}
+};
+REGISTER_PREFERENCE_TYPE(PREF_FLOAT, FloatPreference)
+
 class EnumPreference : public WiresharkPreference
 {
 public:
     EnumPreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/)
+    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/) override
     {
         return new QComboBox(parent);
     }
 
-    virtual void setData(QWidget *editor, const QModelIndex &index)
+    virtual void setData(QWidget *editor, const QModelIndex &index) override
     {
         QComboBox* combo = static_cast<QComboBox*>(editor);
         const enum_val_t *ev;
@@ -124,7 +138,7 @@ public:
         }
     }
 
-    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index)
+    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) override
     {
         QComboBox* combo = static_cast<QComboBox*>(editor);
         model->setData(index, combo->itemData(combo->currentIndex()), Qt::EditRole);
@@ -136,18 +150,18 @@ class RangePreference : public WiresharkPreference
 {
 public:
     RangePreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/)
+    virtual QWidget * editor(QWidget *parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/) override
     {
         return new RangeSyntaxLineEdit(parent);
     }
 
-    virtual void setData(QWidget *editor, const QModelIndex &index)
+    virtual void setData(QWidget *editor, const QModelIndex &index) override
     {
         RangeSyntaxLineEdit* syntax = static_cast<RangeSyntaxLineEdit*>(editor);
         syntax->setText(index.model()->data(index, Qt::DisplayRole).toString());
     }
 
-    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index)
+    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) override
     {
         RangeSyntaxLineEdit* syntax = static_cast<RangeSyntaxLineEdit*>(editor);
         model->setData(index, syntax->text(), Qt::EditRole);
@@ -160,7 +174,7 @@ class ColorPreference : public WiresharkPreference
 {
 public:
     ColorPreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/)
+    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &/*option*/, const QModelIndex &/*index*/) override
     {
         QColorDialog* color_dlg = new QColorDialog(parent);
         color_dlg->setWindowModality(Qt::ApplicationModal);
@@ -168,14 +182,14 @@ public:
         return color_dlg;
     }
 
-    virtual void setData(QWidget *editor, const QModelIndex &index)
+    virtual void setData(QWidget *editor, const QModelIndex &index) override
     {
         QColorDialog* color_dlg = static_cast<QColorDialog*>(editor);
         QColor color = QColor("#" + index.model()->data(index, Qt::DisplayRole).toString());
         color_dlg->setCurrentColor(color);
     }
 
-    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index)
+    virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) override
     {
         QColorDialog* color_dlg = static_cast<QColorDialog*>(editor);
         if (color_dlg->result() == QDialog::Accepted) {
@@ -189,7 +203,7 @@ class SaveFilePreference : public WiresharkPreference
 {
 public:
     SaveFilePreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         QString filename = WiresharkFileDialog::getSaveFileName(parent, mainApp->windowTitleString(prefs_get_title(prefsItem()->getPref())),
                                                     index.model()->data(index, Qt::DisplayRole).toString());
@@ -205,7 +219,7 @@ class OpenFilePreference : public WiresharkPreference
 {
 public:
     OpenFilePreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         QString filename = WiresharkFileDialog::getOpenFileName(parent, mainApp->windowTitleString(prefs_get_title(prefsItem()->getPref())),
                                                         index.model()->data(index, Qt::DisplayRole).toString());
@@ -221,7 +235,7 @@ class DirNamePreference : public WiresharkPreference
 {
 public:
     DirNamePreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         QString filename = WiresharkFileDialog::getExistingDirectory(parent, mainApp->windowTitleString(prefs_get_title(prefsItem()->getPref())),
                                                     index.model()->data(index, Qt::DisplayRole).toString());
@@ -237,7 +251,7 @@ class UatPreference : public WiresharkPreference
 {
 public:
     UatPreference(QObject * parent = Q_NULLPTR) : WiresharkPreference(parent) {}
-    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index)
+    virtual QWidget * editor(QWidget * parent, const QStyleOptionViewItem &option, const QModelIndex &index) override
     {
         UatDialog uat_dlg(parent, prefs_get_uat_value(prefsItem()->getPref()));
         uat_dlg.exec();

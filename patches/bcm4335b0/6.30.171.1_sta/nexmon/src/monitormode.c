@@ -56,12 +56,20 @@ extern void prepend_ethernet_ipv4_udp_header(struct sk_buff *p);
 static int
 channel2freq(struct wl_info *wl, unsigned int channel)
 {
-    int freq = 0;
-//   void *ci = 0;
-
-// TODO    wlc_phy_chan2freq_acphy(wl->wlc->band->pi, channel, &freq, &ci);
-
-    return freq;
+    // Fallback channel→freq when acphy helper not linked (older FW).
+    // Uses standard 802.11 channel plan; keep in sync with bcmwifi_channels.
+    if (channel == 0) return 0;
+    if (channel == 14) return 2484;
+    if (channel >= 1 && channel <= 13) return 2407 + channel * 5;
+    if (channel >= 36 && channel <= 177) return 5000 + channel * 5;
+    if (channel >= 182 && channel <= 196) return 4000 + channel * 5;
+    // Try firmware helper if available (acphy)
+    if (wl && wl->wlc && wl->wlc->band && wl->wlc->band->pi) {
+        // void wlc_phy_chan2freq_acphy(void *pi, int chan, int *freq, void *ci);
+        // Not linked on this FW, but keep stub for future.
+        (void) wl;
+    }
+    return 5000 + channel * 5;
 }
 
 static void
@@ -110,8 +118,15 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
         | (1<<IEEE80211_RADIOTAP_DBM_ANTNOISE)
         | (1<<IEEE80211_RADIOTAP_MCS)
         | (1<<IEEE80211_RADIOTAP_VENDOR_NAMESPACE);
+    static uint32_t fw_tsf_high = 0;
+    static uint32_t fw_last_mactime = 0;
+
+    if (fw_last_mactime >= 0x80000000 && sts->mactime < 0x80000000)
+        fw_tsf_high++;
+    fw_last_mactime = sts->mactime;
+
     frame->tsf.tsf_l = sts->mactime;
-    frame->tsf.tsf_h = 0;
+    frame->tsf.tsf_h = fw_tsf_high;
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = channel2freq(wl, CHSPEC_CHANNEL(sts->chanspec));
     

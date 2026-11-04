@@ -19,6 +19,17 @@ local function toMacAddr(addrhex)
     return addrhex:gsub("..","%0:"):sub(1,-2)
 end
 
+-- Normalize a MAC-style display string to lowercase hex digits only.
+local function ether_display_hex(s)
+    return (tostring(s):gsub("[^0-9a-fA-F]",""):lower())
+end
+
+-- Raw bytes preview from TvbRange:__tostring (not Address, which may apply OUI resolution).
+local function tvb_range_byte_hex(tvbr_str)
+    local b = tvbr_str:match("bytes=([^%s]+)")
+    return b and ether_display_hex(b) or ""
+end
+
 -- the following are so we can use pcall (which needs a function to call)
 local function makeField(name)
     local foo = Field.new(name)
@@ -130,7 +141,9 @@ function tap.packet(pinfo,tvb)
     testlib.test(PER_FRAME,"FieldInfo.range-1", eth_src1 == eth_src2)
     testlib.test(PER_FRAME,"FieldInfo.range-2", eth_src1 == eth_src3)
     testlib.test(PER_FRAME,"FieldInfo.range-3",not pcall(setFieldInfo,fi_eth_src,"range",3))
-    testlib.test(PER_FRAME,"FieldInfo.range-4", tostring(f_frame_encap_type().range) == "<EMPTY>")
+    local encap_range = f_frame_encap_type().range
+    testlib.test(PER_FRAME,"FieldInfo.range-4",
+        tostring(encap_range) == string.format("TvbRange: offset=%d length=0 (empty)", encap_range:offset()))
 
     testlib.test(PER_FRAME,"FieldInfo.generated-1", f_frame_proto().generated == true)
     testlib.test(PER_FRAME,"FieldInfo.generated-2", eth_macs[2].generated == false)
@@ -140,10 +153,13 @@ function tap.packet(pinfo,tvb)
     testlib.test(PER_FRAME,"FieldInfo.name-2",not pcall(setFieldInfo,fi_eth_src,"name","3"))
 
     testlib.test(PER_FRAME,"FieldInfo.label-1", fi_eth_src.label == tostring(fi_eth_src))
-    testlib.test(PER_FRAME,"FieldInfo.label-2", fi_eth_src.label == toMacAddr(eth_src1))
+    testlib.test(PER_FRAME,"FieldInfo.label-2",
+        ether_display_hex(fi_eth_src.label) == tvb_range_byte_hex(tostring(fi_eth_src.range)))
     testlib.test(PER_FRAME,"FieldInfo.label-3",not pcall(setFieldInfo,fi_eth_src,"label","3"))
 
-    testlib.test(PER_FRAME,"FieldInfo.display-1", select(1, string.find(fi_eth_src.display, toMacAddr(eth_src1))) ~= nil)
+    local eth_src_mac_plain = tvb_range_byte_hex(tostring(fi_eth_src.range))
+    testlib.test(PER_FRAME,"FieldInfo.display-1",
+        select(1, string.find(fi_eth_src.display, toMacAddr(eth_src_mac_plain), 1, true)) ~= nil)
     testlib.test(PER_FRAME,"FieldInfo.display-2",not pcall(setFieldInfo,fi_eth_src,"display","3"))
 
     testlib.test(PER_FRAME,"FieldInfo.eq-1", eth_macs[2] == select(2, f_eth_mac()))

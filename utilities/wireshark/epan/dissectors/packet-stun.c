@@ -118,10 +118,10 @@ enum {
 
 /* Auto-tuning. Default: NET_VER_5389; NET_VER_MS_TURN if MAGIC_COOKIE is found */
 /* NET_VER_3489 is only useful for packets that conform specifically to
- * draft-ietf-behave-rfc3849bis-03; i.e. that have the 32 bit magic so that they
+ * draft-ietf-behave-rfc3489bis-03; i.e. that have the 32 bit magic so that they
  * are not handled by classicstun instead, have the current (swapped) NONE and
  * REALM attribute numbers, but do not have the attribute padding that was
- * introduced in draft-ietf-behave-rfc3849bis-04.
+ * introduced in draft-ietf-behave-rfc3489bis-04.
  */
 
 static int stun_network_version = NET_VER_5389;
@@ -303,6 +303,12 @@ typedef struct _stun_conv_info_t {
 #define CONNECTION_BIND         0x000b /* RFC6062 */
 #define CONNECTION_ATTEMPT      0x000c /* RFC6062 */
 #define GOOG_PING               0x0080 /* Google undocumented */
+
+/* MS-TURN message types use raw 16-bit values, not the RFC 5389 class/method
+ * bit layout used by the values above.
+ */
+#define MS_TURN_SEND    0x0004
+#define MS_TURN_DATA_IND 0x0115
 
 /* 0x080-0x0FF Expert Review */
 /* 0x100-0xFFF Reserved (for DTLS-SRTP multiplexing collision avoidance,
@@ -941,7 +947,7 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool i
     unsigned    captured_length;
     uint16_t    msg_type;
     unsigned    msg_length;
-    proto_item *ti;
+    proto_item *ti, *ti_length;
     proto_tree *stun_tree;
     proto_tree *stun_type_tree;
     proto_tree *att_all_tree;
@@ -1174,6 +1180,25 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool i
         stun_trans->req_time=pinfo->abs_ts;
     }
 
+    /* According to [MS-TURN] section 2.2.2.8, the MAGIC_COOKIE attribute is
+     * the first attribute in all MS-TURN messages.
+     */
+    unsigned int first_attr_off = tcp_framing_offset + STUN_HDR_LEN;
+    if (tvb_get_ntohs(tvb, first_attr_off) == MAGIC_COOKIE &&
+        tvb_get_ntohl(tvb, first_attr_off + ATTR_HDR_LEN) == TURN_MAGIC_COOKIE) {
+        switch (msg_type) {
+        case MS_TURN_SEND:
+            msg_type_class = REQUEST;
+            msg_type_method = SEND;
+            break;
+        case MS_TURN_DATA_IND:
+            msg_type_class = INDICATION;
+            msg_type_method = DATA_IND;
+            break;
+        default:
+            break;
+        }
+    }
 
     msg_class_str  = val_to_str_const(msg_type_class, classes, "Unknown");
     msg_method_str = val_to_str_const(msg_type_method, methods, "Unknown");
@@ -1248,7 +1273,7 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool i
     proto_tree_add_uint(stun_type_tree, hf_stun_type_method_assignment, tvb, offset, 2, msg_type);
     offset += 2;
 
-    proto_tree_add_item(stun_tree, hf_stun_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+    ti_length = proto_tree_add_item(stun_tree, hf_stun_length, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
     proto_tree_add_item(stun_tree, hf_stun_cookie, tvb, offset, 4, ENC_NA);
     offset += 4;
@@ -1258,25 +1283,30 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool i
     /* Remember this (in host order) so we can show clear xor'd addresses */
     magic_cookie_first_word = tvb_get_ntohl(tvb, tcp_framing_offset + 4);
 
-    network_version = stun_network_version != NET_VER_AUTO ? stun_network_version : NET_VER_5389;
-
     if (msg_length != 0) {
         const char        *attribute_name_str;
 
-        /* According to [MS-TURN] section 2.2.2.8: "This attribute MUST be the
-           first attribute following the TURN message header in all TURN messages" */
-        if (stun_network_version == NET_VER_AUTO &&
-            offset < (STUN_HDR_LEN + msg_length) &&
-            tvb_get_ntohs(tvb, offset) == MAGIC_COOKIE) {
-          network_version = NET_VER_MS_TURN;
+        if (stun_network_version == NET_VER_AUTO) {
+            /* According to [MS-TURN] section 2.2.2.8: "This attribute MUST be the
+               first attribute following the TURN message header in all TURN messages" */
+            if (offset < (STUN_HDR_LEN + msg_length) &&
+                tvb_get_ntohs(tvb, offset) == MAGIC_COOKIE) {
+              network_version = NET_VER_MS_TURN;
+            } else if (msg_length & 3) {
+              /* Starting with RFC 5389 msg_length MUST be a multiple of 4 bytes */
+              network_version = NET_VER_3489;
+            } else {
+              network_version = NET_VER_5389;
+            }
+        } else {
+            network_version = stun_network_version;
+            /* Starting with RFC 5389 msg_length MUST be multiple of 4 bytes */
+            if ((network_version >= NET_VER_5389 && msg_length & 3) != 0)
+                expert_add_info(pinfo, ti_length, &ei_stun_wrong_msglen);
         }
 
         ti = proto_tree_add_uint(stun_tree, hf_stun_network_version, tvb, offset, 0, network_version);
         proto_item_set_generated(ti);
-
-        /* Starting with RFC 5389 msg_length MUST be multiple of 4 bytes */
-        if ((network_version >= NET_VER_5389 && msg_length & 3) != 0)
-            stun_tree = proto_tree_add_expert(stun_tree, pinfo, &ei_stun_wrong_msglen, tvb, offset-18, 2);
 
         ti = proto_tree_add_item(stun_tree, hf_stun_attributes, tvb, offset, msg_length, ENC_NA);
         att_all_tree = proto_item_add_subtree(ti, ett_stun_att_all);
@@ -1388,8 +1418,7 @@ dissect_stun_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool i
                 proto_tree_add_item(att_tree, hf_stun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
                 if (att_length < 4)
                     break;
-                proto_tree_add_item(att_tree, hf_stun_att_port, tvb, offset+2, 2, ENC_BIG_ENDIAN);
-                att_port = tvb_get_ntohs(tvb, offset + 2);
+                proto_tree_add_item_ret_uint16(att_tree, hf_stun_att_port, tvb, offset+2, 2, ENC_BIG_ENDIAN, &att_port);
 
                 switch (tvb_get_uint8(tvb, offset+1)) {
                 case 1:
