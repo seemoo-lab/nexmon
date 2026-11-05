@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "scope": "Allowlisted public-oriented text only",
+  "archive": "nexmon-public-repro-20261106.zip",
+  "manifest_self_hash_excluded": true,
+  "files": [
+    {
+      "path": "DEPENDENCIES.md",
+      "bytes": 3939,
+      "sha256": "b4a3d48a763c849c441b7b45e141e68a6ac5af89669b82ff00481875e2702f78"
+    },
+    {
+      "path": "INTEGRATION.md",
+      "bytes": 1790,
+      "sha256": "0c87238eb4fb7b08ee606e0993858fcfbb191ff358ad13249c47963a38249693"
+    },
+    {
+      "path": "LICENSE.txt",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "bytes": 2498,
+      "sha256": "c9803eec9514b04321496d576f14e5504940fee9be4af9c40db5610207bbeb8b"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3194,
+      "sha256": "7f51044e587d5d1b1c7a2540b1663b7f9b023fffdae9e06c0889358204d3e3b3"
+    },
+    {
+      "path": "REPORT.md",
+      "bytes": 6068,
+      "sha256": "9d77ee65be4186753980b03d061cde92b097a986eb097ff42b1696ec780a091e"
+    },
+    {
+      "path": "REPRODUCING.md",
+      "bytes": 7040,
+      "sha256": "aa16aa5946ca7fc7d018657e76225615fae8a10924f520c4e4096212b6d7a4ec"
+    },
+    {
+      "path": "build.py",
+      "bytes": 11443,
+      "sha256": "00fdf21ac84dadcab0f404a8067ac74b23bd114d32bb025c6a5be1a8e4ebe400"
+    },
+    {
+      "path": "build_native.py",
+      "bytes": 2622,
+      "sha256": "ab6fa5cee0824fe9c8ed1b49cb09e2626d4f8263fe94f920cdc9d8d963049566"
+    },
+    {
+      "path": "capture.py",
+      "bytes": 11382,
+      "sha256": "7e4564f73274489a282dd7ec3db0d4f2839b47a6156487c023505127812aa9d2"
+    },
+    {
+      "path": "evidence/application-final.json",
+      "bytes": 264,
+      "sha256": "e23f5fcad2079fba73d2f9d81d035e9fbd8cf526f9755bcb52746dd3b4a36ca7"
+    },
+    {
+      "path": "evidence/dopamine-source.json",
+      "bytes": 517,
+      "sha256": "b4ac4d14cc8075f942b0870ddb3950fca2cbf9e5e4b4053033303df45ee417fd"
+    },
+    {
+      "path": "evidence/final-runtime.json",
+      "bytes": 231,
+      "sha256": "b179e063acbdaf6cce121c14cc5f0b46dbb96dd65a12cc431ce2c6d94a167cff"
+    },
+    {
+      "path": "evidence/handshake.json",
+      "bytes": 846,
+      "sha256": "06c79f667512115f096328b4221f00b91ac222eb303245d7ce04b42a6051a7a5"
+    },
+    {
+      "path": "evidence/native-build.json",
+      "bytes": 271,
+      "sha256": "3b256b742e8d012fc5dd10514bd6291b0ccb3a91bb3d20e17b301e0761c00893"
+    },
+    {
+      "path": "evidence/offline-repair.json",
+      "bytes": 372,
+      "sha256": "d6c8f38730676b75c6eb1148b1b9fc197f6746bef5611e86f8e6b798bc24fcfe"
+    },
+    {
+      "path": "evidence/service-fifteen-minute.json",
+      "bytes": 687,
+      "sha256": "c08c869105916c68516e4dab38296289142480be08383f028ef44e93e2306cd9"
+    },
+    {
+      "path": "evidence/service-five-minute.json",
+      "bytes": 722,
+      "sha256": "62d987f6bb5df25488c08780b3482dbbb7496aa20aa9bc815b11693890e951bc"
+    },
+    {
+      "path": "evidence/source-build.json",
+      "bytes": 443,
+      "sha256": "479c3b5a3822d583f2d05a0f001c3b319300ad883144315ee9f87a2a2957a311"
+    },
+    {
+      "path": "evidence/standalone-reproduction.json",
+      "bytes": 569,
+      "sha256": "99b439e3445097c173702cd7d39a93db0cf0938f83ef88a1a23605f90258e9ce"
+    },
+    {
+      "path": "evidence/storage.json",
+      "bytes": 536,
+      "sha256": "1c6c660beff8dfcd01ed0d6bb49e93eac21907d4b18c7946ae0730bd5a3495c2"
+    },
+    {
+      "path": "firmware.py",
+      "bytes": 6797,
+      "sha256": "8bd824b9d79404705cc39a57e26738813e0e057531ee7c9d7b14703d398c8487"
+    },
+    {
+      "path": "metadata/provenance.json",
+      "bytes": 872,
+      "sha256": "ad6a683bf79c7d00447c074fff7523a37228a65f8e8926f472e5102803e0925e"
+    },
+    {
+      "path": "metadata/target.json",
+      "bytes": 2773,
+      "sha256": "003bf5d23a76202d032dabd788f03df24ca641987845d7f6264324bb19104bdd"
+    },
+    {
+      "path": "radio.py",
+      "bytes": 2579,
+      "sha256": "0e5c458cdda5cffe4d62f18c47be48c5199654bf5d54e8751b4737897423e006"
+    },
+    {
+      "path": "raw_transport.py",
+      "bytes": 5403,
+      "sha256": "e57f8a257ec8b7f9c92e0e6260e4efd638fc23b15e80d7293b8d82d54b571709"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 39,
+      "sha256": "885f17480ba6727fb2b2454356fea1192d2bdbe99828042fadf77100a13f1e2c"
+    },
+    {
+      "path": "source/AuthTap.c",
+      "bytes": 5440,
+      "sha256": "f962891a003280c10583d74572b9d7df5ec5fc6532fa3b3b2e4acd9b37ab4ef2"
+    },
+    {
+      "path": "source/MemoryLauncher.c",
+      "bytes": 1608,
+      "sha256": "3d57dede93946d467b6ff711d641b8cc0ca6c2797674f2e587329d2f1027c6c4"
+    },
+    {
+      "path": "source/MonitorRadio.m",
+      "bytes": 1944,
+      "sha256": "0a2db7dcf0d316a5ee372b2fc73ef20ab9320a473dadea2f245973f12f1428a0"
+    },
+    {
+      "path": "source/RawMirror.c",
+      "bytes": 8389,
+      "sha256": "f511b16ff6edc9e402c2d432862ba450daad8285e7b8b4ad59a94a106a3a9b86"
+    },
+    {
+      "path": "source/eapol_mirror_capture_small.S",
+      "bytes": 3814,
+      "sha256": "1b74f6b97a8381530ac3800e25a55b5377c21bda7b43ddb34315b4c782badcce"
+    },
+    {
+      "path": "source/eapol_mirror_control.S",
+      "bytes": 3396,
+      "sha256": "19800343d0976394a8c2a05c5cc74f19e73491a77c7b41451fa7543e708de030"
+    },
+    {
+      "path": "source/eapol_mirror_fetch_combined.c",
+      "bytes": 5622,
+      "sha256": "131866ee63f50d99a06e28e5545714677e193d46a1ebaa93a2a3dd496426745d"
+    },
+    {
+      "path": "source/monitor_control.c",
+      "bytes": 7459,
+      "sha256": "597d2698c16d0365f5dfa3c5afcbbd41f00570316938421177fa47120f1b12ce"
+    },
+    {
+      "path": "test_reproduction.py",
+      "bytes": 8547,
+      "sha256": "0de8a0fd0c837072513bd222d5d6e6ba731a2947cddda1f43fb5d6e5c9940f32"
+    },
+    {
+      "path": "trust_native.py",
+      "bytes": 2030,
+      "sha256": "f1da0c69a98295459c82259d53fbbf622202243758a68aa06819943e87dd3b60"
+    },
+    {
+      "path": "verify_bundle.py",
+      "bytes": 9530,
+      "sha256": "394765213a77e06625ebd862afd1e5f279fea58806a544fdd99af8ac92d5e95e"
+    },
+    {
+      "path": "wifi_auth.py",
+      "bytes": 14668,
+      "sha256": "513d9e1235e278334e0cfa446ec7a6341fea589347678ed1bb2511f4eb8da682"
+    }
+  ]
+}

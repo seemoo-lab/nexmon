@@ -1,0 +1,12 @@
+{
+  "image_sha256": "0245b815b9ff0a5d7e7a3b4f42b491338d2dbeefd8f5bf66cf8a86a83fb00f1f",
+  "object_sha256": "b293141d8e8031ae6c1f7be4e9405328d779233d82f0a1f5495a20de5ac1f9c3",
+  "compiled_bytes": 488,
+  "capture_bytes": 448,
+  "control_bytes": 528,
+  "initializer_bytes": 44,
+  "phone_operations": 0,
+  "wrong_stock_input_rejected_before_compiler": true,
+  "wrong_input_creates_no_output": true,
+  "final_licensed_source_rebuild_exact": true
+}

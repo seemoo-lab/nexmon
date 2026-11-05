@@ -1,0 +1,23 @@
+{
+  "status": "PASS_PRODUCTION_CAPTURE_AND_GATEWAY_EXPORT",
+  "frames": 8,
+  "messages": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2
+  },
+  "pairs": 4,
+  "source": "firmware",
+  "timestamp_source": "observation",
+  "production_database_modified": true,
+  "existing_data_retained": true,
+  "pcap_exact_original": true,
+  "hc22000_original_line_set": true,
+  "authenticated_downloads": true,
+  "anonymous_downloads_rejected": true,
+  "gateway_prefix": "/wifi-maps/",
+  "gateway_port": 80,
+  "firmware_loads": 0,
+  "mode_writes": 0
+}

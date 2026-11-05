@@ -1,0 +1,10 @@
+{
+  "status": "PASS_FINAL_PRODUCTION_HEALTH_AND_RETAINED_EXPORTS",
+  "gateway_health": true,
+  "history_capture_present": true,
+  "retained_frames": 8,
+  "pcap_exact_original": true,
+  "hc22000_original_line_set": true,
+  "firmware_loads": 0,
+  "mode_writes": 0
+}

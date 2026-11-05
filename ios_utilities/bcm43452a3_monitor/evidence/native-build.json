@@ -1,0 +1,9 @@
+{
+  "status": "PASS_PUBLIC_NATIVE_BUILD_AND_ZERO_RADIO_SELFTEST",
+  "helpers": 5,
+  "standalone_cli_bootstrap": true,
+  "reader_hash_matches_installed": true,
+  "bootstrap_fix": "Explicit script directory for isolated Python",
+  "firmware_loads": 0,
+  "mode_writes": 0
+}

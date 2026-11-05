@@ -1,0 +1,29 @@
+{
+  "status": "PASS_INDEPENDENT_RAW_BYTE_AUDIT",
+  "messages": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2
+  },
+  "retained_frames": 8,
+  "all_fcs_valid": true,
+  "all_ap_matched": true,
+  "own_stations_excluded": true,
+  "distinct_other_peers": 1,
+  "complete_same_peer_exchanges": 2,
+  "replay_and_nonce_consistent": true,
+  "pcap_matches_raw": true,
+  "pcap_bytes": 1372,
+  "hc22000_lines": 4,
+  "hc22000_bytes": 1600,
+  "hc22000_matches_original_bytes": true,
+  "mic_cryptographically_verified": false,
+  "snapshots": 114,
+  "ordinal_gaps": 0,
+  "stock_restored": true,
+  "digest_restored": true,
+  "autojoin_restored": true,
+  "authorized_association_restored": true,
+  "limitations": "Host observation timestamps, not radio timestamps. No password recovered or MIC recomputation. Test-specific reception, not universal RF coverage."
+}

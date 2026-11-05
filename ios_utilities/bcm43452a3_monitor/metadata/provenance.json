@@ -1,0 +1,25 @@
+{
+  "scope": "Project-authored source identities; no private source paths",
+  "files": [
+    {
+      "source_name": "RawMirror.c",
+      "original_sha256": "c9c4250513671209122e0ef06f13c346ee8fc8475f3f80594f98ab8dd672c40f",
+      "comment_only_normalization": true
+    },
+    {
+      "source_name": "eapol_mirror_fetch_combined.c",
+      "original_sha256": "768a15c6989b2585043482c22f1e868d432a52a1d7b1e756d6fe78c2440f2d62",
+      "comment_only_normalization": true
+    },
+    {
+      "source_name": "eapol_mirror_capture_small.S",
+      "original_sha256": "b178bd3468e631cf81f9da2131c0797d1812f15f5a8fb6ab47c03856bfe87e5d",
+      "comment_only_normalization": true
+    },
+    {
+      "source_name": "eapol_mirror_control.S",
+      "original_sha256": "38ebfb9f09b39092d39e2b9cc7700efe01bf9809aababcd4df031afeb2acc8cd",
+      "comment_only_normalization": true
+    }
+  ]
+}

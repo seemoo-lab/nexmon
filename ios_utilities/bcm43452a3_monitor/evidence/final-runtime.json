@@ -1,0 +1,8 @@
+{
+  "status": "PASS_FINAL_PUBLIC_RUNTIME_AND_TRUST_BOOTSTRAP",
+  "runtime_semantics_match_tested_snapshot": true,
+  "translated_error_strings_only": true,
+  "trust_helpers": 5,
+  "firmware_operations": 0,
+  "radio_operations": 0
+}

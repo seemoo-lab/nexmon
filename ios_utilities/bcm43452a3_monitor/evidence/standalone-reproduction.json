@@ -1,0 +1,23 @@
+{
+  "status": "PUBLIC_REPRO_CLI_STATUS",
+  "actual_pid_alive": false,
+  "radio_lock_held": false,
+  "terminal": true,
+  "phase": "stopped",
+  "ready": false,
+  "samples": 79,
+  "frames": 0,
+  "blocked": false,
+  "error_present": false,
+  "pending_native": 0,
+  "radio_cleanup_verified": true,
+  "stock_restored": true,
+  "digest_restored": true,
+  "autojoin_restored": true,
+  "monitor": 0,
+  "ordinal_gaps": 0,
+  "busy_snapshots": 0,
+  "source_image_rebuilt_exactly": true,
+  "native_helpers_built_from_public_sources": true,
+  "third_party_binaries_bundled": false
+}

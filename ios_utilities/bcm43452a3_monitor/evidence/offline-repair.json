@@ -1,0 +1,14 @@
+{
+  "status": "PASS_MOBILE_OFFLINE_RAW_REPAIR",
+  "missing_reader_restored": true,
+  "missing_candidate_rederived": true,
+  "reader_hash_verified": true,
+  "candidate_hash_verified": true,
+  "mobile_broker_install": true,
+  "mobile_rpc_check": true,
+  "component_integrity": true,
+  "monitor": 0,
+  "firmware_loads": 0,
+  "mode_writes": 0,
+  "actual_reboot_test": false
+}

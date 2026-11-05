@@ -1,0 +1,10 @@
+{
+  "status": "PASS_OFFICIAL_DOPAMINE_DEPENDENCY",
+  "version": "3.0.11",
+  "url": "https://github.com/opa334/Dopamine/releases/download/3.0.11/Dopamine.ipa",
+  "ipa_sha256": "fbd5b9086634cac0b6c7e5ba95c43d8c40ecafd814f8e620beb06f355480b973",
+  "basebin_tar_sha256": "cb6e61f51d06c70afe81ba716b7d46157e210e5c0d052823b0fe6496b416e8df",
+  "library_sha256": "ea76a9d9b6af0a50c0aa2ace1f770ad5cfcfff89c4555b2c60dc4b7d1b4427be",
+  "installed_pin_matches_official_asset": true,
+  "binary_included_in_public_bundle": false
+}

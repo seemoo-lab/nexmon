@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "scope": "Compatibility metadata only; referenced binaries are excluded",
+  "device": "iPhone SE (2016), A1723, iPhone8,4, A9/S8000",
+  "ios": "15.7",
+  "ios_build": "19H12",
+  "jailbreak": "Dopamine3.0.11; installed library matched the verified official IPA",
+  "chip": "BCM43452a3",
+  "chipnum": "0x4345",
+  "chiprev": "0x8",
+  "firmware_build": "43452a3-roml",
+  "firmware_version": "7.64.133.15 (r936348)",
+  "fwid": "01-8485ab64",
+  "input_pins_sha256": {
+    "stock_ram_527400_bytes": "280bc2d7ad25f2c789ce332c37da9d687693fbda156830803fe1516e8d938244",
+    "overlaid_live_rom_each_read_589748_bytes": "8593142573b24cb2989fff94583c4b4595e69ff017b8a790ad5ff62696889bfe",
+    "kernelcache": "7267f37b274cd03d774d626d060c029a05725be074a0da6b09d699865b3f74ce",
+    "installed_libjailbreak": "ea76a9d9b6af0a50c0aa2ace1f770ad5cfcfff89c4555b2c60dc4b7d1b4427be",
+    "stock_loader_108496_bytes": "a391c0e1c13e161434d4063ade9b9f95669d81cc81382a435adc17519f0a3227"
+  },
+  "rom": {
+    "range_start": "0x20",
+    "range_end_exclusive": "0x8ffd4",
+    "independent_reads": 2,
+    "matching_stock_overlays": 254,
+    "virgin_mask_rom": false,
+    "leading_32_bytes_available": false
+  },
+  "recorded_toolchain": {
+    "host_python": "3.12.14",
+    "device_python": "3.9.9",
+    "capstone": "5.0.9",
+    "keystone": "0.9.2",
+    "unicorn": "2.1.4",
+    "clang": "Procursus clang 16.0.0",
+    "clang_source_commit": "5477f7da643074610bc1f1d32bbfb899c67a61ae",
+    "native_sdk": "iPhoneOS15.6, independently obtained; not included",
+    "tcpdump": "4.99.1",
+    "libpcap": "1.10.4",
+    "firmware_c_flags": [
+      "--target=armv7r-none-eabi",
+      "-mthumb",
+      "-mfloat-abi=soft",
+      "-Oz",
+      "-ffreestanding",
+      "-fno-builtin",
+      "-fomit-frame-pointer",
+      "-fno-stack-protector",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fno-jump-tables",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-c"
+    ],
+    "reviewed_relocations": [
+      "ABS32",
+      "THM_CALL",
+      "THM_JUMP24"
+    ]
+  },
+  "application_integration": "confirmed on installed WiFiSurvey 1.7.0 build 16; three own-endpoint captures including resident reuse and post-package fresh load",
+  "full_deployable_port_included": false,
+  "integrated_generic_profile": {
+    "name": "nxauth2",
+    "image_sha256": "2ef5823d2b844e94da96031a7bad8e91370cda15adf2de5feb58aa4efc27a5cc",
+    "payload_bytes": 860,
+    "embedded_ap": false,
+    "target_selection": "private runtime arm/disarm",
+    "initial_state": "disarmed",
+    "idle_can_remain_resident": true,
+    "image_included": false
+  },
+  "raw_fetch_compiler": "Zig0.13.0, Cortex-R4 Thumb, exact full-image rebuild verified"
+}
