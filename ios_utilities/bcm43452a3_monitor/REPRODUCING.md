@@ -8,7 +8,11 @@ Check out this contribution and work in this directory. Review [DEPENDENCIES.md]
 
 On the phone, check iPhone8,4, iOS15.7/19H12, the stock image/loader hashes and Dopamine3.0.11's library hash. The standalone CLI enforces these again. Do not replace system inputs with reference binaries to bypass a mismatch. Stock resets firmware on reboot; manually restore Dopamine if required before resuming. Installation/re-jailbreak on a second clean device has not been tested by the authors.
 
-## 2. Build the exact firmware image on a host
+## 2. Generate the exact firmware image
+
+For the ready binary route, use the [prebuilt patch instructions](prebuilt/README.md). Apply `apply_prebuilt.py` to your own exact stock input with Python standard library only, then continue at step 3. No Zig or pip dependencies are needed for this alternative.
+
+### Optional independent source build on a host
 
 Use a private working directory and a separately installed Python3.9+ environment. POSIX shell examples follow; adapt environment-variable syntax for your host.
 

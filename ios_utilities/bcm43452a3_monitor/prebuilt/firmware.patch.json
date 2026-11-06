@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "stock_sha256": "280bc2d7ad25f2c789ce332c37da9d687693fbda156830803fe1516e8d938244",
+  "result_sha256": "0245b815b9ff0a5d7e7a3b4f42b491338d2dbeefd8f5bf66cf8a86a83fb00f1f",
+  "payload_bytes": 1556,
+  "payload_sha256": "ca478c5cad710d7dc46028e966083d152aae1a4e8df089ffcec4cb2b8f6fc1c6",
+  "ranges": [
+    {
+      "offset": 7168,
+      "length": 488,
+      "payload_offset": 0
+    },
+    {
+      "offset": 7680,
+      "length": 448,
+      "payload_offset": 488
+    },
+    {
+      "offset": 8128,
+      "length": 24,
+      "payload_offset": 936
+    },
+    {
+      "offset": 348416,
+      "length": 528,
+      "payload_offset": 960
+    },
+    {
+      "offset": 348944,
+      "length": 44,
+      "payload_offset": 1488
+    },
+    {
+      "offset": 101720,
+      "length": 4,
+      "payload_offset": 1532
+    },
+    {
+      "offset": 129836,
+      "length": 4,
+      "payload_offset": 1536
+    },
+    {
+      "offset": 13128,
+      "length": 4,
+      "payload_offset": 1540
+    },
+    {
+      "offset": 12132,
+      "length": 4,
+      "payload_offset": 1544
+    },
+    {
+      "offset": 361036,
+      "length": 4,
+      "payload_offset": 1548
+    },
+    {
+      "offset": 357308,
+      "length": 4,
+      "payload_offset": 1552
+    }
+  ]
+}

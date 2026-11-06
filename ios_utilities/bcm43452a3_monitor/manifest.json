@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "Allowlisted public-oriented text only",
+  "scope": "Allowlisted sources and hash-pinned own-code binary patch",
   "archive": "nexmon-public-repro-20261106.zip",
   "manifest_self_hash_excluded": true,
   "files": [
@@ -26,8 +26,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3194,
-      "sha256": "7f51044e587d5d1b1c7a2540b1663b7f9b023fffdae9e06c0889358204d3e3b3"
+      "bytes": 3556,
+      "sha256": "b4afb4ba8b4c625f8e513cdb2ecdbd84c9f9b93a72fe45d8b09ebc4b558fdc64"
     },
     {
       "path": "REPORT.md",
@@ -36,8 +36,13 @@
     },
     {
       "path": "REPRODUCING.md",
-      "bytes": 7040,
-      "sha256": "aa16aa5946ca7fc7d018657e76225615fae8a10924f520c4e4096212b6d7a4ec"
+      "bytes": 7346,
+      "sha256": "fe4adfbc6b6138cfda77c8ba9748ce38d79fbe42e930cfe134632be155bd9d14"
+    },
+    {
+      "path": "apply_prebuilt.py",
+      "bytes": 2440,
+      "sha256": "35183caccdbb74017a12b6f1e47f2ca82e37a1c05ce4dd6a187a07f13102526c"
     },
     {
       "path": "build.py",
@@ -125,6 +130,21 @@
       "sha256": "003bf5d23a76202d032dabd788f03df24ca641987845d7f6264324bb19104bdd"
     },
     {
+      "path": "prebuilt/README.md",
+      "bytes": 1833,
+      "sha256": "22ddbc7280091e025d31c5b30f5728e663df353d271ea94ae37b455aa2f53001"
+    },
+    {
+      "path": "prebuilt/firmware.patch.bin",
+      "bytes": 1556,
+      "sha256": "ca478c5cad710d7dc46028e966083d152aae1a4e8df089ffcec4cb2b8f6fc1c6"
+    },
+    {
+      "path": "prebuilt/firmware.patch.json",
+      "bytes": 1251,
+      "sha256": "4bb68b5947cd383387bfdbff5897cb1b6f4d5e00151505e90373743fb697d378"
+    },
+    {
       "path": "radio.py",
       "bytes": 2579,
       "sha256": "0e5c458cdda5cffe4d62f18c47be48c5199654bf5d54e8751b4737897423e006"
@@ -180,6 +200,11 @@
       "sha256": "597d2698c16d0365f5dfa3c5afcbbd41f00570316938421177fa47120f1b12ce"
     },
     {
+      "path": "test_prebuilt.py",
+      "bytes": 2455,
+      "sha256": "21a10a2d9388e888cbd69ce707d2aa00fa19e6aa15333ca76317bca23c51ff00"
+    },
+    {
       "path": "test_reproduction.py",
       "bytes": 8547,
       "sha256": "0de8a0fd0c837072513bd222d5d6e6ba731a2947cddda1f43fb5d6e5c9940f32"
@@ -191,8 +216,8 @@
     },
     {
       "path": "verify_bundle.py",
-      "bytes": 9530,
-      "sha256": "394765213a77e06625ebd862afd1e5f279fea58806a544fdd99af8ac92d5e95e"
+      "bytes": 10286,
+      "sha256": "2ea295bb75af5caf4bce5a86743568aaade14ef7075a82b11e5ca945de2965bd"
     },
     {
       "path": "wifi_auth.py",

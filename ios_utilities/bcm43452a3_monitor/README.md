@@ -4,6 +4,10 @@ Exact target: **iPhone SE2016/iPhone8,4, iOS15.7 build19H12, BCM43452a3 firmware
 
 The confirmed capture retained eight original-FCS-valid raw802.11 frames: two complete M1-M4 exchanges from one authorized other station. Independent byte auditing matched the1372-byte PCAP and four HC22000 records to observed fields. No injection, deauthentication, forced remote disconnect or own-SE reconnect was used. No password was recovered or known-password MIC recomputation performed.
 
+## Ready binary patch
+
+A [prebuilt own-code binary patch](prebuilt/README.md) now generates the exact tested firmware from your own pinned stock image, using Python standard library only. No firmware compiler is required for this route. Full Apple/Broadcom firmware and ROM dumps are not redistributed. Native helpers still require the documented source build.
+
 ## Contents
 
 - [Reproduce from source](REPRODUCING.md): exact build, signing/trust, scoped capture and recovery commands.
